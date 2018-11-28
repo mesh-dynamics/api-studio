@@ -1,0 +1,223 @@
+
+# To setup istio/kubernetes example on a ec2 machine
+
+# Instructions below are for the initial setup
+
+## Login to ec2 instance (say ubuntu user)
+mkdir software
+cd software
+
+## Download istio
+curl -L https://git.io/getLatestIstio | sh -
+
+### Add to path. Also add to .profile
+export PATH="$PATH:/home/ubuntu/software/istio-1.0.3/bin"
+
+## Install kubernetes (https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+
+## Minikube doesn't work well on ec2. So we will use an actual aws cluster for use with kubernetes
+## Setup kops (https://linoxide.com/containers/creating-kubernetes-cluster-kops/)
+wget https://github.com/kubernetes/kops/releases/download/1.10.0/kops-linux-amd64
+chmod +x kops-linux-amd64
+sudo mv kops-linux-amd64 /usr/local/bin/kops
+kops version
+
+## install pip
+sudo apt install python3-distutils
+curl -O https://bootstrap.pypa.io/get-pip.py
+python3 get-pip.py --user
+
+### add to .profile
+export PATH=~/.local/bin:$PATH
+
+## aws setup
+### install awscli
+pip install awscli --upgrade --user
+
+aws --version
+
+### create aws access tokens 
+#### key id: <get from aws console>
+#### secret key: <get from aws console>
+
+### configure aws
+aws configure
+
+### create group & user for kubernetes
+
+aws iam create-group --group-name k8s-group
+aws iam create-user --user-name k8s-user
+
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess --group-name k8s-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonRoute53FullAccess --group-name k8s-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess --group-name k8s-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonVPCFullAccess --group-name k8s-group
+aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/IAMFullAccess --group-name k8s-group
+
+aws iam add-user-to-group --user-name k8s-user --group-name k8s-group
+
+#### create aws tokens for created user (k8s-user)
+aws iam create-access-key --user-name k8s-user
+
+##### accessid: <copy from above output>
+##### secret key: <copy from above output>
+
+## Choose a name for cluster. add to .profile
+## For cluster without dns requirement, need to have a name ending with k8s.local
+## Choose a name for the s3 bucket where kubectl will put cluster information
+export K8S_S3_BUCKET_NAME=cubecorp-k8s-cluster
+export KOPS_STATE_STORE=s3://$K8S_S3_BUCKET_NAME
+
+### create the s3 bucket
+aws s3 mb $KOPS_STATE_STORE
+aws s3api put-bucket-versioning --bucket $K8S_S3_BUCKET_NAME --versioning-configuration Status=Enabled
+
+# This completes one time setup
+
+# Instructions below are for creating clusters and deploying apps
+#
+export K8S_CLUSTER_NAME=cluster.k8s.local
+
+## If cluster is setup with dns, the sub-domain needs to be managed by aws
+## example: export K8S_CLUSTER_NAME=cluster1.dev.cubecorp.io
+## in this case, the subdomain dev.cubecorp.io is managed by aws
+
+# create/start cluster
+
+## create cluster config. this has many other params as well - not using them currently
+kops create cluster \
+ --name=${K8S_CLUSTER_NAME} \
+ --zones=us-east-2a \
+ --master-size="t2.medium" \
+ --node-size="t2.medium" \
+ --node-count="3" \
+ --ssh-public-key="~/.ssh/id_rsa.pub"
+
+## to edit
+kops edit cluster $K8S_CLUSTER_NAME
+
+## to start
+kops update cluster $K8S_CLUSTER_NAME --yes
+
+## to validate
+kops validate cluster
+
+## to delete cluster when not needed
+#> kops delete cluster --name ${K8S_CLUSTER_NAME} --yes
+
+## to temporarily shut down master and nodes, without tearing down cluster
+## see https://perrohunter.com/how-to-shutdown-a-kops-kubernetes-cluster-on-aws/
+
+## some useful commands
+### list clusters with:
+#> kops get cluster
+
+### edit this cluster with:
+#> kops edit cluster ${K8S_CLUSTER_NAME}
+
+### edit your node instance group:
+#> kops edit ig --name=${K8S_CLUSTER_NAME}
+
+### edit your master instance group:
+#> kops edit ig --name=${K8S_CLUSTER_NAME} master-us-east-2c
+
+### list nodes:
+#> kubectl get nodes --show-labels
+
+### ssh to the master:
+#> ssh -i ~/.ssh/id_rsa admin@api.dev.cubecorp.io
+### or if local cluster without dns support
+#> ssh -i ~/.ssh/id_rsa admin@<public ip address of master from ec2 console>
+
+# deploy istio on the cluster
+# https://istio.io/docs/setup/kubernetes/quick-start/
+
+kubectl apply -f install/kubernetes/helm/istio/templates/crds.yaml
+
+kubectl apply -f install/kubernetes/istio-demo-auth.yaml
+## OR
+kubectl apply -f install/kubernetes/istio-demo.yaml
+
+## to verify
+kubectl get svc -n istio-system 
+
+kubectl get pods -n istio-system 
+
+# deploy the bookinfo example
+# refer https://istio.io/docs/examples/bookinfo/
+kubectl label namespace default istio-injection=enabled
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+
+## setup gateway
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+
+kubectl get gateway
+
+## base on loadbalancer
+kubectl get svc istio-ingressgateway -n istio-system
+### note the port
+export INGRESS_PORT=<port from above>
+
+export INGRESS_HOST_PVT=$(kubectl get po -l istio=ingressgateway -n istio-system -o 'jsonpath={.items[0].status.hostIP}')
+## Then find the public ip corresponding to this using the aws console
+export INGRESS_HOST=<find from aws console>
+
+## set gateway url
+export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+
+# other useful steps
+## to install kubernetes UI
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+
+## to start proxy
+kubectl proxy --port <8080>
+## OR to be able to connect from any machine
+kubectl proxy --address 0.0.0.0 --accept-hosts '.*' --port <8080>
+### however this does not allow login from another machine
+so use port forwarding
+
+## account to access dashboard
+kubectl create serviceaccount dash
+kubectl create clusterrolebinding dash \
+   --clusterrole=cluster-admin \
+   --serviceaccount=default:dash
+
+## to get token to access dashboard
+kubectl  get secret | grep dash | awk '{print $1}'
+kubectl  describe secret <dash-token-l2b6d> # pick token name from previous output
+### pick token from describe output
+
+# useful commands for debugging
+kubectl cluster-info
+kubectl get nodes
+kubectl get deployments
+kubectl get pods
+kubectl get events
+kubectl config view
+kubectl proxy
+kubectl describe pod
+kubectl describe svc
+kubectl get rs # replica set for a deployment
+kubectl rollout status deployment <deployment-name e.g. details-v1> 
+kubectl describe deployment <deployment-name e.g. details-v1> 
+kubectl describe nodes # to check resources
+kubectl get deployment <deployment-name e.g. details-v1> -o yaml  # very useful to get deployment error message
+#to get cluster info on a pod
+istioctl proxy-config cluster <pod-name> [flags]
+
+## For rolling update of app code
+kops rolling-update cluster
+kops rolling-update cluster --yes
+
+## To stream logs from a container in a pod
+kubectl logs -f <pod name e.g. productpage-v1-f8c8fb8-d847v> -c <container name e.g. istio-proxy>
+
+## to delete any config
+kubectl delete -f <config file name e.g. samples/bookinfo/platform/kube/bookinfo.yaml>
+
+## to update app, just apply again
+kubectl apply -f <config file name>
+
