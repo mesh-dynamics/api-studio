@@ -7,30 +7,8 @@ spec:
     app: reviews
   filters:
   - listenerMatch:
-          #portNumber: 8080
-      listenerType: ANY #SIDECAR_INBOUND #will match with the inbound listener for reviews:8080
-    insertPosition:
-      index: FIRST
-    filterName: envoy.lua
-    filterType: HTTP
-    filterConfig:
-      inlineCode: |
-        function envoy_on_request(request_handle)
-        end
-        function envoy_on_response(response_handle)
-        end
----
-apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: productpage-lua
-spec:
-  workloadLabels:
-    app: productpage
-  filters:
-  - listenerMatch:
-          #portNumber: 8080
-      listenerType: ANY #SIDECAR_INBOUND #will match with the inbound listener for reviews:8080
+      #portNumber: 8080
+      listenerType: SIDECAR_INBOUND #will match with the inbound listener for reviews:8080
     insertPosition:
       index: FIRST
     filterName: envoy.lua
@@ -65,43 +43,287 @@ spec:
                   local hdrs = handle:headers()
                   local buf = {'{'}
                   local delim = ''
-                  data = '{'
                   first = true
                   delim = addToBuf(buf, meta, delim)
-                  for key, value in pairs(meta) do
-                    if (not first) then
-                       data = data .. ', '
-                    else
-                       first = false
-                    end
-                    handle:logErr('hdr :'  .. key .. value)
-                    data = data .. '"' .. string.gsub(key, p, r) .. '_s":' .. '"' .. string.gsub(value, p, r) .. '"'
-                  end
                   delim = addToBuf(buf, hdrs, delim)
-                  for key, value in pairs(hdrs) do
-                    if (not first) then
-                       data = data .. ', '
-                    else
-                       first = false
-                    end
-                    data = data .. '"' .. string.gsub(key, p, r) .. '_s":' .. '"' .. string.gsub(value, p, r) .. '"'
-                  end
-                  if (not first) then
-                    data = data .. ', '
-                  end
                   local body = handle:body()
                   local b = ''
                   if body then
                     local len = body:length()
                     b = body:getBytes(0, len)
                   end
-                  data = data .. '"body_s":' .. '"' .. string.gsub(b, p, r) .. '"}'
                   buf[#buf+1] = delim .. '"body_s":' .. string.format("%q", b) 
+                  buf[#buf+1] = '}'
                   delim = ', '
+                  data = table.concat(buf)
                   handle:logErr(data)
-                  handle:logErr(table.concat(buf))
-                  g = global or 0
-                  handle:logErr(g)
+                  local hhdr, hbody = handle:httpCall(
+                  "outbound|8983||cube.default.svc.cluster.local",
+                  {
+                    [":method"] = "POST",
+                    [":path"] = "/solr/cube/update/json/docs?commit=true",
+                    [":authority"] = "cube"
+                  },
+                  data,
+                  5000)
+                end
+                function envoy_on_response(response_handle)
+                  local meta = {}
+                  meta["type"] = "response"
+                  if (xrequestid) then meta["x-request-id"] = xrequestid end
+                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
+                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
+                  if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
+                  logHdrBody(response_handle, meta)
+                end
+                function envoy_on_request(request_handle)
+                  local meta = {}
+                  meta["type"] = "request"
+                  xrequestid = request_handle:headers():get("x-request-id") or uuid()
+                  request_handle:logErr(xrequestid)
+                  xb3traceid = request_handle:headers():get("x-b3-traceid")
+                  xb3spanid = request_handle:headers():get("x-b3-spanid_s")
+                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  logHdrBody(request_handle, meta)
+                end
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: productpage-lua
+spec:
+  workloadLabels:
+    app: productpage
+  filters:
+  - listenerMatch:
+      #portNumber: 9080
+      listenerType: SIDECAR_INBOUND #SIDECAR_INBOUND #will match with the inbound listener for reviews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                local random = math.random
+                math.randomseed(os.time())
+                function uuid()
+                      local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+                      return string.gsub(template, '[xy]', function (c)
+                    local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+                    return string.format('%x', v)
+                  end)
+                end
+                function escape(str)
+                  -- escape quotes and \
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  return string.gsub(str, p, r)
+                end
+                function addToBuf(buf, tbl, delim)
+                  for key, value in pairs(tbl) do
+                    buf[#buf+1] = delim .. string.format("%q", (key .. '_s')) .. ':' .. string.format("%q", value) 
+                    delim = ', '
+                  end
+                  return delim
+                end
+                function logHdrBody(handle, meta)
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  local hdrs = handle:headers()
+                  local buf = {'{'}
+                  local delim = ''
+                  first = true
+                  delim = addToBuf(buf, meta, delim)
+                  delim = addToBuf(buf, hdrs, delim)
+                  local body = handle:body()
+                  local b = ''
+                  if body then
+                    local len = body:length()
+                    b = body:getBytes(0, len)
+                  end
+                  buf[#buf+1] = delim .. '"body_s":' .. string.format("%q", b) 
+                  buf[#buf+1] = '}'
+                  delim = ', '
+                  data = table.concat(buf)
+                  handle:logErr(data)
+                  local hhdr, hbody = handle:httpCall(
+                  "outbound|8983||cube.default.svc.cluster.local",
+                  {
+                    [":method"] = "POST",
+                    [":path"] = "/solr/cube/update/json/docs?commit=true",
+                    [":authority"] = "cube"
+                  },
+                  data,
+                  5000)
+                end
+                function envoy_on_response(response_handle)
+                  local meta = {}
+                  meta["type"] = "response"
+                  if (xrequestid) then meta["x-request-id"] = xrequestid end
+                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
+                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
+                  if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
+                  logHdrBody(response_handle, meta)
+                end
+                function envoy_on_request(request_handle)
+                  local meta = {}
+                  meta["type"] = "request"
+                  xrequestid = request_handle:headers():get("x-request-id") or uuid()
+                  request_handle:logErr(xrequestid)
+                  xb3traceid = request_handle:headers():get("x-b3-traceid")
+                  xb3spanid = request_handle:headers():get("x-b3-spanid_s")
+                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  logHdrBody(request_handle, meta)
+                end
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: details-lua
+spec:
+  workloadLabels:
+    app: details
+  filters:
+  - listenerMatch:
+      #portNumber: 9080
+      listenerType: SIDECAR_INBOUND #SIDECAR_INBOUND #will match with the inbound listener for reviews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                local random = math.random
+                math.randomseed(os.time())
+                function uuid()
+                      local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+                      return string.gsub(template, '[xy]', function (c)
+                    local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+                    return string.format('%x', v)
+                  end)
+                end
+                function escape(str)
+                  -- escape quotes and \
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  return string.gsub(str, p, r)
+                end
+                function addToBuf(buf, tbl, delim)
+                  for key, value in pairs(tbl) do
+                    buf[#buf+1] = delim .. string.format("%q", (key .. '_s')) .. ':' .. string.format("%q", value) 
+                    delim = ', '
+                  end
+                  return delim
+                end
+                function logHdrBody(handle, meta)
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  local hdrs = handle:headers()
+                  local buf = {'{'}
+                  local delim = ''
+                  first = true
+                  delim = addToBuf(buf, meta, delim)
+                  delim = addToBuf(buf, hdrs, delim)
+                  local body = handle:body()
+                  local b = ''
+                  if body then
+                    local len = body:length()
+                    b = body:getBytes(0, len)
+                  end
+                  buf[#buf+1] = delim .. '"body_s":' .. string.format("%q", b) 
+                  buf[#buf+1] = '}'
+                  delim = ', '
+                  data = table.concat(buf)
+                  handle:logErr(data)
+                  local hhdr, hbody = handle:httpCall(
+                  "outbound|8983||cube.default.svc.cluster.local",
+                  {
+                    [":method"] = "POST",
+                    [":path"] = "/solr/cube/update/json/docs?commit=true",
+                    [":authority"] = "cube"
+                  },
+                  data,
+                  5000)
+                end
+                function envoy_on_response(response_handle)
+                  local meta = {}
+                  meta["type"] = "response"
+                  if (xrequestid) then meta["x-request-id"] = xrequestid end
+                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
+                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
+                  if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
+                  logHdrBody(response_handle, meta)
+                end
+                function envoy_on_request(request_handle)
+                  local meta = {}
+                  meta["type"] = "request"
+                  xrequestid = request_handle:headers():get("x-request-id") or uuid()
+                  request_handle:logErr(xrequestid)
+                  xb3traceid = request_handle:headers():get("x-b3-traceid")
+                  xb3spanid = request_handle:headers():get("x-b3-spanid_s")
+                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  logHdrBody(request_handle, meta)
+                end
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ratings-lua
+spec:
+  workloadLabels:
+    app: ratings
+  filters:
+  - listenerMatch:
+      #portNumber: 9080
+      listenerType: SIDECAR_INBOUND #SIDECAR_INBOUND #will match with the inbound listener for reviews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                local random = math.random
+                math.randomseed(os.time())
+                function uuid()
+                      local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+                      return string.gsub(template, '[xy]', function (c)
+                    local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+                    return string.format('%x', v)
+                  end)
+                end
+                function escape(str)
+                  -- escape quotes and \
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  return string.gsub(str, p, r)
+                end
+                function addToBuf(buf, tbl, delim)
+                  for key, value in pairs(tbl) do
+                    buf[#buf+1] = delim .. string.format("%q", (key .. '_s')) .. ':' .. string.format("%q", value) 
+                    delim = ', '
+                  end
+                  return delim
+                end
+                function logHdrBody(handle, meta)
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  local hdrs = handle:headers()
+                  local buf = {'{'}
+                  local delim = ''
+                  first = true
+                  delim = addToBuf(buf, meta, delim)
+                  delim = addToBuf(buf, hdrs, delim)
+                  local body = handle:body()
+                  local b = ''
+                  if body then
+                    local len = body:length()
+                    b = body:getBytes(0, len)
+                  end
+                  buf[#buf+1] = delim .. '"body_s":' .. string.format("%q", b) 
+                  buf[#buf+1] = '}'
+                  delim = ', '
+                  data = table.concat(buf)
+                  handle:logErr(data)
                   local hhdr, hbody = handle:httpCall(
                   "outbound|8983||cube.default.svc.cluster.local",
                   {
