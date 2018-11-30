@@ -1,7 +1,5 @@
 package com.cubeiosample.webservices.rest.jersey;
 
-import java.sql.SQLException;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -13,7 +11,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 
@@ -45,6 +42,7 @@ public class MovieRentalRest {
 	        obj = mv.GetSalesByStore(storeid);
 		} catch (Exception e) {
 			e.printStackTrace();
+			// TODO: not clear why the return type here is not throwing an error.
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
 		
