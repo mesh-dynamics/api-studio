@@ -27,6 +27,6 @@ public class HeaderParams {
         this.xparentspanid = parentspanid;
         this.xsampled = sampled;
         this.xflags = flags;
-        this.xotspan = xotspan;
+        this.xotspan = otspan;
     }
 }

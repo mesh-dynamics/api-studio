@@ -14,9 +14,10 @@ public class MovieRentals {
     public MovieRentals() throws ClassNotFoundException {
     	// TODO: initialize a set of connections in pool and each of the requests should pick from that pool.
     	LoadDriver();
-    	myConnection = new DBConnection("vganti", "password", "sakila", "jdbc:mysql://127.0.0.1:3306");
+    	myConnection = new DBConnection("cube", "cubeio", "sakila", "jdbc:mysql://127.0.0.1:3306");
     }
     
+       
     private static void LoadDriver() throws ClassNotFoundException {
         // This will load the MySQL driver, each DB has its own driver
         Class.forName("com.mysql.jdbc.Driver");
@@ -27,6 +28,7 @@ public class MovieRentals {
         myConnection = new DBConnection(username, pwd, dbname, server_uri);  // also do this with a kerberos connection
     }
 
+    
     public JSONArray GetSalesByStore(String store_id) throws SQLException, JSONException {
         String query = "select * from sales_by_store where store = '" + store_id + "'";
         ResultSet rs = myConnection.ExecuteQuery(query);
@@ -49,10 +51,12 @@ public class MovieRentals {
         }
         return rental_rate * duration;
     }
+    
 
     // TODO: create a hashmap and iterate over it to simulate different auto-created ids
     public void RentMoviesBulk() {}
 
+    
     private int GetInventoryId(int film_id, int store_id) throws SQLException {
         // find inventory ids for the film in a given store that haven't been rented out.
         String query = "select inventory_id from inventory where "
@@ -67,6 +71,7 @@ public class MovieRentals {
         return inventory_id;
     }
 
+    
     private double GetRentalRate(int film_id) throws SQLException {
         String query = "select rental_rate from film where film_id = " + film_id;
         double rr = -1.0;
@@ -77,6 +82,7 @@ public class MovieRentals {
         return rr;
     }
 
+    
     private int UpdateRental(int inventory_id, int customer_id, int staff_id) throws SQLException {
         String dateString = format.format(new Date());
         String update_query = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "

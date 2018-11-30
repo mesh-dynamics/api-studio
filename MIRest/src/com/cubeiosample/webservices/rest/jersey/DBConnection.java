@@ -2,7 +2,6 @@ package com.cubeiosample.webservices.rest.jersey;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,8 +9,6 @@ import java.sql.Statement;
 public class DBConnection {
     private Connection connect = null;
     private Statement statement = null;
-    private PreparedStatement preparedStatement = null;
-    private ResultSet resultSet = null;
 
     public DBConnection(String username, String pwd, String dbname, String uri) {
         try {
