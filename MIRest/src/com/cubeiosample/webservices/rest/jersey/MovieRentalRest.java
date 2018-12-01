@@ -26,7 +26,7 @@ public class MovieRentalRest {
 	@Path("/salesbystore")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSalesByStore(@QueryParam("storeid") String storeid,
+    public Response getSalesByStore(@QueryParam("storename") String storename,
                                     @HeaderParam("end-user") String user,
                                     @HeaderParam("x-request-id") String xreq,
                                     @HeaderParam("x-b3-traceid") String xtraceid,
@@ -39,7 +39,7 @@ public class MovieRentalRest {
 		JSONArray obj = null;
 		try {
 	        MovieRentals mv = new MovieRentals();
-	        obj = mv.GetSalesByStore(storeid);
+	        obj = mv.GetSalesByStore(storename);
 		} catch (Exception e) {
 			e.printStackTrace();
 			// TODO: not clear why the return type here is not throwing an error.
