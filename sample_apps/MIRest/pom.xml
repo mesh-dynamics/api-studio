@@ -26,6 +26,18 @@
     </plugins>
   </build>
  <dependencies>
+ 	<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-server -->
+	<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-common -->
+	<dependency>
+	    <groupId>org.glassfish.jersey.core</groupId>
+	    <artifactId>jersey-common</artifactId>
+	    <version>2.27</version>
+	</dependency>
+	<dependency>
+	    <groupId>org.glassfish.jersey.core</groupId>
+	    <artifactId>jersey-server</artifactId>
+	    <version>2.26</version>
+	</dependency>
 	 <dependency>
 	    <groupId>javax</groupId>
 	    <artifactId>javaee-web-api</artifactId>
@@ -33,9 +45,9 @@
 	    <scope>provided</scope>
 	</dependency>
 	<dependency>
-	   <groupId>org.json</groupId>
-	   <artifactId>json</artifactId>
-	   <version>20080701</version>
+	    <groupId>org.json</groupId>
+	    <artifactId>json</artifactId>
+	    <version>20180813</version>
 	</dependency>
 	<dependency>
        <groupId>mysql</groupId>
