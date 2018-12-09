@@ -38,13 +38,15 @@ public class MovieRentalRest {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
 	public Response ListMovies(@QueryParam("filmName") String filmName,
-							  @QueryParam("keyword") String keyword,
-							  @QueryParam("actor") String actor) {
+							    @QueryParam("keyword") String keyword,
+							    @QueryParam("actor") String actor) {
+		JSONArray films = null;
 		try {
 			// TODO: figure out a way to create a MovieRentals object without having to create it each call.
 			MovieRentals mv = new MovieRentals();
-			JSONArray films = mv.ListMovies(filmName, keyword);
+			films = mv.ListMovies(filmName, keyword);
 			if (films != null) {
+				// TODO: couldn't return films directly; the client fails
 				return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
 			}
 		} catch (Exception e) {
@@ -76,20 +78,20 @@ public class MovieRentalRest {
 	@Path("/rentmovie")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-    public Response rentMovie(JSONObject rentalInfo,
-                              @HeaderParam("end-user") String user,
-                              @HeaderParam("x-request-id") String xreq,
-                              @HeaderParam("x-b3-traceid") String xtraceid,
-                              @HeaderParam("x-b3-spanid") String xspanid,
-                              @HeaderParam("x-b3-parentspanid") String xparentspanid,
-                              @HeaderParam("x-b3-sampled") String xsampled,
-                              @HeaderParam("x-b3-flags") String xflags,
-                              @HeaderParam("x-ot-span-context") String xotspan) {
+	//@Produces(MediaType.APPLICATION_JSON)
+    public Response rentMovie(JSONObject rentalInfo) {
+//                              @HeaderParam("end-user") String user,
+//                              @HeaderParam("x-request-id") String xreq,
+//                              @HeaderParam("x-b3-traceid") String xtraceid,
+//                              @HeaderParam("x-b3-spanid") String xspanid,
+//                              @HeaderParam("x-b3-parentspanid") String xparentspanid,
+//                              @HeaderParam("x-b3-sampled") String xsampled,
+//                              @HeaderParam("x-b3-flags") String xflags,
+//                              @HeaderParam("x-ot-span-context") String xotspan) {
         //HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 		
         try {
-        	System.out.println(rentalInfo.toString());
+        	LOGGER.info("rentmovie api: " + rentalInfo.toString());
 			int filmId = rentalInfo.getInt("filmid");
 			int storeId = rentalInfo.getInt("storeid");
 			int customerId = rentalInfo.getInt("customerid");
@@ -97,7 +99,7 @@ public class MovieRentalRest {
 			int staffId = rentalInfo.getInt("staffId");
 			System.out.println("filmid: " + filmId + " storeid: " + storeId + " duration: " + duration + " customerid: "+ customerId);
 			if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
-				return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid query params").build();
+				return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{Invalid query params}").build();
 			}
 			
 			MovieRentals mv = new MovieRentals();

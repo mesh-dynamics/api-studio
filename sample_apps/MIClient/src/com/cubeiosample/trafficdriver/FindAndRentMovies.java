@@ -39,6 +39,7 @@ public class FindAndRentMovies {
 			// TODO: couldn't directly read into JSONArray.class without the new JSONArray. 
 			// Missing JSONArray exception. @prasad may know.
 			JSONArray movies = new JSONArray(response1.readEntity(String.class));
+			//JSONArray movies = response1.readEntity(JSONArray.class);
 			if (movies.length() == 0) {
 				continue;
 			}
