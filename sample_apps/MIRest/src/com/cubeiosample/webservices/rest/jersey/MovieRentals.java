@@ -28,10 +28,6 @@ public class MovieRentals {
         	// TODO: move this to the query service
             jdbcPool.setUpPool("jdbc:mysql://127.0.0.1:3306/sakila", "cube", "cubeio");
             LOGGER.info(jdbcPool.getPoolStatus());
-    
-            // setup prepared statements
-            //this.PrepareInventoryStatement();
-            //this.PrepareRentalUpdateStmt();
         } catch (Exception e) {
         	LOGGER.error("connection pool creation failed; " + e.toString());
         }
@@ -226,6 +222,7 @@ public class MovieRentals {
         if (USE_PREPARED_STMTS) {
         	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
                     + " VALUES (?, ?, ?, ?)";
+        	LOGGER.info(rentalUpdateQuery);
         	JSONArray params = new JSONArray();
         	AddIntegerParam(params, inventory_id);
         	AddIntegerParam(params, customer_id);

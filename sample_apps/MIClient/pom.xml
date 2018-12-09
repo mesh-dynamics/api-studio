@@ -5,6 +5,17 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>MovieInfo client</name>
   <description>Client app to drive MIRest</description>
+   <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>2.9.0</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>   
+    </dependencies>
+  </dependencyManagement>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -19,41 +30,56 @@
     </plugins>
   </build>
   <properties>
-        <jersey.version>2.26</jersey.version>
-        <jackson.version>2.8.7</jackson.version>
+        <version.jersey>2.27</version.jersey>
+        <version.jackson>2.8.7</version.jackson>
     </properties>
   <dependencies>
+  <dependency>
+  		<groupId>org.glassfish.jersey.core</groupId>
+  		<artifactId>jersey-common</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.json</groupId>
+  		<artifactId>json</artifactId>
+  		<version>20180813</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.core</groupId>
+  		<artifactId>jersey-server</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.containers</groupId>
+  		<artifactId>jersey-container-servlet</artifactId>
+  		<version>${version.jersey}</version>
+  	</dependency>
+  	<!-- Without the following artifact, we get "Exception in thread "main" java.lang.IllegalStateException" -->
+  	<dependency>
+	    <groupId>org.glassfish.jersey.inject</groupId>
+	    <artifactId>jersey-hk2</artifactId>
+	    <version>${version.jersey}</version>
+	</dependency>
+  	
 	<!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
-	<dependency>
+	<!-- <dependency>
 	    <groupId>javax.ws.rs</groupId>
 	    <artifactId>javax.ws.rs-api</artifactId>
 	    <version>2.1</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.glassfish.jersey.core</groupId>
-	    <artifactId>jersey-client</artifactId>
-	    <version>${jersey.version}</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.glassfish.jersey.inject</groupId>
-	    <artifactId>jersey-hk2</artifactId>
-	    <version>${jersey.version}</version>
-	</dependency>
-	<dependency>
+	</dependency> -->
+	
+	<!--  -->
+	<!-- <dependency>
   		<groupId>org.glassfish.jersey.media</groupId>
  		<artifactId>jersey-media-json-jackson</artifactId>
   		<scope>runtime</scope>
   		<version>${jersey.version}</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.json</groupId>
-	    <artifactId>json</artifactId>
-	    <version>20180813</version>
-	</dependency>
+	</dependency> -->
+	
 	<!-- Following dependency added to deal with the following error. -->
 	<!-- MessageBodyReader not found for media type=application/json, type=class org.json.JSONArray, genericType=class org.json.JSONArray. -->
 	<!-- https://stackoverflow.com/questions/23442440/messagebodyreader-not-found-for-media-type-application-json -->
-	<dependency>
+	<!-- <dependency>
 	    <groupId>com.fasterxml.jackson.jaxrs</groupId>
 	    <artifactId>jackson-jaxrs-json-provider</artifactId>
 	    <version>${jackson.version}</version>
@@ -67,6 +93,6 @@
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
-    </dependency>
-  </dependencies>
+    </dependency> -->
+  </dependencies> 
 </project>
