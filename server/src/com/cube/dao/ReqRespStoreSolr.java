@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -102,10 +103,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		}
 		final SolrDocumentList documents = response.getResults();
 
-		documents.stream().findFirst().map(doc -> {
+		return documents.stream().findFirst().flatMap(doc -> {
 			return docToRequest(doc);
 		});
-		return Optional.empty();
 	}
 
 	/* (non-Javadoc)
@@ -131,10 +131,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		}
 		final SolrDocumentList documents = response.getResults();
 
-		documents.stream().findFirst().map(doc -> {
+		return documents.stream().findFirst().flatMap(doc -> {
 			return docToResponse(doc);
 		});
-		return Optional.empty();
 	}
 
 	/* (non-Javadoc)
@@ -206,6 +205,13 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		return doc;
 	}
 
+	private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, List<Object> vals) {
+		vals.forEach(v -> {
+			if (v instanceof String)
+				cont.add(key, (String)v);
+		});
+	}
+	
 	private static Optional<Request> docToRequest(SolrDocument doc) {
 		
 		Optional<String> type = Optional.empty();
@@ -237,8 +243,13 @@ public class ReqRespStoreSolr implements ReqRespStore {
 			default:
 				Matcher m = pattern.matcher(k);
 				if (m.find()) {					
-					switch (m.group(0)) {
+					switch (m.group(1)) {
 					case QPARAMS:
+						/*
+						if (v instanceof List) {
+							checkAndAddValues(qparams, m.group(1), (List) v);
+						}
+						*/
 						if (v instanceof String) {qparams.add(m.group(1), (String)v);};
 						break;
 					case FPARAMS:
@@ -313,7 +324,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 			default:
 				Matcher m = pattern.matcher(k);
 				if (m.find()) {					
-					switch (m.group(0)) {
+					switch (m.group(1)) {
 					case META:
 						if (v instanceof String) {meta.add(m.group(1), (String)v);};
 						break;
@@ -331,11 +342,11 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		final Optional<String> idv = id; // this is just to avoid compiler from cribbing when accessing non final id in lambda function below
 		return type.flatMap(t -> {
 			if (t.equals(Types.Response.toString())) {
-				s.map(sv ->{
+				return s.map(sv ->{
 					return new Response(idv, sv, meta, hdrs, b);
 				});				
-			} 
-			return Optional.empty();
+			} else
+				return Optional.empty();
 		});
 	}
 

@@ -1,13 +1,18 @@
+/**
+ * Copyright Cube I O
+ */
 package com.cube.ws;
 
-import javax.ws.rs.ApplicationPath;
 import org.glassfish.jersey.server.ResourceConfig;
 
-@ApplicationPath("/")
-public class CubeApplication extends ResourceConfig {
-    public CubeApplication() {
+/**
+ * @author prasad
+ *
+ */
+public class JerseyConfig extends ResourceConfig {
+    public JerseyConfig() {
         // where the Config class is
         packages("com.cube.ws"); 
         register(new Binder());
-    }	
+    }
 }

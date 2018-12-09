@@ -5,7 +5,12 @@ package com.cube.dao;
 
 import java.util.Optional;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response.Status;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * @author prasad
@@ -38,14 +43,60 @@ public interface ReqRespStore {
 			this.cookies = cookies;
 			this.body = body;
 		}
-		final String path;
-		final Optional<String> id;
-		final MultivaluedMap<String, String> qparams; // query params
-		final MultivaluedMap<String, String> fparams; // form params
-		final MultivaluedMap<String, String> meta; 
-		final MultivaluedMap<String, String> hdrs;
-		final MultivaluedMap<String, String> cookies;
-		final String body;
+		
+		
+		
+		/**
+		 * @param path
+		 * @param qparams
+		 * @param fparams
+		 */
+		public Request(String path, MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams) {
+			this(path, Optional.empty(), qparams, fparams, new MultivaluedHashMap<String, String>(), 
+					new MultivaluedHashMap<String, String>(), new MultivaluedHashMap<String, String>(), "");
+		}
+
+		
+		
+		/**
+		 * 
+		 */
+		@SuppressWarnings("unused")
+		private Request() {
+			super();
+			this.path = ""; 
+			this.id = Optional.empty();
+			this.qparams = new MultivaluedHashMap<String, String>();
+			this.fparams = new MultivaluedHashMap<String, String>();
+			this.meta = new MultivaluedHashMap<String, String>();
+			this.hdrs = new MultivaluedHashMap<String, String>();
+			this.cookies = new MultivaluedHashMap<String, String>();
+			this.body = "";
+		}
+
+
+
+		static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
+		  = new TypeReference<MultivaluedHashMap<String, String>>() {};
+		
+		public final String path;
+		public final Optional<String> id;
+        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
+        //@JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> qparams; // query params
+        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
+        //@JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> fparams; // form params
+        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
+        //@JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> meta; 
+        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
+        //@JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> hdrs;
+        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
+        //@JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> cookies;
+		public final String body;
 	}
 	
 	public class Response {
@@ -65,11 +116,28 @@ public interface ReqRespStore {
 			this.hdrs = hdrs;
 			this.body = body;
 		}
-		final Optional<String> reqid;
-		final int status;
-		final MultivaluedMap<String, String> meta; 
-		final MultivaluedMap<String, String> hdrs;
-		final String body;		
+		
+		/**
+		 * 
+		 */
+		@SuppressWarnings("unused")
+		private Response() {
+			super();
+			this.reqid = Optional.empty();
+			this.status = Status.OK.getStatusCode();
+			this.meta = new MultivaluedHashMap<String, String>();
+			this.hdrs = new MultivaluedHashMap<String, String>();
+			this.body = "";
+		}
+
+		
+		public final Optional<String> reqid;
+		public final int status;
+        @JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> meta; 
+        @JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> hdrs;
+		public final String body;		
 	}
 	
 	boolean save(Request req);
