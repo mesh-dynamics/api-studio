@@ -180,7 +180,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 
 	private static final String FSUFFIX = "_ss"; // set of strings in Solr
 	// ensure that this pattern is consistent with the prefix and suffixes used above
-	private static final String patternStr = "^_c_(\\w+)_(.*)_ss$";
+	private static final String patternStr = "^_c_([^_]+)_(.*)_ss$";
 	private static final Pattern pattern = Pattern.compile(patternStr);
 	private static final String QPARAMS = "qp"; 
 	private static final String FPARAMS = "fp"; 
@@ -205,11 +205,15 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		return doc;
 	}
 
-	private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, List<Object> vals) {
-		vals.forEach(v -> {
-			if (v instanceof String)
-				cont.add(key, (String)v);
-		});
+	private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, Object val) {
+		if (val instanceof List) {
+			@SuppressWarnings("unchecked")
+			List<Object> vals = (List<Object>)val;
+			vals.forEach(v -> {
+				if (v instanceof String)
+					cont.add(key, (String)v);
+			});
+		}
 	}
 	
 	private static Optional<Request> docToRequest(SolrDocument doc) {
@@ -245,24 +249,19 @@ public class ReqRespStoreSolr implements ReqRespStore {
 				if (m.find()) {					
 					switch (m.group(1)) {
 					case QPARAMS:
-						/*
-						if (v instanceof List) {
-							checkAndAddValues(qparams, m.group(1), (List) v);
-						}
-						*/
-						if (v instanceof String) {qparams.add(m.group(1), (String)v);};
+						checkAndAddValues(qparams, m.group(2), v);
 						break;
 					case FPARAMS:
-						if (v instanceof String) {fparams.add(m.group(1), (String)v);};
+						checkAndAddValues(fparams, m.group(2), v);
 						break;
 					case META:
-						if (v instanceof String) {meta.add(m.group(1), (String)v);};
+						checkAndAddValues(meta, m.group(2), v);
 						break;
 					case HDR:
-						if (v instanceof String) {hdrs.add(m.group(1), (String)v);};
+						checkAndAddValues(hdrs, m.group(2), v);
 						break;
 					case CK:
-						if (v instanceof String) {cookies.add(m.group(1), (String)v);};
+						checkAndAddValues(cookies, m.group(2), v);
 						break;
 					default:
 					}
@@ -326,10 +325,10 @@ public class ReqRespStoreSolr implements ReqRespStore {
 				if (m.find()) {					
 					switch (m.group(1)) {
 					case META:
-						if (v instanceof String) {meta.add(m.group(1), (String)v);};
+						checkAndAddValues(meta, m.group(2), v);
 						break;
 					case HDR:
-						if (v instanceof String) {hdrs.add(m.group(1), (String)v);};
+						checkAndAddValues(hdrs, m.group(2), v);
 						break;
 					default:
 					}

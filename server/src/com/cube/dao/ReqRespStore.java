@@ -81,20 +81,15 @@ public interface ReqRespStore {
 		
 		public final String path;
 		public final Optional<String> id;
-        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
-        //@JsonDeserialize(as=MultivaluedHashMap.class)
+        @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> qparams; // query params
-        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
-        //@JsonDeserialize(as=MultivaluedHashMap.class)
+        @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> fparams; // form params
-        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
-        //@JsonDeserialize(as=MultivaluedHashMap.class)
+        @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> meta; 
-        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
-        //@JsonDeserialize(as=MultivaluedHashMap.class)
+        @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> hdrs;
-        @JsonDeserialize(using=MultivaluedMapDeserializer.class)
-        //@JsonDeserialize(as=MultivaluedHashMap.class)
+        @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> cookies;
 		public final String body;
 	}
