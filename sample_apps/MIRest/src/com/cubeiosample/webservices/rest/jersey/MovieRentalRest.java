@@ -79,7 +79,8 @@ public class MovieRentalRest {
 	@POST
 	@Path("/rentmovie")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response RentMovie(String rentalInfoStr, // JSONObject rentalInfo,
+    public Response RentMovie(String rentalInfoStr, 
+    						  //JSONObject rentalInfo,
                               @HeaderParam("end-user") String user,
                               @HeaderParam("x-request-id") String xreq,
                               @HeaderParam("x-b3-traceid") String xtraceid,
