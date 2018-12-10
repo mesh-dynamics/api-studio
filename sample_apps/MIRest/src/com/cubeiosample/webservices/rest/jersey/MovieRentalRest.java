@@ -5,6 +5,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 //import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -75,29 +76,28 @@ public class MovieRentalRest {
 	}
 	
 	
+	@POST
 	@Path("/rentmovie")
-    @POST
     @Consumes(MediaType.APPLICATION_JSON)
-	//@Produces(MediaType.APPLICATION_JSON)
-    public Response rentMovie(JSONObject rentalInfo) {
-//                              @HeaderParam("end-user") String user,
-//                              @HeaderParam("x-request-id") String xreq,
-//                              @HeaderParam("x-b3-traceid") String xtraceid,
-//                              @HeaderParam("x-b3-spanid") String xspanid,
-//                              @HeaderParam("x-b3-parentspanid") String xparentspanid,
-//                              @HeaderParam("x-b3-sampled") String xsampled,
-//                              @HeaderParam("x-b3-flags") String xflags,
-//                              @HeaderParam("x-ot-span-context") String xotspan) {
+    public Response RentMovie(String rentalInfoStr, // JSONObject rentalInfo,
+                              @HeaderParam("end-user") String user,
+                              @HeaderParam("x-request-id") String xreq,
+                              @HeaderParam("x-b3-traceid") String xtraceid,
+                              @HeaderParam("x-b3-spanid") String xspanid,
+                              @HeaderParam("x-b3-parentspanid") String xparentspanid,
+                              @HeaderParam("x-b3-sampled") String xsampled,
+                              @HeaderParam("x-b3-flags") String xflags,
+                              @HeaderParam("x-ot-span-context") String xotspan) {
         //HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 		
         try {
-        	LOGGER.info("rentmovie api: " + rentalInfo.toString());
+        	JSONObject rentalInfo = new JSONObject(rentalInfoStr);
 			int filmId = rentalInfo.getInt("filmid");
 			int storeId = rentalInfo.getInt("storeid");
 			int customerId = rentalInfo.getInt("customerid");
 			int duration = rentalInfo.getInt("duration");
-			int staffId = rentalInfo.getInt("staffId");
-			System.out.println("filmid: " + filmId + " storeid: " + storeId + " duration: " + duration + " customerid: "+ customerId);
+			int staffId = rentalInfo.getInt("staffid");
+			LOGGER.debug("filmid: " + filmId + " storeid: " + storeId + " duration: " + duration + " customerid: "+ customerId);
 			if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
 				return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{Invalid query params}").build();
 			}
@@ -108,7 +108,6 @@ public class MovieRentalRest {
 	        obj.put("rental_amount", val);
 	        Response.ok().type(MediaType.APPLICATION_JSON).entity(obj).build();
 	    } catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
@@ -125,7 +124,6 @@ public class MovieRentalRest {
 			MovieRentals mv = new MovieRentals();
 			dues = mv.FindDues(userId);			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
@@ -186,7 +184,6 @@ public class MovieRentalRest {
 	// Corporate flow: check store value & productivity
 	// Sales by store, number of rentals relative to inventory, #customers
 	// Best performing genre
-	
 	@Path("/salesbystore")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

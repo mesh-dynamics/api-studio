@@ -23,7 +23,8 @@ public class FindAndRentMovies {
 	//  Generating query: select language_id, group_concat(concat('"', substring_index(title, ' ', 1), '"') separator ', ') from film where film_id % 29 = 0 group by language_id
 	private static String[] movie_keywords = {"ANTITRUST", "BEACH", "BOONDOCK", "CANDIDATE", "CHISUM", "CONFIDENTIAL", "DAISY", "DIRTY", "DUFFEL", "EVERYONE", "FISH", "GANDHI", "GREASE", "HAUNTING", "HOTEL", "INTENTIONS", "KANE", "LIFE", "MAIDEN", "MINE", "MUSCLE", "OPERATION", "PEACH", "PRIDE", "REQUIEM", "RUSHMORE", "SHANE", "SMOKING", "STAR", "SWARM", "TOWERS", "UPTOWN", "WAR", "WONKA"};
 	
-	private static int[] userIds = {};
+	private static int maxCustomerId = 599;
+	private static int maxStaffId = 2;
 	
 	private static Random randGen = new Random();
 	
@@ -40,6 +41,7 @@ public class FindAndRentMovies {
 			// Missing JSONArray exception. @prasad may know.
 			JSONArray movies = new JSONArray(response1.readEntity(String.class));
 			//JSONArray movies = response1.readEntity(JSONArray.class);
+			response1.close();
 			if (movies.length() == 0) {
 				continue;
 			}
@@ -52,6 +54,7 @@ public class FindAndRentMovies {
 			Response response2 = targetService.path("liststores").queryParam("filmId", movieId).request(MediaType.APPLICATION_JSON).get();
 			System.out.println(response2.getStatus());
 			JSONArray stores = new JSONArray(response2.readEntity(String.class));
+			response2.close();
 			System.out.println(stores.toString());
 			if (stores.length() == 0) {
 				continue;
@@ -65,11 +68,13 @@ public class FindAndRentMovies {
 			rentalInfo.put("filmid", movieId);
 			rentalInfo.put("storeid", storeId);
 			rentalInfo.put("duration", 2);
-			rentalInfo.put("customerid",  1); 
-			Response response3 = targetService.path("rentmovie").request().post(Entity.entity(rentalInfo, MediaType.APPLICATION_JSON));
+			rentalInfo.put("customerid", randGen.nextInt(maxCustomerId));
+			rentalInfo.put("staffid", randGen.nextInt(maxStaffId));   
+			System.out.println("client rentalInfo: " + rentalInfo.toString());
+			Response response3 = targetService.path("rentmovie").request().post(Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON));
+			//Response response3 = targetService.path("rentmovie").path(Integer.toString(movieId)).path(Integer.toString(storeId)).path("1").request().post(Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON));
+			//Response response3 = targetService.path("rentmovie").queryParam("filmid", movieId).queryParam("storeid", storeId).queryParam("customerid", 1).request().post(Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON));
 			System.out.println(response3.getStatus());
-			
-
 		}
 	}
 }
