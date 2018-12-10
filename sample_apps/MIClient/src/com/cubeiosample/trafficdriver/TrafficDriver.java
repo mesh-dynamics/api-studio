@@ -15,7 +15,7 @@ public class TrafficDriver {
   public static void main(String[] args) {
 
       ClientConfig clientConfig = new ClientConfig()
-              .property(ClientProperties.READ_TIMEOUT, 100000)
+              .property(ClientProperties.READ_TIMEOUT, 100000)  // timing out with default 20000
               .property(ClientProperties.CONNECT_TIMEOUT, 10000);
       // Configuration config = new Configuration();
       // Client client = ClientBuilder.newClient(config);

@@ -60,39 +60,17 @@
 	    <artifactId>jersey-hk2</artifactId>
 	    <version>${version.jersey}</version>
 	</dependency>
-  	
-	<!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
-	<!-- <dependency>
+  	<dependency>
+	  	<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
 	    <groupId>javax.ws.rs</groupId>
 	    <artifactId>javax.ws.rs-api</artifactId>
-	    <version>2.1</version>
-	</dependency> -->
-	
-	<!--  -->
-	<!-- <dependency>
+	    <version>2.1</version>  
+	</dependency>
+	<dependency>
   		<groupId>org.glassfish.jersey.media</groupId>
  		<artifactId>jersey-media-json-jackson</artifactId>
   		<scope>runtime</scope>
-  		<version>${jersey.version}</version>
-	</dependency> -->
-	
-	<!-- Following dependency added to deal with the following error. -->
-	<!-- MessageBodyReader not found for media type=application/json, type=class org.json.JSONArray, genericType=class org.json.JSONArray. -->
-	<!-- https://stackoverflow.com/questions/23442440/messagebodyreader-not-found-for-media-type-application-json -->
-	<!-- <dependency>
-	    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-	    <artifactId>jackson-jaxrs-json-provider</artifactId>
-	    <version>${jackson.version}</version>
+  		<version>${version.jersey}</version>
 	</dependency>
-	<dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jackson.version}</version>
-    </dependency> -->
   </dependencies> 
 </project>

@@ -1,5 +1,6 @@
 package com.cubeiosample.trafficdriver;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,14 +34,16 @@ public class FindAndRentMovies {
 		// 
 		for (String movie : movies) {
 			// list films
-			Response response1 = targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).get();
+			Response response1 = CallWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON), null, true, 3);
+			if (response1 == null || response1.getStatus() != 200) {
+				continue;
+			}
 			System.out.println(response1.getStatus());
 			
 			// pick one at random
 			// TODO: couldn't directly read into JSONArray.class without the new JSONArray. 
 			// Missing JSONArray exception. @prasad may know.
 			JSONArray movies = new JSONArray(response1.readEntity(String.class));
-			//JSONArray movies = response1.readEntity(JSONArray.class);
 			response1.close();
 			if (movies.length() == 0) {
 				continue;
@@ -51,7 +54,10 @@ public class FindAndRentMovies {
 			int movieId = movieObj.getInt("film_id");
 			
 			// find stores with movie
-			Response response2 = targetService.path("liststores").queryParam("filmId", movieId).request(MediaType.APPLICATION_JSON).get();
+			Response response2 = CallWithRetries(targetService.path("liststores").queryParam("filmId", movieId).request(MediaType.APPLICATION_JSON), null, true, 3);
+			if (response2 == null || response2.getStatus() != 200) {
+				continue;
+			}
 			System.out.println(response2.getStatus());
 			JSONArray stores = new JSONArray(response2.readEntity(String.class));
 			response2.close();
@@ -68,13 +74,26 @@ public class FindAndRentMovies {
 			rentalInfo.put("filmid", movieId);
 			rentalInfo.put("storeid", storeId);
 			rentalInfo.put("duration", 2);
-			rentalInfo.put("customerid", randGen.nextInt(maxCustomerId));
-			rentalInfo.put("staffid", randGen.nextInt(maxStaffId));   
+			rentalInfo.put("customerid", 1 + randGen.nextInt(maxCustomerId-1));
+			rentalInfo.put("staffid", 1 + randGen.nextInt(maxStaffId-1));   
 			System.out.println("client rentalInfo: " + rentalInfo.toString());
-			Response response3 = targetService.path("rentmovie").request().post(Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON));
-			//Response response3 = targetService.path("rentmovie").path(Integer.toString(movieId)).path(Integer.toString(storeId)).path("1").request().post(Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON));
-			//Response response3 = targetService.path("rentmovie").queryParam("filmid", movieId).queryParam("storeid", storeId).queryParam("customerid", 1).request().post(Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON));
+			Response response3 = CallWithRetries(targetService.path("rentmovie").request(), rentalInfo, false, 3);
 			System.out.println(response3.getStatus());
 		}
+	}
+	
+	private Response CallWithRetries(Builder req, JSONObject body, boolean isGetRequest, int numRetries) {
+		int numAttempts = 0;
+		while (numAttempts < numRetries) {
+			try {
+				if (isGetRequest) {
+					return req.get();
+				} 
+				return req.post(Entity.entity(body.toString(), MediaType.APPLICATION_JSON));
+			} catch (Exception e) {
+				++numAttempts;
+			}
+		}
+		return null;
 	}
 }
