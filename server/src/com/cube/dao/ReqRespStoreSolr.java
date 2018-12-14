@@ -167,6 +167,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	// field names in Solr
 	private static final String PATHF = "_c_path_s";
 	private static final String REQIDF = "_c_reqid_s";
+	private static final String METHODF = "_c_method_s";
 	private static final String BODYF = "_c_body_s";
 	private static final String STATUSF = "_status_i";
 
@@ -186,7 +187,6 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String FPARAMS = "fp"; 
 	private static final String META = "meta"; 
 	private static final String HDR = "hdr"; 
-	private static final String CK = "ck"; 
 
 	
 	private static SolrInputDocument reqToSolrDoc(Request req) {
@@ -195,12 +195,12 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		doc.setField(TYPEF, Types.Request.toString());
 		doc.setField(PATHF, req.path);
 		req.id.ifPresent(id -> doc.setField(REQIDF, id));
+		doc.setField(METHODF, req.method);
 		doc.setField(BODYF, req.body);
 		addFieldsToDoc(doc, QPARAMS, req.qparams);
 		addFieldsToDoc(doc, FPARAMS, req.fparams);
 		addFieldsToDoc(doc, META, req.meta);
 		addFieldsToDoc(doc, HDR, req.hdrs);
-		addFieldsToDoc(doc, CK, req.cookies);
 		
 		return doc;
 	}
@@ -225,7 +225,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); // form params
 		MultivaluedMap<String, String> meta = new MultivaluedHashMap<String, String>(); 
 		MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
-		MultivaluedMap<String, String> cookies = new MultivaluedHashMap<String, String>();
+		Optional<String> method = Optional.empty();		
 		Optional<String> body = Optional.empty();
 		
 		for (Entry<String, Object> kv : doc) {
@@ -240,6 +240,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 				break;
 			case REQIDF:
 				if (v instanceof String) id = Optional.of((String)v);
+				break;
+			case METHODF:
+				if (v instanceof String) method = Optional.of((String)v);
 				break;
 			case BODYF:
 				if (v instanceof String) body = Optional.of((String)v);
@@ -260,9 +263,6 @@ public class ReqRespStoreSolr implements ReqRespStore {
 					case HDR:
 						checkAndAddValues(hdrs, m.group(2), v);
 						break;
-					case CK:
-						checkAndAddValues(cookies, m.group(2), v);
-						break;
 					default:
 					}
 				}
@@ -270,11 +270,12 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		};
 
 		final String p = path.orElse("");
+		final String m = method.orElse("");		
 		final String b = body.orElse("");
 		final Optional<String> idv = id; // this is just to avoid compiler from cribbing when accessing non final id in lambda function below
 		return type.map(t -> {
 			if (t.equals(Types.Request.toString()))
-				return new Request(p, idv, qparams, fparams, meta, hdrs, cookies, b);
+				return new Request(p, idv, qparams, fparams, meta, hdrs, m, b);
 			else
 				return null;
 		});

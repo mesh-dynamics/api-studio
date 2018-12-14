@@ -53,9 +53,14 @@ public class MockServiceHTTP {
 		    ResponseBuilder builder = Response.status(respv.status);
 		    respv.hdrs.forEach((f, vl) -> {
 				vl.forEach((v) -> {
-					builder.header(f, v);
+					// System.out.println(String.format("k=%s, v=%s", f, v));
+					// looks like setting some headers causes a problem, so skip them
+					// TODO: check if this is a comprehensive list
+					if (!f.equals("transfer-encoding"))
+						builder.header(f, v);
 				});
 			});
+		    //return Response.status(Response.Status.NOT_FOUND).entity("Dummy response").build();
 		    return builder.entity(respv.body).build();	    	
 	    }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Response not found").build());
 	    

@@ -3,13 +3,21 @@
  */
 package com.cube.dao;
 
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
@@ -17,6 +25,49 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  *
  */
 public interface ReqRespStore {
+	
+	
+	public class ReqResp {
+				
+		
+		/**
+		 * @param pathwparams
+		 * @param meta
+		 * @param hdrs
+		 * @param body
+		 */
+		private ReqResp(String pathwparams, List<Map.Entry<String, String>> meta,
+				List<Map.Entry<String, String>> hdrs, String body) {
+			super();
+			this.pathwparams = pathwparams;
+			this.meta = meta;
+			this.hdrs = hdrs;
+			this.body = body;
+		}
+		
+		
+		
+		/**
+		 * 
+		 */
+		private ReqResp() {
+			super();
+			this.pathwparams = "";
+			this.meta = new ArrayList<Map.Entry<String, String>>();
+			this.hdrs = new ArrayList<Map.Entry<String, String>>();
+			this.body = "";
+		}
+
+
+		@JsonProperty("path")
+		public final String pathwparams; // path with params
+        @JsonDeserialize(as=ArrayList.class)
+		public final List<Map.Entry<String, String>> meta;
+        @JsonDeserialize(as=ArrayList.class)
+		public final List<Map.Entry<String, String>> hdrs;
+		public final String body;
+		
+	}
 	
 	public class Request {
 		/**
@@ -31,16 +82,16 @@ public interface ReqRespStore {
 				MultivaluedMap<String, String> fparams,
 				MultivaluedMap<String, String> meta, 
 				MultivaluedMap<String, String> hdrs, 
-				MultivaluedMap<String, String> cookies, 
+				String method, 
 				String body) {
 			super();
 			this.path = path; 
 			this.id = id;
-			this.qparams = qparams;
-			this.fparams = fparams;
-			this.meta = meta;
-			this.hdrs = hdrs;
-			this.cookies = cookies;
+			this.qparams = qparams != null ? qparams : new MultivaluedHashMap<String, String>();
+			this.fparams = fparams != null ? fparams : new MultivaluedHashMap<String, String>();
+			this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
+			this.hdrs = hdrs != null ? hdrs : new MultivaluedHashMap<String, String>();
+			this.method = method;
 			this.body = body;
 		}
 		
@@ -53,7 +104,7 @@ public interface ReqRespStore {
 		 */
 		public Request(String path, MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams) {
 			this(path, Optional.empty(), qparams, fparams, new MultivaluedHashMap<String, String>(), 
-					new MultivaluedHashMap<String, String>(), new MultivaluedHashMap<String, String>(), "");
+					new MultivaluedHashMap<String, String>(), "", "");
 		}
 
 		
@@ -70,7 +121,7 @@ public interface ReqRespStore {
 			this.fparams = new MultivaluedHashMap<String, String>();
 			this.meta = new MultivaluedHashMap<String, String>();
 			this.hdrs = new MultivaluedHashMap<String, String>();
-			this.cookies = new MultivaluedHashMap<String, String>();
+			this.method = "";
 			this.body = "";
 		}
 
@@ -89,8 +140,7 @@ public interface ReqRespStore {
 		public final MultivaluedMap<String, String> meta; 
         @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> hdrs;
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> cookies;
+		public final String method;
 		public final String body;
 	}
 	
@@ -160,4 +210,52 @@ public interface ReqRespStore {
 	 */
 	Optional<Response> getRespForReq(Request queryrequest);
 
+	static void main(String[] args) throws IOException{
+
+		Map.Entry<String, String> e = new AbstractMap.SimpleEntry<String, String>("k1", "v1");
+		ObjectMapper m1 = new ObjectMapper();
+		String jr = m1.writerWithDefaultPrettyPrinter()
+				  .writeValueAsString(e);
+
+		System.out.println(String.format("Json string: %s", jr));
+		
+		TypeReference<Map.Entry<String, String>> tR 
+		  = new TypeReference<Map.Entry<String, String>>() {};
+		Map.Entry<String, String> e2 = m1.readValue(jr, tR);
+		System.out.println("Object read back: " + e2.toString());
+		
+		
+		List<Map.Entry<String, String>> meta = new ArrayList<AbstractMap.Entry<String, String>>();
+		meta.add(new SimpleEntry<String, String>("m1", "m1v1"));
+		meta.add(new SimpleEntry<String, String>("m1", "m1v2"));
+		meta.add(new SimpleEntry<String, String>("m2", "m2v1"));
+		meta.add(new SimpleEntry<String, String>("m2", "m2v1"));
+		
+		List<Map.Entry<String, String>> hdrs = new ArrayList<AbstractMap.Entry<String, String>>();
+		hdrs.add(new SimpleEntry<String, String>("h1", "h1v1"));
+		hdrs.add(new SimpleEntry<String, String>("h1", "h1v2"));
+		hdrs.add(new SimpleEntry<String, String>("h2", "h2v1"));
+		hdrs.add(new SimpleEntry<String, String>("h2", "h2v1"));
+		
+		ReqResp rr = new ReqResp("/p1?a=av", meta, hdrs, "body 1");
+		
+		ObjectMapper mapper = new ObjectMapper();
+		String jsonResult = mapper.writerWithDefaultPrettyPrinter()
+		  .writeValueAsString(rr);
+
+		System.out.println(String.format("Json string: %s", jsonResult));
+		
+		TypeReference<ReqResp> typeRef 
+		  = new TypeReference<ReqResp>() {};
+		ReqResp rr2 = mapper.readValue(jsonResult, typeRef);
+		System.out.println("Object read back: " + rr2.toString());
+
+		String jsonResult2 = mapper.writerWithDefaultPrettyPrinter()
+				  .writeValueAsString(rr2);
+
+		System.out.println(String.format("Json string: %s", jsonResult2));
+
+		
+	}
+	
 }
