@@ -24,14 +24,14 @@ public class MovieRentals {
     	
     	// TODO: make a separate database query service.
     	jdbcPool = new ConnectionPool();
-        try {   
-        	// TODO: move this to the query service
-            jdbcPool.setUpPool("jdbc:mysql://127.0.0.1:3306/sakila", "cube", "cubeio");
-            LOGGER.info(jdbcPool.getPoolStatus());
-        } catch (Exception e) {
-        	LOGGER.error("connection pool creation failed; " + e.toString());
-        }
+    try {   
+    		// TODO: move this to the query service
+        jdbcPool.setUpPool("jdbc:mysql://127.0.0.1:3306/sakila", "cube", "cubeio");
+        LOGGER.info(jdbcPool.getPoolStatus());
+    } catch (Exception e) {
+    		LOGGER.error("connection pool creation failed; " + e.toString());
     }
+}
     
     
     public JSONArray ListMovies(String filmName, String keyword) {

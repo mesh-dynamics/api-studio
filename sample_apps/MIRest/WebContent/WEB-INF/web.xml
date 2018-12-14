@@ -21,6 +21,6 @@
   </servlet>
   <servlet-mapping>
     <servlet-name>MIRest Hello World Service</servlet-name>
-    <url-pattern>/rest/*</url-pattern>
+    <url-pattern>/minfo/*</url-pattern>
   </servlet-mapping>
 </web-app>

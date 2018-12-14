@@ -75,6 +75,7 @@ public class ConnectionPool {
     			BindParameter(stmt, obj);
     		}
 	    	ResultSet rs = stmt.executeQuery();
+	    	stmt.closeOnCompletion();
 	    	return ConvertResultSetToJson(rs);
     	} catch (Exception e) {
     		LOGGER.error("couldn't executy query " + e.toString());
