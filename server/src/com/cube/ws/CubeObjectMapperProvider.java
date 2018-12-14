@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 /**
  * @author prasad
- *
+ * This was needed for json support for java 8 objects in jackson
  */
 @Provider
 public class CubeObjectMapperProvider implements ContextResolver<ObjectMapper> {
