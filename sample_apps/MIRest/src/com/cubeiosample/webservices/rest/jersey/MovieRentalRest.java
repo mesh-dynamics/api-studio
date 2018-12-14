@@ -1,4 +1,5 @@
 package com.cubeiosample.webservices.rest.jersey;
+// TODO: change the package name to com.cubeio.samples.MIRest
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -11,6 +12,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,7 +20,11 @@ import org.json.JSONObject;
 
 @Path("/")
 public class MovieRentalRest {
-	final static Logger LOGGER = Logger.getLogger(MovieRentalRest.class);
+	final static Logger LOGGER;
+	static {
+		LOGGER = Logger.getLogger(MovieRentalRest.class);
+		BasicConfigurator.configure();
+	}
 	
 	@Path("/health")
     @GET

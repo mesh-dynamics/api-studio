@@ -164,7 +164,7 @@ public class ConnectionPool {
             return rows;
         } catch (SQLException e) {
             // log e
-        	LOGGER.error("couldn't convert result to json: " + e.toString());
+        		LOGGER.error("couldn't convert result to json: " + e.toString());
             return null;
         }
     }
