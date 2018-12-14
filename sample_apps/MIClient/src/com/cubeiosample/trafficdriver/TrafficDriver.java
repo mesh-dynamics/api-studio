@@ -30,6 +30,6 @@ public class TrafficDriver {
   }
 
   private static URI getBaseURI() {
-    return UriBuilder.fromUri("http://localhost:8080/MIRest/rest/minfo/").build();
+    return UriBuilder.fromUri("http://localhost:8080/minfo/").build();
   }
 }

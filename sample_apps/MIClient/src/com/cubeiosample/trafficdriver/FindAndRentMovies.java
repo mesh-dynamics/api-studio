@@ -9,7 +9,7 @@ import org.json.*;
 
 public class FindAndRentMovies {
 	
-	WebTarget targetService; //= client.target(getBaseURI());
+	WebTarget targetService; 
 	public FindAndRentMovies(WebTarget service) {
 		targetService = service;
 	}
@@ -78,7 +78,9 @@ public class FindAndRentMovies {
 			rentalInfo.put("staffid", 1 + randGen.nextInt(maxStaffId-1));   
 			System.out.println("client rentalInfo: " + rentalInfo.toString());
 			Response response3 = CallWithRetries(targetService.path("rentmovie").request(), rentalInfo, false, 3);
-			System.out.println(response3.getStatus());
+			if (response3 != null) {
+				System.out.println(response3.getStatus());
+			}
 		}
 	}
 	

@@ -17,10 +17,14 @@
         <param-name>jersey.config.server.provider.packages</param-name>
         <param-value>com.cubeiosample.webservices.rest.jersey</param-value>
     </init-param>
+    <init-param>
+			<param-name>log4j-properties-location</param-name>
+			<param-value>WEB-INF/log4j.properties</param-value>
+	</init-param>
     <load-on-startup>1</load-on-startup>
   </servlet>
   <servlet-mapping>
     <servlet-name>MIRest Hello World Service</servlet-name>
-    <url-pattern>/rest/*</url-pattern>
+    <url-pattern>/minfo/*</url-pattern>
   </servlet-mapping>
 </web-app>

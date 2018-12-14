@@ -35,22 +35,101 @@
           <warSourceDirectory>WebContent</warSourceDirectory>
         </configuration>
       </plugin>
+      <!-- Copy Maven dependencies into target/lib/ -->
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>initialize</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <overWriteReleases>false</overWriteReleases>
+              <includeScope>runtime</includeScope>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+		  <groupId>com.spotify</groupId>
+		  <artifactId>dockerfile-maven-plugin</artifactId>
+		  <version>${version.dockerfile-maven}</version>
+		  <executions>
+		    <execution>
+		      <id>default</id>
+		      <goals>
+		        <goal>build</goal>
+		        <goal>push</goal>
+		      </goals>
+		    </execution>
+		  </executions>
+		  <configuration>
+		    <repository>cubeiocorp/sample_apps-mirest</repository>
+		    <tag>${project.version}</tag>
+		    <buildArgs>
+		      <WAR_FILE>${project.build.finalName}.war</WAR_FILE>
+		    </buildArgs>
+		  </configuration>		    
+		    <!-- <resources>
+		      <resource>
+		       <targetPath>/</targetPath>
+               <directory>${project.build.directory}</directory>
+               <include>${project.build.finalName}.war</include>
+		      </resource>
+		    </resources> -->
+	  </plugin>
     </plugins>
+    <pluginManagement>
+    	<plugins>
+    		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    		<plugin>
+    			<groupId>org.eclipse.m2e</groupId>
+    			<artifactId>lifecycle-mapping</artifactId>
+    			<version>1.0.0</version>
+    			<configuration>
+    				<lifecycleMappingMetadata>
+    					<pluginExecutions>
+    						<pluginExecution>
+    							<pluginExecutionFilter>
+    								<groupId>
+    									org.apache.maven.plugins
+    								</groupId>
+    								<artifactId>
+    									maven-dependency-plugin
+    								</artifactId>
+    								<versionRange>[2.8,)</versionRange>
+    								<goals>
+    									<goal>copy-dependencies</goal>
+    								</goals>
+    							</pluginExecutionFilter>
+    							<action>
+    								<ignore></ignore>
+    							</action>
+    						</pluginExecution>
+    					</pluginExecutions>
+    				</lifecycleMappingMetadata>
+    			</configuration>
+    		</plugin>
+    	</plugins>
+    </pluginManagement>
   </build>
   <properties>
   	<version.jersey>2.27</version.jersey>
     <version.jackson>2.8.7</version.jackson>
+    <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
   </properties>
  <dependencies>
-  <dependency>
-  		<groupId>org.glassfish.jersey.core</groupId>
-  		<artifactId>jersey-common</artifactId>
-  		<version>${version.jersey}</version>
-  	</dependency>
   	<dependency>
   		<groupId>org.json</groupId>
   		<artifactId>json</artifactId>
   		<version>20180813</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.glassfish.jersey.core</groupId>
+  		<artifactId>jersey-common</artifactId>
+  		<version>${version.jersey}</version>
   	</dependency>
   	<dependency>
   		<groupId>org.glassfish.jersey.core</groupId>
@@ -82,6 +161,12 @@
        <artifactId>commons-dbcp</artifactId>
        <version>1.4</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.spotify/dockerfile-maven-plugin -->
+	<dependency>
+	    <groupId>com.spotify</groupId>
+	    <artifactId>dockerfile-maven-plugin</artifactId>
+	    <version>${version.dockerfile-maven}</version>
+	</dependency>
 </dependencies>
   
 </project>
