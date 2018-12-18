@@ -16,23 +16,32 @@ public class MovieRentals {
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     private boolean USE_PREPARED_STMTS = true;    
+    private boolean USE_KUBE_CLUSTER = true;
+    
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
     public MovieRentals() throws ClassNotFoundException {
     	LoadDriver();
     	
-    	// TODO: make a separate database query service.
-    	jdbcPool = new ConnectionPool();
-    try {   
-    		// TODO: move this to the query service
-        jdbcPool.setUpPool("jdbc:mysql://127.0.0.1:3306/sakila", "cube", "cubeio");
-        LOGGER.info(jdbcPool.getPoolStatus());
-    } catch (Exception e) {
-    		LOGGER.error("connection pool creation failed; " + e.toString());
+	    // TODO: make a separate database query service.
+	    jdbcPool = new ConnectionPool();
+	    try {   
+	    		// TODO: move this to the query service
+	        jdbcPool.setUpPool("jdbc:mysql://" + baseUri() + ":3306/sakila", "cube", "cubeio");
+	        LOGGER.info(jdbcPool.getPoolStatus());
+	    } catch (Exception e) {
+	    		LOGGER.error("connection pool creation failed; " + e.toString());
+	    }
     }
-}
     
-    
+    // TODO: pipe it from mvn config
+    private String baseUri() {
+    	if (USE_KUBE_CLUSTER) {
+    		return "mysql-sakila";
+    	}
+    	return "127.0.0.1";
+    }
+
     public JSONArray ListMovies(String filmName, String keyword) {
     	// TODO: add actor also in the parameter options.
     	try {

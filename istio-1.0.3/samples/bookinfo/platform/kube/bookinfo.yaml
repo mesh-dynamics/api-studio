@@ -190,3 +190,72 @@ spec:
         ports:
         - containerPort: 9080
 ---
+##################################################################################################
+# MovieInfo services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: movieinfo
+  labels:
+    app: movieinfo
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: movieinfo
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: movieinfo-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: movieinfo
+        version: v1
+    spec:
+      containers:
+      - name: movieinfo
+        image: cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+---
+##################################################################################################
+# Mysql data server
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-sakila
+  labels:
+    app: mysql-sakila
+spec:
+  ports:
+  - port: 3306
+    name: tcp
+  selector:
+    app: mysql-sakila
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-sakila-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql-sakila
+        version: v1
+    spec:
+      containers:
+      - name: mysql-sakila
+        image: cubeiocorp/mysql-sakila:v3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3306
