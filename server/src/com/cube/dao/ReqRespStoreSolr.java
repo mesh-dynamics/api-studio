@@ -4,6 +4,8 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -76,7 +78,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		query.addFilterQuery(String.format("%s:%s", TYPEF, Types.Request.toString()));
 		query.addFilterQuery(String.format("%s:%s", PATHF, qr.path));			
 		if (!ignoreId) 
-			qr.id.ifPresent(reqid -> {
+			qr.reqid.ifPresent(reqid -> {
 				query.addFilterQuery(String.format("%s:%s", REQIDF, reqid));			
 			});
 		qr.qparams.forEach((k, values) -> {
@@ -143,7 +145,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	public Optional<Response> getRespForReq(Request qr) {
 		// Find request, without considering request id
 		Optional<Request> req = getRequest(qr, true);
-		return req.flatMap(reqv -> reqv.id).flatMap(idv -> {
+		return req.flatMap(reqv -> reqv.reqid).flatMap(idv -> {
 			return getResponse(idv);
 		});
 	}
@@ -169,6 +171,8 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String REQIDF = "_c_reqid_s";
 	private static final String METHODF = "_c_method_s";
 	private static final String BODYF = "_c_body_s";
+	private static final String COLLECTIONF = "_c_collection_s";
+	private static final String TIMESTAMPF = "_c_timestamp_dt";
 	private static final String STATUSF = "_status_i";
 
 	private static String getPrefix(String ftype) {
@@ -188,19 +192,29 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String META = "meta"; 
 	private static final String HDR = "hdr"; 
 
+	private static void setRRFields(RRBase rr, SolrInputDocument doc) {
+		
+		rr.reqid.ifPresent(id -> doc.setField(REQIDF, id));
+		doc.setField(BODYF, rr.body);
+		addFieldsToDoc(doc, META, rr.meta);
+		addFieldsToDoc(doc, HDR, rr.hdrs);
+		rr.collection.ifPresent(c -> doc.setField(COLLECTIONF, c));
+		rr.timestamp.ifPresent(t -> doc.setField(TIMESTAMPF, t.toString()));
+		
+	}
+
+
 	
 	private static SolrInputDocument reqToSolrDoc(Request req) {
 		final SolrInputDocument doc = new SolrInputDocument();
-		
+
+		setRRFields(req, doc);
 		doc.setField(TYPEF, Types.Request.toString());
 		doc.setField(PATHF, req.path);
-		req.id.ifPresent(id -> doc.setField(REQIDF, id));
 		doc.setField(METHODF, req.method);
-		doc.setField(BODYF, req.body);
 		addFieldsToDoc(doc, QPARAMS, req.qparams);
 		addFieldsToDoc(doc, FPARAMS, req.fparams);
-		addFieldsToDoc(doc, META, req.meta);
-		addFieldsToDoc(doc, HDR, req.hdrs);
+		
 		
 		return doc;
 	}
@@ -215,56 +229,66 @@ public class ReqRespStoreSolr implements ReqRespStore {
 			});
 		}
 	}
+
+	private static Optional<String> getStrField(SolrDocument doc, String fname) {
+		return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+			if (v instanceof String)
+				return Optional.of((String) v);
+			return Optional.empty();
+		});
+	}
+
+	private static Optional<Integer> getIntField(SolrDocument doc, String fname) {
+		return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+			if (v instanceof Integer)
+				return Optional.of((Integer) v);
+			return Optional.empty();
+		});
+	}
+
+	private static Optional<Instant> getTSField(SolrDocument doc, String fname) {
+		return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+			if (v instanceof Date)
+				return Optional.of(((Date) v).toInstant());
+			return Optional.empty();
+		});
+	}
+
+
 	
 	private static Optional<Request> docToRequest(SolrDocument doc) {
 		
-		Optional<String> type = Optional.empty();
-		Optional<String> path = Optional.empty();
-		Optional<String> id = Optional.empty();
+		Optional<String> type = getStrField(doc, TYPEF);
+		Optional<String> path = getStrField(doc, PATHF);
+		Optional<String> reqid = getStrField(doc, REQIDF);
 		MultivaluedMap<String, String> qparams = new MultivaluedHashMap<String, String>(); // query params
 		MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); // form params
 		MultivaluedMap<String, String> meta = new MultivaluedHashMap<String, String>(); 
 		MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
-		Optional<String> method = Optional.empty();		
-		Optional<String> body = Optional.empty();
+		Optional<String> method = getStrField(doc, METHODF);		
+		Optional<String> body = getStrField(doc, BODYF);
+		Optional<String> collection = getStrField(doc, COLLECTIONF);
+		Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
 		
 		for (Entry<String, Object> kv : doc) {
 			String k = kv.getKey();
 			Object v = kv.getValue();
-			switch (k) {
-			case TYPEF:
-				if (v instanceof String) type = Optional.of((String)v);
-				break;
-			case PATHF:
-				if (v instanceof String) path = Optional.of((String)v);
-				break;
-			case REQIDF:
-				if (v instanceof String) id = Optional.of((String)v);
-				break;
-			case METHODF:
-				if (v instanceof String) method = Optional.of((String)v);
-				break;
-			case BODYF:
-				if (v instanceof String) body = Optional.of((String)v);
-				break;
-			default:
-				Matcher m = pattern.matcher(k);
-				if (m.find()) {					
-					switch (m.group(1)) {
-					case QPARAMS:
-						checkAndAddValues(qparams, m.group(2), v);
-						break;
-					case FPARAMS:
-						checkAndAddValues(fparams, m.group(2), v);
-						break;
-					case META:
-						checkAndAddValues(meta, m.group(2), v);
-						break;
-					case HDR:
-						checkAndAddValues(hdrs, m.group(2), v);
-						break;
-					default:
-					}
+			Matcher m = pattern.matcher(k);
+			if (m.find()) {					
+				switch (m.group(1)) {
+				case QPARAMS:
+					checkAndAddValues(qparams, m.group(2), v);
+					break;
+				case FPARAMS:
+					checkAndAddValues(fparams, m.group(2), v);
+					break;
+				case META:
+					checkAndAddValues(meta, m.group(2), v);
+					break;
+				case HDR:
+					checkAndAddValues(hdrs, m.group(2), v);
+					break;
+				default:
 				}
 			}
 		};
@@ -272,10 +296,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		final String p = path.orElse("");
 		final String m = method.orElse("");		
 		final String b = body.orElse("");
-		final Optional<String> idv = id; // this is just to avoid compiler from cribbing when accessing non final id in lambda function below
 		return type.map(t -> {
 			if (t.equals(Types.Request.toString()))
-				return new Request(p, idv, qparams, fparams, meta, hdrs, m, b);
+				return new Request(p, reqid, qparams, fparams, meta, hdrs, m, b, collection, timestamp);
 			else
 				return null;
 		});
@@ -284,13 +307,10 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	
 	private static SolrInputDocument respToSolrDoc(Response resp) {
 		final SolrInputDocument doc = new SolrInputDocument();
-		
+
+		setRRFields(resp, doc);
 		doc.setField(TYPEF, Types.Response.toString());
-		resp.reqid.ifPresent(id -> doc.setField(REQIDF, id));
-		doc.setField(BODYF, resp.body);
 		doc.setField(STATUSF, resp.status);
-		addFieldsToDoc(doc, META, resp.meta);
-		addFieldsToDoc(doc, HDR, resp.hdrs);
 		
 		return doc;
 	}
@@ -298,52 +318,37 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	
 	private static Optional<Response> docToResponse(SolrDocument doc) {
 		
-		Optional<String> type = Optional.empty();
-		Optional<Integer> status = Optional.empty();
-		Optional<String> id = Optional.empty();
+		Optional<String> type = getStrField(doc, TYPEF);
+		Optional<Integer> status = getIntField(doc, STATUSF);
+		Optional<String> reqid = getStrField(doc, REQIDF);
 		MultivaluedMap<String, String> meta = new MultivaluedHashMap<String, String>(); 
 		MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
-		Optional<String> body = Optional.empty();
+		Optional<String> body = getStrField(doc, BODYF);
+		Optional<String> collection = getStrField(doc, COLLECTIONF);
+		Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
 		
 		for (Entry<String, Object> kv : doc) {
 			String k = kv.getKey();
 			Object v = kv.getValue();
-			switch (k) {
-			case TYPEF:
-				if (v instanceof String) type = Optional.of((String)v);
-				break;
-			case STATUSF:
-				if (v instanceof Integer) status = Optional.of((Integer)v);
-				break;
-			case REQIDF:
-				if (v instanceof String) id = Optional.of((String)v);
-				break;
-			case BODYF:
-				if (v instanceof String) body = Optional.of((String)v);
-				break;
-			default:
-				Matcher m = pattern.matcher(k);
-				if (m.find()) {					
-					switch (m.group(1)) {
-					case META:
-						checkAndAddValues(meta, m.group(2), v);
-						break;
-					case HDR:
-						checkAndAddValues(hdrs, m.group(2), v);
-						break;
-					default:
-					}
+			Matcher m = pattern.matcher(k);
+			if (m.find()) {					
+				switch (m.group(1)) {
+				case META:
+					checkAndAddValues(meta, m.group(2), v);
+					break;
+				case HDR:
+					checkAndAddValues(hdrs, m.group(2), v);
+					break;
+				default:
 				}
 			}
 		};
 
 		final String b = body.orElse("");
-		final Optional<Integer> s = status;
-		final Optional<String> idv = id; // this is just to avoid compiler from cribbing when accessing non final id in lambda function below
 		return type.flatMap(t -> {
 			if (t.equals(Types.Response.toString())) {
-				return s.map(sv ->{
-					return new Response(idv, sv, meta, hdrs, b);
+				return status.map(sv ->{
+					return new Response(reqid, sv, meta, hdrs, b, collection, timestamp);
 				});				
 			} else
 				return Optional.empty();

@@ -81,6 +81,8 @@ spec:
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -95,6 +97,8 @@ spec:
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -185,6 +189,8 @@ spec:
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -199,6 +205,8 @@ spec:
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -289,6 +297,8 @@ spec:
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -303,6 +313,8 @@ spec:
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -393,6 +405,8 @@ spec:
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -407,6 +421,8 @@ spec:
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  meta["collection"] = "testc1"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")

@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -68,8 +69,9 @@ public interface ReqRespStore {
 		public final String body;
 		
 	}
-	
-	public class Request {
+
+	public class RRBase {
+
 		/**
 		 * @param path
 		 * @param id
@@ -78,21 +80,69 @@ public interface ReqRespStore {
 		 * @param hdrs
 		 * @param body
 		 */
-		public Request(String path, Optional<String> id, MultivaluedMap<String, String> qparams,
+		public RRBase(Optional<String> reqid, 
+				MultivaluedMap<String, String> meta, 
+				MultivaluedMap<String, String> hdrs, 
+				String body,
+				Optional<String> collection,
+				Optional<Instant> timestamp) {
+			super();
+			this.reqid = reqid;
+			this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
+			this.hdrs = hdrs != null ? hdrs : new MultivaluedHashMap<String, String>();
+			this.body = body;
+			this.collection = collection;
+			this.timestamp = timestamp;
+		}
+
+		
+		/**
+		 * 
+		 */
+		@SuppressWarnings("unused")
+		private RRBase() {
+			super();
+			this.reqid = Optional.empty();
+			this.meta = new MultivaluedHashMap<String, String>();
+			this.hdrs = new MultivaluedHashMap<String, String>();
+			this.body = "";
+			this.collection = Optional.empty();
+			this.timestamp = Optional.empty();
+		}
+
+		public final Optional<String> reqid;
+        @JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> meta; 
+        @JsonDeserialize(as=MultivaluedHashMap.class)
+		public final MultivaluedMap<String, String> hdrs;
+		public final String body;		
+		public final Optional<String> collection;
+		public final Optional<Instant> timestamp;
+
+	}
+	
+	public class Request extends RRBase {
+		/**
+		 * @param path
+		 * @param id
+		 * @param qparams
+		 * @param meta
+		 * @param hdrs
+		 * @param body
+		 */
+		public Request(String path, Optional<String> reqid, MultivaluedMap<String, String> qparams,
 				MultivaluedMap<String, String> fparams,
 				MultivaluedMap<String, String> meta, 
 				MultivaluedMap<String, String> hdrs, 
 				String method, 
-				String body) {
-			super();
+				String body,
+				Optional<String> collection,
+				Optional<Instant> timestamp) {
+			super(reqid, meta, hdrs, body, collection, timestamp);
 			this.path = path; 
-			this.id = id;
 			this.qparams = qparams != null ? qparams : new MultivaluedHashMap<String, String>();
 			this.fparams = fparams != null ? fparams : new MultivaluedHashMap<String, String>();
-			this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
-			this.hdrs = hdrs != null ? hdrs : new MultivaluedHashMap<String, String>();
 			this.method = method;
-			this.body = body;
 		}
 		
 		
@@ -102,9 +152,9 @@ public interface ReqRespStore {
 		 * @param qparams
 		 * @param fparams
 		 */
-		public Request(String path, MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams) {
-			this(path, Optional.empty(), qparams, fparams, new MultivaluedHashMap<String, String>(), 
-					new MultivaluedHashMap<String, String>(), "", "");
+		public Request(String path, Optional<String> id, MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams, Optional<String> collection) {
+			this(path, id, qparams, fparams, new MultivaluedHashMap<String, String>(), 
+					new MultivaluedHashMap<String, String>(), "", "", collection, Optional.empty());
 		}
 
 		
@@ -116,13 +166,9 @@ public interface ReqRespStore {
 		private Request() {
 			super();
 			this.path = ""; 
-			this.id = Optional.empty();
 			this.qparams = new MultivaluedHashMap<String, String>();
 			this.fparams = new MultivaluedHashMap<String, String>();
-			this.meta = new MultivaluedHashMap<String, String>();
-			this.hdrs = new MultivaluedHashMap<String, String>();
 			this.method = "";
-			this.body = "";
 		}
 
 
@@ -131,20 +177,14 @@ public interface ReqRespStore {
 		  = new TypeReference<MultivaluedHashMap<String, String>>() {};
 		
 		public final String path;
-		public final Optional<String> id;
         @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> qparams; // query params
         @JsonDeserialize(as=MultivaluedHashMap.class)
 		public final MultivaluedMap<String, String> fparams; // form params
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> meta; 
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> hdrs;
 		public final String method;
-		public final String body;
 	}
 	
-	public class Response {
+	public class Response extends RRBase {
 		/**
 		 * @param reqid
 		 * @param status
@@ -153,13 +193,11 @@ public interface ReqRespStore {
 		 */
 		public Response(Optional<String> reqid, int status, 
 				MultivaluedMap<String, String> meta, 
-				MultivaluedMap<String, String> hdrs, String body) {
-			super();
-			this.reqid = reqid;
+				MultivaluedMap<String, String> hdrs, String body,
+				Optional<String> collection,
+				Optional<Instant> timestamp) {
+			super(reqid, meta, hdrs, body, collection, timestamp);
 			this.status = status;
-			this.meta = meta;
-			this.hdrs = hdrs;
-			this.body = body;
 		}
 		
 		/**
@@ -168,21 +206,11 @@ public interface ReqRespStore {
 		@SuppressWarnings("unused")
 		private Response() {
 			super();
-			this.reqid = Optional.empty();
 			this.status = Status.OK.getStatusCode();
-			this.meta = new MultivaluedHashMap<String, String>();
-			this.hdrs = new MultivaluedHashMap<String, String>();
-			this.body = "";
 		}
 
 		
-		public final Optional<String> reqid;
 		public final int status;
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> meta; 
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> hdrs;
-		public final String body;		
 	}
 	
 	boolean save(Request req);
