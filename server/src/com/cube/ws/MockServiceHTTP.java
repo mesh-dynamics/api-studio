@@ -45,7 +45,8 @@ public class MockServiceHTTP {
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
 	    
-	    Request r = new Request(path, queryParams, formParams);
+	    // TODO: extract reqid and collection from headers and pass to request
+	    Request r = new Request(path, Optional.empty(), queryParams, formParams, Optional.empty());
 
 	    Optional<ReqRespStore.Response> resp = rrstore.getRespForReq(r);
 	    

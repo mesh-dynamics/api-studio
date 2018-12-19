@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -76,6 +77,17 @@ public class CubeStore {
 
 	    Optional<String> rid = Optional.ofNullable(meta.getFirst("c-request-id"));
 	    Optional<String> type = Optional.ofNullable(meta.getFirst("type"));
+	    Optional<String> collection = Optional.ofNullable(meta.getFirst("collection"));
+	    Optional<Instant> timestamp = Optional.ofNullable(meta.getFirst("timestamp")).map(v -> {
+	    	Instant t = null;
+	    	try {
+	    		t = Instant.parse(v);
+	    	} catch (Exception e) {
+	    		LOGGER.error(String.format("Expecting time stamp, got %s", v));
+	    		t = Instant.now();
+	    	}
+	    	return t;
+	    });
 	    
 	    MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); 
 
@@ -83,7 +95,7 @@ public class CubeStore {
 	    	if (t.equals("request")) {
 	    	    Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
 	    	    return method.map(mval -> {
-		    	    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body);
+		    	    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp);
 		    	    if (!rrstore.save(req))
 		    	    	return Optional.of("Not able to store request");	    	    	
 		    		Optional<String> empty = Optional.empty();
@@ -100,7 +112,7 @@ public class CubeStore {
 	    	    	}
 	    	    });
 	    	    return s.map(sval -> {
-		    		ReqRespStore.Response resp = new ReqRespStore.Response(rid, sval, meta, hdrs, rr.body);
+		    		ReqRespStore.Response resp = new ReqRespStore.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp);
 		    		if (!rrstore.save(resp))
 		    			return Optional.of("Not able to store response");
 		    		Optional<String> empty = Optional.empty();
