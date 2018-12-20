@@ -19,7 +19,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-//import com.mysql.jdbc.Statement;
  
 public class ConnectionPool {
  
@@ -33,23 +32,40 @@ public class ConnectionPool {
 
     @SuppressWarnings("unused")
     public void setUpPool(String uri, String user, String pwd) throws Exception {
-        Class.forName(JDBC_DRIVER);
-        // Creates an Instance of GenericObjectPool That Holds Our Pool of Connections Object!
-        gPool = new GenericObjectPool();
-        gPool.setMaxActive(5);
-
-        // Creates a ConnectionFactory Object Which Will Be Use by the Pool to Create the Connection Object!
-        Properties props = new Properties();
-        props.setProperty("user", user);
-        props.setProperty("password", pwd);
-        props.setProperty("verifyServerCertificate", "false");
-        props.setProperty("useSSL", "false");
-        props.setProperty("requireSSL", "false");
-        ConnectionFactory cf = new DriverManagerConnectionFactory(uri, props);
-
-        // Creates a PoolableConnectionFactory That Will Wraps the Connection Object Created by the ConnectionFactory to Add Object Pooling Functionality!
-        PoolableConnectionFactory pcf = new PoolableConnectionFactory(cf, gPool, null, null, false, true);
-        connPool = new PoolingDataSource(gPool);
+	    	try {
+	    		LOGGER.info("setting up pool 1");
+	        Class.forName(JDBC_DRIVER);
+	        // Creates an Instance of GenericObjectPool That Holds Our Pool of Connections Object!
+	        LOGGER.info("setting up pool 2");
+	        gPool = new GenericObjectPool();
+	        LOGGER.info("setting up pool 3");
+	        gPool.setMaxActive(5);
+	        
+	        LOGGER.info("setting up pool 4");
+	        // Creates a ConnectionFactory Object Which Will Be Use by the Pool to Create the Connection Object!
+	        Properties props = new Properties();
+	        LOGGER.info("setting up pool 41");
+	        props.setProperty("user", user);
+	        LOGGER.info("setting up pool 42");
+	        props.setProperty("password", pwd);
+	        LOGGER.info("setting up pool 43");
+	        props.setProperty("verifyServerCertificate", "false");
+	        LOGGER.info("setting up pool 44");
+	        props.setProperty("useSSL", "false");
+	        LOGGER.info("setting up pool 45");
+	        props.setProperty("requireSSL", "false");
+	        LOGGER.info("setting up pool 5");
+	        ConnectionFactory cf = new DriverManagerConnectionFactory(uri, props);
+	
+	        LOGGER.info("setting up pool 6");
+	        // Creates a PoolableConnectionFactory That Will Wraps the Connection Object Created by the ConnectionFactory to Add Object Pooling Functionality!
+	        PoolableConnectionFactory pcf = new PoolableConnectionFactory(cf, gPool, null, null, false, true);
+	        LOGGER.info("setting up pool 7");
+	        connPool = new PoolingDataSource(gPool);
+	        LOGGER.info("setting up pool -- done");
+	    	} catch (Exception e) {
+	    		LOGGER.error(e.toString());
+	    	}
     }
  
     public GenericObjectPool getConnectionPool() {
@@ -69,13 +85,18 @@ public class ConnectionPool {
     
     public JSONArray ExecuteQuery(String query, JSONArray params) {
     	try {
+    		LOGGER.debug("executing query:" + query);
     		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
+    		LOGGER.debug("EQ1");
     		for (int i = 0; i < params.length(); ++i) {
     			JSONObject obj = params.getJSONObject(i);
     			BindParameter(stmt, obj);
     		}
+    		LOGGER.debug("EQ2");
 	    	ResultSet rs = stmt.executeQuery();
+	    	LOGGER.debug("EQ3");
 	    	stmt.closeOnCompletion();
+	    	LOGGER.debug("EQ4");
 	    	return ConvertResultSetToJson(rs);
     	} catch (Exception e) {
     		LOGGER.error("couldn't executy query " + e.toString());
@@ -141,6 +162,7 @@ public class ConnectionPool {
     // https://stackoverflow.com/questions/6514876/most-efficient-conversion-of-resultset-to-json
     private JSONArray ConvertResultSetToJson(ResultSet rs) throws JSONException {
         try {
+        		LOGGER.debug("CRSJ1");
             ResultSetMetaData rsmd = rs.getMetaData();
             int numColumns = rsmd.getColumnCount();
             String[] columnNames = new String[numColumns];
@@ -161,6 +183,7 @@ public class ConnectionPool {
                 }
                 rows.put(obj);
             }
+            LOGGER.debug("CRSJ-return");
             return rows;
         } catch (SQLException e) {
             // log e

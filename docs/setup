@@ -130,6 +130,7 @@ kops update cluster $K8S_CLUSTER_NAME --yes
 # As per https://github.com/kubernetes/kops/issues/5521, this is okay and can be ignored
 kops validate cluster
 
+## you may have to wait for a few minutes here until everything is properly created.
 
 ## to delete cluster when not needed
 #> kops delete cluster --name ${K8S_CLUSTER_NAME} --yes
@@ -161,6 +162,7 @@ kops validate cluster
 # deploy istio on the cluster
 # https://istio.io/docs/setup/kubernetes/quick-start/
 
+# NOTE: WAIT A FEW MINUTES AFTER CREATING THE CLUSTER; OTHERWISE, IT THROWS AN ERROR ABOUT AN UNFOUND API...
 kubectl apply -f install/kubernetes/helm/istio/templates/crds.yaml
 
 kubectl apply -f install/kubernetes/istio-demo-auth.yaml
@@ -198,6 +200,9 @@ export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 ## to install kubernetes UI
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
 
+# ssh into a container
+kubectl exec -it <POD NAME> -c <CONTAINER NAME> bash
+
 ## to start proxy
 kubectl proxy --port <8080>
 ## OR to be able to connect from any machine
@@ -230,6 +235,7 @@ kubectl rollout status deployment <deployment-name e.g. details-v1>
 kubectl describe deployment <deployment-name e.g. details-v1> 
 kubectl describe nodes # to check resources
 kubectl get deployment <deployment-name e.g. details-v1> -o yaml  # very useful to get deployment error message
+kubectl exec -it <pod> -- /bin/bash   # execute a shell 
 #to get cluster info on a pod
 istioctl proxy-config cluster <pod-name> [flags]
 

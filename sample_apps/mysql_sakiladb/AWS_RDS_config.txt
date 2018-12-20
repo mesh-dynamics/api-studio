@@ -1,0 +1,10 @@
+While setting up mysql db in RDS, we don't have full admin privileges from a remote client. Hence, we have to set a specific parameter.
+
+https://github.com/soundcloud/lhm/issues/76
+
+Created a new parameter group call trigger_trust (or sthg like that). Make the mysql RDS instance use that config - "modify" menu. Reboot the db and then run the scripts from mysql workbench (or ther client). 
+
+RDS Aurora:
+- serverless instance can only be connected (as of Dec 18) from within the VPC. 
+TODO: try other Aurora types.
+

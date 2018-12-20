@@ -16,92 +16,126 @@ public class MovieRentals {
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     private boolean USE_PREPARED_STMTS = true;    
-    private boolean USE_KUBE_CLUSTER = true;
+    private boolean USE_KUBE = true;
     
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
     public MovieRentals() throws ClassNotFoundException {
-    	LoadDriver();
+    		LOGGER.info("mysql connection pool class");
+    		LoadDriver();
     	
 	    // TODO: make a separate database query service.
+    		setUseKube();
 	    jdbcPool = new ConnectionPool();
 	    try {   
 	    		// TODO: move this to the query service
-	        jdbcPool.setUpPool("jdbc:mysql://" + baseUri() + ":3306/sakila", "cube", "cubeio");
+	    		String uri = "jdbc:mysql://" + baseUri() + "/sakila";
+	    		LOGGER.info("mysql uri: " + uri);
+	        jdbcPool.setUpPool(uri, userName(), passwd());
 	        LOGGER.info(jdbcPool.getPoolStatus());
 	    } catch (Exception e) {
 	    		LOGGER.error("connection pool creation failed; " + e.toString());
 	    }
     }
     
-    // TODO: pipe it from mvn config
+    private void setUseKube() {
+    		String useKube = System.getenv("USE_KUBE");
+    		if (useKube == null || !useKube.equalsIgnoreCase("true")) {
+    			USE_KUBE = false;
+    		}
+    }
+    
     private String baseUri() {
-    	if (USE_KUBE_CLUSTER) {
-    		return "mysql-sakila";
-    	}
-    	return "127.0.0.1";
+    		if (USE_KUBE) {
+    			// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
+    			String host = System.getenv(System.getenv("MYSQL_DB_HOST"));
+    			String port = System.getenv("MYSQL_DB_PORT");
+    			if (port == null) {
+    				port = "3306";
+    			}
+    			return host + ":" + port;
+    		}
+    		String host = System.getenv("MYSQL_PERMANENT_HOST");
+    		String port = System.getenv("MYSQL_PERMANENT_PORT");
+    		return host + ":" + port;
+    }
+    
+    private String userName() {
+		String user = System.getenv("MYSQL_DB_USER");
+		if (user != null) {
+			return user;
+		}
+		LOGGER.error("null username");    		
+    		return "cube";
+    }
+    
+    private String passwd() {
+		String pwd = System.getenv("MYSQL_DB_PASSWORD");
+		if (pwd != null) {
+			return pwd;
+		}
+		LOGGER.error("null password");
+    		return "cubeio";
     }
 
     public JSONArray ListMovies(String filmName, String keyword) {
-    	// TODO: add actor also in the parameter options.
-    	try {
-	    	if (filmName != null && !filmName.isEmpty()) {
-	    		// query with filmname
-	    		String query = "select film_id, title from film where title = ?";
-	    		JSONArray params = new JSONArray();
-	    		AddStringParam(params, filmName);
-	    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
-	    		if (films != null && films.length() > 0) {
-	    			return films;
-	    		}
+	    	// TODO: add actor also in the parameter options.
+	    	try {
+		    	if (filmName != null && !filmName.isEmpty()) {
+		    		// query with filmname
+		    		String query = "select film_id, title from film where title = ?";
+		    		JSONArray params = new JSONArray();
+		    		AddStringParam(params, filmName);
+		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
+		    		if (films != null && films.length() > 0) {
+		    			return films;
+		    		}
+		    	}
+		    	if (keyword != null && !keyword.isEmpty()) {
+		    		String query = "select id, title from film where title like ?";
+		    		JSONArray params = new JSONArray();
+		    		AddStringParam(params, filmName);
+		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
+		    		if (films != null && films.length() > 0) {
+		    			return films;
+		    		}
+		    	}
+	    	} catch (Exception e) {
+	    		LOGGER.error("Couldn't list movies; " + e.toString());
 	    	}
-	    	if (keyword != null && !keyword.isEmpty()) {
-	    		String query = "select id, title from film where title like ?";
-	    		JSONArray params = new JSONArray();
-	    		AddStringParam(params, filmName);
-	    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
-	    		if (films != null && films.length() > 0) {
-	    			return films;
-	    		}
-	    	}
-    	} catch (Exception e) {
-    		LOGGER.error("Couldn't list movies; " + e.toString());
-    	}
-    	return null;
+	    	return null;
     }
     
     
     public JSONArray FindAvailableStores(int filmId) throws SQLException, JSONException {
-    	try {
-	    	String storesQuery = "select distinct store_id from inventory "
-	    			+ " where film_id = ? and "
-	    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
-	    	JSONArray params = new JSONArray();
-	    	AddIntegerParam(params, filmId);
-	    	return jdbcPool.ExecuteQuery(storesQuery, params);
-    	} catch (Exception e) {
-    		LOGGER.error(e.toString());
-    	}
+	    	try {
+		    	String storesQuery = "select distinct store_id from inventory "
+		    			+ " where film_id = ? and "
+		    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
+		    	JSONArray params = new JSONArray();
+		    	AddIntegerParam(params, filmId);
+		    	return jdbcPool.ExecuteQuery(storesQuery, params);
+	    	} catch (Exception e) {
+	    		LOGGER.error(e.toString());
+	    	}
     	return null;
     }
     
     
     public JSONArray FindDues(int userId) throws SQLException, JSONException {
-    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
-    	JSONArray params = new JSONArray();
-    	AddIntegerParam(params, userId);
-    	return jdbcPool.ExecuteQuery(duesQuery, params);
-    }
-    
-    
+	    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
+	    	JSONArray params = new JSONArray();
+	    	AddIntegerParam(params, userId);
+	    	return jdbcPool.ExecuteQuery(duesQuery, params);
+    }    
     
     
     // returns rental amount if successful; otherwise -1 if film_id is not available in the store_id
     public double RentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
         // Update rental table and then payment table
         // Note: last_update columns in both tables are auto-update columns
-    	int inventory_id = -1;
-    	inventory_id = GetInventoryId(film_id, store_id);
+    		int inventory_id = -1;
+    		inventory_id = GetInventoryId(film_id, store_id);
     	
         if (inventory_id < 0) {
             return -1;
@@ -119,8 +153,8 @@ public class MovieRentals {
     
    
     public int ReturnMovie(int filmId, int storeId, int customerId, double rent) {
-    	// TODO
-    	return 1;
+	    	// TODO
+	    	return 1;
     }
     
     
