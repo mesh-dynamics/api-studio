@@ -1,5 +1,6 @@
 package com.cubeiosample.webservices.rest.jersey;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -33,36 +34,23 @@ public class ConnectionPool {
     @SuppressWarnings("unused")
     public void setUpPool(String uri, String user, String pwd) throws Exception {
 	    	try {
-	    		LOGGER.info("setting up pool 1");
 	        Class.forName(JDBC_DRIVER);
 	        // Creates an Instance of GenericObjectPool That Holds Our Pool of Connections Object!
-	        LOGGER.info("setting up pool 2");
 	        gPool = new GenericObjectPool();
-	        LOGGER.info("setting up pool 3");
 	        gPool.setMaxActive(5);
 	        
-	        LOGGER.info("setting up pool 4");
 	        // Creates a ConnectionFactory Object Which Will Be Use by the Pool to Create the Connection Object!
 	        Properties props = new Properties();
-	        LOGGER.info("setting up pool 41");
 	        props.setProperty("user", user);
-	        LOGGER.info("setting up pool 42");
 	        props.setProperty("password", pwd);
-	        LOGGER.info("setting up pool 43");
 	        props.setProperty("verifyServerCertificate", "false");
-	        LOGGER.info("setting up pool 44");
 	        props.setProperty("useSSL", "false");
-	        LOGGER.info("setting up pool 45");
 	        props.setProperty("requireSSL", "false");
-	        LOGGER.info("setting up pool 5");
 	        ConnectionFactory cf = new DriverManagerConnectionFactory(uri, props);
 	
-	        LOGGER.info("setting up pool 6");
 	        // Creates a PoolableConnectionFactory That Will Wraps the Connection Object Created by the ConnectionFactory to Add Object Pooling Functionality!
 	        PoolableConnectionFactory pcf = new PoolableConnectionFactory(cf, gPool, null, null, false, true);
-	        LOGGER.info("setting up pool 7");
 	        connPool = new PoolingDataSource(gPool);
-	        LOGGER.info("setting up pool -- done");
 	    	} catch (Exception e) {
 	    		LOGGER.error(e.toString());
 	    	}
@@ -80,81 +68,84 @@ public class ConnectionPool {
     
     // TODO: move to a different class after creating a new DataService.
     public PreparedStatement GetPreparedStatement(String query) throws SQLException {
-    	return connPool.getConnection().prepareStatement(query);
+    		return connPool.getConnection().prepareStatement(query);
     }
     
     public JSONArray ExecuteQuery(String query, JSONArray params) {
-    	try {
-    		LOGGER.debug("executing query:" + query);
-    		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
-    		LOGGER.debug("EQ1");
-    		for (int i = 0; i < params.length(); ++i) {
-    			JSONObject obj = params.getJSONObject(i);
-    			BindParameter(stmt, obj);
-    		}
-    		LOGGER.debug("EQ2");
-	    	ResultSet rs = stmt.executeQuery();
-	    	LOGGER.debug("EQ3");
-	    	stmt.closeOnCompletion();
-	    	LOGGER.debug("EQ4");
-	    	return ConvertResultSetToJson(rs);
-    	} catch (Exception e) {
-    		LOGGER.error("couldn't executy query " + e.toString());
-    	}
-    	return null;
+	    	try {
+	    		Connection conn = connPool.getConnection();
+	    		PreparedStatement stmt = conn.prepareStatement(query);
+	    		for (int i = 0; i < params.length(); ++i) {
+	    			JSONObject obj = params.getJSONObject(i);
+	    			BindParameter(stmt, obj);
+	    		}
+		    	ResultSet rs = stmt.executeQuery();
+		    	// stmt.closeoncompletion() not supported by mysql driver
+		    	JSONArray res = ConvertResultSetToJson(rs);
+		    	stmt.close();
+		    	gPool.returnObject(conn);
+		    	return res;
+	    	} catch (Exception e) {
+	    		LOGGER.error("couldn't executy query " + e.toString());
+	    	}
+	    	return null;
     }
     
     public JSONArray ExecuteQuery(String query) throws SQLException, JSONException {
-    	Statement stmt = connPool.getConnection().createStatement();
-    	ResultSet rs = stmt.executeQuery(query);
-    	return ConvertResultSetToJson(rs);
+	    	Statement stmt = connPool.getConnection().createStatement();
+	    	ResultSet rs = stmt.executeQuery(query);
+	    	JSONArray res = ConvertResultSetToJson(rs);
+	    	stmt.close();
+	    	return res;
     }
     
     
     public int ExecuteUpdate(String query, JSONArray params) {
-    	try {
-    		System.out.println("update query: " + query);
-    		System.out.println(params.toString());
-    		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
-    		for (int i = 0; i < params.length(); ++i) {
-    			JSONObject obj = params.getJSONObject(i);
-    			BindParameter(stmt, obj);
-    		}
-	    	return stmt.executeUpdate();
-    	} catch (Exception e) {
-    		LOGGER.error(e.toString());
-    	}
-    	return -1;
+	    	try {
+	    		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
+	    		for (int i = 0; i < params.length(); ++i) {
+	    			JSONObject obj = params.getJSONObject(i);
+	    			BindParameter(stmt, obj);
+	    		}
+		    	int res = stmt.executeUpdate();
+		    	stmt.close();
+		    	return res;
+	    	} catch (Exception e) {
+	    		LOGGER.error(e.toString());
+	    	}
+	    	return -1;
     }
     
     public int ExecuteUpdate(String query) {
-    	try {
-    		Statement stmt = connPool.getConnection().createStatement();
-    		return stmt.executeUpdate(query);
-    	} catch (Exception e) {
-    		LOGGER.error(e.toString());
-    	}
+	    	try {
+	    		Statement stmt = connPool.getConnection().createStatement();
+	    		int res = stmt.executeUpdate(query);
+	    		stmt.close();
+	    		return res;
+	    	} catch (Exception e) {
+	    		LOGGER.error(e.toString());
+	    	}
 		return -1;
     }
     
     
     private void BindParameter(PreparedStatement stmt, JSONObject param) throws JSONException, SQLException {
-    	int index = param.getInt("index");
-    	String dataType = param.getString("type").toLowerCase();
-    	
-    	switch(dataType) {
-	    	case "string": 
-	    		stmt.setString(index, param.getString("value"));
-	    		break;
-	    	
-	    	case "integer":
-	    		stmt.setInt(index, param.getInt("value"));
-	    		break;
-	    	
-	    	case "double": 
-	    		stmt.setDouble(index, param.getDouble("value"));
-	    		break;
-    	}
+	    	int index = param.getInt("index");
+	    	String dataType = param.getString("type").toLowerCase();
+	    	LOGGER.debug(index + ":" + param.getString("value"));
+	    	switch(dataType) {
+		    	case "string": 
+		    		stmt.setString(index, param.getString("value"));
+		    		break;
+		    	
+		    	case "integer":
+		    		stmt.setInt(index, param.getInt("value"));
+		    		break;
+		    	
+		    	case "double": 
+		    		stmt.setDouble(index, param.getDouble("value"));
+		    		break;
+	    	}
     }
     
     
@@ -162,8 +153,7 @@ public class ConnectionPool {
     // https://stackoverflow.com/questions/6514876/most-efficient-conversion-of-resultset-to-json
     private JSONArray ConvertResultSetToJson(ResultSet rs) throws JSONException {
         try {
-        		LOGGER.debug("CRSJ1");
-            ResultSetMetaData rsmd = rs.getMetaData();
+        		ResultSetMetaData rsmd = rs.getMetaData();
             int numColumns = rsmd.getColumnCount();
             String[] columnNames = new String[numColumns];
             int[] columnTypes = new int[numColumns];
@@ -183,7 +173,7 @@ public class ConnectionPool {
                 }
                 rows.put(obj);
             }
-            LOGGER.debug("CRSJ-return");
+            LOGGER.debug("Returning CRSJ; numrows=" + rows.length());
             return rows;
         } catch (SQLException e) {
             // log e

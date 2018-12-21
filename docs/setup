@@ -128,6 +128,7 @@ kops update cluster $K8S_CLUSTER_NAME --yes
 ## to validate
 # Got this error: unexpected error during validation: error listing nodes: Get https://api-cluster-venky-k8s-loc-jf56s3-160436179.us-east-2.elb.amazonaws.com/api/v1/nodes: EOF
 # As per https://github.com/kubernetes/kops/issues/5521, this is okay and can be ignored
+# and seems to need time to validate correctly.
 kops validate cluster
 
 ## you may have to wait for a few minutes here until everything is properly created.
@@ -163,6 +164,7 @@ kops validate cluster
 # https://istio.io/docs/setup/kubernetes/quick-start/
 
 # NOTE: WAIT A FEW MINUTES AFTER CREATING THE CLUSTER; OTHERWISE, IT THROWS AN ERROR ABOUT AN UNFOUND API...
+# WAIT until validation succeeds.
 kubectl apply -f install/kubernetes/helm/istio/templates/crds.yaml
 
 kubectl apply -f install/kubernetes/istio-demo-auth.yaml
@@ -238,6 +240,9 @@ kubectl get deployment <deployment-name e.g. details-v1> -o yaml  # very useful 
 kubectl exec -it <pod> -- /bin/bash   # execute a shell 
 #to get cluster info on a pod
 istioctl proxy-config cluster <pod-name> [flags]
+
+# This will start a pod and give a shell into it.
+kubectl run -i --tty busybox --image=busybox --restart=Never -- sh
 
 ## For rolling update of app code
 kops rolling-update cluster
