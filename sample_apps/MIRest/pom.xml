@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>MIRest</groupId>
   <artifactId>MIRest</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>V1-SNAPSHOT</version>
   <packaging>war</packaging>
   <name>MIRest</name>
   
@@ -166,6 +166,11 @@
 	    <groupId>com.spotify</groupId>
 	    <artifactId>dockerfile-maven-plugin</artifactId>
 	    <version>${version.dockerfile-maven}</version>
+	</dependency>
+	<dependency>
+  		<groupId>com.google.googlejavaformat</groupId>
+  		<artifactId>google-java-format</artifactId>
+  		<version>1.6</version>
 	</dependency>
 </dependencies>
   
