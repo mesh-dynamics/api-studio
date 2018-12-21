@@ -1,3 +1,7 @@
 kubectl
 istio/
 workspace/
+/build/
+.settings
+.project
+.classpath
