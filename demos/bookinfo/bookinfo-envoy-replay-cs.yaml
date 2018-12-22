@@ -83,7 +83,7 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   if (crequestid) then meta["c-request-id"] = crequestid end
@@ -102,7 +102,7 @@ spec:
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   xrequestid = request_handle:headers():get("x-request-id")
@@ -197,7 +197,7 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   if (crequestid) then meta["c-request-id"] = crequestid end
@@ -216,7 +216,7 @@ spec:
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   xrequestid = request_handle:headers():get("x-request-id")
@@ -311,7 +311,7 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   if (crequestid) then meta["c-request-id"] = crequestid end
@@ -330,7 +330,7 @@ spec:
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   xrequestid = request_handle:headers():get("x-request-id")
@@ -425,7 +425,7 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   if (crequestid) then meta["c-request-id"] = crequestid end
@@ -444,7 +444,7 @@ spec:
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "testc1"
-                  meta["rrtype"] = "Record"
+                  meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   xrequestid = request_handle:headers():get("x-request-id")

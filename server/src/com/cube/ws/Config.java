@@ -31,6 +31,7 @@ public class Config {
 	
 	public Config() throws Exception
 	{
+		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
 		try {
 			properties.load(this.getClass().getClassLoader().

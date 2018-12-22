@@ -221,3 +221,8 @@ kubectl delete -f <config file name e.g. samples/bookinfo/platform/kube/bookinfo
 ## to update app, just apply again
 kubectl apply -f <config file name>
 
+## to open a shell pod for debugging purposes (first time - busybox pod is started)
+kubectl run -i --tty busybox --image=busybox --restart=Never -- sh
+
+## to connect to same busybox again
+kubectl exec -ti busybox -- sh

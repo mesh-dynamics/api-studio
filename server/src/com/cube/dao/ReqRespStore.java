@@ -70,6 +70,11 @@ public interface ReqRespStore {
 		
 	}
 
+	enum RR {
+		Record,
+		Replay
+	}
+	
 	public class RRBase {
 
 		/**
@@ -85,7 +90,10 @@ public interface ReqRespStore {
 				MultivaluedMap<String, String> hdrs, 
 				String body,
 				Optional<String> collection,
-				Optional<Instant> timestamp) {
+				Optional<Instant> timestamp, 
+				Optional<String> rrtype, 
+				Optional<String> customerid,
+				Optional<String> app) {
 			super();
 			this.reqid = reqid;
 			this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
@@ -93,6 +101,9 @@ public interface ReqRespStore {
 			this.body = body;
 			this.collection = collection;
 			this.timestamp = timestamp;
+			this.rrtype = rrtype;
+			this.customerid = customerid;
+			this.app = app;
 		}
 
 		
@@ -108,6 +119,9 @@ public interface ReqRespStore {
 			this.body = "";
 			this.collection = Optional.empty();
 			this.timestamp = Optional.empty();
+			this.rrtype = Optional.empty();
+			this.customerid = Optional.empty();
+			this.app = Optional.empty();
 		}
 
 		public final Optional<String> reqid;
@@ -118,7 +132,9 @@ public interface ReqRespStore {
 		public final String body;		
 		public final Optional<String> collection;
 		public final Optional<Instant> timestamp;
-
+		public final Optional<String> rrtype; // this can be "record" or "replay"
+		public final Optional<String> customerid;
+		public final Optional<String> app;
 	}
 	
 	public class Request extends RRBase {
@@ -137,8 +153,11 @@ public interface ReqRespStore {
 				String method, 
 				String body,
 				Optional<String> collection,
-				Optional<Instant> timestamp) {
-			super(reqid, meta, hdrs, body, collection, timestamp);
+				Optional<Instant> timestamp, 
+				Optional<String> rrtype, 
+				Optional<String> customerid,
+				Optional<String> app) {
+			super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
 			this.path = path; 
 			this.qparams = qparams != null ? qparams : new MultivaluedHashMap<String, String>();
 			this.fparams = fparams != null ? fparams : new MultivaluedHashMap<String, String>();
@@ -152,9 +171,15 @@ public interface ReqRespStore {
 		 * @param qparams
 		 * @param fparams
 		 */
-		public Request(String path, Optional<String> id, MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams, Optional<String> collection) {
+		public Request(String path, Optional<String> id, 
+				MultivaluedMap<String, String> qparams, 
+				MultivaluedMap<String, String> fparams, 
+				Optional<String> collection, 
+				Optional<String> rrtype, 
+				Optional<String> customerid,
+				Optional<String> app) {
 			this(path, id, qparams, fparams, new MultivaluedHashMap<String, String>(), 
-					new MultivaluedHashMap<String, String>(), "", "", collection, Optional.empty());
+					new MultivaluedHashMap<String, String>(), "", "", collection, Optional.empty(), rrtype, customerid, app);
 		}
 
 		
@@ -195,8 +220,11 @@ public interface ReqRespStore {
 				MultivaluedMap<String, String> meta, 
 				MultivaluedMap<String, String> hdrs, String body,
 				Optional<String> collection,
-				Optional<Instant> timestamp) {
-			super(reqid, meta, hdrs, body, collection, timestamp);
+				Optional<Instant> timestamp, 
+				Optional<String> rrtype, 
+				Optional<String> customerid,
+				Optional<String> app) {
+			super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
 			this.status = status;
 		}
 		

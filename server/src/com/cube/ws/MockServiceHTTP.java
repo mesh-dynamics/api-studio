@@ -13,6 +13,10 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.ws.rs.core.UriInfo;
 
 import com.cube.dao.ReqRespStore;
@@ -25,28 +29,42 @@ import com.cube.dao.ReqRespStore.Request;
 @Path("/ms")
 public class MockServiceHTTP {
 	
-	@GET @Path("/{var:.+}")
-	public Response get(@Context UriInfo ui, @PathParam("var") String path) {
+    private static final Logger LOGGER = LogManager.getLogger(MockServiceHTTP.class);
+	
+	@GET @Path("{customerid}/{app}/{var:.+}")
+	public Response get(@Context UriInfo ui, @PathParam("var") String path, 
+			@PathParam("customerid") String customerid,
+			@PathParam("app") String app) {
 		
-		return getResp(ui, path, new MultivaluedHashMap<>());
+		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app);
 	}
 
 	@POST
-	@Path("/{var:.+}")
+	@Path("{customerid}/{app}/{var:.+}")
 	@Consumes("application/x-www-form-urlencoded")
-	public Response post(@Context UriInfo ui, @PathParam("var") String path, MultivaluedMap<String, String> formParams) {
+	public Response post(@Context UriInfo ui, @PathParam("var") String path, 
+			MultivaluedMap<String, String> formParams,
+			@PathParam("customerid") String customerid,
+			@PathParam("app") String app) {
 		
-		return getResp(ui, path, formParams);
+		return getResp(ui, path, formParams, customerid, app);
 	}
 
-	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams) {
-	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
+			String customerid, String app) {
+
+		LOGGER.info(String.format("Mocking request for %s", path));
+
+		MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
 	    
 	    // TODO: extract reqid and collection from headers and pass to request
-	    Request r = new Request(path, Optional.empty(), queryParams, formParams, Optional.empty());
+	    Request r = new Request(path, Optional.empty(), queryParams, formParams, Optional.empty(), 
+	    		Optional.of(ReqRespStore.RR.Record.toString()), 
+	    		Optional.of(customerid), 
+	    		Optional.of(app));
 
 	    Optional<ReqRespStore.Response> resp = rrstore.getRespForReq(r);
 	    
@@ -76,6 +94,7 @@ public class MockServiceHTTP {
 	public MockServiceHTTP(Config config) {
 		super();
 		this.rrstore = config.rrstore;
+		LOGGER.info("Cube mock service started");
 	}
 
 
