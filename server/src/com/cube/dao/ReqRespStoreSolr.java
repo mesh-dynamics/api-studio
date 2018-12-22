@@ -93,6 +93,15 @@ public class ReqRespStoreSolr implements ReqRespStore {
 				query.addFilterQuery(String.format("%s:%s", f, v));							
 			});
 		});
+		qr.rrtype.ifPresent(reqid -> {
+			query.addFilterQuery(String.format("%s:%s", RRTYPEF, reqid));			
+		});
+		qr.customerid.ifPresent(reqid -> {
+			query.addFilterQuery(String.format("%s:%s", CUSTOMERIDF, reqid));			
+		});
+		qr.app.ifPresent(reqid -> {
+			query.addFilterQuery(String.format("%s:%s", APPF, reqid));			
+		});
 
 		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
 
@@ -173,7 +182,10 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String BODYF = "_c_body_s";
 	private static final String COLLECTIONF = "_c_collection_s";
 	private static final String TIMESTAMPF = "_c_timestamp_dt";
-	private static final String STATUSF = "_status_i";
+	private static final String RRTYPEF = "_c_rrtype_s";
+	private static final String CUSTOMERIDF = "_c_customerid_s";
+	private static final String APPF = "_c_app_s";
+	private static final String STATUSF = "_c_status_i";
 
 	private static String getPrefix(String ftype) {
 		return String.format("_c_%s_", ftype);
@@ -200,6 +212,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		addFieldsToDoc(doc, HDR, rr.hdrs);
 		rr.collection.ifPresent(c -> doc.setField(COLLECTIONF, c));
 		rr.timestamp.ifPresent(t -> doc.setField(TIMESTAMPF, t.toString()));
+		rr.rrtype.ifPresent(c -> doc.setField(RRTYPEF, c));
+		rr.customerid.ifPresent(c -> doc.setField(CUSTOMERIDF, c));
+		rr.app.ifPresent(c -> doc.setField(APPF, c));
 		
 	}
 
@@ -269,6 +284,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		Optional<String> body = getStrField(doc, BODYF);
 		Optional<String> collection = getStrField(doc, COLLECTIONF);
 		Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
+		Optional<String> rrtype = getStrField(doc, RRTYPEF);
+		Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+		Optional<String> app = getStrField(doc, APPF);
 		
 		for (Entry<String, Object> kv : doc) {
 			String k = kv.getKey();
@@ -298,7 +316,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		final String b = body.orElse("");
 		return type.map(t -> {
 			if (t.equals(Types.Request.toString()))
-				return new Request(p, reqid, qparams, fparams, meta, hdrs, m, b, collection, timestamp);
+				return new Request(p, reqid, qparams, fparams, meta, hdrs, m, b, collection, timestamp, rrtype, customerid, app);
 			else
 				return null;
 		});
@@ -326,6 +344,10 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		Optional<String> body = getStrField(doc, BODYF);
 		Optional<String> collection = getStrField(doc, COLLECTIONF);
 		Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
+		Optional<String> rrtype = getStrField(doc, RRTYPEF);
+		Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+		Optional<String> app = getStrField(doc, APPF);
+		
 		
 		for (Entry<String, Object> kv : doc) {
 			String k = kv.getKey();
@@ -348,7 +370,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		return type.flatMap(t -> {
 			if (t.equals(Types.Response.toString())) {
 				return status.map(sv ->{
-					return new Response(reqid, sv, meta, hdrs, b, collection, timestamp);
+					return new Response(reqid, sv, meta, hdrs, b, collection, timestamp,rrtype, customerid, app);
 				});				
 			} else
 				return Optional.empty();

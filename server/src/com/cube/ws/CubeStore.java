@@ -22,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStoreSolr;
 import com.cube.dao.ReqRespStore.Request;
 
 /**
@@ -32,7 +31,7 @@ import com.cube.dao.ReqRespStore.Request;
 @Path("/cs")
 public class CubeStore {
 
-    private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
+    private static final Logger LOGGER = LogManager.getLogger(CubeStore.class);
 
 	@POST
 	@Path("/req")
@@ -87,7 +86,10 @@ public class CubeStore {
 	    		t = Instant.now();
 	    	}
 	    	return t;
-	    });
+	    });	    
+	    Optional<String> rrtype = Optional.ofNullable(meta.getFirst("rrtype"));
+	    Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
+	    Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
 	    
 	    MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); 
 
@@ -95,7 +97,7 @@ public class CubeStore {
 	    	if (t.equals("request")) {
 	    	    Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
 	    	    return method.map(mval -> {
-		    	    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp);
+		    	    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp, rrtype, customerid, app);
 		    	    if (!rrstore.save(req))
 		    	    	return Optional.of("Not able to store request");	    	    	
 		    		Optional<String> empty = Optional.empty();
@@ -112,7 +114,7 @@ public class CubeStore {
 	    	    	}
 	    	    });
 	    	    return s.map(sval -> {
-		    		ReqRespStore.Response resp = new ReqRespStore.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp);
+		    		ReqRespStore.Response resp = new ReqRespStore.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
 		    		if (!rrstore.save(resp))
 		    			return Optional.of("Not able to store response");
 		    		Optional<String> empty = Optional.empty();
