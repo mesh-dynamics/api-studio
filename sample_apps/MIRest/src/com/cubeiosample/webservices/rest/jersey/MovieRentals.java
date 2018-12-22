@@ -13,10 +13,16 @@ import org.json.*;
 public class MovieRentals {
 
     private ConnectionPool jdbcPool = null;
+    private static RestOverSql ros = null;
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
-    private boolean USE_PREPARED_STMTS = true;    
-    private boolean USE_KUBE = true;
+    private static boolean USE_PREPARED_STMTS = true;    
+    private static boolean USE_KUBE = false;
+    private static boolean USE_JDBC_SERVICE = true;
+    private static String MYSQL_HOST = "localhost";
+    private static String MYSQL_PORT = "3306";
+    private static String MYSQL_USERNAME = "cube";
+    private static String MYSQL_PWD = "cubeio";
     
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
@@ -26,12 +32,16 @@ public class MovieRentals {
 	    // TODO: make a separate database query service.
     		configureUseKube();
 	    jdbcPool = new ConnectionPool();
-	    try {   
-	    		// TODO: move this to the query service
-	    		String uri = "jdbc:mysql://" + baseUri() + "/sakila";
-	    		LOGGER.info("mysql uri: " + uri);
-	        jdbcPool.setUpPool(uri, userName(), passwd());
-	        LOGGER.info(jdbcPool.getPoolStatus());
+	    try {
+	      if (USE_JDBC_SERVICE) {
+	        ros = new RestOverSql();
+	        LOGGER.info(ros.getHealth());
+	      } else {
+	        String uri = "jdbc:mysql://" + baseUri() + "/sakila";
+  	    		  LOGGER.info("mysql uri: " + uri);
+          jdbcPool.setUpPool(uri, userName(), passwd());
+          LOGGER.info(jdbcPool.getPoolStatus());
+	      }
 	    } catch (Exception e) {
 	    		LOGGER.error("connection pool creation failed; " + e.toString());
 	    }
@@ -44,7 +54,7 @@ public class MovieRentals {
     		}
     }
     
-    private String baseUri() {
+    public static String baseUri() {
     		if (USE_KUBE) {
     			// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
     			String host = System.getenv(System.getenv("MYSQL_DB_HOST"));
@@ -54,25 +64,21 @@ public class MovieRentals {
     			}
     			return host + ":" + port;
     		}
-    		String host = System.getenv("MYSQL_PERMANENT_HOST");
-    		String port = System.getenv("MYSQL_PERMANENT_PORT");
-    		return host + ":" + port;
+    		return "jdbc:mysql://" + MYSQL_HOST + ":" + MYSQL_PORT + "/sakila";
     }
     
-    private String userName() {
-		String user = System.getenv("MYSQL_DB_USER");
-		if (user == null) {
-			LOGGER.error("null username");    		
-		}
-    		return user;
+    public static String userName() {
+      if (USE_KUBE) {
+    		 return System.getenv("MYSQL_DB_USER");
+      }
+    		return MYSQL_USERNAME;
     }
     
-    private String passwd() {
-		String pwd = System.getenv("MYSQL_DB_PASSWORD");
-		if (pwd == null) {
-			LOGGER.error("null password");
-		}
-    		return pwd;
+    public static String passwd() {
+      if (USE_KUBE) {
+    		  return System.getenv("MYSQL_DB_PASSWORD");
+      }
+    		return MYSQL_PWD;
     }
 
     public JSONArray ListMovies(String filmName, String keyword) {
@@ -83,7 +89,12 @@ public class MovieRentals {
 		    		String query = "select film_id, title from film where title = ?";
 		    		JSONArray params = new JSONArray();
 		    		AddStringParam(params, filmName);
-		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
+		    		JSONArray films = null;
+		    		if (USE_JDBC_SERVICE) {
+		    		  films = ros.ExecuteQuery(query, params);
+		    		} else {
+		    		  films = jdbcPool.ExecuteQuery(query, params);
+		    		}
 		    		if (films != null && films.length() > 0) {
 		    			return films;
 		    		}
@@ -92,7 +103,13 @@ public class MovieRentals {
 		    		String query = "select id, title from film where title like ?";
 		    		JSONArray params = new JSONArray();
 		    		AddStringParam(params, filmName);
-		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
+		    		JSONArray films = null;
+		    		if (USE_JDBC_SERVICE) {
+		    		  LOGGER.debug("params array:" + params.toString());
+		    		  films = ros.ExecuteQuery(query, params);
+		    		} else {
+		    		  films = jdbcPool.ExecuteQuery(query, params);
+		    		}
 		    		if (films != null && films.length() > 0) {
 		    			return films;
 		    		}
@@ -111,6 +128,9 @@ public class MovieRentals {
 		    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
 		    	JSONArray params = new JSONArray();
 		    	AddIntegerParam(params, filmId);
+		    	if (USE_JDBC_SERVICE) {
+		    	  return ros.ExecuteQuery(storesQuery, params);
+		    	}
 		    	return jdbcPool.ExecuteQuery(storesQuery, params);
 	    	} catch (Exception e) {
 	    		LOGGER.error(e.toString());
@@ -123,6 +143,9 @@ public class MovieRentals {
 	    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
 	    	JSONArray params = new JSONArray();
 	    	AddIntegerParam(params, userId);
+	    	if (USE_JDBC_SERVICE) {
+	    	  return ros.ExecuteQuery(duesQuery, params);
+	    	}
 	    	return jdbcPool.ExecuteQuery(duesQuery, params);
     }    
     

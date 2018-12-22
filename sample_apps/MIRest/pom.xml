@@ -120,7 +120,7 @@
     <version.jackson>2.8.7</version.jackson>
     <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
   </properties>
- <dependencies>
+  <dependencies>
   	<dependency>
   		<groupId>org.json</groupId>
   		<artifactId>json</artifactId>
@@ -167,11 +167,19 @@
 	    <artifactId>dockerfile-maven-plugin</artifactId>
 	    <version>${version.dockerfile-maven}</version>
 	</dependency>
+	<!--  Also need the client dependencies for calling the rest over jdbc service -->
 	<dependency>
-  		<groupId>com.google.googlejavaformat</groupId>
-  		<artifactId>google-java-format</artifactId>
-  		<version>1.6</version>
+	  	<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
+	    <groupId>javax.ws.rs</groupId>
+	    <artifactId>javax.ws.rs-api</artifactId>
+	    <version>2.1</version>  
 	</dependency>
-</dependencies>
+	<dependency>
+  		<groupId>org.glassfish.jersey.media</groupId>
+ 		<artifactId>jersey-media-json-jackson</artifactId>
+  		<scope>runtime</scope>
+  		<version>${version.jersey}</version>
+	</dependency>
+  </dependencies>
   
 </project>

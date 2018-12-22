@@ -12,6 +12,8 @@ import org.glassfish.jersey.client.ClientProperties;
 
 
 public class TrafficDriver {
+  private static boolean LOCAL_RUN = true;
+  
   public static void main(String[] args) {
 
       ClientConfig clientConfig = new ClientConfig()
@@ -30,6 +32,9 @@ public class TrafficDriver {
   }
 
   private static URI getBaseURI() {
+    if (LOCAL_RUN) {
+      return UriBuilder.fromUri("http://localhost:8080/MIRest/minfo/").build();
+    }
     return UriBuilder.fromUri("http://localhost:8080/minfo/").build();
   }
 }

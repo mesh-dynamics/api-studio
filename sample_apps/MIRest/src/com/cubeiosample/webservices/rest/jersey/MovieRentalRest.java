@@ -32,17 +32,16 @@ public class MovieRentalRest {
 		try {
 			mv = new MovieRentals();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
 		}
 	}
 	
 	@Path("/health")
-    @GET
+	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-    public Response health() {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"status\": \"MovieInfo is healthy\"}").build();
-    }
+	public Response health() {
+	  return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"status\": \"MovieInfo is healthy\"}").build();
+  }
 
 	// User flow: Rent a movie
 	// Find movies by title/keyword/genre/actor
@@ -178,15 +177,15 @@ public class MovieRentalRest {
 				                           @HeaderParam("x-b3-sampled") String xsampled,
 				                           @HeaderParam("x-b3-flags") String xflags,
 				                           @HeaderParam("x-ot-span-context") String xotspan) {
-        JSONObject obj = new JSONObject();
-        try {
-			double val = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
-	        obj.put("rental_amount", val);
-	    } catch (Exception e) {
-			LOGGER.error(e.toString());
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
-		}
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
+	  JSONObject obj = new JSONObject();
+	  try {
+	    double val = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
+	    obj.put("rental_amount", val);
+	  } catch (Exception e) {
+	    LOGGER.error(e.toString());
+	    return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
+	  }
+	  return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
 	}
 	
 	
