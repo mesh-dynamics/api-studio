@@ -79,10 +79,13 @@ spec:
                 end
                 function envoy_on_response(response_handle)
                   local meta = {}
-                  meta["type"] = "response"
+		  meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -98,7 +101,10 @@ spec:
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
+                  meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -191,6 +197,9 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -206,7 +215,10 @@ spec:
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
+                  meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -299,6 +311,9 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -314,7 +329,10 @@ spec:
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
+                  meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -407,6 +425,9 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -422,7 +443,10 @@ spec:
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
+                  meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -514,6 +538,9 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -529,7 +556,10 @@ spec:
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
+                  meta["collection"] = "test-movieinfo-c1"
+                  meta["rrtype"] = "Record"
+                  meta["customerid"] = "cube"
+                  meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
