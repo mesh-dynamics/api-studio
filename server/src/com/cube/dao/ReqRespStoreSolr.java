@@ -179,7 +179,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String PATHF = "_c_path_s";
 	private static final String REQIDF = "_c_reqid_s";
 	private static final String METHODF = "_c_method_s";
-	private static final String BODYF = "_c_body_s";
+	private static final String BODYF = "_c_body_t";
 	private static final String COLLECTIONF = "_c_collection_s";
 	private static final String TIMESTAMPF = "_c_timestamp_dt";
 	private static final String RRTYPEF = "_c_rrtype_s";
