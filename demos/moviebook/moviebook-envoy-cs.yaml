@@ -79,7 +79,7 @@ spec:
                 end
                 function envoy_on_response(response_handle)
                   local meta = {}
-		  meta["type"] = "response"
+                  meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
