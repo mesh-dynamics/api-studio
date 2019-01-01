@@ -6,6 +6,7 @@
   <packaging>war</packaging>
   <properties>
   	<version.jersey>2.27</version.jersey>
+  	<version.log4j>2.11.1</version.log4j>
   </properties>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -92,17 +93,25 @@
 	<dependency> 
 	    <groupId>org.apache.logging.log4j</groupId> 
 	    <artifactId>log4j-api</artifactId> 
-	    <version>2.11.1</version> 
+	    <version>${version.log4j}</version> 
 	</dependency> 
 	<dependency> 
 	    <groupId>org.apache.logging.log4j</groupId> 
 	    <artifactId>log4j-core</artifactId> 
-	    <version>2.11.1</version> 
+	    <version>${version.log4j}</version> 
 	    </dependency> 
 	<dependency> 
 	    <groupId>org.apache.logging.log4j</groupId> 
 	    <artifactId>log4j-slf4j-impl</artifactId> 
-	    <version>2.11.1</version> 
-	</dependency>	
+	    <version>${version.log4j}</version> 
+	</dependency>
+	<!-- jaxb was removed from java 9 onwards, so need to explicitly add -->	
+	<!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+	<dependency>
+	    <groupId>javax.xml.bind</groupId>
+	    <artifactId>jaxb-api</artifactId>
+	    <version>2.3.1</version>
+	</dependency>
+	
   </dependencies>
 </project>

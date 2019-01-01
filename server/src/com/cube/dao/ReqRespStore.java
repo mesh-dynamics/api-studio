@@ -16,6 +16,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import com.cube.drivers.Replay;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,6 +69,12 @@ public interface ReqRespStore {
 		public final List<Map.Entry<String, String>> hdrs;
 		public final String body;
 		
+	}
+
+	enum Types {
+		Request,
+		Response,
+		ReplayMeta // replay metadata
 	}
 
 	enum RR {
@@ -313,5 +320,27 @@ public interface ReqRespStore {
 
 		
 	}
+
+	/**
+	 * @param customerid
+	 * @param app
+	 * @param collection
+	 * @param reqids
+	 * @param rrtype
+	 * @return
+	 */
+	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, RR rrtype);
+
+	/**
+	 * @param replay
+	 * @return 
+	 */
+	boolean saveReplay(Replay replay);
+
+	/**
+	 * @param replayid
+	 * @return
+	 */
+	Optional<Replay> getReplay(String replayid);
 	
 }

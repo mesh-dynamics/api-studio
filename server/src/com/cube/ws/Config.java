@@ -25,9 +25,9 @@ public class Config {
     private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
     private static final String CONFFILE = "conf/cube.conf";
 
-	Properties properties;
-	SolrClient solr;
-	ReqRespStore rrstore;
+	final Properties properties;
+	final SolrClient solr;
+	public final ReqRespStore rrstore;
 	
 	public Config() throws Exception
 	{
