@@ -16,83 +16,123 @@ public class MovieRentals {
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     private boolean USE_PREPARED_STMTS = true;    
+    private boolean USE_KUBE = true;
+    
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
     public MovieRentals() throws ClassNotFoundException {
-    	LoadDriver();
+    		LoadDriver();
     	
-    	// TODO: make a separate database query service.
-    	jdbcPool = new ConnectionPool();
-    try {   
-    		// TODO: move this to the query service
-        jdbcPool.setUpPool("jdbc:mysql://127.0.0.1:3306/sakila", "cube", "cubeio");
-        LOGGER.info(jdbcPool.getPoolStatus());
-    } catch (Exception e) {
-    		LOGGER.error("connection pool creation failed; " + e.toString());
+	    // TODO: make a separate database query service.
+    		configureUseKube();
+	    jdbcPool = new ConnectionPool();
+	    try {   
+	    		// TODO: move this to the query service
+	    		String uri = "jdbc:mysql://" + baseUri() + "/sakila";
+	    		LOGGER.info("mysql uri: " + uri);
+	        jdbcPool.setUpPool(uri, userName(), passwd());
+	        LOGGER.info(jdbcPool.getPoolStatus());
+	    } catch (Exception e) {
+	    		LOGGER.error("connection pool creation failed; " + e.toString());
+	    }
     }
-}
     
+    private void configureUseKube() {
+    		String useKube = System.getenv("USE_KUBE");
+    		if (useKube == null || !useKube.equalsIgnoreCase("true")) {
+    			USE_KUBE = false;
+    		}
+    }
     
+    private String baseUri() {
+    		if (USE_KUBE) {
+    			// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
+    			String host = System.getenv(System.getenv("MYSQL_DB_HOST"));
+    			String port = System.getenv("MYSQL_DB_PORT");
+    			if (port == null) {
+    				port = "3306";
+    			}
+    			return host + ":" + port;
+    		}
+    		String host = System.getenv("MYSQL_PERMANENT_HOST");
+    		String port = System.getenv("MYSQL_PERMANENT_PORT");
+    		return host + ":" + port;
+    }
+    
+    private String userName() {
+		String user = System.getenv("MYSQL_DB_USER");
+		if (user == null) {
+			LOGGER.error("null username");    		
+		}
+    		return user;
+    }
+    
+    private String passwd() {
+		String pwd = System.getenv("MYSQL_DB_PASSWORD");
+		if (pwd == null) {
+			LOGGER.error("null password");
+		}
+    		return pwd;
+    }
+
     public JSONArray ListMovies(String filmName, String keyword) {
-    	// TODO: add actor also in the parameter options.
-    	try {
-	    	if (filmName != null && !filmName.isEmpty()) {
-	    		// query with filmname
-	    		String query = "select film_id, title from film where title = ?";
-	    		JSONArray params = new JSONArray();
-	    		AddStringParam(params, filmName);
-	    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
-	    		if (films != null && films.length() > 0) {
-	    			return films;
-	    		}
+	    	// TODO: add actor also in the parameter options.
+	    	try {
+		    	if (filmName != null && !filmName.isEmpty()) {
+		    		// query with filmname
+		    		String query = "select film_id, title from film where title = ?";
+		    		JSONArray params = new JSONArray();
+		    		AddStringParam(params, filmName);
+		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
+		    		if (films != null && films.length() > 0) {
+		    			return films;
+		    		}
+		    	}
+		    	if (keyword != null && !keyword.isEmpty()) {
+		    		String query = "select id, title from film where title like ?";
+		    		JSONArray params = new JSONArray();
+		    		AddStringParam(params, filmName);
+		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
+		    		if (films != null && films.length() > 0) {
+		    			return films;
+		    		}
+		    	}
+	    	} catch (Exception e) {
+	    		LOGGER.error("Couldn't list movies; " + e.toString());
 	    	}
-	    	if (keyword != null && !keyword.isEmpty()) {
-	    		String query = "select id, title from film where title like ?";
-	    		JSONArray params = new JSONArray();
-	    		AddStringParam(params, filmName);
-	    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
-	    		if (films != null && films.length() > 0) {
-	    			return films;
-	    		}
-	    	}
-    	} catch (Exception e) {
-    		LOGGER.error("Couldn't list movies; " + e.toString());
-    	}
-    	return null;
+	    	return null;
     }
     
     
     public JSONArray FindAvailableStores(int filmId) throws SQLException, JSONException {
-    	try {
-	    	String storesQuery = "select distinct store_id from inventory "
-	    			+ " where film_id = ? and "
-	    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
-	    	JSONArray params = new JSONArray();
-	    	AddIntegerParam(params, filmId);
-	    	return jdbcPool.ExecuteQuery(storesQuery, params);
-    	} catch (Exception e) {
-    		LOGGER.error(e.toString());
-    	}
-    	return null;
+	    	try {
+		    	String storesQuery = "select distinct store_id from inventory "
+		    			+ " where film_id = ? and "
+		    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
+		    	JSONArray params = new JSONArray();
+		    	AddIntegerParam(params, filmId);
+		    	return jdbcPool.ExecuteQuery(storesQuery, params);
+	    	} catch (Exception e) {
+	    		LOGGER.error(e.toString());
+	    	}
+	    	return null;
     }
     
     
     public JSONArray FindDues(int userId) throws SQLException, JSONException {
-    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
-    	JSONArray params = new JSONArray();
-    	AddIntegerParam(params, userId);
-    	return jdbcPool.ExecuteQuery(duesQuery, params);
-    }
-    
-    
+	    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
+	    	JSONArray params = new JSONArray();
+	    	AddIntegerParam(params, userId);
+	    	return jdbcPool.ExecuteQuery(duesQuery, params);
+    }    
     
     
     // returns rental amount if successful; otherwise -1 if film_id is not available in the store_id
     public double RentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
         // Update rental table and then payment table
         // Note: last_update columns in both tables are auto-update columns
-    	int inventory_id = -1;
-    	inventory_id = GetInventoryId(film_id, store_id);
+    		int inventory_id = -1;
+    		inventory_id = GetInventoryId(film_id, store_id);
     	
         if (inventory_id < 0) {
             return -1;
@@ -110,8 +150,8 @@ public class MovieRentals {
     
    
     public int ReturnMovie(int filmId, int storeId, int customerId, double rent) {
-    	// TODO
-    	return 1;
+	    	// TODO
+	    	return 1;
     }
     
     
@@ -123,27 +163,25 @@ public class MovieRentals {
     // Sales and store performance analysis
     public JSONArray GetSalesByStore(String store_name) throws SQLException, JSONException {
         String query = "select * from sales_by_store where store = '" + store_name + "'";
-        if (LOGGER.isDebugEnabled()) {
         	LOGGER.debug(query);
-        }
         JSONArray rs = jdbcPool.ExecuteQuery(query);
         return rs;
     }
 
     
     private void AddStringParam(JSONArray params, String value) throws JSONException {
-    	JSONObject param = new JSONObject();
-    	param.put("index", params.length() + 1);
-    	param.put("type", "string");
-    	param.put("value", value);
+	    	JSONObject param = new JSONObject();
+	    	param.put("index", params.length() + 1);
+	    	param.put("type", "string");
+	    	param.put("value", value);
 		params.put(param);
     }
     
     private void AddIntegerParam(JSONArray params, Integer value) throws JSONException {
-    	JSONObject param = new JSONObject();
-    	param.put("index", params.length() + 1);
-    	param.put("type", "integer");
-    	param.put("value", value);
+	    	JSONObject param = new JSONObject();
+	    	param.put("index", params.length() + 1);
+	    	param.put("type", "integer");
+	    	param.put("value", value);
 		params.put(param);
     }
     
@@ -154,55 +192,55 @@ public class MovieRentals {
     
   
     public JSONArray RentFilmsBulk(JSONArray filmArray, int storeId, int duration, int customerId, int staffId) throws JSONException, SQLException {
-    	Map<String, Integer> films = new HashMap<>();
-    	try {
-	    	for (int i = 0; i < filmArray.length(); ++i) {
-	    		String film = filmArray.getString(i);
-	    		films.put(film, i);  // i is not used any where. Need to create the hashmap.
+	    	Map<String, Integer> films = new HashMap<>();
+	    	try {
+		    	for (int i = 0; i < filmArray.length(); ++i) {
+		    		String film = filmArray.getString(i);
+		    		films.put(film, i);  // i is not used any where. Need to create the hashmap.
+		    	}
+	    	} catch (Exception e) {
+	    		LOGGER.error("Error while creating a hashmap; " + e.toString());
 	    	}
-    	} catch (Exception e) {
-    		LOGGER.error("Error while creating a hashmap; " + e.toString());
-    	}
-    	
-    	// iteration
-    	JSONArray rentals = new JSONArray();
-    	for (Map.Entry<String, Integer> entry : films.entrySet()) {
-    		double rent = this.RentMovie(entry.getValue(), storeId, duration, customerId, staffId);
-    		JSONObject obj = new JSONObject();
-    		obj.put(entry.getKey(), rent);
-    		rentals.put(obj);
-    	}
-    	LOGGER.info(rentals.toString());
-    	return rentals;
+	    	
+	    	// iteration
+	    	JSONArray rentals = new JSONArray();
+	    	for (Map.Entry<String, Integer> entry : films.entrySet()) {
+	    		double rent = this.RentMovie(entry.getValue(), storeId, duration, customerId, staffId);
+	    		JSONObject obj = new JSONObject();
+	    		obj.put(entry.getKey(), rent);
+	    		rentals.put(obj);
+	    	}
+	    	LOGGER.info(rentals.toString());
+	    	return rentals;
     }
     
     private int GetInventoryId(int film_id, int store_id) {
-    	int inventory_id = -1;
-    	try {
-    		JSONArray rs = null;
-    		if (USE_PREPARED_STMTS) {
-	    		String inventoryQuery = "select inventory_id from inventory "
-		    			+ " where film_id = ? and store_id = ? and "
-		    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-		    	JSONArray params = new JSONArray();
-		    	AddIntegerParam(params, film_id);
-		    	AddIntegerParam(params, store_id);
-		    	rs = jdbcPool.ExecuteQuery(inventoryQuery, params);
-		    	
-    		} else {
-    			String inventoryQuery = "select inventory_id from inventory "
-		    			+ " where film_id = " + film_id + " and store_id = " + store_id 
-		    			+ " and inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-    			rs = jdbcPool.ExecuteQuery(inventoryQuery);
-    		}
-    		if (rs != null && rs.length() < 1) {
-	    		return -1;
+	    	int inventory_id = -1;
+	    	try {
+	    		JSONArray rs = null;
+	    		if (USE_PREPARED_STMTS) {
+		    		String inventoryQuery = "select inventory_id from inventory "
+			    			+ " where film_id = ? and store_id = ? and "
+			    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
+			    	JSONArray params = new JSONArray();
+			    	AddIntegerParam(params, film_id);
+			    	AddIntegerParam(params, store_id);
+			    	rs = jdbcPool.ExecuteQuery(inventoryQuery, params);
+			    	
+	    		} else {
+	    			String inventoryQuery = "select inventory_id from inventory "
+			    			+ " where film_id = " + film_id + " and store_id = " + store_id 
+			    			+ " and inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
+	    			rs = jdbcPool.ExecuteQuery(inventoryQuery);
+	    		}
+	    		if (rs != null && rs.length() < 1) {
+		    		return -1;
+		    	}
+		    	return rs.getJSONObject(0).getInt("inventory_id");
+	    	} catch (Exception sqlException) {
+	    		LOGGER.error("Couldn't prepare rental update stmt: " + sqlException.toString());
 	    	}
-	    	return rs.getJSONObject(0).getInt("inventory_id");
-    	} catch (Exception sqlException) {
-    		LOGGER.error("Couldn't prepare rental update stmt: " + sqlException.toString());
-    	}
-    	return inventory_id;
+	    	return inventory_id;
     }
 
     
@@ -210,8 +248,8 @@ public class MovieRentals {
         String query = "select rental_rate from film where film_id = " + film_id;
         JSONArray rs = jdbcPool.ExecuteQuery(query);
         if (rs.length() < 1) {
-    		return -1;
-    	}
+        		return -1;
+    		}
         return rs.getJSONObject(0).getDouble("rental_rate");
     }
      

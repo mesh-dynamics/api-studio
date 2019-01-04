@@ -21,9 +21,20 @@ import org.json.JSONObject;
 @Path("/")
 public class MovieRentalRest {
 	final static Logger LOGGER;
+	static MovieRentals mv;
+	
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
 		BasicConfigurator.configure();
+	}
+
+	static {
+		try {
+			mv = new MovieRentals();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
+		}
 	}
 	
 	@Path("/health")
@@ -47,8 +58,6 @@ public class MovieRentalRest {
 							    @QueryParam("actor") String actor) {
 		JSONArray films = null;
 		try {
-			// TODO: figure out a way to create a MovieRentals object without having to create it each call.
-			MovieRentals mv = new MovieRentals();
 			films = mv.ListMovies(filmName, keyword);
 			if (films != null) {
 				// TODO: couldn't return films directly; the client fails
@@ -70,7 +79,6 @@ public class MovieRentalRest {
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = new JSONArray();
 		try {
-			MovieRentals mv = new MovieRentals();
 			stores = mv.FindAvailableStores(filmId);
 		} catch (Exception e) {
 			LOGGER.error(e.toString());
@@ -96,7 +104,7 @@ public class MovieRentalRest {
         //HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 		
         try {
-        	JSONObject rentalInfo = new JSONObject(rentalInfoStr);
+        		JSONObject rentalInfo = new JSONObject(rentalInfoStr);
 			int filmId = rentalInfo.getInt("filmid");
 			int storeId = rentalInfo.getInt("storeid");
 			int customerId = rentalInfo.getInt("customerid");
@@ -107,7 +115,6 @@ public class MovieRentalRest {
 				return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{Invalid query params}").build();
 			}
 			
-			MovieRentals mv = new MovieRentals();
 			JSONObject obj = new JSONObject();
 			double val = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
 	        obj.put("rental_amount", val);
@@ -126,7 +133,6 @@ public class MovieRentalRest {
 	public Response OverdueRentals(@QueryParam("userid") int userId) {
 		JSONArray dues = new JSONArray();
 		try {
-			MovieRentals mv = new MovieRentals();
 			dues = mv.FindDues(userId);			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -146,7 +152,6 @@ public class MovieRentalRest {
 								@QueryParam("amount") double rent) {
 		JSONObject result = new JSONObject();
 		try {
-			MovieRentals mv = new MovieRentals();
 			int returnUpdate = mv.ReturnMovie(filmId, storeId, userId, rent);
 			result.put("result", returnUpdate);
 		} catch (Exception e) {
@@ -175,7 +180,6 @@ public class MovieRentalRest {
 				                           @HeaderParam("x-ot-span-context") String xotspan) {
         JSONObject obj = new JSONObject();
         try {
-			MovieRentals mv = new MovieRentals();
 			double val = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
 	        obj.put("rental_amount", val);
 	    } catch (Exception e) {
@@ -204,7 +208,6 @@ public class MovieRentalRest {
         // HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 		JSONArray obj = null;
 		try {
-	        MovieRentals mv = new MovieRentals();
 	        obj = mv.GetSalesByStore(storename);
 		} catch (Exception e) {
 			e.printStackTrace();
