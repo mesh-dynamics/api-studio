@@ -326,10 +326,11 @@ public interface ReqRespStore {
 	 * @param app
 	 * @param collection
 	 * @param reqids
+	 * @param paths 
 	 * @param rrtype
 	 * @return
 	 */
-	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, RR rrtype);
+	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RR rrtype);
 
 	/**
 	 * @param replay

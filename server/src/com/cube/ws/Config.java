@@ -14,6 +14,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author prasad
@@ -28,6 +29,8 @@ public class Config {
 	final Properties properties;
 	final SolrClient solr;
 	public final ReqRespStore rrstore;
+
+	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
 	
 	public Config() throws Exception
 	{
