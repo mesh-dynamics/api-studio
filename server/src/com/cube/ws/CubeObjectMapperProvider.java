@@ -27,7 +27,7 @@ public class CubeObjectMapperProvider implements ContextResolver<ObjectMapper> {
             return defaultObjectMapper;
     }
  
-    private static ObjectMapper createDefaultMapper() {
+    static ObjectMapper createDefaultMapper() {
         final ObjectMapper result = new ObjectMapper();
         result.registerModule(new Jdk8Module());
  

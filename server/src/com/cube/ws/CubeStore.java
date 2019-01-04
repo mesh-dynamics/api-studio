@@ -107,7 +107,7 @@ public class CubeStore {
 	    	    Optional<String> status = Optional.ofNullable(meta.getFirst("status"));
 	    	    Optional<Integer> s = status.flatMap(sval -> {
 	    	    	try {
-	    	    		return Optional.of(new Integer(Integer.parseInt(sval)));
+	    	    		return Optional.of(Integer.valueOf(sval));
 	    	    	} catch (Exception e){
 	    	    		LOGGER.error(String.format("Expecting integer status, got %s", sval));
 	    	    		return Optional.empty();
