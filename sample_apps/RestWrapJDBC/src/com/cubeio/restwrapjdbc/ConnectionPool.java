@@ -68,12 +68,14 @@ public class ConnectionPool {
     
     
     // TODO: move to a different class after creating a new DataService.
+    // TODO: hash map of prepared statement handles to separate prepare stmt and execute calls
     public PreparedStatement GetPreparedStatement(String query) throws SQLException {
         return connPool.getConnection().prepareStatement(query);
     }
     
-    public JSONObject ExecuteQuery(String query, JSONArray params) {
-        try {
+    
+    public JSONArray ExecuteQuery(String query, JSONArray params) {
+        try {          
           Connection conn = connPool.getConnection();
           PreparedStatement stmt = conn.prepareStatement(query);
           for (int i = 0; i < params.length(); ++i) {
@@ -82,58 +84,81 @@ public class ConnectionPool {
           }
           ResultSet rs = stmt.executeQuery();
           // stmt.closeoncompletion() not supported by mysql driver
-          JSONObject res = ConvertResultSetToJson(rs);
+          JSONArray res = ConvertResultSetToJson(rs);
           stmt.close();
           gPool.returnObject(conn);
           return res;
         } catch (Exception e) {
-          LOGGER.error("couldn't executy query " + e.toString());
+          LOGGER.error("couldn't execute query " + e.toString());
         }
         return null;
     }
     
-    public JSONObject ExecuteQuery(String query) throws SQLException, JSONException {
+    public JSONArray ExecuteQuery(String query) throws SQLException, JSONException {
         Statement stmt = connPool.getConnection().createStatement();
         ResultSet rs = stmt.executeQuery(query);
-        JSONObject res = ConvertResultSetToJson(rs);
+        JSONArray res = ConvertResultSetToJson(rs);
         stmt.close();
         return res;
     }
     
     
-    public int ExecuteUpdate(String query, JSONArray params) {
-        try {
-          PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
-          for (int i = 0; i < params.length(); ++i) {
-            JSONObject obj = params.getJSONObject(i);
-            BindParameter(stmt, obj);
-          }
-          int res = stmt.executeUpdate();
-          stmt.close();
-          return res;
-        } catch (Exception e) {
-          LOGGER.error(e.toString());
+//    public int ExecuteUpdate(String query, JSONArray params) {
+//        try {
+//          LOGGER.debug("update query: " + query + "; with params: " + params.toString());
+//          PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
+//          for (int i = 0; i < params.length(); ++i) {
+//            JSONObject obj = params.getJSONObject(i);
+//            BindParameter(stmt, obj);
+//          }
+//          int res = stmt.executeUpdate();
+//          stmt.close();
+//          return res;
+//        } catch (Exception e) {
+//          LOGGER.error(e.toString());
+//        }
+//        return -1;
+//    }
+    
+    public JSONObject ExecuteUpdate(String query, JSONArray params) throws Exception {
+      JSONObject result = new JSONObject();
+      Connection conn = connPool.getConnection();
+      try {       
+        PreparedStatement stmt = conn.prepareStatement(query);
+        for (int i = 0; i < params.length(); ++i) {
+          JSONObject obj = params.getJSONObject(i);
+          BindParameter(stmt, obj);
         }
-        return -1;
+        int res = stmt.executeUpdate();
+        stmt.close();
+        result.put("num_updates", res);
+      } catch (Exception e) {
+        LOGGER.error("Updated query: " + query + "\nParams " + params.toString() + ";\n " + e.toString());
+        result.put("num_updates", -1);
+      } 
+      gPool.returnObject(conn);
+      return result;
     }
     
-    public int ExecuteUpdate(String query) {
-        try {
-          Statement stmt = connPool.getConnection().createStatement();
-          int res = stmt.executeUpdate(query);
-          stmt.close();
-          return res;
-        } catch (Exception e) {
-          LOGGER.error(e.toString());
-        }
-    return -1;
-    }
-    
+//    public JSONObject ExecuteUpdate(String query) {
+//      JSONObject result = new JSONObject();
+//        try {
+//          Statement stmt = connPool.getConnection().createStatement();
+//          int res = stmt.executeUpdate(query);
+//          stmt.close();
+//          result.put("num_updates", res);
+//          return result;
+//        } catch (Exception e) {
+//          LOGGER.error(e.toString());
+//        }
+//        result.put("num_updates", -1);
+//        return result;
+//    }
+   
     
     private void BindParameter(PreparedStatement stmt, JSONObject param) throws JSONException, SQLException {
         int index = param.getInt("index");
         String dataType = param.getString("type").toLowerCase();
-        LOGGER.debug(index + ":" + param.getString("value"));
         switch(dataType) {
           case "string": 
             stmt.setString(index, param.getString("value"));
@@ -152,36 +177,33 @@ public class ConnectionPool {
     
     // Copied from the stackoverflow post
     // https://stackoverflow.com/questions/6514876/most-efficient-conversion-of-resultset-to-json
-    private JSONObject ConvertResultSetToJson(ResultSet rs) throws JSONException {
-        try {
-            ResultSetMetaData rsmd = rs.getMetaData();
-            int numColumns = rsmd.getColumnCount();
-            String[] columnNames = new String[numColumns];
-            int[] columnTypes = new int[numColumns];
+    private JSONArray ConvertResultSetToJson(ResultSet rs) throws JSONException {
+      try {
+          ResultSetMetaData rsmd = rs.getMetaData();
+          int numColumns = rsmd.getColumnCount();
+          String[] columnNames = new String[numColumns];
+          int[] columnTypes = new int[numColumns];
 
-            for (int i = 0; i < columnNames.length; i++) {
-                columnNames[i] = rsmd.getColumnLabel(i + 1);
-                columnTypes[i] = rsmd.getColumnType(i + 1);
-            }
+          for (int i = 0; i < columnNames.length; i++) {
+              columnNames[i] = rsmd.getColumnLabel(i + 1);
+              columnTypes[i] = rsmd.getColumnType(i + 1);
+          }
 
-            JSONObject res = new JSONObject();
-            JSONArray rows = new JSONArray();
-            res.put("result", rows);
-            while(rs.next()) {
-                JSONObject obj = new JSONObject();
-                // resultset index starts from 1
-                for (int i = 1; i <= numColumns; i++) {
-                    String column_name = rsmd.getColumnName(i);
-                    obj.put(column_name, rs.getObject(i));
-                }
-                rows.put(obj);
-            }
-            LOGGER.debug("Returning CRSJ; numrows=" + rows.length());
-            return res;
-        } catch (SQLException e) {
-            // log e
-            LOGGER.error("couldn't convert result to json: " + e.toString());
-            return null;
-        }
+          JSONArray rows = new JSONArray();
+          while(rs.next()) {
+              JSONObject obj = new JSONObject();
+              // resultset index starts from 1
+              for (int i = 1; i <= numColumns; i++) {
+                  String column_name = rsmd.getColumnName(i);
+                  obj.put(column_name, rs.getObject(i));
+              }
+              rows.put(obj);
+          }
+          return rows;
+      } catch (SQLException e) {
+          // log e
+          LOGGER.error("couldn't convert result to json: " + e.toString());
+          return null;
+      }
     }
 }

@@ -50,11 +50,11 @@ public class MovieRentalRest {
 	// Pay for the rental
 	// Return a movie
 	@Path("/listmovies")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response ListMovies(@QueryParam("filmName") String filmName,
-							    @QueryParam("keyword") String keyword,
-							    @QueryParam("actor") String actor) {
+							               @QueryParam("keyword") String keyword,
+							               @QueryParam("actor") String actor) {
 		JSONArray films = null;
 		try {
 			films = mv.ListMovies(filmName, keyword);
@@ -63,7 +63,7 @@ public class MovieRentalRest {
 				return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
 			}
 		} catch (Exception e) {
-			LOGGER.error(e.toString());
+			LOGGER.error("ListMovies args: " + filmName + ", " + keyword + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity("[{}]").build();
@@ -71,17 +71,20 @@ public class MovieRentalRest {
 	
 	
 	@Path("/liststores")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response FindStoreswithFilm(@QueryParam("filmId") Integer filmId) {
 		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
-		JSONArray stores = new JSONArray();
+		JSONArray stores = null;
 		try {
 			stores = mv.FindAvailableStores(filmId);
 		} catch (Exception e) {
-			LOGGER.error(e.toString());
+			LOGGER.error("FindStoreswithFilm args: " + filmId + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
+		}
+		if (stores == null) {
+		  stores = new JSONArray("[{}]");
 		}
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity(stores.toString()).build();
 	}
@@ -89,42 +92,64 @@ public class MovieRentalRest {
 	
 	@POST
 	@Path("/rentmovie")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response RentMovie(String rentalInfoStr, 
-    						  //JSONObject rentalInfo,
-                              @HeaderParam("end-user") String user,
-                              @HeaderParam("x-request-id") String xreq,
-                              @HeaderParam("x-b3-traceid") String xtraceid,
-                              @HeaderParam("x-b3-spanid") String xspanid,
-                              @HeaderParam("x-b3-parentspanid") String xparentspanid,
-                              @HeaderParam("x-b3-sampled") String xsampled,
-                              @HeaderParam("x-b3-flags") String xflags,
-                              @HeaderParam("x-ot-span-context") String xotspan) {
-        //HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
-		
-        try {
-        		JSONObject rentalInfo = new JSONObject(rentalInfoStr);
-			int filmId = rentalInfo.getInt("filmid");
-			int storeId = rentalInfo.getInt("storeid");
-			int customerId = rentalInfo.getInt("customerid");
-			int duration = rentalInfo.getInt("duration");
-			int staffId = rentalInfo.getInt("staffid");
-			LOGGER.debug("filmid: " + filmId + " storeid: " + storeId + " duration: " + duration + " customerid: "+ customerId);
-			if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
-				return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{Invalid query params}").build();
-			}
-			
-			JSONObject obj = new JSONObject();
-			double val = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
-	        obj.put("rental_amount", val);
-	        Response.ok().type(MediaType.APPLICATION_JSON).entity(obj).build();
-	    } catch (Exception e) {
-			e.printStackTrace();
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
-		}
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{}").build();
-    }
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response RentMovie(String rentalInfoStr, 
+	    //JSONObject rentalInfo,
+	    @HeaderParam("end-user") String user,
+	    @HeaderParam("x-request-id") String xreq,
+	    @HeaderParam("x-b3-traceid") String xtraceid,
+	    @HeaderParam("x-b3-spanid") String xspanid,
+	    @HeaderParam("x-b3-parentspanid") String xparentspanid,
+	    @HeaderParam("x-b3-sampled") String xsampled,
+	    @HeaderParam("x-b3-flags") String xflags,
+	    @HeaderParam("x-ot-span-context") String xotspan) {
+	  //HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
+	  try {
+	    JSONObject rentalInfo = new JSONObject(rentalInfoStr);
+	    int filmId = rentalInfo.getInt("filmId");
+	    int storeId = rentalInfo.getInt("storeId");
+	    int customerId = rentalInfo.getInt("customerId");
+	    int duration = rentalInfo.getInt("duration");
+	    int staffId = rentalInfo.getInt("staffId");
+	    if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
+	      return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"Invalid query params\"}").build();
+	    }
+	    JSONObject result = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
+	    return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
+	  } catch (Exception e) {
+	    e.printStackTrace();
+	    LOGGER.error("Rent movie params:" + rentalInfoStr + "; " + e.toString());
+	    return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"" + e.toString() + "\"}").build();
+	  }
+  }
 	
+	
+	// Pay and return movies
+  @Path("/returnmovie")
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response ReturnMovie(String returnInfoStr) {
+    JSONObject returnInfo = new JSONObject(returnInfoStr);
+    int inventoryId = returnInfo.getInt("inventoryId");
+    int userId = returnInfo.getInt("userId");
+    int staffId = returnInfo.getInt("staffId");
+    double rent = returnInfo.getDouble("rent");
+ 
+    JSONObject result = null;
+    try {
+      LOGGER.debug("ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", " + rent);
+      result = mv.ReturnMovie(inventoryId, userId, staffId, rent);
+    } catch (Exception e) {
+      result = new JSONObject("{\"Returnmovie didn't succeed\"}");
+      LOGGER.error("Args: [" + inventoryId + ", " + userId + ", " + staffId + ", " + rent + "]; " + e.toString());
+    }
+    return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
+  }
+  
+  
+	//// FOLLOWING METHODS NOT CHECKED FOR CORRECTNESS
 	// Check due rentals
 	@Path("/overduerentals")
 	@GET
@@ -137,54 +162,33 @@ public class MovieRentalRest {
 			e.printStackTrace();
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity(dues.toString()).build();
+    return Response.ok().type(MediaType.APPLICATION_JSON).entity(dues.toString()).build();
 	}
 	
 	
-	// Pay and return movies
-	@Path("/returnmovie")
+	@Path("/ismovieavailable")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response ReturnMovie(@QueryParam("filmId") int filmId,
-								@QueryParam("storeId") int storeId,
-								@QueryParam("userId") int userId,
-								@QueryParam("amount") double rent) {
-		JSONObject result = new JSONObject();
-		try {
-			int returnUpdate = mv.ReturnMovie(filmId, storeId, userId, rent);
-			result.put("result", returnUpdate);
-		} catch (Exception e) {
-			LOGGER.error(e.toString());
-		}
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
-	}
-	
-	
-	
-	@Path("/rentmovie")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
 	public Response IsFilmAvailableAtStore(@QueryParam("filmid") int filmId, 
-										   @QueryParam("storeid") int storeId,
-										   @QueryParam("duration") int duration,
-				                           @QueryParam("customerid") int customerId,
-				                           @QueryParam("staffid") int staffId,
-				                           @HeaderParam("end-user") String user,
-				                           @HeaderParam("x-request-id") String xreq,
-				                           @HeaderParam("x-b3-traceid") String xtraceid,
-				                           @HeaderParam("x-b3-spanid") String xspanid,
-				                           @HeaderParam("x-b3-parentspanid") String xparentspanid,
-				                           @HeaderParam("x-b3-sampled") String xsampled,
-				                           @HeaderParam("x-b3-flags") String xflags,
-				                           @HeaderParam("x-ot-span-context") String xotspan) {
+										                    @QueryParam("storeid") int storeId,
+										                    @QueryParam("duration") int duration,
+										                    @QueryParam("customerid") int customerId,
+										                    @QueryParam("staffid") int staffId,
+										                    @HeaderParam("end-user") String user,
+										                    @HeaderParam("x-request-id") String xreq,
+										                    @HeaderParam("x-b3-traceid") String xtraceid,
+										                    @HeaderParam("x-b3-spanid") String xspanid,
+										                    @HeaderParam("x-b3-parentspanid") String xparentspanid,
+										                    @HeaderParam("x-b3-sampled") String xsampled,
+										                    @HeaderParam("x-b3-flags") String xflags,
+										                    @HeaderParam("x-ot-span-context") String xotspan) {
 	  JSONObject obj = new JSONObject();
-	  try {
-	    double val = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
-	    obj.put("rental_amount", val);
-	  } catch (Exception e) {
-	    LOGGER.error(e.toString());
-	    return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
-	  }
+//	  try {
+//	    obj = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
+//	  } catch (Exception e) {
+//	    LOGGER.error(e.toString());
+//	    return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
+//	  }
 	  return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
 	}
 	
@@ -193,28 +197,27 @@ public class MovieRentalRest {
 	// Sales by store, number of rentals relative to inventory, #customers
 	// Best performing genre
 	@Path("/salesbystore")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSalesByStore(@QueryParam("storename") String storename,
-                                    @HeaderParam("end-user") String user,
-                                    @HeaderParam("x-request-id") String xreq,
-                                    @HeaderParam("x-b3-traceid") String xtraceid,
-                                    @HeaderParam("x-b3-spanid") String xspanid,
-                                    @HeaderParam("x-b3-parentspanid") String xparentspanid,
-                                    @HeaderParam("x-b3-sampled") String xsampled,
-                                    @HeaderParam("x-b3-flags") String xflags,
-                                    @HeaderParam("x-ot-span-context") String xotspan) {
-        // HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
-		JSONArray obj = null;
-		try {
-	        obj = mv.GetSalesByStore(storename);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
-		}
-		
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
-    }
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getSalesByStore(@QueryParam("storename") String storename,
+	    @HeaderParam("end-user") String user,
+	    @HeaderParam("x-request-id") String xreq,
+	    @HeaderParam("x-b3-traceid") String xtraceid,
+	    @HeaderParam("x-b3-spanid") String xspanid,
+	    @HeaderParam("x-b3-parentspanid") String xparentspanid,
+	    @HeaderParam("x-b3-sampled") String xsampled,
+	    @HeaderParam("x-b3-flags") String xflags,
+	    @HeaderParam("x-ot-span-context") String xotspan) {
+	  // HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
+	  JSONArray obj = null;
+	  try {
+	    obj = mv.GetSalesByStore(storename);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
+    } 
+	  return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
+  }
 	
 }
 

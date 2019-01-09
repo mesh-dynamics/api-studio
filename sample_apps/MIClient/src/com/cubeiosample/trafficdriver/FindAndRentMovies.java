@@ -1,4 +1,5 @@
 package com.cubeiosample.trafficdriver;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
@@ -56,6 +57,7 @@ public class FindAndRentMovies {
 			// find stores with movie
 			Response response2 = CallWithRetries(targetService.path("liststores").queryParam("filmId", movieId).request(MediaType.APPLICATION_JSON), null, true, 3);
 			if (response2 == null || response2.getStatus() != 200) {
+			  System.out.println("list stores wasn't successful");
 				continue;
 			}
 			System.out.println(response2.getStatus());
@@ -70,19 +72,53 @@ public class FindAndRentMovies {
 			int storeId = storeObj.getInt("store_id");
 			
 			// rent movie_id
+			int userId = 1 + randGen.nextInt(maxCustomerId-1);
+			int staffId = 1 + randGen.nextInt(maxStaffId-1);
 			JSONObject rentalInfo = new JSONObject();
-			rentalInfo.put("filmid", movieId);
-			rentalInfo.put("storeid", storeId);
+			rentalInfo.put("filmId", movieId);
+			rentalInfo.put("storeId", storeId);
 			rentalInfo.put("duration", 2);
-			rentalInfo.put("customerid", 1 + randGen.nextInt(maxCustomerId-1));
-			rentalInfo.put("staffid", 1 + randGen.nextInt(maxStaffId-1));   
+			rentalInfo.put("customerId", userId);
+			rentalInfo.put("staffId", staffId);   
 			System.out.println("client rentalInfo: " + rentalInfo.toString());
-			Response response3 = CallWithRetries(targetService.path("rentmovie").request(), rentalInfo, false, 3);
-			if (response3 != null) {
-				System.out.println(response3.getStatus());
+			Response response3 = CallWithRetries(targetService.path("rentmovie").request(), rentalInfo, false, 1); // TOFIX: why is it retrying? is it timing out while debugging?
+			if (response3 == null || response3.getStatus() != 200) {
+			  System.out.println("Rent movie failed or returned null response");
+			  response3.close();
+			  continue;
+			} 
+			System.out.println(response3.getStatus());
+			JSONObject rentalResult = new JSONObject(response3.readEntity(String.class));
+			System.out.println("rentmovie result: " + rentalResult.toString());
+			int inventoryId = rentalResult.getInt("inventory_id");
+			if (inventoryId < 0) {
+			  System.out.println("Couldn't rent film: " + movieId + " @" + storeId);
 			}
+			// numUpdates won't be a key if inventoryId = -1
+      int numUpdates = rentalResult.getInt("num_updates");
+      if (numUpdates < 0) {
+        System.out.println("Couldn't rent film: " + movieId + " @" + storeId);
+      }
+      response3.close();
+
+			// return movie
+			// int inventoryId, int customerId, int staffId, double rent
+			JSONObject returnMovieInfo = new JSONObject();
+			returnMovieInfo.put("inventoryId", inventoryId);
+			returnMovieInfo.put("userId", userId);
+			returnMovieInfo.put("staffId", staffId);
+			returnMovieInfo.put("rent", rentalResult.getDouble("rent"));  
+			System.out.println("returnmovieinfo:" + returnMovieInfo.toString());
+			Response response4 = CallWithRetries(targetService.path("returnmovie").request(), returnMovieInfo, false, 1);
+      if (response4 != null) {
+        System.out.println(response4.getStatus());
+      }
+      JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
+      System.out.println("return movie result: " + returnMovieResult.toString());
+      response4.close();
 		}
 	}
+	
 	
 	private Response CallWithRetries(Builder req, JSONObject body, boolean isGetRequest, int numRetries) {
 		int numAttempts = 0;
@@ -93,6 +129,7 @@ public class FindAndRentMovies {
 				} 
 				return req.post(Entity.entity(body.toString(), MediaType.APPLICATION_JSON));
 			} catch (Exception e) {
+			  System.out.println("request: " + req.toString() + "; exception: " + e.toString());
 				++numAttempts;
 			}
 		}
