@@ -52,7 +52,7 @@ public class ConnectionPool {
 	        PoolableConnectionFactory pcf = new PoolableConnectionFactory(cf, gPool, null, null, false, true);
 	        connPool = new PoolingDataSource(gPool);
 	    	} catch (Exception e) {
-	    		LOGGER.error(e.toString());
+	    		LOGGER.error("URI: " + uri + "; user: " + user + "; pwd: " + pwd + ";\n" + e.toString());
 	    	}
     }
  
@@ -86,7 +86,7 @@ public class ConnectionPool {
 		    	gPool.returnObject(conn);
 		    	return res;
 	    	} catch (Exception e) {
-	    		LOGGER.error("couldn't executy query " + e.toString());
+	    	  LOGGER.error("Query: " + query + "\nParams " + params.toString() + ";\n " + e.toString());
 	    	}
 	    	return null;
     }
@@ -100,7 +100,8 @@ public class ConnectionPool {
     }
     
     
-    public int ExecuteUpdate(String query, JSONArray params) {
+    public JSONObject ExecuteUpdate(String query, JSONArray params) {
+      JSONObject result = new JSONObject();
 	    	try {
 	    		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
 	    		for (int i = 0; i < params.length(); ++i) {
@@ -109,23 +110,28 @@ public class ConnectionPool {
 	    		}
 		    	int res = stmt.executeUpdate();
 		    	stmt.close();
-		    	return res;
+		    	result.put("num_updates", res);
+		    	return result;
 	    	} catch (Exception e) {
-	    		LOGGER.error(e.toString());
+	    		LOGGER.error("Updated query: " + query + "\nParams " + params.toString() + ";\n " + e.toString());
 	    	}
-	    	return -1;
+	    	result.put("num_updates", -1);
+	    	return result;
     }
     
-    public int ExecuteUpdate(String query) {
+    public JSONObject ExecuteUpdate(String query) {
+      JSONObject result = new JSONObject();
 	    	try {
 	    		Statement stmt = connPool.getConnection().createStatement();
 	    		int res = stmt.executeUpdate(query);
 	    		stmt.close();
-	    		return res;
+	    		result.put("num_updates", res);
+	    		return result;
 	    	} catch (Exception e) {
 	    		LOGGER.error(e.toString());
 	    	}
-		return -1;
+	    	result.put("num_updates", -1);
+	    	return result;
     }
     
     
@@ -152,33 +158,31 @@ public class ConnectionPool {
     // Copied from the stackoverflow post
     // https://stackoverflow.com/questions/6514876/most-efficient-conversion-of-resultset-to-json
     private JSONArray ConvertResultSetToJson(ResultSet rs) throws JSONException {
-        try {
-        		ResultSetMetaData rsmd = rs.getMetaData();
-            int numColumns = rsmd.getColumnCount();
-            String[] columnNames = new String[numColumns];
-            int[] columnTypes = new int[numColumns];
+      try {
+      		ResultSetMetaData rsmd = rs.getMetaData();
+      		int numColumns = rsmd.getColumnCount();
+      		String[] columnNames = new String[numColumns];
+      		int[] columnTypes = new int[numColumns];
 
-            for (int i = 0; i < columnNames.length; i++) {
-                columnNames[i] = rsmd.getColumnLabel(i + 1);
-                columnTypes[i] = rsmd.getColumnType(i + 1);
-            }
+      		for (int i = 0; i < columnNames.length; i++) {
+      		  columnNames[i] = rsmd.getColumnLabel(i + 1);
+      		  columnTypes[i] = rsmd.getColumnType(i + 1);
+      		}
 
-            JSONArray rows = new JSONArray();
-            while(rs.next()) {
-                JSONObject obj = new JSONObject();
-                // resultset index starts from 1
-                for (int i = 1; i <= numColumns; i++) {
-                    String column_name = rsmd.getColumnName(i);
-                    obj.put(column_name, rs.getObject(i));
-                }
-                rows.put(obj);
-            }
-            LOGGER.debug("Returning CRSJ; numrows=" + rows.length());
-            return rows;
-        } catch (SQLException e) {
-            // log e
-        		LOGGER.error("couldn't convert result to json: " + e.toString());
-            return null;
+      		JSONArray rows = new JSONArray();
+        while(rs.next()) {
+          JSONObject obj = new JSONObject();
+          // resultset index starts from 1
+          for (int i = 1; i <= numColumns; i++) {
+            String column_name = rsmd.getColumnName(i);
+            obj.put(column_name, rs.getObject(i));
+          }
+          rows.put(obj);
         }
+        return rows;
+      } catch (SQLException e) {
+      		LOGGER.error("couldn't convert result to json: " + e.toString());
+      		return null;
+      }
     }
 }

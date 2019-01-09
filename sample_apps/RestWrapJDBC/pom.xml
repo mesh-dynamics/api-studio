@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>MIRest</groupId>
-  <artifactId>MIRest</artifactId>
+  <groupId>RestWrapJDBC</groupId>
+  <artifactId>RestWrapJDBC</artifactId>
   <version>V1-SNAPSHOT</version>
   <packaging>war</packaging>
-  <name>MIRest</name>
+  <name>RestWrapJDBC</name>
   
   <dependencyManagement>
     <dependencies>
@@ -66,7 +66,7 @@
 		    </execution>
 		  </executions>
 		  <configuration>
-		    <repository>cubeiocorp/sample_apps-mirest</repository>
+		    <repository>cubeiocorp/sample_apps-restwrapjdbc</repository>
 		    <tag>${project.version}</tag>
 		    <buildArgs>
 		      <WAR_FILE>${project.build.finalName}.war</WAR_FILE>
@@ -120,7 +120,7 @@
     <version.jackson>2.8.7</version.jackson>
     <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
   </properties>
-  <dependencies>
+ <dependencies>
   	<dependency>
   		<groupId>org.json</groupId>
   		<artifactId>json</artifactId>
@@ -167,19 +167,7 @@
 	    <artifactId>dockerfile-maven-plugin</artifactId>
 	    <version>${version.dockerfile-maven}</version>
 	</dependency>
-	<!--  Also need the client dependencies for calling the rest over jdbc service -->
-	<dependency>
-	  	<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
-	    <groupId>javax.ws.rs</groupId>
-	    <artifactId>javax.ws.rs-api</artifactId>
-	    <version>2.1</version>  
-	</dependency>
-	<dependency>
-  		<groupId>org.glassfish.jersey.media</groupId>
- 		<artifactId>jersey-media-json-jackson</artifactId>
-  		<scope>runtime</scope>
-  		<version>${version.jersey}</version>
-	</dependency>
-  </dependencies>
+</dependencies>
+
   
 </project>

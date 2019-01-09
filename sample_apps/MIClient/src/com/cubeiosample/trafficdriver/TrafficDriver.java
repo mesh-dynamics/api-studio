@@ -12,24 +12,37 @@ import org.glassfish.jersey.client.ClientProperties;
 
 
 public class TrafficDriver {
+  private static boolean LOCAL_RUN = false;
+  
   public static void main(String[] args) {
+    configureLocalRun();
+    ClientConfig clientConfig = new ClientConfig()
+                .property(ClientProperties.READ_TIMEOUT, 100000)  // timing out with default 20000 ms
+                .property(ClientProperties.CONNECT_TIMEOUT, 10000);
+    Client client = ClientBuilder.newClient(clientConfig);
+    WebTarget service = client.target(getBaseURI());
 
-      ClientConfig clientConfig = new ClientConfig()
-              .property(ClientProperties.READ_TIMEOUT, 100000)  // timing out with default 20000 ms
-              .property(ClientProperties.CONNECT_TIMEOUT, 10000);
-      Client client = ClientBuilder.newClient(clientConfig);
-      WebTarget service = client.target(getBaseURI());
-
-      // TODO: ideally, start separate threads.
-      // User flow 1: rent movies
-      FindAndRentMovies frm = new FindAndRentMovies(service);
-      frm.DriveTraffic();
+    // TODO: ideally, start separate threads.
+    // User flow 1: rent movies
+    FindAndRentMovies frm = new FindAndRentMovies(service);
+    frm.DriveTraffic();
       
-      // User flow 2: check dues and pay them
-      // User flow 3: 
+    // User flow 2: check dues and pay them
+    // User flow 3: 
   }
 
   private static URI getBaseURI() {
+    if (LOCAL_RUN) {
+      return UriBuilder.fromUri("http://localhost:8080/MIRest/minfo/").build();
+    }
     return UriBuilder.fromUri("http://localhost:8080/minfo/").build();
+  }
+  
+  // Setup the env variable in "Run configurations" in eclipse
+  private static void configureLocalRun() {
+    String localRun = System.getenv("LOCAL_RUN");
+    if (localRun != null && localRun.equalsIgnoreCase("true")) {
+      LOCAL_RUN = true;
+    }
   }
 }
