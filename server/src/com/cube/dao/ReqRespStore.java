@@ -4,7 +4,6 @@
 package com.cube.dao;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -12,10 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response.Status;
-
+import com.cube.dao.Request.ReqMatchSpec;
+import com.cube.drivers.Analysis;
+import com.cube.drivers.Analysis.Result;
 import com.cube.drivers.Replay;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -74,191 +72,22 @@ public interface ReqRespStore {
 	enum Types {
 		Request,
 		Response,
-		ReplayMeta // replay metadata
+		ReplayMeta, // replay metadata
+		Analysis,
+		Result
 	}
 
-	enum RR {
-		Record,
-		Replay
-	}
-	
-	public class RRBase {
-
-		/**
-		 * @param path
-		 * @param id
-		 * @param qparams
-		 * @param meta
-		 * @param hdrs
-		 * @param body
-		 */
-		public RRBase(Optional<String> reqid, 
-				MultivaluedMap<String, String> meta, 
-				MultivaluedMap<String, String> hdrs, 
-				String body,
-				Optional<String> collection,
-				Optional<Instant> timestamp, 
-				Optional<String> rrtype, 
-				Optional<String> customerid,
-				Optional<String> app) {
-			super();
-			this.reqid = reqid;
-			this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
-			this.hdrs = hdrs != null ? hdrs : new MultivaluedHashMap<String, String>();
-			this.body = body;
-			this.collection = collection;
-			this.timestamp = timestamp;
-			this.rrtype = rrtype;
-			this.customerid = customerid;
-			this.app = app;
-		}
-
-		
-		/**
-		 * 
-		 */
-		@SuppressWarnings("unused")
-		private RRBase() {
-			super();
-			this.reqid = Optional.empty();
-			this.meta = new MultivaluedHashMap<String, String>();
-			this.hdrs = new MultivaluedHashMap<String, String>();
-			this.body = "";
-			this.collection = Optional.empty();
-			this.timestamp = Optional.empty();
-			this.rrtype = Optional.empty();
-			this.customerid = Optional.empty();
-			this.app = Optional.empty();
-		}
-
-		public final Optional<String> reqid;
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> meta; 
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> hdrs;
-		public final String body;		
-		public final Optional<String> collection;
-		public final Optional<Instant> timestamp;
-		public final Optional<String> rrtype; // this can be "record" or "replay"
-		public final Optional<String> customerid;
-		public final Optional<String> app;
-	}
-	
-	public class Request extends RRBase {
-		/**
-		 * @param path
-		 * @param id
-		 * @param qparams
-		 * @param meta
-		 * @param hdrs
-		 * @param body
-		 */
-		public Request(String path, Optional<String> reqid, MultivaluedMap<String, String> qparams,
-				MultivaluedMap<String, String> fparams,
-				MultivaluedMap<String, String> meta, 
-				MultivaluedMap<String, String> hdrs, 
-				String method, 
-				String body,
-				Optional<String> collection,
-				Optional<Instant> timestamp, 
-				Optional<String> rrtype, 
-				Optional<String> customerid,
-				Optional<String> app) {
-			super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
-			this.path = path; 
-			this.qparams = qparams != null ? qparams : new MultivaluedHashMap<String, String>();
-			this.fparams = fparams != null ? fparams : new MultivaluedHashMap<String, String>();
-			this.method = method;
-		}
-		
-		
-		
-		/**
-		 * @param path
-		 * @param qparams
-		 * @param fparams
-		 */
-		public Request(String path, Optional<String> id, 
-				MultivaluedMap<String, String> qparams, 
-				MultivaluedMap<String, String> fparams, 
-				Optional<String> collection, 
-				Optional<String> rrtype, 
-				Optional<String> customerid,
-				Optional<String> app) {
-			this(path, id, qparams, fparams, new MultivaluedHashMap<String, String>(), 
-					new MultivaluedHashMap<String, String>(), "", "", collection, Optional.empty(), rrtype, customerid, app);
-		}
-
-		
-		
-		/**
-		 * 
-		 */
-		@SuppressWarnings("unused")
-		private Request() {
-			super();
-			this.path = ""; 
-			this.qparams = new MultivaluedHashMap<String, String>();
-			this.fparams = new MultivaluedHashMap<String, String>();
-			this.method = "";
-		}
-
-
-
-		static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
-		  = new TypeReference<MultivaluedHashMap<String, String>>() {};
-		
-		public final String path;
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> qparams; // query params
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-		public final MultivaluedMap<String, String> fparams; // form params
-		public final String method;
-	}
-	
-	public class Response extends RRBase {
-		/**
-		 * @param reqid
-		 * @param status
-		 * @param hdrs
-		 * @param body
-		 */
-		public Response(Optional<String> reqid, int status, 
-				MultivaluedMap<String, String> meta, 
-				MultivaluedMap<String, String> hdrs, String body,
-				Optional<String> collection,
-				Optional<Instant> timestamp, 
-				Optional<String> rrtype, 
-				Optional<String> customerid,
-				Optional<String> app) {
-			super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
-			this.status = status;
-		}
-		
-		/**
-		 * 
-		 */
-		@SuppressWarnings("unused")
-		private Response() {
-			super();
-			this.status = Status.OK.getStatusCode();
-		}
-
-		
-		public final int status;
-	}
-	
 	boolean save(Request req);
 	
 	boolean save(Response resp);
 		
 	/**
 	 * @param queryrequest
-	 * @param ignoreId - whether id should be ignore in the matching
-	 * @return the matching request based on matching path, id (optional based on ignoreId flag), qparams and fparams
-	 * hdrs and cookies are ignored
+	 * @param mspec - the matching specification
+	 * @param nummatches TODO
+	 * @return the requests matching queryrequest based on the matching spec
 	 */
-	Optional<Request> getRequest(Request queryrequest, boolean ignoreId);
+	List<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
 	
 	/**
 	 * @param reqid
@@ -271,8 +100,33 @@ public interface ReqRespStore {
 	 * @return the response corresponding to the request matching in the db
 	 * to find the matching request, the reqid field of queryrequest is ignored
 	 */
-	Optional<Response> getRespForReq(Request queryrequest);
+	Optional<Response> getRespForReq(Request queryrequest, ReqMatchSpec mspec);
 
+
+	/**
+	 * @param customerid
+	 * @param app
+	 * @param collection
+	 * @param reqids
+	 * @param paths 
+	 * @param rrtype
+	 * @return
+	 */
+	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
+
+	/**
+	 * @param replay
+	 * @return 
+	 */
+	boolean saveReplay(Replay replay);
+
+	/**
+	 * @param replayid
+	 * @return
+	 */
+	Optional<Replay> getReplay(String replayid);
+
+	
 	static void main(String[] args) throws IOException{
 
 		Map.Entry<String, String> e = new AbstractMap.SimpleEntry<String, String>("k1", "v1");
@@ -322,26 +176,22 @@ public interface ReqRespStore {
 	}
 
 	/**
-	 * @param customerid
-	 * @param app
-	 * @param collection
-	 * @param reqids
-	 * @param paths 
-	 * @param rrtype
+	 * @param analysis
 	 * @return
 	 */
-	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RR rrtype);
+	boolean saveAnalysis(Analysis analysis);
 
 	/**
-	 * @param replay
+	 * @param res
 	 * @return 
 	 */
-	boolean saveReplay(Replay replay);
+	boolean saveResult(Result res);
 
 	/**
 	 * @param replayid
 	 * @return
 	 */
-	Optional<Replay> getReplay(String replayid);
+	Optional<Analysis> getAnalysis(String replayid);
+
 	
 }

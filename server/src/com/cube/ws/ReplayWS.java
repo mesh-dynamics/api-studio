@@ -38,7 +38,7 @@ public class ReplayWS {
     private static final Logger LOGGER = LogManager.getLogger(ReplayWS.class);
 
 	@POST
-	@Path("replayinit/{customerid}/{app}/{collection}")
+	@Path("init/{customerid}/{app}/{collection}")
 	@Consumes("application/x-www-form-urlencoded")
 	public Response init(@Context UriInfo ui, @PathParam("collection") String collection, 
 			MultivaluedMap<String, String> formParams,
@@ -72,7 +72,7 @@ public class ReplayWS {
 
 
 	@GET
-	@Path("replaystatus/{customerid}/{app}/{collection}/{replayid}")
+	@Path("status/{customerid}/{app}/{collection}/{replayid}")
 	public Response status(@Context UriInfo ui, @PathParam("collection") String collection, 
 			@PathParam("replayid") String replayid,
 			@PathParam("customerid") String customerid,
@@ -94,7 +94,7 @@ public class ReplayWS {
 	}
 
 	@POST
-	@Path("replaystart/{customerid}/{app}/{collection}/{replayid}")
+	@Path("start/{customerid}/{app}/{collection}/{replayid}")
 	public Response start(@Context UriInfo ui, @PathParam("collection") String collection, 
 			@PathParam("replayid") String replayid,
 			@PathParam("customerid") String customerid,

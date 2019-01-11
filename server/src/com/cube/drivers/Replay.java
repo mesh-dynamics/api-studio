@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,9 +32,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.core.Utils;
+import com.cube.dao.RRBase;
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStore.RR;
-import com.cube.dao.ReqRespStore.Request;
+import com.cube.dao.Request;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -104,7 +106,7 @@ public class Replay {
 
 	private void replay() {
 		
-		List<Request> requests = rrstore.getRequests(customerid, app, collection, reqids, paths, RR.Record);
+		List<Request> requests = getRequests();
 
 		if (status != ReplayStatus.Init) {
 			return;
@@ -201,7 +203,7 @@ public class Replay {
 
 	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String collection, List<String> reqids,
 			ReqRespStore rrstore, boolean async, List<String> paths) {
-		String replayid = String.format("%s-%s", collection, UUID.randomUUID().toString());
+		String replayid = getReplayIdFromCollection(collection);
 		Replay replay = new Replay(endpoint, customerid, app, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
 	
 		if (rrstore.saveReplay(replay))
@@ -283,4 +285,33 @@ public class Replay {
 	public int reqcnt; // total number of requests
 	public int reqsent; // number of requests sent
 	public int reqfailed; // requests failed, return code not 200
+
+	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
+	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
+	private static final Pattern replayidpattern = Pattern.compile(replayidpatternStr);
+
+	/**
+	 * @param replayid2
+	 * @return
+	 */
+	public static String getCollectionFromReplayId(String replayid) {		
+		Matcher m = replayidpattern.matcher(replayid);
+		if (m.find()) {
+			return m.group(1);
+		} else {
+			LOGGER.error(String.format("Not able to extract collection from replay id %s", replayid));
+			return replayid;
+		}
+	}
+	
+	public static String getReplayIdFromCollection(String collection) {
+		return String.format("%s-%s", collection, UUID.randomUUID().toString());
+	}
+
+	/**
+	 * @return
+	 */
+	public List<Request> getRequests() {
+		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
+	}
 }
