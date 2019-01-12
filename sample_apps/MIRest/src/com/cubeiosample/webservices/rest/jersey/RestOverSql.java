@@ -56,9 +56,6 @@ public class RestOverSql {
     } 
   }
   
-  private static void configureRestWrapURI() {
-    
-  }
   
   private void InitializeJDBCService() {
     String username = MovieRentals.userName();
