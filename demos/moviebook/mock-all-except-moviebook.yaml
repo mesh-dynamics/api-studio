@@ -58,16 +58,16 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: movieinfo
+  name: restwrapjdbc
 spec:
   hosts:
-  - movieinfo
+  - restwrapjdbc
   http:
   - match:
     - uri:
-        prefix: /minfo
+        prefix: /restsql
     rewrite:
-        uri: /cubews/ms/minfo
+        uri: /cubews/ms/restsql
     route:
     - destination:
         host: cube

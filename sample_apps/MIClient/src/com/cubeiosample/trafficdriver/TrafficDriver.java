@@ -1,6 +1,7 @@
 package com.cubeiosample.trafficdriver;
 
 import java.net.URI;
+import java.util.Properties;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -12,15 +13,16 @@ import org.glassfish.jersey.client.ClientProperties;
 
 
 public class TrafficDriver {
-  private static boolean LOCAL_RUN = false;
+  //private static String MINFO_URI = "http://localhost:8080/MIRest/minfo/";
+  private static String MINFO_URI = "http://a8a48b951150f11e99e65021e7b28c68-286862219.us-east-2.elb.amazonaws.com/minfo/";
+
   
   public static void main(String[] args) {
-    configureLocalRun();
     ClientConfig clientConfig = new ClientConfig()
                 .property(ClientProperties.READ_TIMEOUT, 100000)  // timing out with default 20000 ms
                 .property(ClientProperties.CONNECT_TIMEOUT, 10000);
     Client client = ClientBuilder.newClient(clientConfig);
-    WebTarget service = client.target(getBaseURI());
+    WebTarget service = client.target(MINFO_URI);
 
     // TODO: ideally, start separate threads.
     // User flow 1: rent movies
@@ -31,18 +33,5 @@ public class TrafficDriver {
     // User flow 3: 
   }
 
-  private static URI getBaseURI() {
-    if (LOCAL_RUN) {
-      return UriBuilder.fromUri("http://localhost:8080/MIRest/minfo/").build();
-    }
-    return UriBuilder.fromUri("http://localhost:8080/minfo/").build();
-  }
-  
-  // Setup the env variable in "Run configurations" in eclipse
-  private static void configureLocalRun() {
-    String localRun = System.getenv("LOCAL_RUN");
-    if (localRun != null && localRun.equalsIgnoreCase("true")) {
-      LOCAL_RUN = true;
-    }
-  }
+ 
 }

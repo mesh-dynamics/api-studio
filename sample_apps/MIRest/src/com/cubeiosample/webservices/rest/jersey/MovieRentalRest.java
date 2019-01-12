@@ -22,6 +22,7 @@ import org.json.JSONObject;
 public class MovieRentalRest {
 	final static Logger LOGGER;
 	static MovieRentals mv;
+	static ListMoviesCache lmc;
 	
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
@@ -31,6 +32,7 @@ public class MovieRentalRest {
 	static {
 		try {
 			mv = new MovieRentals();
+			lmc = new ListMoviesCache(mv);
 		} catch (ClassNotFoundException e) {
 			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
 		}
@@ -40,7 +42,7 @@ public class MovieRentalRest {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response health() {
-	  return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"status\": \"MovieInfo is healthy\"}").build();
+	  return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"MIRest status\": \"MovieInfo is healthy\"}").build();
   }
 
 	// User flow: Rent a movie
@@ -57,11 +59,14 @@ public class MovieRentalRest {
 							               @QueryParam("actor") String actor) {
 		JSONArray films = null;
 		try {
-			films = mv.ListMovies(filmName, keyword);
+			films = lmc.getMovieList(filmName);
 			if (films != null) {
-				// TODO: couldn't return films directly; the client fails
 				return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
 			}
+			films = lmc.getMovieList(keyword);
+			if (films != null) {
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
+      }
 		} catch (Exception e) {
 			LOGGER.error("ListMovies args: " + filmName + ", " + keyword + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();

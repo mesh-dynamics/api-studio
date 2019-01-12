@@ -4,11 +4,15 @@ import java.sql.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.text.SimpleDateFormat;
 import org.apache.log4j.Logger;
 
-import org.json.*;
+//import org.json.*;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
 
 public class MovieRentals {
 
@@ -55,20 +59,25 @@ public class MovieRentals {
     
     private void configureUseKube() {
     		String useKube = System.getenv("USE_KUBE");
-    		if (useKube == null || !useKube.equalsIgnoreCase("true")) {
-    			USE_KUBE = false;
+    		if (useKube != null && useKube.equalsIgnoreCase("true")) {
+    			USE_KUBE = true;
     		}
+    		LOGGER.debug("use_kube value:" + useKube);
     }
     
     public static String baseUri() {
     		if (USE_KUBE) {
     			// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
-    			String host = System.getenv(System.getenv("MYSQL_DB_HOST"));
+    			//String host = System.getenv(System.getenv("MYSQL_PERMANENT_HOST"));
+    		  String host = System.getenv("MYSQL_PERMANENT_HOST");
+    			if (host == null) {
+    			  LOGGER.error("host has to be specified");
+    			}
     			String port = System.getenv("MYSQL_DB_PORT");
     			if (port == null) {
     				port = "3306";
     			}
-    			return host + ":" + port;
+    			return "jdbc:mysql://" + host + ":" + port + "/sakila";
     		}
     		return "jdbc:mysql://" + MYSQL_HOST + ":" + MYSQL_PORT + "/sakila";
     }
@@ -87,45 +96,62 @@ public class MovieRentals {
     		return MYSQL_PWD;
     }
 
-    public JSONArray ListMovies(String filmName, String keyword) {
+
+    public JSONArray ListMovies(String filmNameOrKeyword) {
 	    	// TODO: add actor also in the parameter options.
 	    	try {
-		    	if (filmName != null && !filmName.isEmpty()) {
-		    		// query with filmname
-		    		String query = "select film_id, title from film where title = ?";
-		    		JSONArray params = new JSONArray();
-		    		RestOverSql.AddStringParam(params, filmName);
-		    		JSONArray films = null;
-		    		if (USE_JDBC_SERVICE) {
-		    		  films = ros.ExecuteQuery(query, params);
-		    		} else {
-		    		  films = jdbcPool.ExecuteQuery(query, params);
-		    		}
-		    		if (films != null && films.length() > 0) {
-		    			return films;
-		    		}
-		    	}
-		    	if (keyword != null && !keyword.isEmpty()) {
-		    		String query = "select id, title from film where title like ?";
-		    		JSONArray params = new JSONArray();
-		    		RestOverSql.AddStringParam(params, filmName);
-		    		JSONArray films = null;
-		    		if (USE_JDBC_SERVICE) {
-		    		  LOGGER.debug("params array:" + params.toString());
-		    		  films = ros.ExecuteQuery(query, params);
-		    		} else {
-		    		  films = jdbcPool.ExecuteQuery(query, params);
-		    		}
-		    		if (films != null && films.length() > 0) {
-		    			return films;
-		    		}
-		    	}
+		    	JSONArray films = null;
+		    	films = ListMovieByName(filmNameOrKeyword);
+		    	if (films != null && films.length() > 0) {
+	          return films;
+	      }
+		    
+		    	films = ListMoviesByKeyword(filmNameOrKeyword);
+	    		if (films != null && films.length() > 0) {
+	    			return films;
+	    		}
 	    	} catch (Exception e) {
 	    		LOGGER.error("Couldn't list movies; " + e.toString());
 	    	}
-	    	return null;
+	    	return new JSONArray("[{\"couldn't list movies\"}]");
     }
     
+    public JSONArray ListMovieByName(String filmName) {
+      if (filmName == null || filmName.isEmpty()) {
+        return null;
+      }
+           
+      // query with filmname
+      String query = "select film_id, title from film where title = ?";
+      JSONArray params = new JSONArray();
+      RestOverSql.AddStringParam(params, filmName);
+      JSONArray films = null;
+      if (USE_JDBC_SERVICE) {
+        films = ros.ExecuteQuery(query, params);
+      } else {
+        films = jdbcPool.ExecuteQuery(query, params);
+      }
+      return films;
+    }
+    
+    
+    public JSONArray ListMoviesByKeyword(String keyword) {
+      if (keyword == null || keyword.isEmpty()) {
+        return null;
+      }
+      String query = "select id, title from film where title like ?";
+      JSONArray params = new JSONArray();
+      RestOverSql.AddStringParam(params, keyword);
+      JSONArray films = null;
+      if (USE_JDBC_SERVICE) {
+        LOGGER.debug("params array:" + params.toString());
+        films = ros.ExecuteQuery(query, params);
+      } else {
+        films = jdbcPool.ExecuteQuery(query, params);
+      }
+      return films;
+    }
+        
     
     public JSONArray FindAvailableStores(int filmId) throws SQLException, JSONException {
 	    	try {
