@@ -104,7 +104,7 @@ public class MovieRentals {
 		    	films = ListMovieByName(filmNameOrKeyword);
 		    	if (films != null && films.length() > 0) {
 	          return films;
-	      }
+		    	}
 		    
 		    	films = ListMoviesByKeyword(filmNameOrKeyword);
 	    		if (films != null && films.length() > 0) {
@@ -115,6 +115,7 @@ public class MovieRentals {
 	    	}
 	    	return new JSONArray("[{\"couldn't list movies\"}]");
     }
+    
     
     public JSONArray ListMovieByName(String filmName) {
       if (filmName == null || filmName.isEmpty()) {
@@ -139,7 +140,7 @@ public class MovieRentals {
       if (keyword == null || keyword.isEmpty()) {
         return null;
       }
-      String query = "select id, title from film where title like ?";
+      String query = "select id, title from film where title like %?%";
       JSONArray params = new JSONArray();
       RestOverSql.AddStringParam(params, keyword);
       JSONArray films = null;
