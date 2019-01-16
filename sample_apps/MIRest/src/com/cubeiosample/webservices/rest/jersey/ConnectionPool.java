@@ -71,17 +71,17 @@ public class ConnectionPool {
     		return connPool.getConnection().prepareStatement(query);
     }
     
-    public JSONArray ExecuteQuery(String query, JSONArray params) {
+    public JSONArray executeQuery(String query, JSONArray params) {
 	    	try {
 	    		Connection conn = connPool.getConnection();
 	    		PreparedStatement stmt = conn.prepareStatement(query);
 	    		for (int i = 0; i < params.length(); ++i) {
 	    			JSONObject obj = params.getJSONObject(i);
-	    			BindParameter(stmt, obj);
+	    			bindParameter(stmt, obj);
 	    		}
 		    	ResultSet rs = stmt.executeQuery();
 		    	// stmt.closeoncompletion() not supported by mysql driver
-		    	JSONArray res = ConvertResultSetToJson(rs);
+		    	JSONArray res = convertResultSetToJson(rs);
 		    	stmt.close();
 		    	gPool.returnObject(conn);
 		    	return res;
@@ -91,22 +91,22 @@ public class ConnectionPool {
 	    	return null;
     }
     
-    public JSONArray ExecuteQuery(String query) throws SQLException, JSONException {
+    public JSONArray executeQuery(String query) throws SQLException, JSONException {
 	    	Statement stmt = connPool.getConnection().createStatement();
 	    	ResultSet rs = stmt.executeQuery(query);
-	    	JSONArray res = ConvertResultSetToJson(rs);
+	    	JSONArray res = convertResultSetToJson(rs);
 	    	stmt.close();
 	    	return res;
     }
     
     
-    public JSONObject ExecuteUpdate(String query, JSONArray params) {
+    public JSONObject executeUpdate(String query, JSONArray params) {
       JSONObject result = new JSONObject();
 	    	try {
 	    		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
 	    		for (int i = 0; i < params.length(); ++i) {
 	    			JSONObject obj = params.getJSONObject(i);
-	    			BindParameter(stmt, obj);
+	    			bindParameter(stmt, obj);
 	    		}
 		    	int res = stmt.executeUpdate();
 		    	stmt.close();
@@ -119,7 +119,7 @@ public class ConnectionPool {
 	    	return result;
     }
     
-    public JSONObject ExecuteUpdate(String query) {
+    public JSONObject executeUpdate(String query) {
       JSONObject result = new JSONObject();
 	    	try {
 	    		Statement stmt = connPool.getConnection().createStatement();
@@ -135,7 +135,7 @@ public class ConnectionPool {
     }
     
     
-    private void BindParameter(PreparedStatement stmt, JSONObject param) throws JSONException, SQLException {
+    private void bindParameter(PreparedStatement stmt, JSONObject param) throws JSONException, SQLException {
 	    	int index = param.getInt("index");
 	    	String dataType = param.getString("type").toLowerCase();
 	    	LOGGER.debug(index + ":" + param.getString("value"));
@@ -157,7 +157,7 @@ public class ConnectionPool {
     
     // Copied from the stackoverflow post
     // https://stackoverflow.com/questions/6514876/most-efficient-conversion-of-resultset-to-json
-    private JSONArray ConvertResultSetToJson(ResultSet rs) throws JSONException {
+    private JSONArray convertResultSetToJson(ResultSet rs) throws JSONException {
       try {
       		ResultSetMetaData rsmd = rs.getMetaData();
       		int numColumns = rsmd.getColumnCount();

@@ -20,12 +20,12 @@ public class Authenticator {
   // TODO: read key from a conf parameter/file
   final static Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-  public static boolean Authenticate(String username, String password) throws Exception {
+  public static boolean authenticate(String username, String password) throws Exception {
     // TODO: validate against db and then return true/false; needs to be done along with /createuser api
     return true;
   }
    
-  public static String IssueToken(String username) {
+  public static String issueToken(String username) {
     LocalDateTime ldt = LocalDateTime.now().plusMinutes(60L);
     Instant expiry = ldt.atZone(ZoneId.systemDefault()).toInstant();
     String jws = Jwts.builder()
@@ -41,7 +41,7 @@ public class Authenticator {
   }
   
   
-  public static String ValidateToken(String jws) {
+  public static String validateToken(String jws) {
     // key is needed to parse jwt. If successful, this token is valid.
     Jws<Claims> claims = Jwts.parser().setSigningKey(key).parseClaimsJws(jws);
     Date dt = claims.getBody().getExpiration();

@@ -24,7 +24,7 @@ public class TrafficDriver {
     // User flow 1: rent movies
     FindAndRentMovies frm = new FindAndRentMovies(service);
     try {
-      frm.DriveTraffic();
+      frm.driveTraffic();
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

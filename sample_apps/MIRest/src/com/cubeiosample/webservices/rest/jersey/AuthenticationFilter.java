@@ -42,7 +42,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     // Validate the token and extract username
     // has to be "final" for the anonymous class SecurityContext to work
-    final String username = Authenticator.ValidateToken(token);  
+    final String username = Authenticator.validateToken(token);  
     if (username == null) {
       abortWithUnauthorized(requestContext);
     }

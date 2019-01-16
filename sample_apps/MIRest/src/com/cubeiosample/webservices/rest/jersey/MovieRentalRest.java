@@ -55,13 +55,13 @@ public class MovieRentalRest {
 	@POST
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-  public Response AuthenticateUser(@FormParam("username") String username,
+  public Response authenticateUser(@FormParam("username") String username,
                                    @FormParam("password") String password) {
 	  try {
           
-	    Authenticator.Authenticate(username, password);
+	    Authenticator.authenticate(username, password);
 
-	    String token = Authenticator.IssueToken(username);
+	    String token = Authenticator.issueToken(username);
 
 	    return Response.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
 	    
@@ -109,12 +109,12 @@ public class MovieRentalRest {
 	@GET
 	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response FindStoreswithFilm(@QueryParam("filmId") Integer filmId) {
+	public Response findStoreswithFilm(@QueryParam("filmId") Integer filmId) {
 		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = null;
 		try {
-			stores = mv.FindAvailableStores(filmId);
+			stores = mv.findAvailableStores(filmId);
 		} catch (Exception e) {
 			LOGGER.error("FindStoreswithFilm args: " + filmId + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
@@ -131,7 +131,7 @@ public class MovieRentalRest {
 	@Secured
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response RentMovie(String rentalInfoStr, 
+	public Response rentMovie(String rentalInfoStr, 
 	    //JSONObject rentalInfo,
 	    @HeaderParam("end-user") String user,
 	    @HeaderParam("x-request-id") String xreq,
@@ -152,7 +152,7 @@ public class MovieRentalRest {
 	    if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
 	      return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"Invalid query params\"}").build();
 	    }
-	    JSONObject result = mv.RentMovie(filmId, storeId, duration, customerId, staffId);
+	    JSONObject result = mv.rentMovie(filmId, storeId, duration, customerId, staffId);
 	    return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 	  } catch (Exception e) {
 	    e.printStackTrace();
@@ -178,7 +178,7 @@ public class MovieRentalRest {
     JSONObject result = null;
     try {
       LOGGER.debug("ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", " + rent);
-      result = mv.ReturnMovie(inventoryId, userId, staffId, rent);
+      result = mv.returnMovie(inventoryId, userId, staffId, rent);
     } catch (Exception e) {
       result = new JSONObject("{\"Returnmovie didn't succeed\"}");
       LOGGER.error("Args: [" + inventoryId + ", " + userId + ", " + staffId + ", " + rent + "]; " + e.toString());
@@ -196,7 +196,7 @@ public class MovieRentalRest {
 	public Response OverdueRentals(@QueryParam("userid") int userId) {
 		JSONArray dues = new JSONArray();
 		try {
-			dues = mv.FindDues(userId);			
+			dues = mv.findDues(userId);			
 		} catch (Exception e) {
 			e.printStackTrace();
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
@@ -209,7 +209,7 @@ public class MovieRentalRest {
 	@GET
 	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response IsFilmAvailableAtStore(@QueryParam("filmid") int filmId, 
+	public Response isFilmAvailableAtStore(@QueryParam("filmid") int filmId, 
 										                    @QueryParam("storeid") int storeId,
 										                    @QueryParam("duration") int duration,
 										                    @QueryParam("customerid") int customerId,
@@ -252,7 +252,7 @@ public class MovieRentalRest {
 	  // HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 	  JSONArray obj = null;
 	  try {
-	    obj = mv.GetSalesByStore(storename);
+	    obj = mv.getSalesByStore(storename);
     } catch (Exception e) {
       e.printStackTrace();
       return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
