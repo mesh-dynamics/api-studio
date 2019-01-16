@@ -4,15 +4,16 @@
 package com.cube.dao;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Generated;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import javax.annotation.Generated;
-import java.util.Collections;
 
 public class RRBase {
 
@@ -66,6 +67,15 @@ public class RRBase {
 		this.app = Optional.empty();
 	}
 
+	/**
+	 * @return
+	 */
+	@JsonIgnore
+	public Optional<String> getService() {
+		return Optional.ofNullable(meta.get("service")).flatMap(ss -> ss.stream().findFirst());
+	}
+
+	
 	public final Optional<String> reqid;
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> meta; 

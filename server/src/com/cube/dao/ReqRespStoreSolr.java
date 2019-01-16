@@ -653,7 +653,11 @@ public class ReqRespStoreSolr implements ReqRespStore {
 
 	private static final String RECORDREQIDF = CPREFIX + "recordreqid_s";
 	private static final String REPLAYREQIDF = CPREFIX + "replayreqid_s";
-
+	private static final String REQMTF = CPREFIX + "reqmt_s";
+	private static final String NUMMATCHF = CPREFIX + "nummatch_i";
+	private static final String RESPMTF = CPREFIX + "respmt_s";
+	private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata_ni";
+	private static final String SERVICEF = CPREFIX + "service_s";
 	
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#saveResult(com.cube.drivers.Analysis.Result)
@@ -671,18 +675,20 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private SolrInputDocument resultToSolrDoc(Result res) {
 		final SolrInputDocument doc = new SolrInputDocument();
 
-		String json="";
-		try {
-			json = config.jsonmapper.writeValueAsString(res);
-		} catch (JsonProcessingException e) {
-			LOGGER.error(String.format("Error in converting Result object into string for record req id %d, replay req id %d", res.recordreqid, res.replayreqid), e);
-		}
 		
 		// the id field is set to replay id so that the document can be updated based on id
 		doc.setField(RECORDREQIDF, res.recordreqid);
 		doc.setField(REPLAYREQIDF, res.replayreqid);
-		doc.setField(OBJJSONF, json);
+		doc.setField(REQMTF, res.reqmt.toString());
+		doc.setField(NUMMATCHF, res.nummatch);
+		doc.setField(RESPMTF, res.respmt.toString());
+		doc.setField(RESPMATCHMETADATAF, res.respmatchmetadata);
 		doc.setField(TYPEF, Types.Result.toString());
+		doc.setField(CUSTOMERIDF, res.customerid);
+		doc.setField(APPF, res.app);
+		doc.setField(SERVICEF, res.service);
+		doc.setField(PATHF, res.path);
+		doc.setField(REPLAYIDF, res.replayid);
 				
 		return doc;
 	}
