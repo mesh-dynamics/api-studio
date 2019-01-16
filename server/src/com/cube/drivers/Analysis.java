@@ -281,11 +281,11 @@ public class Analysis {
 		 * @param reqmt
 		 * @param respmt
 		 * @param respmatchmetadata
-		 * @param replayid2 
-		 * @param path2 
-		 * @param string3 
-		 * @param app 
 		 * @param customerid 
+		 * @param app 
+		 * @param service 
+		 * @param path
+		 * @param replayid 
 		 */
 		private Result(String recordreqid, String replayreqid, ReqMatchType reqmt, int nummatch, 
 				RespMatchType respmt,
