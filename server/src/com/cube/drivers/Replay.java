@@ -311,6 +311,7 @@ public class Replay {
 	/**
 	 * @return
 	 */
+	@JsonIgnore
 	public List<Request> getRequests() {
 		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
 	}

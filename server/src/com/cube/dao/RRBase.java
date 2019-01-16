@@ -51,7 +51,7 @@ public class RRBase {
 
 	
 	/**
-	 * 
+	 * For jackson json ser/deserialization
 	 */
 	@SuppressWarnings("unused") RRBase() {
 		super();

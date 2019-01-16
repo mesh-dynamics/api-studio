@@ -26,7 +26,8 @@ public class Request extends RRBase {
 	 * @param hdrs
 	 * @param body
 	 */
-	public Request(String path, Optional<String> reqid, MultivaluedMap<String, String> qparams,
+	public Request(String path, Optional<String> reqid, 
+			MultivaluedMap<String, String> qparams,
 			MultivaluedMap<String, String> fparams,
 			MultivaluedMap<String, String> meta, 
 			MultivaluedMap<String, String> hdrs, 
@@ -65,7 +66,7 @@ public class Request extends RRBase {
 	
 	
 	/**
-	 * 
+	 * For jackson json ser/deserialization
 	 */
 	@SuppressWarnings("unused")
 	private Request() {
@@ -201,20 +202,20 @@ public class Request extends RRBase {
 
 		ReqMatchType ret = ReqMatchType.ExactMatch;
 		
-		if ((ret = checkMatch(mspec.mreqid, reqid, other.reqid)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mmeta, meta, other.meta, mspec.metafields)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mhdrs, hdrs, other.hdrs, mspec.hdrfields)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mbody, body, other.body)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mcollection, collection, other.collection)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mtimestamp, timestamp, other.timestamp)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mrrtype, rrtype, other.rrtype)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mcustomerid, customerid, other.customerid)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mapp, app, other.app)) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mreqid, reqid, other.reqid))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mmeta, meta, other.meta, mspec.metafields))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mhdrs, hdrs, other.hdrs, mspec.hdrfields))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mbody, body, other.body))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mcollection, collection, other.collection))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mtimestamp, timestamp, other.timestamp))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mrrtype, rrtype, other.rrtype))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mcustomerid, customerid, other.customerid))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mapp, app, other.app))) == ReqMatchType.NoMatch) return ret;
 
-		if ((ret = checkMatch(mspec.mpath, path, other.path)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mqparams, qparams, other.qparams, mspec.qparamfields)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mfparams, fparams, other.fparams, mspec.fparamfields)) == ReqMatchType.NoMatch) return ret;
-		if ((ret = checkMatch(mspec.mmethod, method, other.method)) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mpath, path, other.path))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mqparams, qparams, other.qparams, mspec.qparamfields))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mfparams, fparams, other.fparams, mspec.fparamfields))) == ReqMatchType.NoMatch) return ret;
+		if ((ret = ret.And(checkMatch(mspec.mmethod, method, other.method))) == ReqMatchType.NoMatch) return ret;
 		
 		return ret;
 

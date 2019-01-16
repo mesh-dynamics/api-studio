@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.core.ResponseComparator;
+import com.cube.dao.RRBase.RR;
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
@@ -42,8 +43,19 @@ public class Analysis {
 	private Analysis(String replayid, int reqcnt) {
 		this.replayid = replayid;
 		this.status = Status.Running;
+		this.reqcnt = reqcnt;
 	}
 
+
+
+	/**
+	 * This constructor is only for jackson json deserialization
+	 */
+	
+	private Analysis() {
+		super();
+		this.replayid = "";
+	}
 
 
 	public final String replayid;
@@ -80,7 +92,7 @@ public class Analysis {
 		
 		Optional<Replay> replay = rrstore.getReplay(replayid);
 
-		// optional matching on traceid and requestid
+		// optional matching on traceid //and requestid
 		ReqMatchSpec mspec = (ReqMatchSpec) ReqMatchSpec.builder()
 				.withMpath(MatchType.FILTER)
 				.withMqparams(MatchType.FILTER)
@@ -89,8 +101,8 @@ public class Analysis {
 				.withHdrfields(Collections.singletonList(tracefield))
 				.withMrrtype(MatchType.FILTER)
 				.withMcustomerid(MatchType.FILTER)
-				.withMapp(MatchType.FILTER)
-				.withMreqid(MatchType.SCORE).build();
+				.withMapp(MatchType.FILTER).build();
+				//.withMreqid(MatchType.SCORE).build();
 
 		return replay.flatMap(r -> {
 			List<Request> reqs = r.getRequests();
@@ -114,15 +126,16 @@ public class Analysis {
 	 * @param reqs
 	 */
 	private void analyze(ReqRespStore rrstore, Stream<Request> reqs, ReqMatchSpec mspec) {
-		// TODO Auto-generated method stub
-		
 		reqs.forEach(r -> {
 			// find matching request in replay
-			List<Request> matches = rrstore.getRequests(r, mspec, Optional.ofNullable(10));
+			// same fields as request, only RRType should be Replay
+			Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta, 
+					r.hdrs, r.method, r.body, r.collection, r.timestamp, 
+					Optional.of(RR.Replay.toString()), r.customerid, r.app);
+			List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10));
 			
 			if (matches.isEmpty()) {
 				reqnotmatched++;
-				return;
 			}
 			else {
 				// fetch response of recording and replay
@@ -143,27 +156,25 @@ public class Analysis {
 						bestmatch = match;
 					}
 				}
-				ReqMatchType reqmt = ReqMatchType.ExactMatch;
-				if (bestmatch.respmt != RespMatchType.NoMatch) {
-					// found match
-					reqmt = r.compare(bestmatch.replayreq, mspec);
-				}
+				ReqMatchType reqmt = rq.compare(bestmatch.replayreq, mspec);
 				// compare & write out result
 				if (reqmt == ReqMatchType.ExactMatch)
 					reqmatched++;
 				else
 					reqpartiallymatched++;
-				if (bestmatch.respmt == RespMatchType.ExactMatch)
-					respmatched++;
-				else
-					resppartiallymatched++;
+				switch(bestmatch.respmt) {
+					case ExactMatch: respmatched++; break;
+					case TemplateMatch: resppartiallymatched++; break;
+					default: respnotmatched++; break;
+				}
 				Result res = new Result(bestmatch, reqmt, matches.size());						
 				rrstore.saveResult(res);
 			}
 			reqanalyzed++;
-			if (reqanalyzed % UPDBATCHSIZE == 0)
+			if (reqanalyzed % UPDBATCHSIZE == 0) {
 				LOGGER.info(String.format("Analysis of replay %s completed %d requests", replayid, reqanalyzed));
 				rrstore.saveAnalysis(this);
+			}
 		});		
 	}
 
@@ -198,7 +209,15 @@ public class Analysis {
 	public enum ReqMatchType {
 		ExactMatch,
 		PartialMatch,
-		NoMatch
+		NoMatch;
+		
+		public ReqMatchType And(ReqMatchType other) {
+			switch (this) {
+			case NoMatch: return NoMatch;
+			case ExactMatch: return other;
+			default: return (other == NoMatch) ? NoMatch : PartialMatch;
+			}
+		}
 	}
 		
 	public enum RespMatchType {
@@ -275,10 +294,10 @@ public class Analysis {
 
 		final public String recordreqid;
 		final public String replayreqid;
-		final ReqMatchType reqmt;
-		final int nummatch;
-		final RespMatchType respmt;
-		final String respmatchmetadata;		
+		final public ReqMatchType reqmt;
+		final public int nummatch;
+		final public RespMatchType respmt;
+		final public String respmatchmetadata;		
 	}
 
 }

@@ -214,16 +214,16 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		Collection<String> ftoadd = (fields.isEmpty()) ? fvalmap.keySet() : fields;
 		ftoadd.forEach(k -> {
 			String f = getSolrFieldName(fieldname, k);
-			fvalmap.get(f).forEach(v -> {
+			Optional.ofNullable(fvalmap.get(k)).ifPresent(vals -> vals.forEach(v -> {
 				addFilter(query, f, v);				
-			});
+			}));
 		});
 	}
 
 	
 	// for predicates in the solr q param. Assumes *:* is already there in the buffer
 	private static void addToQryStr(StringBuffer qstr, String fieldname, String fval) {
-		qstr.append(String.format("OR %s:%s", fieldname, fval));
+		qstr.append(String.format(" OR %s:%s", fieldname, fval));
 	}
 	
 	private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval) {
@@ -235,9 +235,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		Collection<String> ftoadd = (fields.isEmpty()) ? fvalmap.keySet() : fields;
 		ftoadd.forEach(k -> {
 			String f = getSolrFieldName(fieldname, k);
-			fvalmap.get(f).forEach(v -> {
+			Optional.ofNullable(fvalmap.get(k)).ifPresent(vals -> vals.forEach(v -> {
 				addToQryStr(qstr, f, v);				
-			});
+			}));
 		});
 	}
 
@@ -251,9 +251,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	
 	private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval) {
 		switch (mt) {
-		case FILTER: addFilter(query, fieldname, fval); break;
-		case SCORE: addToQryStr(qstr, fieldname, fval); break;
-		default:
+			case FILTER: addFilter(query, fieldname, fval); break;
+			case SCORE: addToQryStr(qstr, fieldname, fval); break;
+			default:
 		}
 	}
 
@@ -509,17 +509,19 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static SolrInputDocument replayToSolrDoc(Replay replay) {
 		final SolrInputDocument doc = new SolrInputDocument();
 
+		String type = Types.ReplayMeta.toString();
+		String id = type + '-' + replay.replayid; 
 		// the id field is set to replay id so that the document can be updated based on id
-		doc.setField(IDF, replay.replayid);
+		doc.setField(IDF, id);
 		doc.setField(APPF, replay.app);
 		doc.setField(ASYNCF, replay.async);
 		doc.setField(COLLECTIONF, replay.collection);
 		doc.setField(CUSTOMERIDF, replay.customerid);
 		doc.setField(ENDPOINTF, replay.endpoint);
 		doc.setField(REPLAYIDF, replay.replayid);
-		replay.reqids.forEach(id -> doc.addField(REQIDSF, id));
+		replay.reqids.forEach(reqid -> doc.addField(REQIDSF, reqid));
 		doc.setField(REPLAYSTATUSF, replay.status.toString());
-		doc.setField(TYPEF, Types.ReplayMeta.toString());
+		doc.setField(TYPEF, type);
 		replay.paths.forEach(path -> doc.addField(PATHSF, path));
 		doc.setField(REQCNTF, replay.reqcnt);
 		doc.setField(REQSENTF, replay.reqsent);
@@ -638,10 +640,13 @@ public class ReqRespStoreSolr implements ReqRespStore {
 			LOGGER.error(String.format("Error in converting Analysis object into string for replay id %d", analysis.replayid), e);
 		}
 		
+		String type = Types.Analysis.toString();
+		String id = type + '-' + analysis.replayid; 
 		// the id field is set to replay id so that the document can be updated based on id
-		doc.setField(IDF, analysis.replayid);
+		doc.setField(IDF, id);
 		doc.setField(REPLAYIDF, analysis.replayid);
 		doc.setField(OBJJSONF, json);
+		doc.setField(TYPEF, type);
 				
 		return doc;
 	}
@@ -677,6 +682,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		doc.setField(RECORDREQIDF, res.recordreqid);
 		doc.setField(REPLAYREQIDF, res.replayreqid);
 		doc.setField(OBJJSONF, json);
+		doc.setField(TYPEF, Types.Result.toString());
 				
 		return doc;
 	}
@@ -706,7 +712,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 */
 	private Optional<Analysis> docToAnalysis(SolrDocument doc, ReqRespStoreSolr rrstore) {
 		
-		Optional<String> json = getStrField(doc, OBJJSONF);
+		Optional<String> json = getStrFieldMV(doc, OBJJSONF).stream().findFirst();
 		Optional<Analysis> analysis = json.flatMap(j -> {
 			try {
 				return Optional.ofNullable(config.jsonmapper.readValue(j, Analysis.class));
