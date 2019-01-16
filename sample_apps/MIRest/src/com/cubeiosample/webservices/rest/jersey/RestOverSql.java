@@ -24,7 +24,7 @@ public class RestOverSql {
   private Client restClient = null;
   private WebTarget restJDBCService = null;
   final static Logger LOGGER = Logger.getLogger(RestOverSql.class);
-  private static boolean LOCAL_RUN = true;
+  private static String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
   Properties properties;
   private static final String CONFFILE = "conf/MIRest.conf";
   
@@ -33,56 +33,50 @@ public class RestOverSql {
         .property(ClientProperties.READ_TIMEOUT, 100000)  
         .property(ClientProperties.CONNECT_TIMEOUT, 10000);
     restClient = ClientBuilder.newClient(clientConfig);
-    LOGGER.debug("LOCAL_RUN is " + LOCAL_RUN + "; Rest jdbc service uri:" + getBaseURI());
-    configureLocalRun();
-    LOGGER.debug("LOCAL_RUN is " + LOCAL_RUN + "; Rest jdbc service uri:" + getBaseURI());
-    restJDBCService = restClient.target(getBaseURI());
+    configureRestWrapUri();
+    LOGGER.debug("RESTWRAPJDBC_URI is " + RESTWRAPJDBC_URI);
+    restJDBCService = restClient.target(RESTWRAPJDBC_URI);
     InitializeJDBCService();
   }
   
-  private static URI getBaseURI() {
-    if (LOCAL_RUN) {
-      // war is not copied to the root of tomcat/catalina_home
-      return UriBuilder.fromUri("http://localhost:8080/RestWrapJDBC/restsql").build();
-    }
-    // assuming root.war is copied to $CATALINA_HOME
-    return UriBuilder.fromUri("http://localhost:8080/restsql").build();
-  }
   
-  private void configureLocalRun() {
+  private void configureRestWrapUri() {
+    // try the conf file and then the env. otherwise, default
     properties = new java.util.Properties();
-    String localRun = null;
     try {
       properties.load(this.getClass().getClassLoader().
           getResourceAsStream(CONFFILE));
-      localRun = properties.getProperty("LOCAL_RUN");
+      RESTWRAPJDBC_URI = properties.getProperty("RESTWRAPJDBC_URI");
     } catch (Exception e) {
-      // ignore
       LOGGER.info("Conf file not found.");
-    }
-    if (localRun != null && localRun.equalsIgnoreCase("true")) {
-      LOCAL_RUN = true;
+      String rwUri = System.getenv("RESTWRAPJDBC_URI");
+      if (rwUri != null) {
+        RESTWRAPJDBC_URI = rwUri;
+      }
     } 
   }
+  
   
   private void InitializeJDBCService() {
     String username = MovieRentals.userName();
     String pwd = MovieRentals.passwd();
     String uri = MovieRentals.baseUri();
     Response response = CallWithRetries(restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, true, 3);
+    LOGGER.debug("intialized jdbc service " + uri + "; " + username + "; " + response.getStatus() + "; "+ response.readEntity(String.class));
     response.close();
   }
   
   
   public String getHealth() {
     Response response = CallWithRetries(restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, true, 3);
-    String result = response.getEntity().toString();
+    String result = response.readEntity(String.class);
     response.close();
     return result;
   }
   
   
   public JSONArray ExecuteQuery(String query, JSONArray params) {
+    LOGGER.debug("Query: " + query + "; " + params.toString());
     Response response = CallWithRetries(restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), null, true, 3);
     JSONArray result = new JSONArray(response.readEntity(String.class));
     LOGGER.debug("Query: " + query + "; " + params.toString() + "; NumRows=" + result.length());
@@ -128,10 +122,11 @@ public class RestOverSql {
     param.put("value", value);
     params.put(param);
   }
-
+  
     
   private Response CallWithRetries(Builder req, JSONObject body, boolean isGetRequest, int numRetries) {
     int numAttempts = 0;
+    LOGGER.debug("req:" + req.toString());
     while (numAttempts < numRetries) {
       try {
         if (isGetRequest) {
@@ -139,7 +134,7 @@ public class RestOverSql {
         } 
         return req.post(Entity.entity(body.toString(), MediaType.APPLICATION_JSON));
       } catch (Exception e) {
-        LOGGER.error("request: " + req.toString() + "; exception: " + e.toString());
+        LOGGER.error("request attempt " + numAttempts + ": " + req.toString() + "; exception: " + e.toString());
         ++numAttempts;
       }
     }

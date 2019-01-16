@@ -228,7 +228,7 @@ spec:
         - containerPort: 8080
         env:
           - name: USE_KUBE
-            value: "false"
+            value: "true"
           - name: MYSQL_DB_HOST
             value: MYSQL_SAKILA_SERVICE_HOST
           - name: MYSQL_DB_PORT
@@ -241,6 +241,40 @@ spec:
             value: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
           - name: MYSQL_PERMANENT_PORT
             value: "3306"
+          - name: RESTWRAPJDBC_URI
+            value: http://restwrapjdbc:8080/restsql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: restwrapjdbc
+  labels:
+    app: restwrapjdbc
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: restwrapjdbc
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: restwrapjdbc-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: restwrapjdbc
+        version: v1
+    spec:
+      containers:
+      - name: restwrapjdbc
+        image: cubeiocorp/restwrapjdbc:V1-SNAPSHOT
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
 ---
 ##############
 # External service

@@ -2,6 +2,7 @@ package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -9,8 +10,11 @@ import javax.ws.rs.Path;
 //import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -22,6 +26,7 @@ import org.json.JSONObject;
 public class MovieRentalRest {
 	final static Logger LOGGER;
 	static MovieRentals mv;
+	static ListMoviesCache lmc;
 	
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
@@ -31,6 +36,7 @@ public class MovieRentalRest {
 	static {
 		try {
 			mv = new MovieRentals();
+			lmc = new ListMoviesCache(mv);
 		} catch (ClassNotFoundException e) {
 			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
 		}
@@ -40,9 +46,31 @@ public class MovieRentalRest {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response health() {
-	  return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"status\": \"MovieInfo is healthy\"}").build();
+	  return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"MIRest status\": \"MovieInfo is healthy\"}").build();
+  }
+	
+	// TODO: createuser API
+	
+	@Path("/authenticate")
+	@POST
+  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+  public Response AuthenticateUser(@FormParam("username") String username,
+                                   @FormParam("password") String password) {
+	  try {
+          
+	    Authenticator.Authenticate(username, password);
+
+	    String token = Authenticator.IssueToken(username);
+
+	    return Response.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
+	    
+	  } catch (Exception e) {
+	    return Response.status(Response.Status.FORBIDDEN).build();
+    }      
   }
 
+	
 	// User flow: Rent a movie
 	// Find movies by title/keyword/genre/actor
 	// Check available stores in zip code
@@ -51,17 +79,24 @@ public class MovieRentalRest {
 	// Return a movie
 	@Path("/listmovies")
 	@GET
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response ListMovies(@QueryParam("filmName") String filmName,
 							               @QueryParam("keyword") String keyword,
-							               @QueryParam("actor") String actor) {
+							               @QueryParam("actor") String actor,
+							               @Context SecurityContext securityContext) {
 		JSONArray films = null;
+		//		Principal principal = securityContext.getUserPrincipal();
+		//		String username = principal.getName();
 		try {
-			films = mv.ListMovies(filmName, keyword);
+			films = lmc.getMovieList(filmName);
 			if (films != null) {
-				// TODO: couldn't return films directly; the client fails
 				return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
 			}
+			films = lmc.getMovieList(keyword);
+			if (films != null) {
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
+      }
 		} catch (Exception e) {
 			LOGGER.error("ListMovies args: " + filmName + ", " + keyword + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
@@ -72,6 +107,7 @@ public class MovieRentalRest {
 	
 	@Path("/liststores")
 	@GET
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response FindStoreswithFilm(@QueryParam("filmId") Integer filmId) {
 		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
@@ -92,6 +128,7 @@ public class MovieRentalRest {
 	
 	@POST
 	@Path("/rentmovie")
+	@Secured
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response RentMovie(String rentalInfoStr, 
@@ -128,6 +165,7 @@ public class MovieRentalRest {
 	// Pay and return movies
   @Path("/returnmovie")
   @POST
+  @Secured
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response ReturnMovie(String returnInfoStr) {
@@ -149,10 +187,11 @@ public class MovieRentalRest {
   }
   
   
-	//// FOLLOWING METHODS NOT CHECKED FOR CORRECTNESS
+	//// FOLLOWING METHODS NOT CHECKED FOR CORRECTNESS. MOST LIKELY WON'T WORK WITHOUT SOME FIXING
 	// Check due rentals
 	@Path("/overduerentals")
 	@GET
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response OverdueRentals(@QueryParam("userid") int userId) {
 		JSONArray dues = new JSONArray();
@@ -168,6 +207,7 @@ public class MovieRentalRest {
 	
 	@Path("/ismovieavailable")
 	@GET
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response IsFilmAvailableAtStore(@QueryParam("filmid") int filmId, 
 										                    @QueryParam("storeid") int storeId,
@@ -198,6 +238,7 @@ public class MovieRentalRest {
 	// Best performing genre
 	@Path("/salesbystore")
 	@GET
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSalesByStore(@QueryParam("storename") String storename,
 	    @HeaderParam("end-user") String user,

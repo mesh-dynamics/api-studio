@@ -44,6 +44,7 @@ public class RestAPIForJDBC {
       jdbcPool.setUpPool(uri, username, passwd);
       LOGGER.info("mysql uri: " + uri);
       LOGGER.info(jdbcPool.getPoolStatus());
+      return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"status\": \"Connection pool created.\"}").build();
     } catch (Exception e) {
       LOGGER.error("connection pool creation failed; " + e.toString());
     }
