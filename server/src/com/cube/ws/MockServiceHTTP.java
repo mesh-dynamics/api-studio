@@ -13,14 +13,16 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.ws.rs.core.UriInfo;
-
+import com.cube.dao.RRBase;
+import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStore.Request;
+import com.cube.dao.Request;
+import com.cube.dao.Request.ReqMatchSpec;
 
 /**
  * @author prasad
@@ -62,11 +64,11 @@ public class MockServiceHTTP {
 	    
 	    // TODO: extract reqid and collection from headers and pass to request
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams, Optional.empty(), 
-	    		Optional.of(ReqRespStore.RR.Record.toString()), 
+	    		Optional.of(RRBase.RR.Record.toString()), 
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
 
-	    Optional<ReqRespStore.Response> resp = rrstore.getRespForReq(r);
+	    Optional<com.cube.dao.Response> resp = rrstore.getRespForReq(r, mspec);
 	    
 	    return resp.map(respv -> {
 		    ResponseBuilder builder = Response.status(respv.status);
@@ -99,4 +101,15 @@ public class MockServiceHTTP {
 
 
 	ReqRespStore rrstore;
+	
+	
+	static ReqMatchSpec mspec = (ReqMatchSpec) ReqMatchSpec.builder()
+			.withMpath(MatchType.FILTER)
+			.withMqparams(MatchType.FILTER)
+			.withMfparams(MatchType.FILTER)
+			.withMrrtype(MatchType.FILTER)
+			.withMcustomerid(MatchType.FILTER)
+			.withMapp(MatchType.FILTER)
+			.withMreqid(MatchType.SCORE)
+			.build();
 }

@@ -6,6 +6,8 @@ package com.cube.dao;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
@@ -28,8 +30,14 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 
 import com.cube.core.Utils;
+import com.cube.dao.RRBase.RRMatchSpec.MatchType;
+import com.cube.dao.Request.ReqMatchSpec;
+import com.cube.drivers.Analysis;
+import com.cube.drivers.Analysis.Result;
 import com.cube.drivers.Replay;
 import com.cube.drivers.Replay.ReplayStatus;
+import com.cube.ws.Config;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * @author prasad
@@ -64,30 +72,17 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 * qr - query request
 	 */
 	@Override
-	public Optional<Request> getRequest(Request qr, boolean ignoreId) {
+	public List<Request> getRequests(Request qr, ReqMatchSpec mspec, Optional<Integer> nummatches) {
 
-		final SolrQuery query = new SolrQuery("*:*");
-		query.addField("*");
-		query.setRows(1);
-		addFilter(query, TYPEF, Types.Request.toString());
-		addFilter(query, PATHF, qr.path);
-
-		if (!ignoreId) 
-			addFilter(query, REQIDF, qr.reqid);
+		// one result by default
+		int nm = nummatches.orElse(1);
 		
-		addFilter(query, QPARAMS, qr.qparams);
-		addFilter(query, FPARAMS, qr.fparams);
-		
-		addFilter(query, RRTYPEF, qr.rrtype);
-		addFilter(query, CUSTOMERIDF, qr.customerid);
-		addFilter(query, APPF, qr.app);
-
-		
-		return query(solr, query).flatMap(documents -> {
-			return documents.stream().findFirst().flatMap(doc -> {
-				return docToRequest(doc);
-			});			
-		});
+		final SolrQuery query = reqMatchSpecToSolrQuery(qr, mspec, Optional.of(1));
+		return query(solr, query).map(documents -> {
+			return documents.stream().limit(nm).flatMap(doc -> {
+				return docToRequest(doc).stream();
+			}).collect(Collectors.toList());			
+		}).orElse(Collections.emptyList());
 
 	}
 
@@ -97,8 +92,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	@Override
 	public List<Request> getRequests(String customerid, String app, String collection, 
 			List<String> reqids, List<String> paths,
-			RR rrtype) {
-		// TODO Auto-generated method stub
+			RRBase.RR rrtype) {
 
 		final SolrQuery query = new SolrQuery("*:*");
 		query.addField("*");
@@ -123,7 +117,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 			return documents.stream().flatMap(doc -> {
 				return docToRequest(doc).stream();
 			}).collect(Collectors.toList());			
-		}).orElse(new ArrayList<Request>());
+		}).orElse(Collections.emptyList());
 	}
 
 	
@@ -152,9 +146,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 * @see com.cube.dao.ReqRespStore#getRespForReq(com.cube.dao.ReqRespStore.Request)
 	 */
 	@Override
-	public Optional<Response> getRespForReq(Request qr) {
+	public Optional<Response> getRespForReq(Request qr, ReqMatchSpec mspec) {
 		// Find request, without considering request id
-		Optional<Request> req = getRequest(qr, true);
+		Optional<Request> req = getRequests(qr, mspec, Optional.empty()).stream().findFirst();
 		return req.flatMap(reqv -> reqv.reqid).flatMap(idv -> {
 			return getResponse(idv);
 		});
@@ -162,13 +156,16 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	
 	/**
 	 * @param solr
+	 * @param config 
 	 */
-	public ReqRespStoreSolr(SolrClient solr) {
+	public ReqRespStoreSolr(SolrClient solr, Config config) {
 		super();
 		this.solr = solr;
+		this.config = config;
 	}
 
 	private final SolrClient solr;
+	private final Config config;
 	
 	private static final String CPREFIX = "";
 	
@@ -205,24 +202,69 @@ public class ReqRespStoreSolr implements ReqRespStore {
 
 	
 	private static void addFilter(SolrQuery query, String fieldname, String fval) {
-		query.addFilterQuery(String.format("%s:%s", fieldname, fval));			
+		query.addFilterQuery(String.format("%s:%s", fieldname, fval));
 	}
 	
 	private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
-		fval.ifPresent(val -> {
-			query.addFilterQuery(String.format("%s:%s", fieldname, val));			
-		});
+		fval.ifPresent(val -> addFilter(query, fieldname, val));
 	}
 
-	private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap) {
-		fvalmap.forEach((k, values) -> {
+	private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> fields) {
+		// Empty list of selected fields is treated as if all fields are to be added
+		Collection<String> ftoadd = (fields.isEmpty()) ? fvalmap.keySet() : fields;
+		ftoadd.forEach(k -> {
 			String f = getSolrFieldName(fieldname, k);
-			values.forEach(v -> {
-				addFilter(query, f, v);
-			});
+			Optional.ofNullable(fvalmap.get(k)).ifPresent(vals -> vals.forEach(v -> {
+				addFilter(query, f, v);				
+			}));
 		});
 	}
 
+	
+	// for predicates in the solr q param. Assumes *:* is already there in the buffer
+	private static void addToQryStr(StringBuffer qstr, String fieldname, String fval) {
+		qstr.append(String.format(" OR %s:%s", fieldname, fval));
+	}
+	
+	private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval) {
+		fval.ifPresent(val -> addToQryStr(qstr, fieldname, val));
+	}
+
+	private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> fields) {
+		// Empty list of selected fields is treated as if all fields are to be added
+		Collection<String> ftoadd = (fields.isEmpty()) ? fvalmap.keySet() : fields;
+		ftoadd.forEach(k -> {
+			String f = getSolrFieldName(fieldname, k);
+			Optional.ofNullable(fvalmap.get(k)).ifPresent(vals -> vals.forEach(v -> {
+				addToQryStr(qstr, f, v);				
+			}));
+		});
+	}
+
+	private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval) {
+		switch (mt) {
+			case FILTER: addFilter(query, fieldname, fval); break;
+			case SCORE: addToQryStr(qparam, fieldname, fval); break;
+			default:
+		}
+	}
+	
+	private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval) {
+		switch (mt) {
+			case FILTER: addFilter(query, fieldname, fval); break;
+			case SCORE: addToQryStr(qstr, fieldname, fval); break;
+			default:
+		}
+	}
+
+	private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> fields) {
+		switch (mt) {
+			case FILTER: addFilter(query, fieldname, fvalmap, fields); break;
+			case SCORE: addToQryStr(qstr, fieldname, fvalmap, fields); break;
+			default:
+		}
+	}
+	
 	private static Optional<SolrDocumentList> query(SolrClient solr, SolrQuery query) {
 
 		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
@@ -467,17 +509,19 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static SolrInputDocument replayToSolrDoc(Replay replay) {
 		final SolrInputDocument doc = new SolrInputDocument();
 
+		String type = Types.ReplayMeta.toString();
+		String id = type + '-' + replay.replayid; 
 		// the id field is set to replay id so that the document can be updated based on id
-		doc.setField(IDF, replay.replayid);
+		doc.setField(IDF, id);
 		doc.setField(APPF, replay.app);
 		doc.setField(ASYNCF, replay.async);
 		doc.setField(COLLECTIONF, replay.collection);
 		doc.setField(CUSTOMERIDF, replay.customerid);
 		doc.setField(ENDPOINTF, replay.endpoint);
 		doc.setField(REPLAYIDF, replay.replayid);
-		replay.reqids.forEach(id -> doc.addField(REQIDSF, id));
+		replay.reqids.forEach(reqid -> doc.addField(REQIDSF, reqid));
 		doc.setField(REPLAYSTATUSF, replay.status.toString());
-		doc.setField(TYPEF, Types.ReplayMeta.toString());
+		doc.setField(TYPEF, type);
 		replay.paths.forEach(path -> doc.addField(PATHSF, path));
 		doc.setField(REQCNTF, replay.reqcnt);
 		doc.setField(REQSENTF, replay.reqsent);
@@ -540,6 +584,144 @@ public class ReqRespStoreSolr implements ReqRespStore {
 				return docToReplay(doc, this);
 			});			
 		});
+	}
+	
+	// Some useful functions
+	public static SolrQuery reqMatchSpecToSolrQuery(Request qr, ReqMatchSpec spec, Optional<Integer> numresults) {
+		final SolrQuery query = new SolrQuery("*:*");
+		final StringBuffer qstr = new StringBuffer("*:*");
+		query.addField("*");
+		numresults.ifPresent(n -> query.setRows(n));
+		
+		addMatch(spec.mreqid, query, qstr, REQIDF, qr.reqid);
+		addMatch(spec.mmeta, query, qstr, META, qr.meta, spec.metafields);
+		addMatch(spec.mhdrs, query, qstr, HDR, qr.hdrs, spec.hdrfields);
+		addMatch(spec.mbody, query, qstr, BODYF, qr.body);
+		addMatch(spec.mcollection, query, qstr, COLLECTIONF, qr.collection);
+		addMatch(spec.mtimestamp, query, qstr, TIMESTAMPF, qr.timestamp.toString());
+		addMatch(spec.mrrtype, query, qstr, RRTYPEF, qr.rrtype);
+		addMatch(spec.mcustomerid, query, qstr, CUSTOMERIDF, qr.customerid);
+		addMatch(spec.mapp, query, qstr, APPF, qr.app);
+
+		addMatch(spec.mpath, query, qstr, PATHF, qr.path);		
+		addMatch(spec.mqparams, query, qstr, QPARAMS, qr.qparams, spec.qparamfields);
+		addMatch(spec.mfparams, query, qstr, FPARAMS, qr.fparams, spec.fparamfields);
+		addMatch(spec.mmethod, query, qstr, METHODF, qr.method);		
+		
+		addFilter(query, TYPEF, Types.Request.toString());
+		
+		query.setQuery(qstr.toString());
+		return query;
+	}
+
+	private static final String OBJJSONF = CPREFIX + "json_ni";
+	
+	
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#saveAnalysis(com.cube.drivers.Analysis)
+	 */
+	@Override
+	public boolean saveAnalysis(Analysis analysis) {
+		SolrInputDocument doc = analysisToSolrDoc(analysis);
+		return saveDoc(doc);
+	}
+
+	/**
+	 * @param analysis
+	 * @return
+	 */
+	private SolrInputDocument analysisToSolrDoc(Analysis analysis) {
+		final SolrInputDocument doc = new SolrInputDocument();
+
+		String json="";
+		try {
+			json = config.jsonmapper.writeValueAsString(analysis);
+		} catch (JsonProcessingException e) {
+			LOGGER.error(String.format("Error in converting Analysis object into string for replay id %d", analysis.replayid), e);
+		}
+		
+		String type = Types.Analysis.toString();
+		String id = type + '-' + analysis.replayid; 
+		// the id field is set to replay id so that the document can be updated based on id
+		doc.setField(IDF, id);
+		doc.setField(REPLAYIDF, analysis.replayid);
+		doc.setField(OBJJSONF, json);
+		doc.setField(TYPEF, type);
+				
+		return doc;
+	}
+
+	private static final String RECORDREQIDF = CPREFIX + "recordreqid_s";
+	private static final String REPLAYREQIDF = CPREFIX + "replayreqid_s";
+
+	
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#saveResult(com.cube.drivers.Analysis.Result)
+	 */
+	@Override
+	public boolean saveResult(Result res) {
+		SolrInputDocument doc = resultToSolrDoc(res);
+		return saveDoc(doc);		
+	}
+
+	/**
+	 * @param res
+	 * @return
+	 */
+	private SolrInputDocument resultToSolrDoc(Result res) {
+		final SolrInputDocument doc = new SolrInputDocument();
+
+		String json="";
+		try {
+			json = config.jsonmapper.writeValueAsString(res);
+		} catch (JsonProcessingException e) {
+			LOGGER.error(String.format("Error in converting Result object into string for record req id %d, replay req id %d", res.recordreqid, res.replayreqid), e);
+		}
+		
+		// the id field is set to replay id so that the document can be updated based on id
+		doc.setField(RECORDREQIDF, res.recordreqid);
+		doc.setField(REPLAYREQIDF, res.replayreqid);
+		doc.setField(OBJJSONF, json);
+		doc.setField(TYPEF, Types.Result.toString());
+				
+		return doc;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getAnalysis(java.lang.String)
+	 */
+	@Override
+	public Optional<Analysis> getAnalysis(String replayid) {
+		final SolrQuery query = new SolrQuery("*:*");
+		query.addField("*");
+		query.setRows(1);
+		addFilter(query, TYPEF, Types.Analysis.toString());
+		addFilter(query, REPLAYIDF, replayid);
+		
+		return query(solr, query).flatMap(documents -> {
+			return documents.stream().findFirst().flatMap(doc -> {
+				return docToAnalysis(doc, this);
+			});			
+		});
+	}
+
+	/**
+	 * @param doc
+	 * @param reqRespStoreSolr
+	 * @return
+	 */
+	private Optional<Analysis> docToAnalysis(SolrDocument doc, ReqRespStoreSolr rrstore) {
+		
+		Optional<String> json = getStrFieldMV(doc, OBJJSONF).stream().findFirst();
+		Optional<Analysis> analysis = json.flatMap(j -> {
+			try {
+				return Optional.ofNullable(config.jsonmapper.readValue(j, Analysis.class));
+			} catch (IOException e) {
+				LOGGER.error(String.format("Not able to parse json into Analysis object: %s", j), e);
+				return Optional.empty();
+			}
+		});
+		return analysis;
 	}
 
 }

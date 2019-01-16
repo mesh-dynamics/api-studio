@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStore.Request;
+import com.cube.dao.Request;
 
 /**
  * @author prasad
@@ -36,7 +36,7 @@ public class CubeStore {
 	@POST
 	@Path("/req")
     @Consumes({MediaType.APPLICATION_JSON})
-	public Response storereq(ReqRespStore.Request req) {
+	public Response storereq(Request req) {
 		
 		if (rrstore.save(req)) {
 			return Response.ok().build();
@@ -48,7 +48,7 @@ public class CubeStore {
 	@POST
 	@Path("/resp")
     @Consumes({MediaType.APPLICATION_JSON})
-	public Response storeresp(ReqRespStore.Response resp) {
+	public Response storeresp(com.cube.dao.Response resp) {
 		
 		if (rrstore.save(resp)) {
 			return Response.ok().build();
@@ -114,7 +114,7 @@ public class CubeStore {
 	    	    	}
 	    	    });
 	    	    return s.map(sval -> {
-		    		ReqRespStore.Response resp = new ReqRespStore.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
+		    		com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
 		    		if (!rrstore.save(resp))
 		    			return Optional.of("Not able to store response");
 		    		Optional<String> empty = Optional.empty();
