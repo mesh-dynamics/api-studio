@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
-import com.cube.drivers.Analysis.Result;
+import com.cube.drivers.Analysis.ReqRespMatchResult;
 import com.cube.drivers.Replay;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -74,7 +74,7 @@ public interface ReqRespStore {
 		Response,
 		ReplayMeta, // replay metadata
 		Analysis,
-		Result
+		ReqRespMatchResult
 	}
 
 	boolean save(Request req);
@@ -185,7 +185,7 @@ public interface ReqRespStore {
 	 * @param res
 	 * @return 
 	 */
-	boolean saveResult(Result res);
+	boolean saveResult(ReqRespMatchResult res);
 
 	/**
 	 * @param replayid

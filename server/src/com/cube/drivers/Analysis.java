@@ -134,11 +134,11 @@ public class Analysis {
 					Optional.of(RR.Replay.toString()), r.customerid, r.app);
 			List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10));
 			
+			/*
 			matches.stream().findFirst().ifPresentOrElse(firstmatch -> {
 				if (matches.size() > 1) {
 					reqmultiplematch++;
-				}
-				else {
+				} else {
 					reqsinglematch++;
 				}
 
@@ -175,10 +175,58 @@ public class Analysis {
 					case TemplateMatch: resppartiallymatched++; break;
 					default: respnotmatched++; break;
 				}
-				Result res = new Result(bestmatch, reqmt, matches.size(), replayid);						
+				ReqRespMatchResult res = new ReqRespMatchResult(bestmatch, reqmt, matches.size(), replayid);						
 				rrstore.saveResult(res);
 				
 			}, () -> reqnotmatched++);
+			*/
+			
+			if (!matches.isEmpty()) {
+				if (matches.size() > 1) {
+					reqmultiplematch++;
+				} else {
+					reqsinglematch++;
+				}
+
+				// fetch response of recording and replay
+
+				RespMatchWithReq bestmatch = new RespMatchWithReq(r, null, RespMatchType.NoMatch, "");
+				ReqMatchType bestreqmt = ReqMatchType.ExactMatch;
+
+				// matches is ordered in decreasing order of request match score. so exact matches
+				// of requests, if any should be at the beginning
+				// If request matches exactly, consider that as the best match
+				// else find the best match based on response matching
+				for (Request replayreq : matches) {						
+					ReqMatchType reqmt = rq.compare(replayreq, mspec);
+					RespMatchWithReq match = checkRespMatch(r, replayreq, rrstore);
+					if ((reqmt == ReqMatchType.ExactMatch) || (match.respmt == RespMatchType.ExactMatch)) {
+						bestmatch = match;
+						bestreqmt = reqmt;
+						break;
+					} else if (bestmatch.respmt == RespMatchType.NoMatch) {
+						bestmatch = match;
+						bestreqmt = reqmt;
+					}
+				}					
+				// compare & write out result
+				if (bestreqmt == ReqMatchType.ExactMatch)
+					reqmatched++;
+				else
+					reqpartiallymatched++;
+				switch(bestmatch.respmt) {
+					case ExactMatch: respmatched++; break;
+					case TemplateMatch: resppartiallymatched++; break;
+					default: respnotmatched++; break;
+				}
+				ReqRespMatchResult res = new ReqRespMatchResult(bestmatch, bestreqmt, matches.size(), replayid);						
+				rrstore.saveResult(res);
+				
+			} else { 
+				reqnotmatched++;	
+			}
+
+			
 			reqanalyzed++;
 			if (reqanalyzed % UPDBATCHSIZE == 0) {
 				LOGGER.info(String.format("Analysis of replay %s completed %d requests", replayid, reqanalyzed));
@@ -271,7 +319,7 @@ public class Analysis {
 
 	}
 	
-	public static class Result {
+	public static class ReqRespMatchResult {
 		
 		
 		
@@ -287,7 +335,7 @@ public class Analysis {
 		 * @param path
 		 * @param replayid 
 		 */
-		private Result(String recordreqid, String replayreqid, ReqMatchType reqmt, int nummatch, 
+		private ReqRespMatchResult(String recordreqid, String replayreqid, ReqMatchType reqmt, int nummatch, 
 				RespMatchType respmt,
 				String respmatchmetadata, String customerid, String app, 
 				String service, String path, String replayid) {
@@ -310,7 +358,7 @@ public class Analysis {
 		 * @param size
 		 * @param replayid 
 		 */
-		public Result(RespMatchWithReq rm, ReqMatchType reqmt, int size, String replayid) {
+		public ReqRespMatchResult(RespMatchWithReq rm, ReqMatchType reqmt, int size, String replayid) {
 			this(rm.recordreq.reqid.orElse(""), rm.replayreq.reqid.orElse(""), reqmt, size, 
 					rm.respmt, rm.respmatchmetadata,
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),

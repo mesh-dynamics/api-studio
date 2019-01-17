@@ -257,17 +257,17 @@ public class Request extends RRBase {
 			Object thisfval, Object fval) {
 		
 		if (mt == MatchType.FILTER || mt == MatchType.SCORE) {
-			if (thisfval.equals(fval))
+			if (thisfval.equals(fval)) {
 				return ReqMatchType.ExactMatch;
-			else if (mt == MatchType.SCORE) // for soft match, its ok to not match on the field val
-				return ReqMatchType.PartialMatch;
-			else return ReqMatchType.NoMatch;
+			} else {
+				if (mt == MatchType.SCORE) {// for soft match, its ok to not match on the field val 
+					return ReqMatchType.PartialMatch;
+				} else {
+					return ReqMatchType.NoMatch;
+				}
+			}
 		}
 		return ReqMatchType.ExactMatch; // default is match 
 	}
-
-
-
-
 
 }
