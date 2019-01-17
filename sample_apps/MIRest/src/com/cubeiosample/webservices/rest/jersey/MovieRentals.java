@@ -31,7 +31,7 @@ public class MovieRentals {
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
     public MovieRentals() throws ClassNotFoundException {
-    		LoadDriver();
+    		loadDriver();
     	
 	    // TODO: make a separate database query service.
     		configureUseKube();
@@ -97,16 +97,16 @@ public class MovieRentals {
     }
 
 
-    public JSONArray ListMovies(String filmNameOrKeyword) {
+    public JSONArray listMovies(String filmNameOrKeyword) {
 	    	// TODO: add actor also in the parameter options.
 	    	try {
 		    	JSONArray films = null;
-		    	films = ListMovieByName(filmNameOrKeyword);
+		    	films = listMovieByName(filmNameOrKeyword);
 		    	if (films != null && films.length() > 0) {
 	          return films;
 		    	}
 		    
-		    	films = ListMoviesByKeyword(filmNameOrKeyword);
+		    	films = listMoviesByKeyword(filmNameOrKeyword);
 	    		if (films != null && films.length() > 0) {
 	    			return films;
 	    		}
@@ -117,7 +117,7 @@ public class MovieRentals {
     }
     
     
-    public JSONArray ListMovieByName(String filmName) {
+    public JSONArray listMovieByName(String filmName) {
       if (filmName == null || filmName.isEmpty()) {
         return null;
       }
@@ -125,51 +125,51 @@ public class MovieRentals {
       // query with filmname
       String query = "select film_id, title from film where title = ?";
       JSONArray params = new JSONArray();
-      RestOverSql.AddStringParam(params, filmName);
+      RestOverSql.addStringParam(params, filmName);
       JSONArray films = null;
       if (USE_JDBC_SERVICE) {
-        films = ros.ExecuteQuery(query, params);
+        films = ros.executeQuery(query, params);
       } else {
-        films = jdbcPool.ExecuteQuery(query, params);
+        films = jdbcPool.executeQuery(query, params);
       }
       return films;
     }
     
     
-    public JSONArray ListMoviesByKeyword(String keyword) {
+    public JSONArray listMoviesByKeyword(String keyword) {
       if (keyword == null || keyword.isEmpty()) {
         return null;
       }
       String query = "select id, title from film where title like %?%";
       JSONArray params = new JSONArray();
-      RestOverSql.AddStringParam(params, keyword);
+      RestOverSql.addStringParam(params, keyword);
       JSONArray films = null;
       if (USE_JDBC_SERVICE) {
         LOGGER.debug("params array:" + params.toString());
-        films = ros.ExecuteQuery(query, params);
+        films = ros.executeQuery(query, params);
       } else {
-        films = jdbcPool.ExecuteQuery(query, params);
+        films = jdbcPool.executeQuery(query, params);
       }
       return films;
     }
         
     
-    public JSONArray FindAvailableStores(int filmId) throws SQLException, JSONException {
+    public JSONArray findAvailableStores(int filmId) throws SQLException, JSONException {
 	    	try {
 		    	String storesQuery = "select distinct store_id from inventory "
 		    			+ " where film_id = ? and "
 		    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
 		    	JSONArray params = new JSONArray();
-		    	RestOverSql.AddIntegerParam(params, filmId);
+		    	RestOverSql.addIntegerParam(params, filmId);
 		    	if (USE_JDBC_SERVICE) {
 		    	  if (ros == null) {
 		    	    LOGGER.debug("Creating ROS since it is null");
 		    	    ros = new RestOverSql();
 		    	  }
-		    	  return ros.ExecuteQuery(storesQuery, params);
+		    	  return ros.executeQuery(storesQuery, params);
 		    	}
 		    	// else
-		    	return jdbcPool.ExecuteQuery(storesQuery, params);
+		    	return jdbcPool.executeQuery(storesQuery, params);
 	    	} catch (Exception e) {
 	    		LOGGER.error("FindAvailableStores failed on filmId=" + filmId + "; " + e.toString());
 	    	}
@@ -177,28 +177,28 @@ public class MovieRentals {
     }
     
     
-    public JSONArray FindDues(int userId) throws SQLException, JSONException {
+    public JSONArray findDues(int userId) throws SQLException, JSONException {
 	    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
 	    	JSONArray params = new JSONArray();
-	    	RestOverSql.AddIntegerParam(params, userId);
+	    	RestOverSql.addIntegerParam(params, userId);
 	    	if (USE_JDBC_SERVICE) {
-	    	  return ros.ExecuteQuery(duesQuery, params);
+	    	  return ros.executeQuery(duesQuery, params);
 	    	}
-	    	return jdbcPool.ExecuteQuery(duesQuery, params);
+	    	return jdbcPool.executeQuery(duesQuery, params);
     }    
     
     
-    public JSONObject RentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
+    public JSONObject rentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
       // Update rental table 
-    		int inventoryId = GetInventoryId(film_id, store_id);
+    		int inventoryId = getInventoryId(film_id, store_id);
     		JSONObject result = new JSONObject();
     		result.put("inventory_id", inventoryId);
     		if (inventoryId < 0) {
     		  return result;
       }
     		
-      double rentalRate = GetRentalRate(film_id);
-    		JSONObject rentResult = UpdateRental(inventoryId, customer_id, staff_id);
+      double rentalRate = getRentalRate(film_id);
+    		JSONObject rentResult = updateRental(inventoryId, customer_id, staff_id);
     		int numUpdates = rentResult.getInt("num_updates");
     		result.put("num_updates", numUpdates);
     		if ( numUpdates < 0) {  
@@ -210,8 +210,8 @@ public class MovieRentals {
     }
     
    
-    public JSONObject ReturnMovie(int inventoryId, int customerId, int staffId, double rent) {
-	    	return ReturnRental(inventoryId, customerId, staffId, rent);
+    public JSONObject returnMovie(int inventoryId, int customerId, int staffId, double rent) {
+	    	return returnRental(inventoryId, customerId, staffId, rent);
     }
     
     
@@ -221,21 +221,21 @@ public class MovieRentals {
 
     
     // Sales and store performance analysis
-    public JSONArray GetSalesByStore(String store_name) throws SQLException, JSONException {
+    public JSONArray getSalesByStore(String store_name) throws SQLException, JSONException {
         String query = "select * from sales_by_store where store = '" + store_name + "'";
         	LOGGER.debug(query);
-        JSONArray rs = jdbcPool.ExecuteQuery(query);
+        JSONArray rs = jdbcPool.executeQuery(query);
         return rs;
     }
 
         
-    private static void LoadDriver() throws ClassNotFoundException {
+    private static void loadDriver() throws ClassNotFoundException {
         // This will load the MySQL driver, each DB has its own driver
         Class.forName("com.mysql.jdbc.Driver");
     }
     
   
-    public JSONArray RentFilmsBulk(JSONArray filmArray, int storeId, int duration, int customerId, int staffId) throws JSONException, SQLException {
+    public JSONArray rentFilmsBulk(JSONArray filmArray, int storeId, int duration, int customerId, int staffId) throws JSONException, SQLException {
 	    	Map<String, Integer> films = new HashMap<>();
 	    	try {
 		    	for (int i = 0; i < filmArray.length(); ++i) {
@@ -249,7 +249,7 @@ public class MovieRentals {
 	    	// iteration
 	    	JSONArray rentals = new JSONArray();
 	    	for (Map.Entry<String, Integer> entry : films.entrySet()) {
-	    	  JSONObject obj = this.RentMovie(entry.getValue(), storeId, duration, customerId, staffId);
+	    	  JSONObject obj = this.rentMovie(entry.getValue(), storeId, duration, customerId, staffId);
 	    		rentals.put(obj);
 	    	}
 	    	LOGGER.info(rentals.toString());
@@ -257,7 +257,7 @@ public class MovieRentals {
     }
     
     
-    private int GetInventoryId(int film_id, int store_id) {
+    private int getInventoryId(int film_id, int store_id) {
 	    	int inventory_id = -1;
 	    	try {
 	    		JSONArray rs = null;
@@ -266,19 +266,19 @@ public class MovieRentals {
 			    			+ " where film_id = ? and store_id = ? and "
 			    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
 			    	JSONArray params = new JSONArray();
-			    	RestOverSql.AddIntegerParam(params, film_id);
-			    	RestOverSql.AddIntegerParam(params, store_id);
+			    	RestOverSql.addIntegerParam(params, film_id);
+			    	RestOverSql.addIntegerParam(params, store_id);
 			    	if (USE_JDBC_SERVICE) {
-		        rs = ros.ExecuteQuery(inventoryQuery, params);
+		        rs = ros.executeQuery(inventoryQuery, params);
 			    	} else {
-			    	  rs = jdbcPool.ExecuteQuery(inventoryQuery, params);
+			    	  rs = jdbcPool.executeQuery(inventoryQuery, params);
 			    	}
 	    		} else {
 	    			String inventoryQuery = "select inventory_id from inventory "
 			    			+ " where film_id = " + film_id + " and store_id = " + store_id 
 			    			+ " and inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
 	    			// TODO: jdbc service doesnt support non-prepared statements yet
-	    			rs = jdbcPool.ExecuteQuery(inventoryQuery);
+	    			rs = jdbcPool.executeQuery(inventoryQuery);
 	    		}
 	    		if (rs == null || rs.length() < 1) {
 		    		return -1;
@@ -292,15 +292,15 @@ public class MovieRentals {
     }
 
     
-    private double GetRentalRate(int film_id) throws SQLException, JSONException {
+    private double getRentalRate(int film_id) throws SQLException, JSONException {
       String query = "select rental_rate from film where film_id = ?";
       JSONArray params = new JSONArray();
-      RestOverSql.AddIntegerParam(params, film_id);
+      RestOverSql.addIntegerParam(params, film_id);
       JSONArray rs = null;
       if (USE_JDBC_SERVICE) {
-        rs = ros.ExecuteQuery(query, params);
+        rs = ros.executeQuery(query, params);
       } else {
-        rs = jdbcPool.ExecuteQuery(query, params);
+        rs = jdbcPool.executeQuery(query, params);
       }
       if (rs.length() < 1) {
         return -1;
@@ -309,43 +309,43 @@ public class MovieRentals {
     }
      
     
-    private JSONObject UpdateRental(int inventory_id, int customer_id, int staff_id) throws SQLException, JSONException {
+    private JSONObject updateRental(int inventory_id, int customer_id, int staff_id) throws SQLException, JSONException {
         String dateString = format.format(new Date());
         if (USE_PREPARED_STMTS) {
           	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
                       + " VALUES (?, ?, ?, ?)";
           	LOGGER.info(rentalUpdateQuery);
           	JSONArray params = new JSONArray();
-          	RestOverSql.	AddIntegerParam(params, inventory_id);
-          	RestOverSql.AddIntegerParam(params, customer_id);
-          	RestOverSql.AddIntegerParam(params, staff_id);
-          	RestOverSql.AddStringParam(params, dateString);
+          	RestOverSql.addIntegerParam(params, inventory_id);
+          	RestOverSql.addIntegerParam(params, customer_id);
+          	RestOverSql.addIntegerParam(params, staff_id);
+          	RestOverSql.addStringParam(params, dateString);
           	if (USE_JDBC_SERVICE) {
-          	  return ros.ExecuteUpdate(rentalUpdateQuery, params);
+          	  return ros.executeUpdate(rentalUpdateQuery, params);
           	} 
           	//else {
-          	return jdbcPool.ExecuteUpdate(rentalUpdateQuery, params);
+          	return jdbcPool.executeUpdate(rentalUpdateQuery, params);
         } 
         
         // not USE_PREPARED_STMTS and not USE_JDBC_SERVICE
         String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
                 + " VALUES (" + inventory_id + ", " + customer_id + ", " + staff_id + ", '" + dateString + "')";
-        return jdbcPool.ExecuteUpdate(rentalUpdateQuery);
+        return jdbcPool.executeUpdate(rentalUpdateQuery);
     }
     
     
-    private int GetRentalIdForReturn(int inventoryId, int customerId, int staffId) {
+    private int getRentalIdForReturn(int inventoryId, int customerId, int staffId) {
       try {
         String rentalIdForReturnQuery = "SELECT rental_id from rental WHERE inventory_id = ? and customer_id = ? and staff_id = ? and return_date is null";
         JSONArray params = new JSONArray();
-        RestOverSql.AddIntegerParam(params, inventoryId);
-        RestOverSql.AddIntegerParam(params, customerId);
-        RestOverSql.AddIntegerParam(params, staffId);
+        RestOverSql.addIntegerParam(params, inventoryId);
+        RestOverSql.addIntegerParam(params, customerId);
+        RestOverSql.addIntegerParam(params, staffId);
         JSONArray rs = null;
         if (USE_JDBC_SERVICE) {
-          rs = ros.ExecuteQuery(rentalIdForReturnQuery, params);
+          rs = ros.executeQuery(rentalIdForReturnQuery, params);
         } else {
-          rs = jdbcPool.ExecuteQuery(rentalIdForReturnQuery, params);
+          rs = jdbcPool.executeQuery(rentalIdForReturnQuery, params);
         }
         return rs.getJSONObject(0).getInt("rental_id");
       } catch (Exception e) {
@@ -355,10 +355,10 @@ public class MovieRentals {
     }
     
     
-    private JSONObject ReturnRental(int inventoryId, int customerId, int staffId, double amount) {
+    private JSONObject returnRental(int inventoryId, int customerId, int staffId, double amount) {
       JSONObject result = new JSONObject();
       String dateString = format.format(new Date());
-      int rentalId = GetRentalIdForReturn(inventoryId, customerId, staffId);
+      int rentalId = getRentalIdForReturn(inventoryId, customerId, staffId);
       result.put("rental_id", rentalId);
       if (rentalId == -1) {
         return result;
@@ -366,13 +366,13 @@ public class MovieRentals {
 
       String rentalReturnQuery = "UPDATE rental SET return_date = ? WHERE rental_id = ?";
       JSONArray params1 = new JSONArray();
-      RestOverSql.AddStringParam(params1, dateString);
-      RestOverSql.AddIntegerParam(params1, rentalId);
+      RestOverSql.addStringParam(params1, dateString);
+      RestOverSql.addIntegerParam(params1, rentalId);
       JSONObject returnUpdate = null;
       if (USE_JDBC_SERVICE) {
-        returnUpdate = ros.ExecuteUpdate(rentalReturnQuery, params1);
+        returnUpdate = ros.executeUpdate(rentalReturnQuery, params1);
       } else {
-        returnUpdate = jdbcPool.ExecuteUpdate(rentalReturnQuery, params1);
+        returnUpdate = jdbcPool.executeUpdate(rentalReturnQuery, params1);
       }
       int returnUpdates = returnUpdate.getInt("num_updates");
       result.put("return_updates", returnUpdates);
@@ -382,16 +382,16 @@ public class MovieRentals {
       
       String paymentQuery = "INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date) VALUES (?, ?, ?, ?, ?)";
       JSONArray params2 = new JSONArray();
-      RestOverSql.AddIntegerParam(params2, customerId);
-      RestOverSql.AddIntegerParam(params2, staffId);
-      RestOverSql.AddIntegerParam(params2, rentalId);
-      RestOverSql.AddDoubleParam(params2, amount);
-      RestOverSql.AddStringParam(params2, dateString);
+      RestOverSql.addIntegerParam(params2, customerId);
+      RestOverSql.addIntegerParam(params2, staffId);
+      RestOverSql.addIntegerParam(params2, rentalId);
+      RestOverSql.addDoubleParam(params2, amount);
+      RestOverSql.addStringParam(params2, dateString);
       JSONObject paymentUpdate = null;
       if (USE_JDBC_SERVICE) {
-        paymentUpdate = ros.ExecuteUpdate(paymentQuery, params2);
+        paymentUpdate = ros.executeUpdate(paymentQuery, params2);
       } else {
-        paymentUpdate = jdbcPool.ExecuteUpdate(paymentQuery, params2);
+        paymentUpdate = jdbcPool.executeUpdate(paymentQuery, params2);
       }
       result.put("payment_updates", paymentUpdate.getInt("num_updates"));
       return result;

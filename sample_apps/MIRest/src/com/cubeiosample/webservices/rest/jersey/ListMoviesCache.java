@@ -23,7 +23,7 @@ public class ListMoviesCache {
       .build(
               new CacheLoader<String, JSONArray>() {
                   public JSONArray load(String filmNameOrKeyword) {
-                         final JSONArray toDo = mv.ListMovies(filmNameOrKeyword);   
+                         final JSONArray toDo = mv.listMovies(filmNameOrKeyword);   
                          return toDo;
                   }
               }

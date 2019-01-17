@@ -36,7 +36,7 @@ public class RestAPIForJDBC {
 	@Path("/initialize")
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  public Response Initialize(@QueryParam("username") String username,
+  public Response initialize(@QueryParam("username") String username,
                              @QueryParam("password") String passwd,
                              @QueryParam("uri") String uri) {
     try {
@@ -55,12 +55,12 @@ public class RestAPIForJDBC {
 	@Path("/query")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response Query(@QueryParam("querystring") String query,
+	public Response query(@QueryParam("querystring") String query,
 	                      @QueryParam("params") String queryParams) {
 		JSONArray result = null;
 		JSONArray params = new JSONArray(queryParams);
 		try {
-		  result = jdbcPool.ExecuteQuery(query, params);
+		  result = jdbcPool.executeQuery(query, params);
 		  return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 		} catch (Exception e) {
 			LOGGER.error("Query failed: " + query + "; " + queryParams + "; " + e.toString());
@@ -73,14 +73,14 @@ public class RestAPIForJDBC {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public Response Update(String queryAndParamsStr) {
+  public Response update(String queryAndParamsStr) {
     JSONObject result = null;
     try {
       JSONObject queryAndParams = new JSONObject(queryAndParamsStr);
       JSONArray params = queryAndParams.getJSONArray("params");
       String query = queryAndParams.getString("query");
       LOGGER.debug("params: " + params.toString());
-      result = jdbcPool.ExecuteUpdate(query, params);
+      result = jdbcPool.executeUpdate(query, params);
     } catch (Exception e) {
       result = new JSONObject();
       LOGGER.error("Update query failed: " + queryAndParamsStr + "; " + e.toString());

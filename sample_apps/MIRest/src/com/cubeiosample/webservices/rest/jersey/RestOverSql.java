@@ -36,7 +36,7 @@ public class RestOverSql {
     configureRestWrapUri();
     LOGGER.debug("RESTWRAPJDBC_URI is " + RESTWRAPJDBC_URI);
     restJDBCService = restClient.target(RESTWRAPJDBC_URI);
-    InitializeJDBCService();
+    initializeJDBCService();
   }
   
   
@@ -57,27 +57,27 @@ public class RestOverSql {
   }
   
   
-  private void InitializeJDBCService() {
+  private void initializeJDBCService() {
     String username = MovieRentals.userName();
     String pwd = MovieRentals.passwd();
     String uri = MovieRentals.baseUri();
-    Response response = CallWithRetries(restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, true, 3);
+    Response response = callWithRetries(restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, true, 3);
     LOGGER.debug("intialized jdbc service " + uri + "; " + username + "; " + response.getStatus() + "; "+ response.readEntity(String.class));
     response.close();
   }
   
   
   public String getHealth() {
-    Response response = CallWithRetries(restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, true, 3);
+    Response response = callWithRetries(restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, true, 3);
     String result = response.readEntity(String.class);
     response.close();
     return result;
   }
   
   
-  public JSONArray ExecuteQuery(String query, JSONArray params) {
+  public JSONArray executeQuery(String query, JSONArray params) {
     LOGGER.debug("Query: " + query + "; " + params.toString());
-    Response response = CallWithRetries(restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), null, true, 3);
+    Response response = callWithRetries(restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), null, true, 3);
     JSONArray result = new JSONArray(response.readEntity(String.class));
     LOGGER.debug("Query: " + query + "; " + params.toString() + "; NumRows=" + result.length());
     response.close();
@@ -85,11 +85,11 @@ public class RestOverSql {
   }
   
   
-  public JSONObject ExecuteUpdate(String query, JSONArray params) {
+  public JSONObject executeUpdate(String query, JSONArray params) {
     JSONObject body = new JSONObject();
     body.put("query", query);
     body.put("params", params);
-    Response response = CallWithRetries(restJDBCService.path("update").request(), body, false, 3);
+    Response response = callWithRetries(restJDBCService.path("update").request(), body, false, 3);
     
     // TODO: figure out the best way of extracting json array from the entity
     JSONObject result = new JSONObject(response.readEntity(String.class));
@@ -99,7 +99,7 @@ public class RestOverSql {
   }
   
   // parameter binding methods
-  public static void AddStringParam(JSONArray params, String value) throws JSONException {
+  public static void addStringParam(JSONArray params, String value) throws JSONException {
     JSONObject param = new JSONObject();
     param.put("index", params.length() + 1);
     param.put("type", "string");
@@ -107,7 +107,7 @@ public class RestOverSql {
     params.put(param);
   }
 
-  public static void AddIntegerParam(JSONArray params, Integer value) throws JSONException {
+  public static void addIntegerParam(JSONArray params, Integer value) throws JSONException {
     JSONObject param = new JSONObject();
     param.put("index", params.length() + 1);
     param.put("type", "integer");
@@ -115,7 +115,7 @@ public class RestOverSql {
     params.put(param);
   }
 
-  public static void AddDoubleParam(JSONArray params, Double value) throws JSONException {
+  public static void addDoubleParam(JSONArray params, Double value) throws JSONException {
     JSONObject param = new JSONObject();
     param.put("index", params.length() + 1);
     param.put("type", "double");
@@ -124,7 +124,7 @@ public class RestOverSql {
   }
   
     
-  private Response CallWithRetries(Builder req, JSONObject body, boolean isGetRequest, int numRetries) {
+  private Response callWithRetries(Builder req, JSONObject body, boolean isGetRequest, int numRetries) {
     int numAttempts = 0;
     LOGGER.debug("req:" + req.toString());
     while (numAttempts < numRetries) {
