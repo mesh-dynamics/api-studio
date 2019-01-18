@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.core.ResponseComparator;
+import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
@@ -101,7 +102,11 @@ public class Analysis {
 				.withHdrfields(Collections.singletonList(tracefield))
 				.withMrrtype(MatchType.FILTER)
 				.withMcustomerid(MatchType.FILTER)
-				.withMapp(MatchType.FILTER).build();
+				.withMapp(MatchType.FILTER)
+				.withMcollection(MatchType.FILTER)
+				.withMmeta(MatchType.FILTER)
+				.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
+				.build();
 				//.withMreqid(MatchType.SCORE).build();
 
 		return replay.flatMap(r -> {
@@ -128,9 +133,11 @@ public class Analysis {
 	private void analyze(ReqRespStore rrstore, Stream<Request> reqs, ReqMatchSpec mspec) {
 		reqs.forEach(r -> {
 			// find matching request in replay
-			// same fields as request, only RRType should be Replay
+			// most fields are same as request except
+			// RRType should be Replay
+			// collection to set to replayid, since collection in replays are set to replayids
 			Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta, 
-					r.hdrs, r.method, r.body, r.collection, r.timestamp, 
+					r.hdrs, r.method, r.body, Optional.ofNullable(replayid), r.timestamp, 
 					Optional.of(RR.Replay.toString()), r.customerid, r.app);
 			List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10));
 			

@@ -84,7 +84,7 @@ public interface ReqRespStore {
 	/**
 	 * @param queryrequest
 	 * @param mspec - the matching specification
-	 * @param nummatches TODO
+	 * @param nummatches - max number of matches
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
 	List<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
