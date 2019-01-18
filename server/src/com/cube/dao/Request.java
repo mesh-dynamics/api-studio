@@ -55,12 +55,13 @@ public class Request extends RRBase {
 	public Request(String path, Optional<String> id, 
 			MultivaluedMap<String, String> qparams, 
 			MultivaluedMap<String, String> fparams, 
+			MultivaluedMap<String, String> hdrs, 
 			Optional<String> collection, 
 			Optional<String> rrtype, 
 			Optional<String> customerid,
 			Optional<String> app) {
 		this(path, id, qparams, fparams, new MultivaluedHashMap<String, String>(), 
-				new MultivaluedHashMap<String, String>(), "", "", collection, Optional.empty(), rrtype, customerid, app);
+				hdrs, "", "", collection, Optional.empty(), rrtype, customerid, app);
 	}
 
 	
@@ -257,17 +258,17 @@ public class Request extends RRBase {
 			Object thisfval, Object fval) {
 		
 		if (mt == MatchType.FILTER || mt == MatchType.SCORE) {
-			if (thisfval.equals(fval))
+			if (thisfval.equals(fval)) {
 				return ReqMatchType.ExactMatch;
-			else if (mt == MatchType.SCORE) // for soft match, its ok to not match on the field val
-				return ReqMatchType.PartialMatch;
-			else return ReqMatchType.NoMatch;
+			} else {
+				if (mt == MatchType.SCORE) {// for soft match, its ok to not match on the field val 
+					return ReqMatchType.PartialMatch;
+				} else {
+					return ReqMatchType.NoMatch;
+				}
+			}
 		}
 		return ReqMatchType.ExactMatch; // default is match 
 	}
-
-
-
-
 
 }

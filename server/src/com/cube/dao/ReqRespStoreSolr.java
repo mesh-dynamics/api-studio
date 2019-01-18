@@ -33,7 +33,7 @@ import com.cube.core.Utils;
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
-import com.cube.drivers.Analysis.Result;
+import com.cube.drivers.Analysis.ReqRespMatchResult;
 import com.cube.drivers.Replay;
 import com.cube.drivers.Replay.ReplayStatus;
 import com.cube.ws.Config;
@@ -663,7 +663,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 * @see com.cube.dao.ReqRespStore#saveResult(com.cube.drivers.Analysis.Result)
 	 */
 	@Override
-	public boolean saveResult(Result res) {
+	public boolean saveResult(ReqRespMatchResult res) {
 		SolrInputDocument doc = resultToSolrDoc(res);
 		return saveDoc(doc);		
 	}
@@ -672,7 +672,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 * @param res
 	 * @return
 	 */
-	private SolrInputDocument resultToSolrDoc(Result res) {
+	private SolrInputDocument resultToSolrDoc(ReqRespMatchResult res) {
 		final SolrInputDocument doc = new SolrInputDocument();
 
 		
@@ -683,7 +683,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		doc.setField(NUMMATCHF, res.nummatch);
 		doc.setField(RESPMTF, res.respmt.toString());
 		doc.setField(RESPMATCHMETADATAF, res.respmatchmetadata);
-		doc.setField(TYPEF, Types.Result.toString());
+		doc.setField(TYPEF, Types.ReqRespMatchResult.toString());
 		doc.setField(CUSTOMERIDF, res.customerid);
 		doc.setField(APPF, res.app);
 		doc.setField(SERVICEF, res.service);

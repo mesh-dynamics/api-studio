@@ -60,7 +60,7 @@ public class CubeStore {
 	@POST
 	@Path("/rr/{var:.*}")
     @Consumes({MediaType.APPLICATION_JSON})
-	public Response storeresp(@Context UriInfo ui, @PathParam("var") String path, ReqRespStore.ReqResp rr) {
+	public Response storerr(@Context UriInfo ui, @PathParam("var") String path, ReqRespStore.ReqResp rr) {
 	
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
@@ -90,6 +90,8 @@ public class CubeStore {
 	    Optional<String> rrtype = Optional.ofNullable(meta.getFirst("rrtype"));
 	    Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
 	    Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
+	    
+	    LOGGER.info(String.format("Got store for type %s, for collection %s, reqid %s", type.orElse(""), collection.orElse(""), rid.orElse("")));
 	    
 	    MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); 
 

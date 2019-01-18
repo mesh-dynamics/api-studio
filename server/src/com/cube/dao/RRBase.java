@@ -72,7 +72,7 @@ public class RRBase {
 	 */
 	@JsonIgnore
 	public Optional<String> getService() {
-		return Optional.ofNullable(meta.get("service")).flatMap(ss -> ss.stream().findFirst());
+		return Optional.ofNullable(meta.get(SERVICEFIELD)).flatMap(ss -> ss.stream().findFirst());
 	}
 
 	
@@ -88,6 +88,7 @@ public class RRBase {
 	public final Optional<String> customerid;
 	public final Optional<String> app;
 	
+	public static final String SERVICEFIELD = "service";
 	
 	public static class RRMatchSpec {
 		
