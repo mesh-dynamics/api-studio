@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
@@ -15,6 +14,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -24,9 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 
 import com.cube.core.Utils;
@@ -72,17 +70,13 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 * qr - query request
 	 */
 	@Override
-	public List<Request> getRequests(Request qr, ReqMatchSpec mspec, Optional<Integer> nummatches) {
-
-		// one result by default
-		int nm = nummatches.orElse(1);
+	public Stream<Request> getRequests(Request qr, ReqMatchSpec mspec, Optional<Integer> nummatches) {
 		
-		final SolrQuery query = reqMatchSpecToSolrQuery(qr, mspec, Optional.of(1));
-		return query(solr, query).map(documents -> {
-			return documents.stream().limit(nm).flatMap(doc -> {
-				return docToRequest(doc).stream();
-			}).collect(Collectors.toList());			
-		}).orElse(Collections.emptyList());
+		final SolrQuery query = reqMatchSpecToSolrQuery(qr, mspec);
+
+		return SolrIterator.getStream(solr, query, nummatches).flatMap(doc -> {
+			return docToRequest(doc).stream();
+		});			
 
 	}
 
@@ -90,7 +84,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	 * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
 	 */
 	@Override
-	public List<Request> getRequests(String customerid, String app, String collection, 
+	public Result<Request> getRequests(String customerid, String app, String collection, 
 			List<String> reqids, List<String> paths,
 			RRBase.RR rrtype) {
 
@@ -113,11 +107,9 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		
 		query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));			
 				
-		return query(solr, query).map(documents -> {
-			return documents.stream().flatMap(doc -> {
-				return docToRequest(doc).stream();
-			}).collect(Collectors.toList());			
-		}).orElse(Collections.emptyList());
+		
+		return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
+		
 	}
 
 	
@@ -129,16 +121,15 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		
 		final SolrQuery query = new SolrQuery("*:*");
 		query.addField("*");
-		query.setRows(1);
+		//query.setRows(1);
 
 		addFilter(query, TYPEF, Types.Response.toString());
 		addFilter(query, REQIDF, reqid);
 
-		return query(solr, query).flatMap(documents -> {
-			return documents.stream().findFirst().flatMap(doc -> {
-				return docToResponse(doc);
-			});			
-		});
+		Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
+			return docToResponse(doc);
+		});			
 
 	}
 
@@ -148,7 +139,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	@Override
 	public Optional<Response> getRespForReq(Request qr, ReqMatchSpec mspec) {
 		// Find request, without considering request id
-		Optional<Request> req = getRequests(qr, mspec, Optional.empty()).stream().findFirst();
+		Optional<Request> req = getRequests(qr, mspec, Optional.of(1)).findFirst();
 		return req.flatMap(reqv -> reqv.reqid).flatMap(idv -> {
 			return getResponse(idv);
 		});
@@ -265,6 +256,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		}
 	}
 	
+	/* TODO Not used - remove 
 	private static Optional<SolrDocumentList> query(SolrClient solr, SolrQuery query) {
 
 		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
@@ -279,7 +271,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		return Optional.ofNullable(response.getResults());
 
 	}
-	
+	*/
 
 	
 	private static void setRRFields(RRBase rr, SolrInputDocument doc) {
@@ -575,23 +567,22 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	public Optional<Replay> getReplay(String replayid) {
 		final SolrQuery query = new SolrQuery("*:*");
 		query.addField("*");
-		query.setRows(1);
+		//query.setRows(1);
 		addFilter(query, TYPEF, Types.ReplayMeta.toString());
 		addFilter(query, REPLAYIDF, replayid);
 		
-		return query(solr, query).flatMap(documents -> {
-			return documents.stream().findFirst().flatMap(doc -> {
-				return docToReplay(doc, this);
-			});			
-		});
+		Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
+			return docToReplay(doc, this);
+		});			
+		
 	}
 	
 	// Some useful functions
-	public static SolrQuery reqMatchSpecToSolrQuery(Request qr, ReqMatchSpec spec, Optional<Integer> numresults) {
+	public static SolrQuery reqMatchSpecToSolrQuery(Request qr, ReqMatchSpec spec) {
 		final SolrQuery query = new SolrQuery("*:*");
 		final StringBuffer qstr = new StringBuffer("*:*");
 		query.addField("*");
-		numresults.ifPresent(n -> query.setRows(n));
 		
 		addMatch(spec.mreqid, query, qstr, REQIDF, qr.reqid);
 		addMatch(spec.mmeta, query, qstr, META, qr.meta, spec.metafields);
@@ -700,15 +691,15 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	public Optional<Analysis> getAnalysis(String replayid) {
 		final SolrQuery query = new SolrQuery("*:*");
 		query.addField("*");
-		query.setRows(1);
+		//query.setRows(1);
 		addFilter(query, TYPEF, Types.Analysis.toString());
 		addFilter(query, REPLAYIDF, replayid);
 		
-		return query(solr, query).flatMap(documents -> {
-			return documents.stream().findFirst().flatMap(doc -> {
-				return docToAnalysis(doc, this);
-			});			
-		});
+		Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
+			return docToAnalysis(doc, this);
+		});			
+		
 	}
 
 	/**

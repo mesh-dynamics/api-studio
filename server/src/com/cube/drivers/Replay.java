@@ -31,10 +31,12 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cube.core.BatchingIterator;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
+import com.cube.dao.Result;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -106,13 +108,12 @@ public class Replay {
 
 	private void replay() {
 		
-		List<Request> requests = getRequests();
+		//List<Request> requests = getRequests();
 
 		if (status != ReplayStatus.Init) {
 			return;
 		}
 		status = ReplayStatus.Running;
-		reqcnt = requests.size();
 		if (!rrstore.saveReplay(this))
 			return;
 
@@ -136,41 +137,46 @@ public class Replay {
 	    if (Authenticator.getDefault() != null)
 	    	clientbuilder.authenticator(Authenticator.getDefault());
 	    HttpClient client = clientbuilder.build();
-	   
-		Stream<HttpRequest> httprequests = requests.stream().map(r -> {
-			UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
-					.path(r.path);
-			r.qparams.forEach((k, vlist) -> {
-				uribuilder.queryParam(k, vlist.toArray());
-			});
-			URI uri = uribuilder.build();
-			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
-					.uri(uri)
-					.method(r.method, BodyPublishers.ofString(r.body));
 
-			r.hdrs.forEach((k, vlist) -> {
-				// some headers are restricted and cannot be set on the request
-				if (Utils.ALLOWED_HEADERS.test(k)) {
-					vlist.forEach(value -> {
-						reqbuilder.header(k, value);					
-					});
-				}
+		getRequestBatches(BATCHSIZE).forEach(requests -> {
+
+			reqcnt += requests.size();
+			
+			Stream<HttpRequest> httprequests = requests.stream().map(r -> {
+				UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
+						.path(r.path);
+				r.qparams.forEach((k, vlist) -> {
+					uribuilder.queryParam(k, vlist.toArray());
+				});
+				URI uri = uribuilder.build();
+				HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
+						.uri(uri)
+						.method(r.method, BodyPublishers.ofString(r.body));
+
+				r.hdrs.forEach((k, vlist) -> {
+					// some headers are restricted and cannot be set on the request
+					if (Utils.ALLOWED_HEADERS.test(k)) {
+						vlist.forEach(value -> {
+							reqbuilder.header(k, value);					
+						});
+					}
+				});
+							
+				return reqbuilder.build();
 			});
-						
-			return reqbuilder.build();
+			
+			List<Integer> respcodes = async ? sendReqAsync(httprequests, client) : sendReqSync(httprequests, client);
+
+			// count number of errors
+			reqfailed += respcodes.stream().map(s -> {
+				if (s != Response.Status.OK.getStatusCode())
+					return 1;
+				else 
+					return 0;
+			}).reduce(Integer::sum).orElse(0);			
 		});
-		
-		List<Integer> respcodes = async ? sendReqAsync(httprequests, client) : sendReqSync(httprequests, client);
-
-		// count number of errors
-		reqfailed = respcodes.stream().map(s -> {
-			if (s != Response.Status.OK.getStatusCode())
-				return 1;
-			else 
-				return 0;
-		}).reduce(Integer::sum).orElse(0);
-		
-		LOGGER.info(String.format("Replayed %d requests, got %d errors", requests.size(), reqfailed));
+			
+		LOGGER.info(String.format("Replayed %d requests, got %d errors", reqcnt, reqfailed));
 
 		status = (reqfailed == 0) ? ReplayStatus.Completed : ReplayStatus.Error;
 		
@@ -211,7 +217,8 @@ public class Replay {
 		return Optional.empty();
 	}
 	
-	private static int UPDBATCHSIZE = 10;
+	private static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
+	private static int BATCHSIZE = 40; // this controls the number of requests in a batch that could be sent in async fashion
 	
 	private List<Integer> sendReqAsync(Stream<HttpRequest> httprequests, HttpClient client) {
 		// exceptions are converted to status code indicating error
@@ -312,7 +319,15 @@ public class Replay {
 	 * @return
 	 */
 	@JsonIgnore
-	public List<Request> getRequests() {
-		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
+	public Result<Request> getRequests() {
+		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record); 
 	}
+
+	@JsonIgnore
+	public Stream<List<Request>> getRequestBatches(int batchSize) {
+		Result<Request> requests = getRequests(); 
+		
+		return BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize);
+	}
+
 }

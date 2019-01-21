@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
@@ -87,7 +88,7 @@ public interface ReqRespStore {
 	 * @param nummatches - max number of matches
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
-	List<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
+	Stream<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
 	
 	/**
 	 * @param reqid
@@ -112,7 +113,7 @@ public interface ReqRespStore {
 	 * @param rrtype
 	 * @return
 	 */
-	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
+	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
 
 	/**
 	 * @param replay
