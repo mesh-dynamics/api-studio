@@ -112,7 +112,7 @@ public class RestOverSql {
     JSONObject body = new JSONObject();
     body.put("query", query);
     body.put("params", params);
-    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("update").request(MediaType.APPLICATION_JSON), body, "POST", 3);
+    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("update").request(), body, "POST", 3);
     
     // TODO: figure out the best way of extracting json array from the entity
     JSONObject result = new JSONObject(response.readEntity(String.class));

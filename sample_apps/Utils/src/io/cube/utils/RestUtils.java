@@ -19,14 +19,13 @@ public class RestUtils {
   public static Response callWithRetries(Tracer tracer, Builder req, JSONObject body, String requestType, int numRetries) {
     int numAttempts = 0;
     // inject headers
+    Tracing.addTraceHeaders(tracer, req, requestType);
     while (numAttempts < numRetries) {
       try {
         if (requestType.equalsIgnoreCase("GET")) {
-          Tracing.addTraceHeaders(tracer, req, requestType);
           return req.get();
         }
         // assuming body is not null.
-        // Tracing.addTraceHeaders(tracer, req, requestType);
         return req.post(Entity.entity(body.toString(), MediaType.APPLICATION_JSON));
       } catch (Exception e) {
         LOGGER.error("request attempt " + numAttempts + ": " + req.toString() + "; exception: " + e.toString());
