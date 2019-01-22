@@ -97,7 +97,6 @@ public class RestOverSql {
  
   
   public JSONArray executeQuery(String query, JSONArray params) {
-    LOGGER.debug("Query: " + query + "; " + params.toString());    
     Response response = RestUtils.callWithRetries(tracer, 
         restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), 
         null, "GET", 3);
