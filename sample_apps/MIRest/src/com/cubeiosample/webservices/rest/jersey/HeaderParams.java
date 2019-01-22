@@ -1,6 +1,11 @@
 package com.cubeiosample.webservices.rest.jersey;
 
+import java.util.HashMap;
+
+import org.json.JSONObject;;
+
 public class HeaderParams {
+  private JSONObject hdrs = null;
     // @HeaderParam("end-user")
     public String user;
     // @HeaderParam("x-request-id") String xreq
@@ -20,6 +25,9 @@ public class HeaderParams {
 
     HeaderParams(String user, String req, String traceid, String spanid, String parentspanid,
                  String sampled, String flags, String otspan) {
+      hdrs = new JSONObject();
+      hdrs.put("user", user);
+      hdrs.put("xreq", req);
         this.user = user;
         this.xreq = req;
         this.xtraceid = traceid;
@@ -28,5 +36,9 @@ public class HeaderParams {
         this.xsampled = sampled;
         this.xflags = flags;
         this.xotspan = otspan;
+    }
+    
+    public String signature() {
+      return xtraceid;  // TODO: is this the right signature?
     }
 }

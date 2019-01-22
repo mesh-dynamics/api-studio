@@ -1,5 +1,8 @@
 package com.cubeiosample.webservices.rest.jersey;
 
+import io.cube.utils.ConnectionPool;
+import io.opentracing.Tracer;
+
 import java.sql.*;
 import java.util.Date;
 import java.util.HashMap;
@@ -7,11 +10,9 @@ import java.util.Map;
 import java.text.SimpleDateFormat;
 import org.apache.log4j.Logger;
 
-//import org.json.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 
 
 public class MovieRentals {
@@ -28,18 +29,22 @@ public class MovieRentals {
     private static String MYSQL_USERNAME = "cube";
     private static String MYSQL_PWD = "cubeio";
     
+    private final Tracer tracer;
+    
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
-    public MovieRentals() throws ClassNotFoundException {
+    public MovieRentals(Tracer tracer) throws ClassNotFoundException {
     		loadDriver();
+    		this.tracer = tracer;
     	
 	    // TODO: make a separate database query service.
     		configureUseKube();
-	    jdbcPool = new ConnectionPool();
 	    try {
 	      if (USE_JDBC_SERVICE) {
-	        ros = new RestOverSql();
+	        LOGGER.debug("MV tracer: " + tracer.toString());
+	        ros = new RestOverSql(this.tracer);
 	      } else {
+	        jdbcPool = new ConnectionPool();
 	        String uri = "jdbc:mysql://" + baseUri() + "/sakila";
   	    		  LOGGER.info("mysql uri: " + uri);
           jdbcPool.setUpPool(uri, userName(), passwd());
@@ -95,18 +100,23 @@ public class MovieRentals {
       }
     		return MYSQL_PWD;
     }
+    
 
-
-    public JSONArray listMovies(String filmNameOrKeyword) {
+//    public void addRequestHeaders(String signature, HeaderParams hd) {
+//      ros.addRequestHeaders(signature, hd);
+//    }
+    
+    
+    public JSONArray listMovies(String filmnameOrKeywordForRequest) {
 	    	// TODO: add actor also in the parameter options.
 	    	try {
 		    	JSONArray films = null;
-		    	films = listMovieByName(filmNameOrKeyword);
+		    	films = listMovieByName(filmnameOrKeywordForRequest);
 		    	if (films != null && films.length() > 0) {
 	          return films;
 		    	}
 		    
-		    	films = listMoviesByKeyword(filmNameOrKeyword);
+		    	films = listMoviesByKeyword(filmnameOrKeywordForRequest);
 	    		if (films != null && films.length() > 0) {
 	    			return films;
 	    		}
@@ -117,15 +127,16 @@ public class MovieRentals {
     }
     
     
-    public JSONArray listMovieByName(String filmName) {
-      if (filmName == null || filmName.isEmpty()) {
-        return null;
-      }
+    public JSONArray listMovieByName(String filmname) {
+//      JSONObject cacheKey = new JSONObject(filmnameForRequest);
+//      String filmname = cacheKey.getString("filmnameOrKeyword");
+//      String requestSignature = cacheKey.getString("signature");
            
-      // query with filmname
+      // Query with filmname
+      LOGGER.debug("filmname:" + filmname);
       String query = "select film_id, title from film where title = ?";
       JSONArray params = new JSONArray();
-      RestOverSql.addStringParam(params, filmName);
+      RestOverSql.addStringParam(params, filmname);
       JSONArray films = null;
       if (USE_JDBC_SERVICE) {
         films = ros.executeQuery(query, params);
@@ -137,9 +148,10 @@ public class MovieRentals {
     
     
     public JSONArray listMoviesByKeyword(String keyword) {
-      if (keyword == null || keyword.isEmpty()) {
-        return null;
-      }
+//      JSONObject cacheKey = new JSONObject(keywordForRequest);
+//      String keyword = cacheKey.getString("filmnameOrKeyword");
+//      String requestSignature = cacheKey.getString("signature");
+
       String query = "select id, title from film where title like %?%";
       JSONArray params = new JSONArray();
       RestOverSql.addStringParam(params, keyword);
@@ -164,7 +176,7 @@ public class MovieRentals {
 		    	if (USE_JDBC_SERVICE) {
 		    	  if (ros == null) {
 		    	    LOGGER.debug("Creating ROS since it is null");
-		    	    ros = new RestOverSql();
+		    	    ros = new RestOverSql(tracer);
 		    	  }
 		    	  return ros.executeQuery(storesQuery, params);
 		    	}
@@ -198,6 +210,7 @@ public class MovieRentals {
       }
     		
       double rentalRate = getRentalRate(film_id);
+      
     		JSONObject rentResult = updateRental(inventoryId, customer_id, staff_id);
     		int numUpdates = rentResult.getInt("num_updates");
     		result.put("num_updates", numUpdates);
@@ -314,16 +327,16 @@ public class MovieRentals {
         if (USE_PREPARED_STMTS) {
           	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
                       + " VALUES (?, ?, ?, ?)";
-          	LOGGER.info(rentalUpdateQuery);
           	JSONArray params = new JSONArray();
           	RestOverSql.addIntegerParam(params, inventory_id);
           	RestOverSql.addIntegerParam(params, customer_id);
           	RestOverSql.addIntegerParam(params, staff_id);
           	RestOverSql.addStringParam(params, dateString);
+          	LOGGER.info(rentalUpdateQuery + "; " + params.toString());
           	if (USE_JDBC_SERVICE) {
           	  return ros.executeUpdate(rentalUpdateQuery, params);
           	} 
-          	//else {
+          	// else 
           	return jdbcPool.executeUpdate(rentalUpdateQuery, params);
         } 
         

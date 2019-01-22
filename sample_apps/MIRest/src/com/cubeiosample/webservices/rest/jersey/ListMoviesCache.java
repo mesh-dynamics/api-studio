@@ -22,8 +22,8 @@ public class ListMoviesCache {
       .expireAfterAccess(60, TimeUnit.SECONDS)
       .build(
               new CacheLoader<String, JSONArray>() {
-                  public JSONArray load(String filmNameOrKeyword) {
-                         final JSONArray toDo = mv.listMovies(filmNameOrKeyword);   
+                  public JSONArray load(String filmNameOrKeywordForRequest) {
+                         final JSONArray toDo = mv.listMovies(filmNameOrKeywordForRequest);   
                          return toDo;
                   }
               }

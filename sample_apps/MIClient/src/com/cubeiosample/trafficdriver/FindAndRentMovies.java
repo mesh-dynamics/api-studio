@@ -68,6 +68,7 @@ public class FindAndRentMovies {
     token = response.getHeaderString(HttpHeaders.AUTHORIZATION);
 	}
 
+	
 	public void driveTraffic() throws Exception {
 	  getToken();
 		warmMovieCache();

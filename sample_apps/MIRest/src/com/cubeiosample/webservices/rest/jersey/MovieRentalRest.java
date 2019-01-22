@@ -1,13 +1,17 @@
 package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
+import io.cube.utils.Tracing;
+import io.jaegertracing.internal.JaegerTracer;
+import io.opentracing.Scope;
+
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-//import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -27,6 +31,7 @@ public class MovieRentalRest {
 	final static Logger LOGGER;
 	static MovieRentals mv;
 	static ListMoviesCache lmc;
+	static JaegerTracer tracer;
 	
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
@@ -34,13 +39,21 @@ public class MovieRentalRest {
 	}
 
 	static {
+	  Scope scope = null;
 		try {
-			mv = new MovieRentals();
-			lmc = new ListMoviesCache(mv);
+		  tracer = Tracing.init("MIRest");
+		  scope = tracer.buildSpan("startingup").startActive(true);
+      scope.span().setTag("startingup", "MovieRentalRest");
+      LOGGER.debug("MIRest tracer: " + tracer.toString());
+		  mv = new MovieRentals(tracer);
+		  lmc = new ListMoviesCache(mv);
 		} catch (ClassNotFoundException e) {
 			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
+		} finally {
+		  scope.span().finish();
 		}
 	}
+	
 	
 	@Path("/health")
 	@GET
@@ -57,8 +70,9 @@ public class MovieRentalRest {
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   public Response authenticateUser(@FormParam("username") String username,
                                    @FormParam("password") String password) {
-	  try {
-          
+	  try (Scope scope = tracer.buildSpan("authenticate").startActive(true)) {
+      scope.span().setTag("authenticate", username);
+      
 	    Authenticator.authenticate(username, password);
 
 	    String token = Authenticator.issueToken(username);
@@ -67,7 +81,7 @@ public class MovieRentalRest {
 	    
 	  } catch (Exception e) {
 	    return Response.status(Response.Status.FORBIDDEN).build();
-    }      
+    } 
   }
 
 	
@@ -81,15 +95,25 @@ public class MovieRentalRest {
 	@GET
 	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response ListMovies(@QueryParam("filmName") String filmName,
+	public Response listMovies(@QueryParam("filmName") String filmname,
 							               @QueryParam("keyword") String keyword,
 							               @QueryParam("actor") String actor,
-							               @Context SecurityContext securityContext) {
+							               @Context SecurityContext securityContext,
+							               @Context HttpHeaders httpHeaders) {
+//							               @HeaderParam("end-user") String user,
+//							               @HeaderParam("x-request-id") String xreq,
+//							               @HeaderParam("x-b3-traceid") String xtraceid,
+//							               @HeaderParam("x-b3-spanid") String xspanid,
+//							               @HeaderParam("x-b3-parentspanid") String xparentspanid,
+//							               @HeaderParam("x-b3-sampled") String xsampled,
+//							               @HeaderParam("x-b3-flags") String xflags,
+//							               @HeaderParam("x-ot-span-context") String xotspan) {
 		JSONArray films = null;
-		//		Principal principal = securityContext.getUserPrincipal();
-		//		String username = principal.getName();
-		try {
-			films = lmc.getMovieList(filmName);
+		try (Scope scope = tracer.buildSpan("listmovies").startActive(true)) {
+		  LOGGER.debug("list movies headers: " + httpHeaders.toString());
+		  String listParams = filmname + ";" + keyword + ";" + actor;
+		  scope.span().setTag("listmovies", listParams);
+			films = lmc.getMovieList(filmname);
 			if (films != null) {
 				return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
 			}
@@ -98,9 +122,9 @@ public class MovieRentalRest {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
       }
 		} catch (Exception e) {
-			LOGGER.error("ListMovies args: " + filmName + ", " + keyword + "; " + e.toString());
+			LOGGER.error("ListMovies args: " + filmname + ", " + keyword + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
-		}
+		} 
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity("[{}]").build();
 	}
 	
@@ -109,11 +133,13 @@ public class MovieRentalRest {
 	@GET
 	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response findStoreswithFilm(@QueryParam("filmId") Integer filmId) {
+	public Response findStoreswithFilm(@QueryParam("filmId") Integer filmId,
+	                                   @Context HttpHeaders httpHeaders) {
 		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = null;
-		try {
+		try (Scope scope = tracer.buildSpan("listmovies").startActive(true)) {
+      scope.span().setTag("listmovies", filmId.toString());
 			stores = mv.findAvailableStores(filmId);
 		} catch (Exception e) {
 			LOGGER.error("FindStoreswithFilm args: " + filmId + "; " + e.toString());
@@ -131,28 +157,32 @@ public class MovieRentalRest {
 	@Secured
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response rentMovie(String rentalInfoStr, 
-	    //JSONObject rentalInfo,
-	    @HeaderParam("end-user") String user,
-	    @HeaderParam("x-request-id") String xreq,
-	    @HeaderParam("x-b3-traceid") String xtraceid,
-	    @HeaderParam("x-b3-spanid") String xspanid,
-	    @HeaderParam("x-b3-parentspanid") String xparentspanid,
-	    @HeaderParam("x-b3-sampled") String xsampled,
-	    @HeaderParam("x-b3-flags") String xflags,
-	    @HeaderParam("x-ot-span-context") String xotspan) {
-	  //HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
-	  try {
+	public Response rentMovie(String rentalInfoStr,
+	                          @Context HttpHeaders httpHeaders) {
+//	    @HeaderParam("end-user") String user,
+//	    @HeaderParam("x-request-id") String xreq,
+//	    @HeaderParam("x-b3-traceid") String xtraceid,
+//	    @HeaderParam("x-b3-spanid") String xspanid,
+//	    @HeaderParam("x-b3-parentspanid") String xparentspanid,
+//	    @HeaderParam("x-b3-sampled") String xsampled,
+//	    @HeaderParam("x-b3-flags") String xflags,
+//	    @HeaderParam("x-ot-span-context") String xotspan) {
+//	  HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
+	  try (Scope scope = tracer.buildSpan("rentmovie").startActive(true)) {
+      scope.span().setTag("rentmovie", rentalInfoStr);
 	    JSONObject rentalInfo = new JSONObject(rentalInfoStr);
 	    int filmId = rentalInfo.getInt("filmId");
 	    int storeId = rentalInfo.getInt("storeId");
 	    int customerId = rentalInfo.getInt("customerId");
 	    int duration = rentalInfo.getInt("duration");
 	    int staffId = rentalInfo.getInt("staffId");
+	    LOGGER.debug("Rent movie params:" + rentalInfoStr + "; ");
 	    if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
 	      return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"Invalid query params\"}").build();
 	    }
+	    
 	    JSONObject result = mv.rentMovie(filmId, storeId, duration, customerId, staffId);
+	    
 	    return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 	  } catch (Exception e) {
 	    e.printStackTrace();
@@ -176,7 +206,8 @@ public class MovieRentalRest {
     double rent = returnInfo.getDouble("rent");
  
     JSONObject result = null;
-    try {
+    try (Scope scope = tracer.buildSpan("returnmovie").startActive(true)) {
+      scope.span().setTag("returnmovie", returnInfoStr);
       LOGGER.debug("ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", " + rent);
       result = mv.returnMovie(inventoryId, userId, staffId, rent);
     } catch (Exception e) {
@@ -259,6 +290,7 @@ public class MovieRentalRest {
     } 
 	  return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
   }
+	
 	
 }
 
