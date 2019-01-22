@@ -1,4 +1,4 @@
-package com.cubeiosample.webservices.rest.jersey;
+package io.cube.utils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,6 +46,7 @@ public class ConnectionPool {
 	        props.setProperty("verifyServerCertificate", "false");
 	        props.setProperty("useSSL", "false");
 	        props.setProperty("requireSSL", "false");
+	        props.setProperty("allowPublicKeyRetrieval", "true");
 	        ConnectionFactory cf = new DriverManagerConnectionFactory(uri, props);
 	
 	        // Creates a PoolableConnectionFactory That Will Wraps the Connection Object Created by the ConnectionFactory to Add Object Pooling Functionality!
@@ -138,7 +139,6 @@ public class ConnectionPool {
     private void bindParameter(PreparedStatement stmt, JSONObject param) throws JSONException, SQLException {
 	    	int index = param.getInt("index");
 	    	String dataType = param.getString("type").toLowerCase();
-	    	LOGGER.debug(index + ":" + param.getString("value"));
 	    	switch(dataType) {
 		    	case "string": 
 		    		stmt.setString(index, param.getString("value"));

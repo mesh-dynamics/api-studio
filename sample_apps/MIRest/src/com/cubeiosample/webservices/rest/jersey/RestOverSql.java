@@ -1,16 +1,16 @@
 package com.cubeiosample.webservices.rest.jersey;
 
-import java.net.URI;
+import io.cube.utils.RestUtils;
+import io.opentracing.Tracer;
+
+import java.util.Hashtable;
 import java.util.Properties;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 
 import org.apache.log4j.Logger;
 import org.glassfish.jersey.client.ClientConfig;
@@ -20,15 +20,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
 public class RestOverSql {
   private Client restClient = null;
   private WebTarget restJDBCService = null;
+  private Tracer tracer = null;
+  
   final static Logger LOGGER = Logger.getLogger(RestOverSql.class);
+  
   private static String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
   Properties properties;
   private static final String CONFFILE = "conf/MIRest.conf";
   
-  public RestOverSql() {
+  // private Hashtable<String, HeaderParams> requestHeaders = null;
+  
+  public RestOverSql(Tracer tracer) {
     ClientConfig clientConfig = new ClientConfig()
         .property(ClientProperties.READ_TIMEOUT, 100000)  
         .property(ClientProperties.CONNECT_TIMEOUT, 10000);
@@ -36,9 +42,22 @@ public class RestOverSql {
     configureRestWrapUri();
     LOGGER.debug("RESTWRAPJDBC_URI is " + RESTWRAPJDBC_URI);
     restJDBCService = restClient.target(RESTWRAPJDBC_URI);
+    
+    this.tracer = tracer;
     initializeJDBCService();
+    
+    // requestHeaders = new Hashtable<String, HeaderParams>();
   }
   
+  
+//  public void addRequestHeaders(String signature, HeaderParams hd) {
+//    requestHeaders.put(signature, hd);
+//  }
+//  
+//  
+//  public void removeRequestHeaders(String signature) {
+//    requestHeaders.remove(signature);
+//  }
   
   private void configureRestWrapUri() {
     // try the conf file and then the env. otherwise, default
@@ -61,23 +80,26 @@ public class RestOverSql {
     String username = MovieRentals.userName();
     String pwd = MovieRentals.passwd();
     String uri = MovieRentals.baseUri();
-    Response response = callWithRetries(restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, true, 3);
+    LOGGER.debug("init jdbc service tracer: ");
+    LOGGER.debug(tracer.toString());
+    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, "GET", 3);
     LOGGER.debug("intialized jdbc service " + uri + "; " + username + "; " + response.getStatus() + "; "+ response.readEntity(String.class));
     response.close();
   }
   
   
   public String getHealth() {
-    Response response = callWithRetries(restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, true, 3);
+    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, "GET", 3);
     String result = response.readEntity(String.class);
     response.close();
     return result;
   }
-  
+ 
   
   public JSONArray executeQuery(String query, JSONArray params) {
-    LOGGER.debug("Query: " + query + "; " + params.toString());
-    Response response = callWithRetries(restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), null, true, 3);
+    Response response = RestUtils.callWithRetries(tracer, 
+        restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), 
+        null, "GET", 3);
     JSONArray result = new JSONArray(response.readEntity(String.class));
     LOGGER.debug("Query: " + query + "; " + params.toString() + "; NumRows=" + result.length());
     response.close();
@@ -89,7 +111,7 @@ public class RestOverSql {
     JSONObject body = new JSONObject();
     body.put("query", query);
     body.put("params", params);
-    Response response = callWithRetries(restJDBCService.path("update").request(), body, false, 3);
+    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("update").request(), body, "POST", 3);
     
     // TODO: figure out the best way of extracting json array from the entity
     JSONObject result = new JSONObject(response.readEntity(String.class));
@@ -106,7 +128,7 @@ public class RestOverSql {
     param.put("value", value);
     params.put(param);
   }
-
+ 
   public static void addIntegerParam(JSONArray params, Integer value) throws JSONException {
     JSONObject param = new JSONObject();
     param.put("index", params.length() + 1);
@@ -123,22 +145,4 @@ public class RestOverSql {
     params.put(param);
   }
   
-    
-  private Response callWithRetries(Builder req, JSONObject body, boolean isGetRequest, int numRetries) {
-    int numAttempts = 0;
-    LOGGER.debug("req:" + req.toString());
-    while (numAttempts < numRetries) {
-      try {
-        if (isGetRequest) {
-          return req.get();
-        } 
-        return req.post(Entity.entity(body.toString(), MediaType.APPLICATION_JSON));
-      } catch (Exception e) {
-        LOGGER.error("request attempt " + numAttempts + ": " + req.toString() + "; exception: " + e.toString());
-        ++numAttempts;
-      }
-    }
-    return null;
-  }
-
 }

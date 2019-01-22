@@ -68,6 +68,7 @@ public class FindAndRentMovies {
     token = response.getHeaderString(HttpHeaders.AUTHORIZATION);
 	}
 
+	
 	public void driveTraffic() throws Exception {
 	  getToken();
 		warmMovieCache();
@@ -120,7 +121,8 @@ public class FindAndRentMovies {
 			rentalInfo.put("customerId", userId);
 			rentalInfo.put("staffId", staffId);   
 			System.out.println("client rentalInfo: " + rentalInfo.toString());
-			Response response3 = callWithRetries(targetService.path("rentmovie").request().header(HttpHeaders.AUTHORIZATION, token), Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON), false, 1); // TOFIX: why is it retrying? is it timing out while debugging?
+			Response response3 = callWithRetries(targetService.path("rentmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
+			    Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON), false, 1); // TOFIX: why is it retrying? is it timing out while debugging?
 			JSONObject rentalResult = new JSONObject(response3.readEntity(String.class));
 			response3.close();
 			if (response3.getStatus() != 200) {
@@ -147,7 +149,8 @@ public class FindAndRentMovies {
 			returnMovieInfo.put("userId", userId);
 			returnMovieInfo.put("staffId", staffId);
 			returnMovieInfo.put("rent", rentalResult.getDouble("rent"));  
-			Response response4 = callWithRetries(targetService.path("returnmovie").request().header(HttpHeaders.AUTHORIZATION, token), Entity.entity(returnMovieInfo.toString(), MediaType.APPLICATION_JSON), false, 1);
+			Response response4 = callWithRetries(targetService.path("returnmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
+			    Entity.entity(returnMovieInfo.toString(), MediaType.APPLICATION_JSON), false, 1);
 			JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
 			response4.close();
 			if (response4.getStatus() != 200) {

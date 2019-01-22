@@ -1,11 +1,19 @@
 package com.cubeio.restwrapjdbc;
 
+import io.cube.utils.ConnectionPool;
+import io.cube.utils.Tracing;
+import io.jaegertracing.internal.JaegerTracer;
+import io.opentracing.Scope;
+
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -18,9 +26,11 @@ import org.json.JSONObject;
 public class RestAPIForJDBC {
 	final static Logger LOGGER;
 	private static ConnectionPool jdbcPool = null;
+	static final JaegerTracer tracer;
 	
 	static {
 		LOGGER = Logger.getLogger(RestAPIForJDBC.class);
+		tracer = Tracing.init("RestWrapJDBC");
 		BasicConfigurator.configure();
 	}
 
@@ -38,8 +48,10 @@ public class RestAPIForJDBC {
   @Produces(MediaType.APPLICATION_JSON)
   public Response initialize(@QueryParam("username") String username,
                              @QueryParam("password") String passwd,
-                             @QueryParam("uri") String uri) {
-    try {
+                             @QueryParam("uri") String uri,
+                             @Context HttpHeaders httpHeaders) {
+    try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders, "initialize")) {
+      scope.span().setTag("initialize", uri + "; "  + username + "; <pwd>");
       jdbcPool = new ConnectionPool();
       jdbcPool.setUpPool(uri, username, passwd);
       LOGGER.info("mysql uri: " + uri);
@@ -56,10 +68,12 @@ public class RestAPIForJDBC {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response query(@QueryParam("querystring") String query,
-	                      @QueryParam("params") String queryParams) {
+	                      @QueryParam("params") String queryParams,
+                        @Context HttpHeaders httpHeaders) {
 		JSONArray result = null;
 		JSONArray params = new JSONArray(queryParams);
-		try {
+		try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders, "query")) {
+		  scope.span().setTag("query", query);
 		  result = jdbcPool.executeQuery(query, params);
 		  return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 		} catch (Exception e) {
@@ -73,9 +87,11 @@ public class RestAPIForJDBC {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public Response update(String queryAndParamsStr) {
+  public Response update(String queryAndParamsStr,
+                         @Context HttpHeaders httpHeaders) {
     JSONObject result = null;
-    try {
+    try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders, "update")) {
+      scope.span().setTag("update", queryAndParamsStr);
       JSONObject queryAndParams = new JSONObject(queryAndParamsStr);
       JSONArray params = queryAndParams.getJSONArray("params");
       String query = queryAndParams.getString("query");
