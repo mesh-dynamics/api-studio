@@ -35,10 +35,5 @@ public class RestUtils {
     LOGGER.debug("call with retries failed: " + req.toString());
     return null;
   }
-  
-//  public static void logHeaders(Logger logger, HttpHeaders hdrs) {
-//    for (Header header : hdrs) {
-//        logger.debug("Headers.. name,value:"+header.getName() + "," + header.getValue());
-//    }
-//  }
+ 
 }

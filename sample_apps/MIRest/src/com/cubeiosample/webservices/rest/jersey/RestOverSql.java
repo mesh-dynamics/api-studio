@@ -32,7 +32,6 @@ public class RestOverSql {
   Properties properties;
   private static final String CONFFILE = "conf/MIRest.conf";
   
-  // private Hashtable<String, HeaderParams> requestHeaders = null;
   
   public RestOverSql(Tracer tracer) {
     ClientConfig clientConfig = new ClientConfig()
@@ -46,19 +45,9 @@ public class RestOverSql {
     this.tracer = tracer;
     initializeJDBCService();
     
-    // requestHeaders = new Hashtable<String, HeaderParams>();
   }
   
-  
-//  public void addRequestHeaders(String signature, HeaderParams hd) {
-//    requestHeaders.put(signature, hd);
-//  }
-//  
-//  
-//  public void removeRequestHeaders(String signature) {
-//    requestHeaders.remove(signature);
-//  }
-  
+    
   private void configureRestWrapUri() {
     // try the conf file and then the env. otherwise, default
     properties = new java.util.Properties();

@@ -100,12 +100,7 @@ public class MovieRentals {
       }
     		return MYSQL_PWD;
     }
-    
-
-//    public void addRequestHeaders(String signature, HeaderParams hd) {
-//      ros.addRequestHeaders(signature, hd);
-//    }
-    
+        
     
     public JSONArray listMovies(String filmnameOrKeywordForRequest) {
 	    	// TODO: add actor also in the parameter options.
@@ -128,10 +123,6 @@ public class MovieRentals {
     
     
     public JSONArray listMovieByName(String filmname) {
-//      JSONObject cacheKey = new JSONObject(filmnameForRequest);
-//      String filmname = cacheKey.getString("filmnameOrKeyword");
-//      String requestSignature = cacheKey.getString("signature");
-           
       // Query with filmname
       LOGGER.debug("filmname:" + filmname);
       String query = "select film_id, title from film where title = ?";
@@ -148,10 +139,6 @@ public class MovieRentals {
     
     
     public JSONArray listMoviesByKeyword(String keyword) {
-//      JSONObject cacheKey = new JSONObject(keywordForRequest);
-//      String keyword = cacheKey.getString("filmnameOrKeyword");
-//      String requestSignature = cacheKey.getString("signature");
-
       String query = "select id, title from film where title like %?%";
       JSONArray params = new JSONArray();
       RestOverSql.addStringParam(params, keyword);
