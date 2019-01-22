@@ -167,7 +167,6 @@ public class MovieRentalRest {
 //	    @HeaderParam("x-b3-sampled") String xsampled,
 //	    @HeaderParam("x-b3-flags") String xflags,
 //	    @HeaderParam("x-ot-span-context") String xotspan) {
-//	  HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 	  try (Scope scope = tracer.buildSpan("rentmovie").startActive(true)) {
       scope.span().setTag("rentmovie", rentalInfoStr);
 	    JSONObject rentalInfo = new JSONObject(rentalInfoStr);
@@ -280,7 +279,6 @@ public class MovieRentalRest {
 	    @HeaderParam("x-b3-sampled") String xsampled,
 	    @HeaderParam("x-b3-flags") String xflags,
 	    @HeaderParam("x-ot-span-context") String xotspan) {
-	  // HeaderParams hd = new HeaderParams(user, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
 	  JSONArray obj = null;
 	  try {
 	    obj = mv.getSalesByStore(storename);
