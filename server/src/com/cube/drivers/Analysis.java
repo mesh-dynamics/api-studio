@@ -6,6 +6,7 @@ package com.cube.drivers;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -19,6 +20,7 @@ import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.dao.Response;
+import com.cube.dao.Result;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
@@ -110,12 +112,12 @@ public class Analysis {
 				//.withMreqid(MatchType.SCORE).build();
 
 		return replay.flatMap(r -> {
-			List<Request> reqs = r.getRequests();
-			Analysis analysis = new Analysis(replayid, reqs.size());
+			Result<Request> reqs = r.getRequests();
+			Analysis analysis = new Analysis(replayid, (int) reqs.numResults());
 			if (!rrstore.saveAnalysis(analysis))
 				return Optional.empty();
 			
-			analysis.analyze(rrstore, reqs.stream(), mspec);
+			analysis.analyze(rrstore, reqs.getObjects(), mspec);
 
 			analysis.status = Status.Completed;
 			// update the stored analysis
@@ -139,7 +141,8 @@ public class Analysis {
 			Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta, 
 					r.hdrs, r.method, r.body, Optional.ofNullable(replayid), r.timestamp, 
 					Optional.of(RR.Replay.toString()), r.customerid, r.app);
-			List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10));
+			List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10))
+					.collect(Collectors.toList());
 			
 			/*
 			matches.stream().findFirst().ifPresentOrElse(firstmatch -> {
@@ -198,7 +201,7 @@ public class Analysis {
 				// fetch response of recording and replay
 
 				RespMatchWithReq bestmatch = new RespMatchWithReq(r, null, RespMatchType.NoMatch, "");
-				ReqMatchType bestreqmt = ReqMatchType.ExactMatch;
+				ReqMatchType bestreqmt = ReqMatchType.NoMatch;
 
 				// matches is ordered in decreasing order of request match score. so exact matches
 				// of requests, if any should be at the beginning
@@ -207,14 +210,14 @@ public class Analysis {
 				for (Request replayreq : matches) {						
 					ReqMatchType reqmt = rq.compare(replayreq, mspec);
 					RespMatchWithReq match = checkRespMatch(r, replayreq, rrstore);
-					if ((reqmt == ReqMatchType.ExactMatch) || (match.respmt == RespMatchType.ExactMatch)) {
+
+					if (isReqRespMatchBetter(reqmt, match.respmt, bestreqmt, bestmatch.respmt)) {
 						bestmatch = match;
 						bestreqmt = reqmt;
-						break;
-					} else if (bestmatch.respmt == RespMatchType.NoMatch) {
-						bestmatch = match;
-						bestreqmt = reqmt;
-					}
+						if (bestreqmt == ReqMatchType.ExactMatch && bestmatch.respmt == RespMatchType.ExactMatch) {
+							break;
+						}
+					}					
 				}					
 				// compare & write out result
 				if (bestreqmt == ReqMatchType.ExactMatch)
@@ -242,7 +245,16 @@ public class Analysis {
 		});		
 	}
 
-
+	private static boolean isReqRespMatchBetter(ReqMatchType reqm1, RespMatchType respm1, 
+			ReqMatchType reqm2, RespMatchType respm2) {
+		// request match has to be better. Only if it is better, check response match
+		if (reqm1.isBetterOrEqual(reqm2)) {
+			if (respm1.isBetter(respm2)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * @param replayid
@@ -278,9 +290,21 @@ public class Analysis {
 		
 		public ReqMatchType And(ReqMatchType other) {
 			switch (this) {
-			case NoMatch: return NoMatch;
-			case ExactMatch: return other;
-			default: return (other == NoMatch) ? NoMatch : PartialMatch;
+				case NoMatch: return NoMatch;
+				case ExactMatch: return other;
+				default: return (other == NoMatch) ? NoMatch : PartialMatch;
+			}
+		}
+
+		/**
+		 * @param other
+		 * @return true if this is better or equal to other match
+		 */
+		public boolean isBetterOrEqual(ReqMatchType other) {
+			switch (this) {
+				case NoMatch: return (other == NoMatch);
+				case ExactMatch: return true;
+				default: return (other != ExactMatch); // PartialMatch is better only if other is not ExactMatch
 			}
 		}
 	}
@@ -288,7 +312,19 @@ public class Analysis {
 	public enum RespMatchType {
 		ExactMatch,
 		TemplateMatch,
-		NoMatch
+		NoMatch;
+
+		/**
+		 * @param other
+		 * @return
+		 */
+		public boolean isBetter(RespMatchType other) {
+			switch (this) {
+				case NoMatch: return (other == NoMatch); // NOTE: NoMatch is considered better than NoMatch to handle the starting condition
+				case ExactMatch: return (other != ExactMatch);
+				default: return (other == NoMatch); // PartialMatch is better only if other is NoMatch
+			}
+		}
 	}
 	
 	public static class RespMatch {
@@ -385,5 +421,5 @@ public class Analysis {
 		final public String path;
 		final public String replayid;
 	}
-
+	
 }
