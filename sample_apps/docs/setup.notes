@@ -1,0 +1,11 @@
+cd Utils; mvn install
+cd MIRest; mvn package
+cd RestWrapJDBC; mvn package
+docker push cubeiocorp/restwrapjdbc:V1-SNAPSHOT
+docker push cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+
+## local mysql database containing the movieinfo db
+docker run --name mysql-sakila-v3-instance -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password cubeiocorp/mysql-sakila:v3
+# login to bash
+docker exec -it mysql-sakila-v3-instance /bin/bash
+mysql -ucube -pcubeio
