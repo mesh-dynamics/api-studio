@@ -65,8 +65,9 @@ public class SolrIterator implements Iterator<SolrDocument> {
 				return true; 
 			} else {
 				// try to read the next batch
-				if (numread >= numresults)
+				if (numread >= numresults) {
 					return false;
+				}
 				int toread = maxresults.map(mr -> Math.min(BATCHSIZE, mr-numread)).orElse(BATCHSIZE);
 				if (toread > 0) {
 					query.setRows(toread);
@@ -78,9 +79,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
 						numread += res.size();
 						return iterator.map(it -> it.hasNext()).orElse(false);
 					}).orElse(false);					
-				} else {
-					return false;
-				}
+				} 
+				return false;
 			}
 		}).orElse(false);
 	}

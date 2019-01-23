@@ -168,12 +168,7 @@ public class Replay {
 			List<Integer> respcodes = async ? sendReqAsync(httprequests, client) : sendReqSync(httprequests, client);
 
 			// count number of errors
-			reqfailed += respcodes.stream().map(s -> {
-				if (s != Response.Status.OK.getStatusCode())
-					return 1;
-				else 
-					return 0;
-			}).reduce(Integer::sum).orElse(0);			
+			reqfailed += respcodes.stream().filter(s -> (s != Response.Status.OK.getStatusCode())).count();
 		});
 			
 		LOGGER.info(String.format("Replayed %d requests, got %d errors", reqcnt, reqfailed));
