@@ -82,10 +82,10 @@ spec:
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
+                  meta["instanceid"] = "test"
                   meta["service"] = "reviews"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -95,18 +95,19 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  local service = "reviews"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
-                  meta["service"] = "reviews"
+                  meta["instanceid"] = "test"
+                  meta["service"] = service
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -198,10 +199,10 @@ spec:
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
+                  meta["instanceid"] = "test"
                   meta["service"] = "productpage"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -211,18 +212,19 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  local service = "productpage"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
-                  meta["service"] = "productpage"
+                  meta["instanceid"] = "test"
+                  meta["service"] = service
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -314,10 +316,10 @@ spec:
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
+                  meta["instanceid"] = "test"
                   meta["service"] = "details"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -327,18 +329,19 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  local service = "details"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
-                  meta["service"] = "details"
+                  meta["instanceid"] = "test"
+                  meta["service"] = service
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -430,10 +433,10 @@ spec:
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
+                  meta["instanceid"] = "test"
                   meta["service"] = "ratings"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -443,18 +446,19 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  local service = "ratings"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
-                  meta["collection"] = "testc1"
                   meta["rrtype"] = "Replay"
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
-                  meta["service"] = "ratings"
+                  meta["instanceid"] = "test"
+                  meta["service"] = service
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")

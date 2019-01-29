@@ -31,10 +31,12 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cube.core.BatchingIterator;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
+import com.cube.dao.Result;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -64,14 +66,16 @@ public class Replay {
 	 * @param replayid
 	 * @param async
 	 * @param status 
+	 * @param instanceid 
 	 */
-	public Replay(String endpoint, String customerid, String app, String collection, List<String> reqids,
+	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
 			ReqRespStore rrstore,  String replayid, boolean async, ReplayStatus status,
 			List<String> paths, int reqcnt, int reqsent, int reqfailed) {
 		super();
 		this.endpoint = endpoint;
 		this.customerid = customerid;
 		this.app = app;
+		this.instanceid = instanceid;
 		this.collection = collection;
 		this.reqids = reqids;
 		this.rrstore = rrstore;
@@ -95,24 +99,23 @@ public class Replay {
 	 * @param async
 	 * @param status 
 	 */
-	private Replay(String endpoint, String customerid, String app, String collection, 
-			List<String> reqids,
+	private Replay(String endpoint, String customerid, String app, String instanceid,
+			String collection, List<String> reqids,
 			ReqRespStore rrstore,  String replayid, boolean async, ReplayStatus status,
 			List<String> paths) {
-		this(endpoint, customerid, app, collection, reqids, rrstore, replayid, async, 
+		this(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, 
 				status, paths, 0, 0, 0);
 	}
 	
 
 	private void replay() {
 		
-		List<Request> requests = getRequests();
+		//List<Request> requests = getRequests();
 
 		if (status != ReplayStatus.Init) {
 			return;
 		}
 		status = ReplayStatus.Running;
-		reqcnt = requests.size();
 		if (!rrstore.saveReplay(this))
 			return;
 
@@ -136,41 +139,41 @@ public class Replay {
 	    if (Authenticator.getDefault() != null)
 	    	clientbuilder.authenticator(Authenticator.getDefault());
 	    HttpClient client = clientbuilder.build();
-	   
-		Stream<HttpRequest> httprequests = requests.stream().map(r -> {
-			UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
-					.path(r.path);
-			r.qparams.forEach((k, vlist) -> {
-				uribuilder.queryParam(k, vlist.toArray());
-			});
-			URI uri = uribuilder.build();
-			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
-					.uri(uri)
-					.method(r.method, BodyPublishers.ofString(r.body));
 
-			r.hdrs.forEach((k, vlist) -> {
-				// some headers are restricted and cannot be set on the request
-				if (Utils.ALLOWED_HEADERS.test(k)) {
-					vlist.forEach(value -> {
-						reqbuilder.header(k, value);					
-					});
-				}
+		getRequestBatches(BATCHSIZE).forEach(requests -> {
+
+			reqcnt += requests.size();
+			
+			Stream<HttpRequest> httprequests = requests.stream().map(r -> {
+				UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
+						.path(r.path);
+				r.qparams.forEach((k, vlist) -> {
+					uribuilder.queryParam(k, vlist.toArray());
+				});
+				URI uri = uribuilder.build();
+				HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
+						.uri(uri)
+						.method(r.method, BodyPublishers.ofString(r.body));
+
+				r.hdrs.forEach((k, vlist) -> {
+					// some headers are restricted and cannot be set on the request
+					if (Utils.ALLOWED_HEADERS.test(k)) {
+						vlist.forEach(value -> {
+							reqbuilder.header(k, value);					
+						});
+					}
+				});
+							
+				return reqbuilder.build();
 			});
-						
-			return reqbuilder.build();
+			
+			List<Integer> respcodes = async ? sendReqAsync(httprequests, client) : sendReqSync(httprequests, client);
+
+			// count number of errors
+			reqfailed += respcodes.stream().filter(s -> (s != Response.Status.OK.getStatusCode())).count();
 		});
-		
-		List<Integer> respcodes = async ? sendReqAsync(httprequests, client) : sendReqSync(httprequests, client);
-
-		// count number of errors
-		reqfailed = respcodes.stream().map(s -> {
-			if (s != Response.Status.OK.getStatusCode())
-				return 1;
-			else 
-				return 0;
-		}).reduce(Integer::sum).orElse(0);
-		
-		LOGGER.info(String.format("Replayed %d requests, got %d errors", requests.size(), reqfailed));
+			
+		LOGGER.info(String.format("Replayed %d requests, got %d errors", reqcnt, reqfailed));
 
 		status = (reqfailed == 0) ? ReplayStatus.Completed : ReplayStatus.Error;
 		
@@ -201,17 +204,19 @@ public class Replay {
 		return rrstore.getReplay(replayid);
 	}
 
-	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String collection, List<String> reqids,
+	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String instanceid, 
+			String collection, List<String> reqids,
 			ReqRespStore rrstore, boolean async, List<String> paths) {
 		String replayid = getReplayIdFromCollection(collection);
-		Replay replay = new Replay(endpoint, customerid, app, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
+		Replay replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
 	
 		if (rrstore.saveReplay(replay))
 			return Optional.of(replay);
 		return Optional.empty();
 	}
 	
-	private static int UPDBATCHSIZE = 10;
+	private static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
+	private static int BATCHSIZE = 40; // this controls the number of requests in a batch that could be sent in async fashion
 	
 	private List<Integer> sendReqAsync(Stream<HttpRequest> httprequests, HttpClient client) {
 		// exceptions are converted to status code indicating error
@@ -274,6 +279,7 @@ public class Replay {
 	public final String endpoint;
 	public final String customerid;
 	public final String app;
+	public final String instanceid;
 	public final String collection;
 	public final List<String> reqids;
 	@JsonIgnore
@@ -312,7 +318,15 @@ public class Replay {
 	 * @return
 	 */
 	@JsonIgnore
-	public List<Request> getRequests() {
-		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
+	public Result<Request> getRequests() {
+		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record); 
 	}
+
+	@JsonIgnore
+	public Stream<List<Request>> getRequestBatches(int batchSize) {
+		Result<Request> requests = getRequests(); 
+		
+		return BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize);
+	}
+
 }

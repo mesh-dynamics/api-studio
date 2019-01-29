@@ -45,29 +45,30 @@ public class ReplayWS {
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
 		
-		boolean async = Optional.ofNullable(formParams.get("async"))
-				.flatMap(vals -> vals.stream().findFirst().map(v -> {return (v == "t") ? true : false;}))
+		boolean async = Optional.ofNullable(formParams.getFirst("async"))
+				.map(v -> {return (v == "t") ? true : false;})
 				.orElse(false);
 		List<String> reqids = Optional.ofNullable(formParams.get("reqids")).orElse(new ArrayList<String>());
-		Optional<String> endpoint = Optional.ofNullable(formParams.get("endpoint"))
-				.flatMap(vals -> vals.stream().findFirst());
+		Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endpoint"));
+		Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
 		List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
 
-		Optional<Response> resp = endpoint
-				.flatMap(e -> Replay.initReplay(e, customerid, app, collection, reqids, rrstore, async, paths))
-				.map(replay -> {
-					String json;
-					try {
-						json = jsonmapper.writeValueAsString(replay);
-						return Response.ok(json, MediaType.APPLICATION_JSON).build();
-					} catch (JsonProcessingException e) {
-						LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayid), e);
-						return Response.serverError().build();
-					}});
-		
-		return resp.orElse(endpoint.isPresent() ? 
-				Response.serverError().build() : Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
-		
+		return endpoint
+				.map(e -> {
+					return instanceid.map(inst -> {
+						return Replay.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths)
+								.map(replay -> {
+									String json;
+									try {
+										json = jsonmapper.writeValueAsString(replay);
+										return Response.ok(json, MediaType.APPLICATION_JSON).build();
+									} catch (JsonProcessingException ex) {							
+										LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayid), ex);
+										return Response.serverError().build();
+									}
+								}).orElse(Response.serverError().build());
+					}).orElse(Response.status(Status.BAD_REQUEST).entity("Instanceid not specified").build());
+				}).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());		
 	}
 
 

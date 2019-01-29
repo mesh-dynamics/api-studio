@@ -1,5 +1,6 @@
 package com.cube.ws;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -9,6 +10,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -36,9 +38,9 @@ public class MockServiceHTTP {
 	@GET @Path("{customerid}/{app}/{var:.+}")
 	public Response get(@Context UriInfo ui, @PathParam("var") String path, 
 			@PathParam("customerid") String customerid,
-			@PathParam("app") String app) {
+			@PathParam("app") String app, @Context HttpHeaders headers) {
 		
-		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app);
+		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, headers);
 	}
 
 	@POST
@@ -47,24 +49,24 @@ public class MockServiceHTTP {
 	public Response post(@Context UriInfo ui, @PathParam("var") String path, 
 			MultivaluedMap<String, String> formParams,
 			@PathParam("customerid") String customerid,
-			@PathParam("app") String app) {
+			@PathParam("app") String app, @Context HttpHeaders headers) {
 		
-		return getResp(ui, path, formParams, customerid, app);
+		return getResp(ui, path, formParams, customerid, app, headers);
 	}
 
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-			String customerid, String app) {
+			String customerid, String app, HttpHeaders headers) {
 
 		LOGGER.info(String.format("Mocking request for %s", path));
 
 		MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+		
 	 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
 	    
-	    // TODO: extract reqid and collection from headers and pass to request
-	    Request r = new Request(path, Optional.empty(), queryParams, formParams, Optional.empty(), 
-	    		Optional.of(RRBase.RR.Record.toString()), 
+	    Request r = new Request(path, Optional.empty(), queryParams, formParams, headers.getRequestHeaders(), Optional.empty(), 
+	    		Optional.of(RRBase.RR.Record), 
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
 
@@ -101,8 +103,9 @@ public class MockServiceHTTP {
 
 
 	ReqRespStore rrstore;
+	static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	
-	
+	// TODO - make trace field configurable
 	static ReqMatchSpec mspec = (ReqMatchSpec) ReqMatchSpec.builder()
 			.withMpath(MatchType.FILTER)
 			.withMqparams(MatchType.FILTER)
@@ -111,5 +114,10 @@ public class MockServiceHTTP {
 			.withMcustomerid(MatchType.FILTER)
 			.withMapp(MatchType.FILTER)
 			.withMreqid(MatchType.SCORE)
+			.withMcollection(MatchType.FILTER)
+			.withMmeta(MatchType.FILTER)
+			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
+			.withMhdrs(MatchType.SCORE)
+			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
 }

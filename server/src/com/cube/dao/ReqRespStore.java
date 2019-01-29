@@ -10,10 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
+import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
-import com.cube.drivers.Analysis.Result;
+import com.cube.drivers.Analysis.ReqRespMatchResult;
+import com.cube.drivers.Replay.ReplayStatus;
 import com.cube.drivers.Replay;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -74,7 +77,8 @@ public interface ReqRespStore {
 		Response,
 		ReplayMeta, // replay metadata
 		Analysis,
-		Result
+		ReqRespMatchResult,
+		Recording
 	}
 
 	boolean save(Request req);
@@ -84,10 +88,10 @@ public interface ReqRespStore {
 	/**
 	 * @param queryrequest
 	 * @param mspec - the matching specification
-	 * @param nummatches TODO
+	 * @param nummatches - max number of matches
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
-	List<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
+	Stream<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
 	
 	/**
 	 * @param reqid
@@ -112,7 +116,7 @@ public interface ReqRespStore {
 	 * @param rrtype
 	 * @return
 	 */
-	List<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
+	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
 
 	/**
 	 * @param replay
@@ -126,7 +130,17 @@ public interface ReqRespStore {
 	 */
 	Optional<Replay> getReplay(String replayid);
 
-	
+	/**
+	 * @param customerid
+	 * @param app
+	 * @param instanceid
+	 * @param status
+	 * @return
+	 */
+	Optional<Replay> getReplay(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid, ReplayStatus status);
+
+
 	static void main(String[] args) throws IOException{
 
 		Map.Entry<String, String> e = new AbstractMap.SimpleEntry<String, String>("k1", "v1");
@@ -185,7 +199,7 @@ public interface ReqRespStore {
 	 * @param res
 	 * @return 
 	 */
-	boolean saveResult(Result res);
+	boolean saveResult(ReqRespMatchResult res);
 
 	/**
 	 * @param replayid
@@ -193,5 +207,37 @@ public interface ReqRespStore {
 	 */
 	Optional<Analysis> getAnalysis(String replayid);
 
-	
+	/**
+	 * @param customerid
+	 * @param app
+	 * @param instanceid 
+	 * @param status
+	 * @return
+	 */
+	Optional<Recording> getRecording(Optional<String> customerid, Optional<String> app, Optional<String> instanceid, RecordingStatus status);
+
+	/**
+	 * @param customerid
+	 * @param app
+	 * @param instanceid
+	 * @return
+	 */
+	Optional<String> getCurrentCollection(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid);
+
+	/**
+	 * @param recording
+	 * @return
+	 */
+	boolean saveRecording(Recording recording);
+
+	/**
+	 * @param ofNullable
+	 * @param ofNullable2
+	 * @param ofNullable3
+	 * @return
+	 */
+	Optional<Recording> getRecordingByCollection(String customerid, String app,
+			String collection);
+
 }
