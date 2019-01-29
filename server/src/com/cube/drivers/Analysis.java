@@ -140,7 +140,7 @@ public class Analysis {
 			// collection to set to replayid, since collection in replays are set to replayids
 			Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta, 
 					r.hdrs, r.method, r.body, Optional.ofNullable(replayid), r.timestamp, 
-					Optional.of(RR.Replay.toString()), r.customerid, r.app);
+					Optional.of(RR.Replay), r.customerid, r.app);
 			List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10))
 					.collect(Collectors.toList());
 			

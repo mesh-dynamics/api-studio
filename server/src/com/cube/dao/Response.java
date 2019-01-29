@@ -21,7 +21,7 @@ public class Response extends RRBase {
 			MultivaluedMap<String, String> hdrs, String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp, 
-			Optional<String> rrtype, 
+			Optional<RR> rrtype, 
 			Optional<String> customerid,
 			Optional<String> app) {
 		super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);

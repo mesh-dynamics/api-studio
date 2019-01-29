@@ -35,7 +35,7 @@ public class Request extends RRBase {
 			String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp, 
-			Optional<String> rrtype, 
+			Optional<RR> rrtype, 
 			Optional<String> customerid,
 			Optional<String> app) {
 		super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
@@ -57,7 +57,7 @@ public class Request extends RRBase {
 			MultivaluedMap<String, String> fparams, 
 			MultivaluedMap<String, String> hdrs, 
 			Optional<String> collection, 
-			Optional<String> rrtype, 
+			Optional<RR> rrtype, 
 			Optional<String> customerid,
 			Optional<String> app) {
 		this(path, id, qparams, fparams, new MultivaluedHashMap<String, String>(), 
