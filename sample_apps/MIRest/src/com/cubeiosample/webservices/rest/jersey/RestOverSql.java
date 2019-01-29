@@ -55,6 +55,7 @@ public class RestOverSql {
       properties.load(this.getClass().getClassLoader().
           getResourceAsStream(CONFFILE));
       RESTWRAPJDBC_URI = properties.getProperty("RESTWRAPJDBC_URI");
+      LOGGER.info("RESTWRAPJDBC_URI configured from conf file: " + RESTWRAPJDBC_URI);
     } catch (Exception e) {
       LOGGER.info("Conf file not found.");
       String rwUri = System.getenv("RESTWRAPJDBC_URI");
