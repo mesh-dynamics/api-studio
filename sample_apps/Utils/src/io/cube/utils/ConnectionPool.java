@@ -30,6 +30,7 @@ public class ConnectionPool {
     private static GenericObjectPool gPool = null;
     
     private DataSource connPool = null;
+    private final static int MAX_NUM_CONNECTIONS = 25;
 
     @SuppressWarnings("unused")
     public void setUpPool(String uri, String user, String pwd) throws Exception {
@@ -37,7 +38,7 @@ public class ConnectionPool {
 	        Class.forName(JDBC_DRIVER);
 	        // Creates an Instance of GenericObjectPool That Holds Our Pool of Connections Object!
 	        gPool = new GenericObjectPool();
-	        gPool.setMaxActive(5);
+	        gPool.setMaxActive(MAX_NUM_CONNECTIONS);
 	        
 	        // Creates a ConnectionFactory Object Which Will Be Use by the Pool to Create the Connection Object!
 	        Properties props = new Properties();
@@ -51,7 +52,7 @@ public class ConnectionPool {
 	
 	        // Creates a PoolableConnectionFactory That Will Wraps the Connection Object Created by the ConnectionFactory to Add Object Pooling Functionality!
 	        PoolableConnectionFactory pcf = new PoolableConnectionFactory(cf, gPool, null, null, false, true);
-	        connPool = new PoolingDataSource(gPool);
+	        //connPool = new PoolingDataSource(gPool);
 	    	} catch (Exception e) {
 	    		LOGGER.error("URI: " + uri + "; user: " + user + "; pwd: " + pwd + ";\n" + e.toString());
 	    	}
@@ -66,15 +67,10 @@ public class ConnectionPool {
         return "Max.: " + getConnectionPool().getMaxActive() + "; Active: " + getConnectionPool().getNumActive() + "; Idle: " + getConnectionPool().getNumIdle();
     }
     
-    
-    // TODO: move to a different class after creating a new DataService.
-    public PreparedStatement GetPreparedStatement(String query) throws SQLException {
-    		return connPool.getConnection().prepareStatement(query);
-    }
-    
+       
     public JSONArray executeQuery(String query, JSONArray params) {
 	    	try {
-	    		Connection conn = connPool.getConnection();
+	    		Connection conn = (Connection) gPool.borrowObject(); 
 	    		PreparedStatement stmt = conn.prepareStatement(query);
 	    		for (int i = 0; i < params.length(); ++i) {
 	    			JSONObject obj = params.getJSONObject(i);
@@ -92,19 +88,28 @@ public class ConnectionPool {
 	    	return null;
     }
     
-    public JSONArray executeQuery(String query) throws SQLException, JSONException {
-	    	Statement stmt = connPool.getConnection().createStatement();
+    public JSONArray executeQuery(String query) {
+    	JSONArray res = null;
+    	try {
+	    	Connection conn = (Connection) gPool.borrowObject();
+	    	Statement stmt = conn.createStatement();
 	    	ResultSet rs = stmt.executeQuery(query);
-	    	JSONArray res = convertResultSetToJson(rs);
+	    	res = convertResultSetToJson(rs);
 	    	stmt.close();
+	    	gPool.returnObject(conn);
 	    	return res;
+    	} catch (Exception e) {
+    		LOGGER.error("Query: " + query + "\n; " + e.toString());
+    	}
+		return res;
     }
     
     
     public JSONObject executeUpdate(String query, JSONArray params) {
       JSONObject result = new JSONObject();
 	    	try {
-	    		PreparedStatement stmt = connPool.getConnection().prepareStatement(query);
+	    		Connection conn = (Connection) gPool.borrowObject(); 
+	    		PreparedStatement stmt = conn.prepareStatement(query);
 	    		for (int i = 0; i < params.length(); ++i) {
 	    			JSONObject obj = params.getJSONObject(i);
 	    			bindParameter(stmt, obj);
@@ -112,6 +117,7 @@ public class ConnectionPool {
 		    	int res = stmt.executeUpdate();
 		    	stmt.close();
 		    	result.put("num_updates", res);
+		    	gPool.returnObject(conn);
 		    	return result;
 	    	} catch (Exception e) {
 	    		LOGGER.error("Updated query: " + query + "\nParams " + params.toString() + ";\n " + e.toString());
@@ -123,10 +129,12 @@ public class ConnectionPool {
     public JSONObject executeUpdate(String query) {
       JSONObject result = new JSONObject();
 	    	try {
-	    		Statement stmt = connPool.getConnection().createStatement();
+	    		Connection conn = (Connection) gPool.borrowObject();
+	    		Statement stmt = conn.createStatement();
 	    		int res = stmt.executeUpdate(query);
 	    		stmt.close();
 	    		result.put("num_updates", res);
+	    		gPool.returnObject(conn);
 	    		return result;
 	    	} catch (Exception e) {
 	    		LOGGER.error(e.toString());

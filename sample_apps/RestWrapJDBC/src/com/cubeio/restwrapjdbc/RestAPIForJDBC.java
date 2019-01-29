@@ -69,12 +69,13 @@ public class RestAPIForJDBC {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response query(@QueryParam("querystring") String query,
 	                      @QueryParam("params") String queryParams,
-                        @Context HttpHeaders httpHeaders) {
+                          @Context HttpHeaders httpHeaders) {
 		JSONArray result = null;
 		JSONArray params = new JSONArray(queryParams);
 		try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders, "query")) {
 		  scope.span().setTag("query", query);
 		  result = jdbcPool.executeQuery(query, params);
+		  LOGGER.info(jdbcPool.getPoolStatus());
 		  return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 		} catch (Exception e) {
 			LOGGER.error("Query failed: " + query + "; " + queryParams + "; " + e.toString());
@@ -95,8 +96,9 @@ public class RestAPIForJDBC {
       JSONObject queryAndParams = new JSONObject(queryAndParamsStr);
       JSONArray params = queryAndParams.getJSONArray("params");
       String query = queryAndParams.getString("query");
-      LOGGER.debug("params: " + params.toString());
+      LOGGER.debug("Update stmt: " + query + "; params: " + params.toString());
       result = jdbcPool.executeUpdate(query, params);
+      LOGGER.info(jdbcPool.getPoolStatus());
     } catch (Exception e) {
       result = new JSONObject();
       LOGGER.error("Update query failed: " + queryAndParamsStr + "; " + e.toString());

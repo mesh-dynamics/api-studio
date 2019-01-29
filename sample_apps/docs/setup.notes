@@ -1,0 +1,72 @@
+#### Building the sample movieinfo app
+
+# mvn package
+# first, build Utils and install to make sure MIRest and RestWrapJDBC pick up changes. 
+# If you don't run "mvn install", the older Utils bits are packaged. I have scratched my head several times 
+# as to why my changes to Utils aren't deployed in the RestWrapJDBC docker image when deployed.
+
+## Build io.cube.Utils jar
+mvn clean; mvn package; mvn install
+
+## Build MIRest and update docker image cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+cd MIRest 
+# Otherwise, changes to Utils may not be packaged in MIRest war. By default the previously installed Utils jar
+# is picked up from the .m2/repository/... folder 
+mvn dependency:purge-local-repository -DmanualInclude=io.cube.Utils   
+mvn clean; mvn package
+
+## Build RestWrapJDBC and update cubeiocorp/restwrapjdbc:V1-SNAPSHOT
+cd RestWrapJDBC
+mvn dependency:purge-local-repository -DmanualInclude=io.cube.Utils   
+docker push cubeiocorp/restwrapjdbc:V1-SNAPSHOT
+docker push cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+
+## For local runs of the MIRest make sure that local mysql database is up and running
+## local mysql database containing the movieinfo db
+docker run --name mysql-sakila-v3-instance -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password cubeiocorp/mysql-sakila:v3
+# login to bash
+docker exec -it mysql-sakila-v3-instance /bin/bash
+mysql -ucube -pcubeio
+
+## For kubernetes cluster run on AWS, make sure that the RDS instance is running. Use the connection string 
+## from AWS console in the moviebook.yaml file (e.g., sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com)
+https://us-east-2.console.aws.amazon.com/rds/home?region=us-east-2#GettingStarted:
+
+
+### Deploying the movieinfo app
+# Follow instructions in cubeio/docs/setup to create the kubernetes cluster
+# Inject ISTIO sidecar proxy
+
+# Deploy app and envoy-cs filters
+kubectl demos/moviebook/moviebook.yaml
+
+
+### Record and Replay
+
+# record
+# change the lua filters (one-time with appropriate customer-id and instance-id)
+
+# deploy envoy-cs yaml files
+kubectl demos/moviebook/moviebook-envoy-cs.yaml
+
+
+# Postman requests: recordstart
+# record start (app or run records entered manualy)
+# play traffic
+# record stop
+# check status
+
+
+## Replay
+# replayinit
+
+# deploy envoy-replay yaml files, and the mock-all-except-& yaml files. 
+kubectl demos/moviebook/moviebook-envoy-replay-cs.yaml
+kubectl demos/moviebook/mock-all-except-moviebook.yaml
+
+
+# replaystart --replay-id & collection-id needs to be fetched from 
+# replaystatus
+
+## Analyze record and replay
+# replayanalyzestart

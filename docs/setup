@@ -181,6 +181,8 @@ kubectl get pods -n istio-system
 # deploy the bookinfo example
 # refer https://istio.io/docs/examples/bookinfo/
 kubectl label namespace default istio-injection=enabled
+
+
 kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
 
 ## setup gateway
