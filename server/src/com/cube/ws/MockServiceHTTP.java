@@ -66,7 +66,7 @@ public class MockServiceHTTP {
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
 	    
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams, headers.getRequestHeaders(), Optional.empty(), 
-	    		Optional.of(RRBase.RR.Record.toString()), 
+	    		Optional.of(RRBase.RR.Record), 
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
 

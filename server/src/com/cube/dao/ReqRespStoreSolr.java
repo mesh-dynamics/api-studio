@@ -28,7 +28,9 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 
 import com.cube.core.Utils;
+import com.cube.dao.RRBase.RR;
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
+import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
 import com.cube.drivers.Analysis.ReqRespMatchResult;
@@ -41,7 +43,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  * @author prasad
  *
  */
-public class ReqRespStoreSolr implements ReqRespStore {
+public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespStore {
 	
     private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
 
@@ -172,6 +174,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String RRTYPEF = CPREFIX + "rrtype_s";
 	private static final String CUSTOMERIDF = CPREFIX + "customerid_s";
 	private static final String APPF = CPREFIX + "app_s";
+	private static final String INSTANCEIDF = CPREFIX + "instanceid_s";
 	private static final String STATUSF = CPREFIX + "status_i";
 
 	private static String getPrefix(String ftype) {
@@ -256,23 +259,6 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		}
 	}
 	
-	/* TODO Not used - remove 
-	private static Optional<SolrDocumentList> query(SolrClient solr, SolrQuery query) {
-
-		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
-
-		QueryResponse response;
-		try {
-			response = solr.query(query);
-		} catch (SolrServerException | IOException e) {
-			LOGGER.error("Error in querying Solr", e);
-			return Optional.empty();
-		}
-		return Optional.ofNullable(response.getResults());
-
-	}
-	*/
-
 	
 	private static void setRRFields(RRBase rr, SolrInputDocument doc) {
 		
@@ -282,7 +268,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		addFieldsToDoc(doc, HDR, rr.hdrs);
 		rr.collection.ifPresent(c -> doc.setField(COLLECTIONF, c));
 		rr.timestamp.ifPresent(t -> doc.setField(TIMESTAMPF, t.toString()));
-		rr.rrtype.ifPresent(c -> doc.setField(RRTYPEF, c));
+		rr.rrtype.ifPresent(c -> doc.setField(RRTYPEF, c.toString()));
 		rr.customerid.ifPresent(c -> doc.setField(CUSTOMERIDF, c));
 		rr.app.ifPresent(c -> doc.setField(APPF, c));
 		
@@ -369,7 +355,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		Optional<String> body = getStrField(doc, BODYF);
 		Optional<String> collection = getStrField(doc, COLLECTIONF);
 		Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-		Optional<String> rrtype = getStrField(doc, RRTYPEF);
+		Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
 		Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
 		Optional<String> app = getStrField(doc, APPF);
 		
@@ -429,7 +415,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		Optional<String> body = getStrField(doc, BODYF);
 		Optional<String> collection = getStrField(doc, COLLECTIONF);
 		Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-		Optional<String> rrtype = getStrField(doc, RRTYPEF);
+		Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
 		Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
 		Optional<String> app = getStrField(doc, APPF);
 		
@@ -509,6 +495,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		doc.setField(ASYNCF, replay.async);
 		doc.setField(COLLECTIONF, replay.collection);
 		doc.setField(CUSTOMERIDF, replay.customerid);
+		doc.setField(INSTANCEIDF, replay.instanceid);
 		doc.setField(ENDPOINTF, replay.endpoint);
 		doc.setField(REPLAYIDF, replay.replayid);
 		replay.reqids.forEach(reqid -> doc.addField(REQIDSF, reqid));
@@ -525,6 +512,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static Optional<Replay> docToReplay(SolrDocument doc, ReqRespStore rrstore) {
 		
 		Optional<String> app = getStrField(doc, APPF);
+		Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
 		Optional<Boolean> async = getBoolField(doc, ASYNCF);
 		Optional<String> collection = getStrField(doc, COLLECTIONF);
 		Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
@@ -538,9 +526,10 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
 		
 		Optional<Replay> replay = Optional.empty();
-		if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && collection.isPresent() 
+		if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && 
+				instanceid.isPresent() && collection.isPresent() 
 				&& replayid.isPresent() && async.isPresent() && status.isPresent()) {
-			replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), collection.get(), 
+			replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
 					reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed));
 		} else {
 			LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
@@ -550,14 +539,25 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	}
 
 
+	private boolean softcommit() {
+		try {
+			solr.commit(false, true, true);
+		} catch (SolrServerException | IOException e) {
+			LOGGER.error("Error in commiting to Solr", e);
+			return false;
+		}
+		
+		return true;
+	}
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.drivers.Replay)
 	 */
 	@Override
 	public boolean saveReplay(Replay replay) {
+		super.saveReplay(replay);
 		SolrInputDocument doc = replayToSolrDoc(replay);
-		return saveDoc(doc);
+		return saveDoc(doc) && softcommit();
 	}
 
 	/* (non-Javadoc)
@@ -578,6 +578,28 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.drivers.Replay.ReplayStatus)
+	 */
+	@Override
+	public Optional<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+			ReplayStatus status) {
+
+		final SolrQuery query = new SolrQuery("*:*");
+		query.addField("*");
+		addFilter(query, TYPEF, Types.ReplayMeta.toString());
+		addFilter(query, CUSTOMERIDF, customerid);
+		addFilter(query, APPF, app);
+		addFilter(query, INSTANCEIDF, instanceid);
+		addFilter(query, REPLAYSTATUSF, status.toString());
+		
+		Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
+			return docToReplay(doc, this);
+		});			
+
+	}
+	
 	// Some useful functions
 	public static SolrQuery reqMatchSpecToSolrQuery(Request qr, ReqMatchSpec spec) {
 		final SolrQuery query = new SolrQuery("*:*");
@@ -590,7 +612,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 		addMatch(spec.mbody, query, qstr, BODYF, qr.body);
 		addMatch(spec.mcollection, query, qstr, COLLECTIONF, qr.collection);
 		addMatch(spec.mtimestamp, query, qstr, TIMESTAMPF, qr.timestamp.toString());
-		addMatch(spec.mrrtype, query, qstr, RRTYPEF, qr.rrtype);
+		addMatch(spec.mrrtype, query, qstr, RRTYPEF, qr.rrtype.map(rrt -> rrt.toString()));
 		addMatch(spec.mcustomerid, query, qstr, CUSTOMERIDF, qr.customerid);
 		addMatch(spec.mapp, query, qstr, APPF, qr.app);
 
@@ -614,7 +636,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	@Override
 	public boolean saveAnalysis(Analysis analysis) {
 		SolrInputDocument doc = analysisToSolrDoc(analysis);
-		return saveDoc(doc);
+		return saveDoc(doc) && softcommit();
 	}
 
 	/**
@@ -646,7 +668,7 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private static final String REPLAYREQIDF = CPREFIX + "replayreqid_s";
 	private static final String REQMTF = CPREFIX + "reqmt_s";
 	private static final String NUMMATCHF = CPREFIX + "nummatch_i";
-	private static final String RESPMTF = CPREFIX + "respmt_s";
+	private static final String RESPMTF = CPREFIX + "respmt_s"; // match type
 	private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata_ni";
 	private static final String SERVICEF = CPREFIX + "service_s";
 	
@@ -666,15 +688,20 @@ public class ReqRespStoreSolr implements ReqRespStore {
 	private SolrInputDocument resultToSolrDoc(ReqRespMatchResult res) {
 		final SolrInputDocument doc = new SolrInputDocument();
 
+		// usually result will never be updated. But we set id field uniquely anyway
 		
-		// the id field is set to replay id so that the document can be updated based on id
+		String type = Types.ReqRespMatchResult.toString();
+		// the id field is to (recordreqid, replayreqid) which is unique
+		String id = type + '-' + res.recordreqid + '-' + res.replayreqid; 
+
+		doc.setField(TYPEF, type);
+		doc.setField(IDF, id);
 		doc.setField(RECORDREQIDF, res.recordreqid);
 		doc.setField(REPLAYREQIDF, res.replayreqid);
 		doc.setField(REQMTF, res.reqmt.toString());
 		doc.setField(NUMMATCHF, res.nummatch);
 		doc.setField(RESPMTF, res.respmt.toString());
 		doc.setField(RESPMATCHMETADATAF, res.respmatchmetadata);
-		doc.setField(TYPEF, Types.ReqRespMatchResult.toString());
 		doc.setField(CUSTOMERIDF, res.customerid);
 		doc.setField(APPF, res.app);
 		doc.setField(SERVICEF, res.service);
@@ -719,6 +746,100 @@ public class ReqRespStoreSolr implements ReqRespStore {
 			}
 		});
 		return analysis;
+	}
+
+	private static final String RECORDINGSTATUSF = CPREFIX + "status_s";
+
+
+	private static Optional<Recording> docToRecording(SolrDocument doc) {
+		
+		Optional<String> app = getStrField(doc, APPF);
+		Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+		Optional<String> collection = getStrField(doc, COLLECTIONF);
+		Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+		Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
+		
+		Optional<Recording> recording = Optional.empty();
+		if (customerid.isPresent() && app.isPresent() 
+				&& instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
+			recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(), 
+					status.get()));
+		} else {
+			LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerid %s, app id %s, instance id %s", 
+					customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
+		}
+		
+		return recording;
+	}
+
+	private static SolrInputDocument recordingToSolrDoc(Recording recording) {
+		final SolrInputDocument doc = new SolrInputDocument();
+
+		String type = Types.Recording.toString();
+		// the id field is to (cust app, collection) which is unique
+		String id = type + '-' + recording.customerid + '-' + recording.app + '-' + recording.collection; 
+
+		doc.setField(TYPEF, type);
+		doc.setField(IDF, id);
+		doc.setField(CUSTOMERIDF, recording.customerid);
+		doc.setField(APPF, recording.app);
+		doc.setField(INSTANCEIDF, recording.instanceid);
+		doc.setField(COLLECTIONF, recording.collection);
+		doc.setField(RECORDINGSTATUSF, recording.status.toString());
+		
+		return doc;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.drivers.Replay)
+	 */
+	@Override
+	public boolean saveRecording(Recording recording) {
+		super.saveRecording(recording);
+		SolrInputDocument doc = recordingToSolrDoc(recording);
+		return saveDoc(doc) && softcommit();
+	}
+
+	
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getRecording(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Recording.RecordingStatus)
+	 */
+	@Override
+	public Optional<Recording> getRecording(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid, RecordingStatus status) {
+
+		final SolrQuery query = new SolrQuery("*:*");
+		query.addField("*");
+		addFilter(query, TYPEF, Types.Recording.toString());
+		addFilter(query, CUSTOMERIDF, customerid);
+		addFilter(query, APPF, app);
+		addFilter(query, INSTANCEIDF, instanceid);
+		addFilter(query, RECORDINGSTATUSF, status.toString());
+		
+		Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
+			return docToRecording(doc);
+		});			
+	}
+
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getRecordingByCollection(java.lang.String, java.lang.String, java.lang.String)
+	 * (cust, app, collection) is a unique key, so only record will satisfy at most
+	 */
+	@Override
+	public Optional<Recording> getRecordingByCollection(String customerid, String app, String collection) {
+		final SolrQuery query = new SolrQuery("*:*");
+		query.addField("*");
+		addFilter(query, TYPEF, Types.Recording.toString());
+		addFilter(query, CUSTOMERIDF, customerid);
+		addFilter(query, APPF, app);
+		addFilter(query, COLLECTIONF, collection);
+		
+		Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
+			return docToRecording(doc);
+		});			
 	}
 
 }

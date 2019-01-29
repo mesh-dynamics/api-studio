@@ -35,7 +35,7 @@ public class RRBase {
 			String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp, 
-			Optional<String> rrtype, 
+			Optional<RR> rrtype, 
 			Optional<String> customerid,
 			Optional<String> app) {
 		super();
@@ -72,7 +72,24 @@ public class RRBase {
 	 */
 	@JsonIgnore
 	public Optional<String> getService() {
-		return Optional.ofNullable(meta.get(SERVICEFIELD)).flatMap(ss -> ss.stream().findFirst());
+		return getMetaField(SERVICEFIELD);
+	}
+
+	/**
+	 * @return
+	 */
+	@JsonIgnore
+	public Optional<String> getInstance() {
+		return getMetaField(INSTANCEIDFIELD);
+	}
+
+
+	/**
+	 * @return
+	 */
+	@JsonIgnore
+	public Optional<String> getMetaField(String fieldname) {
+		return Optional.ofNullable(meta.getFirst(fieldname));
 	}
 
 	
@@ -82,13 +99,14 @@ public class RRBase {
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> hdrs;
 	public final String body;		
-	public final Optional<String> collection;
+	public Optional<String> collection;
 	public final Optional<Instant> timestamp;
-	public final Optional<String> rrtype; // this can be "record" or "replay"
+	public final Optional<RR> rrtype; // this can be "record" or "replay"
 	public final Optional<String> customerid;
 	public final Optional<String> app;
 	
 	public static final String SERVICEFIELD = "service";
+	public static final String INSTANCEIDFIELD = "instanceid";
 	
 	public static class RRMatchSpec {
 		

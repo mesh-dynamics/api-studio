@@ -66,14 +66,16 @@ public class Replay {
 	 * @param replayid
 	 * @param async
 	 * @param status 
+	 * @param instanceid 
 	 */
-	public Replay(String endpoint, String customerid, String app, String collection, List<String> reqids,
+	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
 			ReqRespStore rrstore,  String replayid, boolean async, ReplayStatus status,
 			List<String> paths, int reqcnt, int reqsent, int reqfailed) {
 		super();
 		this.endpoint = endpoint;
 		this.customerid = customerid;
 		this.app = app;
+		this.instanceid = instanceid;
 		this.collection = collection;
 		this.reqids = reqids;
 		this.rrstore = rrstore;
@@ -97,11 +99,11 @@ public class Replay {
 	 * @param async
 	 * @param status 
 	 */
-	private Replay(String endpoint, String customerid, String app, String collection, 
-			List<String> reqids,
+	private Replay(String endpoint, String customerid, String app, String instanceid,
+			String collection, List<String> reqids,
 			ReqRespStore rrstore,  String replayid, boolean async, ReplayStatus status,
 			List<String> paths) {
-		this(endpoint, customerid, app, collection, reqids, rrstore, replayid, async, 
+		this(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, 
 				status, paths, 0, 0, 0);
 	}
 	
@@ -202,10 +204,11 @@ public class Replay {
 		return rrstore.getReplay(replayid);
 	}
 
-	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String collection, List<String> reqids,
+	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String instanceid, 
+			String collection, List<String> reqids,
 			ReqRespStore rrstore, boolean async, List<String> paths) {
 		String replayid = getReplayIdFromCollection(collection);
-		Replay replay = new Replay(endpoint, customerid, app, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
+		Replay replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
 	
 		if (rrstore.saveReplay(replay))
 			return Optional.of(replay);
@@ -276,6 +279,7 @@ public class Replay {
 	public final String endpoint;
 	public final String customerid;
 	public final String app;
+	public final String instanceid;
 	public final String collection;
 	public final List<String> reqids;
 	@JsonIgnore
