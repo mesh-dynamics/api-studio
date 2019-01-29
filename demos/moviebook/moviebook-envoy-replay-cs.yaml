@@ -84,7 +84,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -103,7 +103,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
@@ -198,7 +198,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -217,7 +217,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
@@ -312,7 +312,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -331,7 +331,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
@@ -426,7 +426,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -445,7 +445,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
@@ -540,7 +540,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -559,7 +559,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
@@ -654,7 +654,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -673,7 +673,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   meta["collection"] = "test-movieinfo-c1"
                   meta["rrtype"] = "Replay"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "moviebook"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
