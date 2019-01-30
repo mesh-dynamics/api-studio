@@ -137,7 +137,7 @@ public interface ReqRespStore {
 	 * @param status
 	 * @return
 	 */
-	Optional<Replay> getReplay(Optional<String> customerid, Optional<String> app,
+	Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid, ReplayStatus status);
 
 
@@ -214,8 +214,11 @@ public interface ReqRespStore {
 	 * @param status
 	 * @return
 	 */
-	Optional<Recording> getRecording(Optional<String> customerid, Optional<String> app, Optional<String> instanceid, RecordingStatus status);
+	Stream<Recording> getRecording(Optional<String> customerid, Optional<String> app, 
+			Optional<String> instanceid, Optional<RecordingStatus> status);
 
+
+	
 	/**
 	 * @param customerid
 	 * @param app

@@ -196,7 +196,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 	
 	private static void addFilter(SolrQuery query, String fieldname, String fval) {
-		query.addFilterQuery(String.format("%s:%s", fieldname, fval));
+		// quote empty string specially otherwise solr will throw error 
+		String newfval = fval.equals("") ? "\"\"" : fval;
+		query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
 	}
 	
 	private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
@@ -582,7 +584,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	 * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.drivers.Replay.ReplayStatus)
 	 */
 	@Override
-	public Optional<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+	public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
 			ReplayStatus status) {
 
 		final SolrQuery query = new SolrQuery("*:*");
@@ -594,8 +596,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		addFilter(query, REPLAYSTATUSF, status.toString());
 		
 		Optional<Integer> maxresults = Optional.of(1);
-		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
-			return docToReplay(doc, this);
+		return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> {
+			return docToReplay(doc, this).stream();
 		});			
 
 	}
@@ -801,13 +803,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		return saveDoc(doc) && softcommit();
 	}
 
-	
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getRecording(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Recording.RecordingStatus)
 	 */
 	@Override
-	public Optional<Recording> getRecording(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid, RecordingStatus status) {
+	public Stream<Recording> getRecording(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid, Optional<RecordingStatus> status) {
 
 		final SolrQuery query = new SolrQuery("*:*");
 		query.addField("*");
@@ -815,13 +816,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		addFilter(query, CUSTOMERIDF, customerid);
 		addFilter(query, APPF, app);
 		addFilter(query, INSTANCEIDF, instanceid);
-		addFilter(query, RECORDINGSTATUSF, status.toString());
+		addFilter(query, RECORDINGSTATUSF, status.map(s -> s.toString()));
 		
 		Optional<Integer> maxresults = Optional.of(1);
-		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
-			return docToRecording(doc);
+		return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> {
+			return docToRecording(doc).stream();
 		});			
 	}
+		
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getRecordingByCollection(java.lang.String, java.lang.String, java.lang.String)

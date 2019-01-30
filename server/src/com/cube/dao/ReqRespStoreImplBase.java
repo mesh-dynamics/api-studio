@@ -31,6 +31,11 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			Optional<String> instanceid) {
 		
 		CollectionKey ckey = new CollectionKey(customerid.orElse(""), app.orElse(""), instanceid.orElse(""));
+
+		// in this case matching has to be exact. Null values should match empty strings
+		Optional<String> ncustomerid = customerid.or(() -> Optional.of("")); 
+		Optional<String> napp = app.or(() -> Optional.of("")); 
+		Optional<String> ninstanceid = instanceid.or(() -> Optional.of("")); 
 		
 		Optional<Optional<String>> collection = Optional.ofNullable(currentCollectionMap.get(ckey));
 		LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
@@ -38,13 +43,15 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			// not cached, read from underlying store
 			LOGGER.info("Not found in cache, looking up current recording");
 			// check if there is a recording going on
-			Optional<String> c = getRecording(customerid, app, instanceid, RecordingStatus.Running)
+			Optional<String> c = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running))
+					.findFirst()
 					.map(recording -> recording.collection)
 					.or(() -> { // no ongoing recording, check replay
 						LOGGER.info("No running recording, looking up current replay");
 						// Note that replayid is the collection for replay requests/responses
 						// replay.collection refers to the original collection
-						return getReplay(customerid, app, instanceid, ReplayStatus.Running)
+						return getReplay(ncustomerid, napp, ninstanceid, ReplayStatus.Running)
+								.findFirst()
 								.map(replay -> replay.replayid);
 					});
 			currentCollectionMap.put(ckey, c);
