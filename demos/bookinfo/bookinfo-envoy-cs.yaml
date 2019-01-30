@@ -347,7 +347,7 @@ spec:
                   meta["customerid"] = "cube"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
-                  meta["service"] = service
+                  meta["service"] = "details"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
