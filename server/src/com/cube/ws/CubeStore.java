@@ -4,7 +4,9 @@
 package com.cube.ws;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -165,7 +167,7 @@ public class CubeStore {
 		
 		// check if recording is ongoing for (customer, app, instanceid)
 		Optional<Recording> recording = rrstore.getRecording(Optional.ofNullable(customerid), Optional.ofNullable(app), 
-				Optional.ofNullable(instanceid), RecordingStatus.Running);
+				Optional.ofNullable(instanceid), Optional.of(RecordingStatus.Running)).findFirst();
 		if (recording.isPresent()) {
 			return Response.status(Response.Status.CONFLICT)
 					.entity(String.format("Recording ongoing for customer %s, app %s, instance %s.", customerid, app, instanceid))
@@ -224,6 +226,48 @@ public class CubeStore {
 		return resp;
 	}
 
+	@GET
+	@Path("recordings")
+	public Response recordings(@Context UriInfo ui) {
+		
+		
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
+	    Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+	    Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+	    Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst("status"))
+	    		.flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
+	    
+	    List<Recording> recordings = rrstore.getRecording(customerid, app, instanceid, status)
+	    		.collect(Collectors.toList());
+
+		String json;
+		try {
+			json = jsonmapper.writeValueAsString(recordings);
+			return Response.ok(json, MediaType.APPLICATION_JSON).build();
+		} catch (JsonProcessingException e) {
+			LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, instance %s.", 
+					customerid.orElse(""), app.orElse(""), instanceid.orElse("")), e);
+			return Response.serverError().build();
+		}
+	}
+
+	@GET
+	@Path("currentcollection")
+	public Response currentcollection(@Context UriInfo ui) {
+		
+		
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
+	    Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+	    Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+	    
+	    String currentcollection = rrstore.getCurrentCollection(customerid, app, instanceid)
+	    		.orElse("No current collection");
+
+	    return Response.ok(currentcollection).build();	    
+	}
+	
 	@POST
 	@Path("stop/{customerid}/{app}/{collection}")
 	public Response stop(@Context UriInfo ui, @PathParam("collection") String collection, 
