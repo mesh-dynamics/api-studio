@@ -107,7 +107,7 @@ spec:
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
                   meta["customerid"] = "cube-venky"
-                  meta["app"] = "bookinfo"
+                  meta["app"] = "movieinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = service
                   xrequestid = request_handle:headers():get("x-request-id")
@@ -563,7 +563,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "prod"
-                  meta["service"] = "restwrapjdbc"
+                  meta["service"] = "movieinfo"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -572,6 +572,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  local service = "movieinfo"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -584,7 +585,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "prod"
-                  meta["service"] = "restwrapjdbc"
+                  meta["service"] = "movieinfo"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -680,6 +681,8 @@ spec:
                   meta["rrtype"] = "Record"
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
+                  meta["instanceid"] = "prod"
+                  meta["service"] = "restwrapjdbc"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -688,6 +691,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  local service = "restwrapjdbc"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -699,6 +703,8 @@ spec:
                   meta["rrtype"] = "Record"
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
+                  meta["instanceid"] = "prod"
+                  meta["service"] = "restwrapjdbc"     
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
