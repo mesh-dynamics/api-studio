@@ -20,7 +20,7 @@
   <Loggers> 
     <Root level="info">
       <AppenderRef ref="STDOUT"/>
-      <AppenderRef ref="File"/> -- add this
+      <AppenderRef ref="File"/>
     </Root>
   </Loggers>
  
