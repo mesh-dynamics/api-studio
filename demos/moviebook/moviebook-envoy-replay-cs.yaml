@@ -87,6 +87,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "reviews"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -95,7 +96,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
-                  service = "reviews"
+                  local service = "reviews"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -108,6 +109,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "reviews"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -204,6 +206,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "productpage"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -225,6 +228,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "productpage"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -321,6 +325,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "details"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -329,7 +334,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
-                  service = "details"
+                  local service = "details"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -342,6 +347,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "details"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -438,6 +444,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "ratings"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -446,7 +453,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
-                  service = "ratings"
+                  local service = "ratings"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -459,6 +466,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "ratings"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -555,6 +563,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "movieinfo"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -563,7 +572,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
-                  service = "movieinfo"
+                  local service = "movieinfo"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -576,6 +585,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "movieinfo"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -672,6 +682,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "restwrapjdbc"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -680,7 +691,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
-                  service = "restwrapjdbc"
+                  local service = "restwrapjdbc"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
@@ -693,6 +704,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "test"
+                  meta["service"] = "restwrapjdbc"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
