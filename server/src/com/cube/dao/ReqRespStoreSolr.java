@@ -100,11 +100,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		
 		String reqfilter = reqids.stream().collect(Collectors.joining(" OR ", "(", ")"));
 		if (reqids.size() > 0)
-			addFilter(query, REQIDF, reqfilter);
+			addFilter(query, REQIDF, reqfilter, false);
 
 		String pathfilter = paths.stream().collect(Collectors.joining(" OR ", "(", ")"));
 		if (paths.size() > 0)
-			addFilter(query, PATHF, pathfilter);
+			addFilter(query, PATHF, pathfilter, false);
 
 		
 		query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));			
@@ -194,11 +194,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	private static final String META = "meta"; 
 	private static final String HDR = "hdr"; 
 
+	private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
+		String newfval = quote ? String.format("\"%s\"", fval) : fval ;
+		query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
+	}
+
 	
 	private static void addFilter(SolrQuery query, String fieldname, String fval) {
-		// quote empty string specially otherwise solr will throw error 
-		String newfval = fval.equals("") ? "\"\"" : fval;
-		query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
+		// add quotes by default in case the strings have spaces in them 
+		addFilter(query, fieldname, fval, true);
 	}
 	
 	private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
@@ -218,8 +222,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 	
 	// for predicates in the solr q param. Assumes *:* is already there in the buffer
+	private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote) {
+		String newfval = quote ? String.format("\"%s\"", fval) : fval;
+		qstr.append(String.format(" OR %s:%s", fieldname, newfval));
+	}
+	
+	
 	private static void addToQryStr(StringBuffer qstr, String fieldname, String fval) {
-		qstr.append(String.format(" OR %s:%s", fieldname, fval));
+		// add quotes to field vals by default
+		addToQryStr(qstr, fieldname, fval, true);
 	}
 	
 	private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval) {
@@ -818,8 +829,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		addFilter(query, INSTANCEIDF, instanceid);
 		addFilter(query, RECORDINGSTATUSF, status.map(s -> s.toString()));
 		
-		Optional<Integer> maxresults = Optional.of(1);
-		return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> {
+		//Optional<Integer> maxresults = Optional.of(1);
+		return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> {
 			return docToRecording(doc).stream();
 		});			
 	}
