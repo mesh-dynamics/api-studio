@@ -95,9 +95,10 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  service = "reviews"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -211,9 +212,10 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  service = "productpage"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -327,9 +329,10 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  service = "details"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -443,9 +446,10 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  service = "ratings"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -559,9 +563,10 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  service = "movieinfo"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = uuid()
+                  crequestid = service .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -675,6 +680,7 @@ spec:
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
+                  service = "restwrapjdbc"
                   local meta = {}
                   meta["type"] = "request"
                   crequestid = service .. uuid()
