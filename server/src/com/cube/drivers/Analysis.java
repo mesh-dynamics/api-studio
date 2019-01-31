@@ -191,6 +191,7 @@ public class Analysis {
 			}, () -> reqnotmatched++);
 			*/
 			
+			// TODO: add toString override for the Request object to debug log
 			if (!matches.isEmpty()) {
 				if (matches.size() > 1) {
 					reqmultiplematch++;
@@ -220,10 +221,11 @@ public class Analysis {
 					}					
 				}					
 				// compare & write out result
-				if (bestreqmt == ReqMatchType.ExactMatch)
+				if (bestreqmt == ReqMatchType.ExactMatch) {
 					reqmatched++;
-				else
+				} else {
 					reqpartiallymatched++;
+				}
 				switch(bestmatch.respmt) {
 					case ExactMatch: respmatched++; break;
 					case TemplateMatch: resppartiallymatched++; break;

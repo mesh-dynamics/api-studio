@@ -238,9 +238,9 @@ public class Request extends RRBase {
 				List<String> fvals = fmap.get(f);
 				// check if all values match
 				if (!fvals.containsAll(thisfvals)) {
-					if (mt == MatchType.SCORE) // for soft match, its ok to not match on the field val
+					if (mt == MatchType.SCORE) { // for soft match, its ok to not match on the field val
 						ret = ReqMatchType.PartialMatch;
-					else {
+					} else {
 						ret = ReqMatchType.NoMatch;
 						break;
 					}
@@ -260,13 +260,11 @@ public class Request extends RRBase {
 		if (mt == MatchType.FILTER || mt == MatchType.SCORE) {
 			if (thisfval.equals(fval)) {
 				return ReqMatchType.ExactMatch;
-			} else {
-				if (mt == MatchType.SCORE) {// for soft match, its ok to not match on the field val 
-					return ReqMatchType.PartialMatch;
-				} else {
-					return ReqMatchType.NoMatch;
-				}
-			}
+			} 
+			if (mt == MatchType.SCORE) {// for soft match, its ok to not match on the field val 
+				return ReqMatchType.PartialMatch;
+			} 
+			return ReqMatchType.NoMatch;
 		}
 		return ReqMatchType.ExactMatch; // default is match 
 	}
