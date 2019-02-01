@@ -1,157 +1,217 @@
 package com.cubeiosample.webservices.rest.jersey;
 
+import io.cube.utils.ConnectionPool;
+import io.opentracing.Tracer;
+
 import java.sql.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.text.SimpleDateFormat;
 import org.apache.log4j.Logger;
 
-import org.json.*;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class MovieRentals {
 
     private ConnectionPool jdbcPool = null;
+    private static RestOverSql ros = null;
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
-    private boolean USE_PREPARED_STMTS = true;    
-    private boolean USE_KUBE = true;
+    private static boolean USE_PREPARED_STMTS = true;    
+    private static boolean USE_KUBE = false;
+    private static boolean USE_JDBC_SERVICE = true;
+    private static String MYSQL_HOST = "localhost";
+    private static String MYSQL_PORT = "3306";
+    private static String MYSQL_USERNAME = "cube";
+    private static String MYSQL_PWD = "cubeio";
+    
+    private final Tracer tracer;
     
     final static Logger LOGGER = Logger.getLogger(MovieRentals.class);
     
-    public MovieRentals() throws ClassNotFoundException {
-    		LoadDriver();
+    public MovieRentals(Tracer tracer) throws ClassNotFoundException {
+    		loadDriver();
+    		this.tracer = tracer;
     	
 	    // TODO: make a separate database query service.
     		configureUseKube();
-	    jdbcPool = new ConnectionPool();
-	    try {   
-	    		// TODO: move this to the query service
-	    		String uri = "jdbc:mysql://" + baseUri() + "/sakila";
-	    		LOGGER.info("mysql uri: " + uri);
-	        jdbcPool.setUpPool(uri, userName(), passwd());
-	        LOGGER.info(jdbcPool.getPoolStatus());
+	    try {
+	      if (USE_JDBC_SERVICE) {
+	        LOGGER.debug("MV tracer: " + tracer.toString());
+	        ros = new RestOverSql(this.tracer);
+	      } else {
+	        jdbcPool = new ConnectionPool();
+	        String uri = "jdbc:mysql://" + baseUri() + "/sakila";
+  	    		  LOGGER.info("mysql uri: " + uri);
+          jdbcPool.setUpPool(uri, userName(), passwd());
+          LOGGER.info(jdbcPool.getPoolStatus());
+	      }
 	    } catch (Exception e) {
 	    		LOGGER.error("connection pool creation failed; " + e.toString());
+	    }
+	    
+	    // health check of the ROS
+	    try {
+	      LOGGER.info(ros.getHealth());
+	    } catch (Exception e) {
+	      LOGGER.error("health check of RestWrapper over JDBC failed; " + e.toString());
 	    }
     }
     
     private void configureUseKube() {
     		String useKube = System.getenv("USE_KUBE");
-    		if (useKube == null || !useKube.equalsIgnoreCase("true")) {
-    			USE_KUBE = false;
+    		if (useKube != null && useKube.equalsIgnoreCase("true")) {
+    			USE_KUBE = true;
     		}
+    		LOGGER.debug("use_kube value:" + useKube);
     }
     
-    private String baseUri() {
+    public static String baseUri() {
     		if (USE_KUBE) {
     			// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
-    			String host = System.getenv(System.getenv("MYSQL_DB_HOST"));
+    			//String host = System.getenv(System.getenv("MYSQL_PERMANENT_HOST"));
+    		  String host = System.getenv("MYSQL_PERMANENT_HOST");
+    			if (host == null) {
+    			  LOGGER.error("host has to be specified");
+    			}
     			String port = System.getenv("MYSQL_DB_PORT");
     			if (port == null) {
     				port = "3306";
     			}
-    			return host + ":" + port;
+    			return "jdbc:mysql://" + host + ":" + port + "/sakila";
     		}
-    		String host = System.getenv("MYSQL_PERMANENT_HOST");
-    		String port = System.getenv("MYSQL_PERMANENT_PORT");
-    		return host + ":" + port;
+    		return "jdbc:mysql://" + MYSQL_HOST + ":" + MYSQL_PORT + "/sakila";
     }
     
-    private String userName() {
-		String user = System.getenv("MYSQL_DB_USER");
-		if (user == null) {
-			LOGGER.error("null username");    		
-		}
-    		return user;
+    public static String userName() {
+      if (USE_KUBE) {
+    		 return System.getenv("MYSQL_DB_USER");
+      }
+    		return MYSQL_USERNAME;
     }
     
-    private String passwd() {
-		String pwd = System.getenv("MYSQL_DB_PASSWORD");
-		if (pwd == null) {
-			LOGGER.error("null password");
-		}
-    		return pwd;
+    public static String passwd() {
+      if (USE_KUBE) {
+    		  return System.getenv("MYSQL_DB_PASSWORD");
+      }
+    		return MYSQL_PWD;
     }
-
-    public JSONArray ListMovies(String filmName, String keyword) {
+        
+    
+    public JSONArray listMovies(String filmnameOrKeywordForRequest) {
 	    	// TODO: add actor also in the parameter options.
 	    	try {
-		    	if (filmName != null && !filmName.isEmpty()) {
-		    		// query with filmname
-		    		String query = "select film_id, title from film where title = ?";
-		    		JSONArray params = new JSONArray();
-		    		AddStringParam(params, filmName);
-		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
-		    		if (films != null && films.length() > 0) {
-		    			return films;
-		    		}
+		    	JSONArray films = null;
+		    	films = listMovieByName(filmnameOrKeywordForRequest);
+		    	if (films != null && films.length() > 0) {
+	          return films;
 		    	}
-		    	if (keyword != null && !keyword.isEmpty()) {
-		    		String query = "select id, title from film where title like ?";
-		    		JSONArray params = new JSONArray();
-		    		AddStringParam(params, filmName);
-		    		JSONArray films = jdbcPool.ExecuteQuery(query, params);
-		    		if (films != null && films.length() > 0) {
-		    			return films;
-		    		}
-		    	}
+		    
+		    	films = listMoviesByKeyword(filmnameOrKeywordForRequest);
+	    		if (films != null && films.length() > 0) {
+	    			return films;
+	    		}
 	    	} catch (Exception e) {
 	    		LOGGER.error("Couldn't list movies; " + e.toString());
 	    	}
-	    	return null;
+	    	return new JSONArray("[{\"couldn't list movies\"}]");
     }
     
     
-    public JSONArray FindAvailableStores(int filmId) throws SQLException, JSONException {
+    public JSONArray listMovieByName(String filmname) {
+      // Query with filmname
+      LOGGER.debug("filmname:" + filmname);
+      String query = "select film_id, title from film where title = ?";
+      JSONArray params = new JSONArray();
+      RestOverSql.addStringParam(params, filmname);
+      JSONArray films = null;
+      if (USE_JDBC_SERVICE) {
+        films = ros.executeQuery(query, params);
+      } else {
+        films = jdbcPool.executeQuery(query, params);
+      }
+      return films;
+    }
+    
+    
+    public JSONArray listMoviesByKeyword(String keyword) {
+      String query = "select id, title from film where title like %?%";
+      JSONArray params = new JSONArray();
+      RestOverSql.addStringParam(params, keyword);
+      JSONArray films = null;
+      if (USE_JDBC_SERVICE) {
+        LOGGER.debug("params array:" + params.toString());
+        films = ros.executeQuery(query, params);
+      } else {
+        films = jdbcPool.executeQuery(query, params);
+      }
+      return films;
+    }
+        
+    
+    public JSONArray findAvailableStores(int filmId) throws SQLException, JSONException {
 	    	try {
 		    	String storesQuery = "select distinct store_id from inventory "
 		    			+ " where film_id = ? and "
 		    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
 		    	JSONArray params = new JSONArray();
-		    	AddIntegerParam(params, filmId);
-		    	return jdbcPool.ExecuteQuery(storesQuery, params);
+		    	RestOverSql.addIntegerParam(params, filmId);
+		    	if (USE_JDBC_SERVICE) {
+		    	  if (ros == null) {
+		    	    LOGGER.debug("Creating ROS since it is null");
+		    	    ros = new RestOverSql(tracer);
+		    	  }
+		    	  return ros.executeQuery(storesQuery, params);
+		    	}
+		    	// else
+		    	return jdbcPool.executeQuery(storesQuery, params);
 	    	} catch (Exception e) {
-	    		LOGGER.error(e.toString());
+	    		LOGGER.error("FindAvailableStores failed on filmId=" + filmId + "; " + e.toString());
 	    	}
 	    	return null;
     }
     
     
-    public JSONArray FindDues(int userId) throws SQLException, JSONException {
+    public JSONArray findDues(int userId) throws SQLException, JSONException {
 	    	String duesQuery = "select * from rental where return_date is null and customer_id = ?";
 	    	JSONArray params = new JSONArray();
-	    	AddIntegerParam(params, userId);
-	    	return jdbcPool.ExecuteQuery(duesQuery, params);
+	    	RestOverSql.addIntegerParam(params, userId);
+	    	if (USE_JDBC_SERVICE) {
+	    	  return ros.executeQuery(duesQuery, params);
+	    	}
+	    	return jdbcPool.executeQuery(duesQuery, params);
     }    
     
     
-    // returns rental amount if successful; otherwise -1 if film_id is not available in the store_id
-    public double RentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
-        // Update rental table and then payment table
-        // Note: last_update columns in both tables are auto-update columns
-    		int inventory_id = -1;
-    		inventory_id = GetInventoryId(film_id, store_id);
-    	
-        if (inventory_id < 0) {
-            return -1;
-        }
-        
-        double rental_rate = GetRentalRate(film_id);
-        int num_updates = 0;
-        num_updates = UpdateRental(inventory_id, customer_id, staff_id);
-        
-        if (num_updates < 0) {
-            return 0.0;
-        }
-        return rental_rate * duration;
+    public JSONObject rentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
+      // Update rental table 
+    		int inventoryId = getInventoryId(film_id, store_id);
+    		JSONObject result = new JSONObject();
+    		result.put("inventory_id", inventoryId);
+    		if (inventoryId < 0) {
+    		  return result;
+      }
+    		
+      double rentalRate = getRentalRate(film_id);
+      
+    		JSONObject rentResult = updateRental(inventoryId, customer_id, staff_id);
+    		int numUpdates = rentResult.getInt("num_updates");
+    		result.put("num_updates", numUpdates);
+    		if ( numUpdates < 0) {  
+    		  return result;
+      }
+    		result.put("rent", rentalRate*duration);
+    		LOGGER.debug("rent movie result returning: " + result.toString());
+    		return result;
     }
     
    
-    public int ReturnMovie(int filmId, int storeId, int customerId, double rent) {
-	    	// TODO
-	    	return 1;
+    public JSONObject returnMovie(int inventoryId, int customerId, int staffId, double rent) {
+	    	return returnRental(inventoryId, customerId, staffId, rent);
     }
     
     
@@ -161,37 +221,21 @@ public class MovieRentals {
 
     
     // Sales and store performance analysis
-    public JSONArray GetSalesByStore(String store_name) throws SQLException, JSONException {
+    public JSONArray getSalesByStore(String store_name) throws SQLException, JSONException {
         String query = "select * from sales_by_store where store = '" + store_name + "'";
         	LOGGER.debug(query);
-        JSONArray rs = jdbcPool.ExecuteQuery(query);
+        JSONArray rs = jdbcPool.executeQuery(query);
         return rs;
     }
 
-    
-    private void AddStringParam(JSONArray params, String value) throws JSONException {
-	    	JSONObject param = new JSONObject();
-	    	param.put("index", params.length() + 1);
-	    	param.put("type", "string");
-	    	param.put("value", value);
-		params.put(param);
-    }
-    
-    private void AddIntegerParam(JSONArray params, Integer value) throws JSONException {
-	    	JSONObject param = new JSONObject();
-	    	param.put("index", params.length() + 1);
-	    	param.put("type", "integer");
-	    	param.put("value", value);
-		params.put(param);
-    }
-    
-    private static void LoadDriver() throws ClassNotFoundException {
+        
+    private static void loadDriver() throws ClassNotFoundException {
         // This will load the MySQL driver, each DB has its own driver
         Class.forName("com.mysql.jdbc.Driver");
     }
     
   
-    public JSONArray RentFilmsBulk(JSONArray filmArray, int storeId, int duration, int customerId, int staffId) throws JSONException, SQLException {
+    public JSONArray rentFilmsBulk(JSONArray filmArray, int storeId, int duration, int customerId, int staffId) throws JSONException, SQLException {
 	    	Map<String, Integer> films = new HashMap<>();
 	    	try {
 		    	for (int i = 0; i < filmArray.length(); ++i) {
@@ -205,16 +249,15 @@ public class MovieRentals {
 	    	// iteration
 	    	JSONArray rentals = new JSONArray();
 	    	for (Map.Entry<String, Integer> entry : films.entrySet()) {
-	    		double rent = this.RentMovie(entry.getValue(), storeId, duration, customerId, staffId);
-	    		JSONObject obj = new JSONObject();
-	    		obj.put(entry.getKey(), rent);
+	    	  JSONObject obj = this.rentMovie(entry.getValue(), storeId, duration, customerId, staffId);
 	    		rentals.put(obj);
 	    	}
 	    	LOGGER.info(rentals.toString());
 	    	return rentals;
     }
     
-    private int GetInventoryId(int film_id, int store_id) {
+    
+    private int getInventoryId(int film_id, int store_id) {
 	    	int inventory_id = -1;
 	    	try {
 	    		JSONArray rs = null;
@@ -223,19 +266,24 @@ public class MovieRentals {
 			    			+ " where film_id = ? and store_id = ? and "
 			    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
 			    	JSONArray params = new JSONArray();
-			    	AddIntegerParam(params, film_id);
-			    	AddIntegerParam(params, store_id);
-			    	rs = jdbcPool.ExecuteQuery(inventoryQuery, params);
-			    	
+			    	RestOverSql.addIntegerParam(params, film_id);
+			    	RestOverSql.addIntegerParam(params, store_id);
+			    	if (USE_JDBC_SERVICE) {
+		        rs = ros.executeQuery(inventoryQuery, params);
+			    	} else {
+			    	  rs = jdbcPool.executeQuery(inventoryQuery, params);
+			    	}
 	    		} else {
 	    			String inventoryQuery = "select inventory_id from inventory "
 			    			+ " where film_id = " + film_id + " and store_id = " + store_id 
 			    			+ " and inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-	    			rs = jdbcPool.ExecuteQuery(inventoryQuery);
+	    			// TODO: jdbc service doesnt support non-prepared statements yet
+	    			rs = jdbcPool.executeQuery(inventoryQuery);
 	    		}
-	    		if (rs != null && rs.length() < 1) {
+	    		if (rs == null || rs.length() < 1) {
 		    		return -1;
 		    	}
+	    		LOGGER.debug("getinventoryid: " + rs.toString());
 		    	return rs.getJSONObject(0).getInt("inventory_id");
 	    	} catch (Exception sqlException) {
 	    		LOGGER.error("Couldn't prepare rental update stmt: " + sqlException.toString());
@@ -244,32 +292,109 @@ public class MovieRentals {
     }
 
     
-    private double GetRentalRate(int film_id) throws SQLException, JSONException {
-        String query = "select rental_rate from film where film_id = " + film_id;
-        JSONArray rs = jdbcPool.ExecuteQuery(query);
-        if (rs.length() < 1) {
-        		return -1;
+    private double getRentalRate(int film_id) throws SQLException, JSONException {
+      String query = "select rental_rate from film where film_id = ?";
+      JSONArray params = new JSONArray();
+      RestOverSql.addIntegerParam(params, film_id);
+      JSONArray rs = null;
+      if (USE_JDBC_SERVICE) {
+        rs = ros.executeQuery(query, params);
+      } else {
+        rs = jdbcPool.executeQuery(query, params);
+      }
+      if (rs.length() < 1) {
+        return -1;
     		}
-        return rs.getJSONObject(0).getDouble("rental_rate");
+      return rs.getJSONObject(0).getDouble("rental_rate");
     }
      
     
-    private int UpdateRental(int inventory_id, int customer_id, int staff_id) throws SQLException, JSONException {
+    private JSONObject updateRental(int inventory_id, int customer_id, int staff_id) throws SQLException, JSONException {
         String dateString = format.format(new Date());
         if (USE_PREPARED_STMTS) {
-        	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
-                    + " VALUES (?, ?, ?, ?)";
-        	LOGGER.info(rentalUpdateQuery);
-        	JSONArray params = new JSONArray();
-        	AddIntegerParam(params, inventory_id);
-        	AddIntegerParam(params, customer_id);
-        	AddIntegerParam(params, staff_id);
-        	AddStringParam(params, dateString);
-        	return jdbcPool.ExecuteUpdate(rentalUpdateQuery, params);
+          	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
+                      + " VALUES (?, ?, ?, ?)";
+          	JSONArray params = new JSONArray();
+          	RestOverSql.addIntegerParam(params, inventory_id);
+          	RestOverSql.addIntegerParam(params, customer_id);
+          	RestOverSql.addIntegerParam(params, staff_id);
+          	RestOverSql.addStringParam(params, dateString);
+          	LOGGER.info(rentalUpdateQuery + "; " + params.toString());
+          	if (USE_JDBC_SERVICE) {
+          	  return ros.executeUpdate(rentalUpdateQuery, params);
+          	} 
+          	// else 
+          	return jdbcPool.executeUpdate(rentalUpdateQuery, params);
         } 
+        
+        // not USE_PREPARED_STMTS and not USE_JDBC_SERVICE
         String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
                 + " VALUES (" + inventory_id + ", " + customer_id + ", " + staff_id + ", '" + dateString + "')";
-        return jdbcPool.ExecuteUpdate(rentalUpdateQuery);
+        return jdbcPool.executeUpdate(rentalUpdateQuery);
+    }
+    
+    
+    private int getRentalIdForReturn(int inventoryId, int customerId, int staffId) {
+      try {
+        String rentalIdForReturnQuery = "SELECT rental_id from rental WHERE inventory_id = ? and customer_id = ? and staff_id = ? and return_date is null";
+        JSONArray params = new JSONArray();
+        RestOverSql.addIntegerParam(params, inventoryId);
+        RestOverSql.addIntegerParam(params, customerId);
+        RestOverSql.addIntegerParam(params, staffId);
+        JSONArray rs = null;
+        if (USE_JDBC_SERVICE) {
+          rs = ros.executeQuery(rentalIdForReturnQuery, params);
+        } else {
+          rs = jdbcPool.executeQuery(rentalIdForReturnQuery, params);
+        }
+        return rs.getJSONObject(0).getInt("rental_id");
+      } catch (Exception e) {
+        LOGGER.info("Couldn't find rental_id for [" + inventoryId + ", " + customerId + ", " + staffId + "]");
+        return -1;
+      }
+    }
+    
+    
+    private JSONObject returnRental(int inventoryId, int customerId, int staffId, double amount) {
+      JSONObject result = new JSONObject();
+      String dateString = format.format(new Date());
+      int rentalId = getRentalIdForReturn(inventoryId, customerId, staffId);
+      result.put("rental_id", rentalId);
+      if (rentalId == -1) {
+        return result;
+      }
+
+      String rentalReturnQuery = "UPDATE rental SET return_date = ? WHERE rental_id = ?";
+      JSONArray params1 = new JSONArray();
+      RestOverSql.addStringParam(params1, dateString);
+      RestOverSql.addIntegerParam(params1, rentalId);
+      JSONObject returnUpdate = null;
+      if (USE_JDBC_SERVICE) {
+        returnUpdate = ros.executeUpdate(rentalReturnQuery, params1);
+      } else {
+        returnUpdate = jdbcPool.executeUpdate(rentalReturnQuery, params1);
+      }
+      int returnUpdates = returnUpdate.getInt("num_updates");
+      result.put("return_updates", returnUpdates);
+      if (returnUpdates == -1) {
+        return result;  // failure
+      }
+      
+      String paymentQuery = "INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date) VALUES (?, ?, ?, ?, ?)";
+      JSONArray params2 = new JSONArray();
+      RestOverSql.addIntegerParam(params2, customerId);
+      RestOverSql.addIntegerParam(params2, staffId);
+      RestOverSql.addIntegerParam(params2, rentalId);
+      RestOverSql.addDoubleParam(params2, amount);
+      RestOverSql.addStringParam(params2, dateString);
+      JSONObject paymentUpdate = null;
+      if (USE_JDBC_SERVICE) {
+        paymentUpdate = ros.executeUpdate(paymentQuery, params2);
+      } else {
+        paymentUpdate = jdbcPool.executeUpdate(paymentQuery, params2);
+      }
+      result.put("payment_updates", paymentUpdate.getInt("num_updates"));
+      return result;
     }
     
     /*
@@ -297,9 +422,6 @@ public class MovieRentals {
     		LOGGER.error("Couldn't prepare inventory stmt: " + sqlException.toString());
     	}
     }
-
-    
-    
 
     
     

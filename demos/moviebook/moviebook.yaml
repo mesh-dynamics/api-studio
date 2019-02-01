@@ -1,0 +1,356 @@
+# Copyright 2017 Istio Authors
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+##################################################################################################
+# Details service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: details
+  labels:
+    app: details
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: details
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: details-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: details
+        version: v1
+    spec:
+      containers:
+      - name: details
+        image: istio/examples-bookinfo-details-v1:1.8.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+##################################################################################################
+# Ratings service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  labels:
+    app: ratings
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: ratings
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ratings-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ratings
+        version: v1
+    spec:
+      containers:
+      - name: ratings
+        image: istio/examples-bookinfo-ratings-v1:1.8.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+##################################################################################################
+# Reviews service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+spec:
+  ports:
+
+
+  - port: 9080
+    name: http
+  selector:
+    app: reviews
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: reviews-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v1
+    spec:
+      containers:
+      - name: reviews
+        image: istio/examples-bookinfo-reviews-v1:1.8.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: reviews-v2
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v2
+    spec:
+      containers:
+      - name: reviews
+        image: istio/examples-bookinfo-reviews-v2:1.8.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: reviews-v3
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v3
+    spec:
+      containers:
+      - name: reviews
+        image: istio/examples-bookinfo-reviews-v3:1.8.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+##################################################################################################
+# Productpage services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: productpage
+  labels:
+    app: productpage
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: productpage
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: productpage-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: productpage
+        version: v1
+    spec:
+      containers:
+      - name: productpage
+        image: istio/examples-bookinfo-productpage-v1:1.8.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+##################################################################################################
+# MovieInfo services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: movieinfo
+  labels:
+    app: movieinfo
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: movieinfo
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: movieinfo-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: movieinfo
+        version: v1
+    spec:
+      containers:
+      - name: movieinfo
+        image: cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+          - name: USE_KUBE
+            value: "true"
+          - name: MYSQL_DB_HOST
+            value: MYSQL_SAKILA_SERVICE_HOST
+          - name: MYSQL_DB_PORT
+            value: "3306"
+          - name: MYSQL_DB_USER
+            value: cube
+          - name: MYSQL_DB_PASSWORD
+            value: cubeio12
+          - name: MYSQL_PERMANENT_HOST
+            value: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
+          - name: MYSQL_PERMANENT_PORT
+            value: "3306"
+          - name: RESTWRAPJDBC_URI
+            value: http://restwrapjdbc:8080/restsql
+---
+##################################################################################################
+# Rest Wrap JDBC services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: restwrapjdbc
+  labels:
+    app: restwrapjdbc
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: restwrapjdbc
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: restwrapjdbc-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: restwrapjdbc
+        version: v1
+    spec:
+      containers:
+      - name: restwrapjdbc
+        image: cubeiocorp/restwrapjdbc:V1-SNAPSHOT
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+---
+##############
+# External service
+###############
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: aws-mysql-sakila
+spec:
+  hosts:
+  - sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
+  ports:
+  - number: 3306
+    name: mysql
+    protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+# TODO: the following exernalname didn't work for a service that didn't go through port 80
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: aws-mysql-sakila
+# spec:
+#   type: ExternalName
+#   externalName: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com 
+
+##################################################################################################
+# Mysql data server in the mesh
+##################################################################################################
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: mysql-sakila
+#   labels:
+#     app: mysql-sakila
+# spec:
+#   ports:
+#   - port: 3306
+#     name: tcp
+#     protocol: TCP
+#   selector:
+#     app: mysql-sakila
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Deployment
+# metadata:
+#   name: mysql-sakila-v1
+# spec:
+#   replicas: 1
+#   template:
+#     metadata:
+#       labels:
+#         app: mysql-sakila
+#         version: v1
+#     spec:
+#       containers:
+#       - name: mysql-sakila
+#         image: cubeiocorp/mysql-sakila:v3
+#         imagePullPolicy: Always
+#         ports:
+#         - containerPort: 3306
+# ---
+##################################################################################################
+# External mysql server and endpoint
+##################################################################################################
+
+# kind: Endpoints
+# apiVersion: v1
+# metadata:
+#  name: aws-mysql-sakila
+# subsets:
+#  - addresses:
+#      - ip: 54.69.153.210 #sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
+#    ports:
+#      - port: 3306

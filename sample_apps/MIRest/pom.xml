@@ -119,12 +119,16 @@
   	<version.jersey>2.27</version.jersey>
     <version.jackson>2.8.7</version.jackson>
     <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
+    <version.jaeger>0.32.0</version.jaeger>
+    <version.json>20180813</version.json>
+    <version.mysql>5.1.46</version.mysql>
+    <version.log4j>1.2.17</version.log4j>
   </properties>
- <dependencies>
+  <dependencies>
   	<dependency>
   		<groupId>org.json</groupId>
   		<artifactId>json</artifactId>
-  		<version>20180813</version>
+  		<version>${version.json}</version>
   	</dependency>
   	<dependency>
   		<groupId>org.glassfish.jersey.core</groupId>
@@ -149,12 +153,12 @@
   	<dependency>
        <groupId>mysql</groupId>
        <artifactId>mysql-connector-java</artifactId>
-       <version>5.1.46</version>
+       <version>${version.mysql}</version>
     </dependency>
     <dependency>
 		<groupId>log4j</groupId>
 		<artifactId>log4j</artifactId>
-		<version>1.2.17</version>
+		<version>${version.log4j}</version>
 	</dependency>
 	 <dependency>
        <groupId>commons-dbcp</groupId>
@@ -167,11 +171,56 @@
 	    <artifactId>dockerfile-maven-plugin</artifactId>
 	    <version>${version.dockerfile-maven}</version>
 	</dependency>
+	<!--  Also need the client dependencies for calling the rest over jdbc service -->
 	<dependency>
-  		<groupId>com.google.googlejavaformat</groupId>
-  		<artifactId>google-java-format</artifactId>
-  		<version>1.6</version>
+	  	<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
+	    <groupId>javax.ws.rs</groupId>
+	    <artifactId>javax.ws.rs-api</artifactId>
+	    <version>2.1</version>  
 	</dependency>
-</dependencies>
+	<dependency>
+	    <groupId>javax.xml.bind</groupId>
+	    <artifactId>jaxb-api</artifactId>
+	    <version>2.3.1</version>
+	</dependency>
+	<dependency>
+        <groupId>javax.activation</groupId>
+        <artifactId>activation</artifactId>
+        <version>1.1.1</version>
+    </dependency>
+	<dependency>
+  		<groupId>org.glassfish.jersey.media</groupId>
+ 		<artifactId>jersey-media-json-jackson</artifactId>
+  		<scope>runtime</scope>
+  		<version>${version.jersey}</version>
+	</dependency>
+	<dependency>
+	    <groupId>io.jsonwebtoken</groupId>
+	    <artifactId>jjwt-api</artifactId>
+	    <version>0.10.5</version>
+	</dependency>
+	<dependency>
+	    <groupId>io.jsonwebtoken</groupId>
+	    <artifactId>jjwt-impl</artifactId>
+	    <version>0.10.5</version>
+	    <scope>runtime</scope>
+	</dependency>
+	<dependency>
+	    <groupId>io.jsonwebtoken</groupId>
+	    <artifactId>jjwt-jackson</artifactId>
+	    <version>0.10.5</version>
+	    <scope>runtime</scope>
+	</dependency>
+	<dependency>
+        <groupId>io.jaegertracing</groupId>
+        <artifactId>jaeger-client</artifactId>
+        <version>${version.jaeger}</version>
+    </dependency>
+    <dependency>
+	    <groupId>io.cube.utils</groupId>
+		<artifactId>Utils</artifactId>
+	    <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
   
 </project>

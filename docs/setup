@@ -1,4 +1,6 @@
 
+# TODO: add a link that explains the Kubernetes terminology and relationships. Cluster, pods, instance-groups, instances, etc.
+
 # To setup istio/kubernetes example on a ec2 machine
 
 # Instructions below are for the initial setup
@@ -179,6 +181,8 @@ kubectl get pods -n istio-system
 # deploy the bookinfo example
 # refer https://istio.io/docs/examples/bookinfo/
 kubectl label namespace default istio-injection=enabled
+
+
 kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
 
 ## setup gateway
