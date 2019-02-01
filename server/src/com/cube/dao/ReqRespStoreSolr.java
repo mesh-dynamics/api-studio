@@ -26,6 +26,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.commons.text.StringEscapeUtils;
 
 import com.cube.core.Utils;
 import com.cube.dao.RRBase.RR;
@@ -195,7 +196,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	private static final String HDR = "hdr"; 
 
 	private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
-		String newfval = quote ? String.format("\"%s\"", fval) : fval ;
+		String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
 		query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
 	}
 
@@ -223,7 +224,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	
 	// for predicates in the solr q param. Assumes *:* is already there in the buffer
 	private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote) {
-		String newfval = quote ? String.format("\"%s\"", fval) : fval;
+		String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval;
 		qstr.append(String.format(" OR %s:%s", fieldname, newfval));
 	}
 	
