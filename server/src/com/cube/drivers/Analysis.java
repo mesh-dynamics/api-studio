@@ -114,8 +114,9 @@ public class Analysis {
 		return replay.flatMap(r -> {
 			Result<Request> reqs = r.getRequests();
 			Analysis analysis = new Analysis(replayid, (int) reqs.numResults());
-			if (!rrstore.saveAnalysis(analysis))
+			if (!rrstore.saveAnalysis(analysis)) {
 				return Optional.empty();
+			}
 			
 			analysis.analyze(rrstore, reqs.getObjects(), mspec);
 

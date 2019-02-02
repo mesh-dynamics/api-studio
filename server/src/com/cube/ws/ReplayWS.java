@@ -22,6 +22,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Replay;
@@ -53,10 +54,20 @@ public class ReplayWS {
 		Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
 		List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
 
+		List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
+		String xfms = "";
+		// expect only one JSON String. 
+		if (xfmsParam.size() > 1) {
+			LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
+		} else if (xfmsParam.size() == 1) {
+			xfms = xfmsParam.get(0);
+		}
+		JSONObject requestXfms = Replay.prepareXfmsFromJSONString(xfms);
 		return endpoint
 				.map(e -> {
 					return instanceid.map(inst -> {
-						return Replay.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths)
+						// TODO: introduce response transforms as necessary
+						return Replay.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, requestXfms)
 								.map(replay -> {
 									String json;
 									try {
