@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -235,12 +236,23 @@ public interface ReqRespStore {
 	boolean saveRecording(Recording recording);
 
 	/**
-	 * @param ofNullable
-	 * @param ofNullable2
-	 * @param ofNullable3
+	 * @param customerid
+	 * @param app
+	 * @param collection
 	 * @return
 	 */
 	Optional<Recording> getRecordingByCollection(String customerid, String app,
 			String collection);
+	
+	
+	
+	/**
+	 * @param replayid
+	 * @param service
+	 * @return If service is empty, return aggregate results for all services. If 
+	 * service is non-empty, return results for all paths in the service
+	 */
+	Collection<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
+			boolean facetpath);
 
 }

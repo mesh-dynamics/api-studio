@@ -8,7 +8,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -19,6 +21,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -26,7 +29,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
-import org.apache.commons.text.StringEscapeUtils;
+import org.apache.solr.common.util.NamedList;
 
 import com.cube.core.Utils;
 import com.cube.dao.RRBase.RR;
@@ -34,7 +37,9 @@ import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
+import com.cube.drivers.Analysis.ReqMatchType;
 import com.cube.drivers.Analysis.ReqRespMatchResult;
+import com.cube.drivers.Analysis.RespMatchType;
 import com.cube.drivers.Replay;
 import com.cube.drivers.Replay.ReplayStatus;
 import com.cube.ws.Config;
@@ -854,6 +859,334 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
 			return docToRecording(doc);
 		});			
+	}
+
+	final static int FACETLIMIT = 100;
+	private static final String REQMTFACET = "reqmt_facets";
+	private static final String RESPMTFACET = "respmt_facets";
+	private static final String PATHFACET = "path_facets";
+	private static final String SERVICEFACET = "service_facets";
+	private static final String SOLRJSONFACETPARAM = "json.facet";
+	private static final String BUCKETFIELD = "buckets";
+	private static final String VALFIELD = "val";
+	private static final String COUNTFIELD = "count"; 
+	private static final String FACETSFIELD = "facets"; 
+	
+	static class FacetResKey {		
+		
+		/**
+		 * @param service
+		 * @param path
+		 */
+		private FacetResKey(Optional<String> service, Optional<String> path) {
+			super();
+			this.service = service;
+			this.path = path;
+		}
+
+
+
+		public Optional<String> service = Optional.empty();
+		public Optional<String> path = Optional.empty();
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getResultAggregate(java.lang.String, java.util.Optional)
+	 */
+	@Override
+	public Collection<MatchResultAggregate> getResultAggregate(String replayid, 
+			Optional<String> service, boolean facetpath) {
+		
+		Optional<Replay> replay = getReplay(replayid);
+		Map<FacetResKey, MatchResultAggregate> resMap = new HashMap<FacetResKey, MatchResultAggregate>();
+		
+		replay.ifPresent(replayv -> {
+			final SolrQuery query = new SolrQuery("*:*");
+			query.addField("*");
+			addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+			addFilter(query, REPLAYIDF, replayv.replayid);
+			service.ifPresent(servicev -> {
+				addFilter(query, SERVICEF, servicev);
+			});
+			FacetQ facetq = new FacetQ();
+			List<List<String>> facetFields = new ArrayList<List<String>>();
+			Facet reqmatchf = Facet.createTermFacet(REQMTF, Optional.of(FACETLIMIT));
+			Facet respmatchf = Facet.createTermFacet(RESPMTF, Optional.of(FACETLIMIT));
+			facetq.addFacet(REQMTFACET, reqmatchf);
+			facetq.addFacet(RESPMTFACET, respmatchf);
+			facetFields.add(List.of(REQMTFACET, RESPMTFACET));
+			
+			List<FacetQ> otherfacets = new ArrayList<FacetQ>();
+			
+			if (facetpath) {
+				Facet pathf = Facet.createTermFacet(PATHF, Optional.of(FACETLIMIT));
+				FacetQ pathfq = new FacetQ();
+				pathfq.addFacet(PATHFACET, pathf);
+				otherfacets.add(pathfq);		
+				facetFields.add(List.of(PATHFACET));
+			}
+			if (service.isEmpty()) {
+				// facet on service as well
+				Facet servicef = Facet.createTermFacet(SERVICEF, Optional.of(FACETLIMIT));
+				FacetQ servicefq = new FacetQ();
+				servicefq.addFacet(SERVICEFACET, servicef);
+				otherfacets.add(servicefq);
+				facetFields.add(List.of(SERVICEFACET));
+			}
+			
+			facetq.nest(otherfacets);
+			
+			String json="";
+			try {
+				json = config.jsonmapper.writeValueAsString(facetq);
+				query.add(SOLRJSONFACETPARAM, json);
+			} catch (JsonProcessingException e) {
+				LOGGER.error(String.format("Error in converting facets to json"), e);
+			}
+
+			// we don't need any results, set to 1
+			query.setRows(1);
+			SolrIterator.runQuery(solr, query).ifPresent(response -> {
+				getNLFromNL(response.getResponse(), FACETSFIELD).ifPresent(facets -> {
+					flatten(facets, facetFields).forEach(fr -> {
+						FacetResKey frkey = fr.toFacetResKey();
+						Optional.ofNullable(resMap.get(frkey)).ifPresentOrElse(mra -> {
+							updateMatchResult(mra, fr);
+						}, () -> {
+							MatchResultAggregate mra = new MatchResultAggregate(replayv.app, replayv.replayid, frkey.service, frkey.path);
+							resMap.put(frkey, mra);
+						});
+					});
+				});							
+			});
+		});
+		
+		return resMap.values();
+	}
+
+	/**
+	 * @param mra
+	 * @param fr
+	 */
+	private void updateMatchResult(MatchResultAggregate mra, FacetR fr) {
+
+		fr.keys.forEach(frkey -> {
+			if (frkey.facetName.equals(REQMTFACET)) {
+				Utils.valueOf(ReqMatchType.class, frkey.key).ifPresent(rmt -> {
+					switch (rmt) {
+						case ExactMatch: mra.reqmatched = fr.val;
+						case PartialMatch: mra.reqpartiallymatched = fr.val;
+						case NoMatch: mra.reqnotmatched = fr.val;
+					}
+					
+				});
+			}
+			if (frkey.facetName.equals(RESPMTFACET)) {
+				Utils.valueOf(RespMatchType.class, frkey.key).ifPresent(rmt -> {
+					switch (rmt) {
+						case ExactMatch: mra.reqmatched = fr.val;
+						case TemplateMatch: mra.reqpartiallymatched = fr.val;
+						case NoMatch: mra.reqnotmatched = fr.val;
+					}
+					
+				});
+			}
+		});
+		
+	}
+
+	static class Facet {
+		
+		private static final String TYPEK = "type";
+		private static final String FIELDK = "field";
+		private static final String LIMITK = "limit";
+		private static final String FACETK = "facet";
+
+		/**
+		 * @param params
+		 */
+		private Facet(Map<String, Object> params) {
+			super();
+			this.params = params;
+		}
+
+		public void addSubFacet(FacetQ subfacet) {
+			params.put(FACETK, subfacet);
+		}
+		
+		final private Map<String, Object> params;
+		
+		static public Facet createTermFacet(String fieldname, Optional<Integer> limit) {
+			Map<String, Object> params = new HashMap<String, Object>();
+			params.put(TYPEK, "terms");
+			params.put(FIELDK, fieldname);
+			limit.ifPresent(l -> params.put(LIMITK, l));
+			
+			return new Facet(params);
+		}
+	}
+	
+	static class FacetQ {
+		
+		
+		
+		/**
+		 * 
+		 */
+		private FacetQ() {
+			super();
+			facetqs = new HashMap<String, Facet>();
+		}
+
+		public void addFacet(String name, Facet facet) {
+			facetqs.put(name, facet);
+		}
+		
+		private void nestFacetQ(FacetQ nestedq) {
+			facetqs.forEach((fn, fq) -> fq.addSubFacet(nestedq));
+		}
+		
+		final Map<String, Facet> facetqs;
+		
+		// create a nested facet query
+		public void nest(List<FacetQ> rest) {
+			if (rest.size() > 0) {
+				FacetQ head = rest.get(0);
+				head.nest(rest.subList(1, rest.size()));
+				nestFacetQ(head);
+			}
+		}
+	}
+	
+	static class FacetRKey {
+		
+		
+		
+		/**
+		 * @param key
+		 * @param facetName
+		 */
+		private FacetRKey(String key, String facetName) {
+			super();
+			this.key = key;
+			this.facetName = facetName;
+		}
+		
+		final String key;
+		final String facetName;
+	}
+	
+	// multi-dimensional facet results
+	static class FacetR {
+		
+		
+		/**
+		 * @param keys
+		 * @param val
+		 */
+		private FacetR(List<FacetRKey> keys, int val) {
+			super();
+			this.keys = keys;
+			this.val = val;
+		}
+		
+		/**
+		 * @return
+		 */
+		public FacetResKey toFacetResKey() {
+			Optional<String> service = keys.stream().filter(frkey -> {
+				return frkey.facetName.equals(SERVICEFACET);
+			}).findFirst().map(frkey -> frkey.key);
+			Optional<String> path = keys.stream().filter(frkey -> {
+				return frkey.facetName.equals(PATHFACET);
+			}).findFirst().map(frkey -> frkey.key);
+			
+			return new FacetResKey(service, path);
+		}
+
+		final List<FacetRKey> keys;
+		final int val;
+		/**
+		 * @param rkey
+		 */
+		public void addKey(FacetRKey rkey) {
+			keys.add(rkey);
+		}
+	}
+	
+	static Optional<NamedList<Object>> objToNL(Object namedlist) {
+		if (namedlist instanceof NamedList<?>) {
+			@SuppressWarnings("unchecked")
+			NamedList<Object> nl = (NamedList<Object>) namedlist;
+			return Optional.of(nl);
+		}
+		return Optional.empty();
+	}
+	
+
+	static Optional<Object> getObjFromNL(NamedList<Object> namedlist, String name) {
+		return objToNL(namedlist).flatMap(nl -> Optional.ofNullable(nl.get(name)));
+	}
+
+	@SuppressWarnings("unchecked")
+	static Optional<NamedList<Object>> getNLFromNL(NamedList<Object> namedlist, String name) {
+		return getObjFromNL(namedlist, name).flatMap(v -> {
+			if (v instanceof NamedList<?>) {
+				return Optional.of((NamedList<Object>) v);
+			}
+			return Optional.empty();
+		});
+	}
+
+	static Optional<String> getStringFromNL(NamedList<Object> namedlist, String name) {
+		return getObjFromNL(namedlist, name).flatMap(v -> {
+			if (v instanceof String) {
+				return Optional.of((String) v);
+			}
+			return Optional.empty();
+		});
+	}
+
+	static Optional<Integer> getIntFromNL(NamedList<Object> namedlist, String name) {
+		return getObjFromNL(namedlist, name).flatMap(v -> {
+			if (v instanceof Integer) {
+				return Optional.of((Integer) v);
+			}
+			return Optional.empty();
+		});
+	}
+
+	static List<FacetR> flatten(NamedList<Object> facetresult, List<List<String>> facetFields) {
+		List<FacetR> results = new ArrayList<FacetR>();
+		if (facetFields.size() > 0) {
+			List<String> head = facetFields.get(0);
+			List<List<String>> rest = facetFields.subList(1, facetFields.size());
+			head.forEach(facetname -> {
+				getNLFromNL(facetresult, facetname)
+					.flatMap(bucketobj -> getNLFromNL(bucketobj, BUCKETFIELD))
+					.ifPresent(bucketarrobj -> {
+						bucketarrobj.forEach((pos, bucket) -> {
+							objToNL(bucket).ifPresent(b -> {
+								Optional<String> val = getStringFromNL(b, VALFIELD);
+								Optional<Integer> count = getIntFromNL(b, COUNTFIELD);
+								val.ifPresent(v -> {
+									List<FacetR> subfacetr = flatten(b, rest);
+									FacetRKey rkey = new FacetRKey(v, facetname);
+									subfacetr.forEach(subr -> {
+										subr.addKey(rkey);
+										results.add(subr);
+									});						
+									count.ifPresent(c -> {
+										FacetR newr = new FacetR(List.of(rkey), c);
+										results.add(newr);
+									});
+								});
+							});
+						});
+					});
+			});
+		}
+		return results;
 	}
 
 }
