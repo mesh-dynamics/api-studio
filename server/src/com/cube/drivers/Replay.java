@@ -31,6 +31,7 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.cube.core.BatchingIterator;
@@ -89,6 +90,7 @@ public class Replay {
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
+		this.xfmer = Optional.ofNullable(null);
 	}
 
 	/**
@@ -149,7 +151,7 @@ public class Replay {
 			
 			Stream<HttpRequest> httprequests = requests.stream().map(r -> {
 				// transform fields in the request before the replay.
-				xfmer.transformRequest(r);
+				xfmer.ifPresent(x -> {x.transformRequest(r);});
 				
 				UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
 						.path(r.path);
@@ -214,21 +216,24 @@ public class Replay {
 	/*
 	 * @param jsonStrRepOfXfms: multivalued map of {key : [{src, tgt}+]} in a string representation
 	 */
-	public static JSONObject prepareXfmsFromJSONString(String jsonStrRepOfXfms) {
-		JSONObject rep = new JSONObject(jsonStrRepOfXfms);
-		return rep;
+	public void updateXfmsFromJSONString(String jsonStrRepOfXfms) throws JSONException {
+		JSONObject obj = new JSONObject(jsonStrRepOfXfms);
+		if (xfmer.isPresent()) {
+			xfmer.get().updateTransforms(obj);
+		} else {
+			xfmer = Optional.of(new RRTransformer(obj));
+		}
 	}
 
 	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String instanceid, 
 			String collection, List<String> reqids,
 			ReqRespStore rrstore, boolean async, List<String> paths,
-			JSONObject xfmer) {
-		 
+			JSONObject xfms) {
 		String replayid = getReplayIdFromCollection(collection);
 		Replay replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
-		Replay.xfmer = new RRTransformer(xfmer);
-		if (rrstore.saveReplay(replay))
+		if (rrstore.saveReplay(replay)) {
 			return Optional.of(replay);
+		}
 		return Optional.empty();
 	}
 	
@@ -313,7 +318,7 @@ public class Replay {
 	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
 	private static final Pattern replayidpattern = Pattern.compile(replayidpatternStr);
 	
-	private static RRTransformer xfmer;
+	private Optional<RRTransformer> xfmer;
 
 	/**
 	 * @param replayid2

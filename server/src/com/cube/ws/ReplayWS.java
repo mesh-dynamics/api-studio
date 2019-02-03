@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.cube.core.RRTransformer;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Replay;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,6 +47,7 @@ public class ReplayWS {
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
 		
+		// TODO: move all these constant strings to a file so we can easily change them.
 		boolean async = Optional.ofNullable(formParams.getFirst("async"))
 				.map(v -> {return (v == "t") ? true : false;})
 				.orElse(false);
@@ -53,21 +55,12 @@ public class ReplayWS {
 		Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endpoint"));
 		Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
 		List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
-
-		List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
-		String xfms = "";
-		// expect only one JSON String. 
-		if (xfmsParam.size() > 1) {
-			LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
-		} else if (xfmsParam.size() == 1) {
-			xfms = xfmsParam.get(0);
-		}
-		JSONObject requestXfms = Replay.prepareXfmsFromJSONString(xfms);
+		
 		return endpoint
 				.map(e -> {
 					return instanceid.map(inst -> {
 						// TODO: introduce response transforms as necessary
-						return Replay.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, requestXfms)
+						return Replay.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null)
 								.map(replay -> {
 									String json;
 									try {
@@ -82,6 +75,42 @@ public class ReplayWS {
 				}).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());		
 	}
 
+	
+	@POST
+	@Path("transforms/{customerid}/{app}/{collection}/{replayid}")
+	@Consumes("application/x-www-form-urlencoded")
+	public Response upsertTransforms(@Context UriInfo ui, 
+			MultivaluedMap<String, String> formParams, 
+			@PathParam("customerid") String customerid,
+			@PathParam("app") String app, 
+			@PathParam("collection") String collection,
+			@PathParam("replayid") String replayid) {
+		// {"requestTransforms" : [{"src: xyz, "tgt" : abc}*]}
+		
+		List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
+		
+		if (xfmsParam.size() == 0) {
+			LOGGER.info(String.format("No transformation strings found %s",  xfmsParam));
+			return Response.ok("{}", MediaType.APPLICATION_JSON).build();
+		}
+		try {
+			String xfms = "";
+			// expect only one JSON String. 
+			if (xfmsParam.size() > 1) {
+				LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
+			} 
+			xfms = xfmsParam.get(0);
+			Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
+			if (replay.isPresent()) {
+				replay.get().updateXfmsFromJSONString(xfms);
+			}
+			String replayJson = jsonmapper.writeValueAsString(replay);
+			return Response.ok(replayJson, MediaType.APPLICATION_JSON).build();
+		} catch (Exception e) {
+			LOGGER.error(String.format("Error in updating transforms %s: %s", replayid, xfmsParam.toString()), e);
+			return Response.serverError().build();
+		}
+	}
 
 	@GET
 	@Path("status/{customerid}/{app}/{collection}/{replayid}")
@@ -107,18 +136,42 @@ public class ReplayWS {
 
 	@POST
 	@Path("start/{customerid}/{app}/{collection}/{replayid}")
+	@Consumes("application/x-www-form-urlencoded")
 	public Response start(@Context UriInfo ui, @PathParam("collection") String collection, 
 			@PathParam("replayid") String replayid,
 			@PathParam("customerid") String customerid,
-			@PathParam("app") String app) {
+			@PathParam("app") String app, 
+			MultivaluedMap<String, String> formParams) {
+		List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
+
+		Optional<Replay> replay = Optional.ofNullable(null);
+		// Block for testing -- we need to initialize the auth token to inject
+		if (xfmsParam.size() == 0) {
+			LOGGER.info(String.format("No transformation strings found %s",  xfmsParam));
+			return Response.ok("{}", MediaType.APPLICATION_JSON).build();
+		}
+		try {
+			String xfms = "";
+			// expect only one JSON String. 
+			if (xfmsParam.size() > 1) {
+				LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
+			} 
+			xfms = xfmsParam.get(0);
+			replay = Replay.getStatus(replayid, this.rrstore);
+			if (replay.isPresent()) {
+				replay.get().updateXfmsFromJSONString(xfms);
+			}
+		} catch (Exception e) {
 		
-		Optional<Replay> replay = Replay.getStatus(replayid, rrstore);
+		}
+		/// end block for testing
+		// Optional<Replay> replay = Replay.getStatus(replayid, rrstore);
 		Response resp = replay.map(r -> {
 			boolean status = r.start();
-			if (status)
+			if (status) {
 				return Response.ok().build();
-			else 
-				return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
+			} 
+			return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
 		}).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
 		
 		return resp;
