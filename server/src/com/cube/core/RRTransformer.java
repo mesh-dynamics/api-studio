@@ -20,6 +20,9 @@ public class RRTransformer {
 	// TODO: explore and use wiremock's mustache handler capabilities to match and replace values
 	// FIX: is there a way to avoid MultivaluedMaps? Just following Request object here.
 	
+	// TODO: use ObjectMapper as in Config.java. 
+	//       however, we then need to structure this class properly
+	
 	// types of fields to transform
 	// TODO: qparams, fparams, meta, body
 	JSONObject transforms; 
