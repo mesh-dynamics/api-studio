@@ -50,6 +50,7 @@ public class Authenticator {
       String subject = claims.getBody().getSubject();
       return subject;
     }
+    LOGGER.debug(String.format("Token validatation failed: %s", jws));
     return null;
   }
 }

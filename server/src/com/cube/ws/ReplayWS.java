@@ -142,10 +142,11 @@ public class ReplayWS {
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app, 
 			MultivaluedMap<String, String> formParams) {
-		List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
-
-		Optional<Replay> replay = Optional.ofNullable(null);
+		
+		/**
 		// Block for testing -- we need to initialize the auth token to inject
+		List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
+		Optional<Replay> replay = Optional.ofNullable(null);
 		if (xfmsParam.size() == 0) {
 			LOGGER.info(String.format("No transformation strings found %s",  xfmsParam));
 			return Response.ok("{}", MediaType.APPLICATION_JSON).build();
@@ -165,7 +166,9 @@ public class ReplayWS {
 		
 		}
 		/// end block for testing
-		// Optional<Replay> replay = Replay.getStatus(replayid, rrstore);
+		 */
+		 
+		Optional<Replay> replay = Replay.getStatus(replayid, rrstore);
 		Response resp = replay.map(r -> {
 			boolean status = r.start();
 			if (status) {
