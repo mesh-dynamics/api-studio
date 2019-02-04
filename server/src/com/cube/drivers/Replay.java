@@ -25,13 +25,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.cube.core.BatchingIterator;
+import com.cube.core.RRTransformer;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.ReqRespStore;
@@ -86,6 +90,7 @@ public class Replay {
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
+		this.xfmer = Optional.ofNullable(null);
 	}
 
 	/**
@@ -145,6 +150,9 @@ public class Replay {
 			reqcnt += requests.size();
 			
 			Stream<HttpRequest> httprequests = requests.stream().map(r -> {
+				// transform fields in the request before the replay.
+				xfmer.ifPresent(x -> {x.transformRequest(r);});
+				
 				UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
 						.path(r.path);
 				r.qparams.forEach((k, vlist) -> {
@@ -203,15 +211,29 @@ public class Replay {
 	public static Optional<Replay> getStatus(String replayid, ReqRespStore rrstore) {
 		return rrstore.getReplay(replayid);
 	}
+	
+	
+	/*
+	 * @param jsonStrRepOfXfms: multivalued map of {key : [{src, tgt}+]} in a string representation
+	 */
+	public void updateXfmsFromJSONString(String jsonStrRepOfXfms) throws JSONException {
+		JSONObject obj = new JSONObject(jsonStrRepOfXfms);
+		if (xfmer.isPresent()) {
+			xfmer.get().updateTransforms(obj);
+		} else {
+			xfmer = Optional.of(new RRTransformer(obj));
+		}
+	}
 
 	public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String instanceid, 
 			String collection, List<String> reqids,
-			ReqRespStore rrstore, boolean async, List<String> paths) {
+			ReqRespStore rrstore, boolean async, List<String> paths,
+			JSONObject xfms) {
 		String replayid = getReplayIdFromCollection(collection);
 		Replay replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, ReplayStatus.Init, paths);
-	
-		if (rrstore.saveReplay(replay))
+		if (rrstore.saveReplay(replay)) {
 			return Optional.of(replay);
+		}
 		return Optional.empty();
 	}
 	
@@ -295,6 +317,8 @@ public class Replay {
 	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
 	private static final Pattern replayidpattern = Pattern.compile(replayidpatternStr);
+	
+	private Optional<RRTransformer> xfmer;
 
 	/**
 	 * @param replayid2
@@ -319,12 +343,13 @@ public class Replay {
 	 */
 	@JsonIgnore
 	public Result<Request> getRequests() {
-		return rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record); 
+		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
+		return res;
 	}
 
 	@JsonIgnore
 	public Stream<List<Request>> getRequestBatches(int batchSize) {
-		Result<Request> requests = getRequests(); 
+		Result<Request> requests = getRequests();
 		
 		return BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize);
 	}

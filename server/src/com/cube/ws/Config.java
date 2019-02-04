@@ -33,8 +33,7 @@ public class Config {
 
 	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
 	
-	public Config() throws Exception
-	{
+	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
 		try {

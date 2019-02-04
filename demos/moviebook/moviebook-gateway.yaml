@@ -57,21 +57,3 @@ spec:
         port:
           number: 8080
 ---
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: restsql
-spec:
-  hosts:
-  - "*"
-  gateways:
-  - moviebook-gateway
-  http:
-  - match:
-    - uri:
-        prefix: /restsql
-    route:
-    - destination:
-        host: restwrapjdbc
-        port:
-          number: 8080
