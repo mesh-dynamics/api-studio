@@ -250,9 +250,10 @@ public interface ReqRespStore {
 	 * @param replayid
 	 * @param service
 	 * @return If service is empty, return aggregate results for all services. If 
-	 * service is non-empty, return results for all paths in the service
+	 * service is non-empty, return results for all paths in the service if bypath is true
+	 * This also returns the rollups (service, path), (service) ()
 	 */
 	Collection<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
-			boolean facetpath);
+			boolean bypath);
 
 }

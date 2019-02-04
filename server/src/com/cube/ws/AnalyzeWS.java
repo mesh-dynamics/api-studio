@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.util.Collection;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -20,6 +21,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Analysis;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -79,6 +81,26 @@ public class AnalyzeWS {
 		return resp;
 	}
 
+	@GET
+	@Path("aggrresult/{replayid}")
+	public Response getResultAggregate(@Context UriInfo ui,  
+			@PathParam("replayid") String replayid) {
+		
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
+	    boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
+	    		.map(v -> v.equals("y")).orElse(false);
+
+	    Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
+		String json;
+		try {
+			json = jsonmapper.writeValueAsString(res);
+			return Response.ok(json, MediaType.APPLICATION_JSON).build();
+		} catch (JsonProcessingException e) {
+			LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s", replayid), e);
+			return Response.serverError().build();
+		}		
+	}
 	
 	
 	/**

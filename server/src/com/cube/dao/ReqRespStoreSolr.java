@@ -43,6 +43,8 @@ import com.cube.drivers.Analysis.RespMatchType;
 import com.cube.drivers.Replay;
 import com.cube.drivers.Replay.ReplayStatus;
 import com.cube.ws.Config;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -866,12 +868,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	private static final String RESPMTFACET = "respmt_facets";
 	private static final String PATHFACET = "path_facets";
 	private static final String SERVICEFACET = "service_facets";
-	private static final String SOLRJSONFACETPARAM = "json.facet";
-	private static final String BUCKETFIELD = "buckets";
-	private static final String VALFIELD = "val";
-	private static final String COUNTFIELD = "count"; 
-	private static final String FACETSFIELD = "facets"; 
+	private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
+	private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
+	private static final String VALFIELD = "val"; // term in solr facet results indicating a distinct value of the field   
+	private static final String COUNTFIELD = "count"; // term in solr facet results indicating aggregate value computed
+	private static final String FACETSFIELD = "facets"; // term in solr facet results indicating the facet results block
 	
+	
+	/**
+	 * Results needed in one instance of MatchResultAggregate come as part of different facets. These
+	 * are accumulated into one object by using a map whose key is of type FacetResKey 
+	 *
+	 */
 	static class FacetResKey {		
 		
 		/**
@@ -882,6 +890,44 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			super();
 			this.service = service;
 			this.path = path;
+		}
+
+
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((path == null) ? 0 : path.hashCode());
+			result = prime * result + ((service == null) ? 0 : service.hashCode());
+			return result;
+		}
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			FacetResKey other = (FacetResKey) obj;
+			if (path == null) {
+				if (other.path != null)
+					return false;
+			} else if (!path.equals(other.path))
+				return false;
+			if (service == null) {
+				if (other.service != null)
+					return false;
+			} else if (!service.equals(other.service))
+				return false;
+			return true;
 		}
 
 
@@ -908,6 +954,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			service.ifPresent(servicev -> {
 				addFilter(query, SERVICEF, servicev);
 			});
+			
+			// First generate the solr facet query with appropriate nested facets
 			FacetQ facetq = new FacetQ();
 			List<List<String>> facetFields = new ArrayList<List<String>>();
 			Facet reqmatchf = Facet.createTermFacet(REQMTF, Optional.of(FACETLIMIT));
@@ -948,17 +996,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			query.setRows(1);
 			SolrIterator.runQuery(solr, query).ifPresent(response -> {
 				getNLFromNL(response.getResponse(), FACETSFIELD).ifPresent(facets -> {
+					
+					// facet results will be nested since we used nested facets
+					// first flatten the results into a tabular structure
 					flatten(facets, facetFields).forEach(fr -> {
+						
+						// combine facet results into MatchResultAggregate objects by using FacetResKey
 						FacetResKey frkey = fr.toFacetResKey();
 						Optional.ofNullable(resMap.get(frkey)).ifPresentOrElse(mra -> {
 							updateMatchResult(mra, fr);
 						}, () -> {
 							MatchResultAggregate mra = new MatchResultAggregate(replayv.app, replayv.replayid, frkey.service, frkey.path);
+							updateMatchResult(mra, fr);
 							resMap.put(frkey, mra);
 						});
 					});
 				});							
 			});
+		});
+		
+		// if service filter was present initially, add it to all the results, since it was not
+		// included in the facet query
+		service.ifPresent(servicev -> {
+			resMap.forEach((k, mra) -> mra.service = Optional.of(servicev));
 		});
 		
 		return resMap.values();
@@ -974,9 +1034,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			if (frkey.facetName.equals(REQMTFACET)) {
 				Utils.valueOf(ReqMatchType.class, frkey.key).ifPresent(rmt -> {
 					switch (rmt) {
-						case ExactMatch: mra.reqmatched = fr.val;
-						case PartialMatch: mra.reqpartiallymatched = fr.val;
-						case NoMatch: mra.reqnotmatched = fr.val;
+						case ExactMatch: mra.reqmatched = fr.val; break;
+						case PartialMatch: mra.reqpartiallymatched = fr.val; break;
+						case NoMatch: mra.reqnotmatched = fr.val; break;
 					}
 					
 				});
@@ -984,9 +1044,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			if (frkey.facetName.equals(RESPMTFACET)) {
 				Utils.valueOf(RespMatchType.class, frkey.key).ifPresent(rmt -> {
 					switch (rmt) {
-						case ExactMatch: mra.reqmatched = fr.val;
-						case TemplateMatch: mra.reqpartiallymatched = fr.val;
-						case NoMatch: mra.reqnotmatched = fr.val;
+						case ExactMatch: mra.reqmatched = fr.val; break;
+						case TemplateMatch: mra.reqpartiallymatched = fr.val; break;
+						case NoMatch: mra.reqnotmatched = fr.val; break;
 					}
 					
 				});
@@ -1010,10 +1070,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			this.params = params;
 		}
 
+		// These annotations are used for Jackson to flatten params while serializing/deserializing
+		@JsonAnySetter
 		public void addSubFacet(FacetQ subfacet) {
 			params.put(FACETK, subfacet);
 		}
-		
+
+		// These annotations are used for Jackson to flatten params while serializing/deserializing
+		@JsonAnyGetter
+		public Map<String, Object> getParams() {
+			return params;
+		}
+
 		final private Map<String, Object> params;
 		
 		static public Facet createTermFacet(String fieldname, Optional<Integer> limit) {
@@ -1038,8 +1106,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			facetqs = new HashMap<String, Facet>();
 		}
 
+		// These annotations are used for Jackson to flatten params while serializing/deserializing
+		@JsonAnySetter
 		public void addFacet(String name, Facet facet) {
 			facetqs.put(name, facet);
+		}
+		
+		// These annotations are used for Jackson to flatten params while serializing/deserializing
+		@JsonAnyGetter
+		public Map<String, Facet> getFacetQs() {
+			return facetqs;
 		}
 		
 		private void nestFacetQ(FacetQ nestedq) {
@@ -1077,6 +1153,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 	}
 	
 	// multi-dimensional facet results
+	// this represents one entry of the flattened form of solr nested facet results 
 	static class FacetR {
 		
 		
@@ -1104,7 +1181,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			return new FacetResKey(service, path);
 		}
 
-		final List<FacetRKey> keys;
+		List<FacetRKey> keys;
 		final int val;
 		/**
 		 * @param rkey
@@ -1114,6 +1191,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		}
 	}
 	
+	/* Helper functions to parse solr nested facet results */
 	static Optional<NamedList<Object>> objToNL(Object namedlist) {
 		if (namedlist instanceof NamedList<?>) {
 			@SuppressWarnings("unchecked")
@@ -1138,6 +1216,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		});
 	}
 
+	@SuppressWarnings("unchecked")
+	static Optional<List<Object>> getListFromNL(NamedList<Object> namedlist, String name) {
+		return getObjFromNL(namedlist, name).flatMap(v -> {
+			if (v instanceof List<?>) {
+				return Optional.of((List<Object>) v);
+			}
+			return Optional.empty();
+		});
+	}
+
 	static Optional<String> getStringFromNL(NamedList<Object> namedlist, String name) {
 		return getObjFromNL(namedlist, name).flatMap(v -> {
 			if (v instanceof String) {
@@ -1156,6 +1244,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 		});
 	}
 
+	/* Parse and flatten solr nested facet results
+	 * Recursive function
+	 */
 	static List<FacetR> flatten(NamedList<Object> facetresult, List<List<String>> facetFields) {
 		List<FacetR> results = new ArrayList<FacetR>();
 		if (facetFields.size() > 0) {
@@ -1163,9 +1254,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 			List<List<String>> rest = facetFields.subList(1, facetFields.size());
 			head.forEach(facetname -> {
 				getNLFromNL(facetresult, facetname)
-					.flatMap(bucketobj -> getNLFromNL(bucketobj, BUCKETFIELD))
+					.flatMap(bucketobj -> getListFromNL(bucketobj, BUCKETFIELD))
 					.ifPresent(bucketarrobj -> {
-						bucketarrobj.forEach((pos, bucket) -> {
+						bucketarrobj.forEach(bucket -> {
 							objToNL(bucket).ifPresent(b -> {
 								Optional<String> val = getStringFromNL(b, VALFIELD);
 								Optional<Integer> count = getIntFromNL(b, COUNTFIELD);
@@ -1177,7 +1268,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 										results.add(subr);
 									});						
 									count.ifPresent(c -> {
-										FacetR newr = new FacetR(List.of(rkey), c);
+										List<FacetRKey> frkeys = new ArrayList<FacetRKey>();
+										frkeys.add(rkey);
+										FacetR newr = new FacetR(frkeys, c);
 										results.add(newr);
 									});
 								});
