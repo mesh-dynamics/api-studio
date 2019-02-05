@@ -95,17 +95,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 	private Optional<SolrDocumentList> query() {
 
-		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
-
-		QueryResponse response;
-		try {
-			response = solr.query(query);
-		} catch (SolrServerException | IOException e) {
-			LOGGER.error("Error in querying Solr", e);
-			return Optional.empty();
-		}
-		return Optional.ofNullable(response.getResults());
-
+		return runQuery(solr, query).map(r -> r.getResults());
+		
 	}
 
 	private Stream<SolrDocument> toStream() {
@@ -135,4 +126,16 @@ public class SolrIterator implements Iterator<SolrDocument> {
 		return new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults);
 	}
 
+	static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
+		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
+
+		QueryResponse response;
+		try {
+			response = solr.query(query);
+		} catch (SolrServerException | IOException e) {
+			LOGGER.error("Error in querying Solr", e);
+			return Optional.empty();
+		}
+		return Optional.ofNullable(response);		
+	}
 }

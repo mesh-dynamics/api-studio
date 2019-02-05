@@ -266,3 +266,17 @@ kubectl run -i --tty busybox --image=busybox --restart=Never -- sh
 
 ## to connect to same busybox again
 kubectl exec -ti busybox -- sh
+
+# to reduce the number of nodes, when cluster is not in use
+# ensure that AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY are set
+# update min and max nodes using
+kops edit instancegroup nodes
+
+# apply the update
+kops update cluster <clustername e.g. cluster2.k8s.local>
+
+# actually apply
+kops update cluster <clustername e.g. cluster2.k8s.local> --yes
+
+# verify in aws console after a few minutes
+
