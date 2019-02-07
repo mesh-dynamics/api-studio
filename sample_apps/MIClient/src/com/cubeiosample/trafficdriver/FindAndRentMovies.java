@@ -18,7 +18,8 @@ import org.json.*;
 public class FindAndRentMovies {
 	
 	WebTarget targetService; 
-	private static String token;
+	private static String token = "";
+	private static final boolean useAuthToken = false;
 	
 	public FindAndRentMovies(WebTarget service) {
 		targetService = service;
@@ -54,113 +55,115 @@ public class FindAndRentMovies {
 	}
 	
 	public void getToken() throws Exception {
-	  Form form = new Form();
-    form.param("username", "cube");
-    form.param("password", "cubeio");
+		Form form = new Form();
+		form.param("username", "cube");
+		form.param("password", "cubeio");
     
-	  Response response = callWithRetries(targetService.path("authenticate").request(MediaType.APPLICATION_JSON), Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE), false, 1);
-	  System.out.println(response.getStatus());
+		Response response = callWithRetries(targetService.path("authenticate").request(MediaType.APPLICATION_JSON), Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE), false, 1);
+		System.out.println(response.getStatus());
 	  
-	  System.out.println("header string: " + response.getHeaders());
-    if (response.getHeaderString(HttpHeaders.AUTHORIZATION) == null) {
-      throw new Exception();
-    }
-    token = response.getHeaderString(HttpHeaders.AUTHORIZATION);
+		System.out.println("header string: " + response.getHeaders());
+		if (response.getHeaderString(HttpHeaders.AUTHORIZATION) == null) {
+			throw new Exception();
+		}
+		token = response.getHeaderString(HttpHeaders.AUTHORIZATION);
 	}
 
 	
 	public void driveTraffic() throws Exception {
-	  getToken();
-	  warmMovieCache();
-	  waitForListenerDeploy();
+		if (useAuthToken) {
+			getToken();
+		}
+		warmMovieCache();
+		waitForListenerDeploy();
 		
-	  // play traffic for recording. 
-	  for (String movie : movies) {
-		  // list films
-		  Response response1 = callWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
-		  if (response1 == null || response1.getStatus() != 200) {
-			  continue;
-		  }	
-			
-		  // pick one at random
-		  // TODO: couldn't directly read into JSONArray.class without the new JSONArray. 
-		  // Missing JSONArray exception. @prasad may know.
-		  JSONArray movies = new JSONArray(response1.readEntity(String.class));
-		  response1.close();
-		  if (movies.length() == 0) {
-			  continue;
-		  }
-		  int chosen_movie_indx = randGen.nextInt(movies.length());
-		  JSONObject movieObj = movies.getJSONObject(chosen_movie_indx);
-		  System.out.println(movieObj.toString());
-		  int movieId = movieObj.getInt("film_id");
-			
-		  // find stores with movie
-		  Response response2 = callWithRetries(targetService.path("liststores").queryParam("filmId", movieId).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
-		  if (response2 == null || response2.getStatus() != 200) {
-			  System.out.println("list stores wasn't successful");
-			  response2.close();
-			  continue;
-		  }
-		  JSONArray stores = new JSONArray(response2.readEntity(String.class));
-		  response2.close();
-		  if (stores.length() == 0) {
-			  System.out.println("No store found for film " + movie);
-			  continue;
-		  }
-		  JSONObject storeObj = stores.getJSONObject(randGen.nextInt(stores.length()));
-		  System.out.println(storeObj.toString());
-		  int storeId = storeObj.getInt("store_id");
-			
-		  // rent movie_id
-		  int userId = 1 + randGen.nextInt(maxCustomerId-1);
-		  int staffId = 1 + randGen.nextInt(maxStaffId-1);
-		  JSONObject rentalInfo = new JSONObject();
-		  rentalInfo.put("filmId", movieId);
-		  rentalInfo.put("storeId", storeId);
-		  rentalInfo.put("duration", 2);
-		  rentalInfo.put("customerId", userId);
-		  rentalInfo.put("staffId", staffId);   
-		  System.out.println("client rentalInfo: " + rentalInfo.toString());
-		  Response response3 = callWithRetries(targetService.path("rentmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
-				  Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON), false, 1); // TOFIX: why is it retrying? is it timing out while debugging?
-		  JSONObject rentalResult = new JSONObject(response3.readEntity(String.class));
-		  if (response3.getStatus() != 200) {
-			  System.out.println("Rent movie failed or returned null response");
-			  response3.close();
-			  continue;
-		  } 
-		  response3.close();
+		  // play traffic for recording. 
+		  for (String movie : movies) {
+			  // list films
+			  Response response1 = callWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
+			  if (response1 == null || response1.getStatus() != 200) {
+				  continue;
+			  }	
 				
-		  System.out.println("rentmovie result: " + rentalResult.toString());
-		  int inventoryId = rentalResult.getInt("inventory_id");
-		  if (inventoryId < 0) {
-			  System.out.println("Couldn't rent film: " + movieId + " @" + storeId);
-			  continue;
+			  // pick one at random
+			  // TODO: couldn't directly read into JSONArray.class without the new JSONArray. 
+			  // Missing JSONArray exception. @prasad may know.
+			  JSONArray movies = new JSONArray(response1.readEntity(String.class));
+			  response1.close();
+			  if (movies.length() == 0) {
+				  continue;
+			  }
+			  int chosen_movie_indx = randGen.nextInt(movies.length());
+			  JSONObject movieObj = movies.getJSONObject(chosen_movie_indx);
+			  System.out.println(movieObj.toString());
+			  int movieId = movieObj.getInt("film_id");
+				
+			  // find stores with movie
+			  Response response2 = callWithRetries(targetService.path("liststores").queryParam("filmId", movieId).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
+			  if (response2 == null || response2.getStatus() != 200) {
+				  System.out.println("list stores wasn't successful");
+				  response2.close();
+				  continue;
+			  }
+			  JSONArray stores = new JSONArray(response2.readEntity(String.class));
+			  response2.close();
+			  if (stores.length() == 0) {
+				  System.out.println("No store found for film " + movie);
+				  continue;
+			  }
+			  JSONObject storeObj = stores.getJSONObject(randGen.nextInt(stores.length()));
+			  System.out.println(storeObj.toString());
+			  int storeId = storeObj.getInt("store_id");
+				
+			  // rent movie_id
+			  int userId = 1 + randGen.nextInt(maxCustomerId-1);
+			  int staffId = 1 + randGen.nextInt(maxStaffId-1);
+			  JSONObject rentalInfo = new JSONObject();
+			  rentalInfo.put("filmId", movieId);
+			  rentalInfo.put("storeId", storeId);
+			  rentalInfo.put("duration", 2);
+			  rentalInfo.put("customerId", userId);
+			  rentalInfo.put("staffId", staffId);   
+			  System.out.println("client rentalInfo: " + rentalInfo.toString());
+			  Response response3 = callWithRetries(targetService.path("rentmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
+					  Entity.entity(rentalInfo.toString(), MediaType.APPLICATION_JSON), false, 1); // TOFIX: why is it retrying? is it timing out while debugging?
+			  JSONObject rentalResult = new JSONObject(response3.readEntity(String.class));
+			  if (response3.getStatus() != 200) {
+				  System.out.println("Rent movie failed or returned null response");
+				  response3.close();
+				  continue;
+			  } 
+			  response3.close();
+					
+			  System.out.println("rentmovie result: " + rentalResult.toString());
+			  int inventoryId = rentalResult.getInt("inventory_id");
+			  if (inventoryId < 0) {
+				  System.out.println("Couldn't rent film: " + movieId + " @" + storeId);
+				  continue;
+			  }
+				
+			  int numUpdates = rentalResult.getInt("num_updates");
+			  if (numUpdates < 0) {
+					System.out.println("Couldn't rent film: " + movieId + " @" + storeId);
+			  }
+	
+			  // return movie
+			  // int inventoryId, int customerId, int staffId, double rent
+			  JSONObject returnMovieInfo = new JSONObject();
+			  returnMovieInfo.put("inventoryId", inventoryId);
+			  returnMovieInfo.put("userId", userId);
+			  returnMovieInfo.put("staffId", staffId);
+			  returnMovieInfo.put("rent", rentalResult.getDouble("rent"));  
+			  Response response4 = callWithRetries(targetService.path("returnmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
+					  Entity.entity(returnMovieInfo.toString(), MediaType.APPLICATION_JSON), false, 1);
+			  JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
+			  if (response4.getStatus() != 200) {
+				  System.out.println(response4.getStatus());
+			  }
+			  response4.close();
+			  
+			  System.out.println("return movie result: " + returnMovieResult.toString() +"\n\n");
 		  }
-			
-		  int numUpdates = rentalResult.getInt("num_updates");
-		  if (numUpdates < 0) {
-				System.out.println("Couldn't rent film: " + movieId + " @" + storeId);
-		  }
-
-		  // return movie
-		  // int inventoryId, int customerId, int staffId, double rent
-		  JSONObject returnMovieInfo = new JSONObject();
-		  returnMovieInfo.put("inventoryId", inventoryId);
-		  returnMovieInfo.put("userId", userId);
-		  returnMovieInfo.put("staffId", staffId);
-		  returnMovieInfo.put("rent", rentalResult.getDouble("rent"));  
-		  Response response4 = callWithRetries(targetService.path("returnmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
-				  Entity.entity(returnMovieInfo.toString(), MediaType.APPLICATION_JSON), false, 1);
-		  JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
-		  if (response4.getStatus() != 200) {
-			  System.out.println(response4.getStatus());
-		  }
-		  response4.close();
-		  
-		  System.out.println("return movie result: " + returnMovieResult.toString() +"\n\n");
-	  }
 	}
 	
 	

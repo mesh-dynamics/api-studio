@@ -40,10 +40,19 @@ public class RRTransformer {
 	public boolean transformRequest(Request req) {
 		// headers
 		boolean transformed = false;
-		JSONObject hdrs_xfms = transforms.getJSONObject("requestTransforms");
-		for (String key : hdrs_xfms.keySet()) {
-			if (req.hdrs.containsKey(key)) {
-				transformed = transform(req.hdrs.get(key), hdrs_xfms.getJSONArray(key));
+		try {
+			JSONObject hdrs_xfms = transforms.getJSONObject("requestTransforms");
+			if (hdrs_xfms == null) {
+				return transformed;
+			}
+			for (String key : hdrs_xfms.keySet()) {
+				if (req.hdrs.containsKey(key)) {
+					transformed = transform(req.hdrs.get(key), hdrs_xfms.getJSONArray(key));
+				}
+			}
+		} catch (Exception e) {
+			if (e != null) {
+				LOGGER.error(String.format("Error while tranforming request: %s %s", req.toString(), e.toString()));
 			}
 		}
 		return transformed;
