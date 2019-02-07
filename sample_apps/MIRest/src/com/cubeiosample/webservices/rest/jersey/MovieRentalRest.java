@@ -26,6 +26,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 
+// TODO: @Secured decorators are all commented out since we have to modify request matching during replay and analysis to ignore certain fields.
+
 @Path("/")
 public class MovieRentalRest {
 	final static Logger LOGGER;
@@ -93,7 +95,7 @@ public class MovieRentalRest {
 	// Return a movie
 	@Path("/listmovies")
 	@GET
-	@Secured
+	//@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response listMovies(@QueryParam("filmName") String filmname,
 							               @QueryParam("keyword") String keyword,
@@ -131,7 +133,7 @@ public class MovieRentalRest {
 	
 	@Path("/liststores")
 	@GET
-	@Secured
+	//@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response findStoreswithFilm(@QueryParam("filmId") Integer filmId,
 	                                   @Context HttpHeaders httpHeaders) {
@@ -154,7 +156,7 @@ public class MovieRentalRest {
 	
 	@POST
 	@Path("/rentmovie")
-	@Secured
+	//@Secured
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response rentMovie(String rentalInfoStr,
@@ -194,7 +196,7 @@ public class MovieRentalRest {
 	// Pay and return movies
   @Path("/returnmovie")
   @POST
-  @Secured
+  //@Secured
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response ReturnMovie(String returnInfoStr) {
@@ -221,7 +223,7 @@ public class MovieRentalRest {
 	// Check due rentals
 	@Path("/overduerentals")
 	@GET
-	@Secured
+	//@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response OverdueRentals(@QueryParam("userid") int userId) {
 		JSONArray dues = new JSONArray();
@@ -237,7 +239,7 @@ public class MovieRentalRest {
 	
 	@Path("/ismovieavailable")
 	@GET
-	@Secured
+	//@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response isFilmAvailableAtStore(@QueryParam("filmid") int filmId, 
 										                    @QueryParam("storeid") int storeId,
@@ -268,7 +270,7 @@ public class MovieRentalRest {
 	// Best performing genre
 	@Path("/salesbystore")
 	@GET
-	@Secured
+	//@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSalesByStore(@QueryParam("storename") String storename,
 	    @HeaderParam("end-user") String user,

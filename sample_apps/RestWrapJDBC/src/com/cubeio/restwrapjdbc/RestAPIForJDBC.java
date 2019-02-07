@@ -44,8 +44,8 @@ public class RestAPIForJDBC {
 	
  
 	@Path("/initialize")
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
   public Response initialize(@QueryParam("username") String username,
                              @QueryParam("password") String passwd,
                              @QueryParam("uri") String uri,

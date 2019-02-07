@@ -188,25 +188,25 @@ public class MovieRentals {
     
     
     public JSONObject rentMovie(int film_id, int store_id, int duration, int customer_id, int staff_id) throws SQLException, JSONException {
-      // Update rental table 
-    		int inventoryId = getInventoryId(film_id, store_id);
-    		JSONObject result = new JSONObject();
-    		result.put("inventory_id", inventoryId);
-    		if (inventoryId < 0) {
-    		  return result;
-      }
-    		
-      double rentalRate = getRentalRate(film_id);
-      
-    		JSONObject rentResult = updateRental(inventoryId, customer_id, staff_id);
-    		int numUpdates = rentResult.getInt("num_updates");
-    		result.put("num_updates", numUpdates);
-    		if ( numUpdates < 0) {  
-    		  return result;
-      }
-    		result.put("rent", rentalRate*duration);
-    		LOGGER.debug("rent movie result returning: " + result.toString());
+    	// Update rental table 
+    	int inventoryId = getInventoryId(film_id, store_id);
+    	JSONObject result = new JSONObject();
+    	result.put("inventory_id", inventoryId);
+    	if (inventoryId < 0) {
     		return result;
+    	}	
+    		
+    	double rentalRate = getRentalRate(film_id);
+      
+    	JSONObject rentResult = updateRental(inventoryId, customer_id, staff_id);
+    	int numUpdates = rentResult.getInt("num_updates");
+    	result.put("num_updates", numUpdates);
+    	if ( numUpdates < 0) {  
+    		return result;
+    	}
+    	result.put("rent", rentalRate*duration);
+    	LOGGER.debug("rent movie result returning: " + result.toString());
+    	return result;
     }
     
    
@@ -319,7 +319,7 @@ public class MovieRentals {
           	RestOverSql.addIntegerParam(params, customer_id);
           	RestOverSql.addIntegerParam(params, staff_id);
           	RestOverSql.addStringParam(params, dateString);
-          	LOGGER.info(rentalUpdateQuery + "; " + params.toString());
+          	LOGGER.debug(rentalUpdateQuery + "; " + params.toString());
           	if (USE_JDBC_SERVICE) {
           	  return ros.executeUpdate(rentalUpdateQuery, params);
           	} 

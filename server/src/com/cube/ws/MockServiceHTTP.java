@@ -35,11 +35,13 @@ public class MockServiceHTTP {
 	
     private static final Logger LOGGER = LogManager.getLogger(MockServiceHTTP.class);
 	
-	@GET @Path("{customerid}/{app}/{var:.+}")
+	@GET 
+	@Path("{customerid}/{app}/{var:.+}")
 	public Response get(@Context UriInfo ui, @PathParam("var") String path, 
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app, @Context HttpHeaders headers) {
 		
+		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString()));
 		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, headers);
 	}
 
@@ -51,6 +53,7 @@ public class MockServiceHTTP {
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app, @Context HttpHeaders headers) {
 		
+		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
 		return getResp(ui, path, formParams, customerid, app, headers);
 	}
 

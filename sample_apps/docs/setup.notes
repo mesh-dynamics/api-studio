@@ -37,17 +37,26 @@ https://us-east-2.console.aws.amazon.com/rds/home?region=us-east-2#GettingStarte
 # Follow instructions in cubeio/docs/setup to create the kubernetes cluster
 # Inject ISTIO sidecar proxy
 
+
 # Deploy app and envoy-cs filters
-kubectl demos/moviebook/moviebook.yaml
+kubectl apply -f demos/moviebook/moviebook.yaml
+
+# If you are running the cube server locally, then establish an ssh tunnel as follows. 
+# The IP at the end is that of the solr service. Look at cube.conf
+ssh -R 0.0.0.0:8080:localhost:8080 -i ~/.ssh/id_rsa ubuntu@18.191.135.125
+
+
+### Deploy Cube services
+kubectl apply -f cube-deploy/cube-cs.yaml
 
 
 ### Record and Replay
 
-# record
+## Recording steps
 # change the lua filters (one-time with appropriate customer-id and instance-id)
 
 # deploy envoy-cs yaml files
-kubectl demos/moviebook/moviebook-envoy-cs.yaml
+kubectl apply -f demos/moviebook/moviebook-envoy-cs.yaml
 
 
 # Postman requests: recordstart
@@ -58,11 +67,12 @@ kubectl demos/moviebook/moviebook-envoy-cs.yaml
 
 
 ## Replay
-# replayinit
+# replayinit -- get the replay id
 
 # deploy envoy-replay yaml files, and the mock-all-except-& yaml files. 
-kubectl demos/moviebook/moviebook-envoy-replay-cs.yaml
-kubectl demos/moviebook/mock-all-except-moviebook.yaml
+# Do we need to do this? kubectl delete -f moviebook/moviebook-envoy-cs.yaml
+kubectl apply -f demos/moviebook/moviebook-envoy-replay-cs.yaml
+kubectl apply -f demos/moviebook/mock-all-except-moviebook.yaml
 
 
 # replaystart --replay-id & collection-id needs to be fetched from 
@@ -70,3 +80,17 @@ kubectl demos/moviebook/mock-all-except-moviebook.yaml
 
 ## Analyze record and replay
 # replayanalyzestart
+
+
+# venky-test-c8-78b93e66-ad45-4a49-88f2-a948d87db20c
+
+
+#### Notes
+# If you are running the cube server locally, then establish an ssh tunnel as follows. 
+# The IP at the end is that of the solr service. Look at cube.conf
+ssh -R 0.0.0.0:8080:localhost:8080 -i ~/.ssh/id_rsa ubuntu@18.191.135.125
+
+# When services are run from the eclipse console, the logs will be in the install directory. (e.g., /Applications/Eclipse.app/MacOS/...)
+
+# ISSUES
+create cluster, record, replay (as many times); However, after replay, the record doesn't seem to work. Deployed the services again and the envoy filters, deleted mock-all* and replay filters, etc. Nothing seems to help.

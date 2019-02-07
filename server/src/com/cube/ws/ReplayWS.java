@@ -168,7 +168,7 @@ public class ReplayWS {
 		/// end block for testing
 		 */
 		 
-		Optional<Replay> replay = Replay.getStatus(replayid, rrstore);
+		Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
 		Response resp = replay.map(r -> {
 			boolean status = r.start();
 			if (status) {

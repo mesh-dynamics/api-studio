@@ -14,12 +14,15 @@ import io.opentracing.Tracer;
 
 public class RestUtils {
   final static Logger LOGGER = Logger.getLogger(RestUtils.class);
+  final static boolean addHeaders = false;
 
     
   public static Response callWithRetries(Tracer tracer, Builder req, JSONObject body, String requestType, int numRetries) {
     int numAttempts = 0;
     // inject headers
-    Tracing.addTraceHeaders(tracer, req, requestType);
+    if (addHeaders) {
+    	Tracing.addTraceHeaders(tracer, req, requestType);
+    }
     while (numAttempts < numRetries) {
       try {
         if (requestType.equalsIgnoreCase("GET")) {

@@ -10,7 +10,7 @@ spec:
     - uri:
         prefix: /reviews
     rewrite:
-      uri: /cubews/ms/reviews
+      uri: /cubews/ms/cube-venky/movieinfo/reviews
     route:
     - destination:
         host: cube
@@ -29,7 +29,7 @@ spec:
     - uri:
         prefix: /ratings
     rewrite:
-        uri: /cubews/ms/ratings
+        uri: /cubews/ms/cube-venky/movieinfo/ratings
     route:
     - destination:
         host: cube
@@ -48,7 +48,7 @@ spec:
     - uri:
         prefix: /details
     rewrite:
-        uri: /cubews/ms/details
+        uri: /cubews/ms/cube-venky/movieinfo/details
     route:
     - destination:
         host: cube
@@ -67,7 +67,7 @@ spec:
     - uri:
         prefix: /restsql
     rewrite:
-        uri: /cubews/ms/restsql
+        uri: /cubews/ms/cube-venky/movieinfo/restsql
     route:
     - destination:
         host: cube
