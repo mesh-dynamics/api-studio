@@ -19,7 +19,8 @@ public class RRBase {
 
 	public static enum RR {
 		Record,
-		Replay
+		Replay,
+		Manual  // manually created e.g. default requests and responses 
 	}
 	/**
 	 * @param path
@@ -75,6 +76,10 @@ public class RRBase {
 		return getMetaField(SERVICEFIELD);
 	}
 
+	public void setService(String serviceid) {
+		setMetaField(SERVICEFIELD, serviceid);
+	}
+	
 	/**
 	 * @return
 	 */
@@ -92,8 +97,12 @@ public class RRBase {
 		return Optional.ofNullable(meta.getFirst(fieldname));
 	}
 
+	public void setMetaField(String fieldname, String value) {
+		meta.putSingle(fieldname, value);
+	}
+
 	
-	public final Optional<String> reqid;
+	public Optional<String> reqid;
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> meta; 
     @JsonDeserialize(as=MultivaluedHashMap.class)
@@ -101,7 +110,7 @@ public class RRBase {
 	public final String body;		
 	public Optional<String> collection;
 	public final Optional<Instant> timestamp;
-	public final Optional<RR> rrtype; // this can be "record" or "replay"
+	public Optional<RR> rrtype; // this can be "record" or "replay"
 	public final Optional<String> customerid;
 	public final Optional<String> app;
 	

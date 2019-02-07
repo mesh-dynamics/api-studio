@@ -40,8 +40,8 @@ public class Request extends RRBase {
 			Optional<String> app) {
 		super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
 		this.path = path; 
-		this.qparams = qparams != null ? qparams : new MultivaluedHashMap<String, String>();
-		this.fparams = fparams != null ? fparams : new MultivaluedHashMap<String, String>();
+		this.qparams = qparams != null ? qparams : emptyMap();
+		this.fparams = fparams != null ? fparams : emptyMap();
 		this.method = method;
 	}
 	
@@ -60,10 +60,21 @@ public class Request extends RRBase {
 			Optional<RR> rrtype, 
 			Optional<String> customerid,
 			Optional<String> app) {
-		this(path, id, qparams, fparams, new MultivaluedHashMap<String, String>(), 
+		this(path, id, qparams, fparams, emptyMap(), 
 				hdrs, "", "", collection, Optional.empty(), rrtype, customerid, app);
 	}
 
+	public Request(Optional<String> serviceid, 
+			String path,
+			String method,
+			Optional<RR> rrtype,
+			Optional<String> customerid,
+			Optional<String> app) {
+		this(path, Optional.empty(), emptyMap(), emptyMap(), emptyMap(), 
+				emptyMap(), method, "", Optional.empty(), Optional.empty(), rrtype, customerid, app);
+		serviceid.ifPresent(s -> setService(s));
+	}
+	
 	
 	
 	/**
@@ -89,6 +100,10 @@ public class Request extends RRBase {
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> fparams; // form params
 	public final String method;
+
+	private static MultivaluedHashMap<String, String> emptyMap () {
+		return new MultivaluedHashMap<String, String>();
+	}
 	
 	public static class ReqMatchSpec extends RRMatchSpec {
 		

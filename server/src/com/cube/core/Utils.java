@@ -39,4 +39,16 @@ public class Utils {
     public static final Predicate<String>
             ALLOWED_HEADERS = (header) -> !DISALLOWED_HEADERS_SET.contains(header);
 
+	/**
+	 * @param s
+	 * @return
+	 */
+	public static Optional<Integer> strToInt(String s) {
+		try {
+			return Optional.ofNullable(Integer.valueOf(s));
+		} catch (Exception e) {
+			return Optional.empty();
+		}
+	}
+
 }

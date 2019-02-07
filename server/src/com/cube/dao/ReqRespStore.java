@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.ReqRespStoreImplBase.RecordOrReplay;
 import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.drivers.Analysis;
 import com.cube.drivers.Analysis.ReqRespMatchResult;
@@ -107,7 +108,7 @@ public interface ReqRespStore {
 	 */
 	Optional<Response> getRespForReq(Request queryrequest, ReqMatchSpec mspec);
 
-
+	
 	/**
 	 * @param customerid
 	 * @param app
@@ -255,5 +256,19 @@ public interface ReqRespStore {
 	 */
 	Collection<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
 			boolean bypath);
+
+	/**
+	 * @param customerid
+	 * @param app
+	 * @param instanceid
+	 * @return
+	 */
+	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid);
+
+	/**
+	 * 
+	 */
+	boolean commit();
 
 }

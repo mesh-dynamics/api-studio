@@ -30,6 +30,18 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	public Optional<String> getCurrentCollection(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid) {
 		
+		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getCollection());		
+	}
+
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getCurrentRecordOrReplay(java.util.Optional, java.util.Optional, java.util.Optional)
+	 * For a (cust, app, instance), there is one current recording or replay. Either a recording is going on or a replay or nothing. This 
+	 * looks up the state and caches it for quick retrieval
+	 */
+	@Override
+	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid) {
+		
 		CollectionKey ckey = new CollectionKey(customerid.orElse(""), app.orElse(""), instanceid.orElse(""));
 
 		// in this case matching has to be exact. Null values should match empty strings
@@ -37,28 +49,26 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		Optional<String> napp = app.or(() -> Optional.of("")); 
 		Optional<String> ninstanceid = instanceid.or(() -> Optional.of("")); 
 		
-		Optional<Optional<String>> collection = Optional.ofNullable(currentCollectionMap.get(ckey));
+		Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
 		LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
-		return collection.orElseGet(() -> {
+		return cachedrr.or(() -> {
 			// not cached, read from underlying store
 			LOGGER.info("Not found in cache, looking up current recording");
+			
 			// check if there is a recording going on
-			Optional<String> c = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running))
+			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running))
 					.findFirst()
-					.map(recording -> recording.collection)
+					.map(recording -> RecordOrReplay.createFromRecording(recording))
 					.or(() -> { // no ongoing recording, check replay
 						LOGGER.info("No running recording, looking up current replay");
-						// Note that replayid is the collection for replay requests/responses
-						// replay.collection refers to the original collection
 						return getReplay(ncustomerid, napp, ninstanceid, ReplayStatus.Running)
 								.findFirst()
-								.map(replay -> replay.replayid);
+								.map(replay -> RecordOrReplay.createFromReplay(replay));
 					});
-			currentCollectionMap.put(ckey, c);
-			return c;
+			rr.ifPresent(rrv -> currentCollectionMap.put(ckey, rrv));
+			return rr;
 		});
 	}
-
 
 
 	/* (non-Javadoc)
@@ -167,8 +177,50 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		final String app;
 		final String instanceid;
 	}
+
+	static class RecordOrReplay {
+		
+		
+		public Optional<String> getCollection() {
+			// Note that replayid is the collection for replay requests/responses
+			// replay.collection refers to the original collection
+			// return replay collection if non empty, else return recording collection
+			return replay.map(replay -> replay.replayid)
+					.or(() -> recording.map(recording -> recording.collection));
+		}
+
+		public Optional<String> getRecordingCollection() {
+			// return collection of recording corresponding to replay if non empty, else return recording collection
+			return replay.map(replay -> replay.collection)
+					.or(() -> recording.map(recording -> recording.collection));
+		}
+		
+		/**
+		 * 
+		 */
+		private RecordOrReplay() {
+			super();
+			replay = Optional.empty();
+			recording = Optional.empty();
+		}
+
+		public static RecordOrReplay createFromRecording(Recording recording) {
+			RecordOrReplay rr = new RecordOrReplay();
+			rr.recording = Optional.of(recording);
+			return rr;
+		}
+
+		public static RecordOrReplay createFromReplay(Replay replay) {
+			RecordOrReplay rr = new RecordOrReplay();
+			rr.replay = Optional.of(replay);
+			return rr;
+		}
+
+		Optional<Recording> recording;
+		Optional<Replay> replay;
+	}
 	
 	// map from (cust, app, instance) -> collection. collection is empty if there is no current recording or replay
-	private ConcurrentHashMap<CollectionKey, Optional<String>> currentCollectionMap = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<CollectionKey, RecordOrReplay> currentCollectionMap = new ConcurrentHashMap<>();
 
 }
