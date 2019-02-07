@@ -6,6 +6,7 @@ package com.cube.ws;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -20,6 +21,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -154,6 +156,51 @@ public class CubeStore {
 	    }).orElse(Response.ok().build());
 	    
 	}
+
+	@POST
+	@Path("/setdefault/{customerid}/{app}/{serviceid}/{method}/{var:.+}")
+	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
+	public Response setDefault(@Context UriInfo ui, @PathParam("var") String path, 
+			MultivaluedMap<String, String> formParams,
+			@PathParam("customerid") String customerid,
+			@PathParam("app") String app,
+			@PathParam("serviceid") String serviceid,
+			@PathParam("method") String method) {
+		
+		String respbody = Optional.ofNullable(formParams.getFirst("body")).orElse("");
+		int status = Status.OK.getStatusCode();
+		
+		Optional<String> sparam = Optional.ofNullable(formParams.getFirst("status"));
+		if (sparam.isPresent()) {
+			Optional<Integer> sval = Utils.strToInt(sparam.get());
+			if (sval.isEmpty()) {
+				return Response.status(Status.BAD_REQUEST).entity("Status parameter is not an integer").build();
+			} else {
+				status = sval.get();
+			}
+		}
+				
+		if (saveDefaultResponse(customerid, app, serviceid, path, method, respbody, status)) {
+			return Response.ok().build();
+		} 
+		return Response.serverError().entity("Not able to store default response").build();
+	}
+
+	/* here the body is the full json response */
+	@POST
+	@Path("/setdefault/{method}/{var:.+}")
+	@Consumes({MediaType.APPLICATION_JSON})
+	public Response setDefaultFullResp(@Context UriInfo ui, @PathParam("var") String path,
+			com.cube.dao.Response resp,
+			@PathParam("method") String method) {
+		
+						
+		if (saveDefaultResponse(path, method, resp)) {
+			return Response.ok().build();
+		} 
+		return Response.serverError().entity("Not able to store default response").build();
+	}
+	
 
 	
 	@POST
@@ -324,4 +371,34 @@ public class CubeStore {
 			return rrstore.getCurrentCollection(customerid, app, instanceid);
 		});
 	}
+	
+	private boolean saveDefaultResponse(String customerid, String app,  
+			String serviceid, String path, String method, String respbody, int status) {
+		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status, 
+				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app));
+		resp.setService(serviceid);
+		return saveDefaultResponse(path, method, resp);
+	}
+
+	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
+		Request req = new Request(resp.getService(), path, method, Optional.of(RR.Manual), resp.customerid,
+				resp.app);
+		
+		// check if default response has been saved earlier
+		rrstore.getRequests(req, MockServiceHTTP.mspecForDefault, Optional.of(1))
+			.findFirst().ifPresentOrElse(oldreq -> {
+			// set the id to the same value, so that this becomes an update operation
+			req.reqid = oldreq.reqid;
+		}, () -> {
+			// otherwise generate a new random uuid
+			req.reqid = Optional.of(UUID.randomUUID().toString());
+		});
+		if (rrstore.save(req)) {
+			resp.reqid = req.reqid;
+			return rrstore.save(resp) && rrstore.commit();
+		}
+		return false;
+	}
+
+	
 }

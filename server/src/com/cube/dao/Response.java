@@ -6,6 +6,7 @@ package com.cube.dao;
 import java.time.Instant;
 import java.util.Optional;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
@@ -28,6 +29,15 @@ public class Response extends RRBase {
 		this.status = status;
 	}
 	
+	public Response(Optional<String> reqid, int status,
+			String body,
+			Optional<String> collection,
+			Optional<String> customerid,
+			Optional<String> app) {
+		this(reqid, status, emptyMap, emptyMap, body, collection, Optional.empty(), Optional.empty(),
+				customerid, app);
+	}
+	
 	/**
 	 * 
 	 */
@@ -39,4 +49,6 @@ public class Response extends RRBase {
 
 	
 	public final int status;
+	
+	private static final MultivaluedHashMap<String, String> emptyMap = new MultivaluedHashMap<String, String>();
 }

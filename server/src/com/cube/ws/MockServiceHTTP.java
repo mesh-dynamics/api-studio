@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.dao.RRBase;
+import com.cube.dao.RRBase.RR;
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
@@ -64,13 +65,17 @@ public class MockServiceHTTP {
 	 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-	    
+	    // TODO: serviceid is not being set 
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams, headers.getRequestHeaders(), Optional.empty(), 
 	    		Optional.of(RRBase.RR.Record), 
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
 
-	    Optional<com.cube.dao.Response> resp = rrstore.getRespForReq(r, mspec);
+	    Optional<com.cube.dao.Response> resp = rrstore.getRespForReq(r, mspec)
+	    		.or(() -> {
+	    			r.rrtype = Optional.of(RR.Manual);
+	    			return getDefaultResponse(r);	
+	    		}); // use default response if nothing matches
 	    
 	    return resp.map(respv -> {
 		    ResponseBuilder builder = Response.status(respv.status);
@@ -87,6 +92,11 @@ public class MockServiceHTTP {
 		    return builder.entity(respv.body).build();	    	
 	    }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Response not found").build());
 	    
+	}
+
+	
+	private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
+		return rrstore.getRespForReq(queryrequest, mspecForDefault);
 	}
 	
 
@@ -120,4 +130,16 @@ public class MockServiceHTTP {
 			.withMhdrs(MatchType.SCORE)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
+
+	// matching to get default response
+	static ReqMatchSpec mspecForDefault = (ReqMatchSpec) ReqMatchSpec.builder()
+			.withMpath(MatchType.FILTER)
+			.withMrrtype(MatchType.FILTER)
+			.withMcustomerid(MatchType.FILTER)
+			.withMapp(MatchType.FILTER)
+			.withMcollection(MatchType.SCORE)
+			.withMmeta(MatchType.FILTER)
+			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
+			.build();
+
 }

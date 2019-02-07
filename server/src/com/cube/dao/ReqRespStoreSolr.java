@@ -281,9 +281,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
     
     
-    private static void setRRFields(RRBase rr, SolrInputDocument doc) {
+    private static void setRRFields(Types type, RRBase rr, SolrInputDocument doc) {
         
-        rr.reqid.ifPresent(id -> doc.setField(REQIDF, id));
+        rr.reqid.ifPresent(id -> {
+        	doc.setField(REQIDF, id);
+        	doc.setField(IDF, type.toString() + "-" + id);
+        });
         doc.setField(BODYF, rr.body);
         addFieldsToDoc(doc, META, rr.meta);
         addFieldsToDoc(doc, HDR, rr.hdrs);
@@ -300,7 +303,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static SolrInputDocument reqToSolrDoc(Request req) {
         final SolrInputDocument doc = new SolrInputDocument();
 
-        setRRFields(req, doc);
+        setRRFields(Types.Request, req, doc);
         doc.setField(TYPEF, Types.Request.toString());
         doc.setField(PATHF, req.path);
         doc.setField(METHODF, req.method);
@@ -418,7 +421,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static SolrInputDocument respToSolrDoc(Response resp) {
         final SolrInputDocument doc = new SolrInputDocument();
 
-        setRRFields(resp, doc);
+        setRRFields(Types.Response, resp, doc);
         doc.setField(TYPEF, Types.Response.toString());
         doc.setField(STATUSF, resp.status);
         
@@ -1335,5 +1338,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         return results;
     }
+
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#commit()
+	 */
+	@Override
+	public boolean commit() {
+	
+		return softcommit();	
+	}
 
 }
