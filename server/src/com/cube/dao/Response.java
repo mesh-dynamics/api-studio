@@ -34,7 +34,7 @@ public class Response extends RRBase {
 			Optional<String> collection,
 			Optional<String> customerid,
 			Optional<String> app) {
-		this(reqid, status, emptyMap, emptyMap, body, collection, Optional.empty(), Optional.empty(),
+		this(reqid, status, emptyMap(), emptyMap(), body, collection, Optional.empty(), Optional.empty(),
 				customerid, app);
 	}
 	
@@ -50,5 +50,7 @@ public class Response extends RRBase {
 	
 	public final int status;
 	
-	private static final MultivaluedHashMap<String, String> emptyMap = new MultivaluedHashMap<String, String>();
+	private static final MultivaluedHashMap<String, String> emptyMap() {
+		return new MultivaluedHashMap<String, String>();
+	}
 }
