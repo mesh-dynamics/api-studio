@@ -38,7 +38,7 @@ public class Response extends RRBase {
 			Optional<String> contenttype) {
 		this(reqid, status, emptyMap(), emptyMap(), body, collection, Optional.empty(), Optional.empty(),
 				customerid, app);
-		contenttype.ifPresent(ct -> hdrs.add(HttpHeaders.CONTENT_ENCODING, ct));
+		contenttype.ifPresent(ct -> hdrs.add(HttpHeaders.CONTENT_TYPE, ct));
 	}
 	
 	/**
