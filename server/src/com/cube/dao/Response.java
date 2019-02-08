@@ -6,6 +6,7 @@ package com.cube.dao;
 import java.time.Instant;
 import java.util.Optional;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
@@ -33,9 +34,11 @@ public class Response extends RRBase {
 			String body,
 			Optional<String> collection,
 			Optional<String> customerid,
-			Optional<String> app) {
+			Optional<String> app,
+			Optional<String> contenttype) {
 		this(reqid, status, emptyMap(), emptyMap(), body, collection, Optional.empty(), Optional.empty(),
 				customerid, app);
+		contenttype.ifPresent(ct -> hdrs.add(HttpHeaders.CONTENT_TYPE, ct));
 	}
 	
 	/**

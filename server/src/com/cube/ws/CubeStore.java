@@ -168,6 +168,7 @@ public class CubeStore {
 			@PathParam("method") String method) {
 		
 		String respbody = Optional.ofNullable(formParams.getFirst("body")).orElse("");
+		Optional<String> contenttype = Optional.ofNullable(formParams.getFirst("content-type"));
 		int status = Status.OK.getStatusCode();
 		
 		Optional<String> sparam = Optional.ofNullable(formParams.getFirst("status"));
@@ -180,7 +181,7 @@ public class CubeStore {
 			}
 		}
 				
-		if (saveDefaultResponse(customerid, app, serviceid, path, method, respbody, status)) {
+		if (saveDefaultResponse(customerid, app, serviceid, path, method, respbody, status, contenttype)) {
 			return Response.ok().build();
 		} 
 		return Response.serverError().entity("Not able to store default response").build();
@@ -373,9 +374,9 @@ public class CubeStore {
 	}
 	
 	private boolean saveDefaultResponse(String customerid, String app,  
-			String serviceid, String path, String method, String respbody, int status) {
+			String serviceid, String path, String method, String respbody, int status, Optional<String> contenttype) {
 		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status, 
-				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app));
+				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app), contenttype);
 		resp.setService(serviceid);
 		return saveDefaultResponse(path, method, resp);
 	}
