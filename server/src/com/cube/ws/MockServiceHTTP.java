@@ -1,6 +1,8 @@
 package com.cube.ws;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -11,6 +13,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -19,6 +22,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
@@ -26,6 +30,7 @@ import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 import com.cube.dao.Request.ReqMatchSpec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author prasad
@@ -42,21 +47,44 @@ public class MockServiceHTTP {
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app, @Context HttpHeaders headers) {
 		
-		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString()));
+		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
 		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, headers);
 	}
 
 	@POST
 	@Path("{customerid}/{app}/{var:.+}")
-	@Consumes("application/x-www-form-urlencoded")
-	public Response post(@Context UriInfo ui, @PathParam("var") String path, 
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public Response postForms(@Context UriInfo ui, 
+			@PathParam("var") String path, 
 			MultivaluedMap<String, String> formParams,
 			@PathParam("customerid") String customerid,
-			@PathParam("app") String app, @Context HttpHeaders headers) {
-		
-		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
+			@PathParam("app") String app, 
+			@Context HttpHeaders headers) {
+		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
 		return getResp(ui, path, formParams, customerid, app, headers);
 	}
+
+	@POST
+	@Path("{customerid}/{app}/{var:.+}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response postJson(@Context UriInfo ui,
+			@PathParam("var") String path, 
+			@PathParam("customerid") String customerid,
+			@PathParam("app") String app, 
+			@Context HttpHeaders headers, 
+			String body) {
+		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
+		JSONObject obj = new JSONObject(body);
+		// TODO: converting json to MultivaluedMap<String, String>. Does this work all the time?
+		MultivaluedMap<String, String> mmap = new MultivaluedHashMap<String, String>();
+		for (String key : obj.keySet()) {
+			ArrayList<String> l = new ArrayList<String>();
+			l.add(obj.get(key).toString());
+			mmap.put(key, l);
+		}
+		return getResp(ui, path, mmap, customerid, app, headers);
+	}
+
 
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
 			String customerid, String app, HttpHeaders headers) {
@@ -111,11 +139,13 @@ public class MockServiceHTTP {
 	public MockServiceHTTP(Config config) {
 		super();
 		this.rrstore = config.rrstore;
+		this.jsonmapper = config.jsonmapper;
 		LOGGER.info("Cube mock service started");
 	}
 
 
 	ReqRespStore rrstore;
+	ObjectMapper jsonmapper;
 	static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	
 	// TODO - make trace field configurable
@@ -130,6 +160,7 @@ public class MockServiceHTTP {
 			.withMcollection(MatchType.FILTER)
 			.withMmeta(MatchType.FILTER)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
+			//.withContentType(MatchType.FILTER)
 			.withMhdrs(MatchType.SCORE)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
@@ -143,6 +174,7 @@ public class MockServiceHTTP {
 			.withMcollection(MatchType.SCORE)
 			.withMmeta(MatchType.FILTER)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
+			//.withContentType(MatchType.FILTER)
 			.build();
 
 }
