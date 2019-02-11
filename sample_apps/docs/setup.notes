@@ -82,7 +82,16 @@ kubectl apply -f demos/moviebook/mock-all-except-moviebook.yaml
 # replayanalyzestart
 
 
-# venky-test-c8-78b93e66-ad45-4a49-88f2-a948d87db20c
+# Setting up default responses
+The body should be the json string and the header should have a content-type field saying application/json
+I have added the content-type param to set default api.
+
+curl -X POST \
+  http://localhost:8080/cubews/cs/setdefault/cube-venky/movieinfo/restwrapjdbc/GET/restsql/initialize \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'Postman-Token: a1e8764c-5ca6-48e0-95da-7774f0c217c2' \
+  -H 'cache-control: no-cache' \
+  -d 'body=%7B%20%22status%22%3A%20%22Connection%20pool%20created.%22%7D&status=200&content-type=application%2Fjson&undefined='
 
 
 #### Notes
@@ -92,5 +101,5 @@ ssh -R 0.0.0.0:8080:localhost:8080 -i ~/.ssh/id_rsa ubuntu@18.191.135.125
 
 # When services are run from the eclipse console, the logs will be in the install directory. (e.g., /Applications/Eclipse.app/MacOS/...)
 
-# ISSUES
-create cluster, record, replay (as many times); However, after replay, the record doesn't seem to work. Deployed the services again and the envoy filters, deleted mock-all* and replay filters, etc. Nothing seems to help.
+
+

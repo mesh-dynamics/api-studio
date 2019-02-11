@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -184,6 +185,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String APPF = CPREFIX + "app_s";
     private static final String INSTANCEIDF = CPREFIX + "instanceid_s";
     private static final String STATUSF = CPREFIX + "status_i";
+    private static final String CONTENTTYPEF = CPREFIX + "contenttype_s";
 
     private static String getPrefix(String ftype) {
         return String.format(CPREFIX + "%s_", ftype);
@@ -639,6 +641,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addMatch(spec.mrrtype, query, qstr, RRTYPEF, qr.rrtype.map(rrt -> rrt.toString()));
         addMatch(spec.mcustomerid, query, qstr, CUSTOMERIDF, qr.customerid);
         addMatch(spec.mapp, query, qstr, APPF, qr.app);
+        //addMatch(spec.mcontenttype, query, qstr, CONTENTTYPEF, qr.hdrs.getHeaderString(HttpHeaders.CONTENT_TYPE));
 
         addMatch(spec.mpath, query, qstr, PATHF, qr.path);        
         addMatch(spec.mqparams, query, qstr, QPARAMS, qr.qparams, spec.qparamfields);
