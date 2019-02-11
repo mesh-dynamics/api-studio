@@ -50,6 +50,9 @@ public class MockServiceHTTP {
 		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
 		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, headers);
 	}
+	
+	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two. 
+	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
 	@POST
 	@Path("{customerid}/{app}/{var:.+}")
@@ -75,7 +78,6 @@ public class MockServiceHTTP {
 			String body) {
 		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
 		JSONObject obj = new JSONObject(body);
-		// TODO: converting json to MultivaluedMap<String, String>. Does this work all the time?
 		MultivaluedMap<String, String> mmap = new MultivaluedHashMap<String, String>();
 		for (String key : obj.keySet()) {
 			ArrayList<String> l = new ArrayList<String>();
@@ -160,7 +162,6 @@ public class MockServiceHTTP {
 			.withMcollection(MatchType.FILTER)
 			.withMmeta(MatchType.FILTER)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
-			//.withContentType(MatchType.FILTER)
 			.withMhdrs(MatchType.SCORE)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
@@ -174,7 +175,6 @@ public class MockServiceHTTP {
 			.withMcollection(MatchType.SCORE)
 			.withMmeta(MatchType.FILTER)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
-			//.withContentType(MatchType.FILTER)
 			.build();
 
 }
