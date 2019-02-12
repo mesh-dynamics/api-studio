@@ -16,6 +16,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -33,6 +34,7 @@ import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
+import com.cube.drivers.Replay;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -74,7 +76,10 @@ public class CubeStore {
 	@POST
 	@Path("/rr/{var:.*}")
     @Consumes({MediaType.APPLICATION_JSON})
-	public Response storerr(@Context UriInfo ui, @PathParam("var") String path, ReqRespStore.ReqResp rr) {
+	public Response storerr(@Context UriInfo ui, 
+							@PathParam("var") String path,
+							//@Context HttpHeaders httpHeaders,
+							ReqRespStore.ReqResp rr) {
 	
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
@@ -91,6 +96,11 @@ public class CubeStore {
 	    Optional<String> rid = Optional.ofNullable(meta.getFirst("c-request-id"));
 	    Optional<String> type = Optional.ofNullable(meta.getFirst("type"));
 	    Optional<String> inpcollection = Optional.ofNullable(meta.getFirst("collection"));
+	    // TODO: the following can pass replayid to cubestore but currently requests don't match in the mock
+	    // since we don't have the ability to ignore certain fields (in header and body)
+		//if (inpcollection.isEmpty()) {
+		//	inpcollection = Optional.ofNullable(hdrs.getFirst(Constants.CUBE_REPLAYID_HDRNAME));
+		//}
 	    Optional<Instant> timestamp = Optional.ofNullable(meta.getFirst("timestamp")).map(v -> {
 	    	Instant t = null;
 	    	try {
@@ -106,18 +116,19 @@ public class CubeStore {
 	    Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
 	    Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
 	    
+	    LOGGER.debug(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
+	    
 	    Optional<String> collection = getCurrentCollectionIfEmpty(inpcollection, customerid, app, instanceid);
 	    
-	    LOGGER.info(String.format("Got store for type %s, for collection %s, reqid %s, path %s", type.orElse(""), collection.orElse(""), rid.orElse(""), path));
+	    LOGGER.info(String.format("Got store for type %s, for collection %s, reqid %s, path %s", type.orElse("<empty>"), collection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
 	    if (collection.isEmpty()) {
 		    // Dropping if collection is empty, i.e. recording is not started
-		    LOGGER.info(String.format("Dropping store for type %s, reqid %s since collection is empty", type.orElse(""), rid.orElse("")));
+		    LOGGER.info(String.format("Dropping store for type %s, reqid %s since collection is empty", type.orElse("<empty>"), rid.orElse("<empty>")));
 		    return Response.ok().build();
 	    }
 	    
-	    
-	    
+	    	    
 	    MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); 
 
 	    Optional<String> err = type.map(t -> {
@@ -309,6 +320,7 @@ public class CubeStore {
 	    Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
 	    Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
 	    Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+	    
 	    
 	    String currentcollection = rrstore.getCurrentCollection(customerid, app, instanceid)
 	    		.orElse("No current collection");

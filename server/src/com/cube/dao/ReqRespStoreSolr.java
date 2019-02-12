@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
@@ -228,6 +230,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 addFilter(query, f, v);                
             }));
         });
+    }
+    
+    private static void addSort(SolrQuery query, String fieldname, boolean ascending) {
+    	query.addSort(fieldname, ascending ? ORDER.asc : ORDER.desc);
     }
 
     
@@ -508,6 +514,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQCNTF = CPREFIX + "reqcnt_i";
     private static final String REQSENTF = CPREFIX + "reqsent_i";
     private static final String REQFAILEDF = CPREFIX + "reqfailed_i";
+    private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
+    
+    private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     
     private static SolrInputDocument replayToSolrDoc(Replay replay) {
@@ -531,6 +540,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQCNTF, replay.reqcnt);
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
+        doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
         
         return doc;
     }
@@ -550,13 +560,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         int reqcnt = getIntField(doc, REQCNTF).orElse(0);
         int reqsent = getIntField(doc, REQSENTF).orElse(0);
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
+        Optional<String> creationTimestamp = getStrField(doc, CREATIONTIMESTAMPF);
         
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && 
                 instanceid.isPresent() && collection.isPresent() 
                 && replayid.isPresent() && async.isPresent() && status.isPresent()) {
             replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
-                    reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed));
+                    reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.format(new Date("2010-01-01 00:00:00:000")) : creationTimestamp.get()));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
         }
@@ -618,6 +629,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceid);
         addFilter(query, REPLAYSTATUSF, status.toString());
+        // Heuristic: getting the latest replayid if there are multiple. 
+        // TODO: what happens if there are multiple replays running for the
+        // same triple (customer, app, instance)
+        addSort(query, CREATIONTIMESTAMPF, false /* desc */);    
         
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> {
