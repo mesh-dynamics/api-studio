@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -566,8 +567,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && 
                 instanceid.isPresent() && collection.isPresent() 
                 && replayid.isPresent() && async.isPresent() && status.isPresent()) {
-            replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
-                    reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.format(new Date("2010-01-01 00:00:00:000")) : creationTimestamp.get()));
+            try {
+				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
+				        reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get()));
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
+			}
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
         }

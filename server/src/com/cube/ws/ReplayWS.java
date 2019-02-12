@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -59,7 +60,12 @@ public class ReplayWS {
 		Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
 		List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
 		
-		// TODO: check if there another replay happening with the same triplet; if so, fail and ask users to "complete" replays
+		// TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
+		Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
+		String s = replays.map(r -> r.replayid).reduce("", (res, x) -> res + "; " + x);
+		if (!s.isEmpty()) {
+			return Response.ok(String.format("{\"Force complete these replay ids: %s\"}", s)).build();
+		}
 		
 		return endpoint
 				.map(e -> {
@@ -140,17 +146,31 @@ public class ReplayWS {
 	}
 	
 	
-//	@POST
-//	@Path("forcecomplete/{replayid}")
-//	public Response forceComplete(@Context UriInfo ui, @PathParam("replayid") String replayid) {
-//		Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
-//		Response resp = replay.map(r -> {
-//			r.status = ReplayStatus.Error;
-//			if (!rrstore.saveReplay(r)) {
-//				Response.ok().build();
-//			}
-//		}).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
-//	}
+	@POST
+	@Path("forcecomplete/{replayid}")
+	public Response forceComplete(@Context UriInfo ui, 
+								  @PathParam("replayid") String replayid) {
+		Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
+		
+		Response resp = replay.map(r -> {
+			if (r.status != ReplayStatus.Running || r.status != ReplayStatus.Init) {
+				return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
+			}
+			String json;
+			try {
+				r.status = ReplayStatus.Error;
+				json = jsonmapper.writeValueAsString(r);
+			} catch (JsonProcessingException e) {
+				LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
+				return Response.serverError().build();
+			}
+			if (!rrstore.saveReplay(r)) {
+				return Response.serverError().build();
+			}
+			return Response.ok(json, MediaType.APPLICATION_JSON).build();
+		}).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
+		return resp;
+	}
 	
 
 	@POST
