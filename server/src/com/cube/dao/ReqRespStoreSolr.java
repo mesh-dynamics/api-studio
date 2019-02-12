@@ -571,7 +571,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
 				        reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get()));
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
 			}
         } else {
