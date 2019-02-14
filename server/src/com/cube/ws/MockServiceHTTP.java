@@ -168,7 +168,7 @@ public class MockServiceHTTP {
 			.withMcustomerid(MatchType.FILTER)
 			.withMapp(MatchType.FILTER)
 			.withMreqid(MatchType.SCORE)
-			.withMcollection(MatchType.SCORE)
+			.withMcollection(MatchType.FILTER)
 			.withMmeta(MatchType.FILTER)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
 			.withMhdrs(MatchType.SCORE)
