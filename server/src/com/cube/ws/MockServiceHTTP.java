@@ -2,7 +2,6 @@ package com.cube.ws;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -42,38 +41,45 @@ public class MockServiceHTTP {
     private static final Logger LOGGER = LogManager.getLogger(MockServiceHTTP.class);
 	
 	@GET 
-	@Path("{customerid}/{app}/{var:.+}")
+	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
 	public Response get(@Context UriInfo ui, @PathParam("var") String path, 
 			@PathParam("customerid") String customerid,
-			@PathParam("app") String app, @Context HttpHeaders headers) {
+			@PathParam("app") String app, 
+			@PathParam("instanceid") String instanceid, 
+			@PathParam("service") String service, 
+			@Context HttpHeaders headers) {
 		
 		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
-		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, headers);
+		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
 	}
 	
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two. 
 	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
 	@POST
-	@Path("{customerid}/{app}/{var:.+}")
+	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public Response postForms(@Context UriInfo ui, 
 			@PathParam("var") String path, 
 			MultivaluedMap<String, String> formParams,
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app, 
+			@PathParam("instanceid") String instanceid, 
+			@PathParam("service") String service, 
 			@Context HttpHeaders headers) {
 		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
-		return getResp(ui, path, formParams, customerid, app, headers);
+		return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
 	}
 
 	@POST
-	@Path("{customerid}/{app}/{var:.+}")
+	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postJson(@Context UriInfo ui,
 			@PathParam("var") String path, 
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app, 
+			@PathParam("instanceid") String instanceid, 
+			@PathParam("service") String service, 
 			@Context HttpHeaders headers, 
 			String body) {
 		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
@@ -84,12 +90,13 @@ public class MockServiceHTTP {
 			l.add(obj.get(key).toString());
 			mmap.put(key, l);
 		}
-		return getResp(ui, path, mmap, customerid, app, headers);
+		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
 	}
 
 
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-			String customerid, String app, HttpHeaders headers) {
+			String customerid, String app, String instanceid, 
+			String service, HttpHeaders headers) {
 
 		LOGGER.info(String.format("Mocking request for %s", path));
 
@@ -98,8 +105,9 @@ public class MockServiceHTTP {
 	 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-	    // TODO: serviceid is not being set 
-	    Request r = new Request(path, Optional.empty(), queryParams, formParams, headers.getRequestHeaders(), Optional.empty(), 
+		Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(customerid), Optional.of(app), Optional.of(instanceid));
+	    Request r = new Request(path, Optional.empty(), queryParams, formParams, 
+	    		headers.getRequestHeaders(), service, collection, 
 	    		Optional.of(RRBase.RR.Record), 
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
@@ -107,6 +115,7 @@ public class MockServiceHTTP {
 	    Optional<com.cube.dao.Response> resp = rrstore.getRespForReq(r, mspec)
 	    		.or(() -> {
 	    			r.rrtype = Optional.of(RR.Manual);
+	    			LOGGER.info("Using default response");
 	    			return getDefaultResponse(r);	
 	    		}); // use default response if nothing matches
 	    
@@ -159,7 +168,7 @@ public class MockServiceHTTP {
 			.withMcustomerid(MatchType.FILTER)
 			.withMapp(MatchType.FILTER)
 			.withMreqid(MatchType.SCORE)
-			.withMcollection(MatchType.FILTER)
+			.withMcollection(MatchType.SCORE)
 			.withMmeta(MatchType.FILTER)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
 			.withMhdrs(MatchType.SCORE)
