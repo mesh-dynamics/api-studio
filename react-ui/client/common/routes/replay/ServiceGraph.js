@@ -18,15 +18,15 @@ class ServiceGraph extends Component {
             {
                 selector: 'node',
                 style: {
-                    shape: 'roundrectangle',
+                    shape: 'circle',
                     content: 'data(text)',
-                    "font-size": "12px",
+                    "font-size": "11px",
                     "text-valign": "center",
                     "text-halign": "center",
-                    "background-color": "#555",
-                    "text-outline-color": "#555",
+                    "background-color": "#f7d101",
+                    "text-outline-color": "#f7d101",
                     "text-outline-width": "2px",
-                    "color": "#fff",
+                    "color": "#555",
                     "border-color": "white",
                     "border-width": "3px",
                     "overlay-padding": "6px",
@@ -132,7 +132,7 @@ class ServiceGraph extends Component {
         cy.remove(cy.nodes()); cy.remove(cy.edges());
     
         // Create nodes
-        for (let i = 1; i <= 7; i++) {
+        for (let i = 1; i <= 10; i++) {
             let style = { "text-wrap": "wrap", width: 50, height: 50 }
             let eleObj = {
                 data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
@@ -145,7 +145,7 @@ class ServiceGraph extends Component {
         let style = {
             'source-arrow-shape': 'circle',
             'target-arrow-shape': 'triangle',
-            // 'curve-style': 'unbundled-bezier'
+            //'curve-style': 'unbundled-bezier'
             'curve-style': 'haystack'
         };
         let eleObj = {
@@ -200,6 +200,30 @@ class ServiceGraph extends Component {
             data: {
                 id: 's3_s5',
                 source: 's3.ztc.io', target: 's5.ztc.io'
+            },
+            style: style
+        };
+        cy.add(eleObj);
+        eleObj = {
+            data: {
+                id: 's3_s8',
+                source: 's3.ztc.io', target: 's8.ztc.io'
+            },
+            style: style
+        };
+        cy.add(eleObj);
+        eleObj = {
+            data: {
+                id: 's3_s10',
+                source: 's3.ztc.io', target: 's10.ztc.io'
+            },
+            style: style
+        };
+        cy.add(eleObj);
+        eleObj = {
+            data: {
+                id: 's4_s9',
+                source: 's4.ztc.io', target: 's9.ztc.io'
             },
             style: style
         };
