@@ -49,6 +49,12 @@ class ServiceGraph extends Component {
                     'overlay-padding': '6px',
                     'z-index': '10'
                 }
+            },
+            {
+                selector: 'node.selected-node',
+                style: {
+                    'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555'
+                }
             }
         ]
         
@@ -146,7 +152,7 @@ class ServiceGraph extends Component {
 
         cy.on('tap', 'node', function(evt){
             var node = evt.target;
-            cy.$(node).style({'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555'});
+            cy.$(node).addClass('selected-node');// style({'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555'});
             console.log( 'tapped ' + node.id() );
         });
 
