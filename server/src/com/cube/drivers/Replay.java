@@ -13,8 +13,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +42,7 @@ import com.cube.dao.RRBase;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 import com.cube.dao.Result;
+import com.cube.ws.Constants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -57,8 +60,7 @@ public class Replay {
 		Error
 	}
 	
-	
-	
+		
 	/**
 	 * @param endpoint
 	 * @param customerid
@@ -73,7 +75,7 @@ public class Replay {
 	 */
 	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
 			ReqRespStore rrstore,  String replayid, boolean async, ReplayStatus status,
-			List<String> paths, int reqcnt, int reqsent, int reqfailed) {
+			List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp) {
 		super();
 		this.endpoint = endpoint;
 		this.customerid = customerid;
@@ -90,6 +92,7 @@ public class Replay {
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
 		this.xfmer = Optional.ofNullable(null);
+		this.creationTimeStamp = creationTimestamp == null ? format.format(new Date()) : creationTimestamp;
 	}
 
 	/**
@@ -108,7 +111,7 @@ public class Replay {
 			ReqRespStore rrstore,  String replayid, boolean async, ReplayStatus status,
 			List<String> paths) {
 		this(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, 
-				status, paths, 0, 0, 0);
+				status, paths, 0, 0, 0, null);
 	}
 	
 
@@ -170,6 +173,10 @@ public class Replay {
 						});
 					}
 				});
+				// TODO: we can pass replayid to cubestore but currently requests don't match in the mock
+			    // since we don't have the ability to ignore certain fields (in header and body)
+				// add the replayid so we can grab it while storing replayed requests & responses
+				// reqbuilder.header(Constants.CUBE_REPLAYID_HDRNAME, this.replayid);
 							
 				return reqbuilder.build();
 			});
@@ -235,6 +242,7 @@ public class Replay {
 		}
 		return Optional.empty();
 	}
+	
 	
 	private static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
 	private static int BATCHSIZE = 40; // this controls the number of requests in a batch that could be sent in async fashion
@@ -312,6 +320,9 @@ public class Replay {
 	public int reqcnt; // total number of requests
 	public int reqsent; // number of requests sent
 	public int reqfailed; // requests failed, return code not 200
+	
+	private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	public final String creationTimeStamp;
 
 	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
