@@ -124,5 +124,12 @@
         <artifactId>activation</artifactId>
         <version>1.1.1</version>
     </dependency>
+    <!--  library for json diff -->
+    <!-- https://mvnrepository.com/artifact/com.flipkart.zjsonpatch/zjsonpatch -->
+	<dependency>
+	    <groupId>com.flipkart.zjsonpatch</groupId>
+	    <artifactId>zjsonpatch</artifactId>
+	    <version>0.4.7</version>
+	</dependency>    
   </dependencies>
 </project>
