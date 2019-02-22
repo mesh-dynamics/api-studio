@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import CytoscapeComponent from 'react-cytoscapejs';
-import ConfigSample from "../config/configSample";
+import ConfigSample from '../config/configSample';
 
 class ServiceGraph extends Component {
     constructor(props) {
@@ -21,33 +21,33 @@ class ServiceGraph extends Component {
                 style: {
                     shape: 'rectangle',
                     content: 'data(text)',
-                    "font-size": "11px",
-                    "text-valign": "center",
-                    "text-halign": "center",
-                    "background-color": "#4286f4",
-                    "text-outline-color": "#4286f4",
-                    "text-outline-width": "2px",
-                    "color": "#555",
-                    "border-color": "white",
-                    "border-width": "3px",
-                    "overlay-padding": "6px",
-                    "z-index": "10"
+                    'font-size': '11px',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'background-color': '#4286f4',
+                    'text-outline-color': '#4286f4',
+                    'text-outline-width': '2px',
+                    'color': '#555',
+                    'border-color': 'white',
+                    'border-width': '3px',
+                    'overlay-padding': '6px',
+                    'z-index': '10'
                 }
             },
             {
                 selector: '$node > node',
                 style: {
-                    "font-size": "10px",
-                    "text-valign": "top",
-                    "text-halign": "center",
-                    "background-color": "#bbb",
-                    "text-outline-color": "#555",
-                    "text-outline-width": "0px",
-                    "color": "black",
-                    "border-color": "black",
-                    "border-width": "0px",
-                    "overlay-padding": "6px",
-                    "z-index": "10"
+                    'font-size': '10px',
+                    'text-valign': 'top',
+                    'text-halign': 'center',
+                    'background-color': '#bbb',
+                    'text-outline-color': '#555',
+                    'text-outline-width': '0px',
+                    'color': 'black',
+                    'border-color': 'black',
+                    'border-width': '0px',
+                    'overlay-padding': '6px',
+                    'z-index': '10'
                 }
             }
         ]
@@ -120,8 +120,8 @@ class ServiceGraph extends Component {
                 <br/>
                 <ConfigSample />
                 <br/>
-                <div className="col-sm-12">
-                    <div ref='cyto' tabIndex="1">
+                <div className='col-sm-12'>
+                    <div ref='cyto' tabIndex='1'>
                         <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
                     </div>
                 </div>
@@ -136,13 +136,19 @@ class ServiceGraph extends Component {
     
         // Create nodes
         for (let i = 1; i <= 10; i++) {
-            let style = { "text-wrap": "wrap", width: 80, height: 80 }
+            let style = { 'text-wrap': 'wrap', width: 80, height: 80,  }
             let eleObj = {
                 data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
                 style: style
             };
             cy.add(eleObj);
         }
+
+        cy.on('tap', 'node', function(evt){
+            var node = evt.target;
+            cy.$(node).style({'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555'});
+            console.log( 'tapped ' + node.id() );
+        });
 
         // Create edges
         let style = {
