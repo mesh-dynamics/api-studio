@@ -44,7 +44,7 @@ class configSample extends Component {
     renderAppsList ( cube ) {
         let options = [];
         if (cube.appsListReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.appsList.map(app => ({ label: app, value: app })); 
+            options = cube.appsList.map(app => ({ label: app, value: app }));
         }
         let jsxContent = '';
         if (options.length) {
@@ -63,7 +63,7 @@ class configSample extends Component {
         return <Row>
                 <Col md={2} sm={2} xs={2}>
                 <br/>
-                Select App:
+                Test Config:
                 </Col>
                 <Col md={4} sm={4} xs={4}>
                     <div> 
@@ -113,7 +113,7 @@ class configSample extends Component {
         return <Row>
                     <Col md={2} sm={2} xs={2}>
                     <br/>
-                    Select Test ID:
+                    Collection:
                     </Col>
                     <Col md={4} sm={4} xs={4}>
                         <div> 
@@ -163,7 +163,7 @@ class configSample extends Component {
     const { user, cube } = this.props;
     return (
         <div>
-            <PageTitle title="Test configuration" />
+            {/*<PageTitle title="Test configuration" />*/}
             <Clearfix />
             { this.renderAppsList (cube) }
             <Clearfix />

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import CytoscapeComponent from 'react-cytoscapejs';
+import ConfigSample from "../config/configSample";
 
 class ServiceGraph extends Component {
     constructor(props) {
@@ -18,13 +19,13 @@ class ServiceGraph extends Component {
             {
                 selector: 'node',
                 style: {
-                    shape: 'circle',
+                    shape: 'rectangle',
                     content: 'data(text)',
                     "font-size": "11px",
                     "text-valign": "center",
                     "text-halign": "center",
-                    "background-color": "#f7d101",
-                    "text-outline-color": "#f7d101",
+                    "background-color": "#4286f4",
+                    "text-outline-color": "#4286f4",
                     "text-outline-width": "2px",
                     "color": "#555",
                     "border-color": "white",
@@ -117,6 +118,8 @@ class ServiceGraph extends Component {
         return(
             <div>
                 <br/>
+                <ConfigSample />
+                <br/>
                 <div className="col-sm-12">
                     <div ref='cyto' tabIndex="1">
                         <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
@@ -133,7 +136,7 @@ class ServiceGraph extends Component {
     
         // Create nodes
         for (let i = 1; i <= 10; i++) {
-            let style = { "text-wrap": "wrap", width: 50, height: 50 }
+            let style = { "text-wrap": "wrap", width: 80, height: 80 }
             let eleObj = {
                 data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
                 style: style

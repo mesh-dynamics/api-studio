@@ -50,7 +50,7 @@ class replay extends Component {
         <PageTitle title="Replay configuration" />
         <Clearfix />
         <Row style={{ minHeight: '100vh' }} >
-            Service Graph: 
+            {/*Service Graph: */}
             <div className="col-sm-12">
             { 
                 <ServiceGraph />
