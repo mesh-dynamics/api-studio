@@ -36,8 +36,8 @@ public interface Comparator {
 			this.matchmeta = matchmeta;
 		}
 		
-		final MatchType mt;
-		final String matchmeta;		
+		final public MatchType mt;
+		final public String matchmeta;		
 	}
 	
 }

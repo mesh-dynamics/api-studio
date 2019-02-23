@@ -4,6 +4,7 @@
 package com.cube.core;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -76,6 +77,17 @@ public class JsonCompareTemplate {
 		String customization; // metadata for fuzzy match. For e.g. this could be the regex
 		JsonPointer pathptr; // compiled form of path
 		Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex
+	}
+
+	
+	
+	
+	/**
+	 * 
+	 */
+	public JsonCompareTemplate() {
+		super();
+		rules = new HashMap<String, TemplateEntry>();
 	}
 
 	/**

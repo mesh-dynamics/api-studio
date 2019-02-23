@@ -121,7 +121,7 @@ public class JsonComparator implements Comparator {
 	 * @param template
 	 * @param jsonmapper
 	 */
-	private JsonComparator(JsonCompareTemplate template, ObjectMapper jsonmapper) {
+	public JsonComparator(JsonCompareTemplate template, ObjectMapper jsonmapper) {
 		super();
 		this.template = template;
 		this.jsonmapper = jsonmapper;
@@ -175,6 +175,8 @@ public class JsonComparator implements Comparator {
 			case Diff.REMOVE:
 				if (rule.pt == PresenceType.Optional) {
 					diff.resolution = Resolution.OK_Optional;
+				} else if (rule.pt == PresenceType.Default) {
+					diff.resolution = Resolution.OK;
 				} else {
 					diff.resolution = Resolution.ERR_Required;
 				}
@@ -328,7 +330,7 @@ public class JsonComparator implements Comparator {
 		default:
 			break;
 		}
-		return Resolution.OK; // this should never happen
+		return Resolution.OK; // this can happen if compare type is not specified
 	}
 
 	private static double adjustDblVal(ComparisonType ct, double val, int numdecimal) {
