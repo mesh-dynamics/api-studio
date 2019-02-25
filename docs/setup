@@ -157,6 +157,9 @@ kops validate cluster
 ### list nodes:
 #> kubectl get nodes --show-labels
 
+# create secrets
+kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=cubeiocorp --docker-password=helloDocker1! --docker-email=cube-it@cubecorp.io
+
 ### ssh to the master:
 #> ssh -i ~/.ssh/id_rsa admin@api.dev.cubecorp.io
 ### or if local cluster without dns support
@@ -183,10 +186,14 @@ kubectl get pods -n istio-system
 kubectl label namespace default istio-injection=enabled
 
 
+kubectl apply -f demos/moviebook/moviebook.yaml
+OR
 kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
 
 ## setup gateway
 kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+OR 
+kubectl apply -f demos/moviebook/moviebook-gateway.yaml
 
 kubectl get gateway
 
