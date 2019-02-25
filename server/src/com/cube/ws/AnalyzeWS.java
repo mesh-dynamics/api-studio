@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -36,15 +35,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class AnalyzeWS {
 
     private static final Logger LOGGER = LogManager.getLogger(AnalyzeWS.class);
-
-
-    @Path("/health")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response health() {
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Analysis service status\": \"AS is healthy\"}").build();
-	}
-
 
 	@POST
 	@Path("analyze/{replayid}")

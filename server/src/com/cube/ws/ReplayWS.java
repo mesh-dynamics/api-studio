@@ -10,7 +10,11 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -35,14 +39,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ReplayWS {
 
     private static final Logger LOGGER = LogManager.getLogger(ReplayWS.class);
-
-	@Path("/health")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response health() {
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Analysis service status\": \"AS is healthy\"}").build();
-	}
-
 
 	@POST
 	@Path("init/{customerid}/{app}/{collection}")

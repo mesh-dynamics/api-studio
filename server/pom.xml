@@ -2,12 +2,11 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>cubews</groupId>
   <artifactId>cubews</artifactId>
-  <version>V1-SNAPSHOT</version>
+  <version>0.0.1-SNAPSHOT</version>
   <packaging>war</packaging>
   <properties>
-	  <version.jersey>2.27</version.jersey>
-	  <version.log4j>2.11.1</version.log4j>
-	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
+  	<version.jersey>2.27</version.jersey>
+  	<version.log4j>2.11.1</version.log4j>
   </properties>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -39,34 +38,6 @@
           <warSourceDirectory>WebContent</warSourceDirectory>
         </configuration>
       </plugin>
-	  <plugin>
-		<groupId>com.spotify</groupId>
-		<artifactId>dockerfile-maven-plugin</artifactId>
-		<version>${version.dockerfile-maven}</version>
-		<executions>
-		   <execution>
-			  <id>default</id>
-			  <goals>
-			     <goal>build</goal>
-				 <goal>push</goal>
-			  </goals>
-			</execution>
-		</executions>
-			<configuration>
-				<repository>cubeiocorp/cubews</repository>
-				<tag>${project.version}</tag>
-				<buildArgs>
-					<WAR_FILE>${project.build.finalName}.war</WAR_FILE>
-				</buildArgs>
-			</configuration>
-			<!-- <resources>
-              <resource>
-               <targetPath>/</targetPath>
-               <directory>${project.build.directory}</directory>
-               <include>${project.build.finalName}.war</include>
-              </resource>
-            </resources> -->
-	  </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -153,11 +124,5 @@
         <artifactId>activation</artifactId>
         <version>1.1.1</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/com.spotify/dockerfile-maven-plugin -->
-	    <dependency>
-		  <groupId>com.spotify</groupId>
-		  <artifactId>dockerfile-maven-plugin</artifactId>
-		  <version>${version.dockerfile-maven}</version>
-	    </dependency>
   </dependencies>
 </project>
