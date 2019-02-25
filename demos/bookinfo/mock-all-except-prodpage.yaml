@@ -10,7 +10,7 @@ spec:
     - uri:
         prefix: /reviews
     rewrite:
-      uri: /cubews/ms/cube/bookinfo/reviews
+      uri: /cubews/ms/cube/bookinfo/test/reviews/reviews
     route:
     - destination:
         host: cube
@@ -29,7 +29,7 @@ spec:
     - uri:
         prefix: /ratings
     rewrite:
-        uri: /cubews/ms/cube/bookinfo/ratings
+        uri: /cubews/ms/cube/bookinfo/test/ratings/ratings
     route:
     - destination:
         host: cube
@@ -48,7 +48,7 @@ spec:
     - uri:
         prefix: /details
     rewrite:
-        uri: /cubews/ms/cube/bookinfo/details
+        uri: /cubews/ms/cube/bookinfo/test/details/details
     route:
     - destination:
         host: cube

@@ -33,6 +33,19 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getCollection());		
 	}
 
+	
+	
+	/* (non-Javadoc)
+	 * @see com.cube.dao.ReqRespStore#getCurrentRecordingCollection(java.util.Optional, java.util.Optional, java.util.Optional)
+	 */
+	@Override
+	public Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid) {
+		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getRecordingCollection());		
+	}
+
+
+
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordOrReplay(java.util.Optional, java.util.Optional, java.util.Optional)
 	 * For a (cust, app, instance), there is one current recording or replay. Either a recording is going on or a replay or nothing. This 

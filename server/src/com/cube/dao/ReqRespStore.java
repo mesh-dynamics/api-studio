@@ -231,6 +231,16 @@ public interface ReqRespStore {
 			Optional<String> instanceid);
 
 	/**
+	 * @param customerid
+	 * @param app
+	 * @param instanceid
+	 * @return For both record and replay, return the collection of the record stage
+	 */
+	Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
+			Optional<String> instanceid);
+
+	
+	/**
 	 * @param recording
 	 * @return
 	 */
