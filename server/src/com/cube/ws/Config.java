@@ -36,23 +36,24 @@ public class Config {
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
+		String solrurl = "http://18.191.135.125:8983/solr/cube";   // TODO: pass this default from kube conf
 		try {
-			properties.load(this.getClass().getClassLoader().
-					getResourceAsStream(CONFFILE));
-			final String solrurl = properties.getProperty("solrurl");
-			if (solrurl != null) {
-				solr = new HttpSolrClient.Builder(solrurl).build();
-				rrstore = new ReqRespStoreSolr(solr, this);
-			} else {
-				final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
-				LOGGER.error(msg);
-				throw new Exception(msg);
-			}
-		} catch(Exception eta){
-			LOGGER.error(String.format("Not able to load config file %s", CONFFILE), eta);
-			eta.printStackTrace();
-			throw eta;
-		}
+            properties.load(this.getClass().getClassLoader().
+                    getResourceAsStream(CONFFILE));
+            solrurl = properties.getProperty("solrurl");
+        } catch(Exception eta){
+            LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
+            eta.printStackTrace();
+        }
+        if (solrurl != null) {
+            solr = new HttpSolrClient.Builder(solrurl).build();
+            rrstore = new ReqRespStoreSolr(solr, this);
+        } else {
+            final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
+            LOGGER.error(msg);
+            throw new Exception(msg);
+        }
+
 	}
 
 	public String getProperty(String key)
