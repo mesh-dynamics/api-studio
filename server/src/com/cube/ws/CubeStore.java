@@ -52,7 +52,7 @@ public class CubeStore {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response health() {
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Analysis service status\": \"AS is healthy\"}").build();
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Cube store service status\": \"CS is healthy\"}").build();
 	}
 
 

@@ -44,6 +44,7 @@ public class Config {
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
+            LOGGER.info(String.format("Using default solrulr IP %s", solrurl));
         }
         if (solrurl != null) {
             solr = new HttpSolrClient.Builder(solrurl).build();

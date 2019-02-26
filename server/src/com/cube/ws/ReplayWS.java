@@ -40,7 +40,7 @@ public class ReplayWS {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response health() {
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Analysis service status\": \"AS is healthy\"}").build();
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Replay service status\": \"RS is healthy\"}").build();
 	}
 
 
