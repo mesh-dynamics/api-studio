@@ -2,12 +2,17 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import CytoscapeComponent from 'react-cytoscapejs';
 import ConfigSample from '../config/configSample';
+import Modal from "react-bootstrap/es/Modal";
+import Button from "react-bootstrap/es/Button";
 
 class ServiceGraph extends Component {
     constructor(props) {
-        super(props)
+        super(props);
+        this.handleShow = this.handleShow.bind(this);
+        this.handleClose = this.handleClose.bind(this);
         this.state = {
             panelVisible: true,
+            show: false,
         }
         this.height = '350px';
         this.width = '100%';
@@ -72,6 +77,14 @@ class ServiceGraph extends Component {
         window.scrollTo(x, y);
     }
 
+    handleClose() {
+        this.setState({ show: false });
+    }
+
+    handleShow() {
+        this.setState({ show: true });
+    }
+
     render() {
         
         const $ = window.$;
@@ -131,6 +144,21 @@ class ServiceGraph extends Component {
                         <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
                     </div>
                 </div>
+
+                <Modal show={this.state.show} onHide={this.handleClose}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Modal heading</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>Woohoo, you're reading this text in a modal!</Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={this.handleClose}>
+                            Close
+                        </Button>
+                        <Button variant="primary" onClick={this.handleClose}>
+                            Save Changes
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             </div>
         )
     }
@@ -139,6 +167,7 @@ class ServiceGraph extends Component {
 
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
+        const arr = [];
     
         // Create nodes
         for (let i = 1; i <= 10; i++) {
@@ -147,12 +176,16 @@ class ServiceGraph extends Component {
                 data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
                 style: style
             };
+            arr.push(eleObj);
             cy.add(eleObj);
         }
 
-        cy.on('tap', 'node', function(evt){
+        const _this = this;
+
+        cy.on('click', 'node', function(evt){
+            _this.handleShow();
             var node = evt.target;
-            cy.$(node).addClass('selected-node');// style({'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555'});
+            cy.$(node).addClass('selected-node');
             console.log( 'tapped ' + node.id() );
         });
 
@@ -161,7 +194,8 @@ class ServiceGraph extends Component {
             'source-arrow-shape': 'circle',
             'target-arrow-shape': 'triangle',
             //'curve-style': 'unbundled-bezier'
-            'curve-style': 'haystack'
+            'curve-style': 'haystack',
+            'width': '2px'
         };
         let eleObj = {
             data: {
