@@ -279,6 +279,43 @@ spec:
         ports:
         - containerPort: 8080
 ---
+##################################################################################################
+# Cube Web Services -- TODO (split into own istio service)
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews
+  labels:
+    app: cubews
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubews
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubews-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubews
+        version: v1
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:V1-SNAPSHOT
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+---
 ##############
 # External service
 ###############
@@ -295,7 +332,7 @@ spec:
     protocol: TCP
   resolution: DNS
   location: MESH_EXTERNAL
-
+---
 # TODO: the following exernalname didn't work for a service that didn't go through port 80
 # apiVersion: v1
 # kind: Service

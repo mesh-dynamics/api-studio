@@ -6,3 +6,5 @@ workspace/
 .project
 .classpath
 sample_apps/MIRest/WebContent/META-INF/
+.idea
+*.iml

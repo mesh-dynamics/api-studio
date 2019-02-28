@@ -5,11 +5,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -39,8 +35,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class MockServiceHTTP {
 	
     private static final Logger LOGGER = LogManager.getLogger(MockServiceHTTP.class);
-	
-	@GET 
+
+	@Path("/health")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response health() {
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
+	}
+
+
+	@GET
 	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
 	public Response get(@Context UriInfo ui, @PathParam("var") String path, 
 			@PathParam("customerid") String customerid,
