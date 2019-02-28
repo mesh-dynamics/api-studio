@@ -37,16 +37,43 @@
           <warSourceDirectory>WebContent</warSourceDirectory>
         </configuration>
       </plugin>
-           <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-surefire-plugin</artifactId>
-               <version>2.22.0</version>
-           </plugin>
-           <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-failsafe-plugin</artifactId>
-               <version>2.22.0</version>
-           </plugin>      
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.0</version>
+      </plugin>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>2.22.0</version>
+      </plugin>      
+		<plugin>
+        <!--  
+            for mvn upload to tomcat to work, add the following to the mvn settings.xml, either
+            in MAVEN_HOME/conf/settings.xml or ~/.m2/settings.xml, under <servers>
+            <server>
+                <id>TomcatServer</id>
+                <username>adminscript</username>
+                <password>tomcat4cube$</password>
+            </server>
+            Alternatively you can uncomment the username, password elements below           
+            The user needs to be setup with manager-script role on the tomcat server
+            Also, see https://tomcat.apache.org/tomcat-7.0-doc/manager-howto.html
+         -->
+		    <groupId>org.apache.tomcat.maven</groupId>
+		    <artifactId>tomcat7-maven-plugin</artifactId>
+		    <version>2.2</version>
+		    <configuration>
+		        <url>http://18.191.135.125:8080/manager/text</url>
+		        <server>TomcatServer</server> 
+		        <path>/cubews</path>
+		        <update>true</update>
+		        <!-- 
+		        <username>admin</username>
+                <password>tomcat4cube$</password>
+                -->
+		    </configuration>
+		</plugin>
     </plugins>
   </build>
   <dependencies>
@@ -57,7 +84,15 @@
 	    <artifactId>junit-jupiter-engine</artifactId>
 	    <version>5.4.0</version>
 	    <scope>test</scope>
-	</dependency>  
+	</dependency>
+	<!--  for json comparisons in junit tests -->  
+	<!-- https://mvnrepository.com/artifact/org.skyscreamer/jsonassert -->
+	<dependency>
+	    <groupId>org.skyscreamer</groupId>
+	    <artifactId>jsonassert</artifactId>
+	    <version>1.5.0</version>
+	    <scope>test</scope>
+	</dependency>	
   	<dependency>
        	<groupId>javax.servlet</groupId>
         <artifactId>javax.servlet-api</artifactId>

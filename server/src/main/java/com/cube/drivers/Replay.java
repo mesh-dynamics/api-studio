@@ -6,6 +6,7 @@ package com.cube.drivers;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
@@ -15,6 +16,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -37,12 +39,12 @@ import org.json.JSONObject;
 
 import com.cube.core.BatchingIterator;
 import com.cube.core.RRTransformer;
+import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 import com.cube.dao.Result;
-import com.cube.ws.Constants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -151,37 +153,47 @@ public class Replay {
 
 			reqcnt += requests.size();
 			
-			Stream<HttpRequest> httprequests = requests.stream().map(r -> {
+			List<HttpRequest> reqs = new ArrayList<HttpRequest>();
+			requests.forEach(r -> {
 				// transform fields in the request before the replay.
 				xfmer.ifPresent(x -> {x.transformRequest(r);});
 				
 				UriBuilder uribuilder = UriBuilder.fromUri(endpoint)
 						.path(r.path);
-				r.qparams.forEach((k, vlist) -> {
-					uribuilder.queryParam(k, vlist.toArray());
-				});
-				URI uri = uribuilder.build();
-				HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
-						.uri(uri)
-						.method(r.method, BodyPublishers.ofString(r.body));
-
-				r.hdrs.forEach((k, vlist) -> {
-					// some headers are restricted and cannot be set on the request
-					if (Utils.ALLOWED_HEADERS.test(k)) {
-						vlist.forEach(value -> {
-							reqbuilder.header(k, value);					
-						});
-					}
-				});
-				// TODO: we can pass replayid to cubestore but currently requests don't match in the mock
-			    // since we don't have the ability to ignore certain fields (in header and body)
-				// add the replayid so we can grab it while storing replayed requests & responses
-				// reqbuilder.header(Constants.CUBE_REPLAYID_HDRNAME, this.replayid);
-							
-				return reqbuilder.build();
+				try {
+					r.qparams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
+						String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
+							return URLEncoder.encode(v, "UTF-8");
+						})).toArray(String[]::new);
+						uribuilder.queryParam(k, (Object[])params);
+					}));
+					URI uri = uribuilder.build();
+					HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
+							.uri(uri)
+							.method(r.method, BodyPublishers.ofString(r.body));
+	
+					r.hdrs.forEach((k, vlist) -> {
+						// some headers are restricted and cannot be set on the request
+						if (Utils.ALLOWED_HEADERS.test(k)) {
+							vlist.forEach(value -> {
+								reqbuilder.header(k, value);					
+							});
+						}
+					});
+					// TODO: we can pass replayid to cubestore but currently requests don't match in the mock
+				    // since we don't have the ability to ignore certain fields (in header and body)
+					// add the replayid so we can grab it while storing replayed requests & responses
+					// reqbuilder.header(Constants.CUBE_REPLAYID_HDRNAME, this.replayid);
+								
+					reqs.add(reqbuilder.build());				
+				} catch (Exception e) {
+					// encode can throw UnsupportedEncodingException
+					LOGGER.error("Skipping request. Exception in creating uri: " + r.qparams.toString(), e);
+				}
 			});
 			
-			List<Integer> respcodes = async ? sendReqAsync(httprequests, client) : sendReqSync(httprequests, client);
+			
+			List<Integer> respcodes = async ? sendReqAsync(reqs.stream(), client) : sendReqSync(reqs.stream(), client);
 
 			// count number of errors
 			reqfailed += respcodes.stream().filter(s -> (s != Response.Status.OK.getStatusCode())).count();
@@ -318,7 +330,7 @@ public class Replay {
 	public ReplayStatus status;
 	public final List<String> paths; // paths to be replayed
 	public int reqcnt; // total number of requests
-	public int reqsent; // number of requests sent
+	public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
 	public int reqfailed; // requests failed, return code not 200
 	
 	private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");

@@ -163,7 +163,7 @@ public class JsonComparator implements Comparator {
 			return new Match(MatchType.Exception, e.getMessage());
 		}
 		
-		int numerrs = 0;
+		int numerrs = result.size();
 		for (Diff diff : diffs) {
 			TemplateEntry rule = template.getRule(diff.path);
 			
@@ -188,11 +188,12 @@ public class JsonComparator implements Comparator {
 			if (diff.resolution.isErr()) {
 				numerrs++;
 			} 
+			result.add(diff);
 		}
 		
 		String matchmeta;
 		try {
-			matchmeta = jsonmapper.writeValueAsString(diffs);
+			matchmeta = jsonmapper.writeValueAsString(result);
 		} catch (JsonProcessingException e) {
 			LOGGER.error("Error in writing diffs: " + patch.toString(), e);
 			return new Match(MatchType.Exception, e.getMessage());
@@ -275,7 +276,7 @@ public class JsonComparator implements Comparator {
 			
 			Pattern pattern = rule.regex.orElseGet(() -> {
 				LOGGER.error("Internal logical error - compiled pattern missing for regex");
-				return Pattern.compile(rule.customization);	
+				return Pattern.compile(rule.customization.orElse(".*"));	
 			});
 			
 			Matcher matcher = pattern.matcher(rhs);
@@ -313,7 +314,7 @@ public class JsonComparator implements Comparator {
 				}
 				double lval = lhs.asDouble();
 				double rval = value.asDouble();
-				int numdecimal = Utils.strToInt(rule.customization).orElse(0);
+				int numdecimal = rule.customization.flatMap(Utils::strToInt).orElse(0);
 				double lval1 = adjustDblVal(rule.ct, lval, numdecimal);
 				double rval1 = adjustDblVal(rule.ct, rval, numdecimal);
 				return (lval1 == rval1) ? Resolution.OK_CustomMatch : Resolution.ERR_ValMismatch;
