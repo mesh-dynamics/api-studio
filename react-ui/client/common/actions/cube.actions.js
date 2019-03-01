@@ -35,15 +35,15 @@ function getTestIds ( app ) {
             let options = {
                 app: app
             }
-            let testIds = await cubeService.getTestIds( options );
-            dispatch(success(testIds.ids, Date.now()));
+            let collections = await cubeService.fetchCollectionList();
+            dispatch(success(collections, Date.now()));
         } catch (error) {
             dispatch(failure("Failed to getTestIds", Date.now()));
         }
     };
 
     function request() { return { type: cubeConstants.TESTIDS_REQUEST } }
-    function success(testIds, date) { return { type: cubeConstants.TESTIDS_SUCCESS, data: testIds, date: date } }
+    function success(collections, date) { return { type: cubeConstants.TESTIDS_SUCCESS, data: collections, date: date } }
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 

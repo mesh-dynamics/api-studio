@@ -25,10 +25,10 @@ class configSample extends Component {
             dispatch,
             cube
         } = this.props;
-        dispatch(cubeActions.getApps());
-        if (cube.selectedTestId == cubeConstants.CREATE_NEW) {
+        dispatch(cubeActions.getTestIds());
+        /*if (cube.selectedTestId == cubeConstants.CREATE_NEW) {
             this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
-        }
+        }*/
     }
 
     handleChangeForApps (e) {
@@ -93,9 +93,9 @@ class configSample extends Component {
             return '';
         let options = [];
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.testIds.map(app => ({ label: app, value: app })); 
+            options = cube.testIds.map(item => ({ label: item.collection, value: item.collection }));
         }
-        options.unshift({label: cubeConstants.CREATE_NEW, value: cubeConstants.CREATE_NEW});
+        // options.unshift({label: cubeConstants.CREATE_NEW, value: cubeConstants.CREATE_NEW});
         let jsxContent = '';
         if (options.length) {
             let selectedTestIdObj = ''
@@ -164,14 +164,13 @@ class configSample extends Component {
     return (
         <div>
             {/*<PageTitle title="Test configuration" />*/}
+            {/*<Clearfix />
+            { this.renderAppsList (cube) }*/}
             <Clearfix />
-            { this.renderAppsList (cube) }
-            <Clearfix />
-            <br/>
             { this.renderTestIds (cube) }
             <Clearfix />
             <br/>
-            { this.renderCreateNewTestIdForm (cube) }
+            {/*{ this.renderCreateNewTestIdForm (cube) }*/}
         </div>
     )
     }

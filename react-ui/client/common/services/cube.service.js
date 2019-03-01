@@ -1,8 +1,10 @@
 import config from '../config';
+import axios from 'axios';
 
 export const cubeService = {
     fetchAppsList,
-    getTestIds
+    getTestIds,
+    fetchCollectionList
 };
 
 async function fetchAppsList() {
@@ -47,7 +49,7 @@ async function getTestIds (options) {
         });
         if (response.ok) {
             json = await response.json();
-            console.log(`return JSON: `, JSON.stringify(json));;
+            console.log(`return JSON: `, JSON.stringify(json));
             return json;
         } else {
             throw new Error("Response not ok getTestIds");
@@ -55,4 +57,32 @@ async function getTestIds (options) {
     } catch (e) {
         throw e;
     }
+}
+
+async function fetchCollectionList() {
+    let response, json;
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    let url = `${config.baseUrl}/cubews/cs/recordings?customerid=cube-venky&app=movieinfo`;
+    let collections = [];
+    try {
+        response = await fetch(proxyurl + url, {
+            method: "get",
+            mode: 'cors',
+            headers:{
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
+        if (response.ok) {
+            json = await response.json();
+            collections = json;
+        } else {
+            console.log("Response not ok in fetchCollectionList", response);
+            throw new Error("Response not ok fetchCollectionList");
+        }
+    } catch (e) {
+        console.log("fetchCollectionList has errors!", e);
+        throw e;
+    }
+    console.log('fetchCollectionList success: ', JSON.stringify(collections, null, 4));
+    return collections;
 }
