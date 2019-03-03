@@ -36,6 +36,7 @@ if (!process.env.MOCHA_UNIT_TESTING) {
 
     // Define main routes
     app.route('/api/getApps').get(getApps);
+    app.route('/api/getGraphData').get(getGraphData);
     app.route('/api/getTestIds').post(getTestIds);
 
     app.all('*', (req, res, next) => {
@@ -73,6 +74,46 @@ async function getApps (req, res, next) {
         'HR App',
         'Finance App'
     ]})
+    next();
+    return true;
+}
+
+async function getGraphData (req, res, next) {
+    res.json({
+        nodes: [
+            {
+                "data": {
+                    "id": "movieinfo",
+                    "text": "MovieInfo"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                    "width": 80,
+                    "height": 80
+                }
+            },
+            {
+                "data": {
+                    "id": "restwrapjdbc",
+                    "text": "RestWrapJDBC"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                    "width": 80,
+                    "height": 80
+                }
+            }
+        ],
+        edges: [
+            {
+                "data": {
+                    id: 's1_s2',
+                    source: 'movieinfo',
+                    target: 'restwrapjdbc'
+                }
+            }
+        ]
+    })
     next();
     return true;
 }

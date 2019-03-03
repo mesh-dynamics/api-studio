@@ -16,8 +16,8 @@ class configSample extends Component {
         };
         this.handleChangeForApps = this.handleChangeForApps.bind(this);
         this.handleChangeForTestIds = this.handleChangeForTestIds.bind(this);
-        this.handleTestIdPrefixChange = this.handleTestIdPrefixChange.bind(this);
-        this.handleTestIdPrefixSubmit = this.handleTestIdPrefixSubmit.bind(this);
+        /*this.handleTestIdPrefixChange = this.handleTestIdPrefixChange.bind(this);
+        this.handleTestIdPrefixSubmit = this.handleTestIdPrefixSubmit.bind(this);*/
     }
 
     componentDidMount() {
@@ -78,12 +78,11 @@ class configSample extends Component {
         if (e && e.label) {
             console.log('test-id label is: ', e.label);
             dispatch(cubeActions.setSelectedTestId(e.label));
-            if (e.label == cubeConstants.CREATE_NEW) {
+            dispatch(cubeActions.getGraphData());
+            dispatch(cubeActions.getReplayId(e.label));
+            /*if (e.label == cubeConstants.CREATE_NEW) {
                 this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
-            }
-
-            // dispatch(cubeActions.setSelectedApp(e.label));
-            // dispatch(cubeActions.getTestIds(e.label));
+            }*/
         }
     } 
 
@@ -123,7 +122,7 @@ class configSample extends Component {
                 </Row>
     }
 
-    handleTestIdPrefixChange (e) {
+    /*handleTestIdPrefixChange (e) {
         this.setState({ testIdPrefix: e.target.value });
     }
 
@@ -155,7 +154,7 @@ class configSample extends Component {
                         </div> 
                     </Col>
                 </Row>
-    }
+    }*/
 
     render () {
     const { panelVisible } = this.state

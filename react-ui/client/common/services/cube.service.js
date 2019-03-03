@@ -3,8 +3,10 @@ import axios from 'axios';
 
 export const cubeService = {
     fetchAppsList,
-    getTestIds,
-    fetchCollectionList
+    getGraphData,
+    fetchCollectionList,
+    getReplayId,
+    startReplay
 };
 
 async function fetchAppsList() {
@@ -31,6 +33,33 @@ async function fetchAppsList() {
     }
     console.log('fetchAppsList success: ', JSON.stringify(appsList, null, 4));
     return appsList;
+
+}
+
+async function getGraphData() {
+    let response, json;
+    let url = `${config.apiUrl}/api/getGraphData`;
+    let graphData = {};
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            graphData = json;
+        } else {
+            console.log("Response not ok in getGraphData", response);
+            throw new Error("Response not ok getGraphData");
+        }
+    } catch (e) {
+        console.log("getGraphData has errors!", e);
+        throw e;
+    }
+    console.log('getGraphData success: ', JSON.stringify(graphData, null, 4));
+    return graphData;
 
 }
 
@@ -85,4 +114,88 @@ async function fetchCollectionList() {
     }
     console.log('fetchCollectionList success: ', JSON.stringify(collections, null, 4));
     return collections;
+}
+
+async function getReplayId(collectionId) {
+    let response, json;
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    let url = `${config.baseUrl}/cubews/rs/init/cube-venky/movieinfo/${collectionId}`;
+    let replayId;
+    const searchParams = new URLSearchParams();
+    searchParams.set('endpoint', 'http://a3325808aed4a11e8afc602576770962-1805391667.us-east-2.elb.amazonaws.com');
+    searchParams.set('instanceid', 'test');
+
+    try {
+        let urrl = proxyurl + url;
+        response = await fetch(urrl, {
+            method: "post",
+            body: searchParams,
+            headers: new Headers({
+                "Content-Type": "application/x-www-form-urlencoded",
+                "cache-control": "no-cache"
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            console.log(`return JSON: `, JSON.stringify(json));
+            return json;
+        } else {
+            throw new Error("Response not ok getReplayId");
+        }
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function startReplay(collectionId, replayId) {
+    let response, json;
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    let url = `${config.baseUrl}/cubews/rs/start/cube-venky/movieinfo/${collectionId}/${replayId}`;
+
+    try {
+        let urrl = proxyurl + url;
+        response = await fetch(urrl, {
+            method: "post",
+            headers: new Headers({
+                "cache-control": "no-cache"
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            console.log(`return JSON: `, JSON.stringify(json));
+            return json;
+        } else {
+            throw new Error("Response not ok startReplay");
+        }
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function checkStatusForReplay(replayId) {
+    let response, json;
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    let url = `${config.baseUrl}/cubews/rs/status/cube-venky/movieinfo/${replayId}`;
+    let status = {};
+    try {
+        response = await fetch(proxyurl + url, {
+            method: "get",
+            mode: 'cors',
+            headers:{
+                "cache-control": "no-cache"
+            }
+        });
+        if (response.ok) {
+            json = await response.json();
+            status = json;
+        } else {
+            console.log("Response not ok in checkStatusForReplay", response);
+            throw new Error("Response not ok checkStatusForReplay");
+        }
+    } catch (e) {
+        console.log("checkStatusForReplay has errors!", e);
+        throw e;
+    }
+    console.log('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
+    return status;
 }

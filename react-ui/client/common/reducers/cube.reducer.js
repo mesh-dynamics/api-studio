@@ -18,7 +18,13 @@ const initialState = {
     testIdsReqStatus: cubeConstants.REQ_NOT_DONE,
     testIdsReqErr: '',
     testIds: [],
-    selectedTestId: ''
+    selectedTestId: '',
+
+    replayId: cubeConstants.REQ_NOT_DONE,
+
+    graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
+    graphDataReqErr: '',
+    graphData: null
 };
 
 export function cube (state = initialState, action) {
@@ -70,6 +76,30 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 selectedTestId: action.data
+            };
+        case cubeConstants.REPLAY_ID_SUCCESS:
+            return {
+                ...state,
+                replayId: action.data
+            };
+        case cubeConstants.GRAPH_REQUEST:
+            return {
+                ...state,
+                graphDataReqStatus: cubeConstants.REQ_LOADING,
+                graphDataReqErr: ''
+            };
+        case cubeConstants.GRAPH_REQUEST_FAILURE:
+            return {
+                ...state,
+                graphDataReqStatus: cubeConstants.REQ_FAILURE,
+                graphDataReqErr: action.err
+            };
+        case cubeConstants.GRAPH_REQUEST_SUCCESS:
+            return {
+                ...state,
+                graphDataReqStatus: cubeConstants.REQ_SUCCESS,
+                graphDataReqErr: '',
+                graphData: action.data
             };
 
         default:

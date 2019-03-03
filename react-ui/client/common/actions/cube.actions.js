@@ -5,7 +5,9 @@ export const cubeActions = {
     getApps,
     setSelectedApp,
     getTestIds,
-    setSelectedTestId
+    setSelectedTestId,
+    getReplayId,
+    getGraphData,
 };
 
 function getApps () {
@@ -28,13 +30,10 @@ function setSelectedApp ( appLabel ) {
     return {type: cubeConstants.SET_SELECTED_APP, data: appLabel}
 }
 
-function getTestIds ( app ) {
+function getTestIds () {
     return async dispatch => {
         dispatch(request());
         try {
-            let options = {
-                app: app
-            }
             let collections = await cubeService.fetchCollectionList();
             dispatch(success(collections, Date.now()));
         } catch (error) {
@@ -49,4 +48,36 @@ function getTestIds ( app ) {
 
 function setSelectedTestId ( testIdLabel ) {
     return {type: cubeConstants.SET_SELECTED_TESTID, data: testIdLabel}
+}
+
+function getGraphData () {
+    return async dispatch => {
+        dispatch(request());
+        try {
+            let gd = await cubeService.getGraphData();
+            dispatch(success(gd, Date.now()));
+        } catch (error) {
+            dispatch(failure("Failed to getTestIds", Date.now()));
+        }
+    };
+
+    function request() { return { type: cubeConstants.GRAPH_REQUEST } }
+    function success(gd, date) { return { type: cubeConstants.GRAPH_REQUEST_SUCCESS, data: gd, date: date } }
+    function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
+}
+
+function getReplayId(testIdLabel) {
+    return async dispatch => {
+        // dispatch(request());
+        try {
+            let replayId = await cubeService.getReplayId(testIdLabel);
+            dispatch(success(replayId, Date.now()));
+        } catch (error) {
+            // dispatch(failure("Failed to getTestIds", Date.now()));
+        }
+    };
+
+    function request() { return { type: cubeConstants.TESTIDS_REQUEST } }
+    function success(replayId, date) { return { type: cubeConstants.REPLAY_ID_SUCCESS, data: replayId, date: date } }
+    function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }

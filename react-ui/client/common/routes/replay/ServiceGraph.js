@@ -4,6 +4,7 @@ import CytoscapeComponent from 'react-cytoscapejs';
 import ConfigSample from '../config/configSample';
 import Modal from "react-bootstrap/es/Modal";
 import Button from "react-bootstrap/es/Button";
+import {cubeConstants} from "../../constants";
 
 class ServiceGraph extends Component {
     constructor(props) {
@@ -26,7 +27,7 @@ class ServiceGraph extends Component {
                 style: {
                     shape: 'rectangle',
                     content: 'data(text)',
-                    'font-size': '11px',
+                    'font-size': '10px',
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'background-color': '#4286f4',
@@ -89,9 +90,10 @@ class ServiceGraph extends Component {
         
         const $ = window.$;
         const element = $(this.refs.cyto);
+        const { cube } = this.props;
         
         if (Object.keys(this.cy).length) {
-            this.renderServiceGraph(this.cy);
+            this.renderServiceGraph(this.cy, cube);
             this.focusDivWithoutScroll(element)
         } else {
             setTimeout(this.render, 1);
@@ -132,6 +134,16 @@ class ServiceGraph extends Component {
               }
             });        
         }
+
+        let graph = '';
+        if (cube.selectedTestId) {
+            graph = <div ref='cyto' tabIndex='1'>
+                <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
+            </div>;
+        } else {
+            graph = <div>Please Select a Collection to Proceed</div>
+        }
+
              
  
         return(
@@ -140,9 +152,7 @@ class ServiceGraph extends Component {
                 <ConfigSample />
                 <br/>
                 <div className='col-sm-12'>
-                    <div ref='cyto' tabIndex='1'>
-                        <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
-                    </div>
+                    {graph}
                 </div>
 
                 <Modal show={this.state.show} onHide={this.handleClose}>
@@ -163,14 +173,21 @@ class ServiceGraph extends Component {
         )
     }
 
-    renderServiceGraph(cy) {
-
+    renderServiceGraph(cy, cube) {
+        if (cube.graphDataReqStatus != cubeConstants.REQ_SUCCESS) {
+            return '';
+        }
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
         const arr = [];
+        console.log(cube.graphData);
     
         // Create nodes
-        for (let i = 1; i <= 10; i++) {
+        for (const node of cube.graphData.nodes) {
+            arr.push(node);
+            cy.add(node);
+        }
+        /*for (let i = 1; i <= 10; i++) {
             let style = { 'text-wrap': 'wrap', width: 80, height: 80,  }
             let eleObj = {
                 data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
@@ -178,7 +195,7 @@ class ServiceGraph extends Component {
             };
             arr.push(eleObj);
             cy.add(eleObj);
-        }
+        }*/
 
         const _this = this;
 
@@ -197,86 +214,22 @@ class ServiceGraph extends Component {
             'curve-style': 'haystack',
             'width': '2px'
         };
-        let eleObj = {
+
+        for (const edge of cube.graphData.edges) {
+            edge.style = style;
+            cy.add(edge);
+        }
+
+
+        /*let eleObj = {
             data: {
                 id: 's1_s2',
                 source: 's1.ztc.io', target: 's2.ztc.io'
             },
             style: style
         };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's1_s6',
-                source: 's1.ztc.io', target: 's6.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's2_s6',
-                source: 's2.ztc.io', target: 's6.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's2_s3',
-                source: 's2.ztc.io', target: 's3.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's6_s7',
-                source: 's6.ztc.io', target: 's7.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s4',
-                source: 's3.ztc.io', target: 's4.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s5',
-                source: 's3.ztc.io', target: 's5.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s8',
-                source: 's3.ztc.io', target: 's8.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s10',
-                source: 's3.ztc.io', target: 's10.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's4_s9',
-                source: 's4.ztc.io', target: 's9.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
+        cy.add(eleObj);*/
+
 
         // Layout
         if ( 1 ) {
@@ -305,9 +258,9 @@ class ServiceGraph extends Component {
 
 function mapStateToProps(state) {
     const { user } = state.authentication;
-
+    const cube = state.cube;
     return {
-      user
+      user, cube
     }
   }
 
