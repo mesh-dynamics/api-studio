@@ -9,6 +9,7 @@
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.5",
     "cytoscape-panzoom": "^2.5.3",
+    "cytoscape-popper": "^1.0.4",
     "express": "^4.16.4",
     "file-saver": "^2.0.0",
     "plotly.js": "^1.42.5",

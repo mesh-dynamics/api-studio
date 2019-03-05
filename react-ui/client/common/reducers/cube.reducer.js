@@ -24,7 +24,13 @@ const initialState = {
 
     graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
     graphDataReqErr: '',
-    graphData: null
+    graphData: null,
+
+    replayStatus:'',
+    replayStatusObj: null,
+
+    analysis: null,
+    report: null
 };
 
 export function cube (state = initialState, action) {
@@ -101,6 +107,27 @@ export function cube (state = initialState, action) {
                 graphDataReqErr: '',
                 graphData: action.data
             };
+        case cubeConstants.REPLAY_STARTED:
+            return{
+                ...state,
+                replayStatus: 'started'
+            };
+        case cubeConstants.REPLAY_STATUS_FETCHED:
+            return{
+                ...state,
+                replayStatusObj: action.data,
+                replayStatus: action.data.status,
+            };
+        case cubeConstants.ANALYSIS_FETCHED:
+            return {
+                ...state,
+                analysis: action.data
+            };
+        case cubeConstants.ANALYSIS_FETCHED:
+            return {
+                ...state,
+                report: action.data
+            }
 
         default:
             return state

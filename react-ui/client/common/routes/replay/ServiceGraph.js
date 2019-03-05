@@ -5,6 +5,8 @@ import ConfigSample from '../config/configSample';
 import Modal from "react-bootstrap/es/Modal";
 import Button from "react-bootstrap/es/Button";
 import {cubeConstants} from "../../constants";
+import popper from 'cytoscape-popper';
+import {Clearfix, Col, Row} from "react-bootstrap";
 
 class ServiceGraph extends Component {
     constructor(props) {
@@ -27,7 +29,7 @@ class ServiceGraph extends Component {
                 style: {
                     shape: 'rectangle',
                     content: 'data(text)',
-                    'font-size': '10px',
+                    'font-size': '8px',
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'background-color': '#4286f4',
@@ -144,31 +146,49 @@ class ServiceGraph extends Component {
             graph = <div>Please Select a Collection to Proceed</div>
         }
 
-             
+        let analysis = 'No Analysis';
+        let report = 'No Report';
+        if (cube.analysis) {
+            analysis = Object.keys(cube.analysis).map((key, index) => {
+                return (<div key={index}> Key: {key}, Value: {cube.analysis[key]}</div>)
+            });
+        }
+
+        if (cube.report) {
+            report = Object.keys(cube.report).map((key, index) => {
+                return (<div key={index}> Key: {key}, Value: {cube.report[key]}</div>)
+            });
+        }
+
+
  
         return(
             <div>
                 <br/>
                 <ConfigSample />
                 <br/>
+                <div></div>
+                <br/>
                 <div className='col-sm-12'>
                     {graph}
+                    <Clearfix />
+                    <br/>
+                    <div style={{padding: '15px', border: '1px solid gray'}}>
+                        <Row>
+                            <Col md={6} sm={6} xs={6}>
+                                <div style={{overflow: 'hidden'}}>
+                                    {analysis}
+                                </div>
+                            </Col>
+                            <Col md={6} sm={6} xs={6}>
+                                <div style={{overflow: 'hidden'}}>
+                                    {report}
+                                </div>
+                            </Col>
+                        </Row>
+                    </div>
+                    <Clearfix />
                 </div>
-
-                <Modal show={this.state.show} onHide={this.handleClose}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Node</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>Nade Params</Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={this.handleClose}>
-                            Close
-                        </Button>
-                        <Button variant="primary" onClick={this.handleClose}>
-                            Save Changes
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
             </div>
         )
     }
@@ -181,11 +201,24 @@ class ServiceGraph extends Component {
         cy.remove(cy.nodes()); cy.remove(cy.edges());
         const arr = [];
         console.log(cube.graphData);
+
+        const gd = JSON.parse(JSON.stringify(cube.graphData))
     
         // Create nodes
-        for (const node of cube.graphData.nodes) {
+        for (const node of gd.nodes) {
+            if (cube.analysis && node.data.id == 'movieinfo') {
+                let an = cube.analysis;
+                node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched)
+            }
             arr.push(node);
             cy.add(node);
+        }
+
+        if (cube.analysis) {
+            let an = cube.analysis;
+            let node = cy.nodes().first();
+            node.addClass('selected-node');
+            node.data.text += (an.reqcnt)
         }
         /*for (let i = 1; i <= 10; i++) {
             let style = { 'text-wrap': 'wrap', width: 80, height: 80,  }

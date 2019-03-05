@@ -6,7 +6,10 @@ export const cubeService = {
     getGraphData,
     fetchCollectionList,
     getReplayId,
-    startReplay
+    startReplay,
+    checkStatusForReplay,
+    fetchAnalysis,
+    fetchReport
 };
 
 async function fetchAppsList() {
@@ -172,18 +175,17 @@ async function startReplay(collectionId, replayId) {
     }
 }
 
-async function checkStatusForReplay(replayId) {
+async function checkStatusForReplay(collectionId, replayId) {
     let response, json;
     const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/rs/status/cube-venky/movieinfo/${replayId}`;
+    let url = `${config.baseUrl}/cubews/rs/status/cube-venky/movieinfo/${collectionId}/${replayId}`;
     let status = {};
     try {
         response = await fetch(proxyurl + url, {
             method: "get",
-            mode: 'cors',
-            headers:{
+            headers: new Headers({
                 "cache-control": "no-cache"
-            }
+            })
         });
         if (response.ok) {
             json = await response.json();
@@ -198,4 +200,62 @@ async function checkStatusForReplay(replayId) {
     }
     console.log('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
     return status;
+}
+
+async function fetchAnalysis(collectionId, replayId) {
+    let response, json;
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    let url = `${config.baseUrl}/cubews/as/analyze/${replayId}`;
+    const searchParams = new URLSearchParams();
+    searchParams.set('tracefield', 'x-b3-traceid');
+    let analysis = {};
+    try {
+        response = await fetch(proxyurl + url, {
+            method: "post",
+            body: searchParams,
+            headers: new Headers({
+                "Content-Type": "application/x-www-form-urlencoded",
+                "cache-control": "no-cache"
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            analysis = json;
+        } else {
+            console.log("Response not ok in fetchAnalysis", response);
+            throw new Error("Response not ok fetchAnalysis");
+        }
+    } catch (e) {
+        console.log("fetchAnalysis has errors!", e);
+        throw e;
+    }
+    console.log('fetchAnalysis success: ', JSON.stringify(analysis, null, 4));
+    return analysis;
+}
+
+async function fetchReport(collectionId, replayId) {
+    let response, json;
+    const proxyurl = "https://cors-anywhere.herokuapp.com/";
+    let url = `${config.baseUrl}/cubews/as/aggrresult/${replayId}`;
+    let report = {};
+    try {
+        response = await fetch(proxyurl + url, {
+            method: "get",
+            headers: new Headers({
+                "cache-control": "no-cache"
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            report = json;
+        } else {
+            console.log("Response not ok in fetchReport", response);
+            throw new Error("Response not ok fetchReport");
+        }
+    } catch (e) {
+        console.log("fetchReport has errors!", e);
+        throw e;
+    }
+    console.log('fetchReport success: ', JSON.stringify(report, null, 4));
+    return report;
 }

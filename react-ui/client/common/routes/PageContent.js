@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import config from './config'
 import replay from './replay'
+import analysis from "./analysis";
 
 
 class PageContent extends Component {
@@ -10,6 +11,7 @@ class PageContent extends Component {
       <div className={ needMargin ? "right_col" : "" } role="main">
         { config }
         { replay }
+        { analysis }
       </div>
     )
   }

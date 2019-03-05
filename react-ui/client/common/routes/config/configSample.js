@@ -6,16 +6,23 @@ import { connect } from 'react-redux';
 import { cubeActions } from '../../actions';
 import { cubeConstants } from '../../constants';
 import Select from 'react-select';
+import Modal from "react-bootstrap/es/Modal";
+import {Redirect} from "react-router-dom";
 
 class configSample extends Component {
     constructor(props) {
         super(props)
         this.state = {
             panelVisible: true,
-            testIdPrefix: ''
+            testIdPrefix: '',
+            show: false,
         };
+        this.doAnalysis = true;
+        this.statusInterval;
         this.handleChangeForApps = this.handleChangeForApps.bind(this);
         this.handleChangeForTestIds = this.handleChangeForTestIds.bind(this);
+        this.replay = this.replay.bind(this);
+        this.getReplayStatus = this.getReplayStatus.bind(this);
         /*this.handleTestIdPrefixChange = this.handleTestIdPrefixChange.bind(this);
         this.handleTestIdPrefixSubmit = this.handleTestIdPrefixSubmit.bind(this);*/
     }
@@ -31,6 +38,24 @@ class configSample extends Component {
         }*/
     }
 
+    componentWillReceiveProps(nextProps, prevState) {
+        // do things with nextProps.someProp and prevState.cachedSomeProp
+        const cube = nextProps.cube;
+        console.log(typeof cube.replayStatusObj);
+        if (cube.replayStatusObj && (cube.replayStatusObj.status == 'Completed' || cube.replayStatusObj.status == 'Error')) {
+            clearInterval(this.statusInterval);
+            this.setState({show: false, toAnalysis: true});
+            const {dispatch} = this.props;
+            if(this.doAnalysis) {
+                dispatch(cubeActions.getAnalysis(cube.selectedTestId, cube.replayId.replayid));
+                dispatch(cubeActions.getReport(cube.selectedTestId, cube.replayId.replayid));
+                this.doAnalysis = false;
+            }
+
+        }
+
+    }
+
     handleChangeForApps (e) {
         const { user, match, history, dispatch, nctData } = this.props;
         if (e && e.label) {
@@ -39,7 +64,28 @@ class configSample extends Component {
             dispatch(cubeActions.getTestIds(e.label));
             dispatch(cubeActions.setSelectedTestId(''));
         }
-    } 
+    }
+
+    replay () {
+        const {cube, dispatch} = this.props;
+        if (!cube.selectedTestId) {
+            alert('select collection to replay');
+        } else {
+            this.setState({show: true});
+            dispatch(cubeActions.startReplay(cube.selectedTestId, cube.replayId.replayid));
+            this.doAnalysis = true;
+            this.statusInterval = setInterval(checkStatus, 1500);
+        }
+
+        function checkStatus() {
+            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid));
+        }
+    }
+
+    getReplayStatus() {
+        const {cube, dispatch} = this.props;
+        dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid));
+    }
 
     renderAppsList ( cube ) {
         let options = [];
@@ -119,6 +165,10 @@ class configSample extends Component {
                             { jsxContent }
                         </div> 
                     </Col>
+                    <Col md={4} sm={4}>
+                        <button onClick={this.replay}>Replay</button>&nbsp;
+                        <button onClick={this.getReplayStatus}>Replay Status</button>&nbsp;
+                    </Col>
                 </Row>
     }
 
@@ -160,6 +210,10 @@ class configSample extends Component {
     const { panelVisible } = this.state
     const onHide = e => this.setState({panelVisible: !panelVisible})
     const { user, cube } = this.props;
+    if (this.state.toAnalysis === true) {
+        <Redirect to='/analysis' push />
+    }
+
     return (
         <div>
             {/*<PageTitle title="Test configuration" />*/}
@@ -167,9 +221,17 @@ class configSample extends Component {
             { this.renderAppsList (cube) }*/}
             <Clearfix />
             { this.renderTestIds (cube) }
-            <Clearfix />
-            <br/>
+
             {/*{ this.renderCreateNewTestIdForm (cube) }*/}
+            <Modal show={this.state.show}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Replay</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Replay In Progress...</Modal.Body>
+                <Modal.Footer>
+
+                </Modal.Footer>
+            </Modal>
         </div>
     )
     }
