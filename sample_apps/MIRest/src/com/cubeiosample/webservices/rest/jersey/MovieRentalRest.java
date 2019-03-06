@@ -45,7 +45,7 @@ public class MovieRentalRest {
 		try {
 		  tracer = Tracing.init("MIRest");
 		  scope = tracer.buildSpan("startingup").startActive(true);
-      scope.span().setTag("startingup", "MovieRentalRest");
+      scope.span().setTag("starting-up", "MovieRentalRest");
       LOGGER.debug("MIRest tracer: " + tracer.toString());
 		  mv = new MovieRentals(tracer);
 		  lmc = new ListMoviesCache(mv);
@@ -121,8 +121,8 @@ public class MovieRentalRest {
 			}
 			films = lmc.getMovieList(keyword);
 			if (films != null) {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
-      }
+        		return Response.ok().type(MediaType.APPLICATION_JSON).entity(films.toString()).build();
+      		}
 		} catch (Exception e) {
 			LOGGER.error("ListMovies args: " + filmname + ", " + keyword + "; " + e.toString());
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
@@ -141,7 +141,7 @@ public class MovieRentalRest {
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = null;
 		try (Scope scope = tracer.buildSpan("listmovies").startActive(true)) {
-      scope.span().setTag("listmovies", filmId.toString());
+      		scope.span().setTag("listmovies", filmId.toString());
 			stores = mv.findAvailableStores(filmId);
 		} catch (Exception e) {
 			LOGGER.error("FindStoreswithFilm args: " + filmId + "; " + e.toString());

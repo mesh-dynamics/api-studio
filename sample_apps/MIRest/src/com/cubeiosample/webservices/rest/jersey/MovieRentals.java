@@ -19,6 +19,7 @@ public class MovieRentals {
 
     private ConnectionPool jdbcPool = null;
     private static RestOverSql ros = null;
+    private static BookInfo bookInfo = null;
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     private static boolean USE_PREPARED_STMTS = true;    
@@ -28,6 +29,8 @@ public class MovieRentals {
     private static String MYSQL_PORT = "3306";
     private static String MYSQL_USERNAME = "cube";
     private static String MYSQL_PWD = "cubeio";
+
+    private static boolean GET_BOOK_REVIEWS = true;
     
     private final Tracer tracer;
     
@@ -108,7 +111,7 @@ public class MovieRentals {
 		    	JSONArray films = null;
 		    	films = listMovieByName(filmnameOrKeywordForRequest);
 		    	if (films != null && films.length() > 0) {
-	          return films;
+	                return films;
 		    	}
 		    
 		    	films = listMoviesByKeyword(filmnameOrKeywordForRequest);
@@ -118,6 +121,7 @@ public class MovieRentals {
 	    	} catch (Exception e) {
 	    		LOGGER.error("Couldn't list movies; " + e.toString());
 	    	}
+
 	    	return new JSONArray("[{\"couldn't list movies\"}]");
     }
     
@@ -134,7 +138,23 @@ public class MovieRentals {
       } else {
         films = jdbcPool.executeQuery(query, params);
       }
+
+      if (GET_BOOK_REVIEWS) {
+          enhanceFilmsWithReviews(films);
+      }
+      LOGGER.debug(String.format("Movie and book info list: %s", films.toString()));
       return films;
+    }
+
+    
+    private void enhanceFilmsWithReviews(JSONArray films) {
+        // TODO: avoid modifying the film object. Instead, attach another reviews object
+        // But that requires the client to change. Hence keeping the change by adding another column
+        for (int i = 0; i < films.length(); ++i) {
+            JSONObject film = films.getJSONObject(i);
+            JSONObject binfo = bookInfo.getBookInfo(film.getString("title"), film.getInt("film_id"));
+            film.put("book_info", binfo);
+        }
     }
     
     
