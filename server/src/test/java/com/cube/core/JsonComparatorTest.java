@@ -138,6 +138,32 @@ class JsonComparatorTest  {
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Missing Field")
+	final void testCompare4() throws JsonProcessingException, JSONException {
+		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
+		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
+
+		JsonCompareTemplate template = new JsonCompareTemplate();
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+		Match m = comparator.compare(json1, json2);
+
+		String mjson = config.jsonmapper.writeValueAsString(m);
+
+		System.out.println("match = " + mjson);
+
+		String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":[1,3,3],\\\"resolution\\\":\\\"OK\\\"}]\"}";
+
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
+
 	static Config config;
 
 }
