@@ -60,4 +60,4 @@ $ kubectl apply -f istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
 $ kubectl apply -f istio-1.0.6/install/kubernetes/istio-demo.yaml
 ```
 
-13. [Setup moviebook app](movieinfo/README.md)
+13. [Setup moviebook app](moviebook/README.md)
