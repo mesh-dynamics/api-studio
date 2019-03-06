@@ -226,8 +226,10 @@ public class JsonComparator implements Comparator {
 						valtypemismatch = true;
 					} else {
 						// check for regex pattern match
-						String val = node.asText();
-						valformatmismatch = rule.regex.map(r -> r.matcher(val).matches()).orElse(valformatmismatch);
+						if (rule.ct == ComparisonType.CustomRegex) {
+							String val = node.asText();
+							valformatmismatch = rule.regex.map(r -> r.matcher(val).matches()).orElse(valformatmismatch);
+						}
 					}
 					break;
 				case Float:
@@ -259,7 +261,7 @@ public class JsonComparator implements Comparator {
 	}
 	
 	/**
-	 * @param r.ct
+	 * @param rule
 	 * @param fromValue
 	 * @param value
 	 * @return
