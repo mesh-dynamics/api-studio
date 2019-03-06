@@ -3,6 +3,7 @@
 ## Setup Environment (macOS)
 
 1. Ensure [`homebrew`](https://brew.sh) and [`homebrew-cask`](https://caskroom.github.io/) are installed.
+(Pointer to install cask: https://sourabhbajaj.com/mac-setup/Homebrew/Cask.html)
 
 2. Install [`virtualbox`](https://www.virtualbox.org/wiki/VirtualBox) via `homebrew`, if not already installed  
 ```
