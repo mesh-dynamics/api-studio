@@ -10,7 +10,7 @@ import org.glassfish.jersey.client.ClientProperties;
 
 public class TrafficDriver {
   //private static String MINFO_URI = "http://localhost:8080/MIRest/minfo/";
-  private static String MINFO_URI = "http://a49aa572b28d011e9a43702e23210cab-1389798421.us-east-2.elb.amazonaws.com/minfo/";
+  private static String MINFO_URI = "http://192.168.99.100:31380/minfo/";
 
   
   public static void main(String[] args) {
