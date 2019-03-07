@@ -310,7 +310,7 @@ spec:
       containers:
       - name: cubews
         image: cubeiocorp/cubews:V1-SNAPSHOT
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
       imagePullSecrets:
