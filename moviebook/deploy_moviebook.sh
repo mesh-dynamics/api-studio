@@ -6,6 +6,9 @@
 init() {
 	kubectl apply -f moviebook.yaml
 	kubectl apply -f moviebook-gateway.yaml
+	export INGRESS_HOST=$(minikube ip)
+	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 }
 
 record() {
@@ -29,7 +32,7 @@ clean() {
 	kubectl delete -f moviebook-gateway.yaml
 }
 
-main() {	
+main() {
   set -eo pipefail; [[ "$TRACE" ]] && set -x
   case "$1" in
     init) shift; init "$@";;
