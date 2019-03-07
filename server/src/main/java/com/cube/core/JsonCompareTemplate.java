@@ -115,7 +115,7 @@ public class JsonCompareTemplate {
 		return rules.values();
 	}
 	
-	/*
+	/**
 	 * Equality and Ignore compare rules can be inherited from the nearest ancestor
 	 */
 	private TemplateEntry getInheritedRule(String path) {
