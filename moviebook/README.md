@@ -17,7 +17,8 @@ where,
 ```
 ./deploy_moviebook.sh init
 ```
-This will deploy the moviebook app on the local kubernetes cluster.
+- This will deploy the moviebook app on the local kubernetes cluster.  
+- Open `/minfo/health` endpoint in your default browser.
 
 ### Record Traffic
 ```
