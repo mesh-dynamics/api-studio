@@ -94,7 +94,9 @@ public class RestOverSql {
 	        restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), 
 	        null, "GET", 3);
 	    JSONArray result = new JSONArray(response.readEntity(String.class));
-	    LOGGER.debug("Query: " + query + "; " + params.toString() + "; NumRows=" + result.length());
+	    if (result != null) {
+	    	LOGGER.debug("Query: " + query + "; " + params.toString() + "; NumRows=" + result.length());
+	    }
 	    response.close();
 	    return result;
 	  } catch (Exception e) {
