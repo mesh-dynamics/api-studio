@@ -81,5 +81,5 @@ spec:
     - destination:
         host: cubews
         port:
-          number: 8090
+          number: 8080
 ---
