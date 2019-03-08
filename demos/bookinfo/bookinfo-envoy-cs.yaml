@@ -84,7 +84,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = "reviews"
@@ -106,7 +106,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = service
@@ -203,7 +203,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = "productpage"
@@ -225,7 +225,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = service
@@ -322,7 +322,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = "details"
@@ -344,7 +344,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = "details"
@@ -441,7 +441,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = "ratings"
@@ -463,7 +463,7 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
-                  meta["customerid"] = "cube"
+                  meta["customerid"] = "cube-venky"
                   meta["app"] = "bookinfo"
                   meta["instanceid"] = "prod"
                   meta["service"] = service
