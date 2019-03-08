@@ -144,7 +144,7 @@ class JsonComparatorTest  {
 	 * @throws JSONException
 	 */
 	@Test
-	@DisplayName("Missing Field")
+	@DisplayName("Missing Field: Default")
 	final void testCompare4() throws JsonProcessingException, JSONException {
 		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
 		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
@@ -164,6 +164,60 @@ class JsonComparatorTest  {
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Missing Field: Optional")
+    final void testCompare5() throws JsonProcessingException, JSONException {
+        String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
+        String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
+
+        JsonCompareTemplate template = new JsonCompareTemplate();
+        TemplateEntry rule = new TemplateEntry("/body/b2", DataType.RptArray, PresenceType.Optional, ComparisonType.Equal);
+        template.addRule(rule);
+
+        JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+        Match m = comparator.compare(json1, json2);
+
+        String mjson = config.jsonmapper.writeValueAsString(m);
+
+        System.out.println("match = " + mjson);
+
+        String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":[1,3,3],\\\"resolution\\\":\\\"OK_Optional\\\"}]\"}";
+        JSONAssert.assertEquals(expected, mjson, false);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Missing Field: Required")
+    final void testCompare6() throws JsonProcessingException, JSONException {
+        String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
+        String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
+
+        JsonCompareTemplate template = new JsonCompareTemplate();
+        TemplateEntry rule = new TemplateEntry("/body/b2", DataType.RptArray, PresenceType.Required, ComparisonType.Equal);
+        template.addRule(rule);
+
+        JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+        Match m = comparator.compare(json1, json2);
+
+        String mjson = config.jsonmapper.writeValueAsString(m);
+
+        System.out.println("match = " + mjson);
+
+        String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":null,\\\"resolution\\\":\\\"ERR_Required\\\"},{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":[1,3,3],\\\"resolution\\\":\\\"ERR_Required\\\"}]\"}";
+
+        JSONAssert.assertEquals(expected, mjson, false);
+    }
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
 	 * @throws JsonProcessingException
@@ -171,7 +225,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Strict Validations test - negative")
-	final void testCompare5() throws JsonProcessingException, JSONException {
+	final void testCompare7() throws JsonProcessingException, JSONException {
 		String json1 = "{\n" +
 				"        \"string\": \"5c80e878323659a64d123db4\",\n" +
 				"        \"int\": 35,\n" +
@@ -224,7 +278,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Strict Validations test - positive")
-	final void testCompare6() throws JsonProcessingException, JSONException {
+	final void testCompare8() throws JsonProcessingException, JSONException {
 		String json1 = "{\n" +
 				"        \"string\": \"5c80e878323659a64d123db4\",\n" +
 				"        \"int\": 35,\n" +
