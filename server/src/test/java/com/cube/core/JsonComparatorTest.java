@@ -170,7 +170,7 @@ class JsonComparatorTest  {
 	 * @throws JSONException
 	 */
 	@Test
-	@DisplayName("Strict Validations test - neagtive")
+	@DisplayName("Strict Validations test - negative")
 	final void testCompare5() throws JsonProcessingException, JSONException {
 		String json1 = "{\n" +
 				"        \"string\": \"5c80e878323659a64d123db4\",\n" +
@@ -197,8 +197,6 @@ class JsonComparatorTest  {
 				"            123\n" +
 				"        ]\n" +
 				"    }";
-		System.out.println(json1);
-		System.out.println(json2);
 		JsonCompareTemplate template = new JsonCompareTemplate();
 		String[] paths = {"", "/string", "/int", "/float", "/obj", "/rptArr", "/nrptArr"};
 		DataType[] dataTypes = {DataType.Obj, DataType.Str, DataType.Int, DataType.Float, DataType.Obj, DataType.RptArray, DataType.NrptArray};
@@ -215,7 +213,51 @@ class JsonComparatorTest  {
 
 		System.out.println("match = " + mjson);
 
-		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/int\\\",\\\"value\\\":\\\"35\\\",\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/rptArr\\\",\\\"value\\\":123,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/string\\\",\\\"value\\\":123,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/float\\\",\\\"value\\\":41,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/obj\\\",\\\"value\\\":\\\"not an object\\\",\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/string\\\",\\\"value\\\":123,\\\"fromValue\\\":\\\"5c80e878323659a64d123db4\\\",\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/int\\\",\\\"value\\\":\\\"35\\\",\\\"fromValue\\\":35,\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/float\\\",\\\"value\\\":41,\\\"fromValue\\\":41.280324,\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/obj\\\",\\\"value\\\":\\\"not an object\\\",\\\"fromValue\\\":{\\\"name\\\":\\\"Steele Dominguez\\\"},\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/rptArr\\\",\\\"value\\\":123,\\\"fromValue\\\":[\\\"dolore\\\",\\\"irure\\\"],\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/nrptArr/0\\\",\\\"value\\\":\\\"string\\\",\\\"fromValue\\\":{\\\"id\\\":0},\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/nrptArr/1\\\",\\\"value\\\":123,\\\"fromValue\\\":{\\\"name\\\":\\\"Steele Dominguez\\\"},\\\"resolution\\\":\\\"ERR_ValMismatch\\\"}]\"}";
+		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/int\\\",\\\"value\\\":\\\"35\\\",\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/rptArr\\\",\\\"value\\\":123,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/string\\\",\\\"value\\\":123,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/float\\\",\\\"value\\\":41,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/obj\\\",\\\"value\\\":\\\"not an object\\\",\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/string\\\",\\\"value\\\":123,\\\"fromValue\\\":\\\"5c80e878323659a64d123db4\\\",\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/int\\\",\\\"value\\\":\\\"35\\\",\\\"fromValue\\\":35,\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/float\\\",\\\"value\\\":41,\\\"fromValue\\\":41.280324,\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/obj\\\",\\\"value\\\":\\\"not an object\\\",\\\"fromValue\\\":{\\\"name\\\":\\\"Steele Dominguez\\\"},\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/rptArr\\\",\\\"value\\\":123,\\\"fromValue\\\":[\\\"dolore\\\",\\\"irure\\\"],\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/nrptArr/0\\\",\\\"value\\\":\\\"string\\\",\\\"fromValue\\\":{\\\"id\\\":0},\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/nrptArr/1\\\",\\\"value\\\":123,\\\"fromValue\\\":{\\\"name\\\":\\\"Steele Dominguez\\\"},\\\"resolution\\\":\\\"OK_Ignore\\\"}]\"}";
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Strict Validations test - positive")
+	final void testCompare6() throws JsonProcessingException, JSONException {
+		String json1 = "{\n" +
+				"        \"string\": \"5c80e878323659a64d123db4\",\n" +
+				"        \"int\": 35,\n" +
+				"        \"float\": 41.280324,\n" +
+				"        \"obj\": { \"name\": \"Steele Dominguez\"},\n" +
+				"        \"rptArr\": [\n" +
+				"            \"dolore\",\n" +
+				"            \"irure\"\n" +
+				"        ],\n" +
+				"        \"nrptArr\": [\n" +
+				"            { \"id\": 0 },\n" +
+				"            { \"name\": \"Steele Dominguez\"}\n" +
+				"        ]\n" +
+				"    }";
+		String json2 = json1;
+
+		JsonCompareTemplate template = new JsonCompareTemplate();
+		String[] paths = {"", "/string", "/int", "/float", "/obj", "/rptArr", "/nrptArr"};
+		DataType[] dataTypes = {DataType.Obj, DataType.Str, DataType.Int, DataType.Float, DataType.Obj, DataType.RptArray, DataType.NrptArray};
+		for (int i = 0; i < paths.length; i++) {
+			TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], PresenceType.Required, ComparisonType.Ignore);
+			template.addRule(rule);
+		}
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+		Match m = comparator.compare(json1, json2);
+
+		String mjson = config.jsonmapper.writeValueAsString(m);
+
+		System.out.println("match = " + mjson);
+
+		String expected = "{\"mt\":\"ExactMatch\",\"matchmeta\":\"[]\"}";
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
