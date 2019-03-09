@@ -10,8 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.dao.Recording.RecordingStatus;
-import com.cube.drivers.Replay;
-import com.cube.drivers.Replay.ReplayStatus;
+import com.cube.dao.Replay.ReplayStatus;
 
 /**
  * @author prasad
@@ -97,7 +96,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 
 	/* (non-Javadoc)
-	 * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.drivers.Replay)
+	 * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
 	 */
 	@Override
 	public boolean saveReplay(Replay replay) {

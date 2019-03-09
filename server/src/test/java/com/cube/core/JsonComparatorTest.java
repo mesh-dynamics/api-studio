@@ -13,10 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 import com.cube.core.Comparator.Match;
-import com.cube.core.JsonCompareTemplate.ComparisonType;
-import com.cube.core.JsonCompareTemplate.DataType;
-import com.cube.core.JsonCompareTemplate.PresenceType;
-import com.cube.core.JsonCompareTemplate.TemplateEntry;
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.CompareTemplate.DataType;
+import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.ws.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -67,7 +66,7 @@ class JsonComparatorTest  {
 		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
 		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.458}, \"body\": {\"b1\":\"test456\", \"b2\":[1,2,3]}, \"b3\":{\"a1\":\"a1v1\", \"a2\":15}}";
 		
-		JsonCompareTemplate template = new JsonCompareTemplate();
+		CompareTemplate template = new CompareTemplate();
 		
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 		
@@ -77,7 +76,7 @@ class JsonComparatorTest  {
 		
 		System.out.println("match = " + mjson);
 		
-		String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/hdr/h3\\\",\\\"value\\\":5.458,\\\"fromValue\\\":5.456,\\\"resolution\\\":\\\"OK\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/body/b1\\\",\\\"value\\\":\\\"test456\\\",\\\"fromValue\\\":\\\"test123\\\",\\\"resolution\\\":\\\"OK\\\"},{\\\"op\\\":\\\"add\\\",\\\"path\\\":\\\"/body/b2/1\\\",\\\"value\\\":2,\\\"resolution\\\":\\\"OK\\\"},{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2/3\\\",\\\"value\\\":3,\\\"resolution\\\":\\\"OK\\\"},{\\\"op\\\":\\\"add\\\",\\\"path\\\":\\\"/b3\\\",\\\"value\\\":{\\\"a1\\\":\\\"a1v1\\\",\\\"a2\\\":15},\\\"resolution\\\":\\\"OK\\\"}]\"}";
+		String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[{\"op\":\"replace\",\"path\":\"/hdr/h3\",\"value\":5.458,\"fromValue\":5.456,\"resolution\":\"OK\"},{\"op\":\"replace\",\"path\":\"/body/b1\",\"value\":\"test456\",\"fromValue\":\"test123\",\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/body/b2/1\",\"value\":2,\"resolution\":\"OK\"},{\"op\":\"remove\",\"path\":\"/body/b2/3\",\"value\":3,\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/b3\",\"value\":{\"a1\":\"a1v1\",\"a2\":15},\"resolution\":\"OK\"}]}";
 		
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
@@ -93,7 +92,7 @@ class JsonComparatorTest  {
 		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
 		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.458}, \"body\": {\"b1\":\"test456\", \"b2\":[1,2,3]}, \"b3\":{\"a1\":\"a1v1\", \"a2\":15}}";
 		
-		JsonCompareTemplate template = new JsonCompareTemplate();
+		CompareTemplate template = new CompareTemplate();
 		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
 		template.addRule(rule);
 		
@@ -105,7 +104,7 @@ class JsonComparatorTest  {
 		
 		System.out.println("match = " + mjson);
 		
-		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/hdr/h3\\\",\\\"value\\\":5.458,\\\"fromValue\\\":5.456,\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/body/b1\\\",\\\"value\\\":\\\"test456\\\",\\\"fromValue\\\":\\\"test123\\\",\\\"resolution\\\":\\\"ERR_ValMismatch\\\"},{\\\"op\\\":\\\"add\\\",\\\"path\\\":\\\"/body/b2/1\\\",\\\"value\\\":2,\\\"resolution\\\":\\\"ERR_NotExpected\\\"},{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2/3\\\",\\\"value\\\":3,\\\"resolution\\\":\\\"OK\\\"},{\\\"op\\\":\\\"add\\\",\\\"path\\\":\\\"/b3\\\",\\\"value\\\":{\\\"a1\\\":\\\"a1v1\\\",\\\"a2\\\":15},\\\"resolution\\\":\\\"ERR_NotExpected\\\"}]\"}";
+		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[{\"op\":\"replace\",\"path\":\"/hdr/h3\",\"value\":5.458,\"fromValue\":5.456,\"resolution\":\"ERR_ValMismatch\"},{\"op\":\"replace\",\"path\":\"/body/b1\",\"value\":\"test456\",\"fromValue\":\"test123\",\"resolution\":\"ERR_ValMismatch\"},{\"op\":\"add\",\"path\":\"/body/b2/1\",\"value\":2,\"resolution\":\"OK_OtherValInvalid\"},{\"op\":\"remove\",\"path\":\"/body/b2/3\",\"value\":3,\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/b3\",\"value\":{\"a1\":\"a1v1\",\"a2\":15},\"resolution\":\"OK_OtherValInvalid\"}]}";
 		
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
@@ -121,7 +120,7 @@ class JsonComparatorTest  {
 		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
 		String json2 = json1;
 		
-		JsonCompareTemplate template = new JsonCompareTemplate();
+		CompareTemplate template = new CompareTemplate();
 		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
 		template.addRule(rule);
 		
@@ -133,7 +132,7 @@ class JsonComparatorTest  {
 		
 		System.out.println("match = " + mjson);
 		
-		String expected = "{\"mt\":\"ExactMatch\",\"matchmeta\":\"[]\"}";
+		String expected = "{\"mt\":\"ExactMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[]}";
 		
 		JSONAssert.assertEquals(expected, mjson, false);
 	}

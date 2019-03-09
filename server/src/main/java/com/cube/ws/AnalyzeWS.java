@@ -24,7 +24,9 @@ import org.apache.logging.log4j.Logger;
 
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
-import com.cube.drivers.Analysis;
+import com.cube.dao.Analysis;
+import com.cube.drivers.Analyzer;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -56,7 +58,7 @@ public class AnalyzeWS {
 				.flatMap(vals -> vals.stream().findFirst())
 				.orElse(Config.DEFAULT_TRACE_FIELD);
 		
-		Optional<Analysis> analysis = Analysis.analyze(replayid, tracefield, rrstore);
+		Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, rrstore, jsonmapper);
 		
 		return analysis.map(av -> {
 			String json;
@@ -76,7 +78,7 @@ public class AnalyzeWS {
 	public Response status(@Context UriInfo ui,  
 			@PathParam("replayid") String replayid) {
 		
-		Optional<Analysis> analysis = Analysis.getStatus(replayid, rrstore);
+		Optional<Analysis> analysis = Analyzer.getStatus(replayid, rrstore);
 		Response resp = analysis.map(av -> {
 			String json;
 			try {
@@ -114,7 +116,7 @@ public class AnalyzeWS {
 	
 	
 	/**
-	 * @param rrstore
+	 * @param config
 	 */
 	@Inject
 	public AnalyzeWS(Config config) {

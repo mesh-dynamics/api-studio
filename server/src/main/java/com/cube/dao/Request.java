@@ -13,14 +13,14 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
-import com.cube.drivers.Analysis.ReqMatchType;
+import com.cube.dao.Analysis.ReqMatchType;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public class Request extends RRBase {
 	/**
 	 * @param path
-	 * @param id
+	 * @param reqid
 	 * @param qparams
 	 * @param meta
 	 * @param hdrs
@@ -212,7 +212,8 @@ public class Request extends RRBase {
 	/**
 	 * This function is used for checking if results returned from the store actually matched completely
 	 * Relevant when the matching spec allows for optional matching of some fields
-	 * @param replayreq
+	 * "this" will be the query request
+	 * @param other - the matched request from the store
 	 * @param mspec
 	 * @return
 	 */
@@ -241,8 +242,8 @@ public class Request extends RRBase {
 	
 	/**
 	 * @param mt
-	 * @param thisfvals
-	 * @param fvals
+	 * @param thisfmap
+	 * @param fmap
 	 * @return
 	 */
 	private ReqMatchType checkMatch(MatchType mt, MultivaluedMap<String, String> thisfmap,
