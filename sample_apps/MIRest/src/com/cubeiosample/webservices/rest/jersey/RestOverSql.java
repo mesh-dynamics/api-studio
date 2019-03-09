@@ -3,8 +3,6 @@ package com.cubeiosample.webservices.rest.jersey;
 import io.cube.utils.RestUtils;
 import io.opentracing.Tracer;
 
-import java.util.Hashtable;
-import java.util.Optional;
 import java.util.Properties;
 
 import javax.ws.rs.client.Client;
@@ -26,61 +24,86 @@ public class RestOverSql {
   private Client restClient = null;
   private WebTarget restJDBCService = null;
   private Tracer tracer = null;
+  private Config config = null;
+  private String restWrapJDBCUri = "";
   
   final static Logger LOGGER = Logger.getLogger(RestOverSql.class);
   
-  private static String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
-  Properties properties;
-  private static final String CONFFILE = "conf/MIRest.conf";
   
+  Properties properties; 
   
-  public RestOverSql(Tracer tracer) {
-    ClientConfig clientConfig = new ClientConfig()
+  public RestOverSql(Tracer tracer, Config config) {
+	 this.tracer = tracer;
+	 this.config = config;
+     ClientConfig clientConfig = new ClientConfig()
         .property(ClientProperties.READ_TIMEOUT, 100000)  
         .property(ClientProperties.CONNECT_TIMEOUT, 10000);
     restClient = ClientBuilder.newClient(clientConfig);
+      
     configureRestWrapUri();
-    LOGGER.debug("RESTWRAPJDBC_URI is " + RESTWRAPJDBC_URI);
-    restJDBCService = restClient.target(RESTWRAPJDBC_URI);
+    LOGGER.debug("RESTWRAPJDBC_URI is " + restWrapJDBCUri);
+    restJDBCService = restClient.target(restWrapJDBCUri);
     
-    this.tracer = tracer;
     initializeJDBCService();
-    
   }
   
     
   private void configureRestWrapUri() {
-    // try the conf file and then the env. otherwise, default
-    properties = new java.util.Properties();
-    try {
-      properties.load(this.getClass().getClassLoader().
-          getResourceAsStream(CONFFILE));
-      RESTWRAPJDBC_URI = properties.getProperty("RESTWRAPJDBC_URI");
-      LOGGER.info("RESTWRAPJDBC_URI configured from conf file: " + RESTWRAPJDBC_URI);
-    } catch (Exception e) {
-      LOGGER.info("Conf file not found.");
+	  // try the conf file and then the env. otherwise, default
       String rwUri = System.getenv("RESTWRAPJDBC_URI");
       if (rwUri != null) {
-        RESTWRAPJDBC_URI = rwUri;
+        restWrapJDBCUri = rwUri;
+      } else {
+    	  restWrapJDBCUri = config.RESTWRAPJDBC_URI;
       }
-    } 
-  }
+   }
   
   
   private void initializeJDBCService() {
-    String username = MovieRentals.userName();
-    String pwd = MovieRentals.passwd();
-    String uri = MovieRentals.baseUri();
+    String username = this.userName();
+    String pwd = this.passwd();
+    String uri = this.baseUri();
     LOGGER.debug("init jdbc service tracer: ");
     LOGGER.debug(tracer.toString());
-    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, "GET", 3);
+    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, "GET", 3, config.ADD_TRACING_HEADERS);
     LOGGER.debug("intialized jdbc service " + uri + "; " + username + "; " + response.getStatus() + "; "+ response.readEntity(String.class));
     response.close();
   }
   
+  private String baseUri() {
+  	if (config.USE_KUBE) {
+  		// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
+  		//String host = System.getenv(System.getenv("MYSQL_PERMANENT_HOST"));
+  	  String host = System.getenv("MYSQL_PERMANENT_HOST");
+   	  if (host == null) {
+  		  LOGGER.error("host has to be specified");
+  	  }
+  	  String port = System.getenv("MYSQL_DB_PORT");
+  	  if (port == null) {
+  	     port = "3306";
+  	  }
+  	  return "jdbc:mysql://" + host + ":" + port + "/sakila";
+  	}
+  	return "jdbc:mysql://" + config.MYSQL_HOST + ":" + config.MYSQL_PORT + "/sakila";
+  }
+  
+  private String userName() {
+    if (config.USE_KUBE) {
+  		 return System.getenv("MYSQL_DB_USER");
+    }
+    return config.MYSQL_USERNAME;
+  }
+  
+  private String passwd() {
+    if (config.USE_KUBE) {
+  		  return System.getenv("MYSQL_DB_PASSWORD");
+    }
+    return config.MYSQL_PWD;
+  }
+      
   
   public String getHealth() {
-    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, "GET", 3);
+    Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, "GET", 3, config.ADD_TRACING_HEADERS);
     String result = response.readEntity(String.class);
     response.close();
     return result;
@@ -92,7 +115,7 @@ public class RestOverSql {
 	  try {
 	    response = RestUtils.callWithRetries(tracer, 
 	        restJDBCService.path("query").queryParam("querystring", query).queryParam("params", UriComponent.encode(params.toString(), UriComponent.Type.QUERY_PARAM_SPACE_ENCODED)).request(MediaType.APPLICATION_JSON), 
-	        null, "GET", 3);
+	        null, "GET", 3, config.ADD_TRACING_HEADERS);
 	    JSONArray result = new JSONArray(response.readEntity(String.class));
 	    if (result != null) {
 	    	LOGGER.debug("Query: " + query + "; " + params.toString() + "; NumRows=" + result.length());
@@ -116,7 +139,7 @@ public class RestOverSql {
 	    JSONObject body = new JSONObject();
 	    body.put("query", query);
 	    body.put("params", params);
-	    response = RestUtils.callWithRetries(tracer, restJDBCService.path("update").request(), body, "POST", 3);
+	    response = RestUtils.callWithRetries(tracer, restJDBCService.path("update").request(), body, "POST", 3, config.ADD_TRACING_HEADERS);
 	    
 	    // TODO: figure out the best way of extracting json array from the entity
 	    JSONObject result = new JSONObject(response.readEntity(String.class));

@@ -34,6 +34,7 @@ public class MovieRentalRest {
 	static MovieRentals mv;
 	static ListMoviesCache lmc;
 	static JaegerTracer tracer;
+	static Config config;
 	
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
@@ -45,10 +46,11 @@ public class MovieRentalRest {
 		try {
 		  tracer = Tracing.init("MIRest");
 		  scope = tracer.buildSpan("startingup").startActive(true);
-      scope.span().setTag("starting-up", "MovieRentalRest");
-      LOGGER.debug("MIRest tracer: " + tracer.toString());
-		  mv = new MovieRentals(tracer);
-		  lmc = new ListMoviesCache(mv);
+		  scope.span().setTag("starting-up", "MovieRentalRest");
+		  LOGGER.debug("MIRest tracer: " + tracer.toString());
+		  config = new Config();
+		  mv = new MovieRentals(tracer, config);
+		  lmc = new ListMoviesCache(mv, config);
 		} catch (ClassNotFoundException e) {
 			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
 		} finally {

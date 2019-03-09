@@ -46,6 +46,7 @@ public class Authenticator {
     // key is needed to parse jwt. If successful, this token is valid.
     Jws<Claims> claims = Jwts.parser().setSigningKey(key).parseClaimsJws(jws);
     Date dt = claims.getBody().getExpiration();
+    
     if (dt.after(Date.from(LocalDateTime.now().plusMinutes(TIME_LAX).atZone(ZoneId.systemDefault()).toInstant()))) { 
       String subject = claims.getBody().getSubject();
       return subject;

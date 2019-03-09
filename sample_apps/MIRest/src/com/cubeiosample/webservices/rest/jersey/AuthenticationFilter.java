@@ -95,14 +95,4 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             AUTHENTICATION_SCHEME + " realm=\"" + REALM + "\"")
         .build());
     }
-
-//    private String ValidateToken(String token) throws Exception {
-//      // Check if the token was issued by the server and if it's not expired
-//      // Throw an Exception if the token is invalid
-//      String username = Authenticator.ValidateToken(token);
-//      if (username == null) {
-//        throw new Exception();
-//      }
-//      return username;
-//    }
 }
