@@ -20,6 +20,9 @@ public class Authenticator {
   // TODO: read key from a conf parameter/file
   final static Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
   final static long TIME_LAX = 260000;  // 6 months for testing/demo
+  
+  // TODO: figure out how we can get this value either from conf file or from ISTIO flags
+  final static boolean DUMMY_AUTHENTICATION = true;
 
   public static boolean authenticate(String username, String password) throws Exception {
     // TODO: validate against db and then return true/false; needs to be done along with /createuser api
@@ -46,7 +49,8 @@ public class Authenticator {
     // key is needed to parse jwt. If successful, this token is valid.
     Jws<Claims> claims = Jwts.parser().setSigningKey(key).parseClaimsJws(jws);
     Date dt = claims.getBody().getExpiration();
-    if (dt.after(Date.from(LocalDateTime.now().plusMinutes(TIME_LAX).atZone(ZoneId.systemDefault()).toInstant()))) { 
+    
+    if (DUMMY_AUTHENTICATION || dt.after(Date.from(LocalDateTime.now().plusMinutes(TIME_LAX).atZone(ZoneId.systemDefault()).toInstant()))) { 
       String subject = claims.getBody().getSubject();
       return subject;
     }
