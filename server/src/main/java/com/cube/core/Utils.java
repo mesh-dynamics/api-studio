@@ -3,12 +3,13 @@
  */
 package com.cube.core;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 /**
  * @author prasad
@@ -50,6 +51,24 @@ public class Utils {
 			return Optional.empty();
 		}
 	}
-	
+
+	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
+		CompletableFuture<Void> allDoneFuture =
+				CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+		return allDoneFuture.thenApply(v ->
+				futures.stream().
+						map(future -> future.join()).
+						collect(Collectors.<T>toList())
+		);
+	}
+
+
+    public static IntNode intToJson(Integer val) {
+		return IntNode.valueOf(val);
+    }
+
+	public static TextNode strToJson(String val) {
+		return TextNode.valueOf(val);
+	}
 
 }

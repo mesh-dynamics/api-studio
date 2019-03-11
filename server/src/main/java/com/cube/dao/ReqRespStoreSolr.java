@@ -39,12 +39,10 @@ import com.cube.dao.RRBase.RR;
 import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Request.ReqMatchSpec;
-import com.cube.drivers.Analysis;
-import com.cube.drivers.Analysis.ReqMatchType;
-import com.cube.drivers.Analysis.ReqRespMatchResult;
-import com.cube.drivers.Analysis.RespMatchType;
-import com.cube.drivers.Replay;
-import com.cube.drivers.Replay.ReplayStatus;
+import com.cube.dao.Analysis.ReqMatchType;
+import com.cube.dao.Analysis.ReqRespMatchResult;
+import com.cube.dao.Analysis.RespMatchType;
+import com.cube.dao.Replay.ReplayStatus;
 import com.cube.ws.Config;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -568,7 +566,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 && replayid.isPresent() && async.isPresent() && status.isPresent()) {
             try {
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
-				        reqids, rrstore, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get()));
+				        reqids, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get()));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
 			}
@@ -592,7 +590,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.drivers.Replay)
+     * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
      */
     @Override
     public boolean saveReplay(Replay replay) {
@@ -620,7 +618,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
     
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.drivers.Replay.ReplayStatus)
+     * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Replay.ReplayStatus)
      */
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
@@ -677,7 +675,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     
     
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#saveAnalysis(com.cube.drivers.Analysis)
+     * @see com.cube.dao.ReqRespStore#saveAnalysis(com.cube.dao.Analysis)
      */
     @Override
     public boolean saveAnalysis(Analysis analysis) {
@@ -715,11 +713,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQMTF = CPREFIX + "reqmt_s";
     private static final String NUMMATCHF = CPREFIX + "nummatch_i";
     private static final String RESPMTF = CPREFIX + "respmt_s"; // match type
-    private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata_ni";
+    private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata_s";
+    private static final String DIFFF = CPREFIX + "diff_ni";
     private static final String SERVICEF = CPREFIX + "service_s";
     
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#saveResult(com.cube.drivers.Analysis.Result)
+     * @see com.cube.dao.ReqRespStore#saveResult(com.cube.dao.Analysis.Result)
      */
     @Override
     public boolean saveResult(ReqRespMatchResult res) {
@@ -748,6 +747,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(NUMMATCHF, res.nummatch);
         doc.setField(RESPMTF, res.respmt.toString());
         doc.setField(RESPMATCHMETADATAF, res.respmatchmetadata);
+        doc.setField(DIFFF, res.diff);
         doc.setField(CUSTOMERIDF, res.customerid);
         doc.setField(APPF, res.app);
         doc.setField(SERVICEF, res.service);
@@ -777,7 +777,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     /**
      * @param doc
-     * @param reqRespStoreSolr
+     * @param rrstore
      * @return
      */
     private Optional<Analysis> docToAnalysis(SolrDocument doc, ReqRespStoreSolr rrstore) {
@@ -838,7 +838,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.drivers.Replay)
+     * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
      */
     @Override
     public boolean saveRecording(Recording recording) {
