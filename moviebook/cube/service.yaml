@@ -35,23 +35,6 @@ spec:
       imagePullSecrets:
       - name: regcred
 ---
-##############
-# External service
-###############
-apiVersion: networking.istio.io/v1alpha3
-kind: ServiceEntry
-metadata:
-  name: aws-mysql-sakila
-spec:
-  hosts:
-  - sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
-  ports:
-  - number: 3306
-    name: mysql
-    protocol: TCP
-  resolution: DNS
-  location: MESH_EXTERNAL
----
 # TODO: the following exernalname didn't work for a service that didn't go through port 80
 # apiVersion: v1
 # kind: Service
