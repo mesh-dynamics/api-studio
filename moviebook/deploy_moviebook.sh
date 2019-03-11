@@ -4,8 +4,13 @@
 
 
 init() {
-	kubectl apply -f moviebook.yaml
+	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
+	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
 	kubectl apply -f moviebook-gateway.yaml
+	kubectl apply -f moviebook/moviebook_virtualservice.yaml
+	kubectl apply -f cube/virtualservice.yaml
+	kubectl apply -f cube/service_entry.yaml
+
 	export INGRESS_HOST=$(minikube ip)
 	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
 	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
@@ -14,24 +19,28 @@ init() {
 }
 
 record() {
-	kubectl apply -f moviebook-envoy-cs.yaml
+	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
 }
 
 stop_record() {
-	kubectl delete -f moviebook-envoy-cs.yaml
+	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
 }
 
 replay() {
-	kubectl apply -f moviebook-envoy-replay-cs.yaml
+	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 }
 
 stop_replay() {
-	kubectl delete -f moviebook-envoy-replay-cs.yaml
+	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 }
 
 clean() {
-	kubectl delete -f moviebook.yaml
+	kubectl delete -f moviebook/moviebook.yaml
+	kubectl delete -f cube/service.yaml
+	kubectl delete -f cube/service_entry.yaml
 	kubectl delete -f moviebook-gateway.yaml
+	kubectl delete -f moviebook/moviebook_virtualservice.yaml
+	kubectl delete -f cube/virtualservice.yaml
 }
 
 main() {
