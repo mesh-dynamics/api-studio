@@ -4,7 +4,6 @@
 package com.cube.core;
 
 import com.cube.dao.Response;
-import com.cube.drivers.Analysis.RespMatch;
 
 /**
  * @author prasad
@@ -15,10 +14,10 @@ public interface ResponseComparator {
 	static ResponseComparator EQUALITYCOMPARATOR = new EqualityResponseComparator();
 
 	/**
-	 * @param recordedr
-	 * @param replayr
+	 * @param lhs
+	 * @param rhs
 	 * @return
 	 */
-	RespMatch compare(Response lhs, Response rhs);
+	Comparator.Match compare(Response lhs, Response rhs);
 
 }

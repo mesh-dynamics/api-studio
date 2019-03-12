@@ -12,14 +12,20 @@ import org.json.JSONArray;
 public class ListMoviesCache {
   
   private MovieRentals mv;
+  private Config config;
+  private int maxSize = 100;
   
-  public ListMoviesCache(MovieRentals mvInstance) {
+  public ListMoviesCache(MovieRentals mvInstance, Config config) {
     mv = mvInstance;
+    this.config = config;
+    if (config.USE_CACHING) {
+    	this.maxSize = 0;
+    }
   }
   
   LoadingCache<String, JSONArray> movieIdsCache = CacheBuilder.newBuilder()
-      .maximumSize(10)
-      .expireAfterAccess(60, TimeUnit.SECONDS)
+      .maximumSize(maxSize)
+      .expireAfterAccess(6000, TimeUnit.SECONDS)
       .build(
               new CacheLoader<String, JSONArray>() {
                   public JSONArray load(String filmNameOrKeywordForRequest) {

@@ -6,7 +6,6 @@ package com.cube.ws;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -22,8 +21,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.drivers.Replay;
-import com.cube.drivers.Replay.ReplayStatus;
+import com.cube.dao.Replay;
+import com.cube.dao.Replay.ReplayStatus;
+import com.cube.drivers.ReplayDriver;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -73,7 +74,7 @@ public class ReplayWS {
 				.map(e -> {
 					return instanceid.map(inst -> {
 						// TODO: introduce response transforms as necessary
-						return Replay.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null)
+						return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null)
 								.map(replay -> {
 									String json;
 									try {
@@ -113,7 +114,7 @@ public class ReplayWS {
 				LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
 			} 
 			xfms = xfmsParam.get(0);
-			Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
+			Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 			if (replay.isPresent()) {
 				replay.get().updateXfmsFromJSONString(xfms);
 			}
@@ -132,7 +133,7 @@ public class ReplayWS {
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
 		
-		Optional<Replay> replay = Replay.getStatus(replayid, rrstore);
+		Optional<Replay> replay = ReplayDriver.getStatus(replayid, rrstore);
 		Response resp = replay.map(r -> {
 			String json;
 			try {
@@ -152,7 +153,7 @@ public class ReplayWS {
 	@Path("forcecomplete/{replayid}")
 	public Response forceComplete(@Context UriInfo ui, 
 								  @PathParam("replayid") String replayid) {
-		Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
+		Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 		
 		Response resp = replay.map(r -> {
 			if (r.status != ReplayStatus.Running || r.status != ReplayStatus.Init) {
@@ -209,7 +210,7 @@ public class ReplayWS {
 		/// end block for testing
 		 */
 		 
-		Optional<Replay> replay = Replay.getStatus(replayid, this.rrstore);
+		Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, this.rrstore);
 		Response resp = replay.map(r -> {
 			boolean status = r.start();
 			if (status) {
@@ -224,7 +225,7 @@ public class ReplayWS {
 	
 	
 	/**
-	 * @param rrstore
+	 * @param config
 	 */
 	@Inject
 	public ReplayWS(Config config) {
