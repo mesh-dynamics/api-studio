@@ -17,8 +17,28 @@
                 { "op": "replace",  "path": "/body/b1",     "value": "test456", "fromValue":"test123",  "resolution":"OK"},
                 { "op": "add",      "path": "/body/b2/1",   "value": 2,                                 "resolution":"OK"},
                 { "op": "remove",   "path": "/body/b2/3",   "value": 3,                                 "resolution":"OK"},
-                { "op": "add",      "path": "/b3",          "value": {"a1":"a1v1","a2":15},             "resolution":"OK"}
+                { "op": "add",      "path": "/b3",          "value": { "a1": "a1v1", "a2": 15 },        "resolution":"OK"}
             ]
+        }
+    },
+    "test2": {
+        "output": {
+            "mt": "NoMatch",
+            "matchmeta": "JsonDiff",
+            "diffs": [
+                { "op":"replace",   "path":"/hdr/h3",       "value": 5.458,     "fromValue":5.456,      "resolution":"ERR_ValMismatch"},
+                { "op":"replace",   "path":"/body/b1",      "value": "test456", "fromValue":"test123",  "resolution":"ERR_ValMismatch"},
+                { "op":"add",       "path":"/body/b2/1",    "value": 2,                                 "resolution":"OK_OtherValInvalid"},
+                { "op":"remove",    "path":"/body/b2/3",    "value": 3,                                 "resolution":"OK"},
+                { "op":"add",       "path":"/b3",           "value": { "a1": "a1v1", "a2": 15 },        "resolution":"OK_OtherValInvalid"}
+            ]
+        }
+    },
+    "test3": {
+        "output": {
+            "mt": "ExactMatch",
+            "matchmeta": "JsonDiff",
+            "diffs": []
         }
     }
 }

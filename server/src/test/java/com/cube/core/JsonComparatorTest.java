@@ -99,7 +99,9 @@ class JsonComparatorTest  {
 		
 		System.out.println("match = " + mjson);
 
-		JSONAssert.assertEquals(test1Data.get("output").toString(), mjson, false);
+		String expected = test1Data.get("output").toString();
+
+		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
 	/**
@@ -110,8 +112,9 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict equality comparison negative test")
 	final void testCompare2() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.458}, \"body\": {\"b1\":\"test456\", \"b2\":[1,2,3]}, \"b3\":{\"a1\":\"a1v1\", \"a2\":15}}";
+		JSONObject test1Data = object.getJSONObject("test1");
+		String json1 = test1Data.get("json1").toString();
+		String json2 = test1Data.get("json2").toString();
 		
 		CompareTemplate template = new CompareTemplate();
 		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
@@ -124,9 +127,9 @@ class JsonComparatorTest  {
 		String mjson = config.jsonmapper.writeValueAsString(m);
 		
 		System.out.println("match = " + mjson);
-		
-		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[{\"op\":\"replace\",\"path\":\"/hdr/h3\",\"value\":5.458,\"fromValue\":5.456,\"resolution\":\"ERR_ValMismatch\"},{\"op\":\"replace\",\"path\":\"/body/b1\",\"value\":\"test456\",\"fromValue\":\"test123\",\"resolution\":\"ERR_ValMismatch\"},{\"op\":\"add\",\"path\":\"/body/b2/1\",\"value\":2,\"resolution\":\"OK_OtherValInvalid\"},{\"op\":\"remove\",\"path\":\"/body/b2/3\",\"value\":3,\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/b3\",\"value\":{\"a1\":\"a1v1\",\"a2\":15},\"resolution\":\"OK_OtherValInvalid\"}]}";
-		
+
+		String expected = object.getJSONObject("test2").get("output").toString();
+
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -138,7 +141,8 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict equality comparison positive test")
 	final void testCompare3() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
+		JSONObject test1Data = object.getJSONObject("test1");
+		String json1 = test1Data.get("json1").toString();
 		String json2 = json1;
 		
 		CompareTemplate template = new CompareTemplate();
@@ -153,8 +157,8 @@ class JsonComparatorTest  {
 		
 		System.out.println("match = " + mjson);
 		
-		String expected = "{\"mt\":\"ExactMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[]}";
-		
+		String expected = object.getJSONObject("test3").get("output").toString();
+
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
