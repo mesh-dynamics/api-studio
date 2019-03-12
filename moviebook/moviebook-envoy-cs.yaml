@@ -109,7 +109,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "prod"
-                  meta["service"] = service
+                  meta["service"] = "reviews"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
@@ -228,7 +228,7 @@ spec:
                   meta["customerid"] = "cube-venky"
                   meta["app"] = "movieinfo"
                   meta["instanceid"] = "prod"
-                  meta["service"] = service
+                  meta["service"] = "productpage"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid_s")
