@@ -48,8 +48,10 @@ class configSample extends Component {
             const {dispatch} = this.props;
             if(this.doAnalysis) {
                 dispatch(cubeActions.getAnalysis(cube.selectedTestId, cube.replayId.replayid));
-                dispatch(cubeActions.getReport(cube.selectedTestId, cube.replayId.replayid));
-                this.doAnalysis = false;
+                if (cube.analysis) {
+                    dispatch(cubeActions.getReport(cube.selectedTestId, cube.replayId.replayid));
+                    this.doAnalysis = false;
+                }
             }
 
         }
@@ -227,7 +229,10 @@ class configSample extends Component {
                 <Modal.Header closeButton>
                     <Modal.Title>Replay</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Replay In Progress...</Modal.Body>
+                <Modal.Body>
+                    <div>Replay In Progress...</div>
+                    <h3>Status: {cube.replayStatus}</h3>
+                </Modal.Body>
                 <Modal.Footer>
 
                 </Modal.Footer>

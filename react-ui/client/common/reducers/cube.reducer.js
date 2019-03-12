@@ -26,7 +26,7 @@ const initialState = {
     graphDataReqErr: '',
     graphData: null,
 
-    replayStatus:'',
+    replayStatus:'Init',
     replayStatusObj: null,
 
     analysis: null,
@@ -123,7 +123,7 @@ export function cube (state = initialState, action) {
                 ...state,
                 analysis: action.data
             };
-        case cubeConstants.ANALYSIS_FETCHED:
+        case cubeConstants.REPORT_FETCHED:
             return {
                 ...state,
                 report: action.data

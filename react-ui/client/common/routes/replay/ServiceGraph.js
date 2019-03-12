@@ -17,7 +17,7 @@ class ServiceGraph extends Component {
             panelVisible: true,
             show: false,
         }
-        this.height = '350px';
+        this.height = '400px';
         this.width = '100%';
         this.renderServiceGraph = this.renderServiceGraph.bind(this);
         this.render = this.render.bind(this);
@@ -155,8 +155,8 @@ class ServiceGraph extends Component {
         }
 
         if (cube.report) {
-            report = Object.keys(cube.report).map((key, index) => {
-                return (<div key={index}> Key: {key}, Value: {cube.report[key]}</div>)
+            report = Object.keys(cube.report[1]).map((key, index) => {
+                return (<div key={index}> Key: {key}, Value: {cube.report[1][key]}</div>)
             });
         }
 
@@ -249,8 +249,11 @@ class ServiceGraph extends Component {
         };
 
         for (const edge of cube.graphData.edges) {
-            edge.style = style;
-            cy.add(edge);
+            const ed = {
+                data: edge,
+                style: style
+            };
+            cy.add(ed);
         }
 
 
@@ -268,7 +271,7 @@ class ServiceGraph extends Component {
         if ( 1 ) {
             let layout;
             layout = cy.layout({
-                name: 'grid', // 'cose'
+                name: 'breadthfirst', // 'cose'
                 fit: true,
                 idealEdgeLength: function (edge) { return 100; },
                 edgeElasticity: function (edge) { return 100; },

@@ -102,15 +102,61 @@ async function getGraphData (req, res, next) {
                     "width": 80,
                     "height": 80
                 }
+            },
+            {
+                "data": {
+                    "id": "details",
+                    "text": "ProductDetails"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                    "width": 80,
+                    "height": 80
+                }
+            },
+            {
+                "data": {
+                    "id": "ratings",
+                    "text": "ProductRatings"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                    "width": 80,
+                    "height": 80
+                }
+            },
+            {
+                "data": {
+                    "id": "reviews",
+                    "text": "ProductReviews"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                    "width": 80,
+                    "height": 80
+                }
             }
         ],
         edges: [
             {
-                "data": {
-                    id: 's1_s2',
-                    source: 'movieinfo',
-                    target: 'restwrapjdbc'
-                }
+                id: 's1_s2',
+                source: 'movieinfo',
+                target: 'restwrapjdbc'
+            },
+            {
+                id: 's1_s3',
+                source: 'movieinfo',
+                target: 'details'
+            },
+            {
+                id: 's1_s4',
+                source: 'movieinfo',
+                target: 'ratings'
+            },
+            {
+                id: 's1_s5',
+                source: 'movieinfo',
+                target: 'reviews'
             }
         ]
     })
