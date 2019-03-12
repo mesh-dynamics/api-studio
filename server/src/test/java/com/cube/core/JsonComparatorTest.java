@@ -170,8 +170,9 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Missing Field: Default")
 	final void testCompare4() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
+		JSONObject test4Data = object.getJSONObject("test4");
+		String json1 = test4Data.get("json1").toString();
+		String json2 = test4Data.get("json2").toString();
 
 		CompareTemplate template = new CompareTemplate();
 
@@ -183,7 +184,7 @@ class JsonComparatorTest  {
 
 		System.out.println("match = " + mjson);
 
-		String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":[1,3,3],\\\"resolution\\\":\\\"OK\\\"}]\"}";
+		String expected = test4Data.get("output").toString();
 
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
@@ -196,8 +197,9 @@ class JsonComparatorTest  {
     @Test
     @DisplayName("Missing Field: Optional")
     final void testCompare5() throws JsonProcessingException, JSONException {
-        String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-        String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
+		JSONObject test4Data = object.getJSONObject("test4");
+		String json1 = test4Data.get("json1").toString();
+		String json2 = test4Data.get("json2").toString();
 
         CompareTemplate template = new CompareTemplate();
         TemplateEntry rule = new TemplateEntry("/body/b2", DataType.RptArray, PresenceType.Optional, ComparisonType.Equal);
@@ -211,7 +213,7 @@ class JsonComparatorTest  {
 
         System.out.println("match = " + mjson);
 
-        String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":[1,3,3],\\\"resolution\\\":\\\"OK_Optional\\\"}]\"}";
+        String expected = object.getJSONObject("test5").get("output").toString();
         JSONAssert.assertEquals(expected, mjson, false);
     }
 
@@ -223,8 +225,9 @@ class JsonComparatorTest  {
     @Test
     @DisplayName("Missing Field: Required")
     final void testCompare6() throws JsonProcessingException, JSONException {
-        String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-        String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\"}}";
+		JSONObject test4Data = object.getJSONObject("test4");
+		String json1 = test4Data.get("json1").toString();
+		String json2 = test4Data.get("json2").toString();
 
         CompareTemplate template = new CompareTemplate();
         TemplateEntry rule = new TemplateEntry("/body/b2", DataType.RptArray, PresenceType.Required, ComparisonType.Equal);
@@ -238,8 +241,7 @@ class JsonComparatorTest  {
 
         System.out.println("match = " + mjson);
 
-        String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":null,\\\"resolution\\\":\\\"ERR_Required\\\"},{\\\"op\\\":\\\"remove\\\",\\\"path\\\":\\\"/body/b2\\\",\\\"value\\\":[1,3,3],\\\"resolution\\\":\\\"ERR_Required\\\"}]\"}";
-
+        String expected = object.getJSONObject("test6").get("output").toString();
         JSONAssert.assertEquals(expected, mjson, false);
     }
 	/**
