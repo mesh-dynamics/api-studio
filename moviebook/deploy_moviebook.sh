@@ -4,7 +4,7 @@
 
 
 init() {
-	kubectl apply -f moviebook.yaml
+	kubectl apply -f <(istioctl kube-inject -f moviebook.yaml)
 	kubectl apply -f moviebook-gateway.yaml
 	export INGRESS_HOST=$(minikube ip)
 	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
