@@ -252,31 +252,10 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict Validations test - negative")
 	final void testCompare7() throws JsonProcessingException, JSONException {
-		String json1 = "{\n" +
-				"        \"string\": \"5c80e878323659a64d123db4\",\n" +
-				"        \"int\": 35,\n" +
-				"        \"float\": 41.280324,\n" +
-				"        \"obj\": { \"name\": \"Steele Dominguez\"},\n" +
-				"        \"rptArr\": [\n" +
-				"            \"dolore\",\n" +
-				"            \"irure\"\n" +
-				"        ],\n" +
-				"        \"nrptArr\": [\n" +
-				"            { \"id\": 0 },\n" +
-				"            { \"name\": \"Steele Dominguez\"}\n" +
-				"        ]\n" +
-				"    }";
-		String json2 = "{\n" +
-				"        \"string\": 123,\n" +
-				"        \"int\": \"35\",\n" +
-				"        \"float\": 41,\n" +
-				"        \"obj\": \"not an object\",\n" +
-				"        \"rptArr\": 123,\n" +
-				"        \"nrptArr\": [\n" +
-				"            \"string\",\n" +
-				"            123\n" +
-				"        ]\n" +
-				"    }";
+		JSONObject test7Data = object.getJSONObject("test7");
+		String json1 = test7Data.get("json1").toString();
+		String json2 = test7Data.get("json2").toString();
+
 		CompareTemplate template = new CompareTemplate();
 		String[] paths = {"", "/string", "/int", "/float", "/obj", "/rptArr", "/nrptArr"};
 		DataType[] dataTypes = {DataType.Obj, DataType.Str, DataType.Int, DataType.Float, DataType.Obj, DataType.RptArray, DataType.NrptArray};
@@ -293,7 +272,8 @@ class JsonComparatorTest  {
 
 		System.out.println("match = " + mjson);
 
-		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"[{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/int\\\",\\\"value\\\":\\\"35\\\",\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/rptArr\\\",\\\"value\\\":123,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/string\\\",\\\"value\\\":123,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/float\\\",\\\"value\\\":41,\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"noop\\\",\\\"path\\\":\\\"/obj\\\",\\\"value\\\":\\\"not an object\\\",\\\"resolution\\\":\\\"ERR_ValTypeMismatch\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/string\\\",\\\"value\\\":123,\\\"fromValue\\\":\\\"5c80e878323659a64d123db4\\\",\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/int\\\",\\\"value\\\":\\\"35\\\",\\\"fromValue\\\":35,\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/float\\\",\\\"value\\\":41,\\\"fromValue\\\":41.280324,\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/obj\\\",\\\"value\\\":\\\"not an object\\\",\\\"fromValue\\\":{\\\"name\\\":\\\"Steele Dominguez\\\"},\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/rptArr\\\",\\\"value\\\":123,\\\"fromValue\\\":[\\\"dolore\\\",\\\"irure\\\"],\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/nrptArr/0\\\",\\\"value\\\":\\\"string\\\",\\\"fromValue\\\":{\\\"id\\\":0},\\\"resolution\\\":\\\"OK_Ignore\\\"},{\\\"op\\\":\\\"replace\\\",\\\"path\\\":\\\"/nrptArr/1\\\",\\\"value\\\":123,\\\"fromValue\\\":{\\\"name\\\":\\\"Steele Dominguez\\\"},\\\"resolution\\\":\\\"OK_Ignore\\\"}]\"}";
+		String expected = test7Data.get("output").toString();
+
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -305,20 +285,8 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict Validations test - positive")
 	final void testCompare8() throws JsonProcessingException, JSONException {
-		String json1 = "{\n" +
-				"        \"string\": \"5c80e878323659a64d123db4\",\n" +
-				"        \"int\": 35,\n" +
-				"        \"float\": 41.280324,\n" +
-				"        \"obj\": { \"name\": \"Steele Dominguez\"},\n" +
-				"        \"rptArr\": [\n" +
-				"            \"dolore\",\n" +
-				"            \"irure\"\n" +
-				"        ],\n" +
-				"        \"nrptArr\": [\n" +
-				"            { \"id\": 0 },\n" +
-				"            { \"name\": \"Steele Dominguez\"}\n" +
-				"        ]\n" +
-				"    }";
+		JSONObject test7Data = object.getJSONObject("test7");
+		String json1 = test7Data.get("json1").toString();
 		String json2 = json1;
 
 		CompareTemplate template = new CompareTemplate();
@@ -337,7 +305,7 @@ class JsonComparatorTest  {
 
 		System.out.println("match = " + mjson);
 
-		String expected = "{\"mt\":\"ExactMatch\",\"matchmeta\":\"[]\"}";
+		String expected = object.getJSONObject("test3").get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
