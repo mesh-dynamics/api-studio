@@ -64,4 +64,10 @@ $ kubectl apply -f istio-1.0.6/install/kubernetes/istio-demo.yaml
 
 13. Open the file istio-1.0.6/install/kubernetes/istio-demo.yaml, search for LoadBalancer and replace it with NodePort.
 
-14. [Setup moviebook app](moviebook/README.md)
+14. Jaeger dashboard 
+```
+kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686 &
+```
+Access the Jaeger dashboard by opening your browser to http://localhost:16686.
+
+15. [Setup moviebook app](moviebook/README.md)
