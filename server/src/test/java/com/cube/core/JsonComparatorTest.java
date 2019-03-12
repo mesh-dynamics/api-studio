@@ -4,6 +4,7 @@
 package com.cube.core;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,6 +19,11 @@ import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.ws.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.io.File;
+import java.nio.charset.Charset;
+
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 
 /**
@@ -46,6 +52,7 @@ class JsonComparatorTest  {
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
+		readFile("JsonComparator.json");
 	}
 
 	/**
@@ -53,6 +60,22 @@ class JsonComparatorTest  {
 	 */
 	@AfterEach
 	void tearDown() throws Exception {
+	}
+
+	JSONObject object;
+
+	public void readFile(String url) {
+		try {
+			File file = new File(JsonComparatorTest.class.getClassLoader().getResource(url).toURI().getPath());
+			String data = readFileToString(file, Charset.defaultCharset());
+			try {
+				object = new JSONObject(data);
+			} catch (Exception e) {
+				System.out.println(e);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -63,9 +86,9 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Default comparison test")
 	final void testCompare1() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.458}, \"body\": {\"b1\":\"test456\", \"b2\":[1,2,3]}, \"b3\":{\"a1\":\"a1v1\", \"a2\":15}}";
-		
+		JSONObject test1Data = object.getJSONObject("test1");
+		String json1 = test1Data.get("json1").toString();
+		String json2 = test1Data.get("json2").toString();
 		CompareTemplate template = new CompareTemplate();
 		
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
@@ -75,10 +98,8 @@ class JsonComparatorTest  {
 		String mjson = config.jsonmapper.writeValueAsString(m);
 		
 		System.out.println("match = " + mjson);
-		
-		String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[{\"op\":\"replace\",\"path\":\"/hdr/h3\",\"value\":5.458,\"fromValue\":5.456,\"resolution\":\"OK\"},{\"op\":\"replace\",\"path\":\"/body/b1\",\"value\":\"test456\",\"fromValue\":\"test123\",\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/body/b2/1\",\"value\":2,\"resolution\":\"OK\"},{\"op\":\"remove\",\"path\":\"/body/b2/3\",\"value\":3,\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/b3\",\"value\":{\"a1\":\"a1v1\",\"a2\":15},\"resolution\":\"OK\"}]}";
-		
-		JSONAssert.assertEquals(expected, mjson, false);
+
+		JSONAssert.assertEquals(test1Data.get("output").toString(), mjson, false);
 	}
 
 	/**
