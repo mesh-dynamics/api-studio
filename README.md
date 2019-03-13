@@ -70,4 +70,9 @@ kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=ja
 ```
 Access the Jaeger dashboard by opening your browser to http://localhost:16686.
 
-15. [Setup moviebook app](moviebook/README.md)
+15. minikube dashboard -- useful for ssh, browsing logs per pod, etc.
+```
+minikube dashboard
+```
+
+16. [Setup moviebook app](moviebook/README.md)
