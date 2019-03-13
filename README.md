@@ -55,16 +55,16 @@ $ export PATH=$PWD/istio-1.0.6/bin:$PATH
 $ kubectl apply -f istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
 ```
 
-12. Install Istio  
+> NOTE: Since we are running Istio with Minikube, we need to make one change before going ahead – changing the Ingress Gateway service from type LoadBalancer to NodePort.
+
+12. Open the file istio-1.0.6/install/kubernetes/istio-demo.yaml, search for LoadBalancer and replace it with NodePort.
+
+13. Install Istio  
 ```
 $ kubectl apply -f istio-1.0.6/install/kubernetes/istio-demo.yaml
 ```
 
-> NOTE: Since we are running Istio with Minikube, we need to make one change before going ahead – changing the Ingress Gateway service from type LoadBalancer to NodePort.
-
-13. Open the file istio-1.0.6/install/kubernetes/istio-demo.yaml, search for LoadBalancer and replace it with NodePort.
-
-14. Jaeger dashboard 
+14. Jaeger dashboard
 ```
 kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686 &
 ```
