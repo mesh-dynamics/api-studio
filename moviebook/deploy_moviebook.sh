@@ -10,6 +10,7 @@ init() {
 	kubectl apply -f moviebook/moviebook_virtualservice.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
+	kubectl apply -f cube/solr_service_entry.yaml
 
 	export INGRESS_HOST=$(minikube ip)
 	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
@@ -41,6 +42,7 @@ clean() {
 	kubectl delete -f moviebook-gateway.yaml
 	kubectl delete -f moviebook/moviebook_virtualservice.yaml
 	kubectl delete -f cube/virtualservice.yaml
+	kubectl apply -f cube/solr_service_entry.yaml
 }
 
 main() {
