@@ -42,7 +42,7 @@ clean() {
 	kubectl delete -f moviebook-gateway.yaml
 	kubectl delete -f moviebook/moviebook_virtualservice.yaml
 	kubectl delete -f cube/virtualservice.yaml
-	kubectl apply -f cube/solr_service_entry.yaml
+	kubectl delete -f cube/solr_service_entry.yaml
 }
 
 main() {
