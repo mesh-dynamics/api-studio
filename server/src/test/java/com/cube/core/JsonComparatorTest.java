@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
 
@@ -31,6 +32,9 @@ import static org.apache.commons.io.FileUtils.readFileToString;
  *
  */
 class JsonComparatorTest  {
+
+	static Config config;
+	JSONObject object;
 
 	/**
 	 * @throws java.lang.Exception
@@ -62,8 +66,6 @@ class JsonComparatorTest  {
 	void tearDown() throws Exception {
 	}
 
-	JSONObject object;
-
 	public void readFile(String url) {
 		try {
 			File file = new File(JsonComparatorTest.class.getClassLoader().getResource(url).toURI().getPath());
@@ -85,7 +87,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Default comparison test")
-	final void testCompare1() throws JsonProcessingException, JSONException {
+	final void defaultComparisonTest() throws JsonProcessingException, JSONException {
 		JSONObject test1Data = object.getJSONObject("test1");
 		String json1 = test1Data.get("json1").toString();
 		String json2 = test1Data.get("json2").toString();
@@ -111,7 +113,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Strict equality comparison negative test")
-	final void testCompare2() throws JsonProcessingException, JSONException {
+	final void strictEqualityComparisonNegativeTest() throws JsonProcessingException, JSONException {
 		JSONObject test1Data = object.getJSONObject("test1");
 		String json1 = test1Data.get("json1").toString();
 		String json2 = test1Data.get("json2").toString();
@@ -140,7 +142,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Strict equality comparison positive test")
-	final void testCompare3() throws JsonProcessingException, JSONException {
+	final void strictEqualityComparisonPositiveTest() throws JsonProcessingException, JSONException {
 		JSONObject test1Data = object.getJSONObject("test1");
 		String json1 = test1Data.get("json1").toString();
 		String json2 = json1;
@@ -168,8 +170,68 @@ class JsonComparatorTest  {
 	 * @throws JSONException
 	 */
 	@Test
+	@DisplayName("Equality optional comparison test")
+	final void equalOptionalComparisonTest() throws JsonProcessingException, JSONException {
+		JSONObject test1Data = object.getJSONObject("test1");
+		String json1 = test1Data.get("json1").toString();
+		String json2 = test1Data.get("json2").toString();;
+
+		CompareTemplate template = new CompareTemplate();
+		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.EqualOptional);
+		template.addRule(rule);
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+		Match m = comparator.compare(json1, json2);
+
+		String mjson = config.jsonmapper.writeValueAsString(m);
+
+		System.out.println("match = " + mjson);
+
+		String expected = object.getJSONObject("equalOptionalComparison").get("output").toString();
+
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Custom comparison test")
+	final void customComparisonTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("customComparison");
+		String json1 = testData.get("json1").toString();
+		String json2 = testData.get("json2").toString();;
+
+		CompareTemplate template = new CompareTemplate();
+		TemplateEntry emailRule = new TemplateEntry("/email", DataType.Str, PresenceType.Required, ComparisonType.CustomRegex, Optional.of(".+\\@.+\\..+"));
+		TemplateEntry roundRule = new TemplateEntry("/double", DataType.Float, PresenceType.Required, ComparisonType.CustomRound, Optional.of("2"));
+		template.addRule(emailRule);
+		template.addRule(roundRule);
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+		Match m = comparator.compare(json1, json2);
+
+		String mjson = config.jsonmapper.writeValueAsString(m);
+
+		System.out.println("match = " + mjson);
+
+		String expected = testData.get("output").toString();
+
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
 	@DisplayName("Missing Field: Default")
-	final void testCompare4() throws JsonProcessingException, JSONException {
+	final void missingFieldDefaultTest() throws JsonProcessingException, JSONException {
 		JSONObject test4Data = object.getJSONObject("test4");
 		String json1 = test4Data.get("json1").toString();
 		String json2 = test4Data.get("json2").toString();
@@ -196,7 +258,7 @@ class JsonComparatorTest  {
      */
     @Test
     @DisplayName("Missing Field: Optional")
-    final void testCompare5() throws JsonProcessingException, JSONException {
+    final void missingFieldOptionalTest() throws JsonProcessingException, JSONException {
 		JSONObject test4Data = object.getJSONObject("test4");
 		String json1 = test4Data.get("json1").toString();
 		String json2 = test4Data.get("json2").toString();
@@ -224,7 +286,7 @@ class JsonComparatorTest  {
      */
     @Test
     @DisplayName("Missing Field: Required")
-    final void testCompare6() throws JsonProcessingException, JSONException {
+    final void missingFieldRequiredTest() throws JsonProcessingException, JSONException {
 		JSONObject test4Data = object.getJSONObject("test4");
 		String json1 = test4Data.get("json1").toString();
 		String json2 = test4Data.get("json2").toString();
@@ -251,7 +313,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Strict Validations test - negative")
-	final void testCompare7() throws JsonProcessingException, JSONException {
+	final void validationNegativeTest() throws JsonProcessingException, JSONException {
 		JSONObject test7Data = object.getJSONObject("test7");
 		String json1 = test7Data.get("json1").toString();
 		String json2 = test7Data.get("json2").toString();
@@ -284,7 +346,7 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Strict Validations test - positive")
-	final void testCompare8() throws JsonProcessingException, JSONException {
+	final void validationPositiveTest() throws JsonProcessingException, JSONException {
 		JSONObject test7Data = object.getJSONObject("test7");
 		String json1 = test7Data.get("json1").toString();
 		String json2 = json1;
@@ -308,7 +370,5 @@ class JsonComparatorTest  {
 		String expected = object.getJSONObject("test3").get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
-
-	static Config config;
 
 }
