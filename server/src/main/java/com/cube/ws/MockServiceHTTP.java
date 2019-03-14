@@ -6,26 +6,22 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.ReqMatchSpec;
+import com.cube.core.RequestComparator;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
-import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
-import com.cube.dao.Request.ReqMatchSpec;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author prasad
@@ -148,7 +144,7 @@ public class MockServiceHTTP {
 
 	
 	/**
-	 * @param rrstore
+	 * @param config
 	 */
 	@Inject
 	public MockServiceHTTP(Config config) {
@@ -164,29 +160,29 @@ public class MockServiceHTTP {
 	static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	
 	// TODO - make trace field configurable
-	static ReqMatchSpec mspec = (ReqMatchSpec) ReqMatchSpec.builder()
-			.withMpath(MatchType.FILTER)
-			.withMqparams(MatchType.FILTER)
-			.withMfparams(MatchType.FILTER)
-			.withMrrtype(MatchType.FILTER)
-			.withMcustomerid(MatchType.FILTER)
-			.withMapp(MatchType.FILTER)
-			.withMreqid(MatchType.SCORE)
-			.withMcollection(MatchType.FILTER)
-			.withMmeta(MatchType.FILTER)
+	static RequestComparator mspec = (ReqMatchSpec) ReqMatchSpec.builder()
+			.withMpath(ComparisonType.Equal)
+			.withMqparams(ComparisonType.Equal)
+			.withMfparams(ComparisonType.Equal)
+			.withMrrtype(ComparisonType.Equal)
+			.withMcustomerid(ComparisonType.Equal)
+			.withMapp(ComparisonType.Equal)
+			.withMreqid(ComparisonType.EqualOptional)
+			.withMcollection(ComparisonType.Equal)
+			.withMmeta(ComparisonType.Equal)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
-			.withMhdrs(MatchType.SCORE)
+			.withMhdrs(ComparisonType.EqualOptional)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
 
 	// matching to get default response
-	static ReqMatchSpec mspecForDefault = (ReqMatchSpec) ReqMatchSpec.builder()
-			.withMpath(MatchType.FILTER)
-			.withMrrtype(MatchType.FILTER)
-			.withMcustomerid(MatchType.FILTER)
-			.withMapp(MatchType.FILTER)
-			.withMcollection(MatchType.SCORE)
-			.withMmeta(MatchType.FILTER)
+	static RequestComparator mspecForDefault = (ReqMatchSpec) ReqMatchSpec.builder()
+			.withMpath(ComparisonType.Equal)
+			.withMrrtype(ComparisonType.Equal)
+			.withMcustomerid(ComparisonType.Equal)
+			.withMapp(ComparisonType.Equal)
+			.withMcollection(ComparisonType.EqualOptional)
+			.withMmeta(ComparisonType.Equal)
 			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
 			.build();
 

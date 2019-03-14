@@ -6,11 +6,14 @@ package com.cube.core;
 import static com.cube.core.Comparator.Resolution.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.cube.core.RequestComparator.PathCT;
 
 /**
  * @author prasad
@@ -95,6 +98,11 @@ public class CompareTemplate {
 	
 	public Collection<TemplateEntry> getRules() {
 		return rules.values();
+	}
+
+
+	public List<PathCT> getPathCTs() {
+		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
 	}
 
 	public CompareTemplate subsetWithPrefix(String prefix) {

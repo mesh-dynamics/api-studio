@@ -15,8 +15,8 @@ public class MatchResultAggregate {
 	/**
 	 * @param path 
 	 * @param service 
-	 * @param app2
-	 * @param replayid2
+	 * @param app
+	 * @param replayid
 	 */
 	public MatchResultAggregate(String app, String replayid, Optional<String> service, Optional<String> path) {
 		this.app = app;
@@ -38,5 +38,5 @@ public class MatchResultAggregate {
 	public int respmatched = 0; // resp matched exactly
 	public int resppartiallymatched = 0; // resp matched based on template
 	public int respnotmatched = 0; // not matched
-
+	public int respmatchexception = 0; // some exception during matching
 }

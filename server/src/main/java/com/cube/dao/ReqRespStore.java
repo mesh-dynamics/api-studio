@@ -13,9 +13,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.cube.core.ReqMatchSpec;
+import com.cube.core.RequestComparator;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStoreImplBase.RecordOrReplay;
-import com.cube.dao.Request.ReqMatchSpec;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Replay.ReplayStatus;
 
@@ -92,7 +93,7 @@ public interface ReqRespStore {
 	 * @param nummatches - max number of matches
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
-	Stream<Request> getRequests(Request queryrequest, ReqMatchSpec mspec, Optional<Integer> nummatches);
+	Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches);
 	
 	/**
 	 * @param reqid
@@ -105,7 +106,7 @@ public interface ReqRespStore {
 	 * @return the response corresponding to the request matching in the db
 	 * to find the matching request, the reqid field of queryrequest is ignored
 	 */
-	Optional<Response> getRespForReq(Request queryrequest, ReqMatchSpec mspec);
+	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
 
 	
 	/**

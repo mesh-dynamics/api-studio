@@ -70,10 +70,8 @@
 		        <server>TomcatServer</server> 
 		        <path>/cubews</path>
 		        <update>true</update>
-		        <!-- 
 		        <username>admin</username>
                 <password>tomcat4cube$</password>
-                -->
 		    </configuration>
 		</plugin>
 	  <plugin>
@@ -91,7 +89,7 @@
 		</executions>
 			<configuration>
 				<repository>cubeiocorp/cubews</repository>
-				<tag>${project.version}</tag>
+				<tag>test</tag>
 				<buildArgs>
 					<WAR_FILE>${project.build.finalName}.war</WAR_FILE>
 				</buildArgs>
