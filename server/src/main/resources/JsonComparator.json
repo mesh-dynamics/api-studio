@@ -56,21 +56,54 @@
             ]
         }
     },
-    "customComparison": {
+
+    "customComparisonPositive": {
         "json1": {
             "email": "vineet@beehyv.com",
-            "double": 4.468
+            "round": 4.468,
+            "ceiling": 4.468,
+            "floor": 4.468
         },
         "json2": {
             "email": "vineetks@yahoo.com",
-            "double": 4.469
+            "round": 4.469,
+            "ceiling": 4.469,
+            "floor": 4.469
         },
         "output": {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
             "diffs":[
-                { "op": "replace",  "path": "/double",  "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
+                { "op": "replace",  "path": "/ceiling", "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
+                { "op": "replace",  "path": "/round",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
+                { "op": "replace",  "path": "/floor",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
                 { "op": "replace",  "path": "/email",   "value": "vineetks@yahoo.com",  "fromValue": "vineet@beehyv.com",   "resolution": "OK_CustomMatch" }
+            ]
+        }
+    },
+
+    "customComparisonNegative": {
+        "json1": {
+            "email": "vineet@beehyv.com",
+            "round": 4.468,
+            "ceiling": 4.468,
+            "floor": 4.468
+        },
+        "json2": {
+            "email": "www.vineetks.in",
+            "round": 4.464,
+            "ceiling": 4.471,
+            "floor": 4.459
+        },
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "diffs":[
+                { "op": "noop",     "path": "/email",   "value": "www.vineetks.in",                                         "resolution": "ERR_ValFormatMismatch" },
+                { "op": "replace",  "path": "/ceiling", "value": 4.471,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
+                { "op": "replace",  "path": "/round",   "value": 4.464,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
+                { "op": "replace",  "path": "/floor",   "value": 4.459,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
+                { "op": "replace",  "path": "/email",   "value": "www.vineetks.in",     "fromValue": "vineet@beehyv.com",   "resolution": "ERR_ValFormatMismatch" }
             ]
         }
     },

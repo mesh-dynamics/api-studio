@@ -91,18 +91,14 @@ class JsonComparatorTest  {
 		JSONObject test1Data = object.getJSONObject("test1");
 		String json1 = test1Data.get("json1").toString();
 		String json2 = test1Data.get("json2").toString();
+
 		CompareTemplate template = new CompareTemplate();
-		
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 		
 		Match m = comparator.compare(json1, json2);
 		
 		String mjson = config.jsonmapper.writeValueAsString(m);
-		
-		System.out.println("match = " + mjson);
-
 		String expected = test1Data.get("output").toString();
-
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -121,17 +117,12 @@ class JsonComparatorTest  {
 		CompareTemplate template = new CompareTemplate();
 		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
 		template.addRule(rule);
-		
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 		
 		Match m = comparator.compare(json1, json2);
 		
 		String mjson = config.jsonmapper.writeValueAsString(m);
-		
-		System.out.println("match = " + mjson);
-
 		String expected = object.getJSONObject("test2").get("output").toString();
-
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -150,17 +141,12 @@ class JsonComparatorTest  {
 		CompareTemplate template = new CompareTemplate();
 		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
 		template.addRule(rule);
-		
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 		
 		Match m = comparator.compare(json1, json2);
 		
 		String mjson = config.jsonmapper.writeValueAsString(m);
-		
-		System.out.println("match = " + mjson);
-		
 		String expected = object.getJSONObject("test3").get("output").toString();
-
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -179,17 +165,12 @@ class JsonComparatorTest  {
 		CompareTemplate template = new CompareTemplate();
 		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.EqualOptional);
 		template.addRule(rule);
-
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
 		Match m = comparator.compare(json1, json2);
 
 		String mjson = config.jsonmapper.writeValueAsString(m);
-
-		System.out.println("match = " + mjson);
-
 		String expected = object.getJSONObject("equalOptionalComparison").get("output").toString();
-
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -199,28 +180,59 @@ class JsonComparatorTest  {
 	 * @throws JSONException
 	 */
 	@Test
-	@DisplayName("Custom comparison test")
-	final void customComparisonTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("customComparison");
+	@DisplayName("Custom comparison test - Positive")
+	final void customComparisonPositiveTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("customComparisonPositive");
 		String json1 = testData.get("json1").toString();
 		String json2 = testData.get("json2").toString();;
 
 		CompareTemplate template = new CompareTemplate();
 		TemplateEntry emailRule = new TemplateEntry("/email", DataType.Str, PresenceType.Required, ComparisonType.CustomRegex, Optional.of(".+\\@.+\\..+"));
-		TemplateEntry roundRule = new TemplateEntry("/double", DataType.Float, PresenceType.Required, ComparisonType.CustomRound, Optional.of("2"));
+		TemplateEntry roundRule = new TemplateEntry("/round", DataType.Float, PresenceType.Required, ComparisonType.CustomRound, Optional.of("2"));
+		TemplateEntry ceilingRule = new TemplateEntry("/ceiling", DataType.Float, PresenceType.Required, ComparisonType.CustomCeil, Optional.of("2"));
+		TemplateEntry floorRule = new TemplateEntry("/floor", DataType.Float, PresenceType.Required, ComparisonType.CustomFloor, Optional.of("2"));
 		template.addRule(emailRule);
 		template.addRule(roundRule);
+		template.addRule(ceilingRule);
+		template.addRule(floorRule);
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
 		Match m = comparator.compare(json1, json2);
 
 		String mjson = config.jsonmapper.writeValueAsString(m);
-
-		System.out.println("match = " + mjson);
-
 		String expected = testData.get("output").toString();
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
 
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Custom comparison test - Negative")
+	final void customComparisonNegativeTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("customComparisonNegative");
+		String json1 = testData.get("json1").toString();
+		String json2 = testData.get("json2").toString();;
+
+		CompareTemplate template = new CompareTemplate();
+		TemplateEntry emailRule = new TemplateEntry("/email", DataType.Str, PresenceType.Required, ComparisonType.CustomRegex, Optional.of(".+\\@.+\\..+"));
+		TemplateEntry roundRule = new TemplateEntry("/round", DataType.Float, PresenceType.Required, ComparisonType.CustomRound, Optional.of("2"));
+		TemplateEntry ceilingRule = new TemplateEntry("/ceiling", DataType.Float, PresenceType.Required, ComparisonType.CustomCeil, Optional.of("2"));
+		TemplateEntry floorRule = new TemplateEntry("/floor", DataType.Float, PresenceType.Required, ComparisonType.CustomFloor, Optional.of("2"));
+		template.addRule(emailRule);
+		template.addRule(roundRule);
+		template.addRule(ceilingRule);
+		template.addRule(floorRule);
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+		Match m = comparator.compare(json1, json2);
+
+		String mjson = config.jsonmapper.writeValueAsString(m);
+		String expected = testData.get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -237,17 +249,12 @@ class JsonComparatorTest  {
 		String json2 = test4Data.get("json2").toString();
 
 		CompareTemplate template = new CompareTemplate();
-
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
 		Match m = comparator.compare(json1, json2);
 
 		String mjson = config.jsonmapper.writeValueAsString(m);
-
-		System.out.println("match = " + mjson);
-
 		String expected = test4Data.get("output").toString();
-
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -266,15 +273,11 @@ class JsonComparatorTest  {
         CompareTemplate template = new CompareTemplate();
         TemplateEntry rule = new TemplateEntry("/body/b2", DataType.RptArray, PresenceType.Optional, ComparisonType.Equal);
         template.addRule(rule);
-
         JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
         Match m = comparator.compare(json1, json2);
 
         String mjson = config.jsonmapper.writeValueAsString(m);
-
-        System.out.println("match = " + mjson);
-
         String expected = object.getJSONObject("test5").get("output").toString();
         JSONAssert.assertEquals(expected, mjson, false);
     }
@@ -294,15 +297,11 @@ class JsonComparatorTest  {
         CompareTemplate template = new CompareTemplate();
         TemplateEntry rule = new TemplateEntry("/body/b2", DataType.RptArray, PresenceType.Required, ComparisonType.Equal);
         template.addRule(rule);
-
         JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
         Match m = comparator.compare(json1, json2);
 
         String mjson = config.jsonmapper.writeValueAsString(m);
-
-        System.out.println("match = " + mjson);
-
         String expected = object.getJSONObject("test6").get("output").toString();
         JSONAssert.assertEquals(expected, mjson, false);
     }
@@ -325,17 +324,12 @@ class JsonComparatorTest  {
 			TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], PresenceType.Required, ComparisonType.Ignore);
 			template.addRule(rule);
 		}
-
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
 		Match m = comparator.compare(json1, json2);
 
 		String mjson = config.jsonmapper.writeValueAsString(m);
-
-		System.out.println("match = " + mjson);
-
 		String expected = test7Data.get("output").toString();
-
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -358,15 +352,11 @@ class JsonComparatorTest  {
 			TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], PresenceType.Required, ComparisonType.Ignore);
 			template.addRule(rule);
 		}
-
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 
 		Match m = comparator.compare(json1, json2);
 
 		String mjson = config.jsonmapper.writeValueAsString(m);
-
-		System.out.println("match = " + mjson);
-
 		String expected = object.getJSONObject("test3").get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
