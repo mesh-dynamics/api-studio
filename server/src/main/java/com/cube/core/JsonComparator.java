@@ -137,7 +137,7 @@ public class JsonComparator implements Comparator {
 						// check for regex pattern match
 						if (rule.ct == ComparisonType.CustomRegex) {
 							String val = node.asText();
-							valformatmismatch = !rule.regex.map(r -> r.matcher(val).matches()).orElse(valformatmismatch);
+							valformatmismatch = rule.regex.map(r -> !r.matcher(val).matches()).orElse(valformatmismatch);
 						}
 					}
 					break;
