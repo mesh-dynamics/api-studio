@@ -22,6 +22,9 @@ export CUSTOMER=cube-aakash
 export APPLICATION=movieinfo
 export INSTANCEID=prod
 ```
+
+3. Add service names to `moviebook/service.yaml` for which lua filters will be generated.
+
 ### Deploy
 ```
 ./deploy_moviebook.sh init
