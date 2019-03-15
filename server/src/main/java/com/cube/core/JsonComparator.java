@@ -142,7 +142,7 @@ public class JsonComparator implements Comparator {
 					}
 					break;
 				case Float:
-					if (!node.isFloat() && !node.isDouble()) valtypemismatch = true;
+					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valtypemismatch = true;
 					break;
 				case Int:
 					if (!node.isInt()) valtypemismatch = true;

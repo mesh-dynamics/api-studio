@@ -110,7 +110,7 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict equality comparison negative test")
 	final void strictEqualityComparisonNegativeTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("defaultComparison");
+		JSONObject testData = object.getJSONObject("strictEqualityComparisonNegative");
 		String json1 = testData.get("json1").toString();
 		String json2 = testData.get("json2").toString();
 		
@@ -122,7 +122,7 @@ class JsonComparatorTest  {
 		Match m = comparator.compare(json1, json2);
 		
 		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = object.getJSONObject("strictEqualityComparisonNegative").get("output").toString();
+		String expected = testData.get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -134,7 +134,7 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict equality comparison positive test")
 	final void strictEqualityComparisonPositiveTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("defaultComparison");
+		JSONObject testData = object.getJSONObject("strictEqualityComparisonPositive");
 		String json1 = testData.get("json1").toString();
 		String json2 = json1;
 		
@@ -146,7 +146,7 @@ class JsonComparatorTest  {
 		Match m = comparator.compare(json1, json2);
 		
 		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = object.getJSONObject("exactMatch").get("output").toString();
+		String expected = testData.get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
@@ -266,7 +266,7 @@ class JsonComparatorTest  {
     @Test
     @DisplayName("Missing Field: Optional")
     final void missingFieldOptionalTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("missingFieldDefault");
+		JSONObject testData = object.getJSONObject("missingFieldOptional");
 		String json1 = testData.get("json1").toString();
 		String json2 = testData.get("json2").toString();
 
@@ -278,7 +278,7 @@ class JsonComparatorTest  {
         Match m = comparator.compare(json1, json2);
 
         String mjson = config.jsonmapper.writeValueAsString(m);
-        String expected = object.getJSONObject("missingFieldOptional").get("output").toString();
+        String expected = testData.get("output").toString();
         JSONAssert.assertEquals(expected, mjson, false);
     }
 
@@ -290,7 +290,7 @@ class JsonComparatorTest  {
     @Test
     @DisplayName("Missing Field: Required")
     final void missingFieldRequiredTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("missingFieldDefault");
+		JSONObject testData = object.getJSONObject("missingFieldRequired");
 		String json1 = testData.get("json1").toString();
 		String json2 = testData.get("json2").toString();
 
@@ -302,7 +302,7 @@ class JsonComparatorTest  {
         Match m = comparator.compare(json1, json2);
 
         String mjson = config.jsonmapper.writeValueAsString(m);
-        String expected = object.getJSONObject("missingFieldRequired").get("output").toString();
+        String expected = testData.get("output").toString();
         JSONAssert.assertEquals(expected, mjson, false);
     }
 	/**
@@ -341,13 +341,13 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Strict Validations test - positive")
 	final void validationPositiveTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("validationNegative");
+		JSONObject testData = object.getJSONObject("validationPositive");
 		String json1 = testData.get("json1").toString();
 		String json2 = json1;
 
 		CompareTemplate template = new CompareTemplate();
-		String[] paths = {"", "/string", "/int", "/float", "/obj", "/rptArr", "/nrptArr"};
-		DataType[] dataTypes = {DataType.Obj, DataType.Str, DataType.Int, DataType.Float, DataType.Obj, DataType.RptArray, DataType.NrptArray};
+		String[] paths = {"", "/string", "/int", "/float", "/floatInt", "/obj", "/rptArr", "/nrptArr"};
+		DataType[] dataTypes = {DataType.Obj, DataType.Str, DataType.Int, DataType.Float, DataType.Float, DataType.Obj, DataType.RptArray, DataType.NrptArray};
 		for (int i = 0; i < paths.length; i++) {
 			TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], PresenceType.Required, ComparisonType.Ignore);
 			template.addRule(rule);
@@ -357,7 +357,7 @@ class JsonComparatorTest  {
 		Match m = comparator.compare(json1, json2);
 
 		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = object.getJSONObject("exactMatch").get("output").toString();
+		String expected = testData.get("output").toString();
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
