@@ -3,7 +3,7 @@
 ## Steps to Deploy Moviebook App
 
 
-##Requirements
+## Requirements
 
 1. A Kubernetes cluster uses the Secret of docker-registry type to authenticate with a container registry to pull a private image.  
 Create a Secret by providing credentials on the command line  
