@@ -16,9 +16,8 @@ where,
 `your-pword` is your Docker password.  
 `your-email` is your Docker email.  
 
-2. Export `CUSTOMER`, `APPLICATION`, `INSTANCEID` as Environment variables, for example:
+2. Export `APPLICATION`, `INSTANCEID` as Environment variables, for example:
 ```
-export CUSTOMER=cube-aakash
 export APPLICATION=movieinfo
 export INSTANCEID=prod
 ```

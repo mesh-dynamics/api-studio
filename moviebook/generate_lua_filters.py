@@ -5,7 +5,7 @@ import os
 from jinja2 import Environment, FileSystemLoader
 
 env = Environment(loader=FileSystemLoader('moviebook/templates'))
-customer = os.environ['CUSTOMER']
+customer = os.environ['USERNAME']
 application = os.environ['APPLICATION']
 instanceid = os.environ['INSTANCEID']
 data_stream = open('moviebook/service.yaml', 'r')
