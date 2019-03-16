@@ -11,6 +11,8 @@ init() {
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
 	kubectl apply -f cube/solr_service_entry.yaml
+	./generate_lua_filters.py
+	echo "lua filters generated"
 
 	export INGRESS_HOST=$(minikube ip)
 	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
@@ -20,10 +22,28 @@ init() {
 }
 
 record() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	export INGRESS_HOST=$(minikube ip)
+	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
+	curl -X POST \
+  http://$GATEWAY_URL/cs/start/$USERNAME/$APPLICATION/$INSTANCEID/$COLLECTION_NAME \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache'
 }
 
 stop_record() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	export INGRESS_HOST=$(minikube ip)
+	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+	curl -X POST \
+  http://$GATEWAY_URL/cs/stop/$USERNAME/$APPLICATION/$COLLECTION_NAME \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache'
 	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
 }
 
