@@ -8,7 +8,7 @@ env = Environment(loader=FileSystemLoader('moviebook/templates'))
 customer = os.getlogin()
 application = os.environ['APPLICATION']
 instanceid = os.environ['INSTANCEID']
-data_stream = open('moviebook/service.yaml', 'r')
+data_stream = open('moviebook/services.yaml', 'r')
 dataMap = yaml.safe_load(data_stream)
 
 template_record = env.get_template('moviebook_record.j2')
