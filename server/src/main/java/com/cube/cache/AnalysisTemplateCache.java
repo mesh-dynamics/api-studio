@@ -11,6 +11,7 @@ import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ComparisonChain;
 
 import com.cube.core.CompareTemplate;
 import com.cube.dao.ReqRespStore;
@@ -50,6 +51,18 @@ public class AnalysisTemplateCache {
         @Override
         public int hashCode() {
             return Objects.hashCode(this.customerId,this.appId,this.serviceId,this.path);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof TemplateKey) {
+                TemplateKey other = (TemplateKey) o;
+                return (ComparisonChain.start().
+                        compare(this.customerId , other.customerId).compare(this.appId , other.appId).
+                        compare(this.serviceId , other.serviceId).compare(this.path , other.path).result() == 0);
+            } else {
+                return false;
+            }
         }
 
 
