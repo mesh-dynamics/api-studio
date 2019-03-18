@@ -21,8 +21,14 @@ where,
 export APPLICATION=movieinfo
 export INSTANCEID=prod
 ```
+3. Install python dependencies(pip, yaml, jinja2):
+```
+sudo easy_install pip
+sudo pip install pyaml
+sudo pip install jinja2
+```
 
-3. Add service names to `moviebook/service.yaml` for which lua filters will be generated.
+4. Add service names to `moviebook/service.yaml` for which lua filters will be generated.
 
 ### Deploy
 ```
