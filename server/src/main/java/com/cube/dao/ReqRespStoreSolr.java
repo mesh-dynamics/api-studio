@@ -685,7 +685,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     /**
-     * Save an analysis template as json for the given key parameters in json
+     * Save an analysis template as json for the given key parameters in solr
      * @param customerId
      * @param appId
      * @param serviceId

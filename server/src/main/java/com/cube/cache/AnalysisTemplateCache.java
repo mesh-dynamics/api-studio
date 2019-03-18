@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -38,9 +40,18 @@ public class AnalysisTemplateCache {
             this.path = path;
         }
 
-        public String toString(){
-            return customerId.concat("-").concat(appId).concat("-").concat(serviceId).concat("-").concat(path);
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this).add("customerId" , customerId).add("appId" , appId)
+                    .add("serviceId" , serviceId).add("path" , path).toString();
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.customerId,this.appId,this.serviceId,this.path);
+        }
+
 
     }
 
@@ -76,7 +87,7 @@ public class AnalysisTemplateCache {
         try {
             return templateCache.get(key);
         }  catch (ExecutionException e) {
-            // wrapping all templates in CacheException class
+            // wrapping all exceptions in CacheException class
             throw new CacheException("Error while fetching template for :".concat(key.toString()) , e);
 
         }
