@@ -50,6 +50,7 @@ stop_record() {
 
 replay() {
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
+	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 }
 
 stop_replay() {
