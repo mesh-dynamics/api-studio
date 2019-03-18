@@ -11,7 +11,7 @@ init() {
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
 	kubectl apply -f cube/solr_service_entry.yaml
-	./generate_service.py
+	./fetch_servicenames.py
 	./generate_lua_filters.py
 	echo "lua filters generated"
 
