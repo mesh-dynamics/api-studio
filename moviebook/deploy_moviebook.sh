@@ -29,7 +29,7 @@ record() {
 	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
 	curl -X POST \
-  http://$GATEWAY_URL/cs/start/$USERNAME/$APPLICATION/$INSTANCEID/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/start/$USER/$APPLICATION/$INSTANCEID/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 }
@@ -41,7 +41,7 @@ stop_record() {
 	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
 	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 	curl -X POST \
-  http://$GATEWAY_URL/cs/stop/$USERNAME/$APPLICATION/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/stop/$USER/$APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
