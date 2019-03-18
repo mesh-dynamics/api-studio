@@ -25,7 +25,13 @@ import com.cube.core.*;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.cache.AnalysisTemplateCache;
+import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate;
+import com.cube.core.TemplatedResponseComparator;
+
 import com.cube.dao.*;
+import com.cube.exception.CacheException;
 
 /*
  * Created by IntelliJ IDEA.
@@ -37,16 +43,20 @@ public class Analyzer {
     private static final Logger LOGGER = LogManager.getLogger(Analyzer.class);
 
 
-    private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper) {
+    private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper, AnalysisTemplateCache templateCache) {
         analysis = new Analysis(replayid, reqcnt);
         this.jsonmapper = jsonmapper;
-        comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonmapper);
+
+        //comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonmapper);
+        this.templateCache = templateCache;
     }
 
 
     private Analysis analysis;
-    private ResponseComparator comparator = ResponseComparator.EQUALITYCOMPARATOR;
+    //private ResponseComparator comparator = ResponseComparator.EQUALITYCOMPARATOR;
     private final ObjectMapper jsonmapper;
+    // Template cache being passed from the config
+    private final AnalysisTemplateCache templateCache;
 
     /**
      * @param rrstore
@@ -128,14 +138,41 @@ public class Analyzer {
     private Analysis.RespMatchWithReq checkRespMatch(Request recordreq, Request replayreq, ReqRespStore rrstore) {
         return recordreq.reqid.flatMap(recordreqid -> replayreq.reqid.flatMap(replayreqid -> {
             // fetch response of recording and replay
-            Optional<Response> recordedresp = rrstore.getResponse(recordreqid);
-            Optional<Response> replayresp = rrstore.getResponse(replayreqid);
+            // if enough information is not available to retrieve a template for matching , return a no match
+            if (recordreq.app.isEmpty() || recordreq.customerid.isEmpty() || recordreq.path.isEmpty() ||
+                recordreq.getService().isEmpty()) {
+                LOGGER.error("Not enough information to construct a template cache key for recorded req :: "
+                        + recordreq.reqid.get());
+                return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH));
+            }
 
 
-            return recordedresp.flatMap(recordedr -> replayresp.flatMap(replayr -> {
-                Comparator.Match rm = comparator.compare(recordedr, replayr);
-                return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, rm));
-            }));
+            try {
+                // get appropriate template from solr
+                CompareTemplate template = templateCache.fetchCompareTemplate(recordreq.customerid.get(),
+                        recordreq.app.get(), recordreq.getService().get(), recordreq.path);
+                LOGGER.info("Successfully fetched response comparision template for ::"
+                        .concat(recordreq.customerid.get()).concat(" ")
+                        .concat(recordreq.app.get()).concat(" ")
+                        .concat(recordreq.getService().get()).concat(" ")
+                        .concat(recordreq.path));
+                Optional<Response> recordedresp = rrstore.getResponse(recordreqid);
+                Optional<Response> replayresp = rrstore.getResponse(replayreqid);
+                TemplatedResponseComparator comparator = new TemplatedResponseComparator
+                        (template , jsonmapper);
+                //question ? what happens when these optionals don't contain any value ...
+                // what gets returned
+                return recordedresp.flatMap(recordedr -> replayresp.flatMap(replayr -> {
+                    Comparator.Match rm = comparator.compare(recordedr, replayr);
+                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, rm));
+                }));
+            } catch(CacheException e) {
+                // if analysis retrieval caused an error, log the error and return NO MATCH
+                LOGGER.error("Exception while retrieving template from cache for recorded request :: " +
+                        recordreq.reqid.get() + " " +  e.getMessage());
+                return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH));
+            }
+
         })).orElse(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH));
     }
 
@@ -166,7 +203,7 @@ public class Analyzer {
      * @return
      */
     public static Optional<Analysis> analyze(String replayid, String tracefield,
-                                             ReqRespStore rrstore, ObjectMapper jsonmapper) {
+                                             ReqRespStore rrstore, ObjectMapper jsonmapper, AnalysisTemplateCache templateCache) {
         // String collection = Replay.getCollectionFromReplayId(replayid);
 
         Optional<Replay> replay = rrstore.getReplay(replayid);
@@ -203,7 +240,7 @@ public class Analyzer {
 
         return replay.flatMap(r -> {
             Result<Request> reqs = r.getRequests(rrstore);
-            Analyzer analyzer = new Analyzer(replayid, (int) reqs.numResults(), jsonmapper);
+            Analyzer analyzer = new Analyzer(replayid, (int) reqs.numResults(), jsonmapper , templateCache);
             if (!rrstore.saveAnalysis(analyzer.analysis)) {
                 return Optional.empty();
             }

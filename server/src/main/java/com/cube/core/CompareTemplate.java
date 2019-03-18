@@ -3,8 +3,6 @@
  */
 package com.cube.core;
 
-import static com.cube.core.Comparator.Resolution.*;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -13,6 +11,11 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
+import static com.cube.core.Comparator.Resolution.*;
 import com.cube.core.RequestComparator.PathCT;
 
 /**
@@ -39,10 +42,16 @@ import com.cube.core.RequestComparator.PathCT;
  */
 public class CompareTemplate {
 
+	//Adding appropriate annotations for json serialization and deserialization
+	static String PREFIX_PATH_FIELD = "prefixPath";
+	static String RULES_FIELD = "rules";
 	private static final Logger LOGGER = LogManager.getLogger(CompareTemplate.class);
 
 	private Map<String, TemplateEntry> rules;
-	final String prefixpath;
+
+
+	@JsonProperty("prefixPath")
+ 	final String prefixpath;
 
 	public enum DataType {
 		Str,
@@ -105,7 +114,15 @@ public class CompareTemplate {
 		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
 	}
 
-	CompareTemplate subsetWithPrefix(String prefix) {
+	@JsonGetter("rules")
+	public Map<String, TemplateEntry> getRulesForSerialization() {return rules;}
+
+	@JsonSetter("rules")
+	public void setRulesForSerialization(Map<String, TemplateEntry> rules) {
+		this.rules = rules;
+	}
+
+	public CompareTemplate subsetWithPrefix(String prefix) {
 		CompareTemplate ret = new CompareTemplate(prefix);
 
 		getRules().forEach(rule -> {
@@ -187,5 +204,5 @@ public class CompareTemplate {
 	public void addRule(TemplateEntry rule) {
 		rules.put(rule.path, rule);
 	}
-	
+
 }
