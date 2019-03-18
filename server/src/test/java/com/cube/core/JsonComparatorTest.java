@@ -158,7 +158,7 @@ class JsonComparatorTest  {
 	@Test
 	@DisplayName("Equality optional comparison test")
 	final void equalOptionalComparisonTest() throws JsonProcessingException, JSONException {
-		JSONObject testData = object.getJSONObject("defaultComparison");
+		JSONObject testData = object.getJSONObject("equalOptionalComparison");
 		String json1 = testData.get("json1").toString();
 		String json2 = testData.get("json2").toString();;
 
