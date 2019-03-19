@@ -57,7 +57,7 @@ class JsonComparatorTest  {
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
-		readFile("JsonComparator.json");
+        readJSONFile("JsonComparator.json");
 	}
 
 	/**
@@ -67,7 +67,7 @@ class JsonComparatorTest  {
 	void tearDown() throws Exception {
 	}
 
-	public void readFile(String url) {
+	public void readJSONFile(String url) {
 		try {
 			File file = new File(JsonComparatorTest.class.getClassLoader().getResource(url).toURI().getPath());
 			String data = readFileToString(file, Charset.defaultCharset());
@@ -129,7 +129,7 @@ class JsonComparatorTest  {
 	 * @throws JSONException 
 	 */
 	@Test
-	@DisplayName("Strict equality comparison negative test")
+	@DisplayName("Strict equality comparison test - Negative")
 	final void strictEqualityComparisonNegativeTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("strictEqualityComparisonNegative");
 		compareTest(testData);
@@ -141,7 +141,7 @@ class JsonComparatorTest  {
 	 * @throws JSONException 
 	 */
 	@Test
-	@DisplayName("Strict equality comparison positive test")
+	@DisplayName("Strict equality comparison test - Positive")
 	final void strictEqualityComparisonPositiveTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("strictEqualityComparisonPositive");
 		compareTest(testData);
@@ -224,7 +224,7 @@ class JsonComparatorTest  {
 	 * @throws JSONException
 	 */
 	@Test
-	@DisplayName("Strict Validations test - negative")
+	@DisplayName("Strict Validations test - Negative")
 	final void validationNegativeTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("validationNegative");
 		compareTest(testData);
@@ -236,7 +236,7 @@ class JsonComparatorTest  {
 	 * @throws JSONException
 	 */
 	@Test
-	@DisplayName("Strict Validations test - positive")
+	@DisplayName("Strict Validations test - Positive")
 	final void validationPositiveTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("validationPositive");
 		compareTest(testData);
