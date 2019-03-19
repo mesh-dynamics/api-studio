@@ -2,7 +2,11 @@
 
 #http://redsymbol.net/articles/unofficial-bash-strict-mode
 
-
+export_env_variables() {
+	export INGRESS_HOST=$(minikube ip)
+	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+}
 init() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
@@ -15,9 +19,7 @@ init() {
 	./generate_lua_filters.py
 	echo "lua filters generated"
 
-	export INGRESS_HOST=$(minikube ip)
-	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+	export_env_variables
 	sleep 15
 	open http://$GATEWAY_URL/minfo/health
 }
@@ -25,9 +27,7 @@ init() {
 record() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
-	export INGRESS_HOST=$(minikube ip)
-	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+	export_env_variables
 	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
 	curl -X POST \
   http://$GATEWAY_URL/cs/start/$USER/$APPLICATION/$INSTANCEID/$COLLECTION_NAME \
@@ -38,9 +38,7 @@ record() {
 stop_record() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
-	export INGRESS_HOST=$(minikube ip)
-	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+	export_env_variables
 	curl -X POST \
   http://$GATEWAY_URL/cs/stop/$USER/$APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -58,9 +56,7 @@ replay() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
 	generate_mock_all_yaml $COLLECTION_NAME
-	export INGRESS_HOST=$(minikube ip)
-	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+	export_env_variables
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 	REPLAY_ID=$(curl -X POST \
@@ -76,6 +72,7 @@ replay() {
 
 stop_replay() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
+	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
 }
 
 clean() {
