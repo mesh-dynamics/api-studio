@@ -36,6 +36,7 @@ sudo pip install jinja2
 ```
 - This will deploy the moviebook app on the local kubernetes cluster.
 - Generate Lua filters
+- Generate mock-all-except-moviebook.yaml
 - Open `/minfo/health` endpoint in your default browser.
 
 ### Record Traffic

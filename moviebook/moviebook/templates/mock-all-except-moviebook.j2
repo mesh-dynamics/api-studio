@@ -1,0 +1,75 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - uri:
+        prefix: /reviews
+    rewrite:
+      uri: /ms/{{customer}}/{{application}}/test1/reviews/reviews
+    route:
+    - destination:
+        host: cubews
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ratings
+spec:
+  hosts:
+  - ratings
+  http:
+  - match:
+    - uri:
+        prefix: /ratings
+    rewrite:
+        uri: /ms/{{customer}}/{{application}}/test1/ratings/ratings
+    route:
+    - destination:
+        host: cubews
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: details
+spec:
+  hosts:
+  - details
+  http:
+  - match:
+    - uri:
+        prefix: /details
+    rewrite:
+        uri: /ms/{{customer}}/{{application}}/test1/details/details
+    route:
+    - destination:
+        host: cubews
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: restwrapjdbc
+spec:
+  hosts:
+  - restwrapjdbc
+  http:
+  - match:
+    - uri:
+        prefix: /restsql
+    rewrite:
+        uri: /ms/{{customer}}/{{application}}/test1/restwrapjdbc/restsql
+    route:
+    - destination:
+        host: cubews
+        port:
+          number: 8080
