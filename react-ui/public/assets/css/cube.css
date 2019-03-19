@@ -10,7 +10,9 @@ html , body{
  width:100%;
  
  }
- 
+ .padding-15 {
+     padding: 15px;
+ }
 .full-height{
  height:100%;
  }
@@ -536,7 +538,6 @@ h8{font-size: 8px;}
 
 body {
     color: #525252;
-    background-color: #2A313F;
     font-family: Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     font-size: 13px;
     font-weight: 400;
@@ -912,7 +913,7 @@ a:focus {
 .toggle {
     float: left;
     margin: 0;
-    padding-top: 16px;
+    padding: 5px 15px 0;
     width: 70px
 }
 .toggle a {
@@ -1759,7 +1760,7 @@ span.right {
 }
 @media (min-width: 992px) {
     footer {
-        margin-left: 230px
+
     }
 }
 @media (min-width: 992px) {

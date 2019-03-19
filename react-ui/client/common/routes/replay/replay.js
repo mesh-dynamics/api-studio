@@ -51,11 +51,13 @@ class replay extends Component {
         <Clearfix />
         <Row style={{ minHeight: '100vh' }} >
             {/*Service Graph: */}
-            <div className="col-sm-12">
+            <div className="col-sm-9">
             { 
                 <ServiceGraph />
             }
             </div>
+
+      <div className="col-sm-3">Hi</div>
         </Row>
         
       </div>

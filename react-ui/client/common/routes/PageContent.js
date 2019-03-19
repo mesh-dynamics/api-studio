@@ -8,9 +8,9 @@ class PageContent extends Component {
   render() {
     const { needMargin } = this.props;
     return (
-      <div className={ needMargin ? "right_col" : "" } role="main">
-        { config }
+      <div className="padding-15" role="main">
         { replay }
+        { config }
         { analysis }
       </div>
     )

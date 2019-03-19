@@ -3,5 +3,5 @@ import { Route } from 'react-router'
 import Replay from './replay'
 
 export default [
-  <Route key="replay" path="/replay" component={Replay} />,
+  <Route key="replay" path="/" component={Replay} />,
 ]
