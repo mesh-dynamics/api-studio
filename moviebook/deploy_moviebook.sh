@@ -63,6 +63,11 @@ replay() {
 	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
+	curl -X POST \
+  http://$GATEWAY_URL/rs/init/$USER/$APPLICATION/$COLLECTION_NAME \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache' \
+  -d "endpoint=http://$GATEWAY_URL&instanceid=$INSTANCEID"
 }
 
 stop_replay() {
