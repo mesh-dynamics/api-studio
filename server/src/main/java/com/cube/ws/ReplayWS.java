@@ -156,7 +156,7 @@ public class ReplayWS {
 		Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 		
 		Response resp = replay.map(r -> {
-			if (r.status != ReplayStatus.Running || r.status != ReplayStatus.Init) {
+			if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
 				return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
 			}
 			String json;

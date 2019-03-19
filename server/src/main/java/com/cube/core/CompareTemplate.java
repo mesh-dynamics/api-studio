@@ -21,21 +21,21 @@ import com.cube.core.RequestComparator.PathCT;
  * Semantics:
  * Presence Type:
  * Required => if value missing in rhs -> ERR_Required
- * 		     if value missing in lhs, but present in rhs
- * 			if (comparison type is Ignore or Default)
- * 			    -> OK_Ignore or OK
- *                          else
- * 			    -> OK_OtherValInvalid
+ * 		       if value missing in lhs, but present in rhs
+ * 					if (comparison type is Ignore or Default)
+ * 			    		-> OK_Ignore or OK
+ *                  else
+ * 			    		-> OK_OtherValInvalid
  *
  * Optional => If value missing in rhs -> OK_Optional
- *                      If value missing in lhs -> OK_OtherValInvalid
+ *             If value missing in lhs -> OK_OtherValInvalid
  *
  * Default => If value missing in rhs -> OK
- *                    If value missing in lhs, but present in rhs
- * 			if (comparison type is Ignore or Default)
- * 			    -> OK_Ignore or OK
- *                          else
- * 			    -> OK_OtherValInvalid
+ *            If value missing in lhs, but present in rhs
+ * 				if (comparison type is Ignore or Default)
+ * 			    	-> OK_Ignore or OK
+ *              else
+ * 			    	-> OK_OtherValInvalid
  */
 public class CompareTemplate {
 

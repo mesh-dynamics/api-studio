@@ -132,9 +132,9 @@ public class ReplayDriver  {
                 // transform fields in the request before the replay.
                 replay.xfmer.ifPresent(x -> {x.transformRequest(r);});
 
-                UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
-                    .path(r.path);
                 try {
+                    UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
+                        .path(r.path);
                     r.qparams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
                         String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
                             return URLEncoder.encode(v, "UTF-8");
