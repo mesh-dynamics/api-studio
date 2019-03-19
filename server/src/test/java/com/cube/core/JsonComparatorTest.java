@@ -3,6 +3,7 @@
  */
 package com.cube.core;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
@@ -80,6 +81,36 @@ class JsonComparatorTest  {
 		}
 	}
 
+	private void compareTest(JSONObject testData) throws JsonProcessingException, JSONException{
+		String json1 = testData.get("json1").toString();
+		String json2 = testData.get("json2").toString();
+		JSONArray rules = testData.getJSONArray("rules");
+		String expected = testData.get("output").toString();
+
+		CompareTemplate template = new CompareTemplate();
+
+		for (int i = 0; i < rules.length(); i++) {
+			JSONObject ruleObj = rules.getJSONObject(i);
+			String path = ruleObj.getString("path");
+			DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
+			PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
+			ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+			String customization = ruleObj.getString("customization");
+			TemplateEntry rule;
+			if (customization.isEmpty()) {
+				rule = new TemplateEntry(path, dataType, presenceType, comparisonType);
+			} else {
+				rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
+			}
+			template.addRule(rule);
+		}
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+		Match m = comparator.compare(json1, json2);
+		String mjson = config.jsonmapper.writeValueAsString(m);
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
+
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
 	 * @throws JsonProcessingException 
@@ -89,17 +120,8 @@ class JsonComparatorTest  {
 	@DisplayName("Default comparison test")
 	final void defaultComparisonTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("defaultComparison");
-		String json1 = testData.get("json1").toString();
-		String json2 = testData.get("json2").toString();
-
-		CompareTemplate template = new CompareTemplate();
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-		
-		Match m = comparator.compare(json1, json2);
-		
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = testData.get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
+		//"path": "","dataType": "","presenceType": "","comparisonType": ""
 	}
 
 	/**
@@ -111,19 +133,7 @@ class JsonComparatorTest  {
 	@DisplayName("Strict equality comparison negative test")
 	final void strictEqualityComparisonNegativeTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("strictEqualityComparisonNegative");
-		String json1 = testData.get("json1").toString();
-		String json2 = testData.get("json2").toString();
-		
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
-		template.addRule(rule);
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-		
-		Match m = comparator.compare(json1, json2);
-		
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = testData.get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
 	}
 
 	/**
@@ -135,19 +145,7 @@ class JsonComparatorTest  {
 	@DisplayName("Strict equality comparison positive test")
 	final void strictEqualityComparisonPositiveTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("strictEqualityComparisonPositive");
-		String json1 = testData.get("json1").toString();
-		String json2 = json1;
-		
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
-		template.addRule(rule);
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-		
-		Match m = comparator.compare(json1, json2);
-		
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = testData.get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
 	}
 
 	/**
@@ -159,19 +157,7 @@ class JsonComparatorTest  {
 	@DisplayName("Equality optional comparison test")
 	final void equalOptionalComparisonTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("equalOptionalComparison");
-		String json1 = testData.get("json1").toString();
-		String json2 = testData.get("json2").toString();;
-
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.EqualOptional);
-		template.addRule(rule);
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-
-		Match m = comparator.compare(json1, json2);
-
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = object.getJSONObject("equalOptionalComparison").get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
 	}
 
 	/**
@@ -183,26 +169,7 @@ class JsonComparatorTest  {
 	@DisplayName("Custom comparison test - Positive")
 	final void customComparisonPositiveTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("customComparisonPositive");
-		String json1 = testData.get("json1").toString();
-		String json2 = testData.get("json2").toString();;
-
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry emailRule = new TemplateEntry("/email", DataType.Str, PresenceType.Required, ComparisonType.CustomRegex, Optional.of(".+\\@.+\\..+"));
-		TemplateEntry roundRule = new TemplateEntry("/round", DataType.Float, PresenceType.Required, ComparisonType.CustomRound, Optional.of("2"));
-		TemplateEntry ceilingRule = new TemplateEntry("/ceiling", DataType.Float, PresenceType.Required, ComparisonType.CustomCeil, Optional.of("2"));
-		TemplateEntry floorRule = new TemplateEntry("/floor", DataType.Float, PresenceType.Required, ComparisonType.CustomFloor, Optional.of("2"));
-		template.addRule(emailRule);
-		template.addRule(roundRule);
-		template.addRule(ceilingRule);
-		template.addRule(floorRule);
-
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-
-		Match m = comparator.compare(json1, json2);
-
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = testData.get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
 	}
 
 	/**
@@ -214,26 +181,7 @@ class JsonComparatorTest  {
 	@DisplayName("Custom comparison test - Negative")
 	final void customComparisonNegativeTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("customComparisonNegative");
-		String json1 = testData.get("json1").toString();
-		String json2 = testData.get("json2").toString();;
-
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry emailRule = new TemplateEntry("/email", DataType.Str, PresenceType.Required, ComparisonType.CustomRegex, Optional.of(".+\\@.+\\..+"));
-		TemplateEntry roundRule = new TemplateEntry("/round", DataType.Float, PresenceType.Required, ComparisonType.CustomRound, Optional.of("2"));
-		TemplateEntry ceilingRule = new TemplateEntry("/ceiling", DataType.Float, PresenceType.Required, ComparisonType.CustomCeil, Optional.of("2"));
-		TemplateEntry floorRule = new TemplateEntry("/floor", DataType.Float, PresenceType.Required, ComparisonType.CustomFloor, Optional.of("2"));
-		template.addRule(emailRule);
-		template.addRule(roundRule);
-		template.addRule(ceilingRule);
-		template.addRule(floorRule);
-
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-
-		Match m = comparator.compare(json1, json2);
-
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = testData.get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
 	}
 
 	/**
@@ -245,17 +193,7 @@ class JsonComparatorTest  {
 	@DisplayName("Missing Field: Default")
 	final void missingFieldDefaultTest() throws JsonProcessingException, JSONException {
 		JSONObject testData = object.getJSONObject("missingFieldDefault");
-		String json1 = testData.get("json1").toString();
-		String json2 = testData.get("json2").toString();
-
-		CompareTemplate template = new CompareTemplate();
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-
-		Match m = comparator.compare(json1, json2);
-
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		String expected = testData.get("output").toString();
-		JSONAssert.assertEquals(expected, mjson, false);
+		compareTest(testData);
 	}
 
     /**
