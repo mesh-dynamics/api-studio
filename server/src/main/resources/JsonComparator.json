@@ -255,5 +255,53 @@
             "mt":           "ExactMatch",
             "matchmeta":    "JsonDiff"
         }
+    },
+
+    "inheritance" : {
+        "json1": {
+            "string":   "cube",
+            "int":      35,
+            "float":    41.1,
+            "obj-1":      {
+                "string":   "cube",
+                "int":      35,
+                "float":    41.1,
+                "obj-2":      {
+                    "string":   "cube",
+                    "int":      35,
+                    "float":    41.1
+                }
+            }
+        },
+        "json2": {
+            "string":   "cube-root",
+            "int":      36,
+            "float":    41.2,
+            "obj-1":      {
+                "string":   "cubic",
+                "int":      37,
+                "float":    41.3,
+                "obj-2":      {
+                    "string":   "ice cube",
+                    "int":      34,
+                    "float":    41.4
+                }
+            }
+        },
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "diffs": [
+                { "op": "replace",  "path": "/string",              "value": "cube-root",   "fromValue": "cube",    "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/int",                 "value": 36,            "fromValue": 35,        "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/float",               "value": 41.2,          "fromValue": 41.1,      "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/obj-1/string",        "value": "cubic",       "fromValue": "cube",    "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/obj-1/int",           "value": 37,            "fromValue": 35,        "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/obj-1/float",         "value": 41.3,          "fromValue": 41.1,      "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/obj-1/obj-2/string",  "value": "ice cube",    "fromValue": "cube",    "resolution": "OK_Ignore"           },
+                { "op": "replace",  "path": "/obj-1/obj-2/int",     "value": 34,            "fromValue": 35,        "resolution": "OK_Ignore"           },
+                { "op": "replace",  "path": "/obj-1/obj-2/float",   "value": 41.4,          "fromValue": 41.1,      "resolution": "OK_Ignore"           }
+            ]
+        }
     }
 }

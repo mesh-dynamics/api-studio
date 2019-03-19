@@ -361,4 +361,31 @@ class JsonComparatorTest  {
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Inheritance test")
+	final void inheritanceTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("inheritance");
+		String json1 = testData.get("json1").toString();
+		String json2 = testData.get("json2").toString();
+
+		CompareTemplate template = new CompareTemplate();
+		String[] paths = {"", "/obj-1", "/obj-1/obj-2"};
+		ComparisonType[] ct = {ComparisonType.Equal, ComparisonType.EqualOptional, ComparisonType.Ignore};
+		for (int i = 0; i < paths.length; i++) {
+			TemplateEntry rule = new TemplateEntry(paths[i], DataType.Obj, PresenceType.Required, ct[i]);
+			template.addRule(rule);
+		}
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+
+		Match m = comparator.compare(json1, json2);
+
+		String mjson = config.jsonmapper.writeValueAsString(m);
+		String expected = testData.get("output").toString();
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
 }
