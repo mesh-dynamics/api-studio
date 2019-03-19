@@ -68,6 +68,7 @@ replay() {
   http://$GATEWAY_URL/rs/start/$USER/$APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
+	echo $REPLAY_ID > replayid.temp
 }
 
 stop_replay() {
@@ -75,6 +76,14 @@ stop_replay() {
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
 }
 
+analyze() {
+	export_env_variables
+	REPLAY_ID=$(cat replayid.temp)
+	curl -X POST \
+  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache'
+}
 clean() {
 	kubectl delete -f moviebook/moviebook.yaml
 	kubectl delete -f cube/service.yaml
@@ -83,6 +92,7 @@ clean() {
 	kubectl delete -f moviebook/moviebook_virtualservice.yaml
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
+	rm replayid.temp
 }
 
 main() {
@@ -93,8 +103,9 @@ main() {
     stop_recording) shift; stop_record "@";;
     replay) shift; replay "@";;
     stop_replay) shift; stop_replay "@";;
+		analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
   esac
 }
 
