@@ -165,9 +165,7 @@
             "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
             "body": { "b1": "test123" }
         },
-        "rules": [
-
-        ],
+        "rules": [],
         "output" : {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
@@ -186,6 +184,9 @@
             "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
             "body": { "b1": "test123" }
         },
+        "rules": [
+            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Optional", "comparisonType": "Equal", "customization": "" }
+        ],
         "output": {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
@@ -204,6 +205,9 @@
             "hdr":  { "h1": "h1v1",      "h2": 10,           "h3": 5.456 },
             "body": { "b1": "test123" }
         },
+        "rules": [
+            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+        ],
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
@@ -234,6 +238,15 @@
             "rptArr":   123,
             "nrptArr":  [ "string", 123 ]
         },
+        "rules": [
+            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "" }
+        ],
         "output" : {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
@@ -268,13 +281,26 @@
             ]
         },
         "json2": {
-            "string":   123,
-            "int":      "35",
-            "float":    41,
-            "obj":      "not an object",
-            "rptArr":   123,
-            "nrptArr":  [ "string", 123 ]
+            "string":   "5c80e878323659a64d123db4",
+            "int":      35,
+            "float":    41.280324,
+            "floatInt":    41,
+            "obj":      { "name": "Steele Dominguez" },
+            "rptArr":   [ "dolore", "irure" ],
+            "nrptArr":  [
+                { "id": 0 },
+                { "name": "Steele Dominguez"}
+            ]
         },
+        "rules": [
+            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
+            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "" }
+        ],
         "output": {
             "mt":           "ExactMatch",
             "matchmeta":    "JsonDiff"
@@ -312,6 +338,11 @@
                 }
             }
         },
+        "rules": [
+            { "path": "",               "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/obj-1",         "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/obj-1/obj-2",   "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Ignore",         "customization": "" }
+        ],
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
