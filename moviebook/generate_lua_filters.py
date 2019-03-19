@@ -13,11 +13,6 @@ dataMap = yaml.safe_load(data_stream)
 
 template_record = env.get_template('moviebook_record.j2')
 template_replay = env.get_template('moviebook_replay.j2')
-template_mockall = env.get_template('mock-all-except-moviebook.j2')
-with open("moviebook/mock-all-except-moviebook.yaml", "wb") as mock:
-    output_from_mockall_template = template_mockall.render(customer=customer, application=application)
-    mock.write(output_from_mockall_template)
-mock.close()
 with open("moviebook/moviebook-envoy-cs.yaml", "wb") as record:
     with open("moviebook/moviebook-envoy-replay-cs.yaml", "wb") as replay:
         for service in dataMap['services']:

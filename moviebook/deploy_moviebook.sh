@@ -48,7 +48,19 @@ stop_record() {
 	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
 }
 
+generate_mock_all_yaml() {
+	sed -e "s/{{customer}}/$USER/g" moviebook/templates/mock-all-except-moviebook.j2 > moviebook/mock-all-except-moviebook.yaml
+	sed -i '' -e "s/{{application}}/$APPLICATION/g" moviebook/mock-all-except-moviebook.yaml
+	sed -i '' -e "s/{{collection}}/$1/g" moviebook/mock-all-except-moviebook.yaml
+}
+
 replay() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	generate_mock_all_yaml $COLLECTION_NAME
+	export INGRESS_HOST=$(minikube ip)
+	export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
+	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 }
