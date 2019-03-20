@@ -41,10 +41,10 @@ public class CompareTemplate {
 
 	private static final Logger LOGGER = LogManager.getLogger(CompareTemplate.class);
 
-	Map<String, TemplateEntry> rules;
+	private Map<String, TemplateEntry> rules;
 	final String prefixpath;
 
-	enum DataType {
+	public enum DataType {
 		Str,
 		Int,
 		Float,
@@ -54,7 +54,7 @@ public class CompareTemplate {
 		Default // not specified
 	}
 	
-	enum PresenceType {
+	public enum PresenceType {
 		Required,
 		Optional,
 		Default // if not specified
@@ -82,7 +82,7 @@ public class CompareTemplate {
 
 	public CompareTemplate(String prefixpath) {
 		super();
-		rules = new HashMap<String, TemplateEntry>();
+		rules = new HashMap<>();
 		this.prefixpath = prefixpath;
 	}
 
@@ -101,11 +101,11 @@ public class CompareTemplate {
 	}
 
 
-	public List<PathCT> getPathCTs() {
+	List<PathCT> getPathCTs() {
 		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
 	}
 
-	public CompareTemplate subsetWithPrefix(String prefix) {
+	CompareTemplate subsetWithPrefix(String prefix) {
 		CompareTemplate ret = new CompareTemplate(prefix);
 
 		getRules().forEach(rule -> {
@@ -148,8 +148,8 @@ public class CompareTemplate {
 			Optional<List<String>> rvals = Optional.ofNullable(rhsfmap.get(rule.path));
 			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
 				Comparator.Resolution resolution = OK;
-				Set<String> lset = new HashSet<String>(lvals.orElse(Collections.emptyList()));
-				Set<String> rset = new HashSet<String>(rvals.orElse(Collections.emptyList()));
+				Set<String> lset = new HashSet<>(lvals.orElse(Collections.emptyList()));
+				Set<String> rset = new HashSet<>(rvals.orElse(Collections.emptyList()));
 
 				// check if all values match
 				if (!lset.equals(rset)) {
@@ -170,7 +170,7 @@ public class CompareTemplate {
 			if ((match.mt == Comparator.MatchType.NoMatch) && !needDiff) {
 				break; // short circuit
 			}
-		};
+		}
 	}
 
 
