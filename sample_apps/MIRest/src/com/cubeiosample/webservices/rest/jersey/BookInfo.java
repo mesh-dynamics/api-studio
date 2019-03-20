@@ -24,6 +24,7 @@ public class BookInfo {
     private WebTarget bookRatingsService = null;
     private WebTarget bookReviewsService = null;
     private Tracer tracer = null;
+    private Config config = null;
 
     final static Logger LOGGER = Logger.getLogger(BookInfo.class);
 
@@ -32,7 +33,7 @@ public class BookInfo {
     private static String BOOKRATINGS_URI = "http://ratings:9080";
     private static String BOOKREVIEWS_URI = "http://reviews:9080";
 
-    public BookInfo(Tracer tracer) {
+    public BookInfo(Tracer tracer, Config config) {
         ClientConfig clientConfig = new ClientConfig()
                 .property(ClientProperties.READ_TIMEOUT, 100000)
                 .property(ClientProperties.CONNECT_TIMEOUT, 10000);
@@ -43,6 +44,7 @@ public class BookInfo {
         bookReviewsService = restClient.target(BOOKREVIEWS_URI);
 
         this.tracer = tracer;
+        this.config = config;
     }
 
     // get book info
@@ -55,7 +57,7 @@ public class BookInfo {
         	// get details
         	response = RestUtils.callWithRetries(tracer, 
         			bookDetailsService.path("details").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON), 
-        	   	    null, "GET", 3);
+        	   	    null, "GET", 3, config.ADD_TRACING_HEADERS);
             result = new JSONObject(response.readEntity(String.class));
             bookInfo.put("details", result);
             
@@ -63,14 +65,14 @@ public class BookInfo {
             // get ratings
             response = RestUtils.callWithRetries(tracer, 
         			bookRatingsService.path("ratings").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON), 
-        	   	    null, "GET", 3);
+        	   	    null, "GET", 3, config.ADD_TRACING_HEADERS);
             result = new JSONObject(response.readEntity(String.class));
             bookInfo.put("ratings", result);
 
             // get reviews
             response = RestUtils.callWithRetries(tracer, 
         			bookReviewsService.path("reviews").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON), 
-        	   	    null, "GET", 3);
+        	   	    null, "GET", 3, config.ADD_TRACING_HEADERS);
             result = new JSONObject(response.readEntity(String.class));
             bookInfo.put("reviews", result);
             
