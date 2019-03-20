@@ -89,7 +89,7 @@
 		</executions>
 			<configuration>
 				<repository>cubeiocorp/cubews</repository>
-				<tag>V1-SNAPSHOT</tag>
+				<tag>${project.version}</tag>
 				<buildArgs>
 					<WAR_FILE>${project.build.finalName}.war</WAR_FILE>
 				</buildArgs>
