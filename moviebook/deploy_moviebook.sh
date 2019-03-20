@@ -9,7 +9,7 @@ export_env_variables() {
 }
 init() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
-	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
+	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
 	kubectl apply -f moviebook/moviebook_virtualservice.yaml
 	kubectl apply -f cube/virtualservice.yaml
@@ -79,6 +79,7 @@ stop_replay() {
 analyze() {
 	export_env_variables
 	REPLAY_ID=$(cat replayid.temp)
+	echo "Analyzing for replay ID:" $REPLAY_ID
 	curl -X POST \
   http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
