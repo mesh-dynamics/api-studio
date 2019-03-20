@@ -8,7 +8,7 @@ class PageContent extends Component {
   render() {
     const { needMargin } = this.props;
     return (
-      <div className="padding-15" role="main">
+      <div role="main">
         { replay }
         { config }
         { analysis }

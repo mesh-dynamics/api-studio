@@ -1,0 +1,43 @@
+.pos-rel {
+    position: relative;
+}
+.row1-dummy {
+    position: absolute;
+    padding: 10px;
+    background: #9fe9f9;
+    width: 100%;
+}
+.row2-dummy {
+    position: absolute;
+    padding: 20px;
+    background: #e7f9fe;
+    width: 100%;
+}
+.ra-row1 {
+    z-index: 2;
+    position: relative;
+    padding: 0 30px 10px;
+    background: #9fe9f9;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    margin: 0 15px;
+}
+.ra-row2 {
+    background: #e7f9fe;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding-bottom: 10px;
+    margin: 0 15px;
+}
+.ra-row3 {
+    margin: 0 50px 5px;
+}
+.nav_menu {
+    margin-bottom: 0 !important;
+    background: #42d4f4 !important;
+}
+select {
+    width: 100%;
+    padding: 2px;
+    background: #fff;
+}

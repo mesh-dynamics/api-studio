@@ -165,7 +165,7 @@ class ServiceGraph extends Component {
         return(
             <div>
                 <br/>
-                <ConfigSample />
+                {/*<ConfigSample />*/}
                 <br/>
                 <div></div>
                 <br/>

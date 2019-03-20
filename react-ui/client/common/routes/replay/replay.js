@@ -3,6 +3,7 @@ import { Row, Col, Clearfix, Button, Glyphicon } from 'react-bootstrap'
 import { XPanel, PageTitle } from '../../components'
 import { connect } from 'react-redux';
 import ServiceGraph from './ServiceGraph';
+import ReplayAttribute from "./ReplayAttribute";
 
 class replay extends Component {
   constructor (props) {
@@ -47,7 +48,9 @@ class replay extends Component {
     return (
       <div>
         
-        <PageTitle title="Replay configuration" />
+        {/*<PageTitle title="Replay configuration" />*/}
+        <Clearfix />
+        <ReplayAttribute />
         <Clearfix />
         <Row style={{ minHeight: '100vh' }} >
             {/*Service Graph: */}
