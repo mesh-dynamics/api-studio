@@ -1,2 +1,5 @@
 moviebook-envoy-cs.yaml
 moviebook-envoy-replay-cs.yaml
+services.yaml
+mock-all-except-moviebook.yaml
+replayid.temp

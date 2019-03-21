@@ -1,7 +1,0 @@
-services:
-  - ratings
-  - details
-  - reviews
-  - productpage
-  - movieinfo
-  - restwrapjdbc

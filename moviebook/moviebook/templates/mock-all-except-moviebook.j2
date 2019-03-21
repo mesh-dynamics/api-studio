@@ -10,11 +10,11 @@ spec:
     - uri:
         prefix: /reviews
     rewrite:
-      uri: /cubews/ms/cube-venky/movieinfo/test/reviews/reviews
+      uri: /ms/{{customer}}/{{application}}/{{collection}}/reviews/reviews
     route:
     - destination:
-        host: cube
-        port: 
+        host: cubews
+        port:
           number: 8080
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -29,11 +29,11 @@ spec:
     - uri:
         prefix: /ratings
     rewrite:
-        uri: /cubews/ms/cube-venky/movieinfo/test/ratings/ratings
+        uri: /ms/{{customer}}/{{application}}/{{collection}}/ratings/ratings
     route:
     - destination:
-        host: cube
-        port: 
+        host: cubews
+        port:
           number: 8080
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -48,11 +48,11 @@ spec:
     - uri:
         prefix: /details
     rewrite:
-        uri: /cubews/ms/cube-venky/movieinfo/test/details/details
+        uri: /ms/{{customer}}/{{application}}/{{collection}}/details/details
     route:
     - destination:
-        host: cube
-        port: 
+        host: cubews
+        port:
           number: 8080
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -67,9 +67,9 @@ spec:
     - uri:
         prefix: /restsql
     rewrite:
-        uri: /cubews/ms/cube-venky/movieinfo/test/restwrapjdbc/restsql
+        uri: /ms/{{customer}}/{{application}}/{{collection}}/restwrapjdbc/restsql
     route:
     - destination:
-        host: cube
-        port: 
+        host: cubews
+        port:
           number: 8080

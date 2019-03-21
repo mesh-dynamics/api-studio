@@ -54,13 +54,21 @@ This will make curl request and undeploy the yamls to stop recording traffic on 
 ```
 ./deploy_moviebook.sh replay
 ```
-This will mock all the apps except moviebook.
+- Generate mock-all-except-moviebook.yaml
+- mock all the apps except moviebook
+- Make curl request to init and start replay
 
 ### Stop replay
 ```
 ./deploy_moviebook stop_replay
 ```
 This will stop replaying.
+
+### Analyze
+```
+./deploy_moviebook.sh analyze
+```
+This will make curl request to start analyze.
 
 ### clean
 ```
