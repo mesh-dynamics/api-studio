@@ -3,7 +3,9 @@
  */
 package com.cube.core;
 
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,12 +21,21 @@ import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.ws.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.io.File;
+import java.nio.charset.Charset;
+import java.util.Optional;
+
+import static org.apache.commons.io.FileUtils.readFileToString;
+
 
 /**
  * @author prasad
  *
  */
 class JsonComparatorTest  {
+
+	static Config config;
+	JSONObject object;
 
 	/**
 	 * @throws java.lang.Exception
@@ -46,6 +57,7 @@ class JsonComparatorTest  {
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
+        readJSONFile("JsonComparator.json");
 	}
 
 	/**
@@ -55,6 +67,50 @@ class JsonComparatorTest  {
 	void tearDown() throws Exception {
 	}
 
+	public void readJSONFile(String url) {
+		try {
+			File file = new File(JsonComparatorTest.class.getClassLoader().getResource(url).toURI().getPath());
+			String data = readFileToString(file, Charset.defaultCharset());
+			try {
+				object = new JSONObject(data);
+			} catch (Exception e) {
+				System.out.println(e);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void compareTest(JSONObject testData) throws JsonProcessingException, JSONException{
+		String json1 = testData.get("json1").toString();
+		String json2 = testData.get("json2").toString();
+		JSONArray rules = testData.getJSONArray("rules");
+		String expected = testData.get("output").toString();
+
+		CompareTemplate template = new CompareTemplate();
+
+		for (int i = 0; i < rules.length(); i++) {
+			JSONObject ruleObj = rules.getJSONObject(i);
+			String path = ruleObj.getString("path");
+			DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
+			PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
+			ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+			String customization = ruleObj.getString("customization");
+			TemplateEntry rule;
+			if (customization.isEmpty()) {
+				rule = new TemplateEntry(path, dataType, presenceType, comparisonType);
+			} else {
+				rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
+			}
+			template.addRule(rule);
+		}
+
+		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+		Match m = comparator.compare(json1, json2);
+		String mjson = config.jsonmapper.writeValueAsString(m);
+		JSONAssert.assertEquals(expected, mjson, false);
+	}
+
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
 	 * @throws JsonProcessingException 
@@ -62,23 +118,9 @@ class JsonComparatorTest  {
 	 */
 	@Test
 	@DisplayName("Default comparison test")
-	final void testCompare1() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.458}, \"body\": {\"b1\":\"test456\", \"b2\":[1,2,3]}, \"b3\":{\"a1\":\"a1v1\", \"a2\":15}}";
-		
-		CompareTemplate template = new CompareTemplate();
-		
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-		
-		Match m = comparator.compare(json1, json2);
-		
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		
-		System.out.println("match = " + mjson);
-		
-		String expected = "{\"mt\":\"FuzzyMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[{\"op\":\"replace\",\"path\":\"/hdr/h3\",\"value\":5.458,\"fromValue\":5.456,\"resolution\":\"OK\"},{\"op\":\"replace\",\"path\":\"/body/b1\",\"value\":\"test456\",\"fromValue\":\"test123\",\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/body/b2/1\",\"value\":2,\"resolution\":\"OK\"},{\"op\":\"remove\",\"path\":\"/body/b2/3\",\"value\":3,\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/b3\",\"value\":{\"a1\":\"a1v1\",\"a2\":15},\"resolution\":\"OK\"}]}";
-		
-		JSONAssert.assertEquals(expected, mjson, false);
+	final void defaultComparisonTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("defaultComparison");
+		compareTest(testData);
 	}
 
 	/**
@@ -87,26 +129,10 @@ class JsonComparatorTest  {
 	 * @throws JSONException 
 	 */
 	@Test
-	@DisplayName("Strict equality comparison negative test")
-	final void testCompare2() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-		String json2 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.458}, \"body\": {\"b1\":\"test456\", \"b2\":[1,2,3]}, \"b3\":{\"a1\":\"a1v1\", \"a2\":15}}";
-		
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
-		template.addRule(rule);
-		
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-		
-		Match m = comparator.compare(json1, json2);
-		
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		
-		System.out.println("match = " + mjson);
-		
-		String expected = "{\"mt\":\"NoMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[{\"op\":\"replace\",\"path\":\"/hdr/h3\",\"value\":5.458,\"fromValue\":5.456,\"resolution\":\"ERR_ValMismatch\"},{\"op\":\"replace\",\"path\":\"/body/b1\",\"value\":\"test456\",\"fromValue\":\"test123\",\"resolution\":\"ERR_ValMismatch\"},{\"op\":\"add\",\"path\":\"/body/b2/1\",\"value\":2,\"resolution\":\"OK_OtherValInvalid\"},{\"op\":\"remove\",\"path\":\"/body/b2/3\",\"value\":3,\"resolution\":\"OK\"},{\"op\":\"add\",\"path\":\"/b3\",\"value\":{\"a1\":\"a1v1\",\"a2\":15},\"resolution\":\"OK_OtherValInvalid\"}]}";
-		
-		JSONAssert.assertEquals(expected, mjson, false);
+	@DisplayName("Strict equality comparison test - Negative")
+	final void strictEqualityComparisonNegativeTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("strictEqualityComparisonNegative");
+		compareTest(testData);
 	}
 
 	/**
@@ -115,28 +141,116 @@ class JsonComparatorTest  {
 	 * @throws JSONException 
 	 */
 	@Test
-	@DisplayName("Strict equality comparison positive test")
-	final void testCompare3() throws JsonProcessingException, JSONException {
-		String json1 = "{\"hdr\": {\"h1\":\"h1v1\", \"h2\":10, \"h3\":5.456}, \"body\": {\"b1\":\"test123\", \"b2\":[1,3,3]}}";
-		String json2 = json1;
-		
-		CompareTemplate template = new CompareTemplate();
-		TemplateEntry rule = new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal);
-		template.addRule(rule);
-		
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
-		
-		Match m = comparator.compare(json1, json2);
-		
-		String mjson = config.jsonmapper.writeValueAsString(m);
-		
-		System.out.println("match = " + mjson);
-		
-		String expected = "{\"mt\":\"ExactMatch\",\"matchmeta\":\"JsonDiff\",\"diffs\":[]}";
-		
-		JSONAssert.assertEquals(expected, mjson, false);
+	@DisplayName("Strict equality comparison test - Positive")
+	final void strictEqualityComparisonPositiveTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("strictEqualityComparisonPositive");
+		compareTest(testData);
 	}
 
-	static Config config;
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Equality optional comparison test")
+	final void equalOptionalComparisonTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("equalOptionalComparison");
+		compareTest(testData);
+	}
 
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Custom comparison test - Positive")
+	final void customComparisonPositiveTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("customComparisonPositive");
+		compareTest(testData);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Custom comparison test - Negative")
+	final void customComparisonNegativeTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("customComparisonNegative");
+		compareTest(testData);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Missing Field: Default")
+	final void missingFieldDefaultTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("missingFieldDefault");
+		compareTest(testData);
+	}
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Missing Field: Optional")
+    final void missingFieldOptionalTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("missingFieldOptional");
+		compareTest(testData);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Missing Field: Required")
+    final void missingFieldRequiredTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("missingFieldRequired");
+		compareTest(testData);
+    }
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Strict Validations test - Negative")
+	final void validationNegativeTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("validationNegative");
+		compareTest(testData);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Strict Validations test - Positive")
+	final void validationPositiveTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("validationPositive");
+		compareTest(testData);
+	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Inheritance test")
+	final void inheritanceTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("inheritance");
+		compareTest(testData);
+	}
 }

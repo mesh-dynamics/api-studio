@@ -146,9 +146,11 @@ public class CompareTemplate {
 			return get(subpath).flatMap(rule -> {
 				if (rule.ct == ComparisonType.Equal) {
 					return Optional.of(DEFAULT_RULE_EQUALITY);
-				} else if (rule.ct == ComparisonType.Ignore) {
-					return Optional.of(DEFAULT_RULE_IGNORE);
-				} else {
+				} else if (rule.ct == ComparisonType.EqualOptional) {
+                    return Optional.of(DEFAULT_RULE_EQUAL_OPTIONAL);
+                } else if (rule.ct == ComparisonType.Ignore) {
+                    return Optional.of(DEFAULT_RULE_IGNORE);
+                } else {
 					return Optional.empty();
 				}
 			}).orElse(getInheritedRule(subpath));
@@ -197,6 +199,7 @@ public class CompareTemplate {
 	
 	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default);
 	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal);
+	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional);
 	private static final TemplateEntry DEFAULT_RULE_IGNORE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Ignore);
 	/**
 	 * @param rule
