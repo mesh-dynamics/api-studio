@@ -137,12 +137,12 @@ public class JsonComparator implements Comparator {
 						// check for regex pattern match
 						if (rule.ct == ComparisonType.CustomRegex) {
 							String val = node.asText();
-							valformatmismatch = rule.regex.map(r -> r.matcher(val).matches()).orElse(valformatmismatch);
+							valformatmismatch = rule.regex.map(r -> !r.matcher(val).matches()).orElse(valformatmismatch);
 						}
 					}
 					break;
 				case Float:
-					if (!node.isFloat() && !node.isDouble()) valtypemismatch = true;
+					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valtypemismatch = true;
 					break;
 				case Int:
 					if (!node.isInt()) valtypemismatch = true;
