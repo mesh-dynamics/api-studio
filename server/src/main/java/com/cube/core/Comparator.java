@@ -63,6 +63,18 @@ public interface Comparator {
 			}
 		}
 
+		/**
+		 * @param other
+		 * @return true if this is better or equal to other match
+		 */
+		public boolean isBetterOrEqual(MatchType other) {
+			switch (this) {
+				case NoMatch: return (other == NoMatch);
+				case ExactMatch: return true;
+				default: return (other != ExactMatch); // PartialMatch is better only if other is not ExactMatch
+			}
+		}
+
 	}
 
 	enum Resolution {

@@ -7,14 +7,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,25 +22,27 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 
-import com.cube.core.Utils;
-import com.cube.dao.RRBase.RR;
-import com.cube.dao.RRBase.RRMatchSpec.MatchType;
-import com.cube.dao.Recording.RecordingStatus;
-import com.cube.dao.Request.ReqMatchSpec;
-import com.cube.dao.Analysis.ReqMatchType;
-import com.cube.dao.Analysis.ReqRespMatchResult;
-import com.cube.dao.Analysis.RespMatchType;
-import com.cube.dao.Replay.ReplayStatus;
-import com.cube.ws.Config;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.RequestComparator;
+import com.cube.core.RequestComparator.PathCT;
+import com.cube.core.Utils;
+import com.cube.dao.Analysis.ReqMatchType;
+import com.cube.dao.Analysis.ReqRespMatchResult;
+import com.cube.dao.RRBase.RR;
+import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.Replay.ReplayStatus;
+import com.cube.ws.Config;
 
 /**
  * @author prasad
@@ -81,13 +77,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * qr - query request
      */
     @Override
-    public Stream<Request> getRequests(Request qr, ReqMatchSpec mspec, Optional<Integer> nummatches) {
+    public Stream<Request> getRequests(Request qr, RequestComparator mspec, Optional<Integer> nummatches) {
         
         final SolrQuery query = reqMatchSpecToSolrQuery(qr, mspec);
 
-        return SolrIterator.getStream(solr, query, nummatches).flatMap(doc -> {
-            return docToRequest(doc).stream();
-        });            
+        return SolrIterator.getStream(solr, query, nummatches).flatMap(doc -> docToRequest(doc).stream());
 
     }
 
@@ -138,9 +132,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REQIDF, reqid);
 
         Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
-            return docToResponse(doc);
-        });            
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToResponse(doc));
 
     }
 
@@ -148,12 +140,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRespForReq(com.cube.dao.ReqRespStore.Request)
      */
     @Override
-    public Optional<Response> getRespForReq(Request qr, ReqMatchSpec mspec) {
+    public Optional<Response> getRespForReq(Request qr, RequestComparator mspec) {
         // Find request, without considering request id
         Optional<Request> req = getRequests(qr, mspec, Optional.of(1)).findFirst();
-        return req.flatMap(reqv -> reqv.reqid).flatMap(idv -> {
-            return getResponse(idv);
-        });
+        return req.flatMap(reqv -> reqv.reqid).flatMap(this::getResponse);
     }
     
     /**
@@ -187,12 +177,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String STATUSF = CPREFIX + "status_i";
     private static final String CONTENTTYPEF = CPREFIX + "contenttype_s";
 
-    private static String getPrefix(String ftype) {
-        return String.format(CPREFIX + "%s_", ftype);
+    private static String getFieldName(String fname, String fkey) {
+        return String.format("%s_%s",fname, fkey);
     }
-    private static String getSolrFieldName(String ftype, String fname) {
-        String prefix = getPrefix(ftype);
-        return String.format("%s%s%s", prefix, fname, FSUFFIX);
+    private static String getSolrFieldName(String fname, String fkey) {
+        return String.format("%s%s%s", CPREFIX, getFieldName(fname, fkey), FSUFFIX);
     }
 
     private static final String FSUFFIX = "_ss"; // set of strings in Solr
@@ -219,15 +208,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         fval.ifPresent(val -> addFilter(query, fieldname, val));
     }
 
-    private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> fields) {
-        // Empty list of selected fields is treated as if all fields are to be added
-        Collection<String> ftoadd = (fields.isEmpty()) ? fvalmap.keySet() : fields;
-        ftoadd.forEach(k -> {
-            String f = getSolrFieldName(fieldname, k);
-            Optional.ofNullable(fvalmap.get(k)).ifPresent(vals -> vals.forEach(v -> {
-                addFilter(query, f, v);                
-            }));
-        });
+    private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, String keytoadd) {
+        String f = getSolrFieldName(fieldname, keytoadd);
+        Optional.ofNullable(fvalmap.get(keytoadd)).ifPresent(vals -> vals.forEach(v -> {
+            addFilter(query, f, v);
+        }));
+    }
+
+
+    private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys) {
+        // Empty list of selected keys is treated as if all keys are to be added
+        Collection<String> ftoadd = (keys.isEmpty()) ? fvalmap.keySet() : keys;
+        ftoadd.forEach(k -> addFilter(query, fieldname, fvalmap, k));
     }
     
     private static void addSort(SolrQuery query, String fieldname, boolean ascending) {
@@ -251,9 +243,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         fval.ifPresent(val -> addToQryStr(qstr, fieldname, val));
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> fields) {
-        // Empty list of selected fields is treated as if all fields are to be added
-        Collection<String> ftoadd = (fields.isEmpty()) ? fvalmap.keySet() : fields;
+    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, String key) {
+        String f = getSolrFieldName(fieldname, key);
+        Optional.ofNullable(fvalmap.get(key)).ifPresent(vals -> vals.forEach(v -> {
+            addToQryStr(qstr, f, v);
+        }));
+    }
+
+    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys) {
+        // Empty list of selected keys is treated as if all keys are to be added
+        Collection<String> ftoadd = (keys.isEmpty()) ? fvalmap.keySet() : keys;
         ftoadd.forEach(k -> {
             String f = getSolrFieldName(fieldname, k);
             Optional.ofNullable(fvalmap.get(k)).ifPresent(vals -> vals.forEach(v -> {
@@ -262,31 +261,52 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
-    private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval) {
+    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval) {
         switch (mt) {
-            case FILTER: addFilter(query, fieldname, fval); break;
-            case SCORE: addToQryStr(qparam, fieldname, fval); break;
+            case Equal: addFilter(query, fieldname, fval); break;
+            case EqualOptional: addToQryStr(qparam, fieldname, fval); break;
             default:
         }
     }
     
-    private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval) {
+    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval) {
         switch (mt) {
-            case FILTER: addFilter(query, fieldname, fval); break;
-            case SCORE: addToQryStr(qstr, fieldname, fval); break;
+            case Equal: addFilter(query, fieldname, fval); break;
+            case EqualOptional: addToQryStr(qstr, fieldname, fval); break;
             default:
         }
     }
 
-    private static void addMatch(MatchType mt, SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> fields) {
-        switch (mt) {
-            case FILTER: addFilter(query, fieldname, fvalmap, fields); break;
-            case SCORE: addToQryStr(qstr, fieldname, fvalmap, fields); break;
-            default:
+    private static void addToQuery(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, ComparisonType ct, String path) {
+        if (ct == ComparisonType.Equal) {
+            addFilter(query, fieldname, fvalmap, path);
+        } else if (ct == ComparisonType.EqualOptional) {
+            addToQryStr(qstr, fieldname, fvalmap, path);
         }
     }
-    
-    
+
+    private static void addMatch(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap,
+                                 List<PathCT> pathCTS) {
+        Optional<PathCT> rootpct = Optional.empty();
+
+        for (PathCT pct : pathCTS) {
+            if (pct.path.isBlank()) {
+                // if path is empty, it means the rule is at rule level, so should be applied to it descendents
+                // this is the rule at the root level
+                rootpct = Optional.of(pct);
+            } else {
+                addToQuery(query, qstr, fieldname, fvalmap, pct.ct, pct.path);
+            }
+        }
+        // check for inheritance of paths not covered in pathCTs
+        rootpct.ifPresent(rootpctv -> fvalmap.keySet().forEach(k -> {
+            // check that no rule is already defined on path /k
+            if (pathCTS.stream().filter(pct -> pct.path.equals("/" + k)).findFirst().isEmpty()) {
+               addToQuery(query, qstr, fieldname, fvalmap, rootpctv.ct, k);
+            }
+        }));
+    }
+
     private static void setRRFields(Types type, RRBase rr, SolrInputDocument doc) {
         
         rr.reqid.ifPresent(id -> {
@@ -344,7 +364,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             @SuppressWarnings("unchecked")
             Optional<List<String>> vals = (v instanceof List<?>) ? Optional.of((List<String>)v) : Optional.empty();
             return vals;
-        }).orElse(new ArrayList<String>());
+        }).orElse(new ArrayList<>());
     }
 
     private static Optional<Integer> getIntField(SolrDocument doc, String fname) {
@@ -377,10 +397,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> type = getStrField(doc, TYPEF);
         Optional<String> path = getStrField(doc, PATHF);
         Optional<String> reqid = getStrField(doc, REQIDF);
-        MultivaluedMap<String, String> qparams = new MultivaluedHashMap<String, String>(); // query params
-        MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>(); // form params
-        MultivaluedMap<String, String> meta = new MultivaluedHashMap<String, String>(); 
-        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
+        MultivaluedMap<String, String> qparams = new MultivaluedHashMap<>(); // query params
+        MultivaluedMap<String, String> fparams = new MultivaluedHashMap<>(); // form params
+        MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
+        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         Optional<String> method = getStrField(doc, METHODF);        
         Optional<String> body = getStrField(doc, BODYF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
@@ -410,7 +430,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 default:
                 }
             }
-        };
+        }
 
         final String p = path.orElse("");
         final String m = method.orElse("");        
@@ -440,8 +460,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> type = getStrField(doc, TYPEF);
         Optional<Integer> status = getIntField(doc, STATUSF);
         Optional<String> reqid = getStrField(doc, REQIDF);
-        MultivaluedMap<String, String> meta = new MultivaluedHashMap<String, String>(); 
-        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
+        MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
+        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         Optional<String> body = getStrField(doc, BODYF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
@@ -465,14 +485,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 default:
                 }
             }
-        };
+        }
 
         final String b = body.orElse("");
         return type.flatMap(t -> {
             if (t.equals(Types.Response.toString())) {
-                return status.map(sv ->{
-                    return new Response(reqid, sv, meta, hdrs, b, collection, timestamp,rrtype, customerid, app);
-                });                
+                return status.map(sv -> new Response(reqid, sv, meta, hdrs, b, collection, timestamp,rrtype, customerid, app));
             } else
                 return Optional.empty();
         });
@@ -484,9 +502,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         
         fields.forEach((f, vl) -> {
             final String fname = getSolrFieldName(ftype, f);
-            vl.forEach((v) -> {
-                doc.addField(fname, v);
-            });
+            vl.forEach((v) -> doc.addField(fname, v));
         });
     }
 
@@ -611,9 +627,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYIDF, replayid);
         
         Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
-            return docToReplay(doc, this);
-        });            
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToReplay(doc, this));
         
     }
     
@@ -637,33 +651,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, CREATIONTIMESTAMPF, false /* desc */);    
         
         Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> {
-            return docToReplay(doc, this).stream();
-        });            
+        return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> docToReplay(doc, this).stream());
 
     }
     
     // Some useful functions
-    public static SolrQuery reqMatchSpecToSolrQuery(Request qr, ReqMatchSpec spec) {
+    private static SolrQuery reqMatchSpecToSolrQuery(Request qr, RequestComparator spec) {
         final SolrQuery query = new SolrQuery("*:*");
         final StringBuffer qstr = new StringBuffer("*:*");
         query.addField("*");
         
-        addMatch(spec.mreqid, query, qstr, REQIDF, qr.reqid);
-        addMatch(spec.mmeta, query, qstr, META, qr.meta, spec.metafields);
-        addMatch(spec.mhdrs, query, qstr, HDR, qr.hdrs, spec.hdrfields);
-        addMatch(spec.mbody, query, qstr, BODYF, qr.body);
-        addMatch(spec.mcollection, query, qstr, COLLECTIONF, qr.collection);
-        addMatch(spec.mtimestamp, query, qstr, TIMESTAMPF, qr.timestamp.toString());
-        addMatch(spec.mrrtype, query, qstr, RRTYPEF, qr.rrtype.map(rrt -> rrt.toString()));
-        addMatch(spec.mcustomerid, query, qstr, CUSTOMERIDF, qr.customerid);
-        addMatch(spec.mapp, query, qstr, APPF, qr.app);
-        //addMatch(spec.mcontenttype, query, qstr, CONTENTTYPEF, qr.hdrs.getHeaderString(HttpHeaders.CONTENT_TYPE));
+        addMatch(spec.getCTreqid(), query, qstr, REQIDF, qr.reqid);
+        addMatch(query, qstr, META, qr.meta, spec.getCTMeta());
+        addMatch(query, qstr, HDR, qr.hdrs, spec.getCTHdrs());
+        addMatch(spec.getCTbody(), query, qstr, BODYF, qr.body);
+        addMatch(spec.getCTcollection(), query, qstr, COLLECTIONF, qr.collection);
+        addMatch(spec.getCTtimestamp(), query, qstr, TIMESTAMPF, qr.timestamp.toString());
+        addMatch(spec.getCTrrtype(), query, qstr, RRTYPEF, qr.rrtype.map(Enum::toString));
+        addMatch(spec.getCTcustomerid(), query, qstr, CUSTOMERIDF, qr.customerid);
+        addMatch(spec.getCTapp(), query, qstr, APPF, qr.app);
+        //addMatch(spec.getCTcontenttype, query, qstr, CONTENTTYPEF, qr.hdrs.getHeaderString(HttpHeaders.CONTENT_TYPE));
 
-        addMatch(spec.mpath, query, qstr, PATHF, qr.path);        
-        addMatch(spec.mqparams, query, qstr, QPARAMS, qr.qparams, spec.qparamfields);
-        addMatch(spec.mfparams, query, qstr, FPARAMS, qr.fparams, spec.fparamfields);
-        addMatch(spec.mmethod, query, qstr, METHODF, qr.method);        
+        addMatch(spec.getCTpath(), query, qstr, PATHF, qr.path);
+        addMatch(query, qstr, QPARAMS, qr.qparams, spec.getCTQparams());
+        addMatch(query, qstr, FPARAMS, qr.fparams, spec.getCTFparams());
+        addMatch(spec.getCTmethod(), query, qstr, METHODF, qr.method);
         
         addFilter(query, TYPEF, Types.Request.toString());
         
@@ -694,7 +706,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try {
             json = config.jsonmapper.writeValueAsString(analysis);
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Analysis object into string for replay id %d", analysis.replayid), e);
+            LOGGER.error(String.format("Error in converting Analysis object into string for replay id %s", analysis.replayid), e);
         }
         
         String type = Types.Analysis.toString();
@@ -769,9 +781,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYIDF, replayid);
         
         Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
-            return docToAnalysis(doc, this);
-        });            
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToAnalysis(doc, this));
         
     }
 
@@ -860,12 +870,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, customerid);
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceid);
-        addFilter(query, RECORDINGSTATUSF, status.map(s -> s.toString()));
+        addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
         
         //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> {
-            return docToRecording(doc).stream();
-        });            
+        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
     }
         
 
@@ -883,12 +891,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF, collection);
         
         Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> {
-            return docToRecording(doc);
-        });            
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
 
-    final static int FACETLIMIT = 100;
+    private final static int FACETLIMIT = 100;
     private static final String REQMTFACET = "reqmt_facets";
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
@@ -949,11 +955,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             } else if (!path.equals(other.path))
                 return false;
             if (service == null) {
-                if (other.service != null)
-                    return false;
-            } else if (!service.equals(other.service))
-                return false;
-            return true;
+                return other.service == null;
+            } else return service.equals(other.service);
         }
 
 
@@ -970,16 +973,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Optional<String> service, boolean facetpath) {
         
         Optional<Replay> replay = getReplay(replayid);
-        Map<FacetResKey, MatchResultAggregate> resMap = new HashMap<FacetResKey, MatchResultAggregate>();
+        Map<FacetResKey, MatchResultAggregate> resMap = new HashMap<>();
         
         replay.ifPresent(replayv -> {
             final SolrQuery query = new SolrQuery("*:*");
             query.addField("*");
             addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
             addFilter(query, REPLAYIDF, replayv.replayid);
-            service.ifPresent(servicev -> {
-                addFilter(query, SERVICEF, servicev);
-            });
+            service.ifPresent(servicev -> addFilter(query, SERVICEF, servicev));
 
             // First generate the solr facet query with appropriate nested facets
             /* A nested facet query will look as follows
@@ -1046,9 +1047,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
                         // combine facet results into MatchResultAggregate objects by using FacetResKey
                         FacetResKey frkey = fr.toFacetResKey();
-                        Optional.ofNullable(resMap.get(frkey)).ifPresentOrElse(mra -> {
-                            updateMatchResult(mra, fr);
-                        }, () -> {
+                        Optional.ofNullable(resMap.get(frkey)).ifPresentOrElse(mra -> updateMatchResult(mra, fr), () -> {
                             MatchResultAggregate mra = new MatchResultAggregate(replayv.app, replayv.replayid, frkey.service, frkey.path);
                             updateMatchResult(mra, fr);
                             resMap.put(frkey, mra);
@@ -1060,9 +1059,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         
         // if service filter was present initially, add it to all the results, since it was not
         // included in the facet query
-        service.ifPresent(servicev -> {
-            resMap.forEach((k, mra) -> mra.service = Optional.of(servicev));
-        });
+        service.ifPresent(servicev -> resMap.forEach((k, mra) -> mra.service = Optional.of(servicev)));
         
         return resMap.values();
     }
@@ -1085,11 +1082,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 });
             }
             if (frkey.facetName.equals(RESPMTFACET)) {
-                Utils.valueOf(RespMatchType.class, frkey.key).ifPresent(rmt -> {
+                Utils.valueOf(Comparator.MatchType.class, frkey.key).ifPresent(rmt -> {
                     switch (rmt) {
                         case ExactMatch: mra.respmatched = fr.val; break;
-                        case TemplateMatch: mra.resppartiallymatched = fr.val; break;
+                        case FuzzyMatch: mra.resppartiallymatched = fr.val; break;
                         case NoMatch: mra.respnotmatched = fr.val; break;
+                        case Exception: mra.respmatchexception = fr.val; break;
                     }
                     
                 });
@@ -1127,8 +1125,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         final private Map<String, Object> params;
         
-        static public Facet createTermFacet(String fieldname, Optional<Integer> limit) {
-            Map<String, Object> params = new HashMap<String, Object>();
+        static Facet createTermFacet(String fieldname, Optional<Integer> limit) {
+            Map<String, Object> params = new HashMap<>();
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
             limit.ifPresent(l -> params.put(LIMITK, l));
@@ -1146,7 +1144,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
          */
         private FacetQ() {
             super();
-            facetqs = new HashMap<String, Facet>();
+            facetqs = new HashMap<>();
         }
 
         // These annotations are used for Jackson to flatten params while serializing/deserializing
@@ -1168,7 +1166,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final Map<String, Facet> facetqs;
         
         // create a nested facet query
-        public void nest(List<FacetQ> rest) {
+        void nest(List<FacetQ> rest) {
             if (rest.size() > 0) {
                 FacetQ head = rest.get(0);
                 head.nest(rest.subList(1, rest.size()));
@@ -1213,13 +1211,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         /**
          * @return
          */
-        public FacetResKey toFacetResKey() {
-            Optional<String> service = keys.stream().filter(frkey -> {
-                return frkey.facetName.equals(SERVICEFACET);
-            }).findFirst().map(frkey -> frkey.key);
-            Optional<String> path = keys.stream().filter(frkey -> {
-                return frkey.facetName.equals(PATHFACET);
-            }).findFirst().map(frkey -> frkey.key);
+        FacetResKey toFacetResKey() {
+            Optional<String> service = keys.stream().filter(frkey -> frkey.facetName.equals(SERVICEFACET)).findFirst().map(frkey -> frkey.key);
+            Optional<String> path = keys.stream().filter(frkey -> frkey.facetName.equals(PATHFACET)).findFirst().map(frkey -> frkey.key);
             
             return new FacetResKey(service, path);
         }
@@ -1229,13 +1223,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         /**
          * @param rkey
          */
-        public void addKey(FacetRKey rkey) {
+        void addKey(FacetRKey rkey) {
             keys.add(rkey);
         }
     }
     
     /* Helper functions to parse solr nested facet results */
-    static Optional<NamedList<Object>> objToNL(Object namedlist) {
+    private static Optional<NamedList<Object>> objToNL(Object namedlist) {
         if (namedlist instanceof NamedList<?>) {
             @SuppressWarnings("unchecked")
             NamedList<Object> nl = (NamedList<Object>) namedlist;
@@ -1245,12 +1239,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
     
 
-    static Optional<Object> getObjFromNL(NamedList<Object> namedlist, String name) {
+    private static Optional<Object> getObjFromNL(NamedList<Object> namedlist, String name) {
         return objToNL(namedlist).flatMap(nl -> Optional.ofNullable(nl.get(name)));
     }
 
     @SuppressWarnings("unchecked")
-    static Optional<NamedList<Object>> getNLFromNL(NamedList<Object> namedlist, String name) {
+    private static Optional<NamedList<Object>> getNLFromNL(NamedList<Object> namedlist, String name) {
         return getObjFromNL(namedlist, name).flatMap(v -> {
             if (v instanceof NamedList<?>) {
                 return Optional.of((NamedList<Object>) v);
@@ -1260,7 +1254,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @SuppressWarnings("unchecked")
-    static Optional<List<Object>> getListFromNL(NamedList<Object> namedlist, String name) {
+    private static Optional<List<Object>> getListFromNL(NamedList<Object> namedlist, String name) {
         return getObjFromNL(namedlist, name).flatMap(v -> {
             if (v instanceof List<?>) {
                 return Optional.of((List<Object>) v);
@@ -1269,7 +1263,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
-    static Optional<String> getStringFromNL(NamedList<Object> namedlist, String name) {
+    private static Optional<String> getStringFromNL(NamedList<Object> namedlist, String name) {
         return getObjFromNL(namedlist, name).flatMap(v -> {
             if (v instanceof String) {
                 return Optional.of((String) v);
@@ -1278,7 +1272,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
-    static Optional<Integer> getIntFromNL(NamedList<Object> namedlist, String name) {
+    private static Optional<Integer> getIntFromNL(NamedList<Object> namedlist, String name) {
         return getObjFromNL(namedlist, name).flatMap(v -> {
             if (v instanceof Integer) {
                 return Optional.of((Integer) v);
@@ -1326,8 +1320,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * <{respmt_facets.NoMatch, service_facets.productpage}>, 3>
      *
      */
-    static List<FacetR> flatten(NamedList<Object> facetresult, List<List<String>> facetFields) {
-        List<FacetR> results = new ArrayList<FacetR>();
+    private static List<FacetR> flatten(NamedList<Object> facetresult, List<List<String>> facetFields) {
+        List<FacetR> results = new ArrayList<>();
         if (facetFields.size() > 0) {
             List<String> head = facetFields.get(0);
             List<List<String>> rest = facetFields.subList(1, facetFields.size());
@@ -1347,7 +1341,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                                         results.add(subr);
                                     });                        
                                     count.ifPresent(c -> {
-                                        List<FacetRKey> frkeys = new ArrayList<FacetRKey>();
+                                        List<FacetRKey> frkeys = new ArrayList<>();
                                         frkeys.add(rkey);
                                         FacetR newr = new FacetR(frkeys, c);
                                         results.add(newr);

@@ -28,6 +28,7 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.glassfish.jersey.uri.UriComponent;
 import org.json.JSONObject;
 
 import com.cube.core.UtilException;
@@ -44,7 +45,7 @@ public class ReplayDriver  {
 
     private static final Logger LOGGER = LogManager.getLogger(ReplayDriver.class);
 
-    final Replay replay;
+    private final Replay replay;
     public final ReqRespStore rrstore;
 
     /**
@@ -59,9 +60,9 @@ public class ReplayDriver  {
      * @param status
      * @param instanceid
      */
-    public ReplayDriver(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
-                  ReqRespStore rrstore,  String replayid, boolean async, Replay.ReplayStatus status,
-                  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp) {
+    private ReplayDriver(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
+                         ReqRespStore rrstore, String replayid, boolean async, Replay.ReplayStatus status,
+                         List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp) {
         this.replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, replayid, async, status, paths, reqcnt, reqsent, reqfailed, creationTimestamp);
         this.rrstore = rrstore;
     }
@@ -84,7 +85,7 @@ public class ReplayDriver  {
             status, paths, 0, 0, 0, null);
     }
 
-    public ReplayDriver(Replay r, ReqRespStore rrstore) {
+    private ReplayDriver(Replay r, ReqRespStore rrstore) {
         super();
         replay = r;
         this.rrstore = rrstore;
@@ -127,17 +128,18 @@ public class ReplayDriver  {
 
             replay.reqcnt += requests.size();
 
-            List<HttpRequest> reqs = new ArrayList<HttpRequest>();
+            List<HttpRequest> reqs = new ArrayList<>();
             requests.forEach(r -> {
                 // transform fields in the request before the replay.
-                replay.xfmer.ifPresent(x -> {x.transformRequest(r);});
+                replay.xfmer.ifPresent(x -> x.transformRequest(r));
 
-                UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
-                    .path(r.path);
                 try {
+                    UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
+                        .path(r.path);
                     r.qparams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
                         String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
-                            return URLEncoder.encode(v, "UTF-8");
+                            return UriComponent.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
+                            // return URLEncoder.encode(v, "UTF-8"); // this had a problem of encoding space as +, which further gets encoded as %2B
                         })).toArray(String[]::new);
                         uribuilder.queryParam(k, (Object[])params);
                     }));
@@ -149,9 +151,7 @@ public class ReplayDriver  {
                     r.hdrs.forEach((k, vlist) -> {
                         // some headers are restricted and cannot be set on the request
                         if (Utils.ALLOWED_HEADERS.test(k)) {
-                            vlist.forEach(value -> {
-                                reqbuilder.header(k, value);
-                            });
+                            vlist.forEach(value -> reqbuilder.header(k, value));
                         }
                     });
                     // TODO: we can pass replayid to cubestore but currently requests don't match in the mock
@@ -179,8 +179,6 @@ public class ReplayDriver  {
 
         rrstore.saveReplay(replay);
 
-        return;
-
     }
 
     public boolean start() {
@@ -191,7 +189,7 @@ public class ReplayDriver  {
             return false;
         }
         LOGGER.info(String.format("Starting replay with id %s", replay.replayid));
-        CompletableFuture.runAsync(() -> replay()).handle((ret, e) -> {
+        CompletableFuture.runAsync(this::replay).handle((ret, e) -> {
             if (e != null) {
                 LOGGER.error("Exception in replaying requests", e);
             }

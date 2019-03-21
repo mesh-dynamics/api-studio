@@ -1,31 +1,31 @@
 package com.cube.ws;
 
+import static com.cube.dao.RRBase.*;
+import static com.cube.dao.Request.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.cube.core.*;
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
-import com.cube.dao.RRBase.RRMatchSpec.MatchType;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
-import com.cube.dao.Request.ReqMatchSpec;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author prasad
@@ -88,9 +88,9 @@ public class MockServiceHTTP {
 			String body) {
 		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
 		JSONObject obj = new JSONObject(body);
-		MultivaluedMap<String, String> mmap = new MultivaluedHashMap<String, String>();
+		MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
 		for (String key : obj.keySet()) {
-			ArrayList<String> l = new ArrayList<String>();
+			ArrayList<String> l = new ArrayList<>();
 			l.add(obj.get(key).toString());
 			mmap.put(key, l);
 		}
@@ -125,15 +125,13 @@ public class MockServiceHTTP {
 	    
 	    return resp.map(respv -> {
 		    ResponseBuilder builder = Response.status(respv.status);
-		    respv.hdrs.forEach((f, vl) -> {
-				vl.forEach((v) -> {
-					// System.out.println(String.format("k=%s, v=%s", f, v));
-					// looks like setting some headers causes a problem, so skip them
-					// TODO: check if this is a comprehensive list
-					if (!f.equals("transfer-encoding"))
-						builder.header(f, v);
-				});
-			});
+		    respv.hdrs.forEach((f, vl) -> vl.forEach((v) -> {
+				// System.out.println(String.format("k=%s, v=%s", f, v));
+				// looks like setting some headers causes a problem, so skip them
+				// TODO: check if this is a comprehensive list
+				if (!f.equals("transfer-encoding"))
+					builder.header(f, v);
+			}));
 		    //return Response.status(Response.Status.NOT_FOUND).entity("Dummy response").build();
 		    return builder.entity(respv.body).build();	    	
 	    }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Response not found").build());
@@ -148,7 +146,7 @@ public class MockServiceHTTP {
 
 	
 	/**
-	 * @param rrstore
+	 * @param config
 	 */
 	@Inject
 	public MockServiceHTTP(Config config) {
@@ -159,35 +157,69 @@ public class MockServiceHTTP {
 	}
 
 
-	ReqRespStore rrstore;
-	ObjectMapper jsonmapper;
-	static String tracefield = Config.DEFAULT_TRACE_FIELD;
+	private ReqRespStore rrstore;
+	private ObjectMapper jsonmapper;
+	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	
 	// TODO - make trace field configurable
-	static ReqMatchSpec mspec = (ReqMatchSpec) ReqMatchSpec.builder()
-			.withMpath(MatchType.FILTER)
-			.withMqparams(MatchType.FILTER)
-			.withMfparams(MatchType.FILTER)
-			.withMrrtype(MatchType.FILTER)
-			.withMcustomerid(MatchType.FILTER)
-			.withMapp(MatchType.FILTER)
-			.withMreqid(MatchType.SCORE)
-			.withMcollection(MatchType.FILTER)
-			.withMmeta(MatchType.FILTER)
-			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
-			.withMhdrs(MatchType.SCORE)
+	private static RequestComparator mspec = (ReqMatchSpec) ReqMatchSpec.builder()
+			.withMpath(ComparisonType.Equal)
+			.withMqparams(ComparisonType.Equal)
+			.withQparamfields(List.of("querystring", "params")) // temporarily for restwrapjdbc
+			.withMfparams(ComparisonType.Equal)
+			.withMrrtype(ComparisonType.Equal)
+			.withMcustomerid(ComparisonType.Equal)
+			.withMapp(ComparisonType.Equal)
+			.withMreqid(ComparisonType.EqualOptional)
+			.withMcollection(ComparisonType.Equal)
+			.withMmeta(ComparisonType.Equal)
+			.withMetafields(Collections.singletonList(SERVICEFIELD))
+			.withMhdrs(ComparisonType.EqualOptional)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
 
+	private CompareTemplate reqTemplate = new CompareTemplate();
+
+	{
+        reqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+        reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+
+		// comment below line if earlier ReqMatchSpec is to be used
+		mspec = new TemplatedRequestComparator(reqTemplate, jsonmapper);
+	}
+
 	// matching to get default response
-	static ReqMatchSpec mspecForDefault = (ReqMatchSpec) ReqMatchSpec.builder()
-			.withMpath(MatchType.FILTER)
-			.withMrrtype(MatchType.FILTER)
-			.withMcustomerid(MatchType.FILTER)
-			.withMapp(MatchType.FILTER)
-			.withMcollection(MatchType.SCORE)
-			.withMmeta(MatchType.FILTER)
-			.withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
+	static RequestComparator mspecForDefault = (ReqMatchSpec) ReqMatchSpec.builder()
+			.withMpath(ComparisonType.Equal)
+			.withMrrtype(ComparisonType.Equal)
+			.withMcustomerid(ComparisonType.Equal)
+			.withMapp(ComparisonType.Equal)
+			.withMcollection(ComparisonType.EqualOptional)
+			.withMmeta(ComparisonType.Equal)
+			.withMetafields(Collections.singletonList(SERVICEFIELD))
 			.build();
+
+
+	private CompareTemplate defaultReqTemplate = new CompareTemplate();
+
+	{
+		defaultReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+		defaultReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+
+		// comment below line if earlier ReqMatchSpec is to be used
+		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonmapper);
+	}
 
 }

@@ -96,38 +96,7 @@ public class Analysis {
 		}
 	}
 		
-	public enum RespMatchType {
-		ExactMatch,
-		TemplateMatch,
-		NoMatch;
 
-		/**
-		 * @param other
-		 * @return
-		 */
-		public boolean isBetter(RespMatchType other) {
-			switch (this) {
-				case NoMatch: return (other == NoMatch); // NOTE: NoMatch is considered better than NoMatch to handle the starting condition
-				case ExactMatch: return (other != ExactMatch);
-				default: return (other == NoMatch); // PartialMatch is better only if other is NoMatch
-			}
-		}
-	}
-
-
-/*
-	public static class RespMatch {
-		
-		public RespMatch(RespMatchType respmt, String respmatchmetadata) {
-			super();
-			this.respmt = respmt;
-			this.respmatchmetadata = respmatchmetadata;
-		}
-		
-		final MatchType respmt;
-		final String respmatchmetadata;		
-	}
-*/
 
 	public static class RespMatchWithReq  {
 
@@ -168,7 +137,7 @@ public class Analysis {
 		 * @param replayid
 		 * @param jsonmapper
 		 */
-		private ReqRespMatchResult(String recordreqid, String replayreqid, ReqMatchType reqmt, int nummatch,
+		private ReqRespMatchResult(String recordreqid, String replayreqid, Comparator.MatchType reqmt, int nummatch,
 								   Comparator.Match match,
 								   String customerid, String app,
 								   String service, String path, String replayid, ObjectMapper jsonmapper) {
@@ -189,11 +158,12 @@ public class Analysis {
 		
 		/**
 		 * @param rm
+		 * @param reqmt
 		 * @param size
 		 * @param replayid
 		 * @param jsonmapper
 		 */
-		public ReqRespMatchResult(RespMatchWithReq rm, ReqMatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
+		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
 			this(rm.recordreq.reqid.orElse(""), rm.replayreq.reqid.orElse(""), reqmt, size, 
 					rm.match,
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
@@ -203,7 +173,7 @@ public class Analysis {
 
 		final public String recordreqid;
 		final public String replayreqid;
-		final public ReqMatchType reqmt;
+		final public Comparator.MatchType reqmt;
 		final public int nummatch;
 		final public Comparator.MatchType respmt;
 		final public String respmatchmetadata;

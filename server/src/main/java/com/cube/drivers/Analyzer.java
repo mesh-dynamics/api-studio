@@ -6,6 +6,10 @@
 
 package com.cube.drivers;
 
+import static com.cube.core.Comparator.MatchType.ExactMatch;
+import static com.cube.dao.RRBase.*;
+import static com.cube.dao.Request.*;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -17,9 +21,10 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.cube.core.Comparator;
-import com.cube.core.ResponseComparator;
-import com.cube.core.TemplatedResponseComparator;
+import com.cube.core.*;
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.CompareTemplate.DataType;
+import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.dao.*;
 
 /*
@@ -35,7 +40,7 @@ public class Analyzer {
     private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper) {
         analysis = new Analysis(replayid, reqcnt);
         this.jsonmapper = jsonmapper;
-        comparator = new TemplatedResponseComparator(TemplatedResponseComparator.EQUALITYTEMPLATE, jsonmapper);
+        comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonmapper);
     }
 
 
@@ -45,10 +50,10 @@ public class Analyzer {
 
     /**
      * @param rrstore
-     * @param mspec
      * @param reqs
+     * @param mspec
      */
-    private void analyze(ReqRespStore rrstore, Stream<Request> reqs, Request.ReqMatchSpec mspec) {
+    private void analyze(ReqRespStore rrstore, Stream<Request> reqs, RequestComparator mspec) {
         reqs.forEach(r -> {
             // find matching request in replay
             // most fields are same as request except
@@ -57,7 +62,7 @@ public class Analyzer {
             Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
                 r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
                 Optional.of(RRBase.RR.Replay), r.customerid, r.app);
-            List<Request> matches = rrstore.getRequests(rq, mspec, Optional.ofNullable(10))
+            List<Request> matches = rrstore.getRequests(rq, mspec, Optional.of(10))
                 .collect(Collectors.toList());
 
 
@@ -72,26 +77,26 @@ public class Analyzer {
                 // fetch response of recording and replay
 
                 Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, null, Comparator.Match.NOMATCH);
-                Analysis.ReqMatchType bestreqmt = Analysis.ReqMatchType.NoMatch;
+                Comparator.MatchType bestreqmt = Comparator.MatchType.NoMatch;
 
                 // matches is ordered in decreasing order of request match score. so exact matches
                 // of requests, if any should be at the beginning
                 // If request matches exactly, consider that as the best match
                 // else find the best match based on response matching
                 for (Request replayreq : matches) {
-                    Analysis.ReqMatchType reqmt = rq.compare(replayreq, mspec);
+                    Comparator.MatchType reqmt = mspec.compare(rq, replayreq);
                     Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, rrstore);
 
                     if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
                         bestmatch = match;
                         bestreqmt = reqmt;
-                        if (bestreqmt == Analysis.ReqMatchType.ExactMatch && bestmatch.getmt() == Comparator.MatchType.ExactMatch) {
+                        if (bestreqmt == ExactMatch && bestmatch.getmt() == ExactMatch) {
                             break;
                         }
                     }
                 }
                 // compare & write out result
-                if (bestreqmt == Analysis.ReqMatchType.ExactMatch) {
+                if (bestreqmt == ExactMatch) {
                     analysis.reqmatched++;
                 } else {
                     analysis.reqpartiallymatched++;
@@ -134,8 +139,8 @@ public class Analyzer {
         })).orElse(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH));
     }
 
-    private static boolean isReqRespMatchBetter(Analysis.ReqMatchType reqm1, Comparator.MatchType respm1,
-                                                Analysis.ReqMatchType reqm2, Comparator.MatchType respm2) {
+    private static boolean isReqRespMatchBetter(Comparator.MatchType reqm1, Comparator.MatchType respm1,
+                                                Comparator.MatchType reqm2, Comparator.MatchType respm2) {
         // request match has to be better. Only if it is better, check response match
         if (reqm1.isBetterOrEqual(reqm2)) {
             return respm1.isBetter(respm2);
@@ -167,20 +172,34 @@ public class Analyzer {
         Optional<Replay> replay = rrstore.getReplay(replayid);
 
         // optional matching on traceid //and requestid
-        Request.ReqMatchSpec mspec = (Request.ReqMatchSpec) Request.ReqMatchSpec.builder()
-            .withMpath(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMqparams(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMfparams(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMhdrs(RRBase.RRMatchSpec.MatchType.SCORE)
+        ReqMatchSpec rmspec = (ReqMatchSpec) ReqMatchSpec.builder()
+            .withMpath(ComparisonType.Equal)
+            .withMqparams(ComparisonType.Equal)
+            .withMfparams(ComparisonType.Equal)
+            .withMhdrs(ComparisonType.EqualOptional)
             .withHdrfields(Collections.singletonList(tracefield))
-            .withMrrtype(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMcustomerid(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMapp(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMcollection(RRBase.RRMatchSpec.MatchType.FILTER)
-            .withMmeta(RRBase.RRMatchSpec.MatchType.FILTER)
+            .withMrrtype(ComparisonType.Equal)
+            .withMcustomerid(ComparisonType.Equal)
+            .withMapp(ComparisonType.Equal)
+            .withMcollection(ComparisonType.Equal)
+            .withMmeta(ComparisonType.Equal)
             .withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
             .build();
         //.withMreqid(MatchType.SCORE).build();
+
+        CompareTemplate reqTemplate = new CompareTemplate();
+        reqTemplate.addRule(new TemplateEntry(PATHPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(QPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(FPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+        reqTemplate.addRule(new TemplateEntry(RRTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(APPPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+
+        RequestComparator mspec = new TemplatedRequestComparator(reqTemplate, jsonmapper);
+        //RequestComparator mspec = rmspec;
 
         return replay.flatMap(r -> {
             Result<Request> reqs = r.getRequests(rrstore);

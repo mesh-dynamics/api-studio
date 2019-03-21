@@ -6,11 +6,14 @@ package com.cube.core;
 import static com.cube.core.Comparator.Resolution.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.cube.core.RequestComparator.PathCT;
 
 /**
  * @author prasad
@@ -18,30 +21,30 @@ import org.apache.logging.log4j.Logger;
  * Semantics:
  * Presence Type:
  * Required => if value missing in rhs -> ERR_Required
- * 		     if value missing in lhs, but present in rhs
- * 			if (comparison type is Ignore or Default)
- * 			    -> OK_Ignore or OK
- *                          else
- * 			    -> OK_OtherValInvalid
+ * 		       if value missing in lhs, but present in rhs
+ * 					if (comparison type is Ignore or Default)
+ * 			    		-> OK_Ignore or OK
+ *                  else
+ * 			    		-> OK_OtherValInvalid
  *
  * Optional => If value missing in rhs -> OK_Optional
- *                      If value missing in lhs -> OK_OtherValInvalid
+ *             If value missing in lhs -> OK_OtherValInvalid
  *
  * Default => If value missing in rhs -> OK
- *                    If value missing in lhs, but present in rhs
- * 			if (comparison type is Ignore or Default)
- * 			    -> OK_Ignore or OK
- *                          else
- * 			    -> OK_OtherValInvalid
+ *            If value missing in lhs, but present in rhs
+ * 				if (comparison type is Ignore or Default)
+ * 			    	-> OK_Ignore or OK
+ *              else
+ * 			    	-> OK_OtherValInvalid
  */
 public class CompareTemplate {
 
 	private static final Logger LOGGER = LogManager.getLogger(CompareTemplate.class);
 
-	Map<String, TemplateEntry> rules;
+	private Map<String, TemplateEntry> rules;
 	final String prefixpath;
 
-	enum DataType {
+	public enum DataType {
 		Str,
 		Int,
 		Float,
@@ -51,7 +54,7 @@ public class CompareTemplate {
 		Default // not specified
 	}
 	
-	enum PresenceType {
+	public enum PresenceType {
 		Required,
 		Optional,
 		Default // if not specified
@@ -79,7 +82,7 @@ public class CompareTemplate {
 
 	public CompareTemplate(String prefixpath) {
 		super();
-		rules = new HashMap<String, TemplateEntry>();
+		rules = new HashMap<>();
 		this.prefixpath = prefixpath;
 	}
 
@@ -97,7 +100,12 @@ public class CompareTemplate {
 		return rules.values();
 	}
 
-	public CompareTemplate subsetWithPrefix(String prefix) {
+
+	List<PathCT> getPathCTs() {
+		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
+	}
+
+	CompareTemplate subsetWithPrefix(String prefix) {
 		CompareTemplate ret = new CompareTemplate(prefix);
 
 		getRules().forEach(rule -> {
@@ -140,8 +148,8 @@ public class CompareTemplate {
 			Optional<List<String>> rvals = Optional.ofNullable(rhsfmap.get(rule.path));
 			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
 				Comparator.Resolution resolution = OK;
-				Set<String> lset = new HashSet<String>(lvals.orElse(Collections.emptyList()));
-				Set<String> rset = new HashSet<String>(rvals.orElse(Collections.emptyList()));
+				Set<String> lset = new HashSet<>(lvals.orElse(Collections.emptyList()));
+				Set<String> rset = new HashSet<>(rvals.orElse(Collections.emptyList()));
 
 				// check if all values match
 				if (!lset.equals(rset)) {
@@ -162,7 +170,7 @@ public class CompareTemplate {
 			if ((match.mt == Comparator.MatchType.NoMatch) && !needDiff) {
 				break; // short circuit
 			}
-		};
+		}
 	}
 
 

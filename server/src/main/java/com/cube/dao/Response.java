@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import com.cube.core.Comparator;
+import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
 
 import java.time.Instant;
@@ -60,9 +61,9 @@ public class Response extends RRBase {
 		return new MultivaluedHashMap<String, String>();
 	}
 
-	public Comparator.Match compare(Response rhs, CompareTemplate template, CompareTemplate metaFieldTemplate,
+	public Match compare(Response rhs, CompareTemplate template, CompareTemplate metaFieldTemplate,
 									CompareTemplate hdrFieldTemplate, Comparator bodyComparator) {
-		Comparator.Match match = super.compare(rhs, template, metaFieldTemplate, hdrFieldTemplate, bodyComparator, true);
+		Match match = super.compare(rhs, template, metaFieldTemplate, hdrFieldTemplate, bodyComparator, true);
 		template.getRule("/status").checkMatchInt(status, rhs.status, match, true);
 		return match;
 	}

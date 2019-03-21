@@ -70,10 +70,8 @@
 		        <server>TomcatServer</server> 
 		        <path>/cubews</path>
 		        <update>true</update>
-		        <!-- 
 		        <username>admin</username>
                 <password>tomcat4cube$</password>
-                -->
 		    </configuration>
 		</plugin>
 	  <plugin>

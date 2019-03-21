@@ -21,6 +21,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class RRBase {
 
+	public static final String REQIDPATH = "/reqid";
+	public static final String COLLECTIONPATH = "/collection";
+	public static final String TIMESTAMPPATH = "/timestamp";
+	public static final String RRTYPEPATH = "/rrtype";
+	public static final String CUSTOMERIDPATH = "/customerid";
+	public static final String APPPATH = "/app";
+
 	public static enum RR {
 		Record,
 		Replay,
@@ -109,7 +116,7 @@ public class RRBase {
 		meta.putSingle(fieldname, value);
 	}
 
-	protected Comparator.Match compare(Response rhs,
+	protected Comparator.Match compare(RRBase rhs,
 									   CompareTemplate template,
 									   CompareTemplate metaFieldTemplate,
 									   CompareTemplate hdrFieldTemplate,
@@ -157,162 +164,4 @@ public class RRBase {
 	public static final String METAPATH = "/meta";
 	public static final String BODYPATH = "/body";
 
-	public static class RRMatchSpec {
-
-		public enum MatchType {
-			NONE,
-			FILTER,
-			SCORE
-		};
-
-
-
-		/**
-		 * @param mreqid
-		 * @param mmeta
-		 * @param metafields
-		 * @param mhdrs
-		 * @param hdrfields
-		 * @param mbody
-		 * @param mcollection
-		 * @param mtimestamp
-		 * @param mrrtype
-		 * @param mcustomerid
-		 * @param mapp
-		 */
-		protected RRMatchSpec(MatchType mreqid, MatchType mmeta, List<String> metafields, MatchType mhdrs,
-				List<String> hdrfields, MatchType mbody, MatchType mcollection, MatchType mtimestamp, MatchType mrrtype,
-				MatchType mcustomerid, MatchType mapp) {
-			super();
-			this.mreqid = mreqid;
-			this.mmeta = mmeta;
-			this.metafields = metafields;
-			this.mhdrs = mhdrs;
-			this.hdrfields = hdrfields;
-			this.mbody = mbody;
-			this.mcollection = mcollection;
-			this.mtimestamp = mtimestamp;
-			this.mrrtype = mrrtype;
-			this.mcustomerid = mcustomerid;
-			this.mapp = mapp;
-		}
-
-
-		// indicates whether these fields should be matched
-		final MatchType mreqid;
-		final MatchType mmeta;
-		final List<String> metafields;
-		final MatchType mhdrs;
-		final List<String> hdrfields;
-		final MatchType mbody;
-		final MatchType mcollection;
-		final MatchType mtimestamp;
-		final MatchType mrrtype;
-		final MatchType mcustomerid;
-		final MatchType mapp;
-		@Generated("SparkTools")
-		protected RRMatchSpec(Builder builder) {
-			this.mreqid = builder.mreqid;
-			this.mmeta = builder.mmeta;
-			this.metafields = builder.metafields;
-			this.mhdrs = builder.mhdrs;
-			this.hdrfields = builder.hdrfields;
-			this.mbody = builder.mbody;
-			this.mcollection = builder.mcollection;
-			this.mtimestamp = builder.mtimestamp;
-			this.mrrtype = builder.mrrtype;
-			this.mcustomerid = builder.mcustomerid;
-			this.mapp = builder.mapp;
-		}
-		/**
-		 * Creates builder to build {@link RRMatchSpec}.
-		 * @return created builder
-		 */
-		@Generated("SparkTools")
-		public static Builder builder() {
-			return new Builder();
-		}
-		/**
-		 * Builder to build {@link RRMatchSpec}.
-		 */
-		@Generated("SparkTools")
-		public static class Builder {
-			private MatchType mreqid = MatchType.NONE;
-			private MatchType mmeta = MatchType.NONE;
-			private List<String> metafields = Collections.emptyList();
-			private MatchType mhdrs = MatchType.NONE;
-			private List<String> hdrfields = Collections.emptyList();
-			private MatchType mbody = MatchType.NONE;
-			private MatchType mcollection = MatchType.NONE;
-			private MatchType mtimestamp = MatchType.NONE;
-			private MatchType mrrtype = MatchType.NONE;
-			private MatchType mcustomerid = MatchType.NONE;
-			private MatchType mapp = MatchType.NONE;
-
-			protected Builder() {
-			}
-
-			public Builder withMreqid(MatchType mreqid) {
-				this.mreqid = mreqid;
-				return this;
-			}
-
-			public Builder withMmeta(MatchType mmeta) {
-				this.mmeta = mmeta;
-				return this;
-			}
-
-			public Builder withMetafields(List<String> metafields) {
-				this.metafields = metafields;
-				return this;
-			}
-
-			public Builder withMhdrs(MatchType mhdrs) {
-				this.mhdrs = mhdrs;
-				return this;
-			}
-
-			public Builder withHdrfields(List<String> hdrfields) {
-				this.hdrfields = hdrfields;
-				return this;
-			}
-
-			public Builder withMbody(MatchType mbody) {
-				this.mbody = mbody;
-				return this;
-			}
-
-			public Builder withMcollection(MatchType mcollection) {
-				this.mcollection = mcollection;
-				return this;
-			}
-
-			public Builder withMtimestamp(MatchType mtimestamp) {
-				this.mtimestamp = mtimestamp;
-				return this;
-			}
-
-			public Builder withMrrtype(MatchType mrrtype) {
-				this.mrrtype = mrrtype;
-				return this;
-			}
-
-			public Builder withMcustomerid(MatchType mcustomerid) {
-				this.mcustomerid = mcustomerid;
-				return this;
-			}
-
-			public Builder withMapp(MatchType mapp) {
-				this.mapp = mapp;
-				return this;
-			}
-
-			public RRMatchSpec build() {
-				return new RRMatchSpec(this);
-			}
-		}
-
-
-
-	}
 }
