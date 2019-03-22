@@ -4,26 +4,22 @@
 package com.cube.dao;
 
 import java.io.IOException;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
-
-import com.cube.core.ReqMatchSpec;
-import com.cube.core.RequestComparator;
-import com.cube.dao.Recording.RecordingStatus;
-import com.cube.dao.ReqRespStoreImplBase.RecordOrReplay;
-import com.cube.dao.Analysis.ReqRespMatchResult;
-import com.cube.dao.Replay.ReplayStatus;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import com.cube.cache.TemplateKey;
+import com.cube.core.CompareTemplate;
+import com.cube.core.RequestComparator;
+import com.cube.dao.Analysis.ReqRespMatchResult;
+import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.ReqRespStoreImplBase.RecordOrReplay;
 
 /**
  * @author prasad
@@ -49,8 +45,6 @@ public interface ReqRespStore {
 			this.hdrs = hdrs;
 			this.body = body;
 		}
-		
-		
 		
 		/**
 		 * 
@@ -80,7 +74,8 @@ public interface ReqRespStore {
 		ReplayMeta, // replay metadata
 		Analysis,
 		ReqRespMatchResult,
-		Recording
+		Recording,
+		ResponseCompareTemplate
 	}
 
 	boolean save(Request req);
@@ -131,6 +126,31 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	Optional<Replay> getReplay(String replayid);
+
+
+	/**
+	 * Save an analysis template for the given parameters in the backend
+	 * database
+	 * @param customerId
+	 * @param appId
+	 * @param serviceId
+	 * @param templateAsJson
+	 * @param path
+	 * @return
+	 */
+	boolean saveTemplate(String customerId, String appId,
+						 String serviceId, String path , String templateAsJson);
+
+	/**
+	 * Retrieve an analysis template from the database for
+	 * the given parameters
+	 * @param key
+	 * @return
+	 */
+	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
+
+
+
 
 	/**
 	 * @param customerid

@@ -12,9 +12,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.cube.cache.AnalysisTemplateCache;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author prasad
@@ -30,6 +32,9 @@ public class Config {
 	final Properties properties;
 	final SolrClient solr;
 	public final ReqRespStore rrstore;
+	// Adding an analysis template cache
+    public final AnalysisTemplateCache templateCache;
+
 
 	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
 	
@@ -49,6 +54,7 @@ public class Config {
         if (solrurl != null) {
             solr = new HttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
+            templateCache = new AnalysisTemplateCache(rrstore);
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
             LOGGER.error(msg);

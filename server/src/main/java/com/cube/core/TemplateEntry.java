@@ -6,9 +6,6 @@
 
 package com.cube.core;
 
-import static com.cube.core.Comparator.Resolution.*;
-import static com.cube.core.CompareTemplate.DataType.Default;
-
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +13,12 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonPointer;
+
+import static com.cube.core.Comparator.Resolution.*;
+import static com.cube.core.CompareTemplate.DataType.Default;
 
 public class TemplateEntry {
 
@@ -29,7 +31,12 @@ public class TemplateEntry {
      * @param ct
      * @param customization
      */
-    public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct, Optional<String> customization) {
+    // Adding appropriate annotations for json serialization/deserialization
+    @JsonCreator
+    public TemplateEntry(@JsonProperty("path") String path, @JsonProperty("dt") CompareTemplate.DataType dt,
+                         @JsonProperty("pt") CompareTemplate.PresenceType pt,
+                         @JsonProperty("ct") CompareTemplate.ComparisonType ct,
+                         @JsonProperty("customization") Optional<String> customization) {
         super();
         this.path = path;
         this.dt = dt;
@@ -55,10 +62,15 @@ public class TemplateEntry {
         this(path, dt, pt, ct, Optional.empty());
     }
 
+    @JsonProperty("path")
     String path;
+    @JsonProperty("dt")
     CompareTemplate.DataType dt;
+    @JsonProperty("pt")
     CompareTemplate.PresenceType pt;
+    @JsonProperty("ct")
     CompareTemplate.ComparisonType ct;
+    @JsonProperty("customization")
     Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
     JsonPointer pathptr; // compiled form of path
     Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex

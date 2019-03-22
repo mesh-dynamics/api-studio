@@ -32,7 +32,9 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
@@ -529,6 +531,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQSENTF = CPREFIX + "reqsent_i";
     private static final String REQFAILEDF = CPREFIX + "reqfailed_i";
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
+
+    // field names in Solr for compare template (stored as json)
+    private static final String RESPONSETEMPLATEJSON = CPREFIX + "responsetemplate_s";
     
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -558,6 +563,36 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         
         return doc;
     }
+
+    /**
+     * Form a solr storage document for an analysis template (being stored as
+     * a json)
+     * @param customerId
+     * @param appId
+     * @param serviceId
+     * @param path
+     * @param jsonCompareTemplate
+     * @return
+     */
+    private static SolrInputDocument responseTemplateToSolrDoc(String customerId , String appId ,
+                                                               String serviceId, String path, String jsonCompareTemplate) {
+        final SolrInputDocument doc = new SolrInputDocument();
+        String type = Types.ResponseCompareTemplate.toString();
+        String pathHashed = String.valueOf(path.hashCode());
+        // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
+        String id = type.concat("-").concat(String.valueOf(Objects.hash(customerId , appId, serviceId,path)));
+        doc.setField(IDF , id);
+        doc.setField(RESPONSETEMPLATEJSON , jsonCompareTemplate);
+        doc.setField(PATHF , path);
+        doc.setField(APPF , appId);
+        doc.setField(CUSTOMERIDF , customerId);
+        doc.setField(SERVICEF , serviceId);
+
+        doc.setField(TYPEF , Types.ResponseCompareTemplate.toString());
+        return doc;
+    }
+
+
 
     private static Optional<Replay> docToReplay(SolrDocument doc, ReqRespStore rrstore) {
         
@@ -630,7 +665,58 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToReplay(doc, this));
         
     }
-    
+
+    /**
+     * Extract ResponseCompareTemplate from query result
+     * @param doc Retrieve Result
+     * @return
+     */
+    private  Optional<CompareTemplate> docToCompareTemplate(SolrDocument doc) {
+        return getStrField(doc, RESPONSETEMPLATEJSON).flatMap(templateJson -> {
+            try {
+                return Optional.of(config.jsonmapper.readValue(templateJson, CompareTemplate.class));
+            } catch (IOException e) {
+                LOGGER.error("Error while reading template object from json :: " + getIntField(doc , IDF).orElse(-1));
+                return Optional.empty();
+            }
+        });
+    }
+
+    /**
+     * Save an analysis template as json for the given key parameters in solr
+     * @param customerId
+     * @param appId
+     * @param serviceId
+     * @param path
+     * @param template
+     * @return
+     */
+    @Override
+    public boolean saveTemplate(String customerId, String appId, String serviceId, String path, String template) {
+        SolrInputDocument solrDoc = responseTemplateToSolrDoc(customerId, appId,  serviceId , path ,template);
+        return saveDoc(solrDoc) && softcommit();
+    }
+
+    /**
+     * Get compare template from solr for the given key parameters
+     * @param key
+     * @return
+     */
+    @Override
+    public Optional<CompareTemplate> getCompareTemplate(TemplateKey key) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.ResponseCompareTemplate.toString());
+        addFilter(query, CUSTOMERIDF, key.getCustomerId());
+        addFilter(query, APPF, key.getAppId());
+        addFilter(query , SERVICEF , key.getServiceId());
+        addFilter(query, PATHF , key.getPath());
+        Optional<Integer> maxResults = Optional.of(1);
+        return SolrIterator.getStream(solr , query , maxResults).findFirst().flatMap(doc -> {
+                    return docToCompareTemplate(doc);
+                });
+    }
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Replay.ReplayStatus)
      */

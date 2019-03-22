@@ -16,9 +16,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class TemplatedResponseComparator extends TemplatedRRComparator implements ResponseComparator {
 
+
+    // Removing static hard coded analysis template
+    /*static TemplateEntry EQUALITYRULE = new TemplateEntry("/body", ResponseCompareTemplate.DataType.Str,
+        ResponseCompareTemplate.PresenceType.Required, ResponseCompareTemplate.ComparisonType.Equal);
+    public static ResponseCompareTemplate EQUALITYTEMPLATE = new ResponseCompareTemplate();
     static {
         EQUALITYTEMPLATE.addRule(EQUALITYRULE);
-    };
+    };*/
 
     /**
      *
