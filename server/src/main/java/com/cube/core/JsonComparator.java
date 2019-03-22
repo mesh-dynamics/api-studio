@@ -102,7 +102,7 @@ public class JsonComparator implements Comparator {
 			}
 			if (diff.resolution.isErr()) {
 				numerrs++;
-			} 
+			}
 			result.add(diff);
 		}
 		

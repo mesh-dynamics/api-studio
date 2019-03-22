@@ -376,7 +376,7 @@
             { "path": "/rptArr2/*", "dataType": "Str",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" }
         ],
         "output": {
-            "mt":           "ExactMatch",
+            "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
             "diffs": [
                 { "op": "replace",  "path": "/rptArr1/2",   "value":4, "fromValue":3,   "resolution":"ERR_ValMismatch"  }
