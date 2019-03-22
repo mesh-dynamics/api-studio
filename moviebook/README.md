@@ -16,10 +16,10 @@ where,
 `your-pword` is your Docker password.  
 `your-email` is your Docker email.  
 
-2. Export `APPLICATION`, `INSTANCEID` as Environment variables, for example:
+2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID` as Environment variables, for example:
 ```
-export APPLICATION=movieinfo
-export INSTANCEID=prod
+export CUBE_APPLICATION=movieinfo
+export CUBE_INSTANCEID=prod
 ```
 3. Install python dependencies(pip, yaml, jinja2):
 ```

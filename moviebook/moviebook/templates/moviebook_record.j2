@@ -85,8 +85,8 @@ spec:
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
                   meta["customerid"] = "{{customer}}"
-                  meta["app"] = "{{application}}"
-                  meta["instanceid"] = "{{instanceid}}"
+                  meta["app"] = "{{cube_application}}"
+                  meta["instanceid"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -107,8 +107,8 @@ spec:
                   -- meta["collection"] = "testc1"
                   meta["rrtype"] = "Record"
                   meta["customerid"] = "{{customer}}"
-                  meta["app"] = "{{application}}"
-                  meta["instanceid"] = "{{instanceid}}"
+                  meta["app"] = "{{cube_application}}"
+                  meta["instanceid"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
                   xrequestid = request_handle:headers():get("x-request-id")
                   xb3traceid = request_handle:headers():get("x-b3-traceid")

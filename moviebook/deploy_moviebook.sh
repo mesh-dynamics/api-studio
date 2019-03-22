@@ -30,7 +30,7 @@ record() {
 	export_env_variables
 	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
 	curl -X POST \
-  http://$GATEWAY_URL/cs/start/$USER/$APPLICATION/$INSTANCEID/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/start/$USER/$CUBE_APPLICATION/$CUBE_INSTANCEID/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 }
@@ -40,7 +40,7 @@ stop_record() {
 	read COLLECTION_NAME
 	export_env_variables
 	curl -X POST \
-  http://$GATEWAY_URL/cs/stop/$USER/$APPLICATION/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/stop/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
@@ -48,8 +48,8 @@ stop_record() {
 
 generate_mock_all_yaml() {
 	sed -e "s/{{customer}}/$USER/g" moviebook/templates/mock-all-except-moviebook.j2 > moviebook/mock-all-except-moviebook.yaml
-	sed -i '' -e "s/{{application}}/$APPLICATION/g" moviebook/mock-all-except-moviebook.yaml
-	sed -i '' -e "s/{{collection}}/$1/g" moviebook/mock-all-except-moviebook.yaml
+	sed -i '' -e "s/{{cube_application}}/$CUBE_APPLICATION/g" moviebook/mock-all-except-moviebook.yaml
+	sed -i '' -e "s/{{cube_collection}}/$1/g" moviebook/mock-all-except-moviebook.yaml
 }
 
 replay() {
@@ -60,12 +60,12 @@ replay() {
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 	REPLAY_ID=$(curl -X POST \
-  http://$GATEWAY_URL/rs/init/$USER/$APPLICATION/$COLLECTION_NAME \
+  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
-  -d "endpoint=http://$GATEWAY_URL&instanceid=$INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+  -d "endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 	curl -X POST \
-  http://$GATEWAY_URL/rs/start/$USER/$APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
+  http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 	echo $REPLAY_ID > replayid.temp
