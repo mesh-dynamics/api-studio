@@ -146,7 +146,7 @@ public class AnalyzeWS {
 			rrstore.saveTemplate(customerId , appId , serviceName , path ,templateAsJson);
 			TemplateKey key = new TemplateKey(customerId, appId, serviceName, path);
 			templateCache.invalidateKey(key);
-			Analyzer.removeKey(key);
+			//Analyzer.removeKey(key);
 			return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
 		} catch (JsonProcessingException e) {
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();

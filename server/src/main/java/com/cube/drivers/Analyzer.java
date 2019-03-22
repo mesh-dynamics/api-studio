@@ -6,16 +6,8 @@
 
 package com.cube.drivers;
 
-import static com.cube.core.Comparator.MatchType.ExactMatch;
-import static com.cube.dao.RRBase.*;
-import static com.cube.dao.Request.*;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,16 +16,17 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static com.cube.core.Comparator.MatchType.ExactMatch;
+import static com.cube.dao.RRBase.*;
+import static com.cube.dao.Request.*;
+
+import com.cube.cache.AnalysisTemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.*;
+import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.cache.AnalysisTemplateCache;
-import com.cube.core.Comparator;
-import com.cube.core.CompareTemplate;
-import com.cube.core.TemplatedResponseComparator;
-
 import com.cube.dao.*;
 import com.cube.exception.CacheException;
 
@@ -64,10 +57,10 @@ public class Analyzer {
 
     // Ideally want to shift this map to a loading map too , Need to see how to pass
     // jsonmapper to the cache fetch function
-    private static ConcurrentMap<TemplateKey, TemplatedResponseComparator>
-            responseComparatorMap = new ConcurrentHashMap<>();
+    private Map<TemplateKey, TemplatedResponseComparator>
+            responseComparatorMap = new HashMap<>();
 
-    public static boolean removeKey(TemplateKey key) {
+    public boolean removeKey(TemplateKey key) {
         responseComparatorMap.remove(key);
         return true;
     }
@@ -165,7 +158,7 @@ public class Analyzer {
                 // get appropriate template from solr
                 TemplateKey key = new TemplateKey(recordreq.customerid.get(),
                         recordreq.app.get(), recordreq.getService().get(), recordreq.path);
-                // Maintaining an additional static map of container TemplateResponseComparator
+                // Maintaining an additional map of container TemplateResponseComparator
                 // objects since their construction is a heavy operation
                 // using computeIfAbsent instead of putIfAbsent , cause in case of put the
                 // object will be constructed anyway before the function call
