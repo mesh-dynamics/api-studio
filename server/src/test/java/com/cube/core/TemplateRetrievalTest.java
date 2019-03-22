@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cube.cache.AnalysisTemplateCache;
+import com.cube.cache.TemplateKey;
 import com.cube.dao.ReqRespStore;
 import com.cube.ws.Config;
 
@@ -25,7 +26,7 @@ public class TemplateRetrievalTest {
             Config config = new Config();
             ReqRespStore rrStore = config.rrstore;
             AnalysisTemplateCache templateCache = new AnalysisTemplateCache(rrStore);
-            CompareTemplate template = templateCache.fetchCompareTemplate("1234" , "bookinfo" , "getAllBooks" , "/new/path");
+            CompareTemplate template = templateCache.fetchCompareTemplate(new TemplateKey("1234" , "bookinfo" , "getAllBooks" , "/new/path"));
             String[] paths = {"", "/string", "/int", "/float", "/obj", "/rptArr", "/nrptArr"};
             List<String> pathsFound = new ArrayList<>();
             template.getRules().forEach(rule -> pathsFound.add(rule.path));
