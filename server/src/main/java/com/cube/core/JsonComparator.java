@@ -119,6 +119,11 @@ public class JsonComparator implements Comparator {
 	 */
 	private void validate(JsonNode root, List<Diff> resdiffs) {
 		template.getRules().forEach(rule -> {
+
+			int index = rule.path.lastIndexOf('/');
+			if (index != -1 && rule.path.substring( index + 1 ).equalsIgnoreCase("*")){
+				return;
+			}
 			JsonNode node = root.at(rule.pathptr);
 			if (node.isMissingNode()) {
 				if (rule.pt == PresenceType.Required) {
