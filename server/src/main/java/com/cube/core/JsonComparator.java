@@ -62,8 +62,7 @@ public class JsonComparator implements Comparator {
 		
 		// first validate the rhs (new json)
 		validate(rhsroot, result);
-		
-		
+
 		// Now diff new (rhs) with the old (lhs)
 		EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION, 
 				DiffFlags.OMIT_MOVE_OPERATION,
@@ -103,6 +102,8 @@ public class JsonComparator implements Comparator {
 			if (diff.resolution.isErr()) {
 				numerrs++;
 			}
+			//VINEETKS: Adding next line to remove Diffs with same apth and resolution
+			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
 			result.add(diff);
 		}
 		
@@ -120,6 +121,7 @@ public class JsonComparator implements Comparator {
 	private void validate(JsonNode root, List<Diff> resdiffs) {
 		template.getRules().forEach(rule -> {
 
+			//VINEETKS: Adding next 3 lines to omit validation check for repeating Array
 			int index = rule.path.lastIndexOf('/');
 			if (index != -1 && rule.path.substring( index + 1 ).equalsIgnoreCase("*")){
 				return;
