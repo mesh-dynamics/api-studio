@@ -36,7 +36,7 @@ public class TemplateEntry {
     public TemplateEntry(@JsonProperty("path") String path, @JsonProperty("dt") CompareTemplate.DataType dt,
                          @JsonProperty("pt") CompareTemplate.PresenceType pt,
                          @JsonProperty("ct") CompareTemplate.ComparisonType ct,
-                         @JsonProperty("regex") Optional<String> customization) {
+                         @JsonProperty("customization") Optional<String> customization) {
         super();
         this.path = path;
         this.dt = dt;
@@ -70,7 +70,7 @@ public class TemplateEntry {
     CompareTemplate.PresenceType pt;
     @JsonProperty("ct")
     CompareTemplate.ComparisonType ct;
-    @JsonProperty("regex")
+    @JsonProperty("customization")
     Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
     JsonPointer pathptr; // compiled form of path
     Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex

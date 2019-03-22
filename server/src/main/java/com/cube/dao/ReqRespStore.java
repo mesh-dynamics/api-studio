@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
@@ -143,14 +144,12 @@ public interface ReqRespStore {
 	/**
 	 * Retrieve an analysis template from the database for
 	 * the given parameters
-	 * @param customerId
-	 * @param appId
-	 * @param serviceId
-	 * @param path
+	 * @param key
 	 * @return
 	 */
-	Optional<CompareTemplate> getCompareTemplate(String customerId, String appId
-			, String serviceId , String path);
+	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
+
+
 
 
 	/**

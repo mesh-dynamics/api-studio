@@ -27,11 +27,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.cache.AnalysisTemplateCache;
+import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.dao.Analysis;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Analyzer;
+import com.cube.exception.CacheException;
 
 /**
  * @author prasad
@@ -142,11 +144,17 @@ public class AnalyzeWS {
 			// to our class definition , otherwise send error response
     		CompareTemplate  template = jsonmapper.readValue(templateAsJson , CompareTemplate.class);
 			rrstore.saveTemplate(customerId , appId , serviceName , path ,templateAsJson);
+			TemplateKey key = new TemplateKey(customerId, appId, serviceName, path);
+			templateCache.invalidateKey(key);
+			Analyzer.removeKey(key);
 			return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
 		} catch (JsonProcessingException e) {
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
     	} catch (IOException e) {
     		return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
+		} catch (CacheException e) {
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Unable to invalidate cache entry " +
+					"for corresponding template").build();
 		}
 	}
 

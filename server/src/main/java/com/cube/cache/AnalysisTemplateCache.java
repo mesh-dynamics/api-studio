@@ -8,9 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.google.common.cache.*;
 import com.google.common.collect.ComparisonChain;
 
 import com.cube.core.CompareTemplate;
@@ -25,49 +23,6 @@ import com.cube.exception.CacheException;
 public class AnalysisTemplateCache {
 
 
-    /**
-     * Key against which the analysis template will be retrieved/cached
-     */
-    class TemplateKey {
-        String customerId;
-        String appId;
-        String serviceId;
-        String path;
-
-        public TemplateKey(String customerId, String appId, String serviceId, String path) {
-            this.customerId = customerId;
-            this.appId = appId;
-            this.serviceId = serviceId;
-            this.path = path;
-        }
-
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this).add("customerId" , customerId).add("appId" , appId)
-                    .add("serviceId" , serviceId).add("path" , path).toString();
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(this.customerId,this.appId,this.serviceId,this.path);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o instanceof TemplateKey) {
-                TemplateKey other = (TemplateKey) o;
-                return (ComparisonChain.start().
-                        compare(this.customerId , other.customerId).compare(this.appId , other.appId).
-                        compare(this.serviceId , other.serviceId).compare(this.path , other.path).result() == 0);
-            } else {
-                return false;
-            }
-        }
-
-
-    }
-
     private LoadingCache<TemplateKey, CompareTemplate> templateCache;
 
 
@@ -78,25 +33,26 @@ public class AnalysisTemplateCache {
      * @param rrStore
      */
     public AnalysisTemplateCache(ReqRespStore rrStore) {
-        templateCache = CacheBuilder.newBuilder().maximumSize(10).build(
+        templateCache = CacheBuilder.newBuilder().maximumSize(50).removalListener(
+                new RemovalListener<>() {
+                    @Override
+                    public void onRemoval(RemovalNotification<Object, Object> removalNotification) {
+                        LOGGER.info("Removed key ".concat(removalNotification.getKey().toString()));
+                    }
+                }).build(
                 new CacheLoader<>() {
                     @Override
                     public CompareTemplate load(TemplateKey key) throws Exception {
-                        Optional<CompareTemplate> template =
-                                rrStore.getCompareTemplate(key.customerId,key.appId,key.serviceId,key.path);
-                        if (template.isEmpty()) {
-                            throw new Exception("Couldn't find template corresponding to " + key);
-                        }
-                        return template.get();
+                        return rrStore.getCompareTemplate(key).orElseThrow(() -> {
+                            return new Exception("Couldn't find template corresponding to " + key);
+                        });
                     }
                 }
         );
     }
 
 
-    public CompareTemplate fetchCompareTemplate(String customerId, String appId,
-                                                          String serviceId, String path) throws CacheException {
-        TemplateKey key = new TemplateKey(customerId, appId, serviceId, path);
+    public CompareTemplate fetchCompareTemplate(TemplateKey key) throws CacheException {
         try {
             return templateCache.get(key);
         }  catch (ExecutionException e) {
@@ -104,6 +60,10 @@ public class AnalysisTemplateCache {
             throw new CacheException("Error while fetching template for :".concat(key.toString()) , e);
 
         }
+    }
+
+    public void invalidateKey(TemplateKey key) throws CacheException {
+            templateCache.invalidate(key);
     }
 
 

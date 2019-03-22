@@ -42,14 +42,10 @@ import com.cube.core.RequestComparator.PathCT;
  */
 public class CompareTemplate {
 
-	//Adding appropriate annotations for json serialization and deserialization
-	static String PREFIX_PATH_FIELD = "prefixPath";
-	static String RULES_FIELD = "rules";
 	private static final Logger LOGGER = LogManager.getLogger(CompareTemplate.class);
-
 	private Map<String, TemplateEntry> rules;
 
-
+	//Adding appropriate annotations for json serialization and deserialization
 	@JsonProperty("prefixPath")
  	final String prefixpath;
 
@@ -104,7 +100,8 @@ public class CompareTemplate {
 		
 		return get(path).orElse(getInheritedRule(path));
 	}
-	
+
+	@JsonGetter("rules")
 	public Collection<TemplateEntry> getRules() {
 		return rules.values();
 	}
@@ -114,12 +111,14 @@ public class CompareTemplate {
 		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
 	}
 
-	@JsonGetter("rules")
+
 	public Map<String, TemplateEntry> getRulesForSerialization() {return rules;}
 
 	@JsonSetter("rules")
-	public void setRulesForSerialization(Map<String, TemplateEntry> rules) {
-		this.rules = rules;
+	public void setRules(Collection<TemplateEntry> rules) {
+		for (TemplateEntry rule : rules) {
+			addRule(rule);
+		}
 	}
 
 	public CompareTemplate subsetWithPrefix(String prefix) {

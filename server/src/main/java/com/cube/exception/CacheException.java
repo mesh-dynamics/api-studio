@@ -8,4 +8,8 @@ public class CacheException extends Exception {
     public CacheException(String msg , Exception e) {
         super(msg , e);
     }
+
+    public CacheException(String msg) {
+        super(msg);
+    }
 }
