@@ -1,8 +1,7 @@
 
 html , body{
-	
  height:100%;
- 
+ overflow-x: hidden;
 }
  
 .full-width {
@@ -16,6 +15,25 @@ html , body{
 .full-height{
  height:100%;
  }
+.cube-btn {
+    padding: 5px 10px;
+    color: #FFFFFF;
+    background: #999999;
+    border-radius: 5px;
+    font-size: 12px;
+}
+.cube-btn:hover {
+    cursor: pointer;
+    background: #DDDDDD;
+}
+.select-text {
+    text-align: center;
+    padding: 30px;
+    font-size: 20px;
+}
+.inline-block {
+    display: inline-block;
+}
 
 .daterangepicker .ranges li {
     color: #73879C

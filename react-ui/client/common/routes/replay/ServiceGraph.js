@@ -17,7 +17,7 @@ class ServiceGraph extends Component {
             panelVisible: true,
             show: false,
         }
-        this.height = '400px';
+        this.height = '90vh';
         this.width = '100%';
         this.renderServiceGraph = this.renderServiceGraph.bind(this);
         this.render = this.render.bind(this);
@@ -28,8 +28,11 @@ class ServiceGraph extends Component {
                 selector: 'node',
                 style: {
                     shape: 'rectangle',
+                    "text-wrap": "wrap",
                     content: 'data(text)',
-                    'font-size': '8px',
+                    'font-size': '10px',
+                    'width': '150px',
+                    'height': '120px',
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'background-color': '#4286f4',
@@ -140,13 +143,13 @@ class ServiceGraph extends Component {
         let graph = '';
         if (cube.selectedTestId) {
             graph = <div ref='cyto' tabIndex='1'>
-                <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
+                <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.05' />
             </div>;
         } else {
-            graph = <div>Please Select a Collection to Proceed</div>
+            graph = <div className="select-text">Please Select a Collection to Proceed</div>
         }
 
-        let analysis = 'No Analysis';
+        /*let analysis = 'No Analysis';
         let report = 'No Report';
         if (cube.analysis) {
             analysis = Object.keys(cube.analysis).map((key, index) => {
@@ -158,22 +161,22 @@ class ServiceGraph extends Component {
             report = Object.keys(cube.report[1]).map((key, index) => {
                 return (<div key={index}> Key: {key}, Value: {cube.report[1][key]}</div>)
             });
-        }
+        }*/
 
 
  
         return(
             <div>
-                <br/>
-                {/*<ConfigSample />*/}
+                {/*<br/>
+                <ConfigSample />
                 <br/>
                 <div></div>
-                <br/>
+                <br/>*/}
                 <div className='col-sm-12'>
                     {graph}
                     <Clearfix />
                     <br/>
-                    <div style={{padding: '15px', border: '1px solid gray'}}>
+                    {/*<div style={{padding: '15px', border: '1px solid gray'}}>
                         <Row>
                             <Col md={6} sm={6} xs={6}>
                                 <div style={{overflow: 'hidden'}}>
@@ -187,7 +190,7 @@ class ServiceGraph extends Component {
                             </Col>
                         </Row>
                     </div>
-                    <Clearfix />
+                    <Clearfix />*/}
                 </div>
             </div>
         )
@@ -200,15 +203,16 @@ class ServiceGraph extends Component {
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
         const arr = [];
-        console.log(cube.graphData);
 
         const gd = JSON.parse(JSON.stringify(cube.graphData))
     
         // Create nodes
+        let styleN = { "text-wrap": "wrap", width: 150, height: 50 };
         for (const node of gd.nodes) {
             if (cube.analysis && node.data.id == 'movieinfo') {
                 let an = cube.analysis;
-                node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched)
+                node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched);
+                node.data.style = styleN;
             }
             arr.push(node);
             cy.add(node);
@@ -220,15 +224,6 @@ class ServiceGraph extends Component {
             node.addClass('selected-node');
             node.data.text += (an.reqcnt)
         }
-        /*for (let i = 1; i <= 10; i++) {
-            let style = { 'text-wrap': 'wrap', width: 80, height: 80,  }
-            let eleObj = {
-                data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
-                style: style
-            };
-            arr.push(eleObj);
-            cy.add(eleObj);
-        }*/
 
         const _this = this;
 
@@ -255,16 +250,6 @@ class ServiceGraph extends Component {
             };
             cy.add(ed);
         }
-
-
-        /*let eleObj = {
-            data: {
-                id: 's1_s2',
-                source: 's1.ztc.io', target: 's2.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);*/
 
 
         // Layout

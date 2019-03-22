@@ -115,7 +115,7 @@ class ReplayAttribute extends Component {
             let selectedTestIdObj = ''
             if (cube.selectedTestId)
                 selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
-            jsxContent = <div key={cube.selectedTestId}>
+            jsxContent = <div className="inline-block" key={cube.selectedTestId}>
                 <select onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
                     <option value="">Select Collection</option>
                     {options}
@@ -127,7 +127,7 @@ class ReplayAttribute extends Component {
         if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
             jsxContent = <div><br/>Request failed!</div>
 
-        return <div>
+        return <div className="inline-block">
             { jsxContent }
         </div>
     }
@@ -142,17 +142,37 @@ class ReplayAttribute extends Component {
                 <div className="ra-row2">
                     <div className="ra-row1">
                         <Row>
+                            <Col md={8}>
+                                <div className="dual">
+                                    <Row>
+                                        <Col md={6}>
+                                            <span className="label">Application</span><br/>
+                                            <select name="" id="">
+                                                <option value="">Select App</option>
+                                            </select> &nbsp;&nbsp;
+                                            <span className="cube-btn">NEW TEST</span>
+                                        </Col>
+                                        <Col md={6}>
+                                            <span className="label">Status</span><br/>
+                                            <select name="" id=""></select> &nbsp;&nbsp;
+                                        </Col>
+                                    </Row>
+                                </div>
+                            </Col>
                             <Col md={4}>
-                                <span className="label">Application</span><br/>
-                                <select name="" id=""></select>
+                                <input style={{'marginTop': '10px'}} placeholder="Search Application" type="text"/>&nbsp;&nbsp;
+                                <span className="cube-btn">VIEW SCHEDULE</span>
                             </Col>
                         </Row>
                     </div>
                     <div className="ra-row3">
                         <Row>
-                            <Col md={4}>
+                            <Col md={8}>
                                 <span className="label">Collection</span><br/>
-                                {this.renderTestIds(cube)}
+                                {this.renderTestIds(cube)}&nbsp;&nbsp;
+                                <span className="cube-btn">REPLAY</span>&nbsp;&nbsp;
+                                <span className="cube-btn">SAVE & RUN</span>&nbsp;&nbsp;
+                                <span className="cube-btn">STOP TEST</span>
                             </Col>
                         </Row>
                     </div>

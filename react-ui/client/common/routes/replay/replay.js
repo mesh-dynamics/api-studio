@@ -4,6 +4,7 @@ import { XPanel, PageTitle } from '../../components'
 import { connect } from 'react-redux';
 import ServiceGraph from './ServiceGraph';
 import ReplayAttribute from "./ReplayAttribute";
+import "./ReplayAttribute.css";
 
 class replay extends Component {
   constructor (props) {
@@ -52,16 +53,18 @@ class replay extends Component {
         <Clearfix />
         <ReplayAttribute />
         <Clearfix />
-        <Row style={{ minHeight: '100vh' }} >
-            {/*Service Graph: */}
-            <div className="col-sm-9">
-            { 
-                <ServiceGraph />
-            }
-            </div>
+        <div className="replay-container">
+            <Row style={{ minHeight: '100vh' }} >
+                {/*Service Graph: */}
+                <div className="col-sm-9">
+                {
+                    <ServiceGraph />
+                }
+                </div>
 
-      <div className="col-sm-3">Hi</div>
-        </Row>
+                <div className="col-sm-3">Hi</div>
+            </Row>
+        </div>
         
       </div>
     )
