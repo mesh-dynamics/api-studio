@@ -27,7 +27,6 @@ public class Config {
     public String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
 
     // Flags
-    public boolean USE_PREPARED_STMTS = true;    
     public boolean USE_KUBE = false;
     
     //public static boolean USE_JDBC_SERVICE = true;
