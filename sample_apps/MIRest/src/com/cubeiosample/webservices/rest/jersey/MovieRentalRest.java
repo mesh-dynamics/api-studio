@@ -238,7 +238,7 @@ public class MovieRentalRest {
     return Response.ok().type(MediaType.APPLICATION_JSON).entity(dues.toString()).build();
 	}
 	
-	
+	/*
 	@Path("/ismovieavailable")
 	@GET
 	//@Secured
@@ -292,6 +292,7 @@ public class MovieRentalRest {
     } 
 	  return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
   }
+  */
 	
 	
 }

@@ -21,7 +21,6 @@ import org.json.JSONObject;
 
 public class MovieRentals {
 
-    private ConnectionPool jdbcPool = null;
     private static RestOverSql ros = null;
     private static BookInfo bookInfo = null;
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -215,7 +214,7 @@ public class MovieRentals {
 	    	    	ros = new RestOverSql(tracer, config);
 		    	}
 		    	// else
-		    	return jdbcPool.executeQuery(storesQuery, params);
+		    	return ros.executeQuery(storesQuery, params);
 	    	} catch (Exception e) {
 	    		LOGGER.error("FindAvailableStores failed on filmId=" + filmId + "; " + e.toString());
 	    	}
@@ -265,12 +264,12 @@ public class MovieRentals {
 
     
     // Sales and store performance analysis
-    public JSONArray getSalesByStore(String store_name) throws SQLException, JSONException {
+    /*public JSONArray getSalesByStore(String store_name) throws SQLException, JSONException {
         String query = "select * from sales_by_store where store = '" + store_name + "'";
         	LOGGER.debug(query);
-        JSONArray rs = jdbcPool.executeQuery(query);
+        JSONArray rs = ros.executeQuery(query);
         return rs;
-    }
+    }*/
 
         
     private static void loadDriver() throws ClassNotFoundException {
@@ -305,21 +304,13 @@ public class MovieRentals {
 	    	int inventory_id = -1;
 	    	try {
 	    		JSONArray rs = null;
-	    		if (config.USE_PREPARED_STMTS) {
-		    		String inventoryQuery = "select inventory_id from inventory "
-			    			+ " where film_id = ? and store_id = ? and "
-			    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-			    	JSONArray params = new JSONArray();
-			    	RestOverSql.addIntegerParam(params, film_id);
-			    	RestOverSql.addIntegerParam(params, store_id);
-			    	rs = ros.executeQuery(inventoryQuery, params);
-	    		} else {
-	    			String inventoryQuery = "select inventory_id from inventory "
-			    			+ " where film_id = " + film_id + " and store_id = " + store_id 
-			    			+ " and inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-	    			// TODO: jdbc service doesnt support non-prepared statements yet
-	    			rs = jdbcPool.executeQuery(inventoryQuery);
-	    		}
+    			String inventoryQuery = "select inventory_id from inventory "
+		    			+ " where film_id = ? and store_id = ? and "
+		    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
+		    	JSONArray params = new JSONArray();
+		    	RestOverSql.addIntegerParam(params, film_id);
+		    	RestOverSql.addIntegerParam(params, store_id);
+		    	rs = ros.executeQuery(inventoryQuery, params);
 	    		if (rs == null || rs.length() < 1) {
 		    		return -1;
 		    	}
@@ -347,22 +338,15 @@ public class MovieRentals {
     
     private JSONObject updateRental(int inventory_id, int customer_id, int staff_id) throws SQLException, JSONException {
         String dateString = format.format(new Date());
-        if (config.USE_PREPARED_STMTS) {
-          	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
-                      + " VALUES (?, ?, ?, ?)";
-          	JSONArray params = new JSONArray();
-          	RestOverSql.addIntegerParam(params, inventory_id);
-          	RestOverSql.addIntegerParam(params, customer_id);
-          	RestOverSql.addIntegerParam(params, staff_id);
-          	RestOverSql.addStringParam(params, dateString);
-          	LOGGER.debug(rentalUpdateQuery + "; " + params.toString());
-        	return ros.executeUpdate(rentalUpdateQuery, params);
-        } 
-        
-        // not USE_PREPARED_STMTS and not USE_JDBC_SERVICE
-        String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
-                + " VALUES (" + inventory_id + ", " + customer_id + ", " + staff_id + ", '" + dateString + "')";
-        return jdbcPool.executeUpdate(rentalUpdateQuery);
+      	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
+                  + " VALUES (?, ?, ?, ?)";
+      	JSONArray params = new JSONArray();
+      	RestOverSql.addIntegerParam(params, inventory_id);
+      	RestOverSql.addIntegerParam(params, customer_id);
+      	RestOverSql.addIntegerParam(params, staff_id);
+      	RestOverSql.addStringParam(params, dateString);
+      	LOGGER.debug(rentalUpdateQuery + "; " + params.toString());
+    	return ros.executeUpdate(rentalUpdateQuery, params);
     }
     
     
