@@ -230,25 +230,39 @@ spec:
         env:
           - name: USE_KUBE
             value: "true"
-          - name: MYSQL_DB_HOST
-            value: MYSQL_SAKILA_SERVICE_HOST
-          - name: MYSQL_DB_PORT
-            value: "3306"
-          - name: MYSQL_DB_USER
-            value: cube
-          - name: MYSQL_DB_PASSWORD
-            value: cubeio12
-          - name: MYSQL_PERMANENT_HOST
+          - name: MYSQL_HOST
             value: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
-          - name: MYSQL_PERMANENT_PORT
+          - name: MYSQL_PORT
             value: "3306"
+          - name: MYSQL_DBNAME
+            value: sakila
+          - name: MYSQL_USERNAME
+            value: cube
+          - name: MYSQL_PWD
+            value: cubeio12
           - name: RESTWRAPJDBC_URI
             value: http://restwrapjdbc:8080/restsql
+          - name: GET_BOOK_REVIEWS
+            value: "true"
+          - name: USE_CACHING
+            value: "false"
+          - name: ADD_TRACING_HEADERS
+            value: "true"
+          - name: USE_TOKEN_AUTHENTICATION
+            value: "false"
+          - name: DISPLAYNAME_LASTFIRST
+            value: "true"
+          - name: NUM_ACTORS_TO_DISPLAY
+            value: 2
+          - name: RATINGS_5PT_SCALE
+            value: "true"
+          - name: CONCAT_BUG
+            value: false
+---        
 
 ##################################################################################################
 # Rest Wrap JDBC services
 ##################################################################################################
----
 apiVersion: v1
 kind: Service
 metadata:
