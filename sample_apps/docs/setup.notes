@@ -30,6 +30,15 @@ docker run --name mysql-sakila-v3-instance -p 3306:3306 -e MYSQL_ROOT_PASSWORD=p
 docker exec -it mysql-sakila-v3-instance /bin/bash
 mysql -ucube -pcubeio
 
+# Make sure this actor_film_count view is created. Whether locally or on AWS.
+create view actor_film_count as 
+select actor.actor_id as actor_id, actor.first_name as first_name, actor.last_name as last_name, count(*) as film_count
+from actor, film_actor 
+where actor.actor_id = film_actor.actor_id
+group by actor.actor_id, actor.first_name, actor.last_name
+
+
+
 ## For kubernetes cluster run on AWS, make sure that the RDS instance is running. Use the connection string 
 ## from AWS console in the moviebook.yaml file (e.g., sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com)
 https://us-east-2.console.aws.amazon.com/rds/home?region=us-east-2#GettingStarted:

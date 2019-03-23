@@ -1,5 +1,6 @@
 kubectl
 istio/
+istio-1.0.3/
 workspace/
 /build/
 .settings
@@ -8,3 +9,4 @@ workspace/
 sample_apps/MIRest/WebContent/META-INF/
 .idea
 *.iml
+server/cube.log

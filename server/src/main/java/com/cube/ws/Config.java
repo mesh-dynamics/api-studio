@@ -37,7 +37,7 @@ public class Config {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
 		String solrurl = "http://18.191.135.125:8983/solr/cube";   // TODO: pass this default from kube conf
-		try {
+        try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
             solrurl = properties.getProperty("solrurl");
