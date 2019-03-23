@@ -19,6 +19,12 @@
   </dependencyManagement>
   <build>
     <sourceDirectory>src</sourceDirectory>
+    <resources>
+     	<resource>
+           	<filtering>true</filtering>
+           	<directory>resources</directory>
+       	</resource>
+   	 </resources>		
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -71,7 +77,8 @@
 		    <buildArgs>
 		      <WAR_FILE>${project.build.finalName}.war</WAR_FILE>
 		    </buildArgs>
-		  </configuration>		    
+		  </configuration>
+    	      
 		    <!-- <resources>
 		      <resource>
 		       <targetPath>/</targetPath>

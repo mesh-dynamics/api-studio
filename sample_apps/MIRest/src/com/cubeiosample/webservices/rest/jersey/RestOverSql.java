@@ -25,7 +25,6 @@ public class RestOverSql {
   private WebTarget restJDBCService = null;
   private Tracer tracer = null;
   private Config config = null;
-  private String restWrapJDBCUri = "";
   
   final static Logger LOGGER = Logger.getLogger(RestOverSql.class);
   
@@ -40,67 +39,24 @@ public class RestOverSql {
         .property(ClientProperties.CONNECT_TIMEOUT, 10000);
     restClient = ClientBuilder.newClient(clientConfig);
       
-    configureRestWrapUri();
-    LOGGER.debug("RESTWRAPJDBC_URI is " + restWrapJDBCUri);
-    restJDBCService = restClient.target(restWrapJDBCUri);
+    LOGGER.debug("RESTWRAPJDBC_URI is " + config.RESTWRAPJDBC_URI);
+    restJDBCService = restClient.target(config.RESTWRAPJDBC_URI);
     
     initializeJDBCService();
-  }
-  
+  } 
     
-  private void configureRestWrapUri() {
-	  // try the conf file and then the env. otherwise, default
-      String rwUri = System.getenv("RESTWRAPJDBC_URI");
-      if (rwUri != null) {
-        restWrapJDBCUri = rwUri;
-      } else {
-    	  restWrapJDBCUri = config.RESTWRAPJDBC_URI;
-      }
-   }
-  
-  
+    
   private void initializeJDBCService() {
-    String username = this.userName();
-    String pwd = this.passwd();
-    String uri = this.baseUri();
+    String username = config.userName();
+    String pwd = config.passwd();
+    String uri = config.baseDbUri();
     LOGGER.debug("init jdbc service tracer: ");
     LOGGER.debug(tracer.toString());
     Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("initialize").queryParam("username", username).queryParam("password", pwd).queryParam("uri", uri).request(MediaType.APPLICATION_JSON), null, "GET", 3, config.ADD_TRACING_HEADERS);
     LOGGER.debug("intialized jdbc service " + uri + "; " + username + "; " + response.getStatus() + "; "+ response.readEntity(String.class));
     response.close();
   }
-  
-  private String baseUri() {
-  	if (config.USE_KUBE) {
-  		// couldn't pass the IP of another pod. But the service has it as <svcname>_SERVICE_HOST
-  		//String host = System.getenv(System.getenv("MYSQL_PERMANENT_HOST"));
-  	  String host = System.getenv("MYSQL_PERMANENT_HOST");
-   	  if (host == null) {
-  		  LOGGER.error("host has to be specified");
-  	  }
-  	  String port = System.getenv("MYSQL_DB_PORT");
-  	  if (port == null) {
-  	     port = "3306";
-  	  }
-  	  return "jdbc:mysql://" + host + ":" + port + "/sakila";
-  	}
-  	return "jdbc:mysql://" + config.MYSQL_HOST + ":" + config.MYSQL_PORT + "/sakila";
-  }
-  
-  private String userName() {
-    if (config.USE_KUBE) {
-  		 return System.getenv("MYSQL_DB_USER");
-    }
-    return config.MYSQL_USERNAME;
-  }
-  
-  private String passwd() {
-    if (config.USE_KUBE) {
-  		  return System.getenv("MYSQL_DB_PASSWORD");
-    }
-    return config.MYSQL_PWD;
-  }
-      
+        
   
   public String getHealth() {
     Response response = RestUtils.callWithRetries(tracer, restJDBCService.path("health").request(MediaType.APPLICATION_JSON), null, "GET", 3, config.ADD_TRACING_HEADERS);
