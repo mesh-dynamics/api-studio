@@ -4,8 +4,12 @@ import io.cube.utils.ConnectionPool;
 import io.opentracing.Tracer;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.text.SimpleDateFormat;
 import org.apache.log4j.Logger;
@@ -17,7 +21,6 @@ import org.json.JSONObject;
 
 public class MovieRentals {
 
-    private ConnectionPool jdbcPool = null;
     private static RestOverSql ros = null;
     private static BookInfo bookInfo = null;
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -32,8 +35,6 @@ public class MovieRentals {
     		this.tracer = tracer;
     		this.config = config;
     	
-	    // TODO: make a separate database query service.
-    	configureUseKube();
 	    try {
 	    	LOGGER.debug("MV tracer: " + tracer.toString());
 	    	ros = new RestOverSql(this.tracer, config);
@@ -53,15 +54,6 @@ public class MovieRentals {
 	    }
     }
     
-    private void configureUseKube() {
-    	String useKube = System.getenv("USE_KUBE");
-       	LOGGER.debug("use_kube value:" + useKube);
-        if (useKube != null && useKube.equalsIgnoreCase("true")) {
-    	    config.USE_KUBE = true;
-    	} else {
-    	    config.USE_KUBE = false;
-    	}
-    }
     
     public JSONArray listMovies(String filmnameOrKeywordForRequest) {
 	    	// TODO: add actor also in the parameter options.
@@ -87,11 +79,19 @@ public class MovieRentals {
     public JSONArray listMovieByName(String filmname) {
       // Query with filmname
       LOGGER.debug("filmname:" + filmname);
-      String query = "select film_id, title from film where title = ?";
+      // String query = "select film_id, title from film where title = ?";
+      String query = "select film.film_id as film_id, film.title as title, group_concat(actor_film_count.first_name) as actors_firstnames, group_concat(actor_film_count.last_name) as actors_lastnames, group_concat(actor_film_count.film_count) as film_counts "
+      		  + "from film, film_actor, actor_film_count "
+    		  + " where film.film_id = film_actor.film_id and film_actor.actor_id = actor_film_count.actor_id "
+    		  + " and title = ?"     
+    		  + " group by film.film_id, film.title";
+      
       JSONArray params = new JSONArray();
       RestOverSql.addStringParam(params, filmname);
       JSONArray films = null;
       films = ros.executeQuery(query, params);
+      
+      processActorNamesForDisplay(films);
       
       if (config.GET_BOOK_REVIEWS) {
           enhanceFilmsWithReviews(films);
@@ -99,7 +99,92 @@ public class MovieRentals {
       LOGGER.debug(String.format("Movie and book info list: %s", films.toString()));
       return films;
     }
+    
+    
+    private void processActorNamesForDisplay(JSONArray films) {
+    	for (int i = 0; i < films.length(); ++i) {
+    		JSONObject film = films.getJSONObject(i);
+    		String firstNames = film.getString("actors_firstnames");
+    		String lastNames = film.getString("actors_lastnames");
+    		String filmCounts = film.getString("film_counts");
+    		String displayActors = displayActors(firstNames, lastNames, filmCounts);
+    		film.put("display_actors", displayActors);
+    	}
+    }
 
+    private String displayActors(String firstNames, String lastNames, String filmCounts) {
+    	LOGGER.debug(String.format("finding display actors for %s, %s, %s", firstNames, lastNames, filmCounts));
+    	int[] counts = Arrays.stream(filmCounts.split(",")).mapToInt(Integer::parseInt).toArray();
+    	if (counts.length == 0) {
+    		return "";
+    	}
+    	List<Integer> impActorIndexes = maxKIndexes(counts, config.NUM_ACTORS_TO_DISPLAY);
+    	StringBuilder builder = new StringBuilder();
+    	String[] fNamesArr = firstNames.split(",");
+    	String[] lNamesArr = lastNames.split(",");
+    	for (int i = 0; i < impActorIndexes.size(); ++i) {
+    		if (config.DISPLAYNAME_LASTFIRST) {
+    			builder.append(buggyAppend(lNamesArr[impActorIndexes.get(i)], fNamesArr[impActorIndexes.get(i)], ",") + "; ");
+    		} else {
+    			builder.append(buggyAppend(fNamesArr[impActorIndexes.get(i)], lNamesArr[impActorIndexes.get(i)], " ") + "; ");
+    		}
+    	}
+    	LOGGER.debug(String.format("Display actors: %s", builder.toString()));
+    	return builder.toString();
+    }
+    
+    private String buggyAppend(String name1, String name2, String separator) {
+    	if (config.CONCAT_BUG) {
+    		// introduce the concat bug only occasionally so it stresses comprehensiveness. 
+    		// Narrative: Firstnames in the database have trailing spaces and hence this bug only appears occasionally.
+    		if (name1.toLowerCase().startsWith("a") || name1.toLowerCase().startsWith("p") || name1.toLowerCase().startsWith("s")) {
+    			return name1 + name2;
+    		}
+    		return name1 + separator + name2;
+    	} else {
+    		return name1 + separator + name2;
+    	}
+    }
+    
+    // Always choose k indexes. 
+    // If multiple values in counts are equal to the maxKThreshold then we choose randomly among them.
+    private List<Integer> maxKIndexes(int[] counts, int k) { 
+    	List<Integer> indexes = new ArrayList<>();  
+       	List<Integer> indexesToChooseRandomly = new ArrayList<>();
+        int maxKValue = maxKThreshold(Arrays.copyOf(counts, counts.length), k);
+    	for (int i = 0; i < counts.length; ++i) {
+    		if (counts[i] > maxKValue) {
+    			indexes.add(i);
+    		} else if (counts[i] == maxKValue) {
+    			// add it to the set from which we will pick randomly.
+    			indexesToChooseRandomly.add(i);
+    		}
+    	}
+    	// num to choose randomly. 
+    	int num_iterations = 0;
+    	while (k > indexes.size() && indexesToChooseRandomly.size() > 0 && num_iterations < 1000) {
+    		// pick randomly. 
+			if (Math.random() > 0.5) {
+				indexes.add(indexesToChooseRandomly.get(num_iterations % indexesToChooseRandomly.size()));
+				indexesToChooseRandomly.remove(num_iterations % indexesToChooseRandomly.size());
+			} else {
+				num_iterations++;
+			}
+    	}
+    	
+    	return indexes;
+    }
+    
+    private int maxKThreshold(int[] countsArr, int k) {
+    	// assume k > 0
+    	if (k == 0) {
+    		return Integer.MAX_VALUE; 
+    	}
+    	Arrays.sort(countsArr);
+    	int maxKValue = countsArr[Math.max(0, countsArr.length-k)];
+    	LOGGER.debug(String.format("maxKValue for %s is %d", countsArr.toString(), maxKValue));
+    	return maxKValue;
+    }
     
     private void enhanceFilmsWithReviews(JSONArray films) {
         // TODO: avoid modifying the film object. Instead, attach another reviews object
@@ -134,7 +219,7 @@ public class MovieRentals {
 	    	    	ros = new RestOverSql(tracer, config);
 		    	}
 		    	// else
-		    	return jdbcPool.executeQuery(storesQuery, params);
+		    	return ros.executeQuery(storesQuery, params);
 	    	} catch (Exception e) {
 	    		LOGGER.error("FindAvailableStores failed on filmId=" + filmId + "; " + e.toString());
 	    	}
@@ -184,12 +269,12 @@ public class MovieRentals {
 
     
     // Sales and store performance analysis
-    public JSONArray getSalesByStore(String store_name) throws SQLException, JSONException {
+    /*public JSONArray getSalesByStore(String store_name) throws SQLException, JSONException {
         String query = "select * from sales_by_store where store = '" + store_name + "'";
         	LOGGER.debug(query);
-        JSONArray rs = jdbcPool.executeQuery(query);
+        JSONArray rs = ros.executeQuery(query);
         return rs;
-    }
+    }*/
 
         
     private static void loadDriver() throws ClassNotFoundException {
@@ -224,21 +309,13 @@ public class MovieRentals {
 	    	int inventory_id = -1;
 	    	try {
 	    		JSONArray rs = null;
-	    		if (config.USE_PREPARED_STMTS) {
-		    		String inventoryQuery = "select inventory_id from inventory "
-			    			+ " where film_id = ? and store_id = ? and "
-			    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-			    	JSONArray params = new JSONArray();
-			    	RestOverSql.addIntegerParam(params, film_id);
-			    	RestOverSql.addIntegerParam(params, store_id);
-			    	rs = ros.executeQuery(inventoryQuery, params);
-	    		} else {
-	    			String inventoryQuery = "select inventory_id from inventory "
-			    			+ " where film_id = " + film_id + " and store_id = " + store_id 
-			    			+ " and inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
-	    			// TODO: jdbc service doesnt support non-prepared statements yet
-	    			rs = jdbcPool.executeQuery(inventoryQuery);
-	    		}
+    			String inventoryQuery = "select inventory_id from inventory "
+		    			+ " where film_id = ? and store_id = ? and "
+		    			+ " inventory_id not in (select inventory_id from rental where return_date is null) limit 1";
+		    	JSONArray params = new JSONArray();
+		    	RestOverSql.addIntegerParam(params, film_id);
+		    	RestOverSql.addIntegerParam(params, store_id);
+		    	rs = ros.executeQuery(inventoryQuery, params);
 	    		if (rs == null || rs.length() < 1) {
 		    		return -1;
 		    	}
@@ -266,22 +343,15 @@ public class MovieRentals {
     
     private JSONObject updateRental(int inventory_id, int customer_id, int staff_id) throws SQLException, JSONException {
         String dateString = format.format(new Date());
-        if (config.USE_PREPARED_STMTS) {
-          	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
-                      + " VALUES (?, ?, ?, ?)";
-          	JSONArray params = new JSONArray();
-          	RestOverSql.addIntegerParam(params, inventory_id);
-          	RestOverSql.addIntegerParam(params, customer_id);
-          	RestOverSql.addIntegerParam(params, staff_id);
-          	RestOverSql.addStringParam(params, dateString);
-          	LOGGER.debug(rentalUpdateQuery + "; " + params.toString());
-        	return ros.executeUpdate(rentalUpdateQuery, params);
-        } 
-        
-        // not USE_PREPARED_STMTS and not USE_JDBC_SERVICE
-        String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
-                + " VALUES (" + inventory_id + ", " + customer_id + ", " + staff_id + ", '" + dateString + "')";
-        return jdbcPool.executeUpdate(rentalUpdateQuery);
+      	String rentalUpdateQuery = "INSERT INTO rental (inventory_id, customer_id, staff_id, rental_date) "
+                  + " VALUES (?, ?, ?, ?)";
+      	JSONArray params = new JSONArray();
+      	RestOverSql.addIntegerParam(params, inventory_id);
+      	RestOverSql.addIntegerParam(params, customer_id);
+      	RestOverSql.addIntegerParam(params, staff_id);
+      	RestOverSql.addStringParam(params, dateString);
+      	LOGGER.debug(rentalUpdateQuery + "; " + params.toString());
+    	return ros.executeUpdate(rentalUpdateQuery, params);
     }
     
     

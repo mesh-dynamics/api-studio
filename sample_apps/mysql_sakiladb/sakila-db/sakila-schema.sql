@@ -641,8 +641,18 @@ END $$
 
 DELIMITER ;
 
+
+CREATE VIEW actor_film_count AS 
+SELECT actor.actor_id AS actor_id, actor.first_name AS first_name, actor.last_name AS last_name, COUNT(*) AS film_count
+FROM actor, film_actor 
+WHERE actor.actor_id = film_actor.actor_id
+GROUP BY actor.actor_id, actor.first_name, actor.last_name;
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+select film.film_id as film_id, film.title as title, group_concat(actor_film_count.first_name) as actors_firstnames, group_concat(actor_film_count.last_name) as actors_lastnames, group_concat(actor_film_count.film_count) as film_counts from film, film_actor, actor_film_count  where film.film_id = film_actor.film_id and film_actor.actor_id = actor_film_count.actor_id  group by film.film_id, film.title limit 10;
 
 

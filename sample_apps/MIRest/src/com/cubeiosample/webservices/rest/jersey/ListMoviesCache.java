@@ -18,7 +18,7 @@ public class ListMoviesCache {
   public ListMoviesCache(MovieRentals mvInstance, Config config) {
     mv = mvInstance;
     this.config = config;
-    if (config.USE_CACHING) {
+    if (this.config.USE_CACHING) {
     	this.maxSize = 0;
     }
   }
