@@ -135,7 +135,12 @@ public class MovieRentals {
     
     private String buggyAppend(String name1, String name2, String separator) {
     	if (config.CONCAT_BUG) {
-    		return name1 + name2;
+    		// introduce the concat bug only occasionally so it stresses comprehensiveness. 
+    		// Narrative: Firstnames in the database have trailing spaces and hence this bug only appears occasionally.
+    		if (name1.toLowerCase().startsWith("a") || name1.toLowerCase().startsWith("p") || name1.toLowerCase().startsWith("s")) {
+    			return name1 + name2;
+    		}
+    		return name1 + separator + name2;
     	} else {
     		return name1 + separator + name2;
     	}
