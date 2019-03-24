@@ -67,10 +67,16 @@ replay() {
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
   -d "endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
-	curl -X POST \
+	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
+	if [ $? -eq 0 ]; then
+		echo "Replay started"
+	else
+		echo "Replay did not started"
+	fi
+
 	echo $REPLAY_ID > replayid.temp
 }
 
