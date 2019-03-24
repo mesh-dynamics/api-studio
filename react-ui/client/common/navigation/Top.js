@@ -13,7 +13,10 @@ class Top extends Component {
           <nav>
             <div className="nav toggle">
           {/*<a id="menu_toggle" onClick={ toggleCb }><i className="fas fa-bars"></i></a>*/}
-                <h3>CUBECORP.IO</h3>
+                <h3 className="comp-name">
+                    <img src="/assets/images/icons/cuebcorp_logo.png" alt="CUBECORP.IO"/>
+                    <span>CUBECORP.IO</span>
+                </h3>
             </div>
             <TopNavBar>
               <UserMenuItem user={ user }/>

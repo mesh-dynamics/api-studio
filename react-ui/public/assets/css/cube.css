@@ -4372,3 +4372,27 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     background-color: #ffff !important;
 }
 /** /bootstrap-datetimepicker **/
+
+/*custom*/
+.comp-name {
+    font-family: 'Allerta Stencil', sans-serif;
+    color: #FFFFFF;
+    position: relative;
+}
+
+.comp-name img {
+    position: absolute;
+    width: 95px;
+    top: -15px;
+    z-index: 3;
+}
+
+.comp-name span {
+    position: absolute;
+    left: 90px;
+    z-index: 3;
+}
+.nav_menu {
+    margin-bottom: 0 !important;
+    background: #00B2FF !important;
+}

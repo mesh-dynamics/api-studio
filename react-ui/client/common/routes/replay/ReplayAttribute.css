@@ -1,10 +1,13 @@
+#rep-attr {
+    font-family: 'Roboto Condensed', sans-serif;
+}
 .pos-rel {
     position: relative;
 }
 .row1-dummy {
     position: absolute;
     padding: 10px;
-    background: #9fe9f9;
+    background: #CCEEFD;
     width: 100%;
 }
 .row2-dummy {
@@ -17,17 +20,17 @@
     z-index: 2;
     position: relative;
     padding: 0;
-    background: #dedede/*#9fe9f9*/;
+    background: #95A9B1/*#9fe9f9*/;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     margin: 0 20px 0 30px;
 }
 .dual {
-    background: #c8e8f6;
+    background: #A4CFE2;
     border-bottom-right-radius: 10px;
 }
 .dual .col-md-6:first-child {
-    background: #9fe9f9;
+    background: #CCEEFD;
     padding-left: 20px;
     padding-bottom: 10px;
     border-bottom-left-radius: 10px;
@@ -43,10 +46,6 @@
 }
 .ra-row3 {
     margin: 0 50px 5px;
-}
-.nav_menu {
-    margin-bottom: 0 !important;
-    background: #42d4f4 !important;
 }
 select {
     width: 200px;

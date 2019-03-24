@@ -136,7 +136,7 @@ class ReplayAttribute extends Component {
         const { user, cube } = this.props;
 
         return (
-            <div className="pos-rel">
+            <div className="pos-rel" id="rep-attr">
                 <div className="row2-dummy"></div>
                 <div className="row1-dummy"></div>
                 <div className="ra-row2">
