@@ -42,7 +42,7 @@ $ eval $(minikube docker-env)
 
 9. Download [`Istio`](https://istio.io/)  
 ```
-$ curl -L https://git.io/getLatestIstio | sh -
+$ curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.0.6 sh -
 ```
 
 10. Add Istio to PATH variable to make it easy to access Istio binaries.  
