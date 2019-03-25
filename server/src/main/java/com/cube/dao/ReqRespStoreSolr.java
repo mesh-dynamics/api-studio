@@ -578,7 +578,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 Types.ResponseCompareTemplate.toString();
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
-                key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath() , key.getReqOrResp())));
+                key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
+                , key.getReqOrResp().toString())));
         doc.setField(IDF , id);
         doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
         doc.setField(PATHF , key.getPath());
