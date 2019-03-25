@@ -118,9 +118,11 @@ public class CompareTemplate {
 		if (index != -1) {
 			String subPath = path.substring(0, index);
 			return get(subPath).flatMap(rule -> {
-                //VINEETKS: Adding next 3 line to fetch rules for repeating array
-			    if (rule.dt == DataType.RptArray && get(subPath + "/*").isPresent()) {
-			        return get(subPath + "/*");
+			    if (rule.dt == DataType.RptArray) {
+                    Optional<TemplateEntry> starRule = get(subPath + "/*");
+                    if (starRule.isPresent()) {
+                        return starRule;
+                    }
                 }
 				if (rule.ct == ComparisonType.Equal) {
 					return Optional.of(DEFAULT_RULE_EQUALITY);
