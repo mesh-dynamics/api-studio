@@ -51,7 +51,7 @@ function getTestIds () {
 }
 
 function setSelectedTestId ( testIdLabel ) {
-    return {type: cubeConstants.SET_SELECTED_TESTID, data: testIdLabel}
+    return {type: cubeConstants.SET_SELECTED_TESTID, data: testIdLabel};
 }
 
 function getGraphData () {

@@ -95,7 +95,10 @@ class ReplayAttribute extends Component {
             dispatch(cubeActions.setSelectedTestId(e.target.value));
             dispatch(cubeActions.getGraphData());
             dispatch(cubeActions.getReplayId(e.target.value));
-            this.replay();
+            /*setTimeout(() => {
+                this.replay();
+            });*/
+
             /*if (e.label == cubeConstants.CREATE_NEW) {
                 this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
             }*/
@@ -168,9 +171,16 @@ class ReplayAttribute extends Component {
                     <div className="ra-row3">
                         <Row>
                             <Col md={8}>
-                                <span className="label">Collection</span><br/>
-                                {this.renderTestIds(cube)}&nbsp;&nbsp;
-                                <span className="cube-btn">REPLAY</span>&nbsp;&nbsp;
+                                <div className="inline-block">
+                                    <span className="label">Collection</span><br/>
+                                    {this.renderTestIds(cube)}&nbsp;&nbsp;
+                                </div>
+                                <div className="inline-block">
+                                    <span className="label">Test Instance</span><br/>
+                                    {this.renderTestIds(cube)}&nbsp;&nbsp;
+                                </div>
+
+                                <span className="cube-btn" onClick={this.replay}>REPLAY</span>&nbsp;&nbsp;
                                 <span className="cube-btn">SAVE & RUN</span>&nbsp;&nbsp;
                                 <span className="cube-btn">STOP TEST</span>
                             </Col>

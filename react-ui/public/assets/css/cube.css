@@ -4395,4 +4395,5 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .nav_menu {
     margin-bottom: 0 !important;
     background: #00B2FF !important;
+    border-bottom: none;
 }
