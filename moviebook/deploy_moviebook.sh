@@ -107,10 +107,10 @@ clean() {
 get_environment() {
 	ENVIRONMENT=$(kubectl config current-context)
 	if [ "$ENVIRONMENT" = "minikube" ]; then
-		export_dev_env_variables
+	  export_dev_env_variables
 	  echo "Environment varibales set for dev environemt"
 	else
-		export_aws_env_variables
+	  export_aws_env_variables
 	  echo "Environment varibales set for AWS environment"
 	fi
 }
@@ -125,7 +125,7 @@ main() {
     stop_recording) shift; stop_record "@";;
     replay) shift; replay "@";;
     stop_replay) shift; stop_replay "@";;
-		analyze) shift; analyze "@";;
+    analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
     *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
   esac
