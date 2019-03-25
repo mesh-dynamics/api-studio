@@ -1,0 +1,64 @@
+[
+  {
+    "id" :  "Response-listmovies",
+    "response" : {
+      "actors_lastnames": "SOBIESKI,BERRY,HOFFMAN,MCQUEEN,GIBSON,HOPPER",
+      "display_actors": "BERRY,HENRY; MCQUEEN,CATE; ",
+      "film_id": 299,
+      "title": "FACTORY DRAGON",
+      "actors_firstnames": "SISSY,HENRY,MAE,CATE,MERYL,MENA",
+      "film_counts": "18,35,28,30,28,24",
+      "book_info": {
+        "reviews": [
+          {
+            "rating": {
+              "color": "red",
+              "stars": 5
+            },
+            "reviewer": "Reviewer1",
+            "text": "An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"
+          },
+          {
+            "rating": {
+              "color": "red",
+              "stars": 4
+            },
+            "reviewer": "Reviewer2",
+            "text": "Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.",
+          }
+        ],
+        "id": "299"
+      }
+    }
+
+  } ,
+  {
+    "id" : "Response-liststores",
+    "response" : [
+      {
+        "store_id": 1
+      },
+      {
+        "store_id": 2
+      }
+    ]
+  } ,
+  {
+    "id" :  "Response-rentmovie",
+    "response" : {
+      "inventory_id": 116,
+      "rent": 1.98,
+      "num_updates": 1
+    }
+  } ,
+  {
+    "id" : "Response-returnmovie",
+    "response" :{
+      "return_updates": 1,
+      "payment_updates": 1,
+      "rental_id": 16940
+    }
+  }
+
+
+]

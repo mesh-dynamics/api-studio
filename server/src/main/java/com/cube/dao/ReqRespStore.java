@@ -75,7 +75,8 @@ public interface ReqRespStore {
 		Analysis,
 		ReqRespMatchResult,
 		Recording,
-		ResponseCompareTemplate
+		ResponseCompareTemplate,
+		RequestCompareTemplate
 	}
 
 	boolean save(Request req);
@@ -131,15 +132,11 @@ public interface ReqRespStore {
 	/**
 	 * Save an analysis template for the given parameters in the backend
 	 * database
-	 * @param customerId
-	 * @param appId
-	 * @param serviceId
+	 * @param key
 	 * @param templateAsJson
-	 * @param path
 	 * @return
 	 */
-	boolean saveTemplate(String customerId, String appId,
-						 String serviceId, String path , String templateAsJson);
+	boolean saveCompareTemplate(TemplateKey key, String templateAsJson);
 
 	/**
 	 * Retrieve an analysis template from the database for

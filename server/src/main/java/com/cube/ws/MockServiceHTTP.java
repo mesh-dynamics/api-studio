@@ -19,6 +19,8 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.TemplateKey;
 import com.cube.core.*;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
@@ -26,6 +28,7 @@ import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
+import com.cube.exception.CacheException;
 
 /**
  * @author prasad
@@ -97,6 +100,18 @@ public class MockServiceHTTP {
 		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
 	}
 
+	private Optional<RequestComparator> getRequestComparator(TemplateKey key) {
+		RequestComparator comparator = null;
+		try {
+			comparator = requestComparatorCache.getRequestComparator(key);
+			LOGGER.info("Successfully retrieved request template for key :: " + key);
+		} catch (CacheException e) {
+			LOGGER.error("Error while retrieving request template for key :: " + key + " from cache " + e.getMessage());
+		}
+		return Optional.ofNullable(comparator);
+	}
+
+
 
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
 			String customerid, String app, String instanceid, 
@@ -105,8 +120,7 @@ public class MockServiceHTTP {
 		LOGGER.info(String.format("Mocking request for %s", path));
 
 		MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-		
-	 
+
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
 		Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(customerid), Optional.of(app), Optional.of(instanceid));
@@ -116,13 +130,16 @@ public class MockServiceHTTP {
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
 
-	    Optional<com.cube.dao.Response> resp = rrstore.getRespForReq(r, mspec)
-	    		.or(() -> {
-	    			r.rrtype = Optional.of(RR.Manual);
-	    			LOGGER.info("Using default response");
-	    			return getDefaultResponse(r);	
-	    		}); // use default response if nothing matches
-	    
+	    TemplateKey key = new TemplateKey(customerid, app , service , path , TemplateKey.Type.Request);
+
+	    Optional<com.cube.dao.Response> resp = getRequestComparator(key)
+				.flatMap(comparator -> {return rrstore.getRespForReq(r, comparator);})
+				.or(() -> {
+					r.rrtype = Optional.of(RR.Manual);
+					LOGGER.info("Using default response");
+					return getDefaultResponse(r);
+				});
+
 	    return resp.map(respv -> {
 		    ResponseBuilder builder = Response.status(respv.status);
 		    respv.hdrs.forEach((f, vl) -> vl.forEach((v) -> {
@@ -133,7 +150,7 @@ public class MockServiceHTTP {
 					builder.header(f, v);
 			}));
 		    //return Response.status(Response.Status.NOT_FOUND).entity("Dummy response").build();
-		    return builder.entity(respv.body).build();	    	
+		    return builder.entity(respv.body).build();
 	    }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Response not found").build());
 	    
 	}
@@ -153,12 +170,14 @@ public class MockServiceHTTP {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
+		this.requestComparatorCache = config.requestComparatorCache;
 		LOGGER.info("Cube mock service started");
 	}
 
 
 	private ReqRespStore rrstore;
 	private ObjectMapper jsonmapper;
+	private RequestComparatorCache requestComparatorCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	
 	// TODO - make trace field configurable

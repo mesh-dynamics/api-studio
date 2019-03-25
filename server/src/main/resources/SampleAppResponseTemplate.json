@@ -1,0 +1,132 @@
+
+[
+  {
+    "id" : "ResponseTemplate-productpage",
+    "path" : "productpage",
+    "template" : {
+      "prefixPath": "",
+      "rules": []
+    }
+  } ,
+
+  {
+    "id" : "ResponseTemplate-minfo-returnmovie",
+    "path" : "minfo/returnmovie",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/return_updates",
+          "pt": "Required",
+          "dt": "Int"
+        },
+        {
+          "path": "/payment_updates",
+          "pt": "Required",
+          "dt": "Int"
+        },
+        {
+          "path": "/rental_id",
+          "pt": "Required",
+          "dt": "Int"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "id" : "ResponseTemplate-minfo-liststores",
+    "path" : "minfo/liststores",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/0/store_id",
+          "pt": "Optional",
+          "dt": "Int"
+        },
+        {
+          "path": "/1/store_id",
+          "pt": "Optional",
+          "dt": "Int"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "id" : "ResponseTemplate-minfo-rentmovie",
+    "path" : "minfo/rentmovie",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/inventory_id",
+          "pt": "Required",
+          "dt": "Int"
+        },
+        {
+          "path": "/rent",
+          "pt": "Required",
+          "dt": "Float"
+        },
+        {
+          "path": "/num_updates",
+          "pt": "Required",
+          "dt": "Int"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-minfo-listmovies",
+    "path" : "minfo/listmovies",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/actors_lastnames",
+          "pt": "Required",
+          "dt": "Str"
+        },
+        {
+          "path": "/display_actors",
+          "pt": "Required",
+          "dt": "Str"
+        },
+        {
+          "path": "/film_id",
+          "pt": "Required",
+          "dt": "Int"
+        },
+        {
+          "path": "/title",
+          "pt": "Required",
+          "dt": "Str"
+        },
+        {
+          "path": "/actors_firstnames",
+          "pt": "Required",
+          "dt": "Str"
+        },
+        {
+          "path": "/filmcounts",
+          "pt": "Required",
+          "dt": "Str"
+        },
+        {
+          "path": "/bookinfo/reviews",
+          "pt": "Required",
+          "dt": "RptArray"
+        },
+        {
+          "path": "/bookinfo/id",
+          "pt": "Required",
+          "dt": "Int"
+        }
+      ]
+    }
+  }
+
+
+]

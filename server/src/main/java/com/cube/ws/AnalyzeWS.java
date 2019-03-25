@@ -26,7 +26,8 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.cube.cache.AnalysisTemplateCache;
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.dao.Analysis;
@@ -63,7 +64,8 @@ public class AnalyzeWS {
 				.flatMap(vals -> vals.stream().findFirst())
 				.orElse(Config.DEFAULT_TRACE_FIELD);
 		
-		Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, rrstore, jsonmapper, templateCache);
+		Optional<Analysis> analysis = Analyzer
+				.analyze(replayid, tracefield, rrstore, jsonmapper, templateCache , requestComparatorCache);
 		
 		return analysis.map(av -> {
 			String json;
@@ -132,20 +134,30 @@ public class AnalyzeWS {
 	 * @return
 	 */
 	@POST
-	@Path("registerTemplate/{appId}/{customerId}/{serviceName}/{path:.+}")
+	@Path("registerTemplate/{type}/{appId}/{customerId}/{serviceName}/{path:.+}")
 	@Consumes({MediaType.APPLICATION_JSON})
 	public Response registerTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 									 @PathParam("customerId") String customerId,
 									 @PathParam("serviceName") String serviceName,
 									 @PathParam("path") String path,
+									 @PathParam("type") String type,
 									 String templateAsJson) {
     	try {
 			//This is just to see the template is not invalid, and can be parsed according
 			// to our class definition , otherwise send error response
     		CompareTemplate  template = jsonmapper.readValue(templateAsJson , CompareTemplate.class);
-			rrstore.saveTemplate(customerId , appId , serviceName , path ,templateAsJson);
-			TemplateKey key = new TemplateKey(customerId, appId, serviceName, path);
+			TemplateKey key;
+    		if ("request".equalsIgnoreCase(type)) {
+				key = new TemplateKey(customerId, appId, serviceName, path , TemplateKey.Type.Request);
+			} else if ("response".equalsIgnoreCase(type)) {
+				key = new TemplateKey(customerId, appId, serviceName, path , TemplateKey.Type.Response);
+			} else {
+    			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
+						"either request or response :: "+ type).build();
+			}
+			rrstore.saveCompareTemplate(key , templateAsJson);
 			templateCache.invalidateKey(key);
+			requestComparatorCache.invalidateKey(key);
 			//Analyzer.removeKey(key);
 			return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
 		} catch (JsonProcessingException e) {
@@ -169,11 +181,13 @@ public class AnalyzeWS {
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
 		this.templateCache = config.templateCache;
+		this.requestComparatorCache = config.requestComparatorCache;
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonmapper;
 	// Template cache to retrieve analysis templates from solr
-	AnalysisTemplateCache templateCache;
+	TemplateCache templateCache;
+	RequestComparatorCache requestComparatorCache;
 }

@@ -1,15 +1,11 @@
 package com.cube.cache;
 
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 import com.google.common.cache.*;
-import com.google.common.collect.ComparisonChain;
 
 import com.cube.core.CompareTemplate;
 import com.cube.dao.ReqRespStore;
@@ -20,19 +16,19 @@ import com.cube.exception.CacheException;
  * Cache for retrieving analysis templates from solr
  * Based on cache implementation by google guava library
  */
-public class AnalysisTemplateCache {
+public class TemplateCache {
 
 
     private LoadingCache<TemplateKey, CompareTemplate> templateCache;
 
 
-    private static final Logger LOGGER = LogManager.getLogger(AnalysisTemplateCache.class);
+    private static final Logger LOGGER = LogManager.getLogger(TemplateCache.class);
 
     /**
      *
      * @param rrStore
      */
-    public AnalysisTemplateCache(ReqRespStore rrStore) {
+    public TemplateCache(ReqRespStore rrStore) {
         templateCache = CacheBuilder.newBuilder().maximumSize(50).removalListener(
                 new RemovalListener<>() {
                     @Override

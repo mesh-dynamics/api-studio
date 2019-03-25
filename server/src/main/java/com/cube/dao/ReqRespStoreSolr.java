@@ -533,7 +533,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
 
     // field names in Solr for compare template (stored as json)
-    private static final String RESPONSETEMPLATEJSON = CPREFIX + "responsetemplate_s";
+    private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
     
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -567,28 +567,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     /**
      * Form a solr storage document for an analysis template (being stored as
      * a json)
-     * @param customerId
-     * @param appId
-     * @param serviceId
-     * @param path
+     * @param key
      * @param jsonCompareTemplate
      * @return
      */
-    private static SolrInputDocument responseTemplateToSolrDoc(String customerId , String appId ,
-                                                               String serviceId, String path, String jsonCompareTemplate) {
+    private static SolrInputDocument compareTemplateToSolrDoc(TemplateKey key, String jsonCompareTemplate) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String type = Types.ResponseCompareTemplate.toString();
-        String pathHashed = String.valueOf(path.hashCode());
+        String type = (key.getReqOrResp() == TemplateKey.Type.Request) ?
+                Types.RequestCompareTemplate.toString():
+                Types.ResponseCompareTemplate.toString();
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
-        String id = type.concat("-").concat(String.valueOf(Objects.hash(customerId , appId, serviceId,path)));
+        String id = type.concat("-").concat(String.valueOf(Objects.hash(
+                key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath() , key.getReqOrResp())));
         doc.setField(IDF , id);
-        doc.setField(RESPONSETEMPLATEJSON , jsonCompareTemplate);
-        doc.setField(PATHF , path);
-        doc.setField(APPF , appId);
-        doc.setField(CUSTOMERIDF , customerId);
-        doc.setField(SERVICEF , serviceId);
-
-        doc.setField(TYPEF , Types.ResponseCompareTemplate.toString());
+        doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
+        doc.setField(PATHF , key.getPath());
+        doc.setField(APPF , key.getAppId());
+        doc.setField(CUSTOMERIDF , key.getCustomerId());
+        doc.setField(SERVICEF , key.getServiceId());
+        doc.setField(TYPEF , type);
         return doc;
     }
 
@@ -672,7 +669,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @return
      */
     private  Optional<CompareTemplate> docToCompareTemplate(SolrDocument doc) {
-        return getStrField(doc, RESPONSETEMPLATEJSON).flatMap(templateJson -> {
+        return getStrField(doc, COMPARETEMPLATEJSON).flatMap(templateJson -> {
             try {
                 return Optional.of(config.jsonmapper.readValue(templateJson, CompareTemplate.class));
             } catch (IOException e) {
@@ -684,16 +681,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     /**
      * Save an analysis template as json for the given key parameters in solr
-     * @param customerId
-     * @param appId
-     * @param serviceId
-     * @param path
-     * @param template
+     * @param key
+     * @param templateAsJson
      * @return
      */
     @Override
-    public boolean saveTemplate(String customerId, String appId, String serviceId, String path, String template) {
-        SolrInputDocument solrDoc = responseTemplateToSolrDoc(customerId, appId,  serviceId , path ,template);
+    public boolean saveCompareTemplate(TemplateKey key, String templateAsJson) {
+        SolrInputDocument solrDoc = compareTemplateToSolrDoc(key ,templateAsJson);
         return saveDoc(solrDoc) && softcommit();
     }
 
@@ -706,7 +700,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<CompareTemplate> getCompareTemplate(TemplateKey key) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
-        addFilter(query, TYPEF, Types.ResponseCompareTemplate.toString());
+        addFilter(query, TYPEF,
+                key.getReqOrResp() == TemplateKey.Type.Request? Types.RequestCompareTemplate.toString() :
+                        Types.ResponseCompareTemplate.toString());
         addFilter(query, CUSTOMERIDF, key.getCustomerId());
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());
