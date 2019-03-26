@@ -1,10 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>MIClient</groupId>
+  <!--<groupId>MIClient</groupId>-->
   <artifactId>MIClient</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <!--<version>0.0.1-SNAPSHOT</version>-->
   <name>MovieInfo client</name>
   <description>Client app to drive MIRest</description>
+
+
+	<parent>
+		<groupId>io.cube.sampleapps</groupId>
+		<artifactId>root</artifactId>
+		<version>V1-SNAPSHOT</version>
+	</parent>
+
    <dependencyManagement>
     <dependencies>
         <dependency>
