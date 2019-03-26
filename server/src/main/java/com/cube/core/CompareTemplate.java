@@ -173,7 +173,7 @@ public class CompareTemplate {
 	}
 
 
-	private Optional<TemplateEntry> get(String path) {
+	public Optional<TemplateEntry> get(String path) {
 		return Optional.ofNullable(rules.get(path));
 	}
 	

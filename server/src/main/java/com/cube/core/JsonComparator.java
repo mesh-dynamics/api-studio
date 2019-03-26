@@ -21,6 +21,7 @@ import com.flipkart.zjsonpatch.JsonDiff;
 
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.core.CompareTemplate.DataType;
 import com.cube.ws.Config;
 
 /**
@@ -124,6 +125,16 @@ public class JsonComparator implements Comparator {
 			//VINEETKS: Adding next 3 lines to omit validation check for repeating Array
 			int index = rule.path.lastIndexOf('/');
 			if (index != -1 && rule.path.substring( index + 1 ).equalsIgnoreCase("*")){
+				Optional<TemplateEntry> parentRule = template.get(rule.path.substring( 0, index ));
+				if (parentRule.isEmpty()) {
+					JsonNode node = root.at(rule.pathptr.head());
+					for (int i = 0; i < node.size(); i ++) {
+						if (getDataType(node.get(i)) != rule.dt) {
+							Diff diff = new Diff(Diff.NOOP, rule.path.substring( 0, index ) + "/" + i, node.get(i), ERR_ValTypeMismatch);
+							resdiffs.add(diff);
+						}
+					}
+				}
 				return;
 			}
 			JsonNode node = root.at(rule.pathptr);
@@ -134,46 +145,78 @@ public class JsonComparator implements Comparator {
 				}				
 			} else {
 				// validate data type
-				boolean valtypemismatch = false;
-				boolean valformatmismatch = false;
+				boolean valTypeMismatch = false;
+				boolean valFormatMismatch = false;
 				switch (rule.dt) {
 				case Str:
 					if (!node.isTextual()) {
-						valtypemismatch = true;
+						valTypeMismatch = true;
 					} else {
 						// check for regex pattern match
 						if (rule.ct == ComparisonType.CustomRegex) {
 							String val = node.asText();
-							valformatmismatch = rule.regex.map(r -> !r.matcher(val).matches()).orElse(valformatmismatch);
+							valFormatMismatch = rule.regex.map(r -> !r.matcher(val).matches()).orElse(valFormatMismatch);
 						}
 					}
 					break;
 				case Float:
-					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valtypemismatch = true;
+					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valTypeMismatch = true;
 					break;
 				case Int:
-					if (!node.isInt()) valtypemismatch = true;
+					if (!node.isInt()) valTypeMismatch = true;
 					break;
 				case NrptArray:
+					if (!node.isArray()) valTypeMismatch = true;
+					break;
 				case RptArray:
-					if (!node.isArray()) valtypemismatch = true;
+					if (!node.isArray()) valTypeMismatch = true;
+
+//					Optional<TemplateEntry> starRule = template.get(rule.path + "/*");
+//					Optional<DataType> itemDataType = starRule.map(r->r.dt)
+//							.or(Optional.ofNullable(node.get(0)).map(n->getDataType(n)));
+//					itemDataType.ifPresent(idt -> … )
+//
+//					Optional<DataType> itemDataType = Optional.empty();
+					Optional<DataType> itemDataType = Optional.empty();
+					Optional<TemplateEntry> starRule = template.get(rule.path + "/*");
+					if (starRule.isPresent()) {
+						itemDataType = Optional.of(starRule.get().dt);
+					}
+					for (int i = 0; i < node.size(); i ++) {
+						if (itemDataType.isPresent() && itemDataType.get() != getDataType(node.get(i))) {
+							Diff diff = new Diff(Diff.NOOP, rule.path + "/" + i, node.get(i), ERR_ValTypeMismatch);
+							resdiffs.add(diff);
+						} else {
+							if (i==0) {
+								itemDataType = Optional.of(getDataType(node.get(i)));
+							}
+						}
+					}
 					break;
 				case Obj:
-					if (!node.isObject()) valtypemismatch = true;
+					if (!node.isObject()) valTypeMismatch = true;
 					break;
 				default:
 					break;
 				}
-				if (valtypemismatch) {
+				if (valTypeMismatch) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, ERR_ValTypeMismatch);
 					resdiffs.add(diff);
 				}								
-				if (valformatmismatch) {
+				if (valFormatMismatch) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, Resolution.ERR_ValFormatMismatch);
 					resdiffs.add(diff);
 				}								
 			}
 		});
+	}
+
+	private DataType getDataType(JsonNode node) {
+		if (node.isTextual()) return DataType.Str;
+		if (node.isInt()) return DataType.Int;
+		if (node.isDouble() || node.isFloat()) return DataType.Float;
+		if (node.isObject()) return DataType.Obj;
+		return DataType.Default;
 	}
 	
 	/**
