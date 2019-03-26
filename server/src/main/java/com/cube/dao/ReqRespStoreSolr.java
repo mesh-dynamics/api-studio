@@ -217,7 +217,48 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }));
     }
 
+    private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
+        String[] pathElements = originalPath.split("/");
+        StringBuffer pathBuffer = new StringBuffer();
+        StringBuffer exactPathFilterBuffer = new StringBuffer();
+        StringBuffer partialPathFilterBuffer = new StringBuffer();
+        StringBuffer boostQuery = new StringBuffer();
+        var countWrapper = new Object() {int count = 0;};
+        Arrays.asList(pathElements).stream().forEachOrdered(elem ->
+        {
+            pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
+            String escapedPath = "\"" +StringEscapeUtils.escapeJava(pathBuffer.toString()) + "\"";
+            if (countWrapper.count == pathElements.length - 1) {
+                exactPathFilterBuffer.append(escapedPath);
+            } else {
+                partialPathFilterBuffer.append((countWrapper.count != 0)? " OR " : "").append(escapedPath);
+            }
+            boostQuery.append((countWrapper.count !=0)? " OR " : "").append(escapedPath);
+            boostQuery.append("^").append(++countWrapper.count);
+        });
 
+        String finalPathQuery = fieldName.concat(":").concat(exactPathFilterBuffer.toString())
+                .concat((partialPathFilterBuffer.length() > 0) ? " OR (".concat(PARTIALMATCH).concat(":true AND ")
+                        .concat(fieldName).concat(":(").concat(partialPathFilterBuffer.toString()).concat("))")  : "");
+        //Sample filter query
+        //path_s:"registerTemplate/response/moveieinfo/ravivj/productpage/productpage" OR
+        //(partialmatch_s:true AND path_s:("registerTemplate" OR "registerTemplate/response" OR
+        // "registerTemplate/response/moveieinfo" OR "registerTemplate/response/moveieinfo/ravivj" OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage"))
+        query.addFilterQuery(finalPathQuery);
+        //Sample boost query
+        //path_s:("registerTemplate"^1 OR "registerTemplate/response"^2 OR
+        // "registerTemplate/response/moveieinfo"^3 OR "registerTemplate/response/moveieinfo/ravivj"^4 OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage"^5 OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage/productpage"^6)
+        String finalBoostQuery = fieldName.concat(":").concat("(").concat(boostQuery.toString()).concat(")");
+        // changing query type to extended dismax
+        query.setParam("defType" , "edismax");
+        // boosting query with the same params as filter query (ideally filter query doesn't need boost parameters)
+        // we can remove them later
+        query.setParam("bq" , finalBoostQuery);
+    }
+    
     private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys) {
         // Empty list of selected keys is treated as if all keys are to be added
         Collection<String> ftoadd = (keys.isEmpty()) ? fvalmap.keySet() : keys;
@@ -534,7 +575,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
-    
+    private static final String PARTIALMATCH = CPREFIX + "partialmatch_s";
+
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     
@@ -582,7 +624,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 , key.getReqOrResp().toString())));
         doc.setField(IDF , id);
         doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
-        doc.setField(PATHF , key.getPath());
+
+        String path = key.getPath();
+        if (path != null && path.endsWith("/*")) {
+            path = path.replace("/*" , "");
+            doc.setField(PARTIALMATCH , "true");
+        }
+        doc.setField(PATHF , path);
         doc.setField(APPF , key.getAppId());
         doc.setField(CUSTOMERIDF , key.getCustomerId());
         doc.setField(SERVICEF , key.getServiceId());
@@ -707,7 +755,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, key.getCustomerId());
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());
-        addFilter(query, PATHF , key.getPath());
+        addWeightedPathFilter(query , PATHF , key.getPath());
+        //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         return SolrIterator.getStream(solr , query , maxResults).findFirst().flatMap(doc -> {
                     return docToCompareTemplate(doc);

@@ -29,7 +29,7 @@ public class TemplateRetrievalTest {
     //
     //TemplateKey{customerId=ravivj, appId=movieinfo, serviceId=productpage, path=productpage, type=Response}
 
-    @Test
+    //@Test
     public void testTemplateCache(){
         try {
             Config config = new Config();
@@ -53,7 +53,7 @@ public class TemplateRetrievalTest {
         }
     }
 
-    @Test
+    //@Test
     public void testRequestComparatorCache() {
         try {
             Config config = new Config();
