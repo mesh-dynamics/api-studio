@@ -97,7 +97,6 @@ public class CompareTemplate {
 	 * is found. Never returns null. Will return default rule if nothing is found.
 	 */
 	public TemplateEntry getRule(String path) {
-		
 		return get(path).orElse(getInheritedRule(path));
 	}
 
@@ -141,8 +140,14 @@ public class CompareTemplate {
 	private TemplateEntry getInheritedRule(String path) {
 		int index = path.lastIndexOf('/');
 		if (index != -1) {
-			String subpath = path.substring(0, index);
-			return get(subpath).flatMap(rule -> {
+			String subPath = path.substring(0, index);
+			return get(subPath).flatMap(rule -> {
+			    if (rule.dt == DataType.RptArray) {
+                    Optional<TemplateEntry> starRule = get(subPath + "/*");
+                    if (starRule.isPresent()) {
+                        return starRule;
+                    }
+                }
 				if (rule.ct == ComparisonType.Equal) {
 					return Optional.of(DEFAULT_RULE_EQUALITY);
 				} else if (rule.ct == ComparisonType.EqualOptional) {
@@ -152,7 +157,7 @@ public class CompareTemplate {
                 } else {
 					return Optional.empty();
 				}
-			}).orElse(getInheritedRule(subpath));
+			}).orElse(getInheritedRule(subPath));
 		} else {
 			return DEFAULT_RULE;
 		}
@@ -192,7 +197,7 @@ public class CompareTemplate {
 	}
 
 
-	private Optional<TemplateEntry> get(String path) {
+	public Optional<TemplateEntry> get(String path) {
 		return Optional.ofNullable(rules.get(path));
 	}
 	
