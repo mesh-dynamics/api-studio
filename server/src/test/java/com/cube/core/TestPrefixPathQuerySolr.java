@@ -9,6 +9,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.StringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -100,11 +101,14 @@ public class TestPrefixPathQuerySolr {
             assert(templateEntries.iterator().next().path.equals("/" + temp.size()));
             //System.out.println(templateEntries.iterator().next().path);
             String pathToDelete = temp.stream().collect(Collectors.joining("/"));
+            if (temp.size() != pathElements.size()) {
+                pathToDelete = pathToDelete.concat("/*");
+            }
             try {
                 String deleteQuery = "type_s:RequestCompareTemplate AND ".concat("customerid_s:").concat(customerId)
                         .concat(" AND ").concat(" app_s:").concat(appId)
                         .concat(" AND ").concat("service_s:").concat(serviceName)
-                        .concat(" AND ").concat("path_s:\"").concat(StringEscapeUtils.escapeJava(pathToDelete)).concat("\"");
+                        .concat(" AND ").concat("path_s:\"").concat(ClientUtils.escapeQueryChars(StringEscapeUtils.escapeJava(pathToDelete))).concat("\"");
                 System.out.println("Delete Query :: " + deleteQuery);
                 Solr.deleteByQuery(deleteQuery);
                 Solr.commit();

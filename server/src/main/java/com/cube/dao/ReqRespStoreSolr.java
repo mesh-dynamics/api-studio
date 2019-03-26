@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
@@ -220,36 +221,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
         String[] pathElements = originalPath.split("/");
         StringBuffer pathBuffer = new StringBuffer();
-        StringBuffer exactPathFilterBuffer = new StringBuffer();
-        StringBuffer partialPathFilterBuffer = new StringBuffer();
+        StringBuffer pathFilterBuffer = new StringBuffer();
+        //StringBuffer partialPathFilterBuffer = new StringBuffer();
         StringBuffer boostQuery = new StringBuffer();
         var countWrapper = new Object() {int count = 0;};
         Arrays.asList(pathElements).stream().forEachOrdered(elem ->
         {
             pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
-            String escapedPath = "\"" +StringEscapeUtils.escapeJava(pathBuffer.toString()) + "\"";
-            if (countWrapper.count == pathElements.length - 1) {
-                exactPathFilterBuffer.append(escapedPath);
-            } else {
-                partialPathFilterBuffer.append((countWrapper.count != 0)? " OR " : "").append(escapedPath);
-            }
-            boostQuery.append((countWrapper.count !=0)? " OR " : "").append(escapedPath);
-            boostQuery.append("^").append(++countWrapper.count);
+            String escapedPath = "\"" +StringEscapeUtils.escapeJava(pathBuffer.toString())
+                    .concat((countWrapper.count != pathElements.length -1)? ClientUtils.escapeQueryChars("/*") : "") + "\"";
+            pathFilterBuffer.append((countWrapper.count != 0)? " OR " : "").append(escapedPath);
+            boostQuery.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
+                    .append("^").append(++countWrapper.count);
         });
 
-        String finalPathQuery = fieldName.concat(":").concat(exactPathFilterBuffer.toString())
-                .concat((partialPathFilterBuffer.length() > 0) ? " OR (".concat(PARTIALMATCH).concat(":true AND ")
-                        .concat(fieldName).concat(":(").concat(partialPathFilterBuffer.toString()).concat("))")  : "");
+        String finalPathQuery = fieldName.concat(":").concat("(").concat(pathFilterBuffer.toString()).concat(")");
         //Sample filter query
-        //path_s:"registerTemplate/response/moveieinfo/ravivj/productpage/productpage" OR
-        //(partialmatch_s:true AND path_s:("registerTemplate" OR "registerTemplate/response" OR
-        // "registerTemplate/response/moveieinfo" OR "registerTemplate/response/moveieinfo/ravivj" OR
-        // "registerTemplate/response/moveieinfo/ravivj/productpage"))
+        // path_s:("registerTemplate\/\*" OR "registerTemplate/response\/\*" OR
+        // "registerTemplate/response/moveieinfo\/\*" OR "registerTemplate/response/moveieinfo/ravivj\/\*" OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage\/\*" OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage/productpage")
         query.addFilterQuery(finalPathQuery);
         //Sample boost query
-        //path_s:("registerTemplate"^1 OR "registerTemplate/response"^2 OR
-        // "registerTemplate/response/moveieinfo"^3 OR "registerTemplate/response/moveieinfo/ravivj"^4 OR
-        // "registerTemplate/response/moveieinfo/ravivj/productpage"^5 OR
+        //path_s:("registerTemplate\/\*"^1 OR "registerTemplate/response\/\*"^2 OR
+        // "registerTemplate/response/moveieinfo\/\*"^3 OR "registerTemplate/response/moveieinfo/ravivj\/\*"^4 OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage\/\*"^5 OR
         // "registerTemplate/response/moveieinfo/ravivj/productpage/productpage"^6)
         String finalBoostQuery = fieldName.concat(":").concat("(").concat(boostQuery.toString()).concat(")");
         // changing query type to extended dismax
@@ -626,10 +622,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
 
         String path = key.getPath();
-        if (path != null && path.endsWith("/*")) {
-            path = path.replace("/*" , "");
-            doc.setField(PARTIALMATCH , "true");
-        }
         doc.setField(PATHF , path);
         doc.setField(APPF , key.getAppId());
         doc.setField(CUSTOMERIDF , key.getCustomerId());
