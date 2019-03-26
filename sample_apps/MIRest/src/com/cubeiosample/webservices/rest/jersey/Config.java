@@ -255,12 +255,13 @@ public class Config {
         }
         
         String concatBug = System.getenv("CONCAT_BUG");
-        if (concatBug.equalsIgnoreCase("true")) {
-        	CONCAT_BUG = true;
-        } else {
-        	CONCAT_BUG = false;
+        if (concatBug != null) {
+            if (concatBug.equalsIgnoreCase("true")) {
+                CONCAT_BUG = true;
+            } else {
+                CONCAT_BUG = false;
+            }
         }
-
         // NUM_ACTORS_TO_DISPLAY
         String numActorsToDisplay = System.getenv("NUM_ACTORS_TO_DISPLAY");
         if (numActorsToDisplay != null) {
