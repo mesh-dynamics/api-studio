@@ -103,7 +103,7 @@ public class JsonComparator implements Comparator {
 			if (diff.resolution.isErr()) {
 				numerrs++;
 			}
-			//VINEETKS: Adding next line to remove Diffs with same apth and resolution
+
 			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
 			result.add(diff);
 		}
@@ -122,18 +122,14 @@ public class JsonComparator implements Comparator {
 	private void validate(JsonNode root, List<Diff> resdiffs) {
 		template.getRules().forEach(rule -> {
 
-			//VINEETKS: Adding next 3 lines to omit validation check for repeating Array
 			int index = rule.path.lastIndexOf('/');
 			if (index != -1 && rule.path.substring( index + 1 ).equalsIgnoreCase("*")){
-				Optional<TemplateEntry> parentRule = template.get(rule.path.substring( 0, index ));
+				String parentPath = rule.path.substring( 0, index );
+				Optional<TemplateEntry> parentRule = template.get(parentPath);
 				if (parentRule.isEmpty()) {
 					JsonNode node = root.at(rule.pathptr.head());
-					for (int i = 0; i < node.size(); i ++) {
-						if (getDataType(node.get(i)) != rule.dt) {
-							Diff diff = new Diff(Diff.NOOP, rule.path.substring( 0, index ) + "/" + i, node.get(i), ERR_ValTypeMismatch);
-							resdiffs.add(diff);
-						}
-					}
+					checkRptArrayTypes(node, resdiffs, rule.dt, parentPath);
+
 				}
 				return;
 			}
@@ -170,28 +166,12 @@ public class JsonComparator implements Comparator {
 					break;
 				case RptArray:
 					if (!node.isArray()) valTypeMismatch = true;
-
-//					Optional<TemplateEntry> starRule = template.get(rule.path + "/*");
-//					Optional<DataType> itemDataType = starRule.map(r->r.dt)
-//							.or(Optional.ofNullable(node.get(0)).map(n->getDataType(n)));
-//					itemDataType.ifPresent(idt -> … )
-//
-//					Optional<DataType> itemDataType = Optional.empty();
-					Optional<DataType> itemDataType = Optional.empty();
 					Optional<TemplateEntry> starRule = template.get(rule.path + "/*");
-					if (starRule.isPresent()) {
-						itemDataType = Optional.of(starRule.get().dt);
-					}
-					for (int i = 0; i < node.size(); i ++) {
-						if (itemDataType.isPresent() && itemDataType.get() != getDataType(node.get(i))) {
-							Diff diff = new Diff(Diff.NOOP, rule.path + "/" + i, node.get(i), ERR_ValTypeMismatch);
-							resdiffs.add(diff);
-						} else {
-							if (i==0) {
-								itemDataType = Optional.of(getDataType(node.get(i)));
-							}
-						}
-					}
+					Optional<CompareTemplate.DataType> itemDataType = starRule.map(r -> r.dt)
+							.or(() -> Optional.ofNullable(node.get(0)).map(this::getDataType));
+					itemDataType.ifPresent(idt -> {
+						checkRptArrayTypes(node, resdiffs, idt, rule.path);
+					});
 					break;
 				case Obj:
 					if (!node.isObject()) valTypeMismatch = true;
@@ -209,6 +189,15 @@ public class JsonComparator implements Comparator {
 				}								
 			}
 		});
+	}
+
+	private void checkRptArrayTypes(JsonNode node, List<Diff> resdiffs, CompareTemplate.DataType dt, String parentPath) {
+		for (int i = 0; i < node.size(); i ++) {
+			if (getDataType(node.get(i)) != dt) {
+				Diff diff = new Diff(Diff.NOOP, parentPath + "/" + i, node.get(i), ERR_ValTypeMismatch);
+				resdiffs.add(diff);
+			}
+		}
 	}
 
 	private DataType getDataType(JsonNode node) {
