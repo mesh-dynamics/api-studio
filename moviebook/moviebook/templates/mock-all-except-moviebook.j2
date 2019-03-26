@@ -10,7 +10,7 @@ spec:
     - uri:
         prefix: /reviews
     rewrite:
-      uri: /ms/{{customer}}/{{cube_application}}/{{collection}}/reviews/reviews
+      uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/reviews/reviews
     route:
     - destination:
         host: cubews
@@ -29,7 +29,7 @@ spec:
     - uri:
         prefix: /ratings
     rewrite:
-        uri: /ms/{{customer}}/{{cube_application}}/{{collection}}/ratings/ratings
+        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/ratings/ratings
     route:
     - destination:
         host: cubews
@@ -48,7 +48,7 @@ spec:
     - uri:
         prefix: /details
     rewrite:
-        uri: /ms/{{customer}}/{{cube_application}}/{{collection}}/details/details
+        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/details/details
     route:
     - destination:
         host: cubews
@@ -67,7 +67,7 @@ spec:
     - uri:
         prefix: /restsql
     rewrite:
-        uri: /ms/{{customer}}/{{cube_application}}/{{collection}}/restwrapjdbc/restsql
+        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/restwrapjdbc/restsql
     route:
     - destination:
         host: cubews
