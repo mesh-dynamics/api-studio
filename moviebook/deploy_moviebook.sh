@@ -53,13 +53,13 @@ stop_record() {
 generate_mock_all_yaml() {
 	sed -e "s/{{customer}}/$USER/g" moviebook/templates/mock-all-except-moviebook.j2 > moviebook/mock-all-except-moviebook.yaml
 	sed -i '' -e "s/{{cube_application}}/$CUBE_APPLICATION/g" moviebook/mock-all-except-moviebook.yaml
-	sed -i '' -e "s/{{cube_collection}}/$1/g" moviebook/mock-all-except-moviebook.yaml
+	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" moviebook/mock-all-except-moviebook.yaml
 }
 
 replay() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
-	generate_mock_all_yaml $COLLECTION_NAME
+	generate_mock_all_yaml 
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 	REPLAY_ID=$(curl -X POST \
