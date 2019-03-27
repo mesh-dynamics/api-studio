@@ -15,11 +15,15 @@ class ServiceGraph extends Component {
         this.handleClose = this.handleClose.bind(this);
         this.state = {
             panelVisible: true,
+            selectedNode: null,
+            replaySelected: false,
             show: false,
         }
         this.height = '90vh';
         this.width = '100%';
         this.renderServiceGraph = this.renderServiceGraph.bind(this);
+        this.setRP = this.setRP.bind(this);
+        this.setVP = this.setVP.bind(this);
         this.render = this.render.bind(this);
         this.cy = {};
         
@@ -27,19 +31,18 @@ class ServiceGraph extends Component {
             {
                 selector: 'node',
                 style: {
-                    shape: 'rectangle',
-                    "text-wrap": "wrap",
+                    shape: 'roundrectangle',
                     content: 'data(text)',
+                    "text-wrap": "wrap",
                     'font-size': '10px',
-                    'width': '150px',
-                    'height': '120px',
+                    width: 'label',
                     'text-valign': 'center',
                     'text-halign': 'center',
-                    'background-color': '#4286f4',
-                    'text-outline-color': '#4286f4',
+                    'background-color': '#c4c4c4',
+                    'text-outline-color': '#c4c4c4',
                     'text-outline-width': '2px',
-                    'color': '#555',
-                    'border-color': 'white',
+                    'color': '#616161',
+                    'border-color': '#c4c4c4',
                     'border-width': '3px',
                     'overlay-padding': '6px',
                     'z-index': '10'
@@ -51,6 +54,8 @@ class ServiceGraph extends Component {
                     'font-size': '10px',
                     'text-valign': 'top',
                     'text-halign': 'center',
+                    'width': 'auto',
+                    'height': 'auto',
                     'background-color': '#bbb',
                     'text-outline-color': '#555',
                     'text-outline-width': '0px',
@@ -64,11 +69,43 @@ class ServiceGraph extends Component {
             {
                 selector: 'node.selected-node',
                 style: {
-                    'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555'
+                    'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555', width: '150px'
+                }
+            },
+            {
+                selector: 'node.replay-node',
+                style: {
+                    'background-color': '#e7f9fe',
+                    'color': '#616161',
+                    'text-outline-color': '#e7f9fe',
+                    width: '150px'
                 }
             }
         ]
         
+    }
+
+    setRP() {
+        if (this.state.replaySelected) {
+            return;
+        }
+        const {cube} = this.props;
+        const gd = cube.graphData;
+        for (const node of gd.nodes) {
+            if (node.data.id == this.state.selectedNode.id) {
+                node.data.isReplayPoint = true;
+                break;
+            }
+        }
+        this.setState({
+            replaySelected: true,
+            selectedNode: null,
+            show: false
+        })
+    }
+
+    setVP() {
+
     }
 
     componentWillUnmount () {
@@ -98,10 +135,12 @@ class ServiceGraph extends Component {
         const { cube } = this.props;
         
         if (Object.keys(this.cy).length) {
+            /*this.cy.destroy();
+            this.cy = {};*/
             this.renderServiceGraph(this.cy, cube);
             this.focusDivWithoutScroll(element)
         } else {
-            setTimeout(this.render, 1);
+            //setTimeout(this.render, 1);
         }
 
         if(Object.keys(this.cy).length){
@@ -176,6 +215,24 @@ class ServiceGraph extends Component {
                     {graph}
                     <Clearfix />
                     <br/>
+                    <Modal show={this.state.show} onHide={this.handleClose}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Node Details</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <h4>Node: {this.state.selectedNode && this.state.selectedNode.text ? this.state.selectedNode.text : ''}</h4>
+                            <span className="cube-btn" onClick={this.setRP}>Set Replay Point</span>&nbsp;&nbsp;
+                            <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            {/*<Button variant="secondary" onClick={this.handleClose}>
+                                Close
+                            </Button>
+                            <Button variant="primary" onClick={this.handleClose}>
+                                Save Changes
+                            </Button>*/}
+                        </Modal.Footer>
+                    </Modal>
                     {/*<div style={{padding: '15px', border: '1px solid gray'}}>
                         <Row>
                             <Col md={6} sm={6} xs={6}>
@@ -202,9 +259,9 @@ class ServiceGraph extends Component {
         }
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
-        const arr = [];
+        //const arr = [];
 
-        const gd = JSON.parse(JSON.stringify(cube.graphData))
+        const gd = JSON.parse(JSON.stringify(cube.graphData));
     
         // Create nodes
         let styleN = { "text-wrap": "wrap", width: 150, height: 50 };
@@ -212,9 +269,13 @@ class ServiceGraph extends Component {
             if (cube.analysis && node.data.id == 'movieinfo') {
                 let an = cube.analysis;
                 node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched);
-                node.data.style = styleN;
+                node.data.class = 'selected-node';
+                node.style = styleN;
             }
-            arr.push(node);
+
+            if (node.data.isReplayPoint) {
+                node.classes = 'replay-node';
+            }
             cy.add(node);
         }
 
@@ -227,18 +288,24 @@ class ServiceGraph extends Component {
 
         const _this = this;
 
-        cy.on('click', 'node', function(evt){
+        cy.removeListener('click', 'node').on('click', 'node', function(evt){
+            evt.preventDefault();
             _this.handleShow();
             var node = evt.target;
-            cy.$(node).addClass('selected-node');
-            console.log( 'tapped ' + node.id() );
+            console.log(node.data());
+            _this.setState({
+                selectedNode: node.data(),
+                show: true
+            });
+            /*console.log(node);
+            cy.$(node).addClass('selected-node');*/
         });
 
         // Create edges
         let style = {
             'source-arrow-shape': 'circle',
             'target-arrow-shape': 'triangle',
-            //'curve-style': 'unbundled-bezier'
+            //'curve-style': 'unbundled-bezier',
             'curve-style': 'haystack',
             'width': '2px'
         };
@@ -256,7 +323,7 @@ class ServiceGraph extends Component {
         if ( 1 ) {
             let layout;
             layout = cy.layout({
-                name: 'breadthfirst', // 'cose'
+                name: 'circle', // 'cose'
                 fit: true,
                 idealEdgeLength: function (edge) { return 100; },
                 edgeElasticity: function (edge) { return 100; },

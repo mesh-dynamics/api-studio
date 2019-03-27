@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Row, Col, Clearfix } from 'react-bootstrap'
+import { Row, Col, Clearfix } from 'react-bootstrap';
+import Modal from "react-bootstrap/es/Modal";
+import Button from "react-bootstrap/es/Button";
 import Select from 'react-select';
 import './ReplayAttribute.css';
 import {cubeConstants} from "../../constants";
@@ -187,6 +189,19 @@ class ReplayAttribute extends Component {
                         </Row>
                     </div>
                 </div>
+
+                <Modal show={this.state.show}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Replay</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div>Replay In Progress...</div>
+                        <h3>Status: {cube.replayStatus}</h3>
+                    </Modal.Body>
+                    <Modal.Footer>
+
+                    </Modal.Footer>
+                </Modal>
             </div>
         );
     }
