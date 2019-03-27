@@ -27,7 +27,7 @@ init() {
 	echo "lua filters generated"
 
 	sleep 15
-	open http://$GATEWAY_URL/minfo/health
+	open http://$GATEWAY_URL/
 }
 
 record() {
@@ -59,7 +59,7 @@ generate_mock_all_yaml() {
 replay() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
-	generate_mock_all_yaml 
+	generate_mock_all_yaml
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 	REPLAY_ID=$(curl -X POST \

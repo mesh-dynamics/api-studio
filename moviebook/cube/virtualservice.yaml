@@ -2,6 +2,30 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  name: cubeui
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
+    - uri:
+        exact: /
+    - uri:
+        prefix: /assets
+    - uri:
+        regex: '^.*\.(ico|png|jpg|js|css)$'
+    route:
+    - destination:
+        host: cubeui
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
   name: cubews
 spec:
   hosts:
@@ -23,4 +47,3 @@ spec:
         host: cubews
         port:
           number: 8080
-
