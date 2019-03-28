@@ -221,38 +221,24 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
         String[] pathElements = originalPath.split("/");
         StringBuffer pathBuffer = new StringBuffer();
-        StringBuffer pathFilterBuffer = new StringBuffer();
-        //StringBuffer partialPathFilterBuffer = new StringBuffer();
-        StringBuffer boostQuery = new StringBuffer();
+        StringBuffer queryBuffer = new StringBuffer();
         var countWrapper = new Object() {int count = 0;};
         Arrays.asList(pathElements).stream().forEachOrdered(elem ->
         {
             pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
             String escapedPath = "\"" +StringEscapeUtils.escapeJava(pathBuffer.toString())
                     .concat((countWrapper.count != pathElements.length -1)? ClientUtils.escapeQueryChars("/*") : "") + "\"";
-            pathFilterBuffer.append((countWrapper.count != 0)? " OR " : "").append(escapedPath);
-            boostQuery.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
+            queryBuffer.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
                     .append("^").append(++countWrapper.count);
         });
 
-        String finalPathQuery = fieldName.concat(":").concat("(").concat(pathFilterBuffer.toString()).concat(")");
-        //Sample filter query
-        // path_s:("registerTemplate\/\*" OR "registerTemplate/response\/\*" OR
-        // "registerTemplate/response/moveieinfo\/\*" OR "registerTemplate/response/moveieinfo/ravivj\/\*" OR
-        // "registerTemplate/response/moveieinfo/ravivj/productpage\/\*" OR
-        // "registerTemplate/response/moveieinfo/ravivj/productpage/productpage")
-        query.addFilterQuery(finalPathQuery);
-        //Sample boost query
+        String finalPathQuery = fieldName.concat(":").concat("(").concat(queryBuffer.toString()).concat(")");
+        //Sample query
         //path_s:("registerTemplate\/\*"^1 OR "registerTemplate/response\/\*"^2 OR
         // "registerTemplate/response/moveieinfo\/\*"^3 OR "registerTemplate/response/moveieinfo/ravivj\/\*"^4 OR
         // "registerTemplate/response/moveieinfo/ravivj/productpage\/\*"^5 OR
         // "registerTemplate/response/moveieinfo/ravivj/productpage/productpage"^6)
-        String finalBoostQuery = fieldName.concat(":").concat("(").concat(boostQuery.toString()).concat(")");
-        // changing query type to extended dismax
-        query.setParam("defType" , "edismax");
-        // boosting query with the same params as filter query (ideally filter query doesn't need boost parameters)
-        // we can remove them later
-        query.setParam("bq" , finalBoostQuery);
+        query.setQuery(finalPathQuery.toString());
     }
     
     private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys) {
@@ -611,9 +597,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     private static SolrInputDocument compareTemplateToSolrDoc(TemplateKey key, String jsonCompareTemplate) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String type = (key.getReqOrResp() == TemplateKey.Type.Request) ?
-                Types.RequestCompareTemplate.toString():
-                Types.ResponseCompareTemplate.toString();
+        String type = getTemplateType(key);
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
                 key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
@@ -732,6 +716,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(solrDoc) && softcommit();
     }
 
+    public static String getTemplateType(TemplateKey key) {
+        return (key.getReqOrResp() == TemplateKey.Type.Request) ?
+                Types.RequestCompareTemplate.toString() : Types.ResponseCompareTemplate.toString();
+    }
+
+
     /**
      * Get compare template from solr for the given key parameters
      * @param key
@@ -741,9 +731,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<CompareTemplate> getCompareTemplate(TemplateKey key) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
-        addFilter(query, TYPEF,
-                key.getReqOrResp() == TemplateKey.Type.Request? Types.RequestCompareTemplate.toString() :
-                        Types.ResponseCompareTemplate.toString());
+        addFilter(query, TYPEF, getTemplateType(key));
         addFilter(query, CUSTOMERIDF, key.getCustomerId());
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());

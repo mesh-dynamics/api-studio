@@ -29,7 +29,7 @@ public class TemplateCache {
      * @param rrStore
      */
     public TemplateCache(ReqRespStore rrStore) {
-        templateCache = CacheBuilder.newBuilder().maximumSize(50).removalListener(
+        templateCache = CacheBuilder.newBuilder().maximumSize(200).removalListener(
                 new RemovalListener<>() {
                     @Override
                     public void onRemoval(RemovalNotification<Object, Object> removalNotification) {
@@ -58,7 +58,7 @@ public class TemplateCache {
         }
     }
 
-    public void invalidateKey(TemplateKey key) throws CacheException {
+    public void invalidateKey(TemplateKey key) {
             templateCache.invalidate(key);
     }
 

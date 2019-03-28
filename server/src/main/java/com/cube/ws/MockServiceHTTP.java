@@ -1,8 +1,5 @@
 package com.cube.ws;
 
-import static com.cube.dao.RRBase.*;
-import static com.cube.dao.Request.*;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,16 +16,18 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static com.cube.dao.RRBase.*;
+import static com.cube.dao.Request.*;
+
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.*;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.dao.RRBase;
-import com.cube.dao.RRBase.RR;
+import com.cube.dao.RRBase.*;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
-import com.cube.exception.CacheException;
 
 /**
  * @author prasad
@@ -100,19 +99,6 @@ public class MockServiceHTTP {
 		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
 	}
 
-	private Optional<RequestComparator> getRequestComparator(TemplateKey key) {
-		RequestComparator comparator = null;
-		try {
-			comparator = requestComparatorCache.getRequestComparator(key);
-			LOGGER.info("Successfully retrieved request template for key :: " + key);
-		} catch (CacheException e) {
-			LOGGER.error("Error while retrieving request template for key :: " + key + " from cache " + e.getMessage());
-		}
-		return Optional.ofNullable(comparator);
-	}
-
-
-
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
 			String customerid, String app, String instanceid, 
 			String service, HttpHeaders headers) {
@@ -131,9 +117,9 @@ public class MockServiceHTTP {
 	    		Optional.of(app));
 
 	    TemplateKey key = new TemplateKey(customerid, app , service , path , TemplateKey.Type.Request);
+		RequestComparator comparator = requestComparatorCache.getRequestComparator(key);
 
-	    Optional<com.cube.dao.Response> resp = getRequestComparator(key)
-				.flatMap(comparator -> {return rrstore.getRespForReq(r, comparator);})
+		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
 				.or(() -> {
 					r.rrtype = Optional.of(RR.Manual);
 					LOGGER.info("Using default response");
