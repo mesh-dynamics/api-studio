@@ -128,6 +128,8 @@ get_environment() {
 
 
 main() {
+# To debug this script, run it with TRACE=1 in the enviornment
+# -x option will trace each command that is run
   set -o pipefail; [[ "$TRACE" ]] && set -x
 	get_environment
   case "$1" in
