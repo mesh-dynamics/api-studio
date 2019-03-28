@@ -34,7 +34,7 @@ public class TestPrefixPathQuerySolr {
 
     /**
      * First construct compare-template entries in solr with increasing length of paths.
-     * For paths which are not the entire key path , set field partialmatch_s to true in the stored template
+     * For paths which are not the entire key path , add /* at the end of path key
      * The only difference is the path field in the single template entry object of each compare template
      * , which reflects the length of path in the template key
      * @param pathElements
@@ -59,6 +59,8 @@ public class TestPrefixPathQuerySolr {
             TemplateKey templateKey = new TemplateKey("ravivj" , "cube"
                     , "as" , keyPath , TemplateKey.Type.Request);
             CompareTemplate template = new CompareTemplate();
+            // adding a single template entry to the comparator. The path field of the entry
+            // contains the length of the template key path  (which is used to store this entire template)
             template.addRule(new TemplateEntry("/" + ++countWrapper.count, CompareTemplate.DataType.Str ,
                     CompareTemplate.PresenceType.Optional , CompareTemplate.ComparisonType.Ignore));
             try {
@@ -98,8 +100,9 @@ public class TestPrefixPathQuerySolr {
             assert(template.isPresent());
             Collection<TemplateEntry> templateEntries = template.get().getRules();
             assert(templateEntries.size() == 1);
+            // checking here that the path against which the full path matched
+            // decreases in length with each successive delete
             assert(templateEntries.iterator().next().path.equals("/" + temp.size()));
-            //System.out.println(templateEntries.iterator().next().path);
             String pathToDelete = temp.stream().collect(Collectors.joining("/"));
             if (temp.size() != pathElements.size()) {
                 pathToDelete = pathToDelete.concat("/*");
@@ -113,7 +116,7 @@ public class TestPrefixPathQuerySolr {
                 Solr.deleteByQuery(deleteQuery);
                 Solr.commit();
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println(e.getMessage());
             }
 
             System.out.println(pathToDelete);
@@ -141,11 +144,13 @@ public class TestPrefixPathQuerySolr {
                     Arrays.asList(new String[]{"registerTemplate" , "response"
                     , "moveieinfo" , "ravivj" , "productpage" , "productpage"
                     });
-
+            // first create template entries in the backend for each possible prefix of the given path
             String fullPath = createTemplateEntriesForTest(pathElements , reqRespStore , mapper);
+            // delete templates previously created (from longest to shortest) and confirm that the
+            // full path matches against the longest possible prefix (of all the remaining)
             deleteLongestPathRepeatedlyTestForTemplateMatch(fullPath , pathElements , reqRespStore , Solr);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
