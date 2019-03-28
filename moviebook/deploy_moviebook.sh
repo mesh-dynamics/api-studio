@@ -101,7 +101,9 @@ clean() {
 	kubectl delete -f moviebook/moviebook_virtualservice.yaml
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
-	rm replayid.temp
+	if [ -f replayid.temp ]; then
+	  rm replayid.temp
+	fi
 }
 
 get_environment() {
