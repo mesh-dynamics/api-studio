@@ -32,7 +32,32 @@ public class RestAPIForJDBC {
 		LOGGER = Logger.getLogger(RestAPIForJDBC.class);
 		tracer = Tracing.init("RestWrapJDBC");
 		BasicConfigurator.configure();
-	}
+
+        // mysql properties
+        //String MYSQL_HOST = "sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com";  // "localhost";
+        //String MYSQL_PORT = "3306";
+        //String MYSQL_DBNAME = "sakila";
+        String MYSQL_USERNAME = "cube";
+        //private static String MYSQL_PWD = "cubeio";  // local docker host pwd
+        String MYSQL_PWD = "cubeio12";  // AWS RDS pwd
+
+        String MYSQL_URI = "jdbc:mysql://sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com:3306/sakila";
+
+        initJdbc(MYSQL_URI, MYSQL_USERNAME, MYSQL_PWD);
+
+    }
+
+
+    static private void initJdbc(String uri, String username, String passwd) {
+	    try {
+            jdbcPool = new ConnectionPool();
+            jdbcPool.setUpPool(uri, username, passwd);
+            LOGGER.info("mysql uri: " + uri);
+            LOGGER.info(jdbcPool.getPoolStatus());
+        } catch (Exception e) {
+            LOGGER.error("connection pool creation failed; " + e.toString());
+        }
+    }
 
 
 	@Path("/health")
@@ -52,10 +77,7 @@ public class RestAPIForJDBC {
                              @Context HttpHeaders httpHeaders) {
     try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders, "initialize")) {
       scope.span().setTag("initialize", uri + "; "  + username + "; <pwd>");
-      jdbcPool = new ConnectionPool();
-      jdbcPool.setUpPool(uri, username, passwd);
-      LOGGER.info("mysql uri: " + uri);
-      LOGGER.info(jdbcPool.getPoolStatus());
+      initJdbc(uri, username, passwd);
       return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"status\": \"Connection pool created.\"}").build();
     } catch (Exception e) {
       LOGGER.error("connection pool creation failed; " + e.toString());

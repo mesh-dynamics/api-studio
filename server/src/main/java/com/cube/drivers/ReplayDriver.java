@@ -260,7 +260,12 @@ public class ReplayDriver  {
                     LOGGER.info(String.format("Replay %s completed %d requests", replay.replayid, replay.reqsent));
                     rrstore.saveReplay(replay);
                 }
-                return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+                int ret = client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+                // for debugging - can remove later
+                if (ret != Response.Status.OK.getStatusCode()) {
+                    LOGGER.error(String.format("Got error status %d for req: %s", ret, request.toString()));
+                }
+                return ret;
             } catch (IOException | InterruptedException e) {
                 LOGGER.error("Exception in replaying requests", e);
                 return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
