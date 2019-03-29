@@ -6,8 +6,9 @@
 
 package com.cube.drivers;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,15 +21,14 @@ import static com.cube.core.Comparator.MatchType.ExactMatch;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
-import com.cube.cache.AnalysisTemplateCache;
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.*;
-import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.dao.*;
-import com.cube.exception.CacheException;
 
 /*
  * Created by IntelliJ IDEA.
@@ -40,12 +40,15 @@ public class Analyzer {
     private static final Logger LOGGER = LogManager.getLogger(Analyzer.class);
 
 
-    private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper, AnalysisTemplateCache templateCache) {
+    private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper
+            , RequestComparatorCache requestComparatorCache, ResponseComparatorCache responseComparatorCache) {
         analysis = new Analysis(replayid, reqcnt);
         this.jsonmapper = jsonmapper;
 
         //comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonmapper);
-        this.templateCache = templateCache;
+        //TemplatedRRComparator.EQUALITYTEMPLATE;
+        this.responseComparatorCache = responseComparatorCache;
+        this.requestComparatorCache = requestComparatorCache;
     }
 
 
@@ -53,36 +56,31 @@ public class Analyzer {
     //private ResponseComparator comparator = ResponseComparator.EQUALITYCOMPARATOR;
     private final ObjectMapper jsonmapper;
     // Template cache being passed from the config
-    private final AnalysisTemplateCache templateCache;
-
-    // Ideally want to shift this map to a loading map too , Need to see how to pass
-    // jsonmapper to the cache fetch function
-    private Map<TemplateKey, TemplatedResponseComparator>
-            responseComparatorMap = new HashMap<>();
-
-    public boolean removeKey(TemplateKey key) {
-        responseComparatorMap.remove(key);
-        return true;
-    }
+    private final RequestComparatorCache requestComparatorCache;
+    private final ResponseComparatorCache responseComparatorCache;
 
 
     /**
      * @param rrstore
      * @param reqs
-     * @param mspec
      */
-    private void analyze(ReqRespStore rrstore, Stream<Request> reqs, RequestComparator mspec) {
+    private void analyze(ReqRespStore rrstore, Stream<Request> reqs) {
         reqs.forEach(r -> {
             // find matching request in replay
             // most fields are same as request except
             // RRType should be Replay
             // collection to set to replayid, since collection in replays are set to replayids
             Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
-                r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
-                Optional.of(RRBase.RR.Replay), r.customerid, r.app);
-            List<Request> matches = rrstore.getRequests(rq, mspec, Optional.of(10))
-                .collect(Collectors.toList());
+                    r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
+                    Optional.of(RRBase.RR.Replay), r.customerid, r.app);
 
+            List<Request> matches = new ArrayList<>();
+
+            TemplateKey key = new TemplateKey(r.customerid.get() , r.app.get() , r.getService().get() , r.path
+                    , TemplateKey.Type.Request);
+            RequestComparator comparator = requestComparatorCache.getRequestComparator(key);
+            matches = rrstore.getRequests(rq, comparator, Optional.of(10))
+                        .collect(Collectors.toList());
 
             // TODO: add toString override for the Request object to debug log
             if (!matches.isEmpty()) {
@@ -102,7 +100,7 @@ public class Analyzer {
                 // If request matches exactly, consider that as the best match
                 // else find the best match based on response matching
                 for (Request replayreq : matches) {
-                    Comparator.MatchType reqmt = mspec.compare(rq, replayreq);
+                    Comparator.MatchType reqmt = comparator.compare(rq, replayreq);
                     Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, rrstore);
 
                     if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
@@ -157,25 +155,8 @@ public class Analyzer {
             try {
                 // get appropriate template from solr
                 TemplateKey key = new TemplateKey(recordreq.customerid.get(),
-                        recordreq.app.get(), recordreq.getService().get(), recordreq.path);
-                // Maintaining an additional map of container TemplateResponseComparator
-                // objects since their construction is a heavy operation
-                // using computeIfAbsent instead of putIfAbsent , cause in case of put the
-                // object will be constructed anyway before the function call
-                // Using an ugly method of wrapping cache exception in runtime exception to circumvent
-                // the fact that computeIfAbsent doesn't throw an exception
-                responseComparatorMap.computeIfAbsent(key, k -> {
-                    try {
-                        CompareTemplate compareTemplate = templateCache.fetchCompareTemplate(key);
-                        LOGGER.info("Successfully fetched Compare Template from cache :: " + key);
-                        return new TemplatedResponseComparator(compareTemplate, jsonmapper);
-                    } catch (CacheException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                /*responseComparatorMap.putIfAbsent(key ,
-                        new TemplatedResponseComparator(templateCache.fetchCompareTemplate(key) , jsonmapper));*/
-                TemplatedResponseComparator comparator = responseComparatorMap.get(key);
+                        recordreq.app.get(), recordreq.getService().get(), recordreq.path , TemplateKey.Type.Response);
+                ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
                 Optional<Response> recordedresp = rrstore.getResponse(recordreqid);
                 Optional<Response> replayresp = rrstore.getResponse(replayreqid);
                 //question ? what happens when these optionals don't contain any value ...
@@ -224,13 +205,15 @@ public class Analyzer {
      */
     public static Optional<Analysis> analyze(String replayid, String tracefield,
                                              ReqRespStore rrstore, ObjectMapper jsonmapper,
-                                             AnalysisTemplateCache templateCache) {
+                                             RequestComparatorCache requestComparatorCache,
+                                             ResponseComparatorCache responseComparatorCache) {
         // String collection = Replay.getCollectionFromReplayId(replayid);
 
         Optional<Replay> replay = rrstore.getReplay(replayid);
 
         // optional matching on traceid //and requestid
-        ReqMatchSpec rmspec = (ReqMatchSpec) ReqMatchSpec.builder()
+        // this is not being used
+        /*ReqMatchSpec rmspec = (ReqMatchSpec) ReqMatchSpec.builder()
             .withMpath(ComparisonType.Equal)
             .withMqparams(ComparisonType.Equal)
             .withMfparams(ComparisonType.Equal)
@@ -242,7 +225,7 @@ public class Analyzer {
             .withMcollection(ComparisonType.Equal)
             .withMmeta(ComparisonType.Equal)
             .withMetafields(Collections.singletonList(RRBase.SERVICEFIELD))
-            .build();
+            .build();*/
         //.withMreqid(MatchType.SCORE).build();
 
         CompareTemplate reqTemplate = new CompareTemplate();
@@ -261,12 +244,13 @@ public class Analyzer {
 
         return replay.flatMap(r -> {
             Result<Request> reqs = r.getRequests(rrstore);
-            Analyzer analyzer = new Analyzer(replayid, (int) reqs.numResults(), jsonmapper , templateCache);
+            Analyzer analyzer = new Analyzer(replayid, (int) reqs.numResults()
+                   , jsonmapper , requestComparatorCache, responseComparatorCache);
             if (!rrstore.saveAnalysis(analyzer.analysis)) {
                 return Optional.empty();
             }
 
-            analyzer.analyze(rrstore, reqs.getObjects(), mspec);
+            analyzer.analyze(rrstore, reqs.getObjects());
 
             // update the stored analysis
             rrstore.saveAnalysis(analyzer.analysis);

@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
@@ -217,7 +218,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }));
     }
 
+    private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
+        String[] pathElements = originalPath.split("/");
+        StringBuffer pathBuffer = new StringBuffer();
+        StringBuffer queryBuffer = new StringBuffer();
+        var countWrapper = new Object() {int count = 0;};
+        Arrays.asList(pathElements).stream().forEachOrdered(elem ->
+        {
+            pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
+            String escapedPath = "\"" +StringEscapeUtils.escapeJava(pathBuffer.toString())
+                    .concat((countWrapper.count != pathElements.length -1)? ClientUtils.escapeQueryChars("/*") : "") + "\"";
+            queryBuffer.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
+                    .append("^").append(++countWrapper.count);
+        });
 
+        String finalPathQuery = fieldName.concat(":").concat("(").concat(queryBuffer.toString()).concat(")");
+        //Sample query
+        //path_s:("registerTemplate\/\*"^1 OR "registerTemplate/response\/\*"^2 OR
+        // "registerTemplate/response/moveieinfo\/\*"^3 OR "registerTemplate/response/moveieinfo/ravivj\/\*"^4 OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage\/\*"^5 OR
+        // "registerTemplate/response/moveieinfo/ravivj/productpage/productpage"^6)
+        query.setQuery(finalPathQuery.toString());
+    }
+    
     private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys) {
         // Empty list of selected keys is treated as if all keys are to be added
         Collection<String> ftoadd = (keys.isEmpty()) ? fvalmap.keySet() : keys;
@@ -533,8 +556,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
 
     // field names in Solr for compare template (stored as json)
-    private static final String RESPONSETEMPLATEJSON = CPREFIX + "responsetemplate_s";
-    
+    private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
+    private static final String PARTIALMATCH = CPREFIX + "partialmatch_s";
+
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     
@@ -567,28 +591,26 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     /**
      * Form a solr storage document for an analysis template (being stored as
      * a json)
-     * @param customerId
-     * @param appId
-     * @param serviceId
-     * @param path
+     * @param key
      * @param jsonCompareTemplate
      * @return
      */
-    private static SolrInputDocument responseTemplateToSolrDoc(String customerId , String appId ,
-                                                               String serviceId, String path, String jsonCompareTemplate) {
+    private static SolrInputDocument compareTemplateToSolrDoc(TemplateKey key, String jsonCompareTemplate) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String type = Types.ResponseCompareTemplate.toString();
-        String pathHashed = String.valueOf(path.hashCode());
+        String type = getTemplateType(key);
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
-        String id = type.concat("-").concat(String.valueOf(Objects.hash(customerId , appId, serviceId,path)));
+        String id = type.concat("-").concat(String.valueOf(Objects.hash(
+                key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
+                , key.getReqOrResp().toString())));
         doc.setField(IDF , id);
-        doc.setField(RESPONSETEMPLATEJSON , jsonCompareTemplate);
-        doc.setField(PATHF , path);
-        doc.setField(APPF , appId);
-        doc.setField(CUSTOMERIDF , customerId);
-        doc.setField(SERVICEF , serviceId);
+        doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
 
-        doc.setField(TYPEF , Types.ResponseCompareTemplate.toString());
+        String path = key.getPath();
+        doc.setField(PATHF , path);
+        doc.setField(APPF , key.getAppId());
+        doc.setField(CUSTOMERIDF , key.getCustomerId());
+        doc.setField(SERVICEF , key.getServiceId());
+        doc.setField(TYPEF , type);
         return doc;
     }
 
@@ -672,7 +694,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @return
      */
     private  Optional<CompareTemplate> docToCompareTemplate(SolrDocument doc) {
-        return getStrField(doc, RESPONSETEMPLATEJSON).flatMap(templateJson -> {
+        return getStrField(doc, COMPARETEMPLATEJSON).flatMap(templateJson -> {
             try {
                 return Optional.of(config.jsonmapper.readValue(templateJson, CompareTemplate.class));
             } catch (IOException e) {
@@ -684,18 +706,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     /**
      * Save an analysis template as json for the given key parameters in solr
-     * @param customerId
-     * @param appId
-     * @param serviceId
-     * @param path
-     * @param template
+     * @param key
+     * @param templateAsJson
      * @return
      */
     @Override
-    public boolean saveTemplate(String customerId, String appId, String serviceId, String path, String template) {
-        SolrInputDocument solrDoc = responseTemplateToSolrDoc(customerId, appId,  serviceId , path ,template);
+    public boolean saveCompareTemplate(TemplateKey key, String templateAsJson) {
+        SolrInputDocument solrDoc = compareTemplateToSolrDoc(key ,templateAsJson);
         return saveDoc(solrDoc) && softcommit();
     }
+
+    public static String getTemplateType(TemplateKey key) {
+        return (key.getReqOrResp() == TemplateKey.Type.Request) ?
+                Types.RequestCompareTemplate.toString() : Types.ResponseCompareTemplate.toString();
+    }
+
 
     /**
      * Get compare template from solr for the given key parameters
@@ -706,11 +731,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<CompareTemplate> getCompareTemplate(TemplateKey key) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
-        addFilter(query, TYPEF, Types.ResponseCompareTemplate.toString());
+        addFilter(query, TYPEF, getTemplateType(key));
         addFilter(query, CUSTOMERIDF, key.getCustomerId());
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());
-        addFilter(query, PATHF , key.getPath());
+        addWeightedPathFilter(query , PATHF , key.getPath());
+        //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         return SolrIterator.getStream(solr , query , maxResults).findFirst().flatMap(doc -> {
                     return docToCompareTemplate(doc);

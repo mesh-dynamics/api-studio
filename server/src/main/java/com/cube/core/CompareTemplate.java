@@ -110,9 +110,6 @@ public class CompareTemplate {
 		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
 	}
 
-
-	public Map<String, TemplateEntry> getRulesForSerialization() {return rules;}
-
 	@JsonSetter("rules")
 	public void setRules(Collection<TemplateEntry> rules) {
 		for (TemplateEntry rule : rules) {

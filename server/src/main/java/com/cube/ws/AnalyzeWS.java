@@ -5,7 +5,9 @@ package com.cube.ws;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -25,10 +27,15 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 
-import com.cube.cache.AnalysisTemplateCache;
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateRegistry;
+import com.cube.core.UtilException;
 import com.cube.dao.Analysis;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
@@ -45,7 +52,7 @@ public class AnalyzeWS {
     private static final Logger LOGGER = LogManager.getLogger(AnalyzeWS.class);
 
 
-    @Path("/health")
+	@Path("/health")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response health() {
@@ -63,7 +70,9 @@ public class AnalyzeWS {
 				.flatMap(vals -> vals.stream().findFirst())
 				.orElse(Config.DEFAULT_TRACE_FIELD);
 		
-		Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, rrstore, jsonmapper, templateCache);
+		Optional<Analysis> analysis = Analyzer
+				.analyze(replayid, tracefield, rrstore
+						, jsonmapper , requestComparatorCache , responseComparatorCache );
 		
 		return analysis.map(av -> {
 			String json;
@@ -119,6 +128,43 @@ public class AnalyzeWS {
 		}		
 	}
 
+	@POST
+	@Path("registerTemplateApp/{type}/{customerId}/{appId}")
+	@Consumes({MediaType.APPLICATION_JSON})
+	public Response registerTemplateApp(@Context UriInfo uriInfo , @PathParam("type") String type,
+										@PathParam("customerId") String customerId , @PathParam("appId") String appId,
+										String templateRegistryArray) {
+		try {
+			CollectionType javaType = jsonmapper.getTypeFactory()
+					.constructCollectionType(List.class, TemplateRegistry.class);
+			List<TemplateRegistry> templateRegistries = jsonmapper.readValue(templateRegistryArray, javaType);
+			TemplateKey.Type templateKeyType;
+			if ("request".equalsIgnoreCase(type)) {
+				templateKeyType = TemplateKey.Type.Request;
+			} else if ("response".equalsIgnoreCase(type)) {
+				templateKeyType = TemplateKey.Type.Response;
+			} else {
+				return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
+						"either request or response :: "+ type).build();
+			}
+			templateRegistries.forEach(UtilException.rethrowConsumer(registry -> {
+				TemplateKey key = new TemplateKey(customerId , appId , registry.getService()
+						, registry.getPath() , templateKeyType);
+				rrstore.saveCompareTemplate(key , jsonmapper.writeValueAsString(registry.getTemplate()));
+				requestComparatorCache.invalidateKey(key);
+				responseComparatorCache.invalidateKey(key);
+			}));
+			return Response.ok().type(MediaType.TEXT_PLAIN).entity(type.concat(" Compare Templates Registered for :: ")
+					.concat(customerId).concat(" :: ").concat(appId)).build();
+		} catch (JsonProcessingException e) {
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
+		} catch (Exception e) {
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
+		}
+	}
+
+
+
 
 	/**
 	 * Endpoint to save an analysis template as json in solr
@@ -132,29 +178,36 @@ public class AnalyzeWS {
 	 * @return
 	 */
 	@POST
-	@Path("registerTemplate/{appId}/{customerId}/{serviceName}/{path:.+}")
+	@Path("registerTemplate/{type}/{customerId}/{appId}/{serviceName}/{path:.+}")
 	@Consumes({MediaType.APPLICATION_JSON})
 	public Response registerTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 									 @PathParam("customerId") String customerId,
 									 @PathParam("serviceName") String serviceName,
 									 @PathParam("path") String path,
+									 @PathParam("type") String type,
 									 String templateAsJson) {
     	try {
 			//This is just to see the template is not invalid, and can be parsed according
 			// to our class definition , otherwise send error response
     		CompareTemplate  template = jsonmapper.readValue(templateAsJson , CompareTemplate.class);
-			rrstore.saveTemplate(customerId , appId , serviceName , path ,templateAsJson);
-			TemplateKey key = new TemplateKey(customerId, appId, serviceName, path);
-			templateCache.invalidateKey(key);
+			TemplateKey key;
+    		if ("request".equalsIgnoreCase(type)) {
+				key = new TemplateKey(customerId, appId, serviceName, path , TemplateKey.Type.Request);
+			} else if ("response".equalsIgnoreCase(type)) {
+				key = new TemplateKey(customerId, appId, serviceName, path , TemplateKey.Type.Response);
+			} else {
+    			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
+						"either request or response :: "+ type).build();
+			}
+			rrstore.saveCompareTemplate(key , templateAsJson);
+			requestComparatorCache.invalidateKey(key);
+			responseComparatorCache.invalidateKey(key);
 			//Analyzer.removeKey(key);
 			return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
 		} catch (JsonProcessingException e) {
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
     	} catch (IOException e) {
     		return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
-		} catch (CacheException e) {
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Unable to invalidate cache entry " +
-					"for corresponding template").build();
 		}
 	}
 
@@ -168,12 +221,14 @@ public class AnalyzeWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
-		this.templateCache = config.templateCache;
+		this.requestComparatorCache = config.requestComparatorCache;
+		this.responseComparatorCache = config.responseComparatorCache;
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonmapper;
 	// Template cache to retrieve analysis templates from solr
-	AnalysisTemplateCache templateCache;
+	final RequestComparatorCache requestComparatorCache;
+	final ResponseComparatorCache responseComparatorCache;
 }

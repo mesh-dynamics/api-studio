@@ -59,8 +59,7 @@ public class TemplateSerializationTest {
             System.out.println(convertedJson);
             CompareTemplate template1 = mapper.readValue(convertedJson , CompareTemplate.class);
             assertEquals(template1.prefixpath , "");
-            template1.getRulesForSerialization().forEach((path , entry) -> {
-                        assertEquals(path, entry.path);
+            template1.getRules().forEach(entry -> {
                         assertEquals(entry.pt, CompareTemplate.PresenceType.Required);
                         assertEquals(entry.ct, CompareTemplate.ComparisonType.Ignore);
                     }
