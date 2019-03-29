@@ -30,6 +30,81 @@ init() {
 	open http://$GATEWAY_URL/
 }
 
+setup() {
+	echo "Setting default responses"
+	curl -X POST \
+  http://$GATEWAY_URL/cs/setdefault/$USER/movieinfo/restwrapjdbc/GET/restsql/initialize \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache' \
+  -d 'body=%7B%20%22status%22%3A%20%22Connection%20pool%20created.%22%7D&status=200&content-type=application%2Fjson&undefined='
+	curl -X POST \
+  http://$GATEWAY_URL/cs/setdefault/$USER/movieinfo/restwrapjdbc/POST/restsql/update \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache' \
+  -d 'body=%7B%22num_updates%22%3A1%7D&status=200&content-type=application%2Fjson&undefined='
+	echo "Setting response templates"
+	curl -X POST \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/listmovies \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body",
+          "pt": "Required",
+          "dt": "Str",
+          "ct": "Equal"
+        }
+      ]
+ }'
+	curl -X POST \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/liststores \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body",
+          "pt": "Required",
+          "dt": "Str",
+          "ct": "Equal"
+        }
+      ]
+ }'
+	curl -X POST \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/rentmovie \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body",
+          "pt": "Required",
+          "dt": "Str",
+          "ct": "Equal"
+        }
+      ]
+ }'
+	curl -X POST \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/returnmovie \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body",
+          "pt": "Required",
+          "dt": "Str",
+          "ct": "Equal"
+        }
+      ]
+ }'
+}
+
 record() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
@@ -66,11 +141,11 @@ replay() {
   http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
-  -d "endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+  -d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache'
+  -H 'cache-control: no-cache' 
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
@@ -94,6 +169,8 @@ analyze() {
   -H 'cache-control: no-cache'
 }
 clean() {
+	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
+	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
 	kubectl delete -f moviebook/moviebook.yaml
 	kubectl delete -f cube/service.yaml
 	kubectl delete -f cube/service_entry.yaml
@@ -119,10 +196,11 @@ get_environment() {
 
 
 main() {
-  set -eo pipefail; [[ "$TRACE" ]] && set -x
+  set -o pipefail; [[ "$TRACE" ]] && set -x
 	get_environment
   case "$1" in
     init) shift; init "$@";;
+    setup) shift; setup "$@";;
     record) shift; record "@";;
     stop_recording) shift; stop_record "@";;
     replay) shift; replay "@";;
