@@ -157,7 +157,7 @@
 	<dependency>
 	    <groupId>com.fasterxml.jackson.datatype</groupId>
 	    <artifactId>jackson-datatype-jdk8</artifactId>
-	</dependency>  	
+	</dependency>
   	<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
 	<dependency>
 	    <groupId>org.glassfish.jersey.media</groupId>
@@ -236,7 +236,13 @@
           <version>0.0.20131108.vaadin1</version>
           <scope>test</scope>
     </dependency>
-
+	  <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+	  <dependency>
+		  <groupId>com.fasterxml.jackson.datatype</groupId>
+		  <artifactId>jackson-datatype-jsr310</artifactId>
+		  <version>2.9.8</version>
+		  <scope>test</scope>
+	  </dependency>
   </dependencies>
   <groupId>com.cube</groupId>
 </project>

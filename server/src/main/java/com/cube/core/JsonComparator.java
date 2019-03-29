@@ -21,6 +21,7 @@ import com.flipkart.zjsonpatch.JsonDiff;
 
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.core.CompareTemplate.DataType;
 import com.cube.ws.Config;
 
 /**
@@ -62,8 +63,7 @@ public class JsonComparator implements Comparator {
 		
 		// first validate the rhs (new json)
 		validate(rhsroot, result);
-		
-		
+
 		// Now diff new (rhs) with the old (lhs)
 		EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION, 
 				DiffFlags.OMIT_MOVE_OPERATION,
@@ -102,7 +102,9 @@ public class JsonComparator implements Comparator {
 			}
 			if (diff.resolution.isErr()) {
 				numerrs++;
-			} 
+			}
+
+			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
 			result.add(diff);
 		}
 		
@@ -119,6 +121,18 @@ public class JsonComparator implements Comparator {
 	 */
 	private void validate(JsonNode root, List<Diff> resdiffs) {
 		template.getRules().forEach(rule -> {
+
+			int index = rule.path.lastIndexOf('/');
+			if (index != -1 && rule.path.substring( index + 1 ).equalsIgnoreCase("*")){
+				String parentPath = rule.path.substring( 0, index );
+				Optional<TemplateEntry> parentRule = template.get(parentPath);
+				if (parentRule.isEmpty()) {
+					JsonNode node = root.at(rule.pathptr.head());
+					checkRptArrayTypes(node, resdiffs, rule.dt, parentPath);
+
+				}
+				return;
+			}
 			JsonNode node = root.at(rule.pathptr);
 			if (node.isMissingNode()) {
 				if (rule.pt == PresenceType.Required) {
@@ -127,46 +141,71 @@ public class JsonComparator implements Comparator {
 				}				
 			} else {
 				// validate data type
-				boolean valtypemismatch = false;
-				boolean valformatmismatch = false;
+				boolean valTypeMismatch = false;
+				boolean valFormatMismatch = false;
 				switch (rule.dt) {
 				case Str:
 					if (!node.isTextual()) {
-						valtypemismatch = true;
+						valTypeMismatch = true;
 					} else {
 						// check for regex pattern match
 						if (rule.ct == ComparisonType.CustomRegex) {
 							String val = node.asText();
-							valformatmismatch = rule.regex.map(r -> !r.matcher(val).matches()).orElse(valformatmismatch);
+							valFormatMismatch = rule.regex.map(r -> !r.matcher(val).matches()).orElse(valFormatMismatch);
 						}
 					}
 					break;
 				case Float:
-					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valtypemismatch = true;
+					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valTypeMismatch = true;
 					break;
 				case Int:
-					if (!node.isInt()) valtypemismatch = true;
+					if (!node.isInt()) valTypeMismatch = true;
 					break;
 				case NrptArray:
+					if (!node.isArray()) valTypeMismatch = true;
+					break;
 				case RptArray:
-					if (!node.isArray()) valtypemismatch = true;
+					if (!node.isArray()) valTypeMismatch = true;
+					Optional<TemplateEntry> starRule = template.get(rule.path + "/*");
+					Optional<CompareTemplate.DataType> itemDataType = starRule.map(r -> r.dt)
+							.or(() -> Optional.ofNullable(node.get(0)).map(this::getDataType));
+					itemDataType.ifPresent(idt -> {
+						checkRptArrayTypes(node, resdiffs, idt, rule.path);
+					});
 					break;
 				case Obj:
-					if (!node.isObject()) valtypemismatch = true;
+					if (!node.isObject()) valTypeMismatch = true;
 					break;
 				default:
 					break;
 				}
-				if (valtypemismatch) {
+				if (valTypeMismatch) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, ERR_ValTypeMismatch);
 					resdiffs.add(diff);
 				}								
-				if (valformatmismatch) {
+				if (valFormatMismatch) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, Resolution.ERR_ValFormatMismatch);
 					resdiffs.add(diff);
 				}								
 			}
 		});
+	}
+
+	private void checkRptArrayTypes(JsonNode node, List<Diff> resdiffs, CompareTemplate.DataType dt, String parentPath) {
+		for (int i = 0; i < node.size(); i ++) {
+			if (getDataType(node.get(i)) != dt) {
+				Diff diff = new Diff(Diff.NOOP, parentPath + "/" + i, node.get(i), ERR_ValTypeMismatch);
+				resdiffs.add(diff);
+			}
+		}
+	}
+
+	private DataType getDataType(JsonNode node) {
+		if (node.isTextual()) return DataType.Str;
+		if (node.isInt()) return DataType.Int;
+		if (node.isDouble() || node.isFloat()) return DataType.Float;
+		if (node.isObject()) return DataType.Obj;
+		return DataType.Default;
 	}
 	
 	/**

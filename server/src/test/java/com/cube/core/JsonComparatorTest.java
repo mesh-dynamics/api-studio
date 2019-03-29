@@ -253,4 +253,16 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("inheritance");
 		compareTest(testData);
 	}
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Repeating Array test")
+	final void repeatingArrayTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("repeatingArray");
+		compareTest(testData);
+	}
 }

@@ -13,24 +13,37 @@ public class TemplateKey {
     private String appId;
     private String serviceId;
     private String path;
+    private Type reqOrResp;
 
-    public TemplateKey(String customerId, String appId, String serviceId, String path) {
+    public Type getReqOrResp() {
+        return reqOrResp;
+    }
+
+    public enum Type {
+        Request,
+        Response
+    }
+
+    public TemplateKey(String customerId, String appId, String serviceId, String path , Type reqOrResp) {
         this.customerId = customerId;
         this.appId = appId;
         this.serviceId = serviceId;
         this.path = path;
+        this.reqOrResp = reqOrResp;
     }
 
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("customerId" , getCustomerId()).add("appId" , getAppId())
-                .add("serviceId" , getServiceId()).add("path" , getPath()).toString();
+                .add("serviceId" , getServiceId()).add("path" , getPath())
+                .add("type" , getReqOrResp()).toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.getCustomerId(), this.getAppId(), this.getServiceId(), this.getPath());
+        return Objects.hashCode(this.getCustomerId(), this.getAppId(), this.getServiceId()
+                , this.getPath() , this.getReqOrResp());
     }
 
     @Override
@@ -39,7 +52,8 @@ public class TemplateKey {
             TemplateKey other = (TemplateKey) o;
             return (ComparisonChain.start().
                     compare(this.getCustomerId(), other.getCustomerId()).compare(this.getAppId(), other.getAppId()).
-                    compare(this.getServiceId(), other.getServiceId()).compare(this.getPath(), other.getPath()).result() == 0);
+                    compare(this.getServiceId(), other.getServiceId()).compare(this.getPath(), other.getPath()).
+                    compare(this.getReqOrResp() , other.getReqOrResp()).result() == 0);
         } else {
             return false;
         }
