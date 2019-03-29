@@ -1,5 +1,7 @@
 package com.cube.cache;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -28,34 +30,46 @@ public class RequestComparatorCache {
 
     private LoadingCache<TemplateKey , RequestComparator> requestComparatorCache;
 
-    private RequestComparator defaultRequestComparator;
+    private RequestComparator defaultRequestComparatorWithoutReqId;
+    private RequestComparator defaultRequestComparatorWithReqId;
+
 
     public RequestComparatorCache(TemplateCache cache , ObjectMapper jsonMapper) {
         this.templateCache = cache;
 
-        CompareTemplate defaultTemplate = new CompareTemplate();
-        defaultTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str
+        CompareTemplate defaultTemplateWithoutReqId = new CompareTemplate();
+        CompareTemplate defaultTemplateWithReqId = new CompareTemplate();
+        List<TemplateEntry> defaultRules = new ArrayList<>();
+        defaultRules.add(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.EqualOptional));
-        defaultTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultTemplate.addRule(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD
+        defaultRules.add(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD
                 , CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional
                 , CompareTemplate.ComparisonType.EqualOptional));
-        defaultRequestComparator = new TemplatedRequestComparator(defaultTemplate , jsonMapper);
+        defaultRules.forEach(rule -> {
+            defaultTemplateWithoutReqId.addRule(rule);
+            defaultTemplateWithReqId.addRule(rule);
+        });
+        defaultTemplateWithReqId.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str,
+                CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.EqualOptional));
+
+        defaultRequestComparatorWithoutReqId = new TemplatedRequestComparator(defaultTemplateWithoutReqId
+                , jsonMapper);
+        defaultRequestComparatorWithReqId = new TemplatedRequestComparator(defaultTemplateWithReqId
+                , jsonMapper);
 
         this.requestComparatorCache = CacheBuilder.newBuilder().maximumSize(100).build(
                 new CacheLoader<>() {
@@ -70,13 +84,16 @@ public class RequestComparatorCache {
     }
 
 
-    public RequestComparator getRequestComparator(TemplateKey key)  {
+    public RequestComparator getRequestComparator(TemplateKey key , boolean reqIdInDefault)  {
         try {
             return requestComparatorCache.get(key);
         } catch (ExecutionException e) {
             LOGGER.error("Unable to find template key :: " + key
                     + " in Request Comparator Cache , sending default key");
-            return defaultRequestComparator;
+            if (reqIdInDefault) {
+                return defaultRequestComparatorWithReqId;
+            }
+            return defaultRequestComparatorWithoutReqId;
             //throw new CacheException("Error while fetching request comparator for key " + key , e);
         }
     }

@@ -32,7 +32,7 @@ public class AnalyzeServiceTest {
 
     private static String cubeServeUrl = "http://localhost:8080/cubews_war_exploded/";
     private static String analyzePath = "as/health";
-    private static String storeTemplatePath = "as/registerTemplate/{appId}/{customerId}/{serviceName}/{path}";
+    private static String storeTemplatePath = "as/registerTemplate/response/{customerId}/{appId}/{serviceName}/{path}";
 
     //private static String
 
