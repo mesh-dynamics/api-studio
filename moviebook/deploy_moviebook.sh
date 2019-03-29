@@ -33,18 +33,18 @@ init() {
 setup() {
 	echo "Setting default responses"
 	curl -X POST \
-  http://$GATEWAY_URL/cs/setdefault/prasad/movieinfo/restwrapjdbc/GET/restsql/initialize \
+  http://$GATEWAY_URL/cs/setdefault/$USER/movieinfo/restwrapjdbc/GET/restsql/initialize \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
   -d 'body=%7B%20%22status%22%3A%20%22Connection%20pool%20created.%22%7D&status=200&content-type=application%2Fjson&undefined='
 	curl -X POST \
-  http://$GATEWAY_URL/cs/setdefault/prasad/movieinfo/restwrapjdbc/POST/restsql/update \
+  http://$GATEWAY_URL/cs/setdefault/$USER/movieinfo/restwrapjdbc/POST/restsql/update \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
   -d 'body=%7B%22num_updates%22%3A1%7D&status=200&content-type=application%2Fjson&undefined='
 	echo "Setting response templates"
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/movieinfo/prasad/movieinfo/minfo/listmovies \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/listmovies \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -59,7 +59,7 @@ setup() {
       ]
  }'
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/movieinfo/prasad/movieinfo/minfo/liststores \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/liststores \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -74,7 +74,7 @@ setup() {
       ]
  }'
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/movieinfo/prasad/movieinfo/minfo/rentmovie \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/rentmovie \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -89,7 +89,7 @@ setup() {
       ]
  }'
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/movieinfo/prasad/movieinfo/minfo/returnmovie \
+  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/returnmovie \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
