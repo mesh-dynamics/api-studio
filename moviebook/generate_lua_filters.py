@@ -13,8 +13,8 @@ dataMap = yaml.safe_load(data_stream)
 
 template_record = env.get_template('moviebook_record.j2')
 template_replay = env.get_template('moviebook_replay.j2')
-with open("moviebook/moviebook-envoy-cs.yaml", "wb") as record:
-    with open("moviebook/moviebook-envoy-replay-cs.yaml", "wb") as replay:
+with open("moviebook/moviebook-envoy-cs.yaml", "w") as record:
+    with open("moviebook/moviebook-envoy-replay-cs.yaml", "w") as replay:
         for service in dataMap['services']:
             output_from_record_template = template_record.render(service_name=service,customer=customer, cube_application=cube_application, cube_instanceid=cube_instanceid)
             output_from_replay_template = template_replay.render(service_name=service,customer=customer, cube_application=cube_application, cube_instanceid=cube_instanceid)
