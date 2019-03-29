@@ -42,9 +42,9 @@ public class RequestComparatorCache {
         List<TemplateEntry> defaultRules = new ArrayList<>();
         defaultRules.add(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Obj
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str
+        defaultRules.add(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Obj
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str
                 , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
@@ -65,6 +65,7 @@ public class RequestComparatorCache {
         });
         defaultTemplateWithReqId.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str,
                 CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.EqualOptional));
+
 
         defaultRequestComparatorWithoutReqId = new TemplatedRequestComparator(defaultTemplateWithoutReqId
                 , jsonMapper);
