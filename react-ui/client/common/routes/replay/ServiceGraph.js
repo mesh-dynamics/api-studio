@@ -34,51 +34,51 @@ class ServiceGraph extends Component {
                     shape: 'roundrectangle',
                     content: 'data(text)',
                     "text-wrap": "wrap",
-                    'font-size': '10px',
-                    width: 'label',
+                    'width': '200px',
+                    'height': '60px',
+                    'font-family': 'Roboto Condensed',
+                    'font-size': '12px',
+                    //width: 'label',
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'background-color': '#c4c4c4',
                     'text-outline-color': '#c4c4c4',
                     'text-outline-width': '2px',
                     'color': '#616161',
-                    'border-color': '#c4c4c4',
-                    'border-width': '3px',
-                    'overlay-padding': '6px',
-                    'z-index': '10'
+                    'z-index': '10',
+                    'border-color': '#8F8E8E',
+                    'border-width': '2px'
                 }
             },
             {
                 selector: '$node > node',
                 style: {
-                    'font-size': '10px',
-                    'text-valign': 'top',
+                    'font-size': '12px',
+                    'width': '200px',
+                    'height': '100px',
+                    'text-valign': 'center',
                     'text-halign': 'center',
-                    'width': 'auto',
-                    'height': 'auto',
                     'background-color': '#bbb',
                     'text-outline-color': '#555',
                     'text-outline-width': '0px',
                     'color': 'black',
-                    'border-color': 'black',
-                    'border-width': '0px',
-                    'overlay-padding': '6px',
+                    //'overlay-padding': '6px',
                     'z-index': '10'
                 }
             },
             {
                 selector: 'node.selected-node',
                 style: {
-                    'background-color': '#555', 'color': '#fff', 'text-outline-color': '#555', width: '150px'
+                    'background-color': '#e7f9fe',
+                    'color': '#616161',
+                    'text-outline-color': '#e7f9fe',
                 }
             },
             {
                 selector: 'node.replay-node',
                 style: {
-                    'background-color': '#e7f9fe',
-                    'color': '#616161',
-                    'text-outline-color': '#e7f9fe',
-                    width: '150px'
+                    'border-color': '#DC143C',
+                    'border-width': '2px'
                 }
             }
         ]
@@ -264,13 +264,11 @@ class ServiceGraph extends Component {
         const gd = JSON.parse(JSON.stringify(cube.graphData));
     
         // Create nodes
-        let styleN = { "text-wrap": "wrap", width: 150, height: 50 };
         for (const node of gd.nodes) {
             if (cube.analysis && node.data.id == 'movieinfo') {
                 let an = cube.analysis;
                 node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched);
                 node.data.class = 'selected-node';
-                node.style = styleN;
             }
 
             if (node.data.isReplayPoint) {
@@ -287,16 +285,17 @@ class ServiceGraph extends Component {
         }
 
         const _this = this;
+        cy.userZoomingEnabled(false);
 
         cy.removeListener('click', 'node').on('click', 'node', function(evt){
             evt.preventDefault();
-            _this.handleShow();
             var node = evt.target;
-            console.log(node.data());
+            node.addClass('selected-node');
             _this.setState({
                 selectedNode: node.data(),
                 show: true
             });
+            _this.handleShow();
             /*console.log(node);
             cy.$(node).addClass('selected-node');*/
         });

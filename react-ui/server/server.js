@@ -88,8 +88,6 @@ async function getGraphData (req, res, next) {
                 },
                 "style": {
                     "text-wrap": "wrap",
-                    "width": 80,
-                    "height": 80
                 }
             },
             {
@@ -99,8 +97,6 @@ async function getGraphData (req, res, next) {
                 },
                 "style": {
                     "text-wrap": "wrap",
-                    "width": 80,
-                    "height": 80
                 }
             },
             {
@@ -110,8 +106,6 @@ async function getGraphData (req, res, next) {
                 },
                 "style": {
                     "text-wrap": "wrap",
-                    "width": 80,
-                    "height": 80
                 }
             },
             {
@@ -121,8 +115,6 @@ async function getGraphData (req, res, next) {
                 },
                 "style": {
                     "text-wrap": "wrap",
-                    "width": 80,
-                    "height": 80
                 }
             },
             {
@@ -132,8 +124,6 @@ async function getGraphData (req, res, next) {
                 },
                 "style": {
                     "text-wrap": "wrap",
-                    "width": 80,
-                    "height": 80
                 }
             }
         ],

@@ -515,10 +515,6 @@ body .container.body .right_col {
     background: #D9DEE4
 }
 
-.sidebar-nav {
-    font-family: Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-}
-
 code {
     color: black;
     background-color: rgb(250, 249, 196);
@@ -556,7 +552,7 @@ h8{font-size: 8px;}
 
 body {
     color: #525252;
-    font-family: Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family: 'Roboto Condensed', sans-serif, Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     font-size: 13px;
     font-weight: 400;
     line-height: 1.471
