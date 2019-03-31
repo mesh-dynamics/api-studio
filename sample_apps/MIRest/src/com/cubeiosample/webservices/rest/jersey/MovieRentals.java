@@ -107,30 +107,35 @@ public class MovieRentals {
     		String firstNames = film.getString("actors_firstnames");
     		String lastNames = film.getString("actors_lastnames");
     		String filmCounts = film.getString("film_counts");
-    		String displayActors = displayActors(firstNames, lastNames, filmCounts);
-    		film.put("display_actors", displayActors);
+    		List<String> displayActors = displayActors(firstNames, lastNames, filmCounts);
+    		JSONArray array = new JSONArray();
+    		displayActors.forEach(actor-> array.put(actor));
+    		film.put("display_actors", array);
     	}
     }
 
-    private String displayActors(String firstNames, String lastNames, String filmCounts) {
+    private List<String> displayActors(String firstNames, String lastNames, String filmCounts) {
     	LOGGER.debug(String.format("finding display actors for %s, %s, %s", firstNames, lastNames, filmCounts));
     	int[] counts = Arrays.stream(filmCounts.split(",")).mapToInt(Integer::parseInt).toArray();
+		List<String> result = new ArrayList<>();
     	if (counts.length == 0) {
-    		return "";
+    		return result;
     	}
+
     	List<Integer> impActorIndexes = maxKIndexes(counts, config.NUM_ACTORS_TO_DISPLAY);
-    	StringBuilder builder = new StringBuilder();
+    	//StringBuilder builder = new StringBuilder();
     	String[] fNamesArr = firstNames.split(",");
     	String[] lNamesArr = lastNames.split(",");
+
     	for (int i = 0; i < impActorIndexes.size(); ++i) {
     		if (config.DISPLAYNAME_LASTFIRST) {
-    			builder.append(buggyAppend(lNamesArr[impActorIndexes.get(i)], fNamesArr[impActorIndexes.get(i)], ",") + "; ");
+    			result.add(buggyAppend(lNamesArr[impActorIndexes.get(i)], fNamesArr[impActorIndexes.get(i)], ",")/* + "; "*/);
     		} else {
-    			builder.append(buggyAppend(fNamesArr[impActorIndexes.get(i)], lNamesArr[impActorIndexes.get(i)], " ") + "; ");
+    			result.add(buggyAppend(fNamesArr[impActorIndexes.get(i)], lNamesArr[impActorIndexes.get(i)], " ") /*+ "; "*/);
     		}
     	}
-    	LOGGER.debug(String.format("Display actors: %s", builder.toString()));
-    	return builder.toString();
+    	//LOGGER.debug(String.format("Display actors: %s", builder.toString()));
+    	return result;
     }
     
     private String buggyAppend(String name1, String name2, String separator) {
