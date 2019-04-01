@@ -40,7 +40,7 @@ async function fetchAppsList() {
 }
 
 async function getGraphData() {
-    let response, json;
+    /*let response, json;
     let url = `${config.apiUrl}/api/getGraphData`;
     let graphData = {};
     try {
@@ -62,8 +62,78 @@ async function getGraphData() {
         throw e;
     }
     console.log('getGraphData success: ', JSON.stringify(graphData, null, 4));
-    return graphData;
-
+    return graphData;*/
+    return {
+        nodes: [
+            {
+                "data": {
+                    "id": "movieinfo",
+                    "text": "MovieInfo"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "restwrapjdbc",
+                    "text": "RestWrapJDBC"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "details",
+                    "text": "ProductDetails"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "ratings",
+                    "text": "ProductRatings"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "reviews",
+                    "text": "ProductReviews"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            }
+        ],
+        edges: [
+            {
+                id: 's1_s2',
+                source: 'movieinfo',
+                target: 'restwrapjdbc'
+            },
+            {
+                id: 's1_s3',
+                source: 'movieinfo',
+                target: 'details'
+            },
+            {
+                id: 's1_s4',
+                source: 'movieinfo',
+                target: 'ratings'
+            },
+            {
+                id: 's1_s5',
+                source: 'movieinfo',
+                target: 'reviews'
+            }
+        ]
+    };
 }
 
 async function getTestIds (options) {

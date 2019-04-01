@@ -24,7 +24,11 @@ html , body{
 }
 .cube-btn:hover {
     cursor: pointer;
+    background: #00B2FF;
+}
+.cube-btn.disabled {
     background: #DDDDDD;
+    pointer-events: none;
 }
 .select-text {
     text-align: center;
@@ -4392,4 +4396,28 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     margin-bottom: 0 !important;
     background: #00B2FF !important;
     border-bottom: none;
+}
+.modal-dialog {
+    top: 30vh;
+    transform: translateY(-50%);
+}
+.modal-header {
+    padding: 15px;
+    border: 1px solid #00B2FF;
+    background: #00B2FF;
+}
+
+
+
+
+
+.rep {
+    display: inline-block;
+    margin-top: -2px;
+}
+.right-head {
+    padding: 5px 10px;
+    background: #0f0f0f;
+    color: #FFFFFF;
+    margin-bottom: 10px;
 }

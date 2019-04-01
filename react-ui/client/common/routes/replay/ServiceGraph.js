@@ -17,6 +17,7 @@ class ServiceGraph extends Component {
             panelVisible: true,
             selectedNode: null,
             replaySelected: false,
+            replayNode: null,
             show: false,
         }
         this.height = '90vh';
@@ -37,7 +38,7 @@ class ServiceGraph extends Component {
                     'width': '200px',
                     'height': '60px',
                     'font-family': 'Roboto Condensed',
-                    'font-size': '12px',
+                    'font-size': '14px',
                     //width: 'label',
                     'text-valign': 'center',
                     'text-halign': 'center',
@@ -80,6 +81,14 @@ class ServiceGraph extends Component {
                     'border-color': '#DC143C',
                     'border-width': '2px'
                 }
+            },
+            {
+                selector: 'node.virtual-node',
+                style: {
+                    'border-color': '#39B200',
+                    'border-width': '2px',
+                    'border-style': 'dashed'
+                }
             }
         ]
         
@@ -99,13 +108,25 @@ class ServiceGraph extends Component {
         }
         this.setState({
             replaySelected: true,
+            replayNode: JSON.parse(JSON.stringify(this.state.selectedNode)),
             selectedNode: null,
             show: false
         })
     }
 
     setVP() {
-
+        const {cube} = this.props;
+        const gd = cube.graphData;
+        for (const node of gd.nodes) {
+            if (node.data.id == this.state.selectedNode.id) {
+                node.data.isVirtualised = true;
+                break;
+            }
+        }
+        this.setState({
+            selectedNode: null,
+            show: false
+        })
     }
 
     componentWillUnmount () {
@@ -187,22 +208,6 @@ class ServiceGraph extends Component {
         } else {
             graph = <div className="select-text">Please Select a Collection to Proceed</div>
         }
-
-        /*let analysis = 'No Analysis';
-        let report = 'No Report';
-        if (cube.analysis) {
-            analysis = Object.keys(cube.analysis).map((key, index) => {
-                return (<div key={index}> Key: {key}, Value: {cube.analysis[key]}</div>)
-            });
-        }
-
-        if (cube.report) {
-            report = Object.keys(cube.report[1]).map((key, index) => {
-                return (<div key={index}> Key: {key}, Value: {cube.report[1][key]}</div>)
-            });
-        }*/
-
-
  
         return(
             <div>
@@ -217,37 +222,15 @@ class ServiceGraph extends Component {
                     <br/>
                     <Modal show={this.state.show} onHide={this.handleClose}>
                         <Modal.Header closeButton>
-                            <Modal.Title>Node Details</Modal.Title>
+                            <Modal.Title>{this.state.selectedNode && this.state.selectedNode.text ? this.state.selectedNode.text : ''}</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            <h4>Node: {this.state.selectedNode && this.state.selectedNode.text ? this.state.selectedNode.text : ''}</h4>
-                            <span className="cube-btn" onClick={this.setRP}>Set Replay Point</span>&nbsp;&nbsp;
-                            <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
+                            <div className="text-center">
+                                <span className={"cube-btn " + (this.state.replaySelected ? 'disabled' : '')} onClick={this.setRP}>Set Replay Point</span><br/><br/>
+                                <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
+                            </div>
                         </Modal.Body>
-                        <Modal.Footer>
-                            {/*<Button variant="secondary" onClick={this.handleClose}>
-                                Close
-                            </Button>
-                            <Button variant="primary" onClick={this.handleClose}>
-                                Save Changes
-                            </Button>*/}
-                        </Modal.Footer>
                     </Modal>
-                    {/*<div style={{padding: '15px', border: '1px solid gray'}}>
-                        <Row>
-                            <Col md={6} sm={6} xs={6}>
-                                <div style={{overflow: 'hidden'}}>
-                                    {analysis}
-                                </div>
-                            </Col>
-                            <Col md={6} sm={6} xs={6}>
-                                <div style={{overflow: 'hidden'}}>
-                                    {report}
-                                </div>
-                            </Col>
-                        </Row>
-                    </div>
-                    <Clearfix />*/}
                 </div>
             </div>
         )
@@ -273,6 +256,8 @@ class ServiceGraph extends Component {
 
             if (node.data.isReplayPoint) {
                 node.classes = 'replay-node';
+            } else if (node.data.isVirtualised) {
+                node.classes = 'virtual-node';
             }
             cy.add(node);
         }
