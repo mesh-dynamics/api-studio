@@ -135,7 +135,7 @@
     <version.json>20180813</version.json>
     <version.mysql>5.1.46</version.mysql>
     <version.log4j>1.2.17</version.log4j>
-    <version.java>8</version.java>  
+    <version.java>11</version.java>
   </properties>
   <dependencies>
   	<dependency>

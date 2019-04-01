@@ -117,7 +117,7 @@ public class MockServiceHTTP {
 	    		Optional.of(app));
 
 	    TemplateKey key = new TemplateKey(customerid, app , service , path , TemplateKey.Type.Request);
-		RequestComparator comparator = requestComparatorCache.getRequestComparator(key);
+		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
 				.or(() -> {

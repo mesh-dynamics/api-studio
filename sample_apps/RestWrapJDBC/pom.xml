@@ -3,6 +3,13 @@
   <artifactId>RestWrapJDBC</artifactId>
   <packaging>war</packaging>
   <name>RestWrapJDBC</name>
+	<properties>
+		<version.java>11</version.java>
+		<version.jersey>2.27</version.jersey>
+		<version.jackson>2.8.7</version.jackson>
+		<version.dockerfile-maven>1.4.9</version.dockerfile-maven>
+		<version.jaeger>0.32.0</version.jaeger>
+	</properties>
 
 	<parent>
 		<groupId>io.cube.sampleapps</groupId>
@@ -24,14 +31,14 @@
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
+		<plugin>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<version>3.8.0</version>
+			<configuration>
+				<source>${version.java}</source>
+				<target>${version.java}</target>
+			</configuration>
+		</plugin>
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.2.1</version>
@@ -119,12 +126,6 @@
     	</plugins>
     </pluginManagement>
   </build>
-  <properties>
-  	<version.jersey>2.27</version.jersey>
-    <version.jackson>2.8.7</version.jackson>
-    <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
-    <version.jaeger>0.32.0</version.jaeger>
-  </properties>
  <dependencies>
   	<dependency>
   		<groupId>org.json</groupId>

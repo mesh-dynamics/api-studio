@@ -78,7 +78,7 @@ public class Analyzer {
 
             TemplateKey key = new TemplateKey(r.customerid.get() , r.app.get() , r.getService().get() , r.path
                     , TemplateKey.Type.Request);
-            RequestComparator comparator = requestComparatorCache.getRequestComparator(key);
+            RequestComparator comparator = requestComparatorCache.getRequestComparator(key , false);
             matches = rrstore.getRequests(rq, comparator, Optional.of(10))
                         .collect(Collectors.toList());
 

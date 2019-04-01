@@ -3,7 +3,11 @@
   <artifactId>MIClient</artifactId>
   <name>MovieInfo client</name>
   <description>Client app to drive MIRest</description>
-
+	<properties>
+		<version.java>11</version.java>
+		<version.jersey>2.27</version.jersey>
+		<version.jackson>2.8.7</version.jackson>
+	</properties>
 
 	<parent>
 		<groupId>io.cube.sampleapps</groupId>
@@ -25,20 +29,16 @@
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
+		<plugin>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<version>3.8.0</version>
+			<configuration>
+				<source>${version.java}</source>
+				<target>${version.java}</target>
+			</configuration>
+		</plugin>
     </plugins>
   </build>
-  <properties>
-        <version.jersey>2.27</version.jersey>
-        <version.jackson>2.8.7</version.jackson>
-    </properties>
   <dependencies>
     <dependency>
   		<groupId>org.glassfish.jersey.core</groupId>

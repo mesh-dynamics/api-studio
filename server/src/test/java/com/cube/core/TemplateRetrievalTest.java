@@ -63,7 +63,7 @@ public class TemplateRetrievalTest {
             RequestComparatorCache requestComparatorCache = new RequestComparatorCache(templateCache , objectMapper);
             TemplateKey key = new TemplateKey("ravivj" , "movieinfo"
                     , "productpage" , "productpage" , TemplateKey.Type.Request);
-            RequestComparator comparator = requestComparatorCache.getRequestComparator(key);
+            RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
             assertSame(comparator.getCTapp().toString() , "Equal") ;
             assertSame(comparator.getCTcollection().toString() , "Equal") ;
             assertSame(comparator.getCTcustomerid().toString() , "Equal") ;
