@@ -124,8 +124,10 @@ record() {
 }
 
 stop_record() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+	COLLECTION_NAME=$(curl -X GET \
+  "http://$GATEWAY_URL/cs/currentcollection?customerid=$USER&app=$CUBE_APPLICATION&instanceid=$CUBE_INSTANCEID" \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache')
 	curl -X POST \
   http://$GATEWAY_URL/cs/stop/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -153,7 +155,7 @@ replay() {
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache' 
+  -H 'cache-control: no-cache'
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
@@ -218,7 +220,7 @@ main() {
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
+    *) echo "This script expect one of these system argument(init, setup, record, stop_recording, replay, stop_replay, analyze, clean).";;
   esac
 }
 
