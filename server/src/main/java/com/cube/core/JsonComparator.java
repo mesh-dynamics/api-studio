@@ -48,7 +48,10 @@ public class JsonComparator implements Comparator {
 	 */
 	@Override
 	public Match compare(String lhs, String rhs) {
-		
+
+		LOGGER.debug("COMPARING :: DOC 1 :: " + lhs);
+		LOGGER.debug("COMPARING :: DOC 2 :: " + rhs);
+
 		JsonNode lhsroot;
 		JsonNode rhsroot;
 
@@ -80,8 +83,17 @@ public class JsonComparator implements Comparator {
 		
 		int numerrs = result.size();
 		for (var diff : diffs) {
+			try {
+				LOGGER.debug("GOT DIFF :: " + jsonMapper.writeValueAsString(diff));
+			} catch (JsonProcessingException e) {
+				LOGGER.error("Unable to write diff as string :: " + e.getMessage());
+			}
 			TemplateEntry rule = template.getRule(diff.path);
-			
+			try {
+				LOGGER.debug("GOT rule corresponding to diff :: " + jsonMapper.writeValueAsString(rule));
+			} catch (JsonProcessingException e) {
+				LOGGER.error("Unable to write template as string :: " + e.getMessage());
+			}
 			switch (diff.op) {
 			case Diff.ADD:
 			case Diff.REPLACE:
@@ -105,6 +117,11 @@ public class JsonComparator implements Comparator {
 			}
 
 			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
+			try {
+				 LOGGER.debug("Final resolition diff :: " + jsonMapper.writeValueAsString(diff));
+			} catch (JsonProcessingException e) {
+				LOGGER.error("Unable to write resolution diff as string :: " + e.getMessage());
+			}
 			result.add(diff);
 		}
 		
@@ -262,6 +279,10 @@ public class JsonComparator implements Comparator {
 			LOGGER.error("Internal error - this should never happen");
 			return ERR;
 		});
+	}
+
+	public boolean rulesExist() {
+		return !template.getRules().isEmpty();
 	}
 
 	private final CompareTemplate template;

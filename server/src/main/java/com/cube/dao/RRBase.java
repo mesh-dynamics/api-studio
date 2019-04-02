@@ -4,20 +4,22 @@
 package com.cube.dao;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Optional;
 
-import javax.annotation.Generated;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.cube.core.Comparator;
-import com.cube.core.CompareTemplate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+
+import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate;
+import com.cube.core.JsonComparator;
 
 public class RRBase {
 
@@ -126,7 +128,8 @@ public class RRBase {
 		template.getRule("/reqid").checkMatchStr(reqid, rhs.reqid, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
-		if (getMimeType() == APPLICATION_JSON) {
+		if (getMimeType() == APPLICATION_JSON || ((bodyComparator instanceof JsonComparator)
+				&& ((JsonComparator) bodyComparator).rulesExist())) {
 			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODYPATH);
 		} else {
 			// treat as simple string

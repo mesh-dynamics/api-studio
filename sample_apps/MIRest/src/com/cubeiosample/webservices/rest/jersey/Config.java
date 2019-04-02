@@ -140,6 +140,13 @@ public class Config {
         if (USE_KUBE) {
         	overrideConfigWithKubeSettings();
         }
+
+
+        LOGGER.info("final value for concat bug is :: " + CONCAT_BUG);
+        LOGGER.info("final value for number of actors to display is :: " + NUM_ACTORS_TO_DISPLAY);
+        LOGGER.info("final value for use caching is :: " + USE_CACHING);
+        LOGGER.info("final value for last name first is :: " + DISPLAYNAME_LASTFIRST);
+
 	}
 	
 	public String getProperty(String key)
