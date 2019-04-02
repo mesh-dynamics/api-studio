@@ -67,9 +67,16 @@ public class ReplayWS {
 		Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
 		String s = replays.map(r -> r.replayid).reduce("", (res, x) -> res + "; " + x);
 		if (!s.isEmpty()) {
-			return Response.ok(String.format("{\"Force complete these replay ids: %s\"}", s)).build();
+			return Response.status(Status.CONFLICT).entity(String.format("{\"Force complete these replay ids: %s\"}", s)).build();
 		}
-		
+
+		// check if recording or replay is ongoing for (customer, app, instanceid)
+		Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
+				instanceid);
+		if (errResp.isPresent()) {
+			return errResp.get();
+		}
+
 		return endpoint
 				.map(e -> {
 					return instanceid.map(inst -> {
