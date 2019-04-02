@@ -84,7 +84,7 @@ public class FindAndRentMovies {
 
 		  // play traffic for recording.
 		for (int i=0; i<nm; i++) {
-			String movie = movies[1];
+			String movie = movies[i];
 			  // list films
 			  Response response1 = callWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
 			  if (response1 == null || response1.getStatus() != 200) {
