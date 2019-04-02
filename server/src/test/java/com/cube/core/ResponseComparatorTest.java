@@ -5,16 +5,21 @@ import com.cube.ws.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Optional;
 
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import static com.cube.dao.RRBase.APPPATH;
 import static com.cube.dao.RRBase.COLLECTIONPATH;
@@ -25,10 +30,13 @@ import static com.cube.dao.RRBase.REQIDPATH;
 import static com.cube.dao.RRBase.RRTYPEPATH;
 import static com.cube.dao.RRBase.SERVICEFIELD;
 import static com.cube.dao.Request.*;
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 public class ResponseComparatorTest {
 
     static Config config;
+    JSONObject object;
+    static ObjectMapper mapper;
     static String[] id;
 
     /**
@@ -50,6 +58,8 @@ public class ResponseComparatorTest {
             "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
         };
         id = idArr;
+        mapper = config.jsonmapper;
+        mapper.registerModule(new JavaTimeModule());
     }
 
     /**
@@ -64,7 +74,7 @@ public class ResponseComparatorTest {
      */
     @BeforeEach
     void setUp() throws Exception {
-//        readJSONFile("JsonComparator.json");
+        readJSONFile("ResponseComparator.json");
     }
 
     /**
@@ -72,6 +82,99 @@ public class ResponseComparatorTest {
      */
     @AfterEach
     void tearDown() throws Exception {
+    }
+
+    public void readJSONFile(String url) {
+        try {
+            File file = new File(JsonComparatorTest.class.getClassLoader().getResource(url).toURI().getPath());
+            String data = readFileToString(file, Charset.defaultCharset());
+            try {
+                object = new JSONObject(data);
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void compareTest(JSONObject testData, Response response1, Response response2) throws JsonProcessingException, JSONException{
+        JSONArray rules = testData.getJSONArray("rules");
+        String expected = testData.get("output").toString();
+        System.out.println(mapper.writeValueAsString(response1));
+        System.out.println(mapper.writeValueAsString(response2));
+        CompareTemplate template = new CompareTemplate();
+
+        for (int i = 0; i < rules.length(); i++) {
+            JSONObject ruleObj = rules.getJSONObject(i);
+            String path = ruleObj.getString("path");
+            DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
+            PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
+            ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+            String customization = ruleObj.getString("customization");
+            TemplateEntry rule;
+            if (customization.isEmpty()) {
+                rule = new TemplateEntry(path, dataType, presenceType, comparisonType);
+            } else {
+                rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
+            }
+            template.addRule(rule);
+        }
+
+        TemplatedResponseComparator comparator = new TemplatedResponseComparator(template, mapper);
+        Match m = comparator.compare(response1, response2);
+
+        String mjson = config.jsonmapper.writeValueAsString(m);
+        JSONAssert.assertEquals(expected, mjson, false);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Exact Match Test")
+    final void exactMatchTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("exactMatch");
+        String res1 = testData.get("res1").toString();
+        String res2 = testData.get("res2").toString();
+        Optional<Response> response1 = config.rrstore.getResponse(res1);
+        Optional<Response> response2 = config.rrstore.getResponse(res2);
+        compareTest(testData, response1.get(), response2.get());
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Header template test: Positive")
+    final void headerTemplatePositiveTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("headerTemplatePositive");
+        String res1 = testData.get("res1").toString();
+        String res2 = testData.get("res2").toString();
+        Response response1 = config.rrstore.getResponse(res1).get();
+        Response response2 = config.rrstore.getResponse(res2).get();
+        compareTest(testData, response1, response2);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Header template test: Negative")
+    final void headerTemplateNegativeTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("headerTemplateNegative");
+        String res1 = testData.get("res1").toString();
+        String res2 = testData.get("res2").toString();
+        Response response1 = config.rrstore.getResponse(res1).get();
+        Response response2 = config.rrstore.getResponse(res2).get();
+        response2.hdrs.putSingle("content-type",response2.hdrs.getFirst("content-type") + "K");
+        compareTest(testData, response1, response2);
     }
 
     /**
@@ -84,12 +187,12 @@ public class ResponseComparatorTest {
     final void defaultComparisonTest() throws IOException, JSONException {
         ObjectMapper mapper = config.jsonmapper;
         mapper.registerModule(new JavaTimeModule());
-        Optional<Response> response1 = config.rrstore.getResponse(id[0]);
+        Optional<Response> response1 = config.rrstore.getResponse(id[1]);
         System.out.println(mapper.writeValueAsString(response1));
-        Optional<Response> response2 = config.rrstore.getResponse(id[1]);
+        Optional<Response> response2 = config.rrstore.getResponse(id[2]);
         System.out.println(mapper.writeValueAsString(response2));
         CompareTemplate template = new CompareTemplate();
-        template.addRule(new TemplateEntry("/body", DataType.Str, PresenceType.Required, ComparisonType.Equal));
+        template.addRule(new TemplateEntry("/status", DataType.Str, PresenceType.Required, ComparisonType.Equal));
         template.addRule(new TemplateEntry(PATHPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         template.addRule(new TemplateEntry(QPARAMPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         template.addRule(new TemplateEntry(FPARAMPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));

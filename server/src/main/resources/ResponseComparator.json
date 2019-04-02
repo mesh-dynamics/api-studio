@@ -1,0 +1,49 @@
+{
+    "typeValidationNegative" : {
+        "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "rules": [
+            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+
+        ],
+        "output": {
+            "mt":           "ExactMatch",
+            "matchmeta":    "",
+            "diffs": []
+        }
+    },
+
+    "headerTemplatePositive" : {
+        "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "rules": [
+            { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
+        ],
+        "output": {
+            "mt":           "ExactMatch",
+            "matchmeta":    "",
+            "diffs": []
+        }
+    },
+
+    "headerTemplateNegative" : {
+        "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "rules": [
+            { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
+        ],
+        "output": {
+            "mt":           "NoMatch",
+            "matchmeta":    "JsonDiff",
+            "diffs": [
+                { "op": "replace",  "path": "/hdr/content-type", "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     }
+            ]
+        }
+    }
+}
