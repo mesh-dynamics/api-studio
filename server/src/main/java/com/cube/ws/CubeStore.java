@@ -123,7 +123,7 @@ public class CubeStore {
 	    Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
 	    Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
 	    
-	    LOGGER.debug(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
+	    LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 	    
 	    Optional<String> collection = getCurrentCollectionIfEmpty(inpcollection, customerid, app, instanceid);
 	    

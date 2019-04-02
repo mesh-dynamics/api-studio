@@ -18,19 +18,22 @@
       "prefixPath": "",
       "rules": [
         {
-          "path": "/return_updates",
-          "pt": "Required",
-          "dt": "Int"
+          "path": "/body/return_updates",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "EqualOptional"
         },
         {
-          "path": "/payment_updates",
-          "pt": "Required",
-          "dt": "Int"
+          "path": "/body/payment_updates",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "EqualOptional"
         },
         {
-          "path": "/rental_id",
-          "pt": "Required",
-          "dt": "Int"
+          "path": "/body/rental_id",
+          "pt": "Optional",
+          "dt": "Int" ,
+          "ct" : "EqualOptional"
         }
       ]
     }
@@ -44,12 +47,12 @@
       "prefixPath": "",
       "rules": [
         {
-          "path": "/0/store_id",
+          "path": "/body/0/store_id",
           "pt": "Optional",
           "dt": "Int"
         },
         {
-          "path": "/1/store_id",
+          "path": "/body/1/store_id",
           "pt": "Optional",
           "dt": "Int"
         }
@@ -65,19 +68,22 @@
       "prefixPath": "",
       "rules": [
         {
-          "path": "/inventory_id",
+          "path": "/body/inventory_id",
           "pt": "Required",
-          "dt": "Int"
+          "dt": "Int",
+          "ct": "EqualOptional"
         },
         {
-          "path": "/rent",
-          "pt": "Required",
-          "dt": "Float"
+          "path": "/body/rent",
+          "pt": "Optional",
+          "dt": "Float",
+          "ct" : "EqualOptional"
         },
         {
-          "path": "/num_updates",
-          "pt": "Required",
-          "dt": "Int"
+          "path": "/body/num_updates",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "EqualOptional"
         }
       ]
     }
@@ -90,44 +96,51 @@
       "prefixPath": "",
       "rules": [
         {
-          "path": "/actors_lastnames",
+          "path": "/body/0/actors_lastnames",
           "pt": "Required",
-          "dt": "Str"
+          "dt": "Str",
+          "ct":"Equal"
         },
         {
-          "path": "/display_actors",
+          "path": "/body/0/display_actors",
           "pt": "Required",
-          "dt": "Str"
+          "dt": "RptArray",
+          "ct": "EqualOptional"
         },
         {
-          "path": "/film_id",
-          "pt": "Required",
-          "dt": "Int"
+          "path": "/body/0/display_actors/*",
+          "pt":"Optional",
+          "dt":"Str",
+          "ct":"EqualOptional"
         },
         {
-          "path": "/title",
+          "path": "/body/0/film_id",
           "pt": "Required",
-          "dt": "Str"
+          "dt": "Int",
+          "ct": "Equal"
         },
         {
-          "path": "/actors_firstnames",
+          "path": "/body/0/title",
           "pt": "Required",
-          "dt": "Str"
+          "dt": "Str",
+          "ct" : "Equal"
         },
         {
-          "path": "/filmcounts",
+          "path": "/body/0/actors_firstnames",
           "pt": "Required",
-          "dt": "Str"
+          "dt": "Str",
+          "ct" : "Equal"
         },
         {
-          "path": "/bookinfo/reviews",
+          "path": "/body/0/film_counts",
           "pt": "Required",
+          "dt": "Str",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/bookinfo",
+          "pt": "Optional",
           "dt": "RptArray"
-        },
-        {
-          "path": "/bookinfo/id",
-          "pt": "Required",
-          "dt": "Int"
         }
       ]
     }

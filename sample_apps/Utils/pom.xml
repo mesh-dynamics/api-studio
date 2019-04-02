@@ -1,6 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>Utils</artifactId>
+	<properties>
+		<version.java>11</version.java>
+		<version.jersey>2.27</version.jersey>
+		<version.jackson>2.8.7</version.jackson>
+		<version.dockerfile-maven>1.4.9</version.dockerfile-maven>
+		<version.jaeger>0.32.0</version.jaeger>
+		<version.json>20180813</version.json>
+		<version.mysql>5.1.46</version.mysql>
+		<version.log4j>1.2.17</version.log4j>
+	</properties>
 
 	<parent>
 		<groupId>io.cube.sampleapps</groupId>
@@ -11,25 +21,16 @@
 	<build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
+		<plugin>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<version>3.8.0</version>
+			<configuration>
+				<source>${version.java}</source>
+				<target>${version.java}</target>
+			</configuration>
+		</plugin>
     </plugins>
   </build>
-  <properties>
-  	<version.jersey>2.27</version.jersey>
-    <version.jackson>2.8.7</version.jackson>
-    <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
-    <version.jaeger>0.32.0</version.jaeger>
-    <version.json>20180813</version.json>
-    <version.mysql>5.1.46</version.mysql>
-    <version.log4j>1.2.17</version.log4j>
-  </properties>
   <dependencies>
   	<dependency>
   		<groupId>org.json</groupId>

@@ -78,7 +78,7 @@ public class Analyzer {
 
             TemplateKey key = new TemplateKey(r.customerid.get() , r.app.get() , r.getService().get() , r.path
                     , TemplateKey.Type.Request);
-            RequestComparator comparator = requestComparatorCache.getRequestComparator(key);
+            RequestComparator comparator = requestComparatorCache.getRequestComparator(key , false);
             matches = rrstore.getRequests(rq, comparator, Optional.of(10))
                         .collect(Collectors.toList());
 
@@ -167,8 +167,9 @@ public class Analyzer {
                 }));
             } catch(RuntimeException e) {
                 // if analysis retrieval caused an error, log the error and return NO MATCH
-                LOGGER.error("Cache Exception while retrieving template from cache for recorded request :: " +
-                        recordreq.reqid.get() + " " +  e.getCause().getMessage());
+                LOGGER.error("Exception while analyzing response :: " +
+                        recordreq.reqid.orElse(" -1") + " " +  e.getMessage() + " "
+                        + (e.getStackTrace()[0]).getClassName() + " " + (e.getStackTrace()[0]).getLineNumber());
                 return Optional.empty();
             }
 

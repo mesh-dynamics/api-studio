@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -315,12 +316,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<PathCT> rootpct = Optional.empty();
 
         for (PathCT pct : pathCTS) {
-            if (pct.path.isBlank()) {
+            if (pct.path.equals('/') || pct.path.isBlank()) {
                 // if path is empty, it means the rule is at rule level, so should be applied to it descendents
                 // this is the rule at the root level
                 rootpct = Optional.of(pct);
             } else {
-                addToQuery(query, qstr, fieldname, fvalmap, pct.ct, pct.path);
+                addToQuery(query, qstr, fieldname, fvalmap, pct.ct, StringUtils.removeStart(pct.path, "/"));
             }
         }
         // check for inheritance of paths not covered in pathCTs

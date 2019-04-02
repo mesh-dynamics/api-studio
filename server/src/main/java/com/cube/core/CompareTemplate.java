@@ -123,6 +123,7 @@ public class CompareTemplate {
 		getRules().forEach(rule -> {
 			if (rule.path.startsWith(prefix)) {
 				// strip the prefix from the path, this is needed other paths will not match while doing json comparison
+				LOGGER.debug("Found a rule for " + prefix +  "::  " + rule.path + " " + rule.dt + " " + rule.pt + " " + rule.ct);
 				TemplateEntry newrule = new TemplateEntry(rule.path.substring(prefix.length()), rule.dt, rule.pt, rule.ct, rule.customization);
 				ret.addRule(newrule);
 			}

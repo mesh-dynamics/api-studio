@@ -178,6 +178,8 @@ public class TemplateEntry {
             return resolution;
         }
 
+        // if resolution is not error and compare type is null ... a null point
+        // exception will be thrown
         switch (ct) {
             case Equal:
             case EqualOptional:
