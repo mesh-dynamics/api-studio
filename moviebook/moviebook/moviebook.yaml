@@ -212,7 +212,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: movieinfo-v1
+  name: movieinfo-v1  #movieinfo without bugs
 spec:
   replicas: 1
   template:
@@ -253,13 +253,63 @@ spec:
           - name: DISPLAYNAME_LASTFIRST
             value: "true"
           - name: NUM_ACTORS_TO_DISPLAY
-            value: 2
+            value: 4
           - name: RATINGS_5PT_SCALE
             value: "true"
           - name: CONCAT_BUG
             value: false
----        
 
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: movieinfo-v2    #Movieinfo with bugs
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: movieinfo
+        version: v2
+    spec:
+      containers:
+      - name: movieinfo
+        image: cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+          - name: USE_KUBE
+            value: "true"
+          - name: MYSQL_HOST
+            value: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
+          - name: MYSQL_PORT
+            value: "3306"
+          - name: MYSQL_DBNAME
+            value: sakila
+          - name: MYSQL_USERNAME
+            value: cube
+          - name: MYSQL_PWD
+            value: cubeio12
+          - name: RESTWRAPJDBC_URI
+            value: http://restwrapjdbc:8080/restsql
+          - name: GET_BOOK_REVIEWS
+            value: "true"
+          - name: USE_CACHING
+            value: "false"
+          - name: ADD_TRACING_HEADERS
+            value: "true"
+          - name: USE_TOKEN_AUTHENTICATION
+            value: "false"
+          - name: DISPLAYNAME_LASTFIRST
+            value: "flase"
+          - name: NUM_ACTORS_TO_DISPLAY
+            value: 2
+          - name: RATINGS_5PT_SCALE
+            value: "true"
+          - name: CONCAT_BUG
+            value: true
+---
 ##################################################################################################
 # Rest Wrap JDBC services
 ##################################################################################################
