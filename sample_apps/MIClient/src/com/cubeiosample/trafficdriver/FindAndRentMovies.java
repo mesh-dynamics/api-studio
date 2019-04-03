@@ -8,6 +8,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -71,15 +73,18 @@ public class FindAndRentMovies {
 	}
 
 	
-	public void driveTraffic() throws Exception {
+	public void driveTraffic(Optional<Integer> numMovies) throws Exception {
 		if (useAuthToken) {
 			getToken();
 		}
 		warmMovieCache();
 		waitForListenerDeploy();
-		
-		  // play traffic for recording. 
-		  for (String movie : movies) {
+
+		int nm = numMovies.orElse(movies.length);
+
+		  // play traffic for recording.
+		for (int i=0; i<nm; i++) {
+			String movie = movies[i];
 			  // list films
 			  Response response1 = callWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
 			  if (response1 == null || response1.getStatus() != 200) {

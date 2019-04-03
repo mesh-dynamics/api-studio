@@ -19,7 +19,6 @@ import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
-import com.cube.dao.ReqRespStoreImplBase.RecordOrReplay;
 
 /**
  * @author prasad
@@ -298,4 +297,55 @@ public interface ReqRespStore {
 	 */
 	boolean commit();
 
+	class RecordOrReplay {
+
+
+		public Optional<String> getCollection() {
+			// Note that replayid is the collection for replay requests/responses
+			// replay.collection refers to the original collection
+			// return replay collection if non empty, else return recording collection
+			return replay.map(replay -> replay.replayid)
+					.or(() -> recording.map(recording -> recording.collection));
+		}
+
+		public Optional<String> getRecordingCollection() {
+			// return collection of recording corresponding to replay if non empty, else return recording collection
+			return replay.map(replay -> replay.collection)
+					.or(() -> recording.map(recording -> recording.collection));
+		}
+
+		public boolean isRecording() {
+			return recording.isPresent();
+		}
+
+		/**
+		 *
+		 */
+		private RecordOrReplay(Optional<Recording> recording, Optional<Replay> replay) {
+			super();
+			this.replay = replay;
+			this.recording = recording;
+		}
+
+		private RecordOrReplay(Recording recording) {
+			this(Optional.of(recording), Optional.empty());
+		}
+
+		public RecordOrReplay(Replay replay) {
+			this(Optional.empty(), Optional.of(replay));
+		}
+
+		public static RecordOrReplay createFromRecording(Recording recording) {
+			RecordOrReplay rr = new RecordOrReplay(recording);
+			return rr;
+		}
+
+		public static RecordOrReplay createFromReplay(Replay replay) {
+			RecordOrReplay rr = new RecordOrReplay(replay);
+			return rr;
+		}
+
+		public final Optional<Recording> recording;
+		public final Optional<Replay> replay;
+	}
 }

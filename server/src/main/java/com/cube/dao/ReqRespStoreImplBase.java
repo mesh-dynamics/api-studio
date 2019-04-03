@@ -190,48 +190,6 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		final String instanceid;
 	}
 
-	static class RecordOrReplay {
-		
-		
-		public Optional<String> getCollection() {
-			// Note that replayid is the collection for replay requests/responses
-			// replay.collection refers to the original collection
-			// return replay collection if non empty, else return recording collection
-			return replay.map(replay -> replay.replayid)
-					.or(() -> recording.map(recording -> recording.collection));
-		}
-
-		public Optional<String> getRecordingCollection() {
-			// return collection of recording corresponding to replay if non empty, else return recording collection
-			return replay.map(replay -> replay.collection)
-					.or(() -> recording.map(recording -> recording.collection));
-		}
-		
-		/**
-		 * 
-		 */
-		private RecordOrReplay() {
-			super();
-			replay = Optional.empty();
-			recording = Optional.empty();
-		}
-
-		public static RecordOrReplay createFromRecording(Recording recording) {
-			RecordOrReplay rr = new RecordOrReplay();
-			rr.recording = Optional.of(recording);
-			return rr;
-		}
-
-		public static RecordOrReplay createFromReplay(Replay replay) {
-			RecordOrReplay rr = new RecordOrReplay();
-			rr.replay = Optional.of(replay);
-			return rr;
-		}
-
-		Optional<Recording> recording;
-		Optional<Replay> replay;
-	}
-	
 	// map from (cust, app, instance) -> collection. collection is empty if there is no current recording or replay
 	private ConcurrentHashMap<CollectionKey, RecordOrReplay> currentCollectionMap = new ConcurrentHashMap<>();
 
