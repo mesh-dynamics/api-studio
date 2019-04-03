@@ -22,22 +22,3 @@ spec:
         host: productpage
         port:
           number: 9080
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: movieinfo
-spec:
-  hosts:
-  - "*"
-  gateways:
-  - moviebook-gateway
-  http:
-  - match:
-    - uri:
-        prefix: /minfo
-    route:
-    - destination:
-        host: movieinfo
-        port:
-          number: 8080
