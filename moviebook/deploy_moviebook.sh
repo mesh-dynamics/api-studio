@@ -37,6 +37,7 @@ init() {
 	    echo "Run the following command in your shell: telepresence --new-deployment cubews --expose 8080"
 	  fi
 	fi
+
 }
 
 setup() {
@@ -182,13 +183,13 @@ analyze() {
   -H 'cache-control: no-cache'
 }
 clean() {
-	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
-	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
+	stop_replay
 	kubectl delete -f moviebook/moviebook.yaml
 	kubectl delete -f cube/service.yaml 2> /dev/null
 	kubectl delete -f cube/service_entry.yaml
 	kubectl delete -f moviebook-gateway.yaml
 	kubectl delete -f moviebook/bookinfo_virtualservice.yaml
+	kubectl delete -f moviebook/movieinfo-v1.yaml
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
