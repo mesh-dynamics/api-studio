@@ -57,7 +57,7 @@
         ],
         "output": {
             "mt":           "ExactMatch",
-            "matchmeta":    "JsonDiff",
+            "matchmeta":    "",
             "diffs": []
         }
     },
@@ -72,7 +72,7 @@
             { "path": "/body/pages",        "dataType": "Float","presenceType": "Required", "comparisonType": "Equal",          "customization": "" }
         ],
         "output": {
-            "mt":           "ExactMatch",
+            "mt":           "NoMatch",
             "matchmeta":    "",
             "diffs": [
                 { "op": "noop",     "path": "/body/author", "value": "William Shakespeare",                             "resolution": "ERR_ValTypeMismatch" },

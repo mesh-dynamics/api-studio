@@ -80,6 +80,7 @@ class JsonComparatorTest  {
 			e.printStackTrace();
 		}
 	}
+    //Todo: Add a testcase for combination of fields missing from LHS and different comparison type / presence type in RHS
 
 	private void compareTest(JSONObject testData) throws JsonProcessingException, JSONException{
 		String json1 = testData.get("json1").toString();

@@ -106,6 +106,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Exact Match Test")
     final void exactMatchTest() throws IOException, JSONException {
+        //Todo: Change expected output after bugs are fixed in comparator methods
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -122,6 +123,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Positive")
     final void headerTemplatePositiveTest() throws IOException, JSONException {
+        //Todo: Change expected output after bugs are fixed in comparator methods
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -138,6 +140,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Negative")
     final void headerTemplateNegativeTest() throws IOException, JSONException {
+        //Todo: Change expected output after bugs are fixed in comparator methods
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -145,6 +148,20 @@ public class ResponseComparatorTest {
         Response response2 = config.rrstore.getResponse(res2).get();
         response2.hdrs.putSingle("content-type",response2.hdrs.getFirst("content-type") + "K");
         compareTest(testData, response1, response2);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Same Response body test: Positive")
+    final void sameResponseBodyPositiveTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("sameResponseBodyPositive");
+        String res1 = testData.get("res1").toString();
+        Response response1 = config.rrstore.getResponse(res1).get();
+        compareTest(testData, response1, response1);
     }
 
     /**
