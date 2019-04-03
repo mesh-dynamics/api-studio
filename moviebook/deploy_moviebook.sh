@@ -23,6 +23,7 @@ init() {
 	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
 	kubectl apply -f moviebook/moviebook_virtualservice.yaml
+	kubectl apply -f moviebook/movieinfo-v1.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
 	kubectl apply -f cube/solr_service_entry.yaml
@@ -147,6 +148,7 @@ replay() {
 	generate_mock_all_yaml
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
+	kubectl apply -f moviebook/movieinfo-v2.yaml
 	REPLAY_ID=$(curl -X POST \
   http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -168,6 +170,7 @@ replay() {
 stop_replay() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
+	kubectl apply -f moviebook/movieinfo-v1.yaml
 }
 
 analyze() {
