@@ -22,7 +22,7 @@ init() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
-	kubectl apply -f moviebook/moviebook_virtualservice.yaml
+	kubectl apply -f moviebook/bookinfo_virtualservice.yaml
 	kubectl apply -f moviebook/movieinfo-v1.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
@@ -188,7 +188,7 @@ clean() {
 	kubectl delete -f cube/service.yaml 2> /dev/null
 	kubectl delete -f cube/service_entry.yaml
 	kubectl delete -f moviebook-gateway.yaml
-	kubectl delete -f moviebook/moviebook_virtualservice.yaml
+	kubectl delete -f moviebook/bookinfo_virtualservice.yaml
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
