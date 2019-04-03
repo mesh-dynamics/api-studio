@@ -1,5 +1,5 @@
 {
-    "typeValidationNegative" : {
+    "exactMatch" : {
         "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
@@ -43,6 +43,70 @@
             "matchmeta":    "JsonDiff",
             "diffs": [
                 { "op": "replace",  "path": "/hdr/content-type", "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     }
+            ]
+        }
+    },
+    "sameResponseBodyPositive" : {
+        "res1": "72471111-e096-4494-942e-5fa942c07e90",
+        "rules": [
+            { "path": "/body/id",           "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/body/author",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/body/year",         "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/body/type",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body/pages",        "dataType": "Float","presenceType": "Required", "comparisonType": "Equal",          "customization": "" }
+        ],
+        "output": {
+            "mt":           "ExactMatch",
+            "matchmeta":    "JsonDiff",
+            "diffs": []
+        }
+    },
+
+    "sameResponseBodyNegative" : {
+        "res1": "72471111-e096-4494-942e-5fa942c07e90",
+        "rules": [
+            { "path": "/body/id",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/body/author",       "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/body/year",         "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
+            { "path": "/body/type",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body/pages",        "dataType": "Float","presenceType": "Required", "comparisonType": "Equal",          "customization": "" }
+        ],
+        "output": {
+            "mt":           "ExactMatch",
+            "matchmeta":    "",
+            "diffs": [
+                { "op": "noop",     "path": "/body/author", "value": "William Shakespeare",                             "resolution": "ERR_ValTypeMismatch" },
+                { "op": "noop",     "path": "/body/id",     "value": 0,                                                 "resolution": "ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/body/year",   "value": 1000,                  "fromValue": 1595,          "resolution": "ERR_ValMismatch"     },
+                { "op": "replace",  "path": "/body/type",   "value": "softcopy",            "fromValue": "paperback",   "resolution": "OK_OptionalMismatch" },
+                { "op": "replace",  "path": "/body/pages",  "value": 3.14,                  "fromValue": 200,           "resolution": "ERR_ValTypeMismatch" }
+            ]
+        }
+    },
+
+    "differentResponseBody" : {
+        "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "res2": "72471111-e096-4494-942e-5fa942c07e90",
+        "rules": [
+            { "path": "/body/MIRest status",  "dataType": "Str",  "presenceType": "Optional", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/body/id",             "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/body/author",         "dataType": "Str",  "presenceType": "Default", "comparisonType":  "Ignore",  "customization": "" },
+            { "path": "/body/year",           "dataType": "Int",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" }
+        ],
+        "output": {
+            "mt":           "FuzzyMatch",
+            "matchmeta":    "",
+            "diffs": [
+                { "op": "remove",   "path": "/body/MIRest status",  "value": "MovieInfo is healthy",    "resolution": "OK_Optional"         },
+                { "op": "add",      "path": "/body/id",             "value": 0,                         "resolution": "OK_OtherValInvalid"  },
+                { "op": "add",      "path": "/body/author",         "value": "William Shakespeare",     "resolution": "OK_Ignore"           },
+                { "op": "add",      "path": "/body/year",           "value": 1595,                      "resolution": "OK_Ignore"           },
+                { "op": "add",      "path": "/body/type",           "value": "paperback",               "resolution": "OK"                  },
+                { "op": "add",      "path": "/body/pages",          "value": 200,                       "resolution": "OK"                  },
+                { "op": "add",      "path": "/body/publisher",      "value": "PublisherA",              "resolution": "OK"                  },
+                { "op": "add",      "path": "/body/language",       "value": "English",                 "resolution": "OK"                  },
+                { "op": "add",      "path": "/body/ISBN-10",        "value": "1234567890",              "resolution": "OK"                  },
+                { "op": "add",      "path": "/body/ISBN-13",        "value": "123-1234567890",          "resolution": "OK"                  }
             ]
         }
     }
