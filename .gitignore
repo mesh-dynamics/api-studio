@@ -3,3 +3,4 @@ moviebook-envoy-replay-cs.yaml
 services.yaml
 mock-all-except-moviebook.yaml
 replayid.temp
+*.log

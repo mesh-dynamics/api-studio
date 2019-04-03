@@ -31,12 +31,13 @@ sudo pip install jinja2
 4. Add service names to `moviebook/service.yaml` for which lua filters will be generated.
 
 ### Deploy
+
+NOTE: If you wish to run cubews in your IDE, make sure your `Application context` is set to `/` under `Deployment` tab in Tomcat Server configuration.
 ```
 ./deploy_moviebook.sh init
 ```
 - This will deploy the moviebook app on the local kubernetes cluster.
 - Generate Lua filters
-- Open `/minfo/health` endpoint in your default browser.
 
 ### Record Traffic
 ```

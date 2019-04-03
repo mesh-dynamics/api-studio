@@ -15,6 +15,10 @@ export_aws_env_variables() {
 }
 
 init() {
+	if [ "$ENVIRONMENT" = "minikube" ]; then
+	  echo "Do you want to run cubews on your IDE?(yes/no)"
+	  read CHOICE
+	fi
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
@@ -25,9 +29,13 @@ init() {
 	./fetch_servicenames.py
 	./generate_lua_filters.py
 	echo "lua filters generated"
-
-	sleep 15
-	open http://$GATEWAY_URL/
+	if [ "$ENVIRONMENT" = "minikube" ]; then
+	  if [ "$CHOICE" = "yes" ]; then
+	    kubectl delete deployments cubews-v1
+	    kubectl delete svc cubews
+	    echo "Run the following command in your shell: telepresence --new-deployment cubews --expose 8080"
+	  fi
+	fi
 }
 
 setup() {
@@ -172,12 +180,13 @@ clean() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
 	kubectl delete -f moviebook/moviebook.yaml
-	kubectl delete -f cube/service.yaml
+	kubectl delete -f cube/service.yaml 2> /dev/null
 	kubectl delete -f cube/service_entry.yaml
 	kubectl delete -f moviebook-gateway.yaml
 	kubectl delete -f moviebook/moviebook_virtualservice.yaml
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
+	kubectl delete deployments cubews 2> /dev/null
 	if [ -f replayid.temp ]; then
 	  rm replayid.temp
 	fi
@@ -196,6 +205,8 @@ get_environment() {
 
 
 main() {
+# To debug this script, run it with TRACE=1 in the enviornment
+# -x option will trace each command that is run
   set -o pipefail; [[ "$TRACE" ]] && set -x
 	get_environment
   case "$1" in
