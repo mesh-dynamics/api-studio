@@ -33,6 +33,7 @@ import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Request;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -231,24 +232,27 @@ public class CubeStore {
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("collection") String collection) {
 		
-		// check if recording is ongoing for (customer, app, instanceid)
-		Optional<Recording> recording = rrstore.getRecording(Optional.ofNullable(customerid), Optional.ofNullable(app), 
-				Optional.ofNullable(instanceid), Optional.of(RecordingStatus.Running)).findFirst();
-		if (recording.isPresent()) {
-			return Response.status(Response.Status.CONFLICT)
-					.entity(String.format("Recording ongoing for customer %s, app %s, instance %s.", customerid, app, instanceid))
-					.build();
+		// check if recording or replay is ongoing for (customer, app, instanceid)
+		Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
+				Optional.ofNullable(instanceid));
+		if (errResp.isPresent()) {
+			return errResp.get();
 		}
-		
-		// check if recording collection name is unique for (customerid, app)
-		recording = rrstore.getRecordingByCollection(customerid, app, collection);
 
-		if (recording.isPresent()) {
-			return Response.status(Response.Status.CONFLICT)
-					.entity(String.format("Collection %s already exists for customer %s, app %s. Use different name", collection, customerid, app))
-					.build();
+		// check if recording collection name is unique for (customerid, app)
+		Optional<Recording> recording = rrstore.getRecordingByCollection(customerid, app, collection);
+		errResp = recording.filter(r -> r.status == RecordingStatus.Running)
+				.map(recordingv -> Response.status(Response.Status.CONFLICT)
+						.entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
+								collection, customerid, app, recordingv.instanceid))
+						.build());
+		if (errResp.isPresent()) {
+			return errResp.get();
 		}
-		
+
+		// NOTE that if the recording is not active, it will be activated again. This allows the same collection recording to be
+		// stopped and started multiple times
+
 		LOGGER.info(String.format("Starting recording for customer %s, app %s, instance %s, collection %s", 
 				customerid, app, instanceid, collection));
 

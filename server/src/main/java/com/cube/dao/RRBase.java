@@ -129,7 +129,7 @@ public class RRBase {
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
 		if (getMimeType() == APPLICATION_JSON || ((bodyComparator instanceof JsonComparator)
-				&& ((JsonComparator) bodyComparator).rulesExist())) {
+				&& ((JsonComparator) bodyComparator).pathRulesExist())) {
 			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODYPATH);
 		} else {
 			// treat as simple string
