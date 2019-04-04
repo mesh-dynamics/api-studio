@@ -128,7 +128,7 @@ public class RRBase {
 		template.getRule("/reqid").checkMatchStr(reqid, rhs.reqid, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
-		if (getMimeType() == APPLICATION_JSON || ((bodyComparator instanceof JsonComparator)
+		if (getMimeType().equalsIgnoreCase(APPLICATION_JSON) || ((bodyComparator instanceof JsonComparator)
 				&& ((JsonComparator) bodyComparator).pathRulesExist())) {
 			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODYPATH);
 		} else {

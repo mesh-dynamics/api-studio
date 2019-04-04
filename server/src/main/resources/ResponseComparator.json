@@ -4,7 +4,7 @@
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
             { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/body",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -42,7 +42,7 @@
             "mt":           "NoMatch",
             "matchmeta":    "",
             "diffs": [
-                { "op": "replace",  "path": "/hdr/content-type",    "value": "[application/jsonK]", "fromValue": "[application/json]",  "resolution":"ERR_ValMismatch"}
+                { "op": "replace",  "path": "/hdr/content-type",    "value": "application/jsonK", "fromValue": "application/json",  "resolution":"ERR_ValMismatch"}
             ]
         }
     },
