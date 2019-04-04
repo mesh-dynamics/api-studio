@@ -1,15 +1,17 @@
 import React, { Component } from 'react'
 import config from './config'
 import replay from './replay'
+import analysis from "./analysis";
 
 
 class PageContent extends Component {
   render() {
     const { needMargin } = this.props;
     return (
-      <div className={ needMargin ? "right_col" : "" } role="main">
-        { config }
+      <div role="main">
         { replay }
+        { config }
+        { analysis }
       </div>
     )
   }

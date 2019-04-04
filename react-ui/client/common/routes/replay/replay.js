@@ -3,6 +3,8 @@ import { Row, Col, Clearfix, Button, Glyphicon } from 'react-bootstrap'
 import { XPanel, PageTitle } from '../../components'
 import { connect } from 'react-redux';
 import ServiceGraph from './ServiceGraph';
+import ReplayAttribute from "./ReplayAttribute";
+import "./ReplayAttribute.css";
 
 class replay extends Component {
   constructor (props) {
@@ -46,17 +48,29 @@ class replay extends Component {
     const { user, match, nctData, neList, version } = this.props;
     return (
       <div>
-        
-        <PageTitle title="Replay configuration" />
+
         <Clearfix />
-        <Row style={{ minHeight: '100vh' }} >
-            Service Graph: 
-            <div className="col-sm-12">
-            { 
-                <ServiceGraph />
-            }
-            </div>
-        </Row>
+        <ReplayAttribute />
+        <Clearfix />
+        <div className="replay-container">
+            <Row style={{ minHeight: '100vh' }} >
+                {/*Service Graph: */}
+                <div className="col-sm-9">
+                {
+                    <ServiceGraph />
+                }
+                </div>
+
+                <div className="col-sm-3">
+                    <div className="right-head">
+                        Replay
+                    </div>
+                    <input type="radio" name="replayType" value="male" checked /> <span className="rep">Replay All</span><br/>
+                    <input type="radio" name="replayType" value="female" /> <span className="rep">Filter by Paths</span><br/>
+                    <input type="radio" name="replayType" value="other" /> <span className="rep">Filter for Specific Requests (max 25)</span>
+                </div>
+            </Row>
+        </div>
         
       </div>
     )

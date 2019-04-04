@@ -1,8 +1,7 @@
 
 html , body{
-	
  height:100%;
- 
+ overflow-x: hidden;
 }
  
 .full-width {
@@ -10,10 +9,35 @@ html , body{
  width:100%;
  
  }
- 
+ .padding-15 {
+     padding: 15px;
+ }
 .full-height{
  height:100%;
  }
+.cube-btn {
+    padding: 5px 10px;
+    color: #FFFFFF;
+    background: #999999;
+    border-radius: 5px;
+    font-size: 12px;
+}
+.cube-btn:hover {
+    cursor: pointer;
+    background: #00B2FF;
+}
+.cube-btn.disabled {
+    background: #DDDDDD;
+    pointer-events: none;
+}
+.select-text {
+    text-align: center;
+    padding: 30px;
+    font-size: 20px;
+}
+.inline-block {
+    display: inline-block;
+}
 
 .daterangepicker .ranges li {
     color: #73879C
@@ -495,10 +519,6 @@ body .container.body .right_col {
     background: #D9DEE4
 }
 
-.sidebar-nav {
-    font-family: Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-}
-
 code {
     color: black;
     background-color: rgb(250, 249, 196);
@@ -536,8 +556,7 @@ h8{font-size: 8px;}
 
 body {
     color: #525252;
-    background-color: #2A313F;
-    font-family: Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family: 'Roboto Condensed', sans-serif, Verdana, 'sans-serif', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     font-size: 13px;
     font-weight: 400;
     line-height: 1.471
@@ -912,7 +931,7 @@ a:focus {
 .toggle {
     float: left;
     margin: 0;
-    padding-top: 16px;
+    padding: 5px 15px 0;
     width: 70px
 }
 .toggle a {
@@ -1759,7 +1778,7 @@ span.right {
 }
 @media (min-width: 992px) {
     footer {
-        margin-left: 230px
+
     }
 }
 @media (min-width: 992px) {
@@ -4353,3 +4372,52 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     background-color: #ffff !important;
 }
 /** /bootstrap-datetimepicker **/
+
+/*custom*/
+.comp-name {
+    font-family: 'Allerta Stencil', sans-serif;
+    color: #FFFFFF;
+    position: relative;
+}
+
+.comp-name img {
+    position: absolute;
+    width: 95px;
+    top: -15px;
+    z-index: 3;
+}
+
+.comp-name span {
+    position: absolute;
+    left: 90px;
+    z-index: 3;
+}
+.nav_menu {
+    margin-bottom: 0 !important;
+    background: #00B2FF !important;
+    border-bottom: none;
+}
+.modal-dialog {
+    top: 30vh;
+    transform: translateY(-50%);
+}
+.modal-header {
+    padding: 15px;
+    border: 1px solid #00B2FF;
+    background: #00B2FF;
+}
+
+
+
+
+
+.rep {
+    display: inline-block;
+    margin-top: -2px;
+}
+.right-head {
+    padding: 5px 10px;
+    background: #0f0f0f;
+    color: #FFFFFF;
+    margin-bottom: 10px;
+}

@@ -18,7 +18,19 @@ const initialState = {
     testIdsReqStatus: cubeConstants.REQ_NOT_DONE,
     testIdsReqErr: '',
     testIds: [],
-    selectedTestId: ''
+    selectedTestId: '',
+
+    replayId: cubeConstants.REQ_NOT_DONE,
+
+    graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
+    graphDataReqErr: '',
+    graphData: null,
+
+    replayStatus:'Init',
+    replayStatusObj: null,
+
+    analysis: null,
+    report: null
 };
 
 export function cube (state = initialState, action) {
@@ -71,6 +83,51 @@ export function cube (state = initialState, action) {
                 ...state,
                 selectedTestId: action.data
             };
+        case cubeConstants.REPLAY_ID_SUCCESS:
+            return {
+                ...state,
+                replayId: action.data
+            };
+        case cubeConstants.GRAPH_REQUEST:
+            return {
+                ...state,
+                graphDataReqStatus: cubeConstants.REQ_LOADING,
+                graphDataReqErr: ''
+            };
+        case cubeConstants.GRAPH_REQUEST_FAILURE:
+            return {
+                ...state,
+                graphDataReqStatus: cubeConstants.REQ_FAILURE,
+                graphDataReqErr: action.err
+            };
+        case cubeConstants.GRAPH_REQUEST_SUCCESS:
+            return {
+                ...state,
+                graphDataReqStatus: cubeConstants.REQ_SUCCESS,
+                graphDataReqErr: '',
+                graphData: action.data
+            };
+        case cubeConstants.REPLAY_STARTED:
+            return{
+                ...state,
+                replayStatus: 'started'
+            };
+        case cubeConstants.REPLAY_STATUS_FETCHED:
+            return{
+                ...state,
+                replayStatusObj: action.data,
+                replayStatus: action.data.status,
+            };
+        case cubeConstants.ANALYSIS_FETCHED:
+            return {
+                ...state,
+                analysis: action.data
+            };
+        case cubeConstants.REPORT_FETCHED:
+            return {
+                ...state,
+                report: action.data
+            }
 
         default:
             return state
