@@ -42,7 +42,7 @@
             "mt":           "NoMatch",
             "matchmeta":    "",
             "diffs": [
-                { "op": "replace",  "path": "/hdr/content-type",    "value": "application/jsonK", "fromValue": "application/json",  "resolution":"ERR_ValMismatch"}
+                { "op": "replace",  "path": "/hdr/content-type",    "value": "[application/jsonK]", "fromValue": "[application/json]",  "resolution":"ERR_ValMismatch"}
             ]
         }
     },

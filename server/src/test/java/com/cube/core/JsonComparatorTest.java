@@ -219,6 +219,19 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("missingFieldRequired");
 		compareTest(testData);
     }
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Missing LHS test")
+    final void missingLHSTest() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("missingLHS");
+        compareTest(testData);
+    }
+
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
 	 * @throws JsonProcessingException
@@ -266,4 +279,5 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("repeatingArray");
 		compareTest(testData);
 	}
+
 }

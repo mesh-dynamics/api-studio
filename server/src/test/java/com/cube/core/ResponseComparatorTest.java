@@ -231,14 +231,14 @@ public class ResponseComparatorTest {
      * @throws JsonProcessingException
      * @throws JSONException
      */
-    @Test
-    @DisplayName("Default comparison test")
-    final void defaultComparisonTest() throws IOException, JSONException {
-
-        for (String id: idList){
-            Optional<Response> response = config.rrstore.getResponse(id);
-            System.out.println(response.get().body);
-        }
+//    @Test
+//    @DisplayName("Default comparison test")
+//    final void defaultComparisonTest() throws IOException, JSONException {
+//
+//        for (String id: idList){
+//            Optional<Response> response = config.rrstore.getResponse(id);
+//            System.out.println(response.get().body);
+//        }
 //        ObjectMapper mapper = config.jsonmapper;
 //        mapper.registerModule(new JavaTimeModule());
 //        Optional<Response> response1 = config.rrstore.getResponse(id[1]);
@@ -261,6 +261,6 @@ public class ResponseComparatorTest {
 //        Match m = comparator.compare(response1.get(), response2.get());
 //        String mjson = config.jsonmapper.writeValueAsString(m);
 //        System.out.println(mjson);
-    }
+//    }
 
 }
