@@ -157,11 +157,29 @@ replay() {
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 	kubectl apply -f moviebook/movieinfo-v2.yaml
-	REPLAY_ID=$(curl -X POST \
-  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache' \
-  -d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	echo "Do you want to replay with default paths?(yes/no)"
+	read CHOICE
+	if [ "$CHOICE" = "no" ]; then
+		echo "enter comma seperated paths(eg: minfo/listmovies,minfo/liststores)"
+		read INPUTPATHS
+		PATHS_SEPRATED=$(echo $INPUTPATHS | tr "," "\n")
+		for path in $PATHS_SEPRATED
+		do
+			TEMP_PATH="$TEMP_PATH""paths=$path&"
+		done
+		FINAL_PATH=${TEMP_PATH::${#TEMP_PATH}-1}
+		REPLAY_ID=$(curl -X POST \
+	  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	  -H 'Content-Type: application/x-www-form-urlencoded' \
+	  -H 'cache-control: no-cache' \
+	  -d "$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	else
+		REPLAY_ID=$(curl -X POST \
+	  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	  -H 'Content-Type: application/x-www-form-urlencoded' \
+	  -H 'cache-control: no-cache' \
+	  -d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	fi
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -171,7 +189,6 @@ replay() {
 	else
 		echo "Replay did not started"
 	fi
-
 	echo $REPLAY_ID > replayid.temp
 }
 
