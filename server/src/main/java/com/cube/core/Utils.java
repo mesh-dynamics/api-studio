@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -69,6 +71,21 @@ public class Utils {
 
 	public static TextNode strToJson(String val) {
 		return TextNode.valueOf(val);
+	}
+
+	public static Optional<List<String>> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap , String possibleKey) {
+		List<String> result = null;
+		// TODO use case insensitive maps in all these cases
+		if (possibleKey != null) {
+			String actualKey = possibleKey.substring(1);
+			for (Map.Entry<String , List<String>> entry : mMap.entrySet()) {
+				if (entry.getKey().equalsIgnoreCase(actualKey)) {
+					result = entry.getValue();
+					break;
+				}
+			}
+		}
+		return Optional.ofNullable(result);
 	}
 
 }

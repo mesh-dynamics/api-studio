@@ -19,9 +19,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-import com.cube.core.Comparator;
-import com.cube.core.CompareTemplate;
-import com.cube.core.JsonComparator;
+import com.cube.core.*;
 
 public class RRBase {
 
@@ -145,18 +143,10 @@ public class RRBase {
 		return match;
 	}
 
-    public String getMimeType() {
+    private String getMimeType() {
 		String mimeType = null;
-		// TODO : this is an inefficient solution as it goes through all the keys of the map
-		// TODO : Need to build a Case Insensitive map (Apache Commons) headers , mime-type
-		// TODO : qparams and form-params in the Constructor of RRBase object itself
-		for (Map.Entry<String, List<String>> entry : hdrs.entrySet()) {
-			if (entry.getKey().equalsIgnoreCase(HttpHeaders.CONTENT_TYPE) && entry.getValue().size() > 0) {
-				mimeType = entry.getValue().get(0);
-				break;
-			}
-		}
-	    return Optional.ofNullable(mimeType).orElse(MediaType.TEXT_PLAIN);
+		return Utils.getCaseInsensitiveMatches(hdrs , HttpHeaders.CONTENT_TYPE)
+				.map(x -> {if (x.size() > 0) return x.get(0); else return null;}).orElse(MediaType.TEXT_PLAIN);
     }
 
 
