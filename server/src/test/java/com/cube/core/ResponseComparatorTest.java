@@ -106,7 +106,6 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Exact Match Test")
     final void exactMatchTest() throws IOException, JSONException {
-        //Todo: Change expected output after bugs are fixed in comparator methods
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -123,7 +122,6 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Positive")
     final void headerTemplatePositiveTest() throws IOException, JSONException {
-        //Todo: Change expected output after bugs are fixed in comparator methods
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -140,7 +138,6 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Negative")
     final void headerTemplateNegativeTest() throws IOException, JSONException {
-        //Todo: Change expected output after bugs are fixed in comparator methods
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
