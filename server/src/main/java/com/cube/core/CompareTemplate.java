@@ -161,12 +161,28 @@ public class CompareTemplate {
 		}
 	}
 
+	public Optional<List<String>> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap , String possibleKey) {
+		List<String> result = null;
+		// TODO use case insensitive maps in all these cases
+		if (possibleKey != null) {
+			String actualKey = possibleKey.substring(1);
+			for (Map.Entry<String , List<String>> entry : mMap.entrySet()) {
+				if (entry.getKey().equalsIgnoreCase(actualKey)) {
+					result = entry.getValue();
+					break;
+				}
+			}
+		}
+		return Optional.ofNullable(result);
+	}
+
+
 	public void checkMatch(MultivaluedMap<String, String> lhsfmap, MultivaluedMap<String, String> rhsfmap,
 						   Comparator.Match match, boolean needDiff) {
 
 		for (TemplateEntry rule: getRules()) {
-			Optional<List<String>> lvals = Optional.ofNullable(lhsfmap.get(rule.path));
-			Optional<List<String>> rvals = Optional.ofNullable(rhsfmap.get(rule.path));
+			Optional<List<String>> lvals = getCaseInsensitiveMatches(lhsfmap , rule.path);
+			Optional<List<String>> rvals = getCaseInsensitiveMatches(rhsfmap , rule.path);
 			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
 				Comparator.Resolution resolution = OK;
 				Set<String> lset = new HashSet<>(lvals.orElse(Collections.emptyList()));

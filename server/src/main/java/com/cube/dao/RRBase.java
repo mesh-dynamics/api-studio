@@ -5,6 +5,8 @@ package com.cube.dao;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -143,8 +145,18 @@ public class RRBase {
 		return match;
 	}
 
-    private String getMimeType() {
-	    return Optional.ofNullable(hdrs.getFirst(HttpHeaders.CONTENT_TYPE)).orElse(MediaType.TEXT_PLAIN);
+    public String getMimeType() {
+		String mimeType = null;
+		// TODO : this is an inefficient solution as it goes through all the keys of the map
+		// TODO : Need to build a Case Insensitive map (Apache Commons) headers , mime-type
+		// TODO : qparams and form-params in the Constructor of RRBase object itself
+		for (Map.Entry<String, List<String>> entry : hdrs.entrySet()) {
+			if (entry.getKey().equalsIgnoreCase(HttpHeaders.CONTENT_TYPE) && entry.getValue().size() > 0) {
+				mimeType = entry.getValue().get(0);
+				break;
+			}
+		}
+	    return Optional.ofNullable(mimeType).orElse(MediaType.TEXT_PLAIN);
     }
 
 
