@@ -30,6 +30,13 @@ init() {
 	./fetch_servicenames.py
 	./generate_lua_filters.py
 	echo "lua filters generated"
+	echo "waiting for cubews to come online"
+	until $(curl --output /dev/null --silent --head --fail http://$GATEWAY_URL/cs/health); do
+	  printf '.'
+	  sleep 2
+	done
+	echo "\n"
+	setup
 	if [ "$ENVIRONMENT" = "minikube" ]; then
 	  if [ "$CHOICE" = "yes" ]; then
 	    kubectl delete deployments cubews-v1
@@ -217,14 +224,13 @@ main() {
 	get_environment
   case "$1" in
     init) shift; init "$@";;
-    setup) shift; setup "$@";;
     record) shift; record "@";;
     stop_recording) shift; stop_record "@";;
     replay) shift; replay "@";;
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, setup, record, stop_recording, replay, stop_replay, analyze, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
   esac
 }
 
