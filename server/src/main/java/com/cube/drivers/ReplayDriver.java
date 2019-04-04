@@ -134,6 +134,10 @@ public class ReplayDriver  {
 
             List<HttpRequest> reqs = new ArrayList<>();
             requests.forEach(r -> {
+                /*
+                 TODO: currently sampling samples across all paths with same rate. If we want to ensure that we have some
+                 minimum requests from each path (particularly the rare ones), we need to add more logic
+                */
                 if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
                     return; // drop this request
                 }
