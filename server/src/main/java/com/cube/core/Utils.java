@@ -73,11 +73,12 @@ public class Utils {
 		return TextNode.valueOf(val);
 	}
 
-	public static Optional<List<String>> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap , String possibleKey) {
+	public static Optional<List<String>> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap
+			, String possibleKey , boolean removePrefixSlash) {
 		List<String> result = null;
 		// TODO use case insensitive maps in all these cases
 		if (possibleKey != null) {
-			String actualKey = possibleKey.substring(1);
+			String actualKey = (removePrefixSlash)? possibleKey.substring(1) : possibleKey;
 			for (Map.Entry<String , List<String>> entry : mMap.entrySet()) {
 				if (entry.getKey().equalsIgnoreCase(actualKey)) {
 					result = entry.getValue();

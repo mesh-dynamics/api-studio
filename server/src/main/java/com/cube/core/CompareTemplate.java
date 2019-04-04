@@ -165,8 +165,8 @@ public class CompareTemplate {
 						   Comparator.Match match, boolean needDiff) {
 
 		for (TemplateEntry rule: getRules()) {
-			Optional<List<String>> lvals = Utils.getCaseInsensitiveMatches(lhsfmap , rule.path);
-			Optional<List<String>> rvals = Utils.getCaseInsensitiveMatches(rhsfmap , rule.path);
+			Optional<List<String>> lvals = Utils.getCaseInsensitiveMatches(lhsfmap , rule.path, true);
+			Optional<List<String>> rvals = Utils.getCaseInsensitiveMatches(rhsfmap , rule.path, true);
 			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
 				Comparator.Resolution resolution = OK;
 				Set<String> lset = new HashSet<>(lvals.orElse(Collections.emptyList()));
