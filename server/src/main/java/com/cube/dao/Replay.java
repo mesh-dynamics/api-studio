@@ -44,16 +44,18 @@ public class Replay {
 	 * @param endpoint
 	 * @param customerid
 	 * @param app
+	 * @param instanceid
 	 * @param collection
 	 * @param reqids
 	 * @param replayid
 	 * @param async
-	 * @param status 
-	 * @param instanceid 
+	 * @param status
+	 * @param samplerate
 	 */
 	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
-			String replayid, boolean async, ReplayStatus status,
-			List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp) {
+				  String replayid, boolean async, ReplayStatus status,
+				  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+				  Optional<Double> samplerate) {
 		super();
 		this.endpoint = endpoint;
 		this.customerid = customerid;
@@ -70,6 +72,7 @@ public class Replay {
 		this.reqfailed = reqfailed;
 		this.creationTimeStamp = creationTimestamp == null ? format.format(new Date()) : creationTimestamp;
 		this.xfmer = Optional.ofNullable(null);
+		this.samplerate = samplerate;
 	}
 
 	/*
@@ -99,6 +102,7 @@ public class Replay {
 	public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
 	public int reqfailed; // requests failed, return code not 200
 	public Optional<RRTransformer> xfmer;
+	public final Optional<Double> samplerate;
 
 	private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	public final String creationTimeStamp;

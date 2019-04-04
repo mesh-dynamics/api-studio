@@ -9,6 +9,7 @@ package com.cube.drivers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,8 +65,19 @@ public class Analyzer {
      * @param rrstore
      * @param reqs
      */
-    private void analyze(ReqRespStore rrstore, Stream<Request> reqs) {
+    private void analyze(ReqRespStore rrstore, Stream<Request> reqs, Replay replay) {
+
+        // using seed generated from replayid so that same requests get picked in replay and analyze
+        long seed = replay.replayid.hashCode();
+        Random random = new Random(seed);
+
+
+
         reqs.forEach(r -> {
+            if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
+                return; // drop this request
+            }
+
             // find matching request in replay
             // most fields are same as request except
             // RRType should be Replay
@@ -251,7 +263,7 @@ public class Analyzer {
                 return Optional.empty();
             }
 
-            analyzer.analyze(rrstore, reqs.getObjects());
+            analyzer.analyze(rrstore, reqs.getObjects(), r);
 
             // update the stored analysis
             rrstore.saveAnalysis(analyzer.analysis);

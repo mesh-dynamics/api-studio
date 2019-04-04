@@ -401,6 +401,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
+    private static Optional<Double> getDblField(SolrDocument doc, String fname) {
+        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+            if (v instanceof Double) {
+                return Optional.of((Double) v);
+            } else if (v instanceof Float) {
+                return Optional.of(((Float)v).doubleValue());
+            } else if (v instanceof Integer) {
+                return Optional.of(((Integer)v).doubleValue());
+            }
+            return Optional.empty();
+        });
+    }
+
     private static Optional<Instant> getTSField(SolrDocument doc, String fname) {
         return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
             if (v instanceof Date)
@@ -555,6 +568,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQSENTF = CPREFIX + "reqsent_i";
     private static final String REQFAILEDF = CPREFIX + "reqfailed_i";
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
+    private static final String SAMPLERATEF = CPREFIX + "samplerate_d";
 
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
@@ -585,7 +599,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
-        
+        replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
+
         return doc;
     }
 
@@ -633,6 +648,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         int reqsent = getIntField(doc, REQSENTF).orElse(0);
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
         Optional<String> creationTimestamp = getStrField(doc, CREATIONTIMESTAMPF);
+        Optional<Double> samplerate = getDblField(doc, SAMPLERATEF);
         
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && 
@@ -640,7 +656,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 && replayid.isPresent() && async.isPresent() && status.isPresent()) {
             try {
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
-				        reqids, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed, creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get()));
+				        reqids, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
+                        creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get(),
+                        samplerate));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
 			}
