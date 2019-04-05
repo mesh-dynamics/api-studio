@@ -20,6 +20,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
@@ -62,6 +63,7 @@ public class ReplayWS {
 		Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endpoint"));
 		Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
 		List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
+		Optional<Double> samplerate = Optional.ofNullable(formParams.getFirst("samplerate")).flatMap(v -> Utils.strToDouble(v));
 		
 		// TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
 		Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
@@ -81,7 +83,7 @@ public class ReplayWS {
 				.map(e -> {
 					return instanceid.map(inst -> {
 						// TODO: introduce response transforms as necessary
-						return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null)
+						return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null, samplerate)
 								.map(replay -> {
 									String json;
 									try {

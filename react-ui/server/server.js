@@ -36,6 +36,7 @@ if (!process.env.MOCHA_UNIT_TESTING) {
 
     // Define main routes
     app.route('/api/getApps').get(getApps);
+    app.route('/api/getGraphData').get(getGraphData);
     app.route('/api/getTestIds').post(getTestIds);
 
     app.all('*', (req, res, next) => {
@@ -73,6 +74,82 @@ async function getApps (req, res, next) {
         'HR App',
         'Finance App'
     ]})
+    next();
+    return true;
+}
+
+async function getGraphData (req, res, next) {
+    res.json({
+        nodes: [
+            {
+                "data": {
+                    "id": "movieinfo",
+                    "text": "MovieInfo"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "restwrapjdbc",
+                    "text": "RestWrapJDBC"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "details",
+                    "text": "ProductDetails"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "ratings",
+                    "text": "ProductRatings"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            },
+            {
+                "data": {
+                    "id": "reviews",
+                    "text": "ProductReviews"
+                },
+                "style": {
+                    "text-wrap": "wrap",
+                }
+            }
+        ],
+        edges: [
+            {
+                id: 's1_s2',
+                source: 'movieinfo',
+                target: 'restwrapjdbc'
+            },
+            {
+                id: 's1_s3',
+                source: 'movieinfo',
+                target: 'details'
+            },
+            {
+                id: 's1_s4',
+                source: 'movieinfo',
+                target: 'ratings'
+            },
+            {
+                id: 's1_s5',
+                source: 'movieinfo',
+                target: 'reviews'
+            }
+        ]
+    })
     next();
     return true;
 }

@@ -28,27 +28,8 @@ class App extends Component {
         return (
             <div className="container body">
                 <div className="main_container">
-                    <Left user={ user } visible={ leftVisible }>
-                        { /* Menu */ }
-                        <SideBar>
-                            <SideBar.MenuSection title=" ">
-                                <MenuItem title="Test Config" to="/config" icon="home"/>
-                                <GroupMenuItem title="Replay" to="/replay">
-                                    <MenuItem title="Replay point" to="/replay/point" />
-                                    <MenuItem title="Virtualization points" to="/replay/virtualPoints" />
-                                    <MenuItem title="Profile" to="/replay/profile" />
-                                    <MenuItem title="Replay" to="/replay/replay" />
-                                </GroupMenuItem>
-                                <GroupMenuItem title="Results" to="/results">
-                                    { left.replayList.map((r, idx) => {
-                                        return <MenuItem key= {idx} title={r} to={'/' + r} />
-                                    })}
-                                </GroupMenuItem>
-                            </SideBar.MenuSection>
-                        </SideBar>
-                    </Left>
-                    <Top user={ user } toggleCb={ this.toggleLeft } needMargin={ leftVisible }/>
-                    <PageContent needMargin={ leftVisible } />
+                    <Top user={ user } toggleCb={ this.toggleLeft }/>
+                    <PageContent/>
                     <Footer/>
                 </div>
             </div>

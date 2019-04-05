@@ -1,16 +1,30 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import CytoscapeComponent from 'react-cytoscapejs';
+import ConfigSample from '../config/configSample';
+import Modal from "react-bootstrap/es/Modal";
+import Button from "react-bootstrap/es/Button";
+import {cubeConstants} from "../../constants";
+import popper from 'cytoscape-popper';
+import {Clearfix, Col, Row} from "react-bootstrap";
 
 class ServiceGraph extends Component {
     constructor(props) {
-        super(props)
+        super(props);
+        this.handleShow = this.handleShow.bind(this);
+        this.handleClose = this.handleClose.bind(this);
         this.state = {
             panelVisible: true,
+            selectedNode: null,
+            replaySelected: false,
+            replayNode: null,
+            show: false,
         }
-        this.height = '350px';
+        this.height = '90vh';
         this.width = '100%';
         this.renderServiceGraph = this.renderServiceGraph.bind(this);
+        this.setRP = this.setRP.bind(this);
+        this.setVP = this.setVP.bind(this);
         this.render = this.render.bind(this);
         this.cy = {};
         
@@ -18,39 +32,101 @@ class ServiceGraph extends Component {
             {
                 selector: 'node',
                 style: {
-                    shape: 'circle',
+                    shape: 'roundrectangle',
                     content: 'data(text)',
-                    "font-size": "11px",
-                    "text-valign": "center",
-                    "text-halign": "center",
-                    "background-color": "#f7d101",
-                    "text-outline-color": "#f7d101",
-                    "text-outline-width": "2px",
-                    "color": "#555",
-                    "border-color": "white",
-                    "border-width": "3px",
-                    "overlay-padding": "6px",
-                    "z-index": "10"
+                    "text-wrap": "wrap",
+                    'width': '200px',
+                    'height': '60px',
+                    'font-family': 'Roboto Condensed',
+                    'font-size': '14px',
+                    //width: 'label',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'background-color': '#c4c4c4',
+                    'text-outline-color': '#c4c4c4',
+                    'text-outline-width': '2px',
+                    'color': '#616161',
+                    'z-index': '10',
+                    'border-color': '#8F8E8E',
+                    'border-width': '2px'
                 }
             },
             {
                 selector: '$node > node',
                 style: {
-                    "font-size": "10px",
-                    "text-valign": "top",
-                    "text-halign": "center",
-                    "background-color": "#bbb",
-                    "text-outline-color": "#555",
-                    "text-outline-width": "0px",
-                    "color": "black",
-                    "border-color": "black",
-                    "border-width": "0px",
-                    "overlay-padding": "6px",
-                    "z-index": "10"
+                    'font-size': '12px',
+                    'width': '200px',
+                    'height': '100px',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'background-color': '#bbb',
+                    'text-outline-color': '#555',
+                    'text-outline-width': '0px',
+                    'color': 'black',
+                    //'overlay-padding': '6px',
+                    'z-index': '10'
+                }
+            },
+            {
+                selector: 'node.selected-node',
+                style: {
+                    'background-color': '#e7f9fe',
+                    'color': '#616161',
+                    'text-outline-color': '#e7f9fe',
+                }
+            },
+            {
+                selector: 'node.replay-node',
+                style: {
+                    'border-color': '#DC143C',
+                    'border-width': '2px'
+                }
+            },
+            {
+                selector: 'node.virtual-node',
+                style: {
+                    'border-color': '#39B200',
+                    'border-width': '2px',
+                    'border-style': 'dashed'
                 }
             }
         ]
         
+    }
+
+    setRP() {
+        if (this.state.replaySelected) {
+            return;
+        }
+        const {cube} = this.props;
+        const gd = cube.graphData;
+        for (const node of gd.nodes) {
+            if (node.data.id == this.state.selectedNode.id) {
+                node.data.isReplayPoint = true;
+                break;
+            }
+        }
+        this.setState({
+            replaySelected: true,
+            replayNode: JSON.parse(JSON.stringify(this.state.selectedNode)),
+            selectedNode: null,
+            show: false
+        })
+    }
+
+    setVP() {
+        const {cube} = this.props;
+        const gd = cube.graphData;
+        for (const node of gd.nodes) {
+            if (node.data.id == this.state.selectedNode.id) {
+                node.data.isVirtualised = true;
+                break;
+            }
+        }
+        this.setState({
+            selectedNode: null,
+            show: false
+        })
     }
 
     componentWillUnmount () {
@@ -65,16 +141,27 @@ class ServiceGraph extends Component {
         window.scrollTo(x, y);
     }
 
+    handleClose() {
+        this.setState({ show: false });
+    }
+
+    handleShow() {
+        this.setState({ show: true });
+    }
+
     render() {
         
         const $ = window.$;
         const element = $(this.refs.cyto);
+        const { cube } = this.props;
         
         if (Object.keys(this.cy).length) {
-            this.renderServiceGraph(this.cy);
+            /*this.cy.destroy();
+            this.cy = {};*/
+            this.renderServiceGraph(this.cy, cube);
             this.focusDivWithoutScroll(element)
         } else {
-            setTimeout(this.render, 1);
+            //setTimeout(this.render, 1);
         }
 
         if(Object.keys(this.cy).length){
@@ -112,128 +199,115 @@ class ServiceGraph extends Component {
               }
             });        
         }
-             
+
+        let graph = '';
+        if (cube.selectedTestId) {
+            graph = <div ref='cyto' tabIndex='1'>
+                <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.05' />
+            </div>;
+        } else {
+            graph = <div className="select-text">Please Select a Collection to Proceed</div>
+        }
  
         return(
             <div>
+                {/*<br/>
+                <ConfigSample />
                 <br/>
-                <div className="col-sm-12">
-                    <div ref='cyto' tabIndex="1">
-                        <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.25' />
-                    </div>
+                <div></div>
+                <br/>*/}
+                <div className='col-sm-12'>
+                    {graph}
+                    <Clearfix />
+                    <br/>
+                    <Modal show={this.state.show} onHide={this.handleClose}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>{this.state.selectedNode && this.state.selectedNode.text ? this.state.selectedNode.text : ''}</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <div className="text-center">
+                                <span className={"cube-btn " + (this.state.replaySelected ? 'disabled' : '')} onClick={this.setRP}>Set Replay Point</span><br/><br/>
+                                <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
+                            </div>
+                        </Modal.Body>
+                    </Modal>
                 </div>
             </div>
         )
     }
 
-    renderServiceGraph(cy) {
-
+    renderServiceGraph(cy, cube) {
+        if (cube.graphDataReqStatus != cubeConstants.REQ_SUCCESS) {
+            return '';
+        }
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
+        //const arr = [];
+
+        const gd = JSON.parse(JSON.stringify(cube.graphData));
     
         // Create nodes
-        for (let i = 1; i <= 10; i++) {
-            let style = { "text-wrap": "wrap", width: 50, height: 50 }
-            let eleObj = {
-                data: { id: `s${i}.ztc.io`, text: `s${i}.ztc.io`},
-                style: style
-            };
-            cy.add(eleObj);
+        for (const node of gd.nodes) {
+            if (cube.analysis && node.data.id == 'movieinfo') {
+                let an = cube.analysis;
+                node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched);
+                node.data.class = 'selected-node';
+            }
+
+            if (node.data.isReplayPoint) {
+                node.classes = 'replay-node';
+            } else if (node.data.isVirtualised) {
+                node.classes = 'virtual-node';
+            }
+            cy.add(node);
         }
+
+        if (cube.analysis) {
+            let an = cube.analysis;
+            let node = cy.nodes().first();
+            node.addClass('selected-node');
+            node.data.text += (an.reqcnt)
+        }
+
+        const _this = this;
+        cy.userZoomingEnabled(false);
+
+        cy.removeListener('click', 'node').on('click', 'node', function(evt){
+            evt.preventDefault();
+            var node = evt.target;
+            node.addClass('selected-node');
+            _this.setState({
+                selectedNode: node.data(),
+                show: true
+            });
+            _this.handleShow();
+            /*console.log(node);
+            cy.$(node).addClass('selected-node');*/
+        });
 
         // Create edges
         let style = {
             'source-arrow-shape': 'circle',
             'target-arrow-shape': 'triangle',
-            //'curve-style': 'unbundled-bezier'
-            'curve-style': 'haystack'
+            //'curve-style': 'unbundled-bezier',
+            'curve-style': 'haystack',
+            'width': '2px'
         };
-        let eleObj = {
-            data: {
-                id: 's1_s2',
-                source: 's1.ztc.io', target: 's2.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's1_s6',
-                source: 's1.ztc.io', target: 's6.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's2_s6',
-                source: 's2.ztc.io', target: 's6.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's2_s3',
-                source: 's2.ztc.io', target: 's3.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's6_s7',
-                source: 's6.ztc.io', target: 's7.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s4',
-                source: 's3.ztc.io', target: 's4.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s5',
-                source: 's3.ztc.io', target: 's5.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s8',
-                source: 's3.ztc.io', target: 's8.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's3_s10',
-                source: 's3.ztc.io', target: 's10.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
-        eleObj = {
-            data: {
-                id: 's4_s9',
-                source: 's4.ztc.io', target: 's9.ztc.io'
-            },
-            style: style
-        };
-        cy.add(eleObj);
+
+        for (const edge of cube.graphData.edges) {
+            const ed = {
+                data: edge,
+                style: style
+            };
+            cy.add(ed);
+        }
+
 
         // Layout
         if ( 1 ) {
             let layout;
             layout = cy.layout({
-                name: 'grid', // 'cose'
+                name: 'circle', // 'cose'
                 fit: true,
                 idealEdgeLength: function (edge) { return 100; },
                 edgeElasticity: function (edge) { return 100; },
@@ -256,9 +330,9 @@ class ServiceGraph extends Component {
 
 function mapStateToProps(state) {
     const { user } = state.authentication;
-
+    const cube = state.cube;
     return {
-      user
+      user, cube
     }
   }
 

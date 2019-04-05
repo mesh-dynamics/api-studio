@@ -9,15 +9,11 @@ package com.cube.drivers;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -52,18 +48,21 @@ public class ReplayDriver  {
      * @param endpoint
      * @param customerid
      * @param app
+     * @param instanceid
      * @param collection
      * @param reqids
      * @param rrstore
      * @param replayid
      * @param async
      * @param status
-     * @param instanceid
+     * @param samplerate
      */
     private ReplayDriver(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
                          ReqRespStore rrstore, String replayid, boolean async, Replay.ReplayStatus status,
-                         List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp) {
-        this.replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, replayid, async, status, paths, reqcnt, reqsent, reqfailed, creationTimestamp);
+                         List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+                         Optional<Double> samplerate) {
+        this.replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, replayid, async,
+                status, paths, reqcnt, reqsent, reqfailed, creationTimestamp, samplerate);
         this.rrstore = rrstore;
     }
 
@@ -76,13 +75,14 @@ public class ReplayDriver  {
      * @param replayid
      * @param async
      * @param status
+     * @param samplerate
      */
     private ReplayDriver(String endpoint, String customerid, String app, String instanceid,
-                   String collection, List<String> reqids, ReqRespStore rrstore,
+                         String collection, List<String> reqids, ReqRespStore rrstore,
                          String replayid, boolean async, Replay.ReplayStatus status,
-                   List<String> paths) {
+                         List<String> paths, Optional<Double> samplerate) {
         this(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async,
-            status, paths, 0, 0, 0, null);
+            status, paths, 0, 0, 0, null, samplerate);
     }
 
     private ReplayDriver(Replay r, ReqRespStore rrstore) {
@@ -103,6 +103,10 @@ public class ReplayDriver  {
         if (!rrstore.saveReplay(replay))
             return;
 
+
+        // using seed generated from replayid so that same requests get picked in replay and analyze
+        long seed = replay.replayid.hashCode();
+        Random random = new Random(seed);
 
         // TODO: add support for matrix params
 
@@ -130,6 +134,13 @@ public class ReplayDriver  {
 
             List<HttpRequest> reqs = new ArrayList<>();
             requests.forEach(r -> {
+                /*
+                 TODO: currently sampling samples across all paths with same rate. If we want to ensure that we have some
+                 minimum requests from each path (particularly the rare ones), we need to add more logic
+                */
+                if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
+                    return; // drop this request
+                }
                 // transform fields in the request before the replay.
                 replay.xfmer.ifPresent(x -> x.transformRequest(r));
 
@@ -211,9 +222,10 @@ public class ReplayDriver  {
     public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String instanceid,
                                               String collection, List<String> reqids,
                                               ReqRespStore rrstore, boolean async, List<String> paths,
-                                              JSONObject xfms) {
+                                              JSONObject xfms, Optional<Double> samplerate) {
         String replayid = Replay.getReplayIdFromCollection(collection);
-        ReplayDriver replaydriver = new ReplayDriver(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async, Replay.ReplayStatus.Init, paths);
+        ReplayDriver replaydriver = new ReplayDriver(endpoint, customerid, app, instanceid, collection,
+                reqids, rrstore, replayid, async, Replay.ReplayStatus.Init, paths, samplerate);
         if (rrstore.saveReplay(replaydriver.replay)) {
             return Optional.of(replaydriver.replay);
         }
