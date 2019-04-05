@@ -198,7 +198,18 @@ replay() {
 	generate_mock_all_yaml
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
-	kubectl apply -f moviebook/movieinfo-v2.yaml
+	echo "Which version of movieinfo you want to test?(v1/v2)"
+	read VERSION
+	if [ "$VERSION" = "v1" ]; then
+		echo "Routing traffic to v1"
+		kubectl apply -f moviebook/movieinfo-v1.yaml
+	elif [ "$VERSION" = "v2" ]; then
+		echo "Routing traffic to v2"
+		kubectl apply -f moviebook/movieinfo-v2.yaml
+	else
+		echo "Invalid Input, enter a valid version(v1/v2)"
+		exit 1
+	fi
 	echo "Do you want to replay with default paths?(yes/no)"
 	read CHOICE
 	if [ "$CHOICE" = "no" ]; then
