@@ -150,6 +150,48 @@ generate_mock_all_yaml() {
 	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" moviebook/mock-all-except-moviebook.yaml
 }
 
+custom_replay() {
+	echo "Enter comma seperated request ID(press enter key to skip this)"
+	read REQUESTIDS
+	if [ -z $REQUESTIDS ]; then
+		echo "enter comma seperated paths(eg: minfo/listmovies,minfo/liststores)"
+		read INPUTPATHS
+		PATHS_SEPRATED=$(echo $INPUTPATHS | tr "," "\n")
+		for path in $PATHS_SEPRATED
+		do
+			TEMP_PATH="$TEMP_PATH""paths=$path&"
+		done
+		FINAL_PATH=${TEMP_PATH::${#TEMP_PATH}-1}
+		echo "Enter sample rate(press enter key to skip this)"
+		read SAMPLERATE
+		if [ -z $SAMPLERATE ]; then
+			REPLAY_ID=$(curl -X POST \
+			http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+			-H 'Content-Type: application/x-www-form-urlencoded' \
+			-H 'cache-control: no-cache' \
+			-d "$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+		else
+			REPLAY_ID=$(curl -X POST \
+			http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+			-H 'Content-Type: application/x-www-form-urlencoded' \
+			-H 'cache-control: no-cache' \
+			-d "$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID&samplerate=$SAMPLERATE" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+		fi
+	else
+		REQUESTIDS=$(echo $REQUESTIDS | tr "," "\n")
+		for REQUEST in $REQUESTIDS
+		do
+			TEMP_REQUESTIDS="$TEMP_REQUESTIDS""reqids=$REQUEST&"
+		done
+		FINAL_REQUESTIDS=${TEMP_REQUESTIDS::${#TEMP_REQUESTIDS}-1}
+		REPLAY_ID=$(curl -X POST \
+		http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'cache-control: no-cache' \
+		-d "$FINAL_REQUESTIDS&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	fi
+}
+
 replay() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
@@ -160,19 +202,7 @@ replay() {
 	echo "Do you want to replay with default paths?(yes/no)"
 	read CHOICE
 	if [ "$CHOICE" = "no" ]; then
-		echo "enter comma seperated paths(eg: minfo/listmovies,minfo/liststores)"
-		read INPUTPATHS
-		PATHS_SEPRATED=$(echo $INPUTPATHS | tr "," "\n")
-		for path in $PATHS_SEPRATED
-		do
-			TEMP_PATH="$TEMP_PATH""paths=$path&"
-		done
-		FINAL_PATH=${TEMP_PATH::${#TEMP_PATH}-1}
-		REPLAY_ID=$(curl -X POST \
-	  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-	  -H 'Content-Type: application/x-www-form-urlencoded' \
-	  -H 'cache-control: no-cache' \
-	  -d "$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+		custom_replay
 	else
 		REPLAY_ID=$(curl -X POST \
 	  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
