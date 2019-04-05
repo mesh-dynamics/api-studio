@@ -74,13 +74,16 @@ public class Utils {
 	}
 
 	public static Optional<List<String>> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap
-			, String possibleKey , boolean removePrefixSlash) {
+			, String possibleKey) {
 		List<String> result = null;
 		// TODO use case insensitive maps in all these cases
 		if (possibleKey != null) {
-			String actualKey = (removePrefixSlash)? possibleKey.substring(1) : possibleKey;
+			if (possibleKey.startsWith("/")) {
+				// remove the preceding forward slash in all the cases
+				possibleKey = possibleKey.substring(1);
+			}
 			for (Map.Entry<String , List<String>> entry : mMap.entrySet()) {
-				if (entry.getKey().equalsIgnoreCase(actualKey)) {
+				if (entry.getKey().equalsIgnoreCase(possibleKey)) {
 					result = entry.getValue();
 					break;
 				}
