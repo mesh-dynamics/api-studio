@@ -144,8 +144,8 @@ public class RRBase {
 	}
 
     public String getMimeType() {
-		return Utils.getCaseInsensitiveMatches(hdrs , HttpHeaders.CONTENT_TYPE)
-				.map(x -> {if (x.size() > 0) return x.get(0); else return null;}).orElse(MediaType.TEXT_PLAIN);
+		return Utils.getCaseInsensitiveMatches(hdrs , HttpHeaders.CONTENT_TYPE).stream()
+            .findFirst().orElse(MediaType.TEXT_PLAIN);
     }
 
 

@@ -165,13 +165,12 @@ public class CompareTemplate {
 						   Comparator.Match match, boolean needDiff) {
 
 		for (TemplateEntry rule: getRules()) {
-			Optional<List<String>> lvals = Utils.getCaseInsensitiveMatches(lhsfmap , rule.path);
-			Optional<List<String>> rvals = Utils.getCaseInsensitiveMatches(rhsfmap , rule.path);
+			List<String> lvals = Utils.getCaseInsensitiveMatches(lhsfmap , rule.path);
+			List<String> rvals = Utils.getCaseInsensitiveMatches(rhsfmap , rule.path);
 			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
 				Comparator.Resolution resolution = OK;
-				Set<String> lset = new HashSet<>(lvals.orElse(Collections.emptyList()));
-				Set<String> rset = new HashSet<>(rvals.orElse(Collections.emptyList()));
-
+				Set<String> lset = new HashSet<>(lvals);
+				Set<String> rset = new HashSet<>(rvals);
 				// check if all values match
 				if (!lset.equals(rset)) {
 					if (rule.ct == ComparisonType.EqualOptional) { // for soft match, its ok to not match on the field val
@@ -184,8 +183,8 @@ public class CompareTemplate {
 			} else {
 				// consider only the first val of the multivals
 				// TODO: mav have to revisit this later
-				Optional<String> lval = lvals.flatMap(vals -> vals.stream().findFirst());
-				Optional<String> rval = rvals.flatMap(vals -> vals.stream().findFirst());
+				Optional<String> lval = lvals.stream().findFirst();
+				Optional<String> rval = rvals.stream().findFirst();
 				rule.checkMatchStr(lval, rval, match, needDiff, prefixpath);
 			}
 			if ((match.mt == Comparator.MatchType.NoMatch) && !needDiff) {
