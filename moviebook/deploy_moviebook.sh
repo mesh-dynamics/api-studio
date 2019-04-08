@@ -38,6 +38,11 @@ init() {
 	fi
 }
 
+test() {
+	echo "Registering Templates"
+	./update_templates.py 1 $GATEWAY_URL $USER movieinfo
+}
+
 setup() {
 	echo "Setting default responses"
 	curl -X POST \
@@ -153,7 +158,7 @@ replay() {
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache' 
+  -H 'cache-control: no-cache'
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
@@ -218,6 +223,7 @@ main() {
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
+		test) shift; test "$@" ;;
     *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
   esac
 }
