@@ -151,13 +151,13 @@ generate_mock_all_yaml() {
 }
 
 custom_replay() {
-	echo "Enter comma seperated request ID(press enter key to skip this)"
+	echo "Enter comma separate request ID(press enter key to skip this)"
 	read REQUESTIDS
 	if [ -z $REQUESTIDS ]; then
-		echo "enter comma seperated paths(eg: minfo/listmovies,minfo/liststores)"
+		echo "enter comma separate paths(eg: minfo/listmovies,minfo/liststores)"
 		read INPUTPATHS
-		PATHS_SEPRATED=$(echo $INPUTPATHS | tr "," "\n")
-		for path in $PATHS_SEPRATED
+		PATHS_SEPARATED=$(echo $INPUTPATHS | tr "," "\n")
+		for path in $PATHS_SEPARATED
 		do
 			TEMP_PATH="$TEMP_PATH""paths=$path&"
 		done
@@ -192,9 +192,7 @@ custom_replay() {
 	fi
 }
 
-replay() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+replay_setup() {
 	generate_mock_all_yaml
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
@@ -210,6 +208,11 @@ replay() {
 		echo "Invalid Input, enter a valid version(v1/v2)"
 		exit 1
 	fi
+}
+
+replay() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
 	echo "Do you want to replay with default paths?(yes/no)"
 	read CHOICE
 	if [ "$CHOICE" = "no" ]; then
@@ -284,11 +287,12 @@ main() {
     init) shift; init "$@";;
     record) shift; record "@";;
     stop_recording) shift; stop_record "@";;
+		replay_setup) shift; replay_setup "@";;
     replay) shift; replay "@";;
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, replay_setup, replay, stop_replay, analyze, clean).";;
   esac
 }
 
