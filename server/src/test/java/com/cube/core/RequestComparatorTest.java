@@ -83,9 +83,9 @@ public class RequestComparatorTest {
         JSONObject testData = object.getJSONObject("exactMatch");
         String req1 = testData.get("res1").toString();
         String req2 = testData.get("res2").toString();
-        Optional<Request> request1 = config.rrstore.getRequest(req1);
-        Optional<Request> request2 = config.rrstore.getRequest(req2);
-        compareTest(testData, request1.get(), request2.get());
+        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
+        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
+        compareTest(testData, request1, request2);
     }
 
     /**
@@ -99,9 +99,10 @@ public class RequestComparatorTest {
         JSONObject testData = object.getJSONObject("headerFuzzyMatch");
         String req1 = testData.get("res1").toString();
         String req2 = testData.get("res2").toString();
-        Request request1 = config.rrstore.getRequest(req1).get();
-        Request request2 = config.rrstore.getRequest(req2).get();
+        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
+        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
+        request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
         compareTest(testData, request1, request2);
     }
 
@@ -116,9 +117,10 @@ public class RequestComparatorTest {
         JSONObject testData = object.getJSONObject("headerNoMatch");
         String req1 = testData.get("res1").toString();
         String req2 = testData.get("res2").toString();
-        Request request1 = config.rrstore.getRequest(req1).get();
-        Request request2 = config.rrstore.getRequest(req2).get();
+        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
+        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
+        request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
         compareTest(testData, request1, request2);
     }
 
@@ -155,24 +157,24 @@ public class RequestComparatorTest {
      * @throws JsonProcessingException
      * @throws JSONException
      */
-    @Test
-    @DisplayName("Get request from Solr")
-    final void getAllRequest() throws JsonProcessingException, JSONException {
-        String[] idList = {
-            "restwrapjdbc2523c0a2-0645-4471-9340-2c4aeef6635e",
-            "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-            "restwrapjdbcd1c51946-f454-4988-9cb0-4d3eb761a0d5",
-            "restwrapjdbccd64786d-1c64-4f50-b376-0b96f9d84eb1",
-            "restwrapjdbcede1e225-f2dd-4378-aa47-fbee9c7c64ef",
-            "restwrapjdbc59b33aff-4e35-47b1-9ead-df9f58407ee7",
-            "reviews7bd68a74-2457-4948-81c9-8b61c851d752",
-            "movieinfod8d4fdb8-7f5a-4610-90ed-4e9267a934ef",
-            "movieinfo45348484-2ef0-47bd-ae94-6069a35e025e",
-            "movieinfo504e9d35-0087-4289-91a0-67333360b7f9"
-        };
-        for (String id: idList){
-            Request request = config.rrstore.getRequest(id).get();
-            System.out.println(mapper.writeValueAsString(request));
-        }
-    }
+//    @Test
+//    @DisplayName("Get request from Solr")
+//    final void getAllRequest() throws JsonProcessingException, JSONException {
+//        String[] idList = {
+//            "restwrapjdbc2523c0a2-0645-4471-9340-2c4aeef6635e",
+//            "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+//            "restwrapjdbcd1c51946-f454-4988-9cb0-4d3eb761a0d5",
+//            "restwrapjdbccd64786d-1c64-4f50-b376-0b96f9d84eb1",
+//            "restwrapjdbcede1e225-f2dd-4378-aa47-fbee9c7c64ef",
+//            "restwrapjdbc59b33aff-4e35-47b1-9ead-df9f58407ee7",
+//            "reviews7bd68a74-2457-4948-81c9-8b61c851d752",
+//            "movieinfod8d4fdb8-7f5a-4610-90ed-4e9267a934ef",
+//            "movieinfo45348484-2ef0-47bd-ae94-6069a35e025e",
+//            "movieinfo504e9d35-0087-4289-91a0-67333360b7f9"
+//        };
+//        for (String id: idList){
+//            Request request = config.rrstore.getRequest(id).get();
+//            System.out.println(mapper.writeValueAsString(request));
+//        }
+//    }
 }
