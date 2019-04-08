@@ -2,7 +2,6 @@ package com.cube.cache;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
@@ -17,10 +16,12 @@ import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
 import com.cube.core.CompareTemplate;
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.CompareTemplate.DataType;
+import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
-import com.cube.exception.CacheException;
 import com.cube.ws.Config;
 
 public class RequestComparatorCache {
@@ -40,31 +41,20 @@ public class RequestComparatorCache {
         CompareTemplate defaultTemplateWithoutReqId = new CompareTemplate();
         CompareTemplate defaultTemplateWithReqId = new CompareTemplate();
         List<TemplateEntry> defaultRules = new ArrayList<>();
-        defaultRules.add(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Obj
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Obj
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str
-                , CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD
-                , CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional
-                , CompareTemplate.ComparisonType.EqualOptional));
+        defaultRules.add(new TemplateEntry(PATHPATH,DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(QPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(FPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(RRTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(CUSTOMERIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(APPPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(COLLECTIONPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD, DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
         defaultRules.forEach(rule -> {
             defaultTemplateWithoutReqId.addRule(rule);
             defaultTemplateWithReqId.addRule(rule);
         });
-        defaultTemplateWithReqId.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str,
-                CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.EqualOptional));
+        defaultTemplateWithReqId.addRule(new TemplateEntry(REQIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
 
 
         defaultRequestComparatorWithoutReqId = new TemplatedRequestComparator(defaultTemplateWithoutReqId

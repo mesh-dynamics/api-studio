@@ -21,15 +21,6 @@ import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import static com.cube.dao.RRBase.APPPATH;
-import static com.cube.dao.RRBase.COLLECTIONPATH;
-import static com.cube.dao.RRBase.CUSTOMERIDPATH;
-import static com.cube.dao.RRBase.HDRPATH;
-import static com.cube.dao.RRBase.METAPATH;
-import static com.cube.dao.RRBase.REQIDPATH;
-import static com.cube.dao.RRBase.RRTYPEPATH;
-import static com.cube.dao.RRBase.SERVICEFIELD;
-import static com.cube.dao.Request.*;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
 public class ResponseComparatorTest {
@@ -37,7 +28,6 @@ public class ResponseComparatorTest {
     static Config config;
     JSONObject object;
     static ObjectMapper mapper;
-    static String[] idList;
 
     /**
      * @throws java.lang.Exception
@@ -45,19 +35,6 @@ public class ResponseComparatorTest {
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         config = new Config();
-        String[] idArr = {
-            "72471111-e096-4494-942e-5fa942c07e90",
-            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
-            "movieinfod6c58e4e-f7cf-448f-acc7-0b1258125577",
-            "movieinfob0573202-5212-4016-ba9d-d2d295812959",
-            "movieinfo688542ce-d62a-4115-8274-7cadc900389d",
-            "movieinfoef243baf-1e76-494a-b66a-fcc8c8aea97a",
-            "movieinfoa6b2c925-fca3-4397-8cd9-2ab0c2143f5c",
-            "restwrapjdbc11939c73-78cd-489b-971f-50a073bc1487",
-            "restwrapjdbce6acccf2-cf09-499f-a7dc-d6b4a11381ba",
-            "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
-        };
-        idList = idArr;
         mapper = config.jsonmapper;
         mapper.registerModule(new JavaTimeModule());
     }
@@ -109,9 +86,11 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Optional<Response> response1 = config.rrstore.getResponse(res1);
-        Optional<Response> response2 = config.rrstore.getResponse(res2);
-        compareTest(testData, response1.get(), response2.get());
+        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
+        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
+//        Optional<Response> response1 = config.rrstore.getResponse(res1);
+//        Optional<Response> response2 = config.rrstore.getResponse(res2);
+        compareTest(testData, response1, response2);
     }
 
     /**
@@ -125,8 +104,8 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = config.rrstore.getResponse(res1).get();
-        Response response2 = config.rrstore.getResponse(res2).get();
+        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
+        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
         compareTest(testData, response1, response2);
     }
 
@@ -141,8 +120,8 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = config.rrstore.getResponse(res1).get();
-        Response response2 = config.rrstore.getResponse(res2).get();
+        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
+        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
         response2.hdrs.putSingle("content-type",response2.hdrs.getFirst("content-type") + "K");
         compareTest(testData, response1, response2);
     }
@@ -157,8 +136,10 @@ public class ResponseComparatorTest {
     final void sameResponseBodyPositiveTest() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("sameResponseBodyPositive");
         String res1 = testData.get("res1").toString();
-        Response response1 = config.rrstore.getResponse(res1).get();
-        compareTest(testData, response1, response1);
+        String res2 = testData.get("res2").toString();
+        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
+        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
+        compareTest(testData, response1, response2);
     }
 
     /**
@@ -171,7 +152,7 @@ public class ResponseComparatorTest {
     final void sameResponseBodyNegativeTest() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("sameResponseBodyNegative");
         String res1 = testData.get("res1").toString();
-        Response response1 = config.rrstore.getResponse(res1).get();
+        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
         JSONObject body = new JSONObject(response1.body);
         body.put("year", 1000);
         body.put("type", "softcopy");
@@ -192,8 +173,8 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("differentResponseBody");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = config.rrstore.getResponse(res1).get();
-        Response response2 = config.rrstore.getResponse(res2).get();
+        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
+        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
         compareTest(testData, response1, response2);
     }
 
@@ -234,33 +215,22 @@ public class ResponseComparatorTest {
 //    @Test
 //    @DisplayName("Default comparison test")
 //    final void defaultComparisonTest() throws IOException, JSONException {
-//
+//        String[] idList = {
+//            "72471111-e096-4494-942e-5fa942c07e90",
+//            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+//            "movieinfod6c58e4e-f7cf-448f-acc7-0b1258125577",
+//            "movieinfob0573202-5212-4016-ba9d-d2d295812959",
+//            "movieinfo688542ce-d62a-4115-8274-7cadc900389d",
+//            "movieinfoef243baf-1e76-494a-b66a-fcc8c8aea97a",
+//            "movieinfoa6b2c925-fca3-4397-8cd9-2ab0c2143f5c",
+//            "restwrapjdbc11939c73-78cd-489b-971f-50a073bc1487",
+//            "restwrapjdbce6acccf2-cf09-499f-a7dc-d6b4a11381ba",
+//            "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
+//        };
 //        for (String id: idList){
 //            Optional<Response> response = config.rrstore.getResponse(id);
 //            System.out.println(response.get().body);
 //        }
-//        ObjectMapper mapper = config.jsonmapper;
-//        mapper.registerModule(new JavaTimeModule());
-//        Optional<Response> response1 = config.rrstore.getResponse(id[1]);
-//        System.out.println(mapper.writeValueAsString(response1));
-//        Optional<Response> response2 = config.rrstore.getResponse(id[2]);
-//        System.out.println(mapper.writeValueAsString(response2));
-//        CompareTemplate template = new CompareTemplate();
-//        template.addRule(new TemplateEntry("/status", DataType.Str, PresenceType.Required, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(PATHPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(QPARAMPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(FPARAMPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(RRTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(CUSTOMERIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(APPPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(REQIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-//        template.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-//        template.addRule(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD, DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-//        TemplatedResponseComparator comparator = new TemplatedResponseComparator(template, mapper);
-//        Match m = comparator.compare(response1.get(), response2.get());
-//        String mjson = config.jsonmapper.writeValueAsString(m);
-//        System.out.println(mjson);
 //    }
 
 }
