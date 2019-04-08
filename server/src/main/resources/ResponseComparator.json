@@ -46,6 +46,7 @@
             ]
         }
     },
+
     "sameResponseBodyPositive" : {
         "res1": "72471111-e096-4494-942e-5fa942c07e90",
         "rules": [

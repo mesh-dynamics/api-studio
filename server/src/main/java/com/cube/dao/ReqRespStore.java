@@ -95,6 +95,12 @@ public interface ReqRespStore {
 	 * @return the matching response on the reqid 
 	 */
 	Optional<Response> getResponse(String reqid);
+
+    /**
+     * @param reqid
+     * @return the matching response on the reqid
+     */
+    Optional<Request> getRequest(String reqid);
 	
 	/**
 	 * @param queryrequest

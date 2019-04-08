@@ -37,7 +37,6 @@ public class ResponseComparatorTest {
     static Config config;
     JSONObject object;
     static ObjectMapper mapper;
-    static String[] idList;
 
     /**
      * @throws java.lang.Exception
@@ -45,19 +44,6 @@ public class ResponseComparatorTest {
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         config = new Config();
-        String[] idArr = {
-            "72471111-e096-4494-942e-5fa942c07e90",
-            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
-            "movieinfod6c58e4e-f7cf-448f-acc7-0b1258125577",
-            "movieinfob0573202-5212-4016-ba9d-d2d295812959",
-            "movieinfo688542ce-d62a-4115-8274-7cadc900389d",
-            "movieinfoef243baf-1e76-494a-b66a-fcc8c8aea97a",
-            "movieinfoa6b2c925-fca3-4397-8cd9-2ab0c2143f5c",
-            "restwrapjdbc11939c73-78cd-489b-971f-50a073bc1487",
-            "restwrapjdbce6acccf2-cf09-499f-a7dc-d6b4a11381ba",
-            "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
-        };
-        idList = idArr;
         mapper = config.jsonmapper;
         mapper.registerModule(new JavaTimeModule());
     }
@@ -234,7 +220,18 @@ public class ResponseComparatorTest {
 //    @Test
 //    @DisplayName("Default comparison test")
 //    final void defaultComparisonTest() throws IOException, JSONException {
-//
+//        String[] idList = {
+//            "72471111-e096-4494-942e-5fa942c07e90",
+//            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+//            "movieinfod6c58e4e-f7cf-448f-acc7-0b1258125577",
+//            "movieinfob0573202-5212-4016-ba9d-d2d295812959",
+//            "movieinfo688542ce-d62a-4115-8274-7cadc900389d",
+//            "movieinfoef243baf-1e76-494a-b66a-fcc8c8aea97a",
+//            "movieinfoa6b2c925-fca3-4397-8cd9-2ab0c2143f5c",
+//            "restwrapjdbc11939c73-78cd-489b-971f-50a073bc1487",
+//            "restwrapjdbce6acccf2-cf09-499f-a7dc-d6b4a11381ba",
+//            "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
+//        };
 //        for (String id: idList){
 //            Optional<Response> response = config.rrstore.getResponse(id);
 //            System.out.println(response.get().body);

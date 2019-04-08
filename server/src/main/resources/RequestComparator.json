@@ -1,0 +1,34 @@
+{
+    "exactMatch" : {
+        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "rules": [
+            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+        ],
+        "output": "ExactMatch"
+    },
+
+    "headerFuzzyMatch" : {
+        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "rules": [
+            { "path": "/hdr/accept",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+        ],
+        "output": "FuzzyMatch"
+    },
+
+    "headerNoMatch" : {
+        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "rules": [
+            { "path": "/hdr/accept",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
+        ],
+        "output":  "NoMatch"
+    }
+}
