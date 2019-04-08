@@ -141,6 +141,24 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     /* (non-Javadoc)
+     * @see com.cube.dao.ReqRespStore#getRequest(java.lang.String)
+     */
+    @Override
+    public Optional<Request> getRequest(String reqid) {
+
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        //query.setRows(1);
+
+        addFilter(query, TYPEF, Types.Request.toString());
+        addFilter(query, REQIDF, reqid);
+
+        Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRequest(doc));
+
+    }
+
+    /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getRespForReq(com.cube.dao.ReqRespStore.Request)
      */
     @Override

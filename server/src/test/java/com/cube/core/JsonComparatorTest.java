@@ -80,6 +80,7 @@ class JsonComparatorTest  {
 			e.printStackTrace();
 		}
 	}
+    //Todo: Add a testcase for combination of fields missing from LHS and different comparison type / presence type in RHS
 
 	private void compareTest(JSONObject testData) throws JsonProcessingException, JSONException{
 		String json1 = testData.get("json1").toString();
@@ -96,12 +97,7 @@ class JsonComparatorTest  {
 			PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
 			ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
 			String customization = ruleObj.getString("customization");
-			TemplateEntry rule;
-			if (customization.isEmpty()) {
-				rule = new TemplateEntry(path, dataType, presenceType, comparisonType);
-			} else {
-				rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
-			}
+			TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
 			template.addRule(rule);
 		}
 
@@ -218,6 +214,19 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("missingFieldRequired");
 		compareTest(testData);
     }
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Missing LHS test")
+    final void missingLHSTest() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("missingLHS");
+        compareTest(testData);
+    }
+
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
 	 * @throws JsonProcessingException
@@ -265,4 +274,5 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("repeatingArray");
 		compareTest(testData);
 	}
+
 }

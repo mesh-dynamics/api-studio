@@ -5,6 +5,8 @@ package com.cube.dao;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -17,9 +19,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-import com.cube.core.Comparator;
-import com.cube.core.CompareTemplate;
-import com.cube.core.JsonComparator;
+import com.cube.core.*;
 
 public class RRBase {
 
@@ -128,7 +128,7 @@ public class RRBase {
 		template.getRule("/reqid").checkMatchStr(reqid, rhs.reqid, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
-		if (getMimeType() == APPLICATION_JSON || ((bodyComparator instanceof JsonComparator)
+		if (getMimeType().equalsIgnoreCase(APPLICATION_JSON) || ((bodyComparator instanceof JsonComparator)
 				&& ((JsonComparator) bodyComparator).pathRulesExist())) {
 			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODYPATH);
 		} else {
@@ -143,8 +143,9 @@ public class RRBase {
 		return match;
 	}
 
-    private String getMimeType() {
-	    return Optional.ofNullable(hdrs.getFirst(HttpHeaders.CONTENT_TYPE)).orElse(MediaType.TEXT_PLAIN);
+    public String getMimeType() {
+		return Utils.getCaseInsensitiveMatches(hdrs , HttpHeaders.CONTENT_TYPE).stream()
+            .findFirst().orElse(MediaType.TEXT_PLAIN);
     }
 
 
