@@ -40,7 +40,7 @@ init() {
 
 register_templates() {
 	echo "Registering Templates"
-	./update_templates.py  $1 $GATEWAY_URL $USER movieinfo
+	./update_templates.py  $1 $GATEWAY_URL $USER $CUBE_APPLICATION
 }
 
 setup() {
