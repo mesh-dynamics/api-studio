@@ -141,7 +141,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getResponse(java.lang.String)
+     * @see com.cube.dao.ReqRespStore#getRequest(java.lang.String)
      */
     @Override
     public Optional<Request> getRequest(String reqid) {
