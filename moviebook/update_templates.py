@@ -3,7 +3,8 @@ import sys
 import json
 import requests
 
-request_filename_prefix = "request_template"
+request_filename_prefix = "template_request_"
+response_filename_prefix = "template_response_"
 json_file_suffix = ".json"
 headers = {'Content-type': 'application/json'}
 
@@ -13,26 +14,34 @@ def main():
     customer = sys.argv[3]
     app = sys.argv[4]
     print (version + " " + gateway + " "  + customer + " " + app)
-    request_filename = request_filename_prefix +  json_file_suffix
+    request_filename = request_filename_prefix + version +  json_file_suffix
+    response_filename = response_filename_prefix + version + json_file_suffix
     #templates = json.load(request_filename)
     # defining the api-endpoint
-    api_endpoint =  "http://" + gateway + "/as/registerTemplate/request/" + customer + "/" + app
-    print (api_endpoint)
-    template_json = read_json_file(request_filename)
-    for entry in template_json:
-        servicename = entry["service"]
-        path = entry["path"]
-        template = entry["template"]
-        template_api_endpoint = api_endpoint + "/" + servicename + "/" + path
-        print(template)
-        r = requests.post(url=template_api_endpoint , json=template , headers=headers)
-        print(r.text)
-        #print(r.status)
+    request_api_endpoint =  "http://" + gateway + "/as/registerTemplate/request/" + customer + "/" + app
+    response_api_endpoint = "http://" + gateway + "/as/registerTemplate/response/" + customer + "/" + app
+    register_templates_from_file(request_filename , "request" , request_api_endpoint, customer, app)
+    register_templates_from_file(response_filename , "response" , response_api_endpoint, customer, app)
 
-def read_json_file(filename):
+
+def register_templates_from_file(filename , reqOrResponse, api_endpoint , customer , app):
     with open(filename ,encoding='utf-8', errors='ignore') as json_data:
         template_as_dict = json.load(json_data , strict=False)
-        return template_as_dict
+        for entry in template_as_dict:
+            servicename = entry["service"]
+            path = entry["path"]
+            try :
+                template = entry["template"]
+                template_api_endpoint = api_endpoint + "/" + servicename + "/" + path
+                print("Registered " + reqOrResponse +" template json for " + customer + \
+                 " :: " +  app + " :: " + " :: " + servicename + " :: " + path)
+                print(template_api_endpoint)
+                r = requests.post(url=template_api_endpoint , json=template , headers=headers)
+                print("Got Reponse :: " + r.text)
+            except Exception as e:
+                print("Exception occured for " +  servicename + " :: " + path)
+                print(e)
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,157 @@
+
+[
+  {
+    "id" : "ResponseTemplate-productpage",
+    "path" : "productpage",
+    "service" : "productpage",
+    "template" : {
+      "prefixPath": "",
+      "rules": []
+    }
+  } ,
+
+  {
+    "id" : "ResponseTemplate-minfo-returnmovie",
+    "path" : "minfo/returnmovie",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/return_updates",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/body/payment_updates",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/body/rental_id",
+          "pt": "Optional",
+          "dt": "Int" ,
+          "ct" : "EqualOptional"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "id" : "ResponseTemplate-minfo-liststores",
+    "path" : "minfo/liststores",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/0/store_id",
+          "pt": "Optional",
+          "dt": "Int"
+        },
+        {
+          "path": "/body/1/store_id",
+          "pt": "Optional",
+          "dt": "Int"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "id" : "ResponseTemplate-minfo-rentmovie",
+    "path" : "minfo/rentmovie",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/inventory_id",
+          "pt": "Required",
+          "dt": "Int",
+          "ct": "EqualOptional"
+        },
+        {
+          "path": "/body/rent",
+          "pt": "Optional",
+          "dt": "Float",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/body/num_updates",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "EqualOptional"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-minfo-listmovies",
+    "path" : "minfo/listmovies",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/0/actors_lastnames",
+          "pt": "Required",
+          "dt": "Str",
+          "ct":"Equal"
+        },
+        {
+          "path": "/body/0/display_actors",
+          "pt": "Required",
+          "dt": "RptArray",
+          "ct": "EqualOptional"
+        },
+        {
+          "path": "/body/0/display_actors/*",
+          "pt":"Optional",
+          "dt":"Str",
+          "ct":"EqualOptional"
+        },
+        {
+          "path": "/body/0/film_id",
+          "pt": "Required",
+          "dt": "Int",
+          "ct": "Equal"
+        },
+        {
+          "path": "/body/0/title",
+          "pt": "Required",
+          "dt": "Str",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/actors_firstnames",
+          "pt": "Required",
+          "dt": "Str",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/film_counts",
+          "pt": "Required",
+          "dt": "Str",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/bookinfo",
+          "pt": "Optional",
+          "dt": "RptArray"
+        },
+        {
+          "path" : "/body/0/timestamp",
+          "pt" : "Required",
+          "dt" : "Int",
+          "ct" : "Equal",
+          "customization" : "[0-9]{13}"
+        }
+      ]
+    }
+  }
+
+
+]

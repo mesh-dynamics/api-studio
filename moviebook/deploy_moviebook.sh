@@ -38,9 +38,9 @@ init() {
 	fi
 }
 
-test() {
+register_templates() {
 	echo "Registering Templates"
-	./update_templates.py 1 $GATEWAY_URL $USER movieinfo
+	./update_templates.py  $1 $GATEWAY_URL $USER movieinfo
 }
 
 setup() {
@@ -223,7 +223,7 @@ main() {
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-		test) shift; test "$@" ;;
+		register_templates) shift; register_templates "$@" ;;
     *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
   esac
 }

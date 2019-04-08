@@ -1,0 +1,83 @@
+
+[
+  {
+    "id" : "ResponseTemplate-productpage",
+    "path" : "productpage",
+    "service" : "productpage",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body/*",
+          "pt" : "Required",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  } ,
+
+  {
+    "id" : "ResponseTemplate-minfo-returnmovie",
+    "path" : "minfo/returnmovie",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body/*",
+          "pt" : "Required",
+          "ct" : "Equal"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "id" : "ResponseTemplate-minfo-liststores",
+    "path" : "minfo/liststores",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body/*",
+          "pt" : "Required",
+          "ct" : "Equal"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "id" : "ResponseTemplate-minfo-rentmovie",
+    "path" : "minfo/rentmovie",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body/*",
+          "pt" : "Required",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-minfo-listmovies",
+    "path" : "minfo/listmovies",
+    "service" : "movieinfo",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body/*",
+          "pt" : "Required",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  }
+
+
+]

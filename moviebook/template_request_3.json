@@ -1,0 +1,309 @@
+[{
+  "id" : "listmovies",
+  "service":"movieinfo",
+  "path":"/minfo/listmovies",
+  "template" : {
+    "prefixPath": "",
+    "rules": [
+      {
+        "path": "/path",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/qparmas",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/fparams",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/hdr/x-b3-traceid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      },
+      {
+        "path" : "/hdr/uber-trace-id",
+        "dt" : "Str",
+        "pt" : "Optional",
+        "ct" : "EqualOptional"
+      },
+      {
+        "path": "/customerid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/app",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/collection",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/meta/service",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/rrtype",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/reqid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      }
+    ]
+  }
+
+},
+{
+  "id" : "rentmovie",
+  "service":"movieinfo",
+  "path":"/minfo/rentmovie",
+  "template" : {
+    "prefixPath": "",
+    "rules": [
+      {
+        "path": "/path",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/qparmas",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/fparams",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/hdr/x-b3-traceid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      },
+      {
+        "path" : "/hdr/uber-trace-id",
+        "dt" : "Str",
+        "pt" : "Optional",
+        "ct" : "EqualOptional"
+      },
+      {
+        "path": "/customerid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/app",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/collection",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/meta/service",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/rrtype",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/reqid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      }
+    ]
+  }
+
+},
+{
+  "id" : "returnmovie",
+  "service":"movieinfo",
+  "path":"/minfo/returnmovie",
+  "template" : {
+    "prefixPath": "",
+    "rules": [
+      {
+        "path": "/path",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/qparmas",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/fparams",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/hdr/x-b3-traceid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      },
+      {
+        "path" : "/hdr/uber-trace-id",
+        "dt" : "Str",
+        "pt" : "Optional",
+        "ct" : "EqualOptional"
+      },
+      {
+        "path": "/customerid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/app",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/collection",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/meta/service",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/rrtype",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/reqid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      }
+    ]
+  }
+
+},
+{
+  "id" : "liststores",
+  "service":"movieinfo",
+  "path":"/minfo/liststores",
+  "template" : {
+    "prefixPath": "",
+    "rules": [
+      {
+        "path": "/path",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/qparmas",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/fparams",
+        "dt": "Obj",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/hdr/x-b3-traceid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      },
+      {
+        "path" : "/hdr/uber-trace-id",
+        "dt" : "Str",
+        "pt" : "Optional",
+        "ct" : "EqualOptional"
+      },
+      {
+        "path": "/customerid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/app",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/collection",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/meta/service",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/rrtype",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "Equal"
+      },
+      {
+        "path": "/reqid",
+        "dt": "Str",
+        "pt": "Optional",
+        "ct": "EqualOptional"
+      }
+    ]
+  }
+
+}
+]
