@@ -137,12 +137,7 @@ public class RequestComparatorTest {
             CompareTemplate.PresenceType presenceType = CompareTemplate.PresenceType.valueOf(ruleObj.getString("presenceType"));
             CompareTemplate.ComparisonType comparisonType = CompareTemplate.ComparisonType.valueOf(ruleObj.getString("comparisonType"));
             String customization = ruleObj.getString("customization");
-            TemplateEntry rule;
-            if (customization.isEmpty()) {
-                rule = new TemplateEntry(path, dataType, presenceType, comparisonType);
-            } else {
-                rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
-            }
+            TemplateEntry  rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
             template.addRule(rule);
         }
 

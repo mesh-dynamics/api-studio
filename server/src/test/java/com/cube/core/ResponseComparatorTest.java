@@ -191,12 +191,7 @@ public class ResponseComparatorTest {
             PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
             ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
             String customization = ruleObj.getString("customization");
-            TemplateEntry rule;
-            if (customization.isEmpty()) {
-                rule = new TemplateEntry(path, dataType, presenceType, comparisonType);
-            } else {
-                rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
-            }
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
             template.addRule(rule);
         }
 
