@@ -76,3 +76,17 @@ This will make curl request to start analyze.
 ./deploy_moviebook.sh clean
 ```
 This will delete moviebook app from the kubernetes cluster
+
+### Register Templates
+```
+./deploy_moviebook.sh register_templates $version
+```
+
+where version can 1,2 or 3. This is primarily for demo purposes 
+
+* Version 1 - No request matches
+* Version 2 - All request partially match. But no response matches
+* Version 3 - All response either match or partially match (template based)
+
+Beyond this, we can replay again with the buggy version of the app. We will get no matches because template version 3 doesn't catch the buggy changes.
+

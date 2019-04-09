@@ -38,6 +38,11 @@ init() {
 	fi
 }
 
+register_templates() {
+	echo "Registering Templates"
+	./update_templates.py  $1 $GATEWAY_URL $USER $CUBE_APPLICATION
+}
+
 setup() {
 	echo "Setting default responses"
 	curl -X POST \
@@ -153,7 +158,7 @@ replay() {
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache' 
+  -H 'cache-control: no-cache'
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
@@ -218,7 +223,8 @@ main() {
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
+    register_templates) shift; register_templates "$@" ;;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay, stop_replay, analyze, clean).";;
   esac
 }
 
