@@ -19,21 +19,21 @@
       "rules": [
         {
           "path": "/body/return_updates",
-          "pt": "Optional",
+          "pt": "Required",
           "dt": "Int",
-          "ct" : "EqualOptional"
+          "ct" : "Equal"
         },
         {
           "path": "/body/payment_updates",
-          "pt": "Optional",
+          "pt": "Required",
           "dt": "Int",
-          "ct" : "EqualOptional"
+          "ct" : "Equal"
         },
         {
           "path": "/body/rental_id",
-          "pt": "Optional",
+          "pt": "Required",
           "dt": "Int" ,
-          "ct" : "EqualOptional"
+          "ct" : "Equal"
         }
       ]
     }
@@ -71,19 +71,19 @@
           "path": "/body/inventory_id",
           "pt": "Required",
           "dt": "Int",
-          "ct": "EqualOptional"
+          "ct": "Equal"
         },
         {
           "path": "/body/rent",
-          "pt": "Optional",
+          "pt": "Required",
           "dt": "Float",
-          "ct" : "EqualOptional"
+          "ct" : "Equal"
         },
         {
           "path": "/body/num_updates",
-          "pt": "Optional",
+          "pt": "Required",
           "dt": "Int",
-          "ct" : "EqualOptional"
+          "ct" : "Equal"
         }
       ]
     }
@@ -97,8 +97,8 @@
       "rules": [
         {
           "path": "/body/0/actors_lastnames",
-          "pt": "Required",
-          "dt": "Str",
+          "pt": "Optional",
+          "dt": "RptArray",
           "ct":"Equal"
         },
         {
@@ -127,14 +127,20 @@
         },
         {
           "path": "/body/0/actors_firstnames",
-          "pt": "Required",
-          "dt": "Str",
+          "pt": "Optional",
+          "dt": "RptArray",
           "ct" : "Equal"
         },
         {
           "path": "/body/0/film_counts",
           "pt": "Required",
-          "dt": "Str",
+          "dt": "RptArray",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/film_counts/*",
+          "pt": "Required",
+          "dt": "Int",
           "ct" : "Equal"
         },
         {
@@ -145,9 +151,9 @@
         {
           "path" : "/body/0/timestamp",
           "pt" : "Required",
-          "dt" : "Int",
-          "ct" : "Equal",
-          "customization" : "[0-9]{13}"
+          "dt" : "Default",
+          "ct" : "EqualOptional",
+          "customization" : "[0-9]{14}"
         }
       ]
     }

@@ -1,7 +1,7 @@
 [{
   "id" : "listmovies",
   "service":"movieinfo",
-  "path":"/minfo/listmovies",
+  "path":"minfo/listmovies",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -78,7 +78,7 @@
 {
   "id" : "rentmovie",
   "service":"movieinfo",
-  "path":"/minfo/rentmovie",
+  "path":"minfo/rentmovie",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -155,7 +155,7 @@
 {
   "id" : "returnmovie",
   "service":"movieinfo",
-  "path":"/minfo/returnmovie",
+  "path":"minfo/returnmovie",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -232,7 +232,7 @@
 {
   "id" : "liststores",
   "service":"movieinfo",
-  "path":"/minfo/liststores",
+  "path":"minfo/liststores",
   "template" : {
     "prefixPath": "",
     "rules": [

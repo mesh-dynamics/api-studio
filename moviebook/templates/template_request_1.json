@@ -1,7 +1,7 @@
 [{
   "id" : "listmovies",
   "service":"movieinfo",
-  "path":"/minfo/listmovies",
+  "path":"minfo/listmovies",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -69,7 +69,7 @@
         "path": "/reqid",
         "dt": "Str",
         "pt": "Optional",
-        "ct": "EqualOptional"
+        "ct": "Equal"
       }
     ]
   }
@@ -78,7 +78,7 @@
 {
   "id" : "rentmovie",
   "service":"movieinfo",
-  "path":"/minfo/rentmovie",
+  "path":"minfo/rentmovie",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -146,7 +146,7 @@
         "path": "/reqid",
         "dt": "Str",
         "pt": "Optional",
-        "ct": "EqualOptional"
+        "ct": "Equal"
       }
     ]
   }
@@ -155,7 +155,7 @@
 {
   "id" : "returnmovie",
   "service":"movieinfo",
-  "path":"/minfo/returnmovie",
+  "path":"minfo/returnmovie",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -223,7 +223,7 @@
         "path": "/reqid",
         "dt": "Str",
         "pt": "Optional",
-        "ct": "EqualOptional"
+        "ct": "Equal"
       }
     ]
   }
@@ -232,7 +232,7 @@
 {
   "id" : "liststores",
   "service":"movieinfo",
-  "path":"/minfo/liststores",
+  "path":"minfo/liststores",
   "template" : {
     "prefixPath": "",
     "rules": [
@@ -300,7 +300,7 @@
         "path": "/reqid",
         "dt": "Str",
         "pt": "Optional",
-        "ct": "EqualOptional"
+        "ct": "Equal"
       }
     ]
   }

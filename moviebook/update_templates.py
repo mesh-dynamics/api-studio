@@ -3,8 +3,8 @@ import sys
 import json
 import requests
 
-request_filename_prefix = "template_request_"
-response_filename_prefix = "template_response_"
+request_filename_prefix = "templates/template_request_"
+response_filename_prefix = "templates/template_response_"
 json_file_suffix = ".json"
 headers = {'Content-type': 'application/json'}
 
