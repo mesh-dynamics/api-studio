@@ -94,6 +94,38 @@ public class RequestComparatorTest {
      * @throws JSONException
      */
     @Test
+    @DisplayName("DataType NoMatch Test")
+    final void dataTypeNoMatch() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("dataTypeNoMatch");
+        String req1 = testData.get("res1").toString();
+        String req2 = testData.get("res2").toString();
+        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
+        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
+        compareTest(testData, request1, request2);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Path NoMatch Test")
+    final void pathNoMatch() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("pathNoMatch");
+        String req1 = testData.get("res1").toString();
+        String req2 = testData.get("res2").toString();
+        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
+        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
+        compareTest(testData, request1, request2);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
     @DisplayName("Header FuzzyMatch Test")
     final void headerFuzzyMatch() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("headerFuzzyMatch");
@@ -102,7 +134,12 @@ public class RequestComparatorTest {
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
+        compareTest(testData, request1, request2);
         request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
+        compareTest(testData, request1, request2);
+        request2.fparams.putSingle("filmName",request2.fparams.getFirst("filmName") + "K");
+        compareTest(testData, request1, request2);
+        request2.qparams.putSingle("filmId",request2.qparams.getFirst("filmName") + "K");
         compareTest(testData, request1, request2);
     }
 
@@ -120,7 +157,12 @@ public class RequestComparatorTest {
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
+        compareTest(testData, request1, request2);
         request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
+        compareTest(testData, request1, request2);
+        request2.fparams.putSingle("filmName",request2.fparams.getFirst("filmName") + "K");
+        compareTest(testData, request1, request2);
+        request2.qparams.putSingle("filmId",request2.qparams.getFirst("filmName") + "K");
         compareTest(testData, request1, request2);
     }
 
@@ -170,6 +212,9 @@ public class RequestComparatorTest {
 //        for (String id: idList){
 //            Request request = config.rrstore.getRequest(id).get();
 //            System.out.println(mapper.writeValueAsString(request));
+//            System.out.println(request.qparams);
+//            System.out.println(request.body);
+//            System.out.println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 //        }
 //    }
 }
