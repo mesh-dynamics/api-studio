@@ -150,6 +150,14 @@ generate_mock_all_yaml() {
 	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" moviebook/mock-all-except-moviebook.yaml
 }
 
+get_replay_id() {
+	REPLAY_ID=$(curl -X POST \
+	http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	-H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'cache-control: no-cache' \
+	-d "$1" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+}
+
 custom_replay() {
 	echo "Enter comma separate request ID(press enter key to skip this)"
 	read REQUESTIDS
@@ -165,17 +173,11 @@ custom_replay() {
 		echo "Enter sample rate(press enter key to skip this)"
 		read SAMPLERATE
 		if [ -z $SAMPLERATE ]; then
-			REPLAY_ID=$(curl -X POST \
-			http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-			-H 'Content-Type: application/x-www-form-urlencoded' \
-			-H 'cache-control: no-cache' \
-			-d "$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+			BODY="$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+			get_replay_id $BODY
 		else
-			REPLAY_ID=$(curl -X POST \
-			http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-			-H 'Content-Type: application/x-www-form-urlencoded' \
-			-H 'cache-control: no-cache' \
-			-d "$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID&samplerate=$SAMPLERATE" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+			BODY="$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID&samplerate=$SAMPLERATE"
+			get_replay_id $BODY
 		fi
 	else
 		REQUESTIDS=$(echo $REQUESTIDS | tr "," "\n")
@@ -184,11 +186,8 @@ custom_replay() {
 			TEMP_REQUESTIDS="$TEMP_REQUESTIDS""reqids=$REQUEST&"
 		done
 		FINAL_REQUESTIDS=${TEMP_REQUESTIDS::${#TEMP_REQUESTIDS}-1}
-		REPLAY_ID=$(curl -X POST \
-		http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-		-H 'Content-Type: application/x-www-form-urlencoded' \
-		-H 'cache-control: no-cache' \
-		-d "$FINAL_REQUESTIDS&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+		BODY="$FINAL_REQUESTIDS&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+		get_replay_id $BODY
 	fi
 }
 
@@ -218,11 +217,8 @@ replay() {
 	if [ "$CHOICE" = "no" ]; then
 		custom_replay
 	else
-		REPLAY_ID=$(curl -X POST \
-	  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-	  -H 'Content-Type: application/x-www-form-urlencoded' \
-	  -H 'cache-control: no-cache' \
-	  -d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+		BODY="paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+		get_replay_id $BODY
 	fi
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
