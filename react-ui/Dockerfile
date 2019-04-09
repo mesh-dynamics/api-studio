@@ -2,7 +2,8 @@
 FROM node:8 as react-build
 WORKDIR /app
 COPY . ./
-RUN npm install
+RUN npm install \
+&& cp -r /app/public/assets/cytoscape /app/public/assets/cytoscape-panzoom /app/public/assets/react-cytoscapejs /app/public/assets/react-scripts node_modules/
 RUN npm run build
 
 # Copy build to production
