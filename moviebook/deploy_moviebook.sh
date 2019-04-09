@@ -22,13 +22,21 @@ init() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
-	kubectl apply -f moviebook/moviebook_virtualservice.yaml
+	kubectl apply -f moviebook/bookinfo_virtualservice.yaml
+	kubectl apply -f moviebook/movieinfo-v1.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
 	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
 	./generate_lua_filters.py
 	echo "lua filters generated"
+	echo "waiting for cubews to come online"
+	until $(curl --output /dev/null --silent --head --fail http://$GATEWAY_URL/cs/health); do
+	  printf '.'
+	  sleep 2
+	done
+	echo "\n"
+	setup
 	if [ "$ENVIRONMENT" = "minikube" ]; then
 	  if [ "$CHOICE" = "yes" ]; then
 	    kubectl delete deployments cubews-v1
@@ -36,6 +44,7 @@ init() {
 	    echo "Run the following command in your shell: telepresence --new-deployment cubews --expose 8080"
 	  fi
 	fi
+
 }
 
 register_templates() {
@@ -129,8 +138,10 @@ record() {
 }
 
 stop_record() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+	COLLECTION_NAME=$(curl -X GET \
+  "http://$GATEWAY_URL/cs/currentcollection?customerid=$USER&app=$CUBE_APPLICATION&instanceid=$CUBE_INSTANCEID" \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache')
 	curl -X POST \
   http://$GATEWAY_URL/cs/stop/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -144,17 +155,76 @@ generate_mock_all_yaml() {
 	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" moviebook/mock-all-except-moviebook.yaml
 }
 
-replay() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+get_replay_id() {
+	REPLAY_ID=$(curl -X POST \
+	http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	-H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'cache-control: no-cache' \
+	-d "$1" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+}
+
+custom_replay() {
+	echo "Enter comma separate request ID(press enter key to skip this)"
+	read REQUESTIDS
+	if [ -z $REQUESTIDS ]; then
+		echo "enter comma separate paths(eg: minfo/listmovies,minfo/liststores)"
+		read INPUTPATHS
+		PATHS_SEPARATED=$(echo $INPUTPATHS | tr "," "\n")
+		for path in $PATHS_SEPARATED
+		do
+			TEMP_PATH="$TEMP_PATH""paths=$path&"
+		done
+		FINAL_PATH=${TEMP_PATH::${#TEMP_PATH}-1}
+		echo "Enter sample rate(press enter key to skip this)"
+		read SAMPLERATE
+		if [ -z $SAMPLERATE ]; then
+			BODY="$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+			get_replay_id $BODY
+		else
+			BODY="$FINAL_PATH&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID&samplerate=$SAMPLERATE"
+			get_replay_id $BODY
+		fi
+	else
+		REQUESTIDS=$(echo $REQUESTIDS | tr "," "\n")
+		for REQUEST in $REQUESTIDS
+		do
+			TEMP_REQUESTIDS="$TEMP_REQUESTIDS""reqids=$REQUEST&"
+		done
+		FINAL_REQUESTIDS=${TEMP_REQUESTIDS::${#TEMP_REQUESTIDS}-1}
+		BODY="$FINAL_REQUESTIDS&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+		get_replay_id $BODY
+	fi
+}
+
+replay_setup() {
 	generate_mock_all_yaml
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
-	REPLAY_ID=$(curl -X POST \
-  http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache' \
-  -d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	echo "Which version of movieinfo you want to test?(v1/v2)"
+	read VERSION
+	if [ "$VERSION" = "v1" ]; then
+		echo "Routing traffic to v1"
+		kubectl apply -f moviebook/movieinfo-v1.yaml
+	elif [ "$VERSION" = "v2" ]; then
+		echo "Routing traffic to v2"
+		kubectl apply -f moviebook/movieinfo-v2.yaml
+	else
+		echo "Invalid Input, enter a valid version(v1/v2)"
+		exit 1
+	fi
+}
+
+replay() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	echo "Do you want to replay with default paths?(yes/no)"
+	read CHOICE
+	if [ "$CHOICE" = "no" ]; then
+		custom_replay
+	else
+		BODY="paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+		get_replay_id $BODY
+	fi
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -164,13 +234,13 @@ replay() {
 	else
 		echo "Replay did not started"
 	fi
-
 	echo $REPLAY_ID > replayid.temp
 }
 
 stop_replay() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
+	kubectl apply -f moviebook/movieinfo-v1.yaml
 }
 
 analyze() {
@@ -182,13 +252,13 @@ analyze() {
   -H 'cache-control: no-cache'
 }
 clean() {
-	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
-	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
+	stop_replay
 	kubectl delete -f moviebook/moviebook.yaml
 	kubectl delete -f cube/service.yaml 2> /dev/null
 	kubectl delete -f cube/service_entry.yaml
 	kubectl delete -f moviebook-gateway.yaml
-	kubectl delete -f moviebook/moviebook_virtualservice.yaml
+	kubectl delete -f moviebook/bookinfo_virtualservice.yaml
+	kubectl delete -f moviebook/movieinfo-v1.yaml
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
@@ -216,15 +286,14 @@ main() {
 	get_environment
   case "$1" in
     init) shift; init "$@";;
-    setup) shift; setup "$@";;
     record) shift; record "@";;
     stop_recording) shift; stop_record "@";;
+		replay_setup) shift; replay_setup "@";;
     replay) shift; replay "@";;
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    register_templates) shift; register_templates "$@" ;;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay, stop_replay, analyze, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay_setup, replay, stop_replay, analyze, clean).";;
   esac
 }
 

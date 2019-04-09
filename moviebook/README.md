@@ -51,17 +51,22 @@ This will deploy yamls and make curl request to start recording request/response
 ```
 This will make curl request and undeploy the yamls to stop recording traffic on moviebook app.
 
+### Setup Replay
+```
+./deploy_moviebook.sh replay_setup
+```
+- Generate mock-all-except-moviebook.yaml
+- mock all the apps except moviebook
+
 ### Replay
 ```
 ./deploy_moviebook.sh replay
 ```
-- Generate mock-all-except-moviebook.yaml
-- mock all the apps except moviebook
 - Make curl request to init and start replay
 
 ### Stop replay
 ```
-./deploy_moviebook stop_replay
+./deploy_moviebook.sh stop_replay
 ```
 This will stop replaying.
 
