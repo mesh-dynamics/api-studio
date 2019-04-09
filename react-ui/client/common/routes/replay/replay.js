@@ -54,15 +54,15 @@ class replay extends Component {
         <ReplayAttribute />
         <Clearfix />
         <div className="replay-container">
-            <Row style={{ minHeight: '100vh' }} >
+            <Row>
                 {/*Service Graph: */}
-                <div className="col-sm-9">
+                <div className="col-sm-9 border-bottom">
                 {
                     <ServiceGraph />
                 }
                 </div>
 
-                <div className="col-sm-3">
+                <div className="col-sm-3 border-bottom">
                     <div className="right-head">
                         Replay
                     </div>

@@ -20,7 +20,7 @@ const initialState = {
     testIds: [],
     selectedTestId: '',
 
-    replayId: cubeConstants.REQ_NOT_DONE,
+    replayId: null,
 
     graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
     graphDataReqErr: '',
@@ -127,7 +127,24 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 report: action.data
-            }
+            };
+        case cubeConstants.CLEAR_PREVIOUS_DATA:
+            return {
+                ...state,
+                selectedTestId: '',
+
+                replayId: null,
+
+                graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
+                graphDataReqErr: '',
+                graphData: null,
+
+                replayStatus:'Init',
+                replayStatusObj: null,
+
+                analysis: null,
+                report: null
+            };
 
         default:
             return state

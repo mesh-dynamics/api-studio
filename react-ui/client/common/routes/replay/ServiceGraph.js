@@ -20,7 +20,7 @@ class ServiceGraph extends Component {
             replayNode: null,
             show: false,
         }
-        this.height = '90vh';
+        this.height = '70vh';
         this.width = '100%';
         this.renderServiceGraph = this.renderServiceGraph.bind(this);
         this.setRP = this.setRP.bind(this);

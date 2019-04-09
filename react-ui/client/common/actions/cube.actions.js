@@ -11,8 +11,19 @@ export const cubeActions = {
     startReplay,
     getReplayStatus,
     getAnalysis,
-    getReport
+    getReport,
+    clear
 };
+
+function clear() {
+    return async dispatch => {
+        dispatch(clearPrev());
+    };
+
+    function clearPrev() {
+        return { type: cubeConstants.CLEAR_PREVIOUS_DATA, data: null };
+    }
+}
 
 function getApps () {
     return async dispatch => {
@@ -25,9 +36,9 @@ function getApps () {
         }
     };
 
-    function request() { return { type: cubeConstants.APPS_REQUEST } }
-    function success(appsList, date) { return { type: cubeConstants.APPS_SUCCESS, data: appsList, date: date } }
-    function failure(message, date) { return { type: cubeConstants.APPS_FAILURE, err: message, date: date } }
+    function request() { return { type: cubeConstants.APPS_REQUEST }; }
+    function success(appsList, date) { return { type: cubeConstants.APPS_SUCCESS, data: appsList, date: date }; }
+    function failure(message, date) { return { type: cubeConstants.APPS_FAILURE, err: message, date: date }; }
 }
 
 function setSelectedApp ( appLabel ) {
