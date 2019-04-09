@@ -47,6 +47,11 @@ init() {
 
 }
 
+register_templates() {
+	echo "Registering Templates"
+	./update_templates.py  $1 $GATEWAY_URL $USER $CUBE_APPLICATION
+}
+
 setup() {
 	echo "Setting default responses"
 	curl -X POST \
@@ -288,7 +293,7 @@ main() {
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay_setup, replay, stop_replay, analyze, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay_setup, replay, stop_replay, analyze, clean).";;
   esac
 }
 
