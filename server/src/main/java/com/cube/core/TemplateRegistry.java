@@ -13,6 +13,10 @@ public class TemplateRegistry {
     @JsonProperty("id")
     private String id;
 
+    // for jackson
+    public TemplateRegistry() {
+        super();
+    }
 
     public String getPath() {
         return path;

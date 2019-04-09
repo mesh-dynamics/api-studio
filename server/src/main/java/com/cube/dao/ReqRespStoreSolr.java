@@ -140,6 +140,23 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     }
 
+    @Override
+    public Map<String, Response> getResponses(List<Request> requests) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query , TYPEF , Types.Response.toString());
+        addFilter(query, REQIDF ,
+                requests.stream().map(request -> request.reqid).filter(Optional::isPresent).map(Optional::get).collect(Collectors
+                        .joining(" OR " , "(" , ")")), false );
+        Optional<Integer> maxResults = Optional.of(requests.size());
+        Map<String, Response> result = new HashMap<>();
+        SolrIterator.getStream(solr , query , maxResults).forEach(doc -> {
+            docToResponse(doc).ifPresent(response ->
+                    response.reqid.ifPresent(reqid -> result.put(reqid , response)));
+        });
+        return result;
+    }
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getRequest(java.lang.String)
      */

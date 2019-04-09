@@ -101,7 +101,13 @@ public interface ReqRespStore {
      * @return the matching response on the reqid
      */
     Optional<Request> getRequest(String reqid);
-	
+
+	/**
+	 * @param requests
+	 * @return
+	 */
+	Map<String, Response> getResponses(List<Request> requests);
+
 	/**
 	 * @param queryrequest
 	 * @return the response corresponding to the request matching in the db

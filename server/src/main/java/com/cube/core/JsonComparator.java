@@ -83,17 +83,7 @@ public class JsonComparator implements Comparator {
 		
 		int numerrs = result.size();
 		for (var diff : diffs) {
-			try {
-				LOGGER.debug("GOT DIFF :: " + jsonMapper.writeValueAsString(diff));
-			} catch (JsonProcessingException e) {
-				LOGGER.error("Unable to write diff as string :: " + e.getMessage());
-			}
 			TemplateEntry rule = template.getRule(diff.path);
-			try {
-				LOGGER.debug("GOT rule corresponding to diff :: " + jsonMapper.writeValueAsString(rule));
-			} catch (JsonProcessingException e) {
-				LOGGER.error("Unable to write template as string :: " + e.getMessage());
-			}
 			switch (diff.op) {
 			case Diff.ADD:
 			case Diff.REPLACE:
@@ -110,22 +100,23 @@ public class JsonComparator implements Comparator {
 				break;
 			default: 
 				LOGGER.error("Unexpected op in diff, ignoring: " + diff.op);
-				
 			}
 			if (diff.resolution.isErr()) {
 				numerrs++;
 			}
 
 			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
-			try {
-				 LOGGER.debug("Final resolition diff :: " + jsonMapper.writeValueAsString(diff));
-			} catch (JsonProcessingException e) {
-				LOGGER.error("Unable to write resolution diff as string :: " + e.getMessage());
-			}
 			result.add(diff);
 		}
 		
 		String matchmeta = "JsonDiff";
+		result.forEach(diff -> {if (diff.resolution.isErr()) {
+			try {
+				LOGGER.debug("ERR DIFF :: " + jsonMapper.writeValueAsString(diff));
+			} catch (JsonProcessingException e) {
+                LOGGER.error("Unable to write resolution diff as string :: " + e.getMessage());
+			}
+		}});
 		MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
 			(diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
 		return new Match(mt, matchmeta, result);
@@ -218,6 +209,7 @@ public class JsonComparator implements Comparator {
 	}
 
 	private DataType getDataType(JsonNode node) {
+		// TODO take care of null pointer exception here
 		if (node.isTextual()) return DataType.Str;
 		if (node.isInt()) return DataType.Int;
 		if (node.isDouble() || node.isFloat()) return DataType.Float;

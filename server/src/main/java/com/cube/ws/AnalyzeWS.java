@@ -25,15 +25,21 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT;
+import static com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY;
 
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateRegistries;
 import com.cube.core.TemplateRegistry;
 import com.cube.core.UtilException;
 import com.cube.dao.Analysis;
@@ -137,7 +143,10 @@ public class AnalyzeWS {
 		try {
 			CollectionType javaType = jsonmapper.getTypeFactory()
 					.constructCollectionType(List.class, TemplateRegistry.class);
-			List<TemplateRegistry> templateRegistries = jsonmapper.readValue(templateRegistryArray, javaType);
+			//jsonmapper.configure(ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+			jsonmapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+			TemplateRegistries registries = jsonmapper.readValue(templateRegistryArray , TemplateRegistries.class);
+			List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
 			TemplateKey.Type templateKeyType;
 			if ("request".equalsIgnoreCase(type)) {
 				templateKeyType = TemplateKey.Type.Request;
@@ -157,7 +166,7 @@ public class AnalyzeWS {
 			return Response.ok().type(MediaType.TEXT_PLAIN).entity(type.concat(" Compare Templates Registered for :: ")
 					.concat(customerId).concat(" :: ").concat(appId)).build();
 		} catch (JsonProcessingException e) {
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent " + e.getMessage()).build();
 		} catch (Exception e) {
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
 		}

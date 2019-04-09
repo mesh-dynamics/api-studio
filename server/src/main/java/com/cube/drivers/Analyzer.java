@@ -8,6 +8,7 @@ package com.cube.drivers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.cube.core.Comparator.MatchType.ExactMatch;
+import static com.cube.core.Comparator.MatchType.NoMatch;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
@@ -93,9 +95,10 @@ public class Analyzer {
             RequestComparator comparator = requestComparatorCache.getRequestComparator(key , false);
             matches = rrstore.getRequests(rq, comparator, Optional.of(10))
                         .collect(Collectors.toList());
-
             // TODO: add toString override for the Request object to debug log
             if (!matches.isEmpty()) {
+                Map<String, Response> replayResponseMap = rrstore.getResponses(matches);
+                Optional<Response> recordedResponse = r.reqid.flatMap(rrstore::getResponse);
                 if (matches.size() > 1) {
                     analysis.reqmultiplematch++;
                 } else {
@@ -113,7 +116,7 @@ public class Analyzer {
                 // else find the best match based on response matching
                 for (Request replayreq : matches) {
                     Comparator.MatchType reqmt = comparator.compare(rq, replayreq);
-                    Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, rrstore);
+                    Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, recordedResponse , replayResponseMap);
 
                     if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
                         bestmatch = match;
@@ -134,6 +137,9 @@ public class Analyzer {
                     case FuzzyMatch: analysis.resppartiallymatched++; break;
                     default: analysis.respnotmatched++; break;
                 }
+                if (bestmatch.getmt() == NoMatch) {
+                    LOGGER.debug("NO MATCH OCCURED FOR RESPONSE :: " + r.reqid.get());
+                }
                 Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
                     analysis.replayid, jsonmapper);
                 rrstore.saveResult(res);
@@ -153,7 +159,8 @@ public class Analyzer {
 
     }
 
-    private Analysis.RespMatchWithReq checkRespMatch(Request recordreq, Request replayreq, ReqRespStore rrstore) {
+    private Analysis.RespMatchWithReq checkRespMatch(Request recordreq, Request replayreq, Optional<Response> recordedResponse ,
+                                                     Map<String, Response> replayResponseMap) {
         return recordreq.reqid.flatMap(recordreqid -> replayreq.reqid.flatMap(replayreqid -> {
             // fetch response of recording and replay
             // if enough information is not available to retrieve a template for matching , return a no match
@@ -169,19 +176,19 @@ public class Analyzer {
                 TemplateKey key = new TemplateKey(recordreq.customerid.get(),
                         recordreq.app.get(), recordreq.getService().get(), recordreq.path , TemplateKey.Type.Response);
                 ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
-                Optional<Response> recordedresp = rrstore.getResponse(recordreqid);
-                Optional<Response> replayresp = rrstore.getResponse(replayreqid);
+                Optional<Response> replayresp = Optional.ofNullable(replayResponseMap.get(replayreqid));
                 //question ? what happens when these optionals don't contain any value ...
                 // what gets returned
-                return recordedresp.flatMap(recordedr -> replayresp.flatMap(replayr -> {
+                return recordedResponse.flatMap(recordedr -> replayresp.flatMap(replayr -> {
                     Comparator.Match rm = comparator.compare(recordedr, replayr);
                     return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, rm));
                 }));
             } catch(RuntimeException e) {
                 // if analysis retrieval caused an error, log the error and return NO MATCH
+                String stackTraceError =  (e.getStackTrace().length > 0) ? ((e.getStackTrace()[0]).getClassName()
+                        + " " + (e.getStackTrace()[0]).getLineNumber()) : "";
                 LOGGER.error("Exception while analyzing response :: " +
-                        recordreq.reqid.orElse(" -1") + " " +  e.getMessage() + " "
-                        + (e.getStackTrace()[0]).getClassName() + " " + (e.getStackTrace()[0]).getLineNumber());
+                        recordreq.reqid.orElse(" -1") + " " +  e.getMessage() + " " + stackTraceError);
                 return Optional.empty();
             }
 

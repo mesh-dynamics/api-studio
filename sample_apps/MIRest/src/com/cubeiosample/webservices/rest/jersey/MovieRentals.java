@@ -121,7 +121,9 @@ public class MovieRentals {
 		if (valueFate >= 0.5) {
 			String[] valueArr = value.split(",");
 			List<String> valueList = Arrays.asList(valueArr);
-			Collections.shuffle(valueList , forShuffle);
+			if (config.CONCAT_BUG) {
+				Collections.shuffle(valueList, forShuffle);
+			}
 			jsonObject.put(fieldName , valueList);
 		}
 		return value;
@@ -137,8 +139,8 @@ public class MovieRentals {
 		    jsonObject.put(fieldName , valueList);
         } else {
 		    List<Integer> valuesAsIntegerList =
-                    Arrays.stream(valueArr).map(x -> Integer.valueOf(x)).collect(Collectors.toList());
-		    Collections.shuffle(valuesAsIntegerList , forShuffle);
+                    Arrays.stream(valueArr).map(Integer::valueOf).collect(Collectors.toList());
+		    //Collections.shuffle(valuesAsIntegerList , forShuffle);
 		    jsonObject.put(fieldName , valuesAsIntegerList);
         }
     	return value;
