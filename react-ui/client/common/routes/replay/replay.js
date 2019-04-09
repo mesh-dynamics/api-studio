@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
-import { Row, Col, Clearfix, Button, Glyphicon } from 'react-bootstrap'
+import { Row, Col, Clearfix, Button, Glyphicon, Tabs, Tab  } from 'react-bootstrap';
 import { XPanel, PageTitle } from '../../components'
 import { connect } from 'react-redux';
 import ServiceGraph from './ServiceGraph';
 import ReplayAttribute from "./ReplayAttribute";
 import "./ReplayAttribute.css";
+import Results from "./Results";
 
 class replay extends Component {
   constructor (props) {
@@ -70,6 +71,17 @@ class replay extends Component {
                     <input type="radio" name="replayType" value="other" /> <span className="rep">Filter for Specific Requests (max 25)</span>
                 </div>
             </Row>
+
+            <div className="result-container">
+                <Tabs defaultActiveKey="result" id="uncontrolled-tab-example">
+                    <Tab eventKey="result" title="Result">
+                        <Results/>
+                    </Tab>
+                    <Tab eventKey="analysis" title="Analysis">
+                        <div>In Prog</div>
+                    </Tab>
+                </Tabs>
+            </div>
         </div>
         
       </div>

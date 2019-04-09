@@ -7,6 +7,7 @@ import Select from 'react-select';
 import './ReplayAttribute.css';
 import {cubeConstants} from "../../constants";
 import {cubeActions} from "../../actions";
+import ScatterPlot from "../../components/Graph/ScatterPlot";
 
 class ReplayAttribute extends Component {
     constructor(props) {

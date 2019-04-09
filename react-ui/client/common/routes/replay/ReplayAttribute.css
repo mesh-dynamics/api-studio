@@ -73,3 +73,7 @@ select {
     padding-top: 15px;
     height: 90vh;
 }
+
+.result-container{
+    padding: 15px;
+}
