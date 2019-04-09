@@ -140,7 +140,6 @@ public class MovieRentals {
         } else {
 		    List<Integer> valuesAsIntegerList =
                     Arrays.stream(valueArr).map(Integer::valueOf).collect(Collectors.toList());
-		    //Collections.shuffle(valuesAsIntegerList , forShuffle);
 		    jsonObject.put(fieldName , valuesAsIntegerList);
         }
     	return value;
