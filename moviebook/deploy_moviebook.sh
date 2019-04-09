@@ -223,8 +223,8 @@ main() {
     stop_replay) shift; stop_replay "@";;
     analyze) shift; analyze "@";;
     clean) shift; clean "$@";;
-		register_templates) shift; register_templates "$@" ;;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, stop_replay, analyze, clean).";;
+    register_templates) shift; register_templates "$@" ;;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay, stop_replay, analyze, clean).";;
   esac
 }
 
