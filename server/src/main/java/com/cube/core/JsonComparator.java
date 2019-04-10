@@ -49,8 +49,8 @@ public class JsonComparator implements Comparator {
 	@Override
 	public Match compare(String lhs, String rhs) {
 
-		LOGGER.debug("COMPARING :: DOC 1 :: " + lhs);
-		LOGGER.debug("COMPARING :: DOC 2 :: " + rhs);
+		LOGGER.info("COMPARING :: DOC 1 :: " + lhs);
+		LOGGER.info("COMPARING :: DOC 2 :: " + rhs);
 
 		JsonNode lhsroot;
 		JsonNode rhsroot;
@@ -112,7 +112,7 @@ public class JsonComparator implements Comparator {
 		String matchmeta = "JsonDiff";
 		result.forEach(diff -> {if (diff.resolution.isErr()) {
 			try {
-				LOGGER.debug("ERR DIFF :: " + jsonMapper.writeValueAsString(diff));
+				LOGGER.info("ERR DIFF :: " + jsonMapper.writeValueAsString(diff));
 			} catch (JsonProcessingException e) {
 				LOGGER.error("Unable to write resolution diff as string :: " + e.getMessage());
 			}

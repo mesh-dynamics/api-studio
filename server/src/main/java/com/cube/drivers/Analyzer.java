@@ -138,7 +138,7 @@ public class Analyzer {
                     default: analysis.respnotmatched++; break;
                 }
                 if (bestmatch.getmt() == NoMatch) {
-                    LOGGER.debug("NO MATCH OCCURED FOR RESPONSE :: " + r.reqid.get());
+                    LOGGER.info("NO MATCH OCCURED FOR RESPONSE :: " + r.reqid.get());
                 }
                 Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
                     analysis.replayid, jsonmapper);
