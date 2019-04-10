@@ -144,10 +144,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Map<String, Response> getResponses(List<Request> requests) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
+        // adding filter for type response
         addFilter(query , TYPEF , Types.Response.toString());
+        // adding filter for request id's against which we want to find repsonses
         addFilter(query, REQIDF ,
-                requests.stream().map(request -> request.reqid).filter(Optional::isPresent).map(Optional::get).collect(Collectors
-                        .joining(" OR " , "(" , ")")), false );
+                requests.stream().map(request -> request.reqid).filter(Optional::isPresent).map(Optional::get)
+                        .collect(Collectors.joining(" OR " , "(" , ")")), false );
         Optional<Integer> maxResults = Optional.of(requests.size());
         Map<String, Response> result = new HashMap<>();
         SolrIterator.getStream(solr , query , maxResults).forEach(doc -> {

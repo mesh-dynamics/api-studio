@@ -7,36 +7,21 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT;
-import static com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY;
 
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
-import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.core.TemplateRegistries;
@@ -46,7 +31,6 @@ import com.cube.dao.Analysis;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Analyzer;
-import com.cube.exception.CacheException;
 
 /**
  * @author prasad
@@ -141,9 +125,6 @@ public class AnalyzeWS {
 										@PathParam("customerId") String customerId , @PathParam("appId") String appId,
 										String templateRegistryArray) {
 		try {
-			CollectionType javaType = jsonmapper.getTypeFactory()
-					.constructCollectionType(List.class, TemplateRegistry.class);
-			//jsonmapper.configure(ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 			jsonmapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
 			TemplateRegistries registries = jsonmapper.readValue(templateRegistryArray , TemplateRegistries.class);
 			List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
