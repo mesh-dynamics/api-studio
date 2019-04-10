@@ -37,6 +37,9 @@ public class CorsFilter implements ContainerResponseFilter {
                 try {
                     return Optional.of(new URL(url));
                 } catch (MalformedURLException e) {
+                    // This is not a critical error. The browser/client may just have set a wrong string as Origin. We
+                    // can safely ignore it and prevent access in this case, which will give the indication to client
+                    // that something in their request is wrong.
                     //e.printStackTrace();
                     return Optional.empty();
                 }
@@ -44,6 +47,9 @@ public class CorsFilter implements ContainerResponseFilter {
         origin.ifPresent(originVal -> {
             if (originVal.getHost().equals("localhost")) {
                 // only allowing from localhost for dev purposes
+                // Browsers will block cross-origin access unless the server sets these fields explicitly and
+                // specifies which domains to allow
+                // Picked from https://www.baeldung.com/cors-in-jax-rs
                 responseContext.getHeaders().add(
                     "Access-Control-Allow-Origin", originVal.toString());
                 responseContext.getHeaders().add(
