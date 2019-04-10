@@ -1,6 +1,6 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import { Row, Col, Clearfix, Button, Glyphicon, Tabs, Tab  } from 'react-bootstrap';
-import { XPanel, PageTitle } from '../../components'
+import { XPanel, PageTitle } from '../../components';
 import { connect } from 'react-redux';
 import ServiceGraph from './ServiceGraph';
 import ReplayAttribute from "./ReplayAttribute";
