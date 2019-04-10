@@ -19,8 +19,8 @@ class ServiceGraph extends Component {
             replaySelected: false,
             replayNode: null,
             show: false,
-        }
-        this.height = '90vh';
+        };
+        this.height = '70vh';
         this.width = '100%';
         this.renderServiceGraph = this.renderServiceGraph.bind(this);
         this.setRP = this.setRP.bind(this);
@@ -35,10 +35,10 @@ class ServiceGraph extends Component {
                     shape: 'roundrectangle',
                     content: 'data(text)',
                     "text-wrap": "wrap",
-                    'width': '200px',
-                    'height': '60px',
+                    'width': '230px',
+                    'height': '70px',
                     'font-family': 'Roboto Condensed',
-                    'font-size': '14px',
+                    'font-size': '15px',
                     //width: 'label',
                     'text-valign': 'center',
                     'text-halign': 'center',
@@ -54,9 +54,6 @@ class ServiceGraph extends Component {
             {
                 selector: '$node > node',
                 style: {
-                    'font-size': '12px',
-                    'width': '200px',
-                    'height': '100px',
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'background-color': '#bbb',
