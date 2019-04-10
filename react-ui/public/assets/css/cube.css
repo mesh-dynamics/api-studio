@@ -4421,3 +4421,16 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     color: #FFFFFF;
     margin-bottom: 10px;
 }
+
+.tab-panel{
+    margin-top: 20px;
+    margin-left: 20px;
+}
+.grey{
+    background: gray !important;
+    color:white;
+}
+.default{
+    background: #00B2FF !important;
+    color: white;
+}
