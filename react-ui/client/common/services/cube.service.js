@@ -163,7 +163,7 @@ async function getTestIds (options) {
 
 async function fetchCollectionList() {
     let response, json;
-    let url = `${config.baseUrl}/cs/recordings?customerid=cube-venky&app=movieinfo`;
+    let url = `${config.baseUrl}/cs/recordings?customerid=ravivj&app=movieinfo`;
     let collections = [];
     try {
         response = await fetch(url, {
@@ -190,11 +190,15 @@ async function fetchCollectionList() {
 
 async function getReplayId(collectionId) {
     let response, json;
-    let url = `${config.baseUrl}/rs/init/cube-venky/movieinfo/${collectionId}`;
+    let url = `${config.baseUrl}/rs/init/ravivj/movieinfo/${collectionId}`;
     let replayId;
     const searchParams = new URLSearchParams();
-    searchParams.set('endpoint', 'http://a3325808aed4a11e8afc602576770962-1805391667.us-east-2.elb.amazonaws.com');
-    searchParams.set('instanceid', 'test');
+    searchParams.set('endpoint', `${config.baseUrl}`);
+    searchParams.set('instanceid', 'prod');
+    searchParams.set('paths', 'minfo/listmovies')
+    searchParams.append('paths', 'minfo/returnmovie')
+    searchParams.append('paths', 'minfo/rentmovie')
+    searchParams.append('paths', 'minfo/liststores')
 
     try {
         let urrl = url;
@@ -220,7 +224,7 @@ async function getReplayId(collectionId) {
 
 async function startReplay(collectionId, replayId) {
     let response, json;
-    let url = `${config.baseUrl}/rs/start/cube-venky/movieinfo/${collectionId}/${replayId}`;
+    let url = `${config.baseUrl}/rs/start/ravivj/movieinfo/${collectionId}/${replayId}`;
 
     try {
         let urrl = url;
@@ -244,7 +248,7 @@ async function startReplay(collectionId, replayId) {
 
 async function checkStatusForReplay(collectionId, replayId) {
     let response, json;
-    let url = `${config.baseUrl}/rs/status/cube-venky/movieinfo/${collectionId}/${replayId}`;
+    let url = `${config.baseUrl}/rs/status/ravivj/movieinfo/${collectionId}/${replayId}`;
     let status = {};
     try {
         response = await fetch(url, {
