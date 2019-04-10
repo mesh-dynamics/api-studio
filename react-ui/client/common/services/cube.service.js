@@ -163,11 +163,10 @@ async function getTestIds (options) {
 
 async function fetchCollectionList() {
     let response, json;
-    const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/cs/recordings?customerid=cube-venky&app=movieinfo`;
+    let url = `${config.baseUrl}/cs/recordings?customerid=cube-venky&app=movieinfo`;
     let collections = [];
     try {
-        response = await fetch(proxyurl + url, {
+        response = await fetch(url, {
             method: "get",
             mode: 'cors',
             headers:{
@@ -191,15 +190,14 @@ async function fetchCollectionList() {
 
 async function getReplayId(collectionId) {
     let response, json;
-    const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/rs/init/cube-venky/movieinfo/${collectionId}`;
+    let url = `${config.baseUrl}/rs/init/cube-venky/movieinfo/${collectionId}`;
     let replayId;
     const searchParams = new URLSearchParams();
     searchParams.set('endpoint', 'http://a3325808aed4a11e8afc602576770962-1805391667.us-east-2.elb.amazonaws.com');
     searchParams.set('instanceid', 'test');
 
     try {
-        let urrl = proxyurl + url;
+        let urrl = url;
         response = await fetch(urrl, {
             method: "post",
             body: searchParams,
@@ -222,11 +220,10 @@ async function getReplayId(collectionId) {
 
 async function startReplay(collectionId, replayId) {
     let response, json;
-    const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/rs/start/cube-venky/movieinfo/${collectionId}/${replayId}`;
+    let url = `${config.baseUrl}/rs/start/cube-venky/movieinfo/${collectionId}/${replayId}`;
 
     try {
-        let urrl = proxyurl + url;
+        let urrl = url;
         response = await fetch(urrl, {
             method: "post",
             headers: new Headers({
@@ -247,11 +244,10 @@ async function startReplay(collectionId, replayId) {
 
 async function checkStatusForReplay(collectionId, replayId) {
     let response, json;
-    const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/rs/status/cube-venky/movieinfo/${collectionId}/${replayId}`;
+    let url = `${config.baseUrl}/rs/status/cube-venky/movieinfo/${collectionId}/${replayId}`;
     let status = {};
     try {
-        response = await fetch(proxyurl + url, {
+        response = await fetch(url, {
             method: "get",
             headers: new Headers({
                 "cache-control": "no-cache"
@@ -274,13 +270,12 @@ async function checkStatusForReplay(collectionId, replayId) {
 
 async function fetchAnalysis(collectionId, replayId) {
     let response, json;
-    const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/as/analyze/${replayId}`;
+    let url = `${config.baseUrl}/as/analyze/${replayId}`;
     const searchParams = new URLSearchParams();
     searchParams.set('tracefield', 'x-b3-traceid');
     let analysis = {};
     try {
-        response = await fetch(proxyurl + url, {
+        response = await fetch(url, {
             method: "post",
             body: searchParams,
             headers: new Headers({
@@ -305,11 +300,10 @@ async function fetchAnalysis(collectionId, replayId) {
 
 async function fetchReport(collectionId, replayId) {
     let response, json;
-    const proxyurl = "https://cors-anywhere.herokuapp.com/";
-    let url = `${config.baseUrl}/cubews/as/aggrresult/${replayId}`;
+    let url = `${config.baseUrl}/as/aggrresult/${replayId}`;
     let report = {};
     try {
-        response = await fetch(proxyurl + url, {
+        response = await fetch(url, {
             method: "get",
             headers: new Headers({
                 "cache-control": "no-cache"
