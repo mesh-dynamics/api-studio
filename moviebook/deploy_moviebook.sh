@@ -286,12 +286,13 @@ main() {
 	get_environment
   case "$1" in
     init) shift; init "$@";;
-    record) shift; record "@";;
-    stop_recording) shift; stop_record "@";;
-		replay_setup) shift; replay_setup "@";;
-    replay) shift; replay "@";;
-    stop_replay) shift; stop_replay "@";;
-    analyze) shift; analyze "@";;
+    record) shift; record "$@";;
+    stop_recording) shift; stop_record "$@";;
+    register_templates) shift; register_templates "$@";;
+    replay_setup) shift; replay_setup "$@";;
+    replay) shift; replay "$@";;
+    stop_replay) shift; stop_replay "$@";;
+    analyze) shift; analyze "$@";;
     clean) shift; clean "$@";;
     *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay_setup, replay, stop_replay, analyze, clean).";;
   esac
