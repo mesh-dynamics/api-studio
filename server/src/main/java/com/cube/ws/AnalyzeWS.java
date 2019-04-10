@@ -7,40 +7,30 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT;
 
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
-import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateRegistries;
 import com.cube.core.TemplateRegistry;
 import com.cube.core.UtilException;
 import com.cube.dao.Analysis;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Analyzer;
-import com.cube.exception.CacheException;
 
 /**
  * @author prasad
@@ -135,9 +125,10 @@ public class AnalyzeWS {
 										@PathParam("customerId") String customerId , @PathParam("appId") String appId,
 										String templateRegistryArray) {
 		try {
-			CollectionType javaType = jsonmapper.getTypeFactory()
-					.constructCollectionType(List.class, TemplateRegistry.class);
-			List<TemplateRegistry> templateRegistries = jsonmapper.readValue(templateRegistryArray, javaType);
+			//TODO study the impact of enabling this flag in other deserialization methods
+			//jsonmapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+			TemplateRegistries registries = jsonmapper.readValue(templateRegistryArray , TemplateRegistries.class);
+			List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
 			TemplateKey.Type templateKeyType;
 			if ("request".equalsIgnoreCase(type)) {
 				templateKeyType = TemplateKey.Type.Request;
@@ -157,7 +148,7 @@ public class AnalyzeWS {
 			return Response.ok().type(MediaType.TEXT_PLAIN).entity(type.concat(" Compare Templates Registered for :: ")
 					.concat(customerId).concat(" :: ").concat(appId)).build();
 		} catch (JsonProcessingException e) {
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent " + e.getMessage()).build();
 		} catch (Exception e) {
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
 		}
