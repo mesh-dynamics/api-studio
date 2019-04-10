@@ -114,7 +114,7 @@ public class JsonComparator implements Comparator {
 			try {
 				LOGGER.debug("ERR DIFF :: " + jsonMapper.writeValueAsString(diff));
 			} catch (JsonProcessingException e) {
-                LOGGER.error("Unable to write resolution diff as string :: " + e.getMessage());
+				LOGGER.error("Unable to write resolution diff as string :: " + e.getMessage());
 			}
 		}});
 		MatchType mt = (numerrs > 0) ? MatchType.NoMatch :

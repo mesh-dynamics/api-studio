@@ -185,8 +185,7 @@ public class Analyzer {
                 }));
             } catch(RuntimeException e) {
                 // if analysis retrieval caused an error, log the error and return NO MATCH
-                String stackTraceError =  (e.getStackTrace().length > 0) ? ((e.getStackTrace()[0]).getClassName()
-                        + " " + (e.getStackTrace()[0]).getLineNumber()) : "";
+                String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
                 LOGGER.error("Exception while analyzing response :: " +
                         recordreq.reqid.orElse(" -1") + " " +  e.getMessage() + " " + stackTraceError);
                 return Optional.empty();

@@ -131,4 +131,9 @@ public final class UtilException {
 		throw (E) exception;
 	}
 
+	public static String extractFirstStackTraceLocation(StackTraceElement[] stackTraces) {
+		return (stackTraces.length > 0) ? (stackTraces[0]).getClassName()
+				+ " " + (stackTraces[0]).getLineNumber() : "";
+	}
+
 }

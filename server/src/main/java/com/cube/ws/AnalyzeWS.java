@@ -125,7 +125,8 @@ public class AnalyzeWS {
 										@PathParam("customerId") String customerId , @PathParam("appId") String appId,
 										String templateRegistryArray) {
 		try {
-			jsonmapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+			//TODO study the impact of enabling this flag in other deserialization methods
+			//jsonmapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
 			TemplateRegistries registries = jsonmapper.readValue(templateRegistryArray , TemplateRegistries.class);
 			List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
 			TemplateKey.Type templateKeyType;

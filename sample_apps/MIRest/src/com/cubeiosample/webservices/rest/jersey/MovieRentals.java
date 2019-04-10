@@ -137,7 +137,7 @@ public class MovieRentals {
 		if (config.CONCAT_BUG) {
 		    Collections.shuffle(valueList , forShuffle);
 		    jsonObject.put(fieldName , valueList);
-        } else {
+		} else {
 		    List<Integer> valuesAsIntegerList =
                     Arrays.stream(valueArr).map(Integer::valueOf).collect(Collectors.toList());
 		    jsonObject.put(fieldName , valuesAsIntegerList);
@@ -149,6 +149,7 @@ public class MovieRentals {
     	for (int i = 0; i < films.length(); ++i) {
     		JSONObject film = films.getJSONObject(i);
 			long seed = System.nanoTime();
+			// having the same seed for shuffling all the arrays in the same order
     		String firstNames  = arrayifyOrRemoveRandomly(film, FIRST_NAMES , new Random(seed));
     		String lastNames = arrayifyOrRemoveRandomly(film, LAST_NAMES , new Random(seed));
     		String filmCounts = arrayifyToNumbers(film, FILM_COUNTS , new Random(seed));
