@@ -16,11 +16,14 @@ where,
 `your-pword` is your Docker password.  
 `your-email` is your Docker email.  
 
-2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID` as Environment variables, for example:
+2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID`, `CUBE_USER`(optional) as Environment variables, for example:
 ```
 export CUBE_APPLICATION=movieinfo
 export CUBE_INSTANCEID=prod
+export CUBE_USER=aakash
 ```
+>NOTE: if CUBE_USER is not exported, the script will use $USER as CUBE_USER
+
 3. Install python dependencies(pip, yaml, jinja2):
 ```
 sudo easy_install pip
@@ -87,7 +90,7 @@ This will delete moviebook app from the kubernetes cluster
 ./deploy_moviebook.sh register_templates $version
 ```
 
-where version can 1,2 or 3. This is primarily for demo purposes 
+where version can 1,2 or 3. This is primarily for demo purposes
 
 * Version 1 - No request matches
 * Version 2 - All request partially match. But no response matches

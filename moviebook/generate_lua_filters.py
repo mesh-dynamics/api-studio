@@ -5,7 +5,7 @@ import os
 from jinja2 import Environment, FileSystemLoader
 
 env = Environment(loader=FileSystemLoader('moviebook/templates'))
-customer = os.getlogin()
+customer = sys.argv[1]
 cube_application = os.environ['CUBE_APPLICATION']
 cube_instanceid = os.environ['CUBE_INSTANCEID']
 data_stream = open('moviebook/services.yaml', 'r')
