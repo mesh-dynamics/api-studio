@@ -2,6 +2,7 @@
 
 import yaml
 import os
+import sys
 from jinja2 import Environment, FileSystemLoader
 
 env = Environment(loader=FileSystemLoader('moviebook/templates'))
