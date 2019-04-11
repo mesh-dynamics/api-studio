@@ -7,6 +7,7 @@ import Select from 'react-select';
 import './ReplayAttribute.css';
 import {cubeConstants} from "../../constants";
 import {cubeActions} from "../../actions";
+import ScatterPlot from "../../components/Graph/ScatterPlot";
 
 class ReplayAttribute extends Component {
     constructor(props) {
@@ -94,16 +95,10 @@ class ReplayAttribute extends Component {
         cube.selectedTestId = e.target.value;
         if (e) {
             console.log('test-id label is: ', e.target.value);
+            dispatch(cubeActions.clear());
             dispatch(cubeActions.setSelectedTestId(e.target.value));
             dispatch(cubeActions.getGraphData());
             dispatch(cubeActions.getReplayId(e.target.value));
-            /*setTimeout(() => {
-                this.replay();
-            });*/
-
-            /*if (e.label == cubeConstants.CREATE_NEW) {
-                this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
-            }*/
         }
     }
 
@@ -153,7 +148,7 @@ class ReplayAttribute extends Component {
                                         <Col md={6}>
                                             <span className="label">Application</span><br/>
                                             <select name="" id="">
-                                                <option value="">Select App</option>
+                                                <option value="">MovieInfo</option>
                                             </select> &nbsp;&nbsp;
                                             <span className="cube-btn">NEW TEST</span>
                                         </Col>
