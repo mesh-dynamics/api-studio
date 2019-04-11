@@ -123,7 +123,7 @@ public class Analyzer {
                     if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
                         bestmatch = match;
                         bestreqmt = reqmt;
-                        if (bestreqmt == ExactMatch && bestmatch.getmt() == ExactMatch) {
+                        if (bestmatch.getmt() == ExactMatch) {
                             break;
                         }
                     }
