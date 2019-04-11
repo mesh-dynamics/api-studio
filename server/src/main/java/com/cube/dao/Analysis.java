@@ -5,8 +5,12 @@
  */
 package com.cube.dao;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.zookeeper.Op;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -105,18 +109,35 @@ public class Analysis {
 		 * @param replayreq
 		 * @param match
 		 */
-		public RespMatchWithReq(Request recordreq, Request replayreq, Comparator.Match match) {
+		public RespMatchWithReq(Request recordreq, Request replayreq, Comparator.Match match,
+								Response recordres , Response replayres) {
 			this.recordreq = recordreq;
 			this.replayreq = replayreq;
+			this.recordres = recordres;
+			this.replayres = replayres;
 			this.match = match;
 		}
 
 		final Comparator.Match match;
 		final Request recordreq;
 		final Request replayreq;
+		final Response recordres;
+		final Response replayres;
 
 		public Comparator.MatchType getmt() {
 			return match.mt;
+		}
+
+		public List<Comparator.Diff> getDiffs() {
+			return match.diffs;
+		}
+
+		public Optional<String> getRecordedResponseBody() {
+			return (recordres != null) ? Optional.ofNullable(recordres.body) : Optional.empty();
+		}
+
+		public Optional<String> getReplayResponseBody() {
+			return (replayres != null) ? Optional.ofNullable(replayres.body) : Optional.empty();
 		}
 
 	}

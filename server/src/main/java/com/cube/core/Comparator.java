@@ -34,6 +34,7 @@ public interface Comparator {
 	Match compare(String lhs, String rhs);
 	
 	public enum MatchType {
+		Default,
 		ExactMatch,
 		FuzzyMatch,
 		NoMatch,
@@ -57,9 +58,11 @@ public interface Comparator {
 		 */
 		public boolean isBetter(MatchType other) {
 			switch (this) {
-				case NoMatch: return (other == NoMatch); // NOTE: NoMatch is considered better than NoMatch to handle the starting condition
-				case ExactMatch: return (other != ExactMatch);
-				default: return (other == NoMatch); // PartialMatch is better only if other is NoMatch
+				case Default: return false; // the default is only the starting condition and worse than anything
+				case Exception: return (other == Default); // Exception is worse than anything except default
+				case ExactMatch: return (other != ExactMatch); // Exact match overrides exact match
+				default: return (other == NoMatch || other == Exception || other == Default); // No Match doesn't override
+				// PartialMatch overrides PartialMatch
 			}
 		}
 
@@ -172,6 +175,8 @@ public interface Comparator {
 		}
 
 		public static Match NOMATCH = new Match(MatchType.NoMatch, "", Collections.emptyList());
+		public static Match DEFAULT = new Match(MatchType.Default, "", Collections.emptyList());
+
 
 		public String getDiffAsJsonStr(ObjectMapper jsonmapper) {
 			try {
