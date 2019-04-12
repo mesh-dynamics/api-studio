@@ -79,6 +79,36 @@
           "pt" : "Required",
           "dt" : "Default",
           "ct" : "Equal"
+        },
+        {
+          "path" : "/body/0/actors_lastnames",
+          "pt" : "Required",
+          "dt" : "Default",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/0/actors_lastnames/*",
+          "pt" : "Required",
+          "dt" : "Default",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/0/book_info",
+          "pt" : "Required",
+          "dt" : "Default",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/0/actors_firstnames",
+          "pt" : "Required",
+          "dt" : "Default",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/0/actors_firstnames/*",
+          "pt" : "Required",
+          "dt" : "Default",
+          "ct" : "Equal"
         }
       ]
     }
