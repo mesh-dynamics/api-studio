@@ -132,11 +132,11 @@ public class Analysis {
 		}
 
 		public Optional<String> getRecordedResponseBody() {
-			return recordres.flatMap(response -> Optional.ofNullable(response.body));
+			return recordres.map(response -> response.body);
 		}
 
 		public Optional<String> getReplayResponseBody() {
-			return replayres.flatMap(response -> Optional.ofNullable(response.body));
+			return replayres.map(response -> response.body);
 		}
 
 		private Optional<String> serializeRequest(Request request, ObjectMapper jsonMapper) {

@@ -61,7 +61,7 @@ public interface Comparator {
 		 */
 		public boolean isBetter(MatchType other) {
 			switch (this) {
-				case ExactMatch: return true; // ExactMatch will override Exact Match
+				case ExactMatch: return (other != ExactMatch); // ExactMatch will override Exact Match
 				case FuzzyMatch: return (other != ExactMatch); // Partial Match overrides Partial Match
 				case NoMatch: return (other == Exception || other == Default); // No Match does not override No Match
 				case Exception: return (other == Default);
