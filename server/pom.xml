@@ -4,10 +4,11 @@
   <version>V1-SNAPSHOT</version>
   <packaging>war</packaging>
   <properties>
-	<version.jersey>2.27</version.jersey>
-	<version.log4j>2.11.1</version.log4j>
-	<version.dockerfile-maven>1.4.9</version.dockerfile-maven>
-    <version.java>11</version.java>     
+	  <version.jersey>2.27</version.jersey>
+	  <version.log4j>2.11.1</version.log4j>
+	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
+	  <version.java>11</version.java>
+	  <version.jaxb>2.3.2</version.jaxb>
   </properties>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -18,8 +19,17 @@
             <version>2.9.0</version>
             <scope>import</scope>
             <type>pom</type>
-        </dependency>   
-    </dependencies>
+        </dependency>
+		<!-- needed since some jaxb-api not found exceptions were being thrown for CORS preflight requests -->
+		<!-- https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis -->
+		<!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-bom -->
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-bom</artifactId>
+			<version>${version.jaxb}</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
   </dependencyManagement>
   <build>
     <plugins>
@@ -242,6 +252,18 @@
 		  <artifactId>jackson-datatype-jsr310</artifactId>
 		  <version>2.9.8</version>
 		  <scope>test</scope>
+	  </dependency>
+	  <!-- related to jaxb-bom above -->
+	  <!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl -->
+	  <dependency>
+		  <groupId>com.sun.xml.bind</groupId>
+		  <artifactId>jaxb-impl</artifactId>
+		  <version>${version.jaxb}</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>com.sun.xml.bind</groupId>
+		  <artifactId>jaxb-core</artifactId>
+		  <version>2.3.0.1</version>
 	  </dependency>
   </dependencies>
   <groupId>com.cube</groupId>
