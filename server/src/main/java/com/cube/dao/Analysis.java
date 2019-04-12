@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.zookeeper.Op;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -110,7 +109,7 @@ public class Analysis {
 		 * @param match
 		 */
 		public RespMatchWithReq(Request recordreq, Request replayreq, Comparator.Match match,
-								Response recordres , Response replayres) {
+								Optional<Response> recordres , Optional<Response> replayres) {
 			this.recordreq = recordreq;
 			this.replayreq = replayreq;
 			this.recordres = recordres;
@@ -121,8 +120,8 @@ public class Analysis {
 		final Comparator.Match match;
 		final Request recordreq;
 		final Request replayreq;
-		final Response recordres;
-		final Response replayres;
+		final Optional<Response> recordres;
+		final Optional<Response> replayres;
 
 		public Comparator.MatchType getmt() {
 			return match.mt;
@@ -133,14 +132,31 @@ public class Analysis {
 		}
 
 		public Optional<String> getRecordedResponseBody() {
-			return (recordres != null) ? Optional.ofNullable(recordres.body) : Optional.empty();
+			return recordres.flatMap(response -> Optional.ofNullable(response.body));
 		}
 
 		public Optional<String> getReplayResponseBody() {
-			return (replayres != null) ? Optional.ofNullable(replayres.body) : Optional.empty();
+			return replayres.flatMap(response -> Optional.ofNullable(response.body));
 		}
 
+		private Optional<String> serializeRequest(Request request, ObjectMapper jsonMapper) {
+			try {
+				return Optional.of(jsonMapper.writeValueAsString(request));
+			} catch (Exception e) {
+				return Optional.empty();
+			}
+		}
+
+		public Optional<String> getReplayReq(ObjectMapper jsonMapper) {
+			return serializeRequest(replayreq , jsonMapper);
+		}
+
+
+		public Optional<String> getRecordReq(ObjectMapper jsonMapper) {
+			return serializeRequest(recordreq , jsonMapper);
+		}
 	}
+
 	
 	public static class ReqRespMatchResult {
 		
@@ -185,7 +201,7 @@ public class Analysis {
 		 * @param jsonmapper
 		 */
 		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
-			this(rm.recordreq.reqid.orElse(""), rm.replayreq.reqid.orElse(""), reqmt, size, 
+			this(rm.recordreq.reqid.orElse(""), rm.replayreq.reqid.orElse(""), reqmt, size,
 					rm.match,
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
 					rm.recordreq.getService().orElse(""), rm.recordreq.path,

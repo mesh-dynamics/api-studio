@@ -119,7 +119,6 @@ public class Analyzer {
                 for (Request replayreq : matches) {
                     Comparator.MatchType reqmt = comparator.compare(rq, replayreq);
                     Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, recordedResponse , replayResponseMap);
-
                     if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
                         bestmatch = match;
                         bestreqmt = reqmt;
@@ -139,20 +138,21 @@ public class Analyzer {
                     case FuzzyMatch: analysis.resppartiallymatched++; break;
                     default: analysis.respnotmatched++; break;
                 }
-                if (bestmatch.getmt() == NoMatch) {
-                    LOGGER.info("NO MATCH OCCURRED FOR RESPONSE :: " + r.reqid.orElse("-1"));
-                    LOGGER.info("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
-                    LOGGER.info("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
-                    bestmatch.getDiffs().stream().filter(diff -> diff.resolution.isErr()).forEach(
-                            diff -> {
-                                try {
-                                    LOGGER.info("ERROR DIFF :: " + jsonmapper.writeValueAsString(diff));
-                                } catch (JsonProcessingException e) {
-                                    // DO NOTHING
-                                }
-                            });
 
-                }
+                LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqid.orElse("-1"));
+                LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(jsonmapper).orElse(" N/A"));
+                LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonmapper).orElse("N/A"));
+                LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
+                LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
+                bestmatch.getDiffs().stream().filter(diff -> true).forEach(
+                        diff -> {
+                            try {
+                                LOGGER.debug("DIFF :: " + jsonmapper.writeValueAsString(diff));
+                            } catch (JsonProcessingException e) {
+                                // DO NOTHING
+                            }
+                        });
+
                 Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
                     analysis.replayid, jsonmapper);
                 rrstore.saveResult(res);
@@ -194,7 +194,8 @@ public class Analyzer {
                 // what gets returned
                 return recordedResponse.flatMap(recordedr -> replayresp.flatMap(replayr -> {
                     Comparator.Match rm = comparator.compare(recordedr, replayr);
-                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, rm , recordedr, replayr));
+                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq , rm ,
+                            Optional.of(recordedr) , Optional.of(replayr)));
                 }));
             } catch(RuntimeException e) {
                 // if analysis retrieval caused an error, log the error and return NO MATCH
@@ -205,7 +206,7 @@ public class Analyzer {
             }
 
         })).orElse(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH
-                , null , null));
+                , Optional.empty() , Optional.empty()));
     }
 
     private static boolean isReqRespMatchBetter(Comparator.MatchType reqm1, Comparator.MatchType respm1,
