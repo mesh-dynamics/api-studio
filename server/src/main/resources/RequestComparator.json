@@ -10,9 +10,41 @@
             { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/path",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": "ExactMatch"
+    },
+
+    "rootParamFuzzyMatch" : {
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "rules": [
+            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/path",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+        ],
+        "output": "FuzzyMatch"
+    },
+
+    "rootParamNoMatch" : {
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "rules": [
+            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/path",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
+        ],
+        "output": "NoMatch"
     },
 
     "dataTypeNoMatch" : {
@@ -24,7 +56,7 @@
         "output": "NoMatch"
     },
 
-    "pathNoMatch" : {
+    "pathNotFound" : {
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
@@ -33,7 +65,7 @@
         "output": "NoMatch"
     },
 
-    "headerFuzzyMatch" : {
+    "multimapFuzzyMatch" : {
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
@@ -45,7 +77,7 @@
         "output": "FuzzyMatch"
     },
 
-    "headerNoMatch" : {
+    "multimapNoMatch" : {
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [

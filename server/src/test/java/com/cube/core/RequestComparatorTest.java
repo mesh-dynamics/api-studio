@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.time.temporal.TemporalAmount;
 import java.util.Optional;
 
 
@@ -79,13 +80,9 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Exact Match Test")
-    final void exactMatch() throws IOException, JSONException {
+    final void exactMatchTest() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("exactMatch");
-        String req1 = testData.get("req1").toString();
-        String req2 = testData.get("req2").toString();
-        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
-        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
-        compareTest(testData, request1, request2);
+        matchTest(testData);
     }
 
     /**
@@ -95,13 +92,9 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("DataType NoMatch Test")
-    final void dataTypeNoMatch() throws IOException, JSONException {
+    final void dataTypeNoMatchTest() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("dataTypeNoMatch");
-        String req1 = testData.get("req1").toString();
-        String req2 = testData.get("req2").toString();
-        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
-        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
-        compareTest(testData, request1, request2);
+        matchTest(testData);
     }
 
     /**
@@ -111,8 +104,12 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Path NoMatch Test")
-    final void pathNoMatch() throws IOException, JSONException {
-        JSONObject testData = object.getJSONObject("pathNoMatch");
+    final void pathNotFoundTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("pathNotFound");
+        matchTest(testData);
+    }
+
+    private void matchTest(JSONObject testData) throws IOException, JSONException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
@@ -126,20 +123,37 @@ public class RequestComparatorTest {
      * @throws JSONException
      */
     @Test
-    @DisplayName("Header FuzzyMatch Test")
-    final void headerFuzzyMatch() throws IOException, JSONException {
-        JSONObject testData = object.getJSONObject("headerFuzzyMatch");
+    @DisplayName("Multimap FuzzyMatch Test")
+    final void multimapFuzzyMatchTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("multimapFuzzyMatch");
+        multimapMatchTest(testData);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Multimap NoMatch Test")
+    final void multimapNoMatchTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("multimapNoMatch");
+        multimapMatchTest(testData);
+    }
+
+    private void multimapMatchTest(JSONObject testData) throws IOException, JSONException  {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
-        compareTest(testData, request1, request2);
+        compareTest(testData, request1, request2, Optional.of("/hdr/accept"));
         request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
-        compareTest(testData, request1, request2);
+        compareTest(testData, request1, request2, Optional.of("/meta/method"));
         request2.fparams.putSingle("filmName",request2.fparams.getFirst("filmName") + "K");
-        compareTest(testData, request1, request2);
+        compareTest(testData, request1, request2, Optional.of("/fparams/filmName"));
         request2.qparams.putSingle("filmId",request2.qparams.getFirst("filmName") + "K");
+        compareTest(testData, request1, request2, Optional.of("/qparams/filmId"));
         compareTest(testData, request1, request2);
     }
 
@@ -149,24 +163,72 @@ public class RequestComparatorTest {
      * @throws JSONException
      */
     @Test
-    @DisplayName("Header NoMatch Test")
-    final void headerNoMatch() throws IOException, JSONException {
-        JSONObject testData = object.getJSONObject("headerNoMatch");
+    @DisplayName("Root Param Fuzzy Match Test")
+    final void rootParaFuzzyoMatchTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("rootParamFuzzyMatch");
+        rootParamMatchTest(testData);
+    }
+
+    /**
+     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Root Param No Match Test")
+    final void rootParamNoMatchTest() throws IOException, JSONException {
+        JSONObject testData = object.getJSONObject("rootParamNoMatch");
+        rootParamMatchTest(testData);
+    }
+
+    private void rootParamMatchTest(JSONObject testData) throws IOException, JSONException {
         String req1 = testData.get("req1").toString();
-        String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
-        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
-        request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
-        compareTest(testData, request1, request2);
-        request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
-        compareTest(testData, request1, request2);
-        request2.fparams.putSingle("filmName",request2.fparams.getFirst("filmName") + "K");
-        compareTest(testData, request1, request2);
-        request2.qparams.putSingle("filmId",request2.qparams.getFirst("filmName") + "K");
+        Optional<String> temp = Optional.of("K");
+
+        Request request2 = new Request(temp.get(), request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+            request1.method, request1.body, request1.collection, request1.timestamp, request1.rrtype, request1.customerid, request1.app);
+        compareTest(testData, request1, request2, Optional.of("/path"));
+
+        request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs, temp.get(),
+            request1.body, request1.collection, request1.timestamp, request1.rrtype, request1.customerid, request1.app);
+        compareTest(testData, request1, request2, Optional.of("/method"));
+
+        if (request1.reqid.isPresent()) {
+            request2 = new Request(request1.path, temp, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+                request1.method, request1.body, request1.collection, request1.timestamp, request1.rrtype, request1.customerid, request1.app);
+            compareTest(testData, request1, request2, Optional.of("/reqid"));
+        }
+
+        if (request1.collection.isPresent()) {
+            request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+                request1.method, request1.body, temp, request1.timestamp, request1.rrtype, request1.customerid, request1.app);
+            compareTest(testData, request1, request2, Optional.of("/collection"));
+        }
+
+        if (request1.customerid.isPresent()) {
+            request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+                request1.method, request1.body, request1.collection, request1.timestamp, request1.rrtype, temp, request1.app);
+            compareTest(testData, request1, request2, Optional.of("/customerid"));
+        }
+
+        if (request1.app.isPresent()) {
+            request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+                request1.method, request1.body, request1.collection, request1.timestamp, request1.rrtype, request1.customerid,  Optional.of(request1.app.get() + "K"));
+            compareTest(testData, request1, request2, Optional.of("/app"));
+        }
+
+        request2 = new Request(temp.get(), temp, request1.qparams, request1.fparams, request1.meta, request1.hdrs, temp.get(),
+            request1.body, request1.collection, request1.timestamp, request1.rrtype, temp,  temp);
         compareTest(testData, request1, request2);
     }
+
 
     private void compareTest(JSONObject testData, Request response1, Request response2) throws JsonProcessingException, JSONException {
+        compareTest(testData, response1, response2, Optional.empty());
+    }
+
+    private void compareTest(JSONObject testData, Request response1, Request response2, Optional<String> rulePath) throws JsonProcessingException, JSONException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
         System.out.println(mapper.writeValueAsString(response1));
@@ -175,12 +237,14 @@ public class RequestComparatorTest {
         for (int i = 0; i < rules.length(); i++) {
             JSONObject ruleObj = rules.getJSONObject(i);
             String path = ruleObj.getString("path");
-            CompareTemplate.DataType dataType = CompareTemplate.DataType.valueOf(ruleObj.getString("dataType"));
-            CompareTemplate.PresenceType presenceType = CompareTemplate.PresenceType.valueOf(ruleObj.getString("presenceType"));
-            CompareTemplate.ComparisonType comparisonType = CompareTemplate.ComparisonType.valueOf(ruleObj.getString("comparisonType"));
-            String customization = ruleObj.getString("customization");
-            TemplateEntry  rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
-            template.addRule(rule);
+            if (rulePath.isEmpty() || (path.equalsIgnoreCase(rulePath.get()))) {
+                CompareTemplate.DataType dataType = CompareTemplate.DataType.valueOf(ruleObj.getString("dataType"));
+                CompareTemplate.PresenceType presenceType = CompareTemplate.PresenceType.valueOf(ruleObj.getString("presenceType"));
+                CompareTemplate.ComparisonType comparisonType = CompareTemplate.ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+                String customization = ruleObj.getString("customization");
+                TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
+                template.addRule(rule);
+            }
         }
 
         TemplatedRequestComparator comparator = new TemplatedRequestComparator(template, mapper);
