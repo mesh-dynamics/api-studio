@@ -1,7 +1,7 @@
 {
     "exactMatch" : {
-        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
             { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -16,8 +16,8 @@
     },
 
     "dataTypeNoMatch" : {
-        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
             { "path": "/body/query",    "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
@@ -25,17 +25,17 @@
     },
 
     "pathNoMatch" : {
-        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
-            { "path": "/body/param",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body/param",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": "NoMatch"
     },
 
     "headerFuzzyMatch" : {
-        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
             { "path": "/hdr/accept",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/meta/method",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -46,8 +46,8 @@
     },
 
     "headerNoMatch" : {
-        "res1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-        "res2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
             { "path": "/hdr/accept",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/meta/method",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },

@@ -81,8 +81,8 @@ public class RequestComparatorTest {
     @DisplayName("Exact Match Test")
     final void exactMatch() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("exactMatch");
-        String req1 = testData.get("res1").toString();
-        String req2 = testData.get("res2").toString();
+        String req1 = testData.get("req1").toString();
+        String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         compareTest(testData, request1, request2);
@@ -97,8 +97,8 @@ public class RequestComparatorTest {
     @DisplayName("DataType NoMatch Test")
     final void dataTypeNoMatch() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("dataTypeNoMatch");
-        String req1 = testData.get("res1").toString();
-        String req2 = testData.get("res2").toString();
+        String req1 = testData.get("req1").toString();
+        String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         compareTest(testData, request1, request2);
@@ -113,8 +113,8 @@ public class RequestComparatorTest {
     @DisplayName("Path NoMatch Test")
     final void pathNoMatch() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("pathNoMatch");
-        String req1 = testData.get("res1").toString();
-        String req2 = testData.get("res2").toString();
+        String req1 = testData.get("req1").toString();
+        String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         compareTest(testData, request1, request2);
@@ -129,8 +129,8 @@ public class RequestComparatorTest {
     @DisplayName("Header FuzzyMatch Test")
     final void headerFuzzyMatch() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("headerFuzzyMatch");
-        String req1 = testData.get("res1").toString();
-        String req2 = testData.get("res2").toString();
+        String req1 = testData.get("req1").toString();
+        String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
@@ -152,8 +152,8 @@ public class RequestComparatorTest {
     @DisplayName("Header NoMatch Test")
     final void headerNoMatch() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("headerNoMatch");
-        String req1 = testData.get("res1").toString();
-        String req2 = testData.get("res2").toString();
+        String req1 = testData.get("req1").toString();
+        String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
         request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
