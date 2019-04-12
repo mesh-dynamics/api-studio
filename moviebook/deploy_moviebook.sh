@@ -28,7 +28,7 @@ init() {
 	kubectl apply -f cube/service_entry.yaml
 	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
-	./generate_lua_filters.py
+	./generate_lua_filters.py $CUBE_USER
 	echo "lua filters generated"
 	echo "waiting for cubews to come online"
 	until $(curl --output /dev/null --silent --head --fail http://$GATEWAY_URL/cs/health); do
@@ -49,24 +49,24 @@ init() {
 
 register_templates() {
 	echo "Registering Templates"
-	./update_templates.py  $1 $GATEWAY_URL $USER $CUBE_APPLICATION
+	./update_templates.py  $1 $GATEWAY_URL $CUBE_USER $CUBE_APPLICATION
 }
 
 setup() {
 	echo "Setting default responses"
 	curl -X POST \
-  http://$GATEWAY_URL/cs/setdefault/$USER/movieinfo/restwrapjdbc/GET/restsql/initialize \
+  http://$GATEWAY_URL/cs/setdefault/$CUBE_USER/movieinfo/restwrapjdbc/GET/restsql/initialize \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
   -d 'body=%7B%20%22status%22%3A%20%22Connection%20pool%20created.%22%7D&status=200&content-type=application%2Fjson&undefined='
 	curl -X POST \
-  http://$GATEWAY_URL/cs/setdefault/$USER/movieinfo/restwrapjdbc/POST/restsql/update \
+  http://$GATEWAY_URL/cs/setdefault/$CUBE_USER/movieinfo/restwrapjdbc/POST/restsql/update \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
   -d 'body=%7B%22num_updates%22%3A1%7D&status=200&content-type=application%2Fjson&undefined='
 	echo "Setting response templates"
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/listmovies \
+  http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/listmovies \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -81,7 +81,7 @@ setup() {
       ]
  }'
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/liststores \
+  http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/liststores \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -96,7 +96,7 @@ setup() {
       ]
  }'
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/rentmovie \
+  http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/rentmovie \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -111,7 +111,7 @@ setup() {
       ]
  }'
 	curl -X POST \
-  http://$GATEWAY_URL/as/registerTemplate/response/$USER/$CUBE_APPLICATION/movieinfo/minfo/returnmovie \
+  http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/returnmovie \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -d '{
@@ -132,32 +132,32 @@ record() {
 	read COLLECTION_NAME
 	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
 	curl -X POST \
-  http://$GATEWAY_URL/cs/start/$USER/$CUBE_APPLICATION/$CUBE_INSTANCEID/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/start/$CUBE_USER/$CUBE_APPLICATION/$CUBE_INSTANCEID/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 }
 
 stop_record() {
 	COLLECTION_NAME=$(curl -X GET \
-  "http://$GATEWAY_URL/cs/currentcollection?customerid=$USER&app=$CUBE_APPLICATION&instanceid=$CUBE_INSTANCEID" \
+  "http://$GATEWAY_URL/cs/currentcollection?customerid=$CUBE_USER&app=$CUBE_APPLICATION&instanceid=$CUBE_INSTANCEID" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache')
 	curl -X POST \
-  http://$GATEWAY_URL/cs/stop/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/stop/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
 }
 
 generate_mock_all_yaml() {
-	sed -e "s/{{customer}}/$USER/g" moviebook/templates/mock-all-except-moviebook.j2 > moviebook/mock-all-except-moviebook.yaml
+	sed -e "s/{{customer}}/$CUBE_USER/g" moviebook/templates/mock-all-except-moviebook.j2 > moviebook/mock-all-except-moviebook.yaml
 	sed -i '' -e "s/{{cube_application}}/$CUBE_APPLICATION/g" moviebook/mock-all-except-moviebook.yaml
 	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" moviebook/mock-all-except-moviebook.yaml
 }
 
 get_replay_id() {
 	REPLAY_ID=$(curl -X POST \
-	http://$GATEWAY_URL/rs/init/$USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	http://$GATEWAY_URL/rs/init/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-d "$1" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
@@ -222,11 +222,11 @@ replay() {
 	if [ "$CHOICE" = "no" ]; then
 		custom_replay
 	else
-		BODY="paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID"
+		BODY="paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://$GATEWAY_URL&instanceid=$CUBE_INSTANCEID&samplerate=0.05"
 		get_replay_id $BODY
 	fi
 	curl -f -X POST \
-  http://$GATEWAY_URL/rs/start/$USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
+  http://$GATEWAY_URL/rs/start/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 	if [ $? -eq 0 ]; then
@@ -268,6 +268,9 @@ clean() {
 }
 
 get_environment() {
+	if [ -z "$CUBE_USER" ]; then
+		export CUBE_USER=$USER
+	fi
 	ENVIRONMENT=$(kubectl config current-context)
 	if [ "$ENVIRONMENT" = "minikube" ]; then
 	  export_dev_env_variables
