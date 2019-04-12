@@ -108,7 +108,7 @@ public class Analysis {
 		 * @param replayreq
 		 * @param match
 		 */
-		public RespMatchWithReq(Request recordreq, Request replayreq, Comparator.Match match,
+		public RespMatchWithReq(Request recordreq, Optional<Request> replayreq, Comparator.Match match,
 								Optional<Response> recordres , Optional<Response> replayres) {
 			this.recordreq = recordreq;
 			this.replayreq = replayreq;
@@ -119,7 +119,7 @@ public class Analysis {
 
 		final Comparator.Match match;
 		final Request recordreq;
-		final Request replayreq;
+		final Optional<Request> replayreq;
 		final Optional<Response> recordres;
 		final Optional<Response> replayres;
 
@@ -148,7 +148,7 @@ public class Analysis {
 		}
 
 		public Optional<String> getReplayReq(ObjectMapper jsonMapper) {
-			return serializeRequest(replayreq , jsonMapper);
+			return replayreq.flatMap(request -> serializeRequest(request , jsonMapper));
 		}
 
 
@@ -201,7 +201,7 @@ public class Analysis {
 		 * @param jsonmapper
 		 */
 		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
-			this(rm.recordreq.reqid.orElse(""), rm.replayreq.reqid.orElse(""), reqmt, size,
+			this(rm.recordreq.reqid.orElse(""), rm.replayreq.flatMap(req -> req.reqid).orElse(""), reqmt, size,
 					rm.match,
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
 					rm.recordreq.getService().orElse(""), rm.recordreq.path,

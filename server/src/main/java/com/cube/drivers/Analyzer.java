@@ -108,8 +108,8 @@ public class Analyzer {
 
                 // fetch response of recording and replay
 
-                Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, null,
-                        Comparator.Match.DEFAULT , null , null);
+                Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, Optional.empty(),
+                        Comparator.Match.DEFAULT , Optional.empty() , Optional.empty());
                 Comparator.MatchType bestreqmt = Comparator.MatchType.NoMatch;
 
                 // matches is ordered in decreasing order of request match score. so exact matches
@@ -194,7 +194,7 @@ public class Analyzer {
                 // what gets returned
                 return recordedResponse.flatMap(recordedr -> replayresp.flatMap(replayr -> {
                     Comparator.Match rm = comparator.compare(recordedr, replayr);
-                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq , rm ,
+                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, Optional.of(replayreq) , rm ,
                             Optional.of(recordedr) , Optional.of(replayr)));
                 }));
             } catch(RuntimeException e) {
@@ -205,7 +205,7 @@ public class Analyzer {
                 return Optional.empty();
             }
 
-        })).orElse(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH
+        })).orElse(new Analysis.RespMatchWithReq(recordreq, Optional.of(replayreq), Comparator.Match.NOMATCH
                 , Optional.empty() , Optional.empty()));
     }
 
