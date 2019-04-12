@@ -49,14 +49,14 @@ public class CorsFilter implements ContainerResponseFilter {
                 // only allowing from localhost for dev purposes
                 // Browsers will block cross-origin access unless the server sets these fields explicitly and
                 // specifies which domains to allow
-                // Picked from https://www.baeldung.com/cors-in-jax-rs
+                // Picked and modified from https://www.baeldung.com/cors-in-jax-rs
                 responseContext.getHeaders().add(
                     "Access-Control-Allow-Origin", originVal.toString());
                 responseContext.getHeaders().add(
                     "Access-Control-Allow-Credentials", "true");
-                responseContext.getHeaders().add(
-                    "Access-Control-Allow-Headers",
-                    "origin, content-type, accept, authorization");
+                Optional.ofNullable(requestContext.getHeaderString("Access-Control-Request-Headers"))
+                    .ifPresent(headers -> responseContext.getHeaders().add(
+                        "Access-Control-Allow-Headers", headers));
                 responseContext.getHeaders().add(
                     "Access-Control-Allow-Methods",
                     "GET, POST, PUT, DELETE, OPTIONS, HEAD");
