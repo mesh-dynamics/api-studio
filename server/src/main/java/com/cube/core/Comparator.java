@@ -56,15 +56,16 @@ public interface Comparator {
 		 * Here other is the best so far, we need to decide
 		 * if the current analysis match result should replace
 		 * the best result
+	         * ExactMatch > FuzzyMatch > Exception > NoMatch > Default
 		 * @param other
 		 * @return
 		 */
 		public boolean isBetter(MatchType other) {
 			switch (this) {
-				case ExactMatch: return (other != ExactMatch); // ExactMatch will override Exact Match
-				case FuzzyMatch: return (other != ExactMatch); // Partial Match overrides Partial Match
-				case NoMatch: return (other == Exception || other == Default); // No Match does not override No Match
-				case Exception: return (other == Default);
+				case ExactMatch: return (other != ExactMatch); // ExactMatch will not override Exact Match, but everything else
+				case FuzzyMatch: return !(other == ExactMatch || other == FuzzyMatch); // Partial Match will not override Partial Match
+				case Exception: return (other == Default || other == NoMatch); // Exception overrides Default and NoMatch
+				case NoMatch: return (other == Default); // NoMatch only overrides default
 				case Default: return false; // the default is only the starting condition and worse than anything
 				default: return false;
 			}
