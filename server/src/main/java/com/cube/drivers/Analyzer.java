@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.cube.core.Comparator.MatchType.ExactMatch;
@@ -107,7 +108,8 @@ public class Analyzer {
 
                 // fetch response of recording and replay
 
-                Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, null, Comparator.Match.NOMATCH);
+                Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, Optional.empty(),
+                        Comparator.Match.DEFAULT , Optional.empty() , Optional.empty());
                 Comparator.MatchType bestreqmt = Comparator.MatchType.NoMatch;
 
                 // matches is ordered in decreasing order of request match score. so exact matches
@@ -117,11 +119,10 @@ public class Analyzer {
                 for (Request replayreq : matches) {
                     Comparator.MatchType reqmt = comparator.compare(rq, replayreq);
                     Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, recordedResponse , replayResponseMap);
-
                     if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
                         bestmatch = match;
                         bestreqmt = reqmt;
-                        if (bestreqmt == ExactMatch && bestmatch.getmt() == ExactMatch) {
+                        if (bestmatch.getmt() == ExactMatch) {
                             break;
                         }
                     }
@@ -137,9 +138,21 @@ public class Analyzer {
                     case FuzzyMatch: analysis.resppartiallymatched++; break;
                     default: analysis.respnotmatched++; break;
                 }
-                if (bestmatch.getmt() == NoMatch) {
-                    LOGGER.info("NO MATCH OCCURED FOR RESPONSE :: " + r.reqid.get());
-                }
+
+                LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqid.orElse("-1"));
+                LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(jsonmapper).orElse(" N/A"));
+                LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonmapper).orElse("N/A"));
+                LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
+                LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
+                bestmatch.getDiffs().stream().filter(diff -> true).forEach(
+                        diff -> {
+                            try {
+                                LOGGER.debug("DIFF :: " + jsonmapper.writeValueAsString(diff));
+                            } catch (JsonProcessingException e) {
+                                // DO NOTHING
+                            }
+                        });
+
                 Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
                     analysis.replayid, jsonmapper);
                 rrstore.saveResult(res);
@@ -181,7 +194,8 @@ public class Analyzer {
                 // what gets returned
                 return recordedResponse.flatMap(recordedr -> replayresp.flatMap(replayr -> {
                     Comparator.Match rm = comparator.compare(recordedr, replayr);
-                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, replayreq, rm));
+                    return Optional.of(new Analysis.RespMatchWithReq(recordreq, Optional.of(replayreq) , rm ,
+                            Optional.of(recordedr) , Optional.of(replayr)));
                 }));
             } catch(RuntimeException e) {
                 // if analysis retrieval caused an error, log the error and return NO MATCH
@@ -191,7 +205,8 @@ public class Analyzer {
                 return Optional.empty();
             }
 
-        })).orElse(new Analysis.RespMatchWithReq(recordreq, replayreq, Comparator.Match.NOMATCH));
+        })).orElse(new Analysis.RespMatchWithReq(recordreq, Optional.of(replayreq), Comparator.Match.NOMATCH
+                , Optional.empty() , Optional.empty()));
     }
 
     private static boolean isReqRespMatchBetter(Comparator.MatchType reqm1, Comparator.MatchType respm1,
