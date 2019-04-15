@@ -239,7 +239,7 @@ class ServiceGraph extends Component {
                         </Modal.Header>
                         <Modal.Body>
                             <div className="text-center">
-                                <span className={"cube-btn " + (this.state.replaySelected ? 'disabled' : '')} onClick={this.setRP}>Set Replay Point</span><br/><br/>
+                                <span className={"cube-btn " + (this.state.replaySelected ? 'disabled' : '')} onClick={this.setRP}>Set Gateway Point</span><br/><br/>
                                 <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
                             </div>
                         </Modal.Body>
@@ -288,7 +288,8 @@ class ServiceGraph extends Component {
         for (const node of gd.nodes) {
             if (cube.analysis && node.data.id == 'movieinfo') {
                 let an = cube.analysis;
-                node.data.text += ('\n\n' + an.reqcnt + ' / ' + an.reqmatched + ' / ' + an.respmatched + ' / ' + an.respnotmatched);
+                node.data.text += ('\n\n' + an.reqcnt + ' / ' + (an.respmatched + an.resppartiallymatched) + ' / ' + an.respnotmatched + ' / ' +
+                    (an.reqcnt - (an.respmatched + an.resppartiallymatched + an.respnotmatched)));
                 node.data.class = 'selected-node';
             }
 

@@ -189,11 +189,14 @@ class ReplayAttribute extends Component {
 
                 <Modal show={this.state.show}>
                     <Modal.Header closeButton>
-                        <Modal.Title>Replay</Modal.Title>
+                        <Modal.Title>Gateway</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <div>Replay In Progress...</div>
-                        <h3>Status: {cube.replayStatus}</h3>
+                        <div>Test In Progress...</div>
+                        <h3>
+                            Status: {cube.replayStatus}&nbsp;&nbsp;
+                            {cube.replayStatusObj ? (<small>Completed: {'' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
+                        </h3>
                     </Modal.Body>
                     <Modal.Footer>
 

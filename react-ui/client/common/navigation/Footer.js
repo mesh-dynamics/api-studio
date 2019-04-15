@@ -5,7 +5,7 @@ class Footer extends Component {
     return (
         <footer>
           <div className="text-center">
-            © Copyright 2018 Cube.io Inc. All rights reserved.
+
           </div>
           <div className="clearfix"></div>
         </footer>

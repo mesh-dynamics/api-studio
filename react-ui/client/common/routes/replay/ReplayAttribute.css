@@ -66,12 +66,12 @@ select {
 .replay-container .col-sm-8 {
     border-right: 2px solid #eeeeee;
     padding-top: 15px;
-    height: calc(100vh - 181px);
+    height: calc(100vh - 161px);
 }
 
 .replay-container .col-sm-4 {
     padding-top: 15px;
-    height: calc(100vh - 181px);
+    height: calc(100vh - 161px);
 }
 
 .result-container{

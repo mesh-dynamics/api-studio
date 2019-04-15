@@ -83,28 +83,54 @@ class replay extends Component {
                         <div className="right-head">
                             Test Configuration
                         </div>
-                        <div className="row">
-                            <div className="col-md-4">
-                                Test Configuration
+                        <div className="padding-15" style={{'padding-top': 0}}>
+                            <div className="row">
+                                <div className="col-md-4">
+                                    Test Configuration
+                                </div>
+                                <div className="col-md-8 pull-right">
+                                    HR-Primary-2019-3-RC-18
+                                </div>
                             </div>
-                            <div className="col-md-8 pull-right">
-                                HR-Primary-2019-3-RC-18
+                            <div className="row">
+                                <div className="col-md-4">
+                                    Collection
+                                </div>
+                                <div className="col-md-8 pull-right">
+                                    {cube.selectedTestId}
+                                </div>
                             </div>
-                        </div>
-                        <div className="row">
-                            <div className="col-md-4">
-                                Collection
+                            <div className="row">
+                                <div className="col-md-4">
+                                    Total Requests
+                                </div>
+                                <div className="col-md-8 pull-right">
+                                    {cube.analysis.reqcnt}
+                                </div>
                             </div>
-                            <div className="col-md-8 pull-right">
-                                {cube.selectedTestId}
+                            <div className="row">
+                                <div className="col-md-4">
+                                    Request Completed
+                                </div>
+                                <div className="col-md-8 pull-right">
+                                    {cube.analysis.respmatched + cube.analysis.resppartiallymatched}
+                                </div>
                             </div>
-                        </div>
-                        <div className="row">
-                            <div className="col-md-4">
-                                Total Requests
+                            <div className="row">
+                                <div className="col-md-4">
+                                    Errors
+                                </div>
+                                <div className="col-md-8 pull-right">
+                                    {cube.analysis.respnotmatched}
+                                </div>
                             </div>
-                            <div className="col-md-8 pull-right">
-                                {cube.analysis.reqcnt}
+                            <div className="row">
+                                <div className="col-md-4">
+                                    Request Incomplete
+                                </div>
+                                <div className="col-md-8 pull-right">
+                                    {cube.analysis.reqcnt - (cube.analysis.respmatched + cube.analysis.resppartiallymatched + cube.analysis.respnotmatched)}
+                                </div>
                             </div>
                         </div>
                     </div>
