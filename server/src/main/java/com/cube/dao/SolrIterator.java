@@ -112,7 +112,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	final Optional<Integer> maxresults;
 	int numread;
 	static final int BATCHSIZE = 20;
-	long numFound; // total number of results matching the query, i.e. the results available over all batches
+	long numFound; // total number of results matching the query, i.e. the max number of results available if no
+	// maxresults is set
 	
 	static public Stream<SolrDocument> getStream(SolrClient solr, SolrQuery query, Optional<Integer> maxresults) {
 		SolrIterator iter = new SolrIterator(solr, query, maxresults);
@@ -123,7 +124,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
 			Optional<Integer> maxresults,
 			Function<SolrDocument, Optional<R>> transform) {
 		SolrIterator iter = new SolrIterator(solr, query, maxresults);
-		return new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults, iter.numFound);
+		return new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults,
+				iter.numresults);
 	}
 
 	static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
