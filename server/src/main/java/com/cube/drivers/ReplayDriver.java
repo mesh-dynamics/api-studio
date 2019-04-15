@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.uri.UriComponent;
@@ -31,6 +32,7 @@ import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.Request;
 
 /*
  * Created by IntelliJ IDEA.
@@ -128,9 +130,13 @@ public class ReplayDriver  {
             clientbuilder.authenticator(Authenticator.getDefault());
         HttpClient client = clientbuilder.build();
 
-        replay.getRequestBatches(BATCHSIZE, rrstore).forEach(requests -> {
+        Pair<Stream<List<Request>>, Long> batchedResult = replay.getRequestBatches(BATCHSIZE, rrstore);
+        replay.reqcnt = batchedResult.getRight().intValue(); // NOTE: converting long to int, should be ok, since we
+        // never replay so many requests
 
-            replay.reqcnt += requests.size();
+        batchedResult.getLeft().forEach(requests -> {
+
+            // replay.reqcnt += requests.size();
 
             List<HttpRequest> reqs = new ArrayList<>();
             requests.forEach(r -> {

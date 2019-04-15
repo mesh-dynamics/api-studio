@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -139,10 +140,10 @@ public class Replay {
 	}
 
 	@JsonIgnore
-	public Stream<List<Request>> getRequestBatches(int batchSize, ReqRespStore rrstore) {
+	public Pair<Stream<List<Request>>, Long> getRequestBatches(int batchSize, ReqRespStore rrstore) {
 		Result<Request> requests = getRequests(rrstore);
 		
-		return BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize);
+		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
 	}
 
 }

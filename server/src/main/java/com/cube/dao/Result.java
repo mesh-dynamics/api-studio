@@ -14,16 +14,19 @@ public class Result<T> {
 	/**
 	 * @param objects
 	 * @param numresults
+	 * @param numFound
 	 */
-	public Result(Stream<T> objects, long numresults) {
+	public Result(Stream<T> objects, long numresults, long numFound) {
 		super();
 		this.objects = objects;
 		this.numResults = numresults;
+		this.numFound = numFound;
 	}
 	
 	final Stream<T> objects;
 	final long numResults;
-	
+	final long numFound;
+
 	/**
 	 * @return
 	 */
