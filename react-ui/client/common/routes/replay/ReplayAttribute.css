@@ -84,3 +84,6 @@ select {
     display: inline-block;
     padding: 0 10px;
 }
+li.disabled {
+    opacity: 0.2;
+}

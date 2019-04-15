@@ -29,11 +29,14 @@ class Results extends Component {
     }
 
     changeTab(val) {
-        this.setState({currentView: val});
+        if (val === 'gateway_service') {
+            this.setState({currentView: val});
+        }
     }
 
     render() {
         const {tabs, currentView} = this.state;
+        const {res} = this.props;
         let tabElem = tabs.map(item => (
             <div onClick={() => {this.changeTab(item.value)}} className={currentView == item.value ? 'selected res-tab' : 'res-tab'}>
                 {item.name}
@@ -43,7 +46,7 @@ class Results extends Component {
         let view;
         switch (this.state.currentView) {
             case "gateway_service":
-                view = (<GatewayTab/>);
+                view = (<GatewayTab res={res}/>);
                 break;
 
             case "supporting_services":
