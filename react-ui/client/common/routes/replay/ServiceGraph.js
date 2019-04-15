@@ -19,6 +19,7 @@ class ServiceGraph extends Component {
             replaySelected: false,
             replayNode: null,
             show: false,
+            showDiff: false
         };
         this.height = '70vh';
         this.width = '100%';
@@ -139,11 +140,17 @@ class ServiceGraph extends Component {
     }
 
     handleClose() {
-        this.setState({ show: false });
+        this.setState({ show: false, showDiff: false });
     }
 
     handleShow() {
-        this.setState({ show: true });
+        const { cube } = this.props;
+        if (cube.analysis) {
+            this.setState({ showDiff: true });
+        } else {
+            this.setState({ show: true });
+        }
+
     }
 
     render() {
@@ -151,7 +158,16 @@ class ServiceGraph extends Component {
         const $ = window.$;
         const element = $(this.refs.cyto);
         const { cube } = this.props;
-        
+        const recordedResponse = [{"actors_lastnames":["HARRIS","WILLIS","TEMPLE"],"display_actors":["DAN HARRIS","HUMPHREY WILLIS","BURT TEMPLE"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","HUMPHREY","BURT"],"film_counts":[28,26,23],"timestamp":1641491700530174,"book_info":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"}}];
+        const replayRes1 =  [{"actors_lastnames":["HARRIS","WILLIS","TEMPLE"],"display_actors":["DAN HARRIS","HUMPHREY WILLIS","BURT TEMPLE"],"film_id":851,"title":"STRAIGHT HOURS","film_counts":[28,26,23],"timestamp":12334619322128}];
+        const diff1 = 'DIFF :: {"op":"remove","path":"/0/actors_firstnames","value":["DAN","HUMPHREY","BURT"],"resolution":"ERR_Required"}\n' +
+            'DIFF :: {"op":"replace","path":"/0/timestamp","value":12334619322128,"fromValue":1641491700530174,"resolution":"ERR_ValMismatch"}\n' +
+            '\n' +
+            'DIFF :: {"op":"remove","path":"/0/book_info","value":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"},"resolution":"ERR_Required"}';
+
+        var textedJson = JSON.stringify(recordedResponse, undefined, 4);
+        var textedJson1 = JSON.stringify(replayRes1, undefined, 4);
+
         if (Object.keys(this.cy).length) {
             /*this.cy.destroy();
             this.cy = {};*/
@@ -225,6 +241,31 @@ class ServiceGraph extends Component {
                             <div className="text-center">
                                 <span className={"cube-btn " + (this.state.replaySelected ? 'disabled' : '')} onClick={this.setRP}>Set Replay Point</span><br/><br/>
                                 <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
+                            </div>
+                        </Modal.Body>
+                    </Modal>
+
+                    <Modal show={this.state.showDiff} onHide={this.handleClose}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Response Diff</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <div className="diff-json">
+                                <pre>
+                                    {diff1}
+                                </pre>
+                            </div>
+                            <div className="left-json">
+                                <h4>Recorded</h4>
+                                <textarea name="" id="myTextarea" cols="30" rows="10">
+                                    {textedJson}
+                                </textarea>
+                            </div>
+                            <div className="right-json">
+                                <h4>Replay</h4>
+                                <textarea name="" id="myTextarea" cols="30" rows="10">
+                                    {textedJson1}
+                                </textarea>
                             </div>
                         </Modal.Body>
                     </Modal>

@@ -4398,8 +4398,8 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     border-bottom: none;
 }
 .modal-dialog {
-    top: 30vh;
-    transform: translateY(-50%);
+    /*top: 30vh;
+    transform: translateY(-50%);*/
 }
 .modal-header {
     padding: 15px;
@@ -4433,4 +4433,15 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .default{
     background: #00B2FF !important;
     color: white;
+}
+.left-json{
+    display: inline-block;
+    width: 50%;
+}
+.right-json{
+    display: inline-block;
+    width: 50%;
+}
+.left-json textarea, .right-json textarea {
+    width: 100%;
 }

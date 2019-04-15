@@ -1,14 +1,9 @@
 import React, { Component } from 'react';
 import {
-    PieChart, Pie, Sector, Cell,
+    PieChart, Pie, Sector, Cell, Tooltip
 } from 'recharts';
 
-const data = [
-    { name: 'Group A', value: 400 },
-    { name: 'Group B', value: 300 },
-    { name: 'Group C', value: 300 },
-    { name: 'Group D', value: 200 },
-];
+
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -35,10 +30,10 @@ const renderActiveShape = (props) => {
     } = props;
     const sin = Math.sin(-RADIAN * midAngle);
     const cos = Math.cos(-RADIAN * midAngle);
-    const sx = cx + (outerRadius + 10) * cos;
-    const sy = cy + (outerRadius + 10) * sin;
-    const mx = cx + (outerRadius + 30) * cos;
-    const my = cy + (outerRadius + 30) * sin;
+    const sx = cx + (outerRadius + 2) * cos;
+    const sy = cy + (outerRadius + 2) * sin;
+    const mx = cx + (outerRadius + 6) * cos;
+    const my = cy + (outerRadius + 6) * sin;
     const ex = mx + (cos >= 0 ? 1 : -1) * 22;
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
@@ -66,7 +61,7 @@ const renderActiveShape = (props) => {
             />
             <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
             <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`PV ${value}`}</text>
+            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`${value}`}</text>
             <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
                 {`(Rate ${(percent * 100).toFixed(2)}%)`}
             </text>
@@ -88,25 +83,25 @@ class PiChart extends Component {
         });
     };
     render() {
+        let {width, data} = this.props;
+        console.log(data);
         return (
-            <PieChart width={300} height={200}>
+            <PieChart width={width} height={300}>
                 <Pie
-                    activeIndex={this.state.activeIndex}
-                    activeShape={renderActiveShape}
                     data={data}
-                    cx={150}
-                    cy={100}
+                    cx={width/2}
+                    cy={125}
                     labelLine={false}
                     label={renderCustomizedLabel}
-                    outerRadius={80}
+                    outerRadius={85}
                     fill="#8884d8"
                     dataKey="value"
-                    onMouseEnter={this.onPieEnter}
                 >
                     {
                         data.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)
                     }
                 </Pie>
+                <Tooltip />
             </PieChart>
         );
     }
