@@ -49,12 +49,14 @@
         {
           "path": "/body/0/store_id",
           "pt": "Optional",
-          "dt": "Int"
+          "dt": "Int",
+          "ct" : "Default"
         },
         {
           "path": "/body/1/store_id",
           "pt": "Optional",
-          "dt": "Int"
+          "dt": "Int",
+          "ct": "Default"
         }
       ]
     }
