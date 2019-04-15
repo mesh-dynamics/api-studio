@@ -9,6 +9,7 @@
 	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
 	  <version.java>11</version.java>
 	  <version.jaxb>2.3.2</version.jaxb>
+	  <docker.tag>demo-1.0</docker.tag>
   </properties>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -99,7 +100,7 @@
 		</executions>
 			<configuration>
 				<repository>cubeiocorp/cubews</repository>
-				<tag>${project.version}</tag>
+				<tag>${docker.tag}</tag>
 				<buildArgs>
 					<WAR_FILE>${project.build.finalName}.war</WAR_FILE>
 				</buildArgs>
