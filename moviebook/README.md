@@ -42,6 +42,14 @@ NOTE: If you wish to run cubews in your IDE, make sure your `Application context
 - This will deploy the moviebook app on the local kubernetes cluster.
 - Generate Lua filters
 
+### Switch between IDE/minikube
+```
+./deploy_moviebook.sh switch $env
+```
+Where $env can be ide or minikube.  
+This flag allow user to run cubews service on IDE.
+
+
 ### Record Traffic
 ```
 ./deploy_moviebook.sh record

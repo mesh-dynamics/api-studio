@@ -15,10 +15,6 @@ export_aws_env_variables() {
 }
 
 init() {
-	if [ "$ENVIRONMENT" = "minikube" ]; then
-	  echo "Do you want to run cubews on your IDE?(yes/no)"
-	  read CHOICE
-	fi
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
@@ -35,16 +31,22 @@ init() {
 	  printf '.'
 	  sleep 2
 	done
-	echo "\n"
+	printf "\n"
 	setup
-	if [ "$ENVIRONMENT" = "minikube" ]; then
-	  if [ "$CHOICE" = "yes" ]; then
-	    kubectl delete deployments cubews-v1
-	    kubectl delete svc cubews
-	    echo "Run the following command in your shell: telepresence --new-deployment cubews --expose 8080"
-	  fi
-	fi
+}
 
+switch() {
+	if [ "$1" = "ide" ] || [ "$1" = "IDE" ]; then
+		kubectl delete deployment cubews-v1
+		kubectl delete svc cubews
+		echo "Run the following command in your shell: telepresence --new-deployment cubews --expose 8080"
+	elif [ "$1" = "minikube" ]; then
+		kubectl delete deployments cubews
+		kubectl delete svc cubews
+		kubectl apply -f cube/service.yaml
+	else
+		echo "Invaild choice, enter a valid option(ide, minikube)"
+	fi
 }
 
 register_templates() {
@@ -252,7 +254,7 @@ analyze() {
   -H 'cache-control: no-cache'
 }
 clean() {
-	stop_replay
+	stop_replay 2> /dev/null
 	kubectl delete -f moviebook/moviebook.yaml
 	kubectl delete -f cube/service.yaml 2> /dev/null
 	kubectl delete -f cube/service_entry.yaml
@@ -289,6 +291,7 @@ main() {
 	get_environment
   case "$1" in
     init) shift; init "$@";;
+    switch) shift; switch "$@";;
     record) shift; record "$@";;
     stop_recording) shift; stop_record "$@";;
     register_templates) shift; register_templates "$@";;
@@ -297,7 +300,7 @@ main() {
     stop_replay) shift; stop_replay "$@";;
     analyze) shift; analyze "$@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, register_templates, replay_setup, replay, stop_replay, analyze, clean).";;
+    *) echo "This script expect one of these system argument(init, switch, record, stop_recording, register_templates, replay_setup, replay, stop_replay, analyze, clean).";;
   esac
 }
 
