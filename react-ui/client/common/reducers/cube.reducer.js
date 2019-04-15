@@ -26,7 +26,7 @@ const initialState = {
     graphDataReqErr: '',
     graphData: null,
 
-    replayStatus:'Init',
+    replayStatus:'Not Initialized',
     replayStatusObj: null,
 
     analysis: null,
@@ -139,7 +139,7 @@ export function cube (state = initialState, action) {
                 graphDataReqErr: '',
                 graphData: null,
 
-                replayStatus:'Init',
+                replayStatus: 'Not Initialized',
                 replayStatusObj: null,
 
                 analysis: null,

@@ -34,7 +34,6 @@ async function fetchAppsList() {
         console.log("fetchAppsList has errors!", e);
         throw e;
     }
-    console.log('fetchAppsList success: ', JSON.stringify(appsList, null, 4));
     return appsList;
 
 }
@@ -184,7 +183,6 @@ async function fetchCollectionList() {
         console.log("fetchCollectionList has errors!", e);
         throw e;
     }
-    console.log('fetchCollectionList success: ', JSON.stringify(collections, null, 4));
     return collections;
 }
 
@@ -291,14 +289,12 @@ async function fetchAnalysis(collectionId, replayId) {
             json = await response.json();
             analysis = json;
         } else {
-            console.log("Response not ok in fetchAnalysis", response);
             throw new Error("Response not ok fetchAnalysis");
         }
     } catch (e) {
         console.log("fetchAnalysis has errors!", e);
         throw e;
     }
-    console.log('fetchAnalysis success: ', JSON.stringify(analysis, null, 4));
     return analysis;
 }
 
@@ -324,6 +320,5 @@ async function fetchReport(collectionId, replayId) {
         console.log("fetchReport has errors!", e);
         throw e;
     }
-    console.log('fetchReport success: ', JSON.stringify(report, null, 4));
     return report;
 }

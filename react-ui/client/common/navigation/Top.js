@@ -14,8 +14,8 @@ class Top extends Component {
             <div className="nav toggle">
           {/*<a id="menu_toggle" onClick={ toggleCb }><i className="fas fa-bars"></i></a>*/}
                 <h3 className="comp-name">
-                    <img src="/assets/images/icons/cuebcorp_logo.png" alt="CUBECORP.IO"/>
-                    <span>CUBECORP.IO</span>
+                    <img src="/assets/images/icons/cuebcorp_logo.png" alt="CUBE.IO"/>
+                    <span>CUBE.IO</span>
                 </h3>
             </div>
             <TopNavBar>

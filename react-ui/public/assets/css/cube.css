@@ -4445,3 +4445,6 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .left-json textarea, .right-json textarea {
     width: 100%;
 }
+.margin-left-15{
+    margin-left: 15px;
+}

@@ -147,14 +147,14 @@ class ReplayAttribute extends Component {
                                     <Row>
                                         <Col md={6}>
                                             <span className="label">Application</span><br/>
-                                            <select name="" id="">
+                                            <select name="" id="app-sel">
                                                 <option value="">MovieInfo</option>
                                             </select> &nbsp;&nbsp;
                                             <span className="cube-btn">NEW TEST</span>
                                         </Col>
                                         <Col md={6}>
                                             <span className="label">Status</span><br/>
-                                            <select name="" id=""></select> &nbsp;&nbsp;
+                                            <span className="status">{cube.replayStatus}</span>
                                         </Col>
                                     </Row>
                                 </div>
@@ -172,14 +172,16 @@ class ReplayAttribute extends Component {
                                     <span className="label">Collection</span><br/>
                                     {this.renderTestIds(cube)}&nbsp;&nbsp;
                                 </div>
-                                <div className="inline-block">
+                                <div className="inline-block margin-left-15">
                                     <span className="label">Test Instance</span><br/>
-                                    {this.renderTestIds(cube)}&nbsp;&nbsp;
+                                    <select name="" id="app-sel">
+                                        <option value="">Prod</option>
+                                    </select> &nbsp;&nbsp;
                                 </div>
 
-                                <span className="cube-btn" onClick={this.replay}>REPLAY</span>&nbsp;&nbsp;
-                                <span className="cube-btn">SAVE & RUN</span>&nbsp;&nbsp;
-                                <span className="cube-btn">STOP TEST</span>
+                                <span className="cube-btn" onClick={this.replay}>Test</span>&nbsp;&nbsp;
+                                <span className="cube-btn disabled">SAVE & RUN</span>&nbsp;&nbsp;
+                                <span className="cube-btn disabled">STOP TEST</span>
                             </Col>
                         </Row>
                     </div>
