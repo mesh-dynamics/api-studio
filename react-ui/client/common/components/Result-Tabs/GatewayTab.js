@@ -9,6 +9,11 @@ class GatewayTab extends Component{
 
     render() {
         const {res} =  this.props;
+        const error =  res.respnotmatched;
+        const errorP = Math.round((100 * error/res.reqcnt) * 100) / 100;
+        const incomplete = res.reqcnt - (res.respmatched + res.resppartiallymatched + res.respnotmatched);
+        const incompleteP = Math.round((100 * incomplete/res.reqcnt) * 100) / 100;
+
         return (
             <div className="tab-panel">
                 <h4>Gateway @Movieinfo</h4>
@@ -31,16 +36,16 @@ class GatewayTab extends Component{
                     <tbody>
                     <tr>
                         <td>Errors</td>
-                        <td>{res.respnotmatched}</td>
-                        <td>{100 * res.respnotmatched/res.reqcnt}</td>
+                        <td>{error}</td>
+                        <td>{errorP}</td>
                         <td>0.63</td>
                         <td>0.78</td>
                         <td>-</td>
                     </tr>
                     <tr>
                         <td>Incomplete</td>
-                        <td>{res.reqcnt - (res.respmatched + res.resppartiallymatched + res.respnotmatched)}</td>
-                        <td>{100 * (res.reqcnt - (res.respmatched + res.resppartiallymatched + res.respnotmatched))/res.reqcnt}</td>
+                        <td>{incomplete}</td>
+                        <td>{incompleteP}</td>
                         <td>0.22</td>
                         <td>0.34</td>
                         <td>-</td>
