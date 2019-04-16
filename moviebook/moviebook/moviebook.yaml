@@ -223,7 +223,7 @@ spec:
     spec:
       containers:
       - name: movieinfo
-        image: cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+        image: cubeiocorp/sample_apps-mirest:demo-1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -274,7 +274,7 @@ spec:
     spec:
       containers:
       - name: movieinfo
-        image: cubeiocorp/sample_apps-mirest:V1-SNAPSHOT
+        image: cubeiocorp/sample_apps-mirest:demo-1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -354,7 +354,7 @@ spec:
     spec:
       containers:
       - name: restwrapjdbc
-        image: cubeiocorp/restwrapjdbc:V1-SNAPSHOT
+        image: cubeiocorp/restwrapjdbc:demo-1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

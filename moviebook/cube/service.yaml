@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:V1-SNAPSHOT
+        image: cubeiocorp/cubews:demo-1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
