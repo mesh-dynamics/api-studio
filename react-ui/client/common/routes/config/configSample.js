@@ -76,7 +76,7 @@ class configSample extends Component {
             this.setState({show: true});
             dispatch(cubeActions.startReplay(cube.selectedTestId, cube.replayId.replayid));
             this.doAnalysis = true;
-            this.statusInterval = setInterval(checkStatus, 1500);
+            this.statusInterval = setInterval(checkStatus, 300);
         }
 
         function checkStatus() {

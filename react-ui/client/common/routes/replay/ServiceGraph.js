@@ -259,14 +259,14 @@ class ServiceGraph extends Component {
                         </Modal.Header>
                         <Modal.Body>
                             <div className="left-json">
-                                <h4>Recorded</h4>
-                                <textarea name="" id="myTextarea" cols="30" rows="10">
+                                <h4>Expected</h4>
+                                <textarea disabled name="" id="myTextarea" cols="30" rows="10">
                                     {textedJson}
                                 </textarea>
                             </div>
                             <div className="right-json">
-                                <h4>Replay</h4>
-                                <textarea name="" id="myTextarea" cols="30" rows="10">
+                                <h4>Actual</h4>
+                                <textarea disabled name="" id="myTextarea" cols="30" rows="10">
                                     {textedJson1}
                                 </textarea>
                             </div>
