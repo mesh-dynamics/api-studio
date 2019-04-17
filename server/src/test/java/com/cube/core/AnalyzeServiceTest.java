@@ -29,7 +29,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 public class AnalyzeServiceTest {
 
     private static final Logger LOGGER = LogManager.getLogger(AnalyzeServiceTest.class);
-
+    System.out.println();
     private static String cubeServeUrl = "http://localhost:8080/cubews_war_exploded/";
     private static String analyzePath = "as/health";
     private static String storeTemplatePath = "as/registerTemplate/response/{customerId}/{appId}/{serviceName}/{path}";
