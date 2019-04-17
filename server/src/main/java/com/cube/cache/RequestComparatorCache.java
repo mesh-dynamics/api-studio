@@ -79,7 +79,7 @@ public class RequestComparatorCache {
         try {
             return requestComparatorCache.get(key);
         } catch (ExecutionException e) {
-            LOGGER.error("Unable to find template key :: " + key
+            LOGGER.debug("Unable to find template key :: " + key
                     + " in Request Comparator Cache , sending default key");
             if (reqIdInDefault) {
                 return defaultRequestComparatorWithReqId;

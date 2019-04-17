@@ -360,4 +360,6 @@ public interface ReqRespStore {
 		public final Optional<Recording> recording;
 		public final Optional<Replay> replay;
 	}
+
+	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
 }

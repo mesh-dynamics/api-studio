@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -935,6 +936,45 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, res.replayid);
                 
         return doc;
+    }
+
+    public Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId) {
+            SolrQuery query = new SolrQuery("*:*");
+            query.setFields("*");
+            addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+            addFilter(query, RECORDREQIDF, recordReqId);
+            addFilter(query, REPLAYIDF, replayId);
+
+            Optional<Integer> maxresults = Optional.of(1);
+            return SolrIterator.getStream(solr, query, maxresults).findFirst()
+                    .flatMap(doc -> docToAnalysisMatchResult(doc));
+    }
+
+    /**
+     * Convert Solr document to corresponding ReqRespMatchResult object
+     * @param doc
+     * @return
+     */
+    private Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
+        // These three fields won't be null as the solr filter query is on them
+        String recordReqId = getStrField(doc , RECORDREQIDF).get();
+        String replayReqId = getStrField(doc, REPLAYREQIDF).get();
+        String replayId = getStrField(doc, REPLAYIDF).get();
+
+        Comparator.MatchType reqMatchType = getStrField(doc , REQMTF)
+                .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
+        Comparator.MatchType respMatchType = getStrField(doc, RESPMTF)
+                .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
+        Integer nummatch = getIntField(doc , NUMMATCHF).orElse(-1);
+        String respMatchMetaData = getStrField(doc , RESPMATCHMETADATAF).orElse("");
+        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("");
+        String customerId = getStrField(doc , CUSTOMERIDF).orElse("");
+        String app = getStrField(doc , APPF).orElse("");
+        String service = getStrField(doc, SERVICEF).orElse("");
+        String path = getStrField(doc, PATHF).orElse("");
+        return Optional.of(new ReqRespMatchResult(
+                recordReqId , replayReqId , reqMatchType , nummatch , respMatchType, respMatchMetaData,
+                diff, customerId, app, service, path, replayId));
     }
 
     /* (non-Javadoc)

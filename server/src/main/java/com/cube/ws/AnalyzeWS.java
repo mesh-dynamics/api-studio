@@ -202,6 +202,26 @@ public class AnalyzeWS {
 		}
 	}
 
+	@GET
+	@Path("getAnalysisResult/{replayId}/{recordReqId}")
+	public Response getAnalysisResult(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,
+									  @PathParam("replayId") String replayId) {
+		Optional<Analysis.ReqRespMatchResult> matchResult =
+				rrstore.getAnalysisMatchResult(recordReqId, replayId);
+
+		return matchResult.map(mRes -> {
+			try {
+				return Response.ok().type(MediaType.
+						APPLICATION_JSON).entity(jsonmapper.writeValueAsString(mRes)).build();
+			} catch (JsonProcessingException e) {
+				return Response.serverError().type(MediaType.TEXT_PLAIN)
+						.entity("Error while processing analysis result for recordReqId:replayId " +
+								":: " + recordReqId + ":" + replayId + " :: " + e.getMessage()).build();
+			}
+		}).orElse(Response.serverError().type(MediaType.TEXT_PLAIN).entity("No Analysis Match Result Found for " +
+				"recordReqId:replayId :: " + recordReqId + ":" + replayId).build());
+
+	}
 
 
 	/**
