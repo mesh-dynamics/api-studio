@@ -41,7 +41,7 @@
           <source>${version.java}</source>
           <target>${version.java}</target>
         </configuration>
-      </plugin> 
+      </plugin>
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.2.1</version>
@@ -59,9 +59,9 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>2.22.0</version>
-      </plugin>      
+      </plugin>
 		<plugin>
-        <!--  
+        <!--
             for mvn upload to tomcat to work, add the following to the mvn settings.xml, either
             in MAVEN_HOME/conf/settings.xml or ~/.m2/settings.xml, under <servers>
             <server>
@@ -69,7 +69,7 @@
                 <username>adminscript</username>
                 <password>tomcat4cube$</password>
             </server>
-            Alternatively you can uncomment the username, password elements below           
+            Alternatively you can uncomment the username, password elements below
             The user needs to be setup with manager-script role on the tomcat server
             Also, see https://tomcat.apache.org/tomcat-7.0-doc/manager-howto.html
          -->
@@ -78,41 +78,13 @@
 		    <version>2.2</version>
 		    <configuration>
 		        <url>http://18.191.135.125:8080/manager/text</url>
-		        <server>TomcatServer</server> 
+		        <server>TomcatServer</server>
 		        <path>/cubews</path>
 		        <update>true</update>
 		        <username>admin</username>
                 <password>tomcat4cube$</password>
 		    </configuration>
 		</plugin>
-	  <plugin>
-		<groupId>com.spotify</groupId>
-		<artifactId>dockerfile-maven-plugin</artifactId>
-		<version>${version.dockerfile-maven}</version>
-		<executions>
-		   <execution>
-			  <id>default</id>
-			  <goals>
-			     <goal>build</goal>
-				 <goal>push</goal>
-			  </goals>
-			</execution>
-		</executions>
-			<configuration>
-				<repository>cubeiocorp/cubews</repository>
-				<tag>${docker.tag}</tag>
-				<buildArgs>
-					<WAR_FILE>${project.build.finalName}.war</WAR_FILE>
-				</buildArgs>
-			</configuration>
-			<!-- <resources>
-              <resource>
-               <targetPath>/</targetPath>
-               <directory>${project.build.directory}</directory>
-               <include>${project.build.finalName}.war</include>
-              </resource>
-            </resources> -->
-	  </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -124,14 +96,14 @@
 	    <version>5.4.0</version>
 	    <scope>test</scope>
 	</dependency>
-	<!--  for json comparisons in junit tests -->  
+	<!--  for json comparisons in junit tests -->
 	<!-- https://mvnrepository.com/artifact/org.skyscreamer/jsonassert -->
 	<dependency>
 	    <groupId>org.skyscreamer</groupId>
 	    <artifactId>jsonassert</artifactId>
 	    <version>1.5.0</version>
 	    <scope>test</scope>
-	</dependency>	
+	</dependency>
   	<dependency>
        	<groupId>javax.servlet</groupId>
         <artifactId>javax.servlet-api</artifactId>
@@ -174,29 +146,29 @@
 	    <groupId>org.glassfish.jersey.media</groupId>
 	    <artifactId>jersey-media-json-jackson</artifactId>
 	    <version>${version.jersey}</version>
-	</dependency>  	
+	</dependency>
   	<!-- https://mvnrepository.com/artifact/org.apache.solr/solr-solrj -->
 	<dependency>
     	<groupId>org.apache.solr</groupId>
     	<artifactId>solr-solrj</artifactId>
     	<version>7.5.0</version>
 	</dependency>
-	<dependency> 
-	    <groupId>org.apache.logging.log4j</groupId> 
-	    <artifactId>log4j-api</artifactId> 
-	    <version>${version.log4j}</version> 
-	</dependency> 
-	<dependency> 
-	    <groupId>org.apache.logging.log4j</groupId> 
-	    <artifactId>log4j-core</artifactId> 
-	    <version>${version.log4j}</version> 
-	    </dependency> 
-	<dependency> 
-	    <groupId>org.apache.logging.log4j</groupId> 
-	    <artifactId>log4j-slf4j-impl</artifactId> 
-	    <version>${version.log4j}</version> 
+	<dependency>
+	    <groupId>org.apache.logging.log4j</groupId>
+	    <artifactId>log4j-api</artifactId>
+	    <version>${version.log4j}</version>
 	</dependency>
-	<!-- jaxb was removed from java 9 onwards, so need to explicitly add -->	
+	<dependency>
+	    <groupId>org.apache.logging.log4j</groupId>
+	    <artifactId>log4j-core</artifactId>
+	    <version>${version.log4j}</version>
+	    </dependency>
+	<dependency>
+	    <groupId>org.apache.logging.log4j</groupId>
+	    <artifactId>log4j-slf4j-impl</artifactId>
+	    <version>${version.log4j}</version>
+	</dependency>
+	<!-- jaxb was removed from java 9 onwards, so need to explicitly add -->
 	<!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
 	<dependency>
 	    <groupId>javax.xml.bind</groupId>
@@ -209,7 +181,7 @@
 	    <groupId>org.apache.commons</groupId>
 	    <artifactId>commons-text</artifactId>
 	    <version>1.6</version>
-	</dependency>	
+	</dependency>
 	<dependency>
         <groupId>javax.activation</groupId>
         <artifactId>activation</artifactId>
@@ -221,7 +193,7 @@
 	    <groupId>com.flipkart.zjsonpatch</groupId>
 	    <artifactId>zjsonpatch</artifactId>
 	    <version>0.4.7</version>
-	</dependency>    
+	</dependency>
     <!-- https://mvnrepository.com/artifact/com.spotify/dockerfile-maven-plugin -->
 	    <dependency>
 		  <groupId>com.spotify</groupId>
