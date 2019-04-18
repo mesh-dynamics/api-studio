@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.OPTIONS;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -34,7 +33,9 @@ import org.apache.solr.common.util.NamedList;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
@@ -399,8 +400,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(METHODF, req.method);
         addFieldsToDoc(doc, QPARAMS, req.qparams);
         addFieldsToDoc(doc, FPARAMS, req.fparams);
-        
-        
+
+
         return doc;
     }
 
@@ -531,6 +532,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
+    private static SolrInputDocument replayStatisticsToSolrDoc(String service, String replayId,
+                                                               List<ReplayPathStatistic> pathStatistics,
+                                                               ObjectMapper jsonMapper) {
+
+        final SolrInputDocument doc = new SolrInputDocument();
+        ReplayPathStatistic first = pathStatistics.get(0);
+        doc.setField(CUSTOMERIDF, first.customer);
+        doc.setField(APPF , first.app);
+        doc.setField(SERVICEF , service);
+        doc.setField(TYPEF , Types.ReplayStats.toString());
+        doc.setField(REPLAYIDF , replayId);
+        doc.setField(IDF , Types.ReplayStats.toString()+ "-"
+                + Objects.hash(replayId , first.customer, first.app , first.service));
+        pathStatistics.forEach(pathStatistic -> {
+            try {
+                doc.addField(REPLAYPATHSTATF, jsonMapper.writeValueAsString(pathStatistic));
+            } catch (JsonProcessingException e) {
+                LOGGER.error("Unable to write to solr path statistic for path ::" + pathStatistic.path + " :: service :: "
+                        + service +  " :: replayid :: " + replayId);
+            }
+        });
+
+        return doc;
+    }
+
     
     private static Optional<Response> docToResponse(SolrDocument doc) {
         
@@ -607,6 +633,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQFAILEDF = CPREFIX + "reqfailed_i";
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
     private static final String SAMPLERATEF = CPREFIX + "samplerate_d";
+    private static final String REPLAYPATHSTATF = CPREFIX + "pathstat_ss";
 
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
@@ -948,6 +975,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Optional<Integer> maxresults = Optional.of(1);
             return SolrIterator.getStream(solr, query, maxresults).findFirst()
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
+    }
+
+
+
+
+    @Override
+    public void saveReplayResult(Map<String, List<ReplayPathStatistic>> pathStatistics
+            , String replayId) {
+            pathStatistics.entrySet().forEach(entry-> {
+                SolrInputDocument inputDocument = replayStatisticsToSolrDoc(entry.getKey() , replayId
+                        , entry.getValue() ,config.jsonmapper);
+                saveDoc(inputDocument);
+            });
     }
 
     /**

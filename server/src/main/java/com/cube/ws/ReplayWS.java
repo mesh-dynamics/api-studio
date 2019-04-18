@@ -20,6 +20,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Replay;
@@ -179,6 +180,7 @@ public class ReplayWS {
 			if (!rrstore.saveReplay(r)) {
 				return Response.serverError().build();
 			}
+			replayResultCache.stopReplay(r.customerid, r.app , replayid);
 			return Response.ok(json, MediaType.APPLICATION_JSON).build();
 		}).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
 		return resp;
@@ -219,7 +221,7 @@ public class ReplayWS {
 		/// end block for testing
 		 */
 		 
-		Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, this.rrstore);
+		Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, this.rrstore,this.replayResultCache);
 		Response resp = replay.map(r -> {
 			boolean status = r.start();
 			if (status) {
@@ -241,9 +243,11 @@ public class ReplayWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
+		this.replayResultCache = config.replayResultCache;
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonmapper;
+	ReplayResultCache replayResultCache;
 }

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
+import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.*;
@@ -136,8 +137,13 @@ public class MockServiceHTTP {
 					builder.header(f, v);
 			}));
 		    //return Response.status(Response.Status.NOT_FOUND).entity("Dummy response").build();
+			replayResultCache.incrementReqMatchCounter(customerid, app, service, path);
 		    return builder.entity(respv.body).build();
-	    }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Response not found").build());
+	    }).orElseGet(() ->
+			{
+				replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path);
+				return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
+			});
 	    
 	}
 
@@ -157,6 +163,7 @@ public class MockServiceHTTP {
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
 		this.requestComparatorCache = config.requestComparatorCache;
+		this.replayResultCache = config.replayResultCache;
 		LOGGER.info("Cube mock service started");
 	}
 
@@ -164,6 +171,7 @@ public class MockServiceHTTP {
 	private ReqRespStore rrstore;
 	private ObjectMapper jsonmapper;
 	private RequestComparatorCache requestComparatorCache;
+	private ReplayResultCache replayResultCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	
 	// TODO - make trace field configurable

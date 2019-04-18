@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.core.RequestComparator;
@@ -75,7 +76,8 @@ public interface ReqRespStore {
 		ReqRespMatchResult,
 		Recording,
 		ResponseCompareTemplate,
-		RequestCompareTemplate
+		RequestCompareTemplate,
+		ReplayStats
 	}
 
 	boolean save(Request req);
@@ -362,4 +364,6 @@ public interface ReqRespStore {
 	}
 
 	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
+
+	void saveReplayResult(Map<String , List<ReplayPathStatistic>> pathStatistics, String replayId);
 }

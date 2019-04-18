@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.uri.UriComponent;
 import org.json.JSONObject;
 
+import com.cube.cache.ReplayResultCache;
 import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.Replay;
@@ -45,6 +46,7 @@ public class ReplayDriver  {
 
     private final Replay replay;
     public final ReqRespStore rrstore;
+    private ReplayResultCache replayResultCache;
 
     /**
      * @param endpoint
@@ -87,10 +89,11 @@ public class ReplayDriver  {
             status, paths, 0, 0, 0, null, samplerate);
     }
 
-    private ReplayDriver(Replay r, ReqRespStore rrstore) {
+    private ReplayDriver(Replay r, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
         super();
         replay = r;
         this.rrstore = rrstore;
+        this.replayResultCache = replayResultCache;
     }
 
 
@@ -105,6 +108,7 @@ public class ReplayDriver  {
         if (!rrstore.saveReplay(replay))
             return;
 
+        replayResultCache.startReplay(replay.customerid , replay.app , replay.replayid);
 
         // using seed generated from replayid so that same requests get picked in replay and analyze
         long seed = replay.replayid.hashCode();
@@ -195,7 +199,7 @@ public class ReplayDriver  {
         replay.status = (replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
 
         rrstore.saveReplay(replay);
-
+        replayResultCache.stopReplay(replay.customerid, replay.app , replay.replayid);
     }
 
     public boolean start() {
@@ -220,8 +224,8 @@ public class ReplayDriver  {
     }
 
 
-    public static Optional<ReplayDriver> getReplayDriver(String replayid, ReqRespStore rrstore) {
-        return getStatus(replayid, rrstore).map(r -> new ReplayDriver(r, rrstore));
+    public static Optional<ReplayDriver> getReplayDriver(String replayid, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
+        return getStatus(replayid, rrstore).map(r -> new ReplayDriver(r, rrstore,replayResultCache));
     }
 
 
