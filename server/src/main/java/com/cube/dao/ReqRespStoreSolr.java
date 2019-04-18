@@ -990,6 +990,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             });
     }
 
+    @Override
+    public List<String> getReplayRequestCounts(String customer, String app, String service, String replayId) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, CUSTOMERIDF, customer);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query, REPLAYIDF, replayId);
+        Optional<Integer> maxresults = Optional.of(1);
+
+        return SolrIterator.getStream(solr , query , maxresults)
+                .findFirst().map(doc -> getReplayStats(doc)).orElse(Collections.EMPTY_LIST);
+    }
+
+    private List<String> getReplayStats(SolrDocument document) {
+        return getStrFieldMV(document ,  REPLAYPATHSTATF);
+    }
+
+
     /**
      * Convert Solr document to corresponding ReqRespMatchResult object
      * @param doc

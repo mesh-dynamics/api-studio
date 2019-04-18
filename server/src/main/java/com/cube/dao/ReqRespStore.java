@@ -366,4 +366,6 @@ public interface ReqRespStore {
 	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
 
 	void saveReplayResult(Map<String , List<ReplayPathStatistic>> pathStatistics, String replayId);
+
+	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
 }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -118,6 +119,17 @@ public class AnalyzeWS {
 		}		
 	}
 
+	@GET
+	@Path("replayRes/{customerId}/{app}/{service}/{replayId}")
+	public Response replayResult(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
+								 @PathParam("app") String app, @PathParam("service") String service,
+								 @PathParam("replayId") String replayId) {
+		List<String> replayRequestCountResults = rrstore.getReplayRequestCounts(customerId,app,service,replayId);
+		String resultJson = replayRequestCountResults.stream().collect(Collectors.joining("," , "[" , "]"));
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity(resultJson).build();
+	}
+
+
 	@POST
 	@Path("registerTemplateApp/{type}/{customerId}/{appId}")
 	@Consumes({MediaType.APPLICATION_JSON})
@@ -203,7 +215,7 @@ public class AnalyzeWS {
 	}
 
 	@GET
-	@Path("getAnalysisResult/{replayId}/{recordReqId}")
+	@Path("analysisRes/{replayId}/{recordReqId}")
 	public Response getAnalysisResult(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,
 									  @PathParam("replayId") String replayId) {
 		Optional<Analysis.ReqRespMatchResult> matchResult =
