@@ -1,0 +1,21 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: docker build
+    image: plugins/docker
+    settings:
+      username: cubeiocorp
+      password:
+        from_secret: docker_password
+      repo: cubeiocorp/cubeui
+      tags: test
+
+trigger:
+  branch:
+  - master
+
+---
+kind: secret
+name: docker_password
+data: BTPwSFd7SErg2vLGfDY--jW_NJ4F16VgNj860_Po_h8vWz2UDwMesRk=
