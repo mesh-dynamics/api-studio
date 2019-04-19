@@ -119,6 +119,17 @@ public class AnalyzeWS {
 		}		
 	}
 
+	/**
+	 * Api to get replay results for a given customer/app/virtual(mock) service and replay combination.
+	 * The result would contain request match / not match counts for all the paths covered by
+	 * the service during replay.
+	 * @param uriInfo
+	 * @param customerId
+	 * @param app
+	 * @param service
+	 * @param replayId
+	 * @return
+	 */
 	@GET
 	@Path("replayRes/{customerId}/{app}/{service}/{replayId}")
 	public Response replayResult(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
@@ -214,6 +225,15 @@ public class AnalyzeWS {
 		}
 	}
 
+	/**
+	 * Api to access analysis result for a given recorded request and related replay.
+	 * Result would contain all the diffs calculated during analyis for the given request/response
+	 * combination
+	 * @param urlInfo
+	 * @param recordReqId
+	 * @param replayId
+	 * @return
+	 */
 	@GET
 	@Path("analysisRes/{replayId}/{recordReqId}")
 	public Response getAnalysisResult(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,

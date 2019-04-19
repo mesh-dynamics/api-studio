@@ -136,11 +136,12 @@ public class MockServiceHTTP {
 				if (!f.equals("transfer-encoding"))
 					builder.header(f, v);
 			}));
-		    //return Response.status(Response.Status.NOT_FOUND).entity("Dummy response").build();
+		    // Increment match counter in cache
 			replayResultCache.incrementReqMatchCounter(customerid, app, service, path);
 		    return builder.entity(respv.body).build();
 	    }).orElseGet(() ->
 			{
+				// Increment not match counter in cache
 				replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path);
 				return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
 			});

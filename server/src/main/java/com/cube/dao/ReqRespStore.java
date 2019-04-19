@@ -363,9 +363,30 @@ public interface ReqRespStore {
 		public final Optional<Replay> replay;
 	}
 
+	/**
+	 * Get ReqResponseMatchResult for the given request and replay Id
+	 * @param recordReqId
+	 * @param replayId
+	 * @return
+	 */
 	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
 
+	/**
+	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
+	 * combination. The counts are stored in the backend path wise.
+	 * @param pathStatistics
+	 * @param replayId
+	 */
 	void saveReplayResult(Map<String , List<ReplayPathStatistic>> pathStatistics, String replayId);
 
+	/**
+	 * Get replay results (request match / not match counts) from the backend for a given customer/app/virtual(mock)
+	 * service and replay combination
+	 * @param customer
+	 * @param app
+	 * @param service
+	 * @param replayId
+	 * @return
+	 */
 	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
 }

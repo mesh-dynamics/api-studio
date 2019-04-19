@@ -965,6 +965,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
+    /**
+     * Get request/response match result (as computed by analysis) for a given recorded request and
+     * replay Id combination. The assumption is there will be only one such result  in solr per request/replay.
+     * Ideally the analysis should overwrite the result, if we perform analysis for the same replay.
+     * @param recordReqId
+     * @param replayId
+     * @return
+     */
     public Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId) {
             SolrQuery query = new SolrQuery("*:*");
             query.setFields("*");
@@ -978,8 +986,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-
-
+    /**
+     * Save Replay Stats for a Virtual(Mock) Service. The stats (request match/not match counts)
+     * are stored path wise as a json string in the same solr document.
+     * @param pathStatistics
+     * @param replayId
+     */
     @Override
     public void saveReplayResult(Map<String, List<ReplayPathStatistic>> pathStatistics
             , String replayId) {
@@ -990,6 +1002,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             });
     }
 
+    /**
+     * Get Request Match / Not Match Count for a given virtual(mock) service during replay.
+     * Return the statistics for each path in the service as a separate json string
+     * @param customer
+     * @param app
+     * @param service
+     * @param replayId
+     * @return
+     */
     @Override
     public List<String> getReplayRequestCounts(String customer, String app, String service, String replayId) {
         SolrQuery query = new SolrQuery("*:*");
@@ -1007,7 +1028,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private List<String> getReplayStats(SolrDocument document) {
         return getStrFieldMV(document ,  REPLAYPATHSTATF);
     }
-
 
     /**
      * Convert Solr document to corresponding ReqRespMatchResult object

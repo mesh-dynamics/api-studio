@@ -107,7 +107,7 @@ public class ReplayDriver  {
         replay.status = Replay.ReplayStatus.Running;
         if (!rrstore.saveReplay(replay))
             return;
-
+        // start recording stats for the current replay
         replayResultCache.startReplay(replay.customerid , replay.app , replay.replayid);
 
         // using seed generated from replayid so that same requests get picked in replay and analyze
@@ -199,6 +199,7 @@ public class ReplayDriver  {
         replay.status = (replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
 
         rrstore.saveReplay(replay);
+        // stop recording stats for the current replay
         replayResultCache.stopReplay(replay.customerid, replay.app , replay.replayid);
     }
 

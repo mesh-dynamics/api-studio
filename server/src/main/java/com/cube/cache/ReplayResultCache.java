@@ -15,6 +15,11 @@ import com.cube.dao.ReqRespStore;
 /**
  * TODO in case of a distributed deployment of cube service, these caches need to be separated
  * as a service, possibly redis
+ * This Cache serves the purpose of storing request match / not match counts for a Mock(Virtual)
+ * Service during replay. The initiation/stopping of replay is done via the replay driver. Once the replay
+ * is in action, the mock service gives directions to increment appropriate counters. The linking
+ * is done via the customer/app/service composite key. So the assumption is that only one replay
+ * will be running for every such combination at a given time.
  */
 public class ReplayResultCache {
 
@@ -73,15 +78,33 @@ public class ReplayResultCache {
                 .computeIfAbsent(secondaryKey , k -> new ReplayPathStatistic(customer,app,service,path));
     }
 
+    /**
+     * Increment the counter for request match (from MockService)
+     * @param customer
+     * @param app
+     * @param service
+     * @param path
+     */
     public void incrementReqMatchCounter(String customer, String app, String service, String path) {
         getPathStatistic(customer,app,service,path).incrementMatchCount();
     }
 
-
+    /**
+     * Increment the counter for request no match (from MockService)
+     * @param customer
+     * @param app
+     * @param service
+     * @param path
+     */
     public void incrementReqNotMatchCounter(String customer, String app, String service, String path) {
         getPathStatistic(customer,app,service,path).incrementNonMatchCount();
     }
 
+    /**
+     * Once the replay is over, store the results in the backend. The results are stored path wise
+     * @param key
+     * @param replayId
+     */
     private void materializeResults(Integer key, String replayId) {
         Map<String,List<ReplayPathStatistic>> serviceVsReplayPathStatistic = new HashMap<>();
         replayStatisticsMap.getOrDefault(key , new ConcurrentHashMap<>())
@@ -92,17 +115,33 @@ public class ReplayResultCache {
         reqRespStore.saveReplayResult(serviceVsReplayPathStatistic , replayId);
     }
 
+    /**
+     * Invalidate the keys once the replay is over
+     * @param key
+     */
     private void invalidateCache(Integer key){
         currentReplayId.remove(key);
         replayStatisticsMap.remove(key);
     }
 
+    /**
+     * Stop recording stats for the given replay (from ReplayDriver)
+     * @param customer
+     * @param app
+     * @param replayId
+     */
     public void stopReplay(String customer, String app, String replayId) {
         Integer key = Objects.hash(customer , app);
         materializeResults(key , replayId);
         invalidateCache(key);
     }
 
+    /**
+     * Start recording stats for the given replay (from ReplayDriver)
+     * @param customer
+     * @param app
+     * @param replayId
+     */
     public void startReplay(String customer, String app, String replayId) {
         Integer key = Objects.hash(customer , app);
         currentReplayId.put(key , replayId);
