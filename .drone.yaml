@@ -6,8 +6,7 @@ steps:
     image: plugins/docker
     settings:
       username: cubeiocorp
-      password:
-        from_secret: helloDocker1!
+      password: helloDocker1!
       repo: cubeiocorp/cubeui
       tags: test
 
