@@ -1,0 +1,20 @@
+import React, { Component } from 'react'
+import config from './config'
+import replay from './replay'
+import analysis from "./analysis";
+
+
+class PageContent extends Component {
+  render() {
+    const { needMargin } = this.props;
+    return (
+      <div role="main">
+        { replay }
+        { config }
+        { analysis }
+      </div>
+    )
+  }
+}
+
+export default PageContent
