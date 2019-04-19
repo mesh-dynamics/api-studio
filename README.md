@@ -1,3 +1,5 @@
+[![Build Status](http://52.14.108.99/api/badges/cube-io-corp/cubeui/status.svg)](http://52.14.108.99/cube-io-corp/cubeui)
+
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
 Below you will find some information on how to perform common tasks.<br>
