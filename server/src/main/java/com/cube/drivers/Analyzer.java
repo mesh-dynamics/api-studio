@@ -277,7 +277,7 @@ public class Analyzer {
         //RequestComparator mspec = rmspec;
 
         return replay.flatMap(r -> {
-            Result<Request> reqs = r.getRequests(rrstore);
+            Result<Request> reqs = r.getRequests(rrstore, true);
             Analyzer analyzer = new Analyzer(replayid, (int) reqs.numResults()
                    , jsonmapper , requestComparatorCache, responseComparatorCache);
             if (!rrstore.saveAnalysis(analyzer.analysis)) {

@@ -127,7 +127,8 @@ public interface ReqRespStore {
 	 * @param rrtype
 	 * @return
 	 */
-	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
+	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
+			, List<String> paths, RRBase.RR rrtype, boolean expandOnTrace, List<String> intermediateServices);
 
 	/**
 	 * @param replay

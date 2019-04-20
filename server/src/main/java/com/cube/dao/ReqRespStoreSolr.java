@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -95,18 +96,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
      */
     @Override
-    public Result<Request> getRequests(String customerid, String app, String collection, 
-            List<String> reqids, List<String> paths,
-            RRBase.RR rrtype) {
-
+    public Result<Request> getRequests(String customerid, String app, String collection,
+                                       List<String> reqids, List<String> paths, RRBase.RR rrtype,
+                                       boolean expandOnTrace, List<String> intermediateServices) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Request.toString());
         addFilter(query, CUSTOMERIDF, customerid);
         addFilter(query, APPF, app);
         addFilter(query, COLLECTIONF, collection);
-        
-        
         String reqfilter = reqids.stream().collect(Collectors.joining(" OR ", "(", ")"));
         if (reqids.size() > 0)
             addFilter(query, REQIDF, reqfilter, false);
@@ -115,12 +113,41 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (paths.size() > 0)
             addFilter(query, PATHF, pathfilter, false);
 
-        
-        query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));            
-                
-        
-        return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
-        
+
+        query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));
+
+        if (expandOnTrace) {
+            return SolrIterator.getResultsWithTransformStream(solr , query , Optional.empty()
+                    , findIntermediateServiceRequests(intermediateServices));
+        } else {
+            return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
+        }
+    }
+
+    public Stream<Request> findIntermediateServiceRequests(List<String> services, String traceId, String collectionId) {
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query , METASERVICEF , services.stream().collect(Collectors.joining(" OR "
+                , "(" , ")")) , false);
+        addFilter(query , HDRTRACEF , traceId);
+        addFilter(query , TYPEF , Types.Request.toString());
+        addFilter(query , COLLECTIONF , collectionId);
+        // TODO need to take this max results number from some config
+        Integer maxResult = 100;
+        return SolrIterator.getStream(solr, query , Optional.of(maxResult)).flatMap(d -> docToRequest(d).stream());
+    }
+
+    public Function<SolrDocument, Stream<Request>> findIntermediateServiceRequests(List<String> services) {
+        return (SolrDocument document) -> {
+            Optional<Request> request = docToRequest(document);
+            return request.map(r -> {
+                List<String> traceIds = Utils.getCaseInsensitiveMatches(r.hdrs, Config.DEFAULT_TRACE_FIELD);
+                return Stream.concat(Stream.of(r) ,
+                        r.collection.flatMap(collection ->
+                        traceIds.stream().findFirst().flatMap(traceId ->
+                        Optional.of(findIntermediateServiceRequests(services, traceId, r.collection.get()))))
+                                .orElse(Stream.empty()));
+            }).orElse(Stream.empty());
+        };
     }
 
     
@@ -234,7 +261,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String QPARAMS = "qp"; 
     private static final String FPARAMS = "fp"; 
     private static final String META = "meta"; 
-    private static final String HDR = "hdr"; 
+    private static final String HDR = "hdr";
+    private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + FSUFFIX;
+    private static final String METASERVICEF = META + "_service" + FSUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
@@ -521,7 +550,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
-    
+
+
     private static SolrInputDocument respToSolrDoc(Response resp) {
         final SolrInputDocument doc = new SolrInputDocument();
 
@@ -634,6 +664,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
     private static final String SAMPLERATEF = CPREFIX + "samplerate_d";
     private static final String REPLAYPATHSTATF = CPREFIX + "pathstat_ss";
+    private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv_ss" ;
+
 
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
@@ -664,6 +696,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
+        replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
 
         return doc;
@@ -714,6 +747,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
         Optional<String> creationTimestamp = getStrField(doc, CREATIONTIMESTAMPF);
         Optional<Double> samplerate = getDblField(doc, SAMPLERATEF);
+        List<String> intermediateService = getStrFieldMV(doc , INTERMEDIATESERVF);
         
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && 
@@ -723,7 +757,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
 				        reqids, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get(),
-                        samplerate));
+                        samplerate , intermediateService));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
 			}

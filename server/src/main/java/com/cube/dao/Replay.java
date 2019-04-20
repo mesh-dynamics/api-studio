@@ -56,7 +56,7 @@ public class Replay {
 	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
 				  String replayid, boolean async, ReplayStatus status,
 				  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
-				  Optional<Double> samplerate) {
+				  Optional<Double> samplerate, List<String> intermediateServices) {
 		super();
 		this.endpoint = endpoint;
 		this.customerid = customerid;
@@ -74,6 +74,7 @@ public class Replay {
 		this.creationTimeStamp = creationTimestamp == null ? format.format(new Date()) : creationTimestamp;
 		this.xfmer = Optional.ofNullable(null);
 		this.samplerate = samplerate;
+		this.intermediateServices = intermediateServices;
 	}
 
 	/*
@@ -99,6 +100,7 @@ public class Replay {
 	public final boolean async;
 	public ReplayStatus status;
 	public final List<String> paths; // paths to be replayed
+	public final List<String> intermediateServices;
 	public int reqcnt; // total number of requests
 	public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
 	public int reqfailed; // requests failed, return code not 200
@@ -134,14 +136,15 @@ public class Replay {
 	 * @return
 	 */
 	@JsonIgnore
-	public Result<Request> getRequests(ReqRespStore rrstore) {
-		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
+	public Result<Request> getRequests(ReqRespStore rrstore, boolean expandOnTrace) {
+		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record
+				, expandOnTrace, intermediateServices);
 		return res;
 	}
 
 	@JsonIgnore
 	public Pair<Stream<List<Request>>, Long> getRequestBatches(int batchSize, ReqRespStore rrstore) {
-		Result<Request> requests = getRequests(rrstore);
+		Result<Request> requests = getRequests(rrstore , false);
 		
 		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
 	}
