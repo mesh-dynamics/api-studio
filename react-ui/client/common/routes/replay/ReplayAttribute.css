@@ -87,3 +87,16 @@ select {
 li.disabled {
     opacity: 0.2;
 }
+div.remove {
+    background: #ffbbbb;
+    text-decoration: line-through;
+    width: fit-content;
+}
+div.add {
+    background: #bbffbb;
+    width: fit-content;
+}
+div.replace {
+    background: #ffbbbb;
+    width: fit-content;
+}
