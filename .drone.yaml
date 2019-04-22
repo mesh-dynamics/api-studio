@@ -20,6 +20,10 @@ steps:
       repo: cubeiocorp/cubeui
       container: cubeui
       tag: test-v2
+    when:
+      event:
+        exclude:
+        - pull_request
 
 trigger:
   branch:
