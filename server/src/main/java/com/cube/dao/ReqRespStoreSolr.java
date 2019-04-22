@@ -140,6 +140,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return (SolrDocument document) -> {
             Optional<Request> request = docToRequest(document);
             return request.map(r -> {
+                if (services.isEmpty()) return Stream.of(r);
                 List<String> traceIds = Utils.getCaseInsensitiveMatches(r.hdrs, Config.DEFAULT_TRACE_FIELD);
                 return Stream.concat(Stream.of(r) ,
                         r.collection.flatMap(collection ->
