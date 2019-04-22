@@ -236,7 +236,7 @@ public class ReplayDriver  {
                                               JSONObject xfms, Optional<Double> samplerate, List<String> intermediateServices) {
         String replayid = Replay.getReplayIdFromCollection(collection);
         ReplayDriver replaydriver = new ReplayDriver(endpoint, customerid, app, instanceid, collection,
-                reqids, rrstore, replayid, async, Replay.ReplayStatus.Init, paths, samplerate,intermediateServices);
+                reqids, rrstore, replayid, async, Replay.ReplayStatus.Init, paths, samplerate, intermediateServices);
         if (rrstore.saveReplay(replaydriver.replay)) {
             return Optional.of(replaydriver.replay);
         }

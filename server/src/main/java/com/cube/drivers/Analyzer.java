@@ -14,6 +14,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -68,105 +69,117 @@ public class Analyzer {
      * @param rrstore
      * @param reqs
      */
-    private void analyze(ReqRespStore rrstore, Stream<Request> reqs, Replay replay) {
+    private void analyze(ReqRespStore rrstore, Stream<List<Request>> reqs, Replay replay) {
 
         // using seed generated from replayid so that same requests get picked in replay and analyze
         long seed = replay.replayid.hashCode();
         Random random = new Random(seed);
 
+        reqs.forEach(requestList -> {
 
+            Stream<Request> enhancedRequests = rrstore.expandOnTraceId(requestList , replay.intermediateServices
+                    , replay.collection);
 
-        reqs.forEach(r -> {
-            if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
-                return; // drop this request
-            }
+            enhancedRequests.forEach(r -> {
 
-            // find matching request in replay
-            // most fields are same as request except
-            // RRType should be Replay
-            // collection to set to replayid, since collection in replays are set to replayids
-            Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
-                    r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
-                    Optional.of(RRBase.RR.Replay), r.customerid, r.app);
-
-            List<Request> matches = new ArrayList<>();
-
-            TemplateKey key = new TemplateKey(r.customerid.get() , r.app.get() , r.getService().get() , r.path
-                    , TemplateKey.Type.Request);
-            RequestComparator comparator = requestComparatorCache.getRequestComparator(key , false);
-            matches = rrstore.getRequests(rq, comparator, Optional.of(10))
-                        .collect(Collectors.toList());
-            // TODO: add toString override for the Request object to debug log
-            if (!matches.isEmpty()) {
-                Map<String, Response> replayResponseMap = rrstore.getResponses(matches);
-                Optional<Response> recordedResponse = r.reqid.flatMap(rrstore::getResponse);
-                if (matches.size() > 1) {
-                    analysis.reqmultiplematch++;
-                } else {
-                    analysis.reqsinglematch++;
+                if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
+                    return; // drop this request
                 }
 
-                // fetch response of recording and replay
+                // find matching request in replay
+                // most fields are same as request except
+                // RRType should be Replay
+                // collection to set to replayid, since collection in replays are set to replayids
+                Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
+                        r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
+                        Optional.of(RRBase.RR.Replay), r.customerid, r.app);
 
-                Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, Optional.empty(),
-                        Comparator.Match.DEFAULT , Optional.empty() , Optional.empty());
-                Comparator.MatchType bestreqmt = Comparator.MatchType.NoMatch;
+                List<Request> matches = new ArrayList<>();
 
-                // matches is ordered in decreasing order of request match score. so exact matches
-                // of requests, if any should be at the beginning
-                // If request matches exactly, consider that as the best match
-                // else find the best match based on response matching
-                for (Request replayreq : matches) {
-                    Comparator.MatchType reqmt = comparator.compare(rq, replayreq);
-                    Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, recordedResponse , replayResponseMap);
-                    if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
-                        bestmatch = match;
-                        bestreqmt = reqmt;
-                        if (bestmatch.getmt() == ExactMatch) {
-                            break;
+                TemplateKey key = new TemplateKey(r.customerid.get(), r.app.get(), r.getService().get(), r.path
+                        , TemplateKey.Type.Request);
+                RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
+                matches = rrstore.getRequests(rq, comparator, Optional.of(10))
+                        .collect(Collectors.toList());
+                // TODO: add toString override for the Request object to debug log
+                if (!matches.isEmpty()) {
+                    Map<String, Response> replayResponseMap = rrstore.getResponses(matches);
+                    Optional<Response> recordedResponse = r.reqid.flatMap(rrstore::getResponse);
+                    if (matches.size() > 1) {
+                        analysis.reqmultiplematch++;
+                    } else {
+                        analysis.reqsinglematch++;
+                    }
+
+                    // fetch response of recording and replay
+
+                    Analysis.RespMatchWithReq bestmatch = new Analysis.RespMatchWithReq(r, Optional.empty(),
+                            Comparator.Match.DEFAULT, Optional.empty(), Optional.empty());
+                    Comparator.MatchType bestreqmt = Comparator.MatchType.NoMatch;
+
+                    // matches is ordered in decreasing order of request match score. so exact matches
+                    // of requests, if any should be at the beginning
+                    // If request matches exactly, consider that as the best match
+                    // else find the best match based on response matching
+                    for (Request replayreq : matches) {
+                        Comparator.MatchType reqmt = comparator.compare(rq, replayreq);
+                        Analysis.RespMatchWithReq match = checkRespMatch(r, replayreq, recordedResponse, replayResponseMap);
+                        if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
+                            bestmatch = match;
+                            bestreqmt = reqmt;
+                            if (bestmatch.getmt() == ExactMatch) {
+                                break;
+                            }
                         }
                     }
-                }
-                // compare & write out result
-                if (bestreqmt == ExactMatch) {
-                    analysis.reqmatched++;
+                    // compare & write out result
+                    if (bestreqmt == ExactMatch) {
+                        analysis.reqmatched++;
+                    } else {
+                        analysis.reqpartiallymatched++;
+                    }
+                    switch (bestmatch.getmt()) {
+                        case ExactMatch:
+                            analysis.respmatched++;
+                            break;
+                        case FuzzyMatch:
+                            analysis.resppartiallymatched++;
+                            break;
+                        default:
+                            analysis.respnotmatched++;
+                            break;
+                    }
+
+                    LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqid.orElse("-1"));
+                    LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(jsonmapper).orElse(" N/A"));
+                    LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonmapper).orElse("N/A"));
+                    LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
+                    LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
+                    bestmatch.getDiffs().stream().filter(diff -> true).forEach(
+                            diff -> {
+                                try {
+                                    LOGGER.debug("DIFF :: " + jsonmapper.writeValueAsString(diff));
+                                } catch (JsonProcessingException e) {
+                                    // DO NOTHING
+                                }
+                            });
+
+                    Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
+                            analysis.replayid, jsonmapper);
+                    rrstore.saveResult(res);
+
                 } else {
-                    analysis.reqpartiallymatched++;
-                }
-                switch(bestmatch.getmt()) {
-                    case ExactMatch: analysis.respmatched++; break;
-                    case FuzzyMatch: analysis.resppartiallymatched++; break;
-                    default: analysis.respnotmatched++; break;
+                    analysis.reqnotmatched++;
                 }
 
-                LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqid.orElse("-1"));
-                LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(jsonmapper).orElse(" N/A"));
-                LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonmapper).orElse("N/A"));
-                LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
-                LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
-                bestmatch.getDiffs().stream().filter(diff -> true).forEach(
-                        diff -> {
-                            try {
-                                LOGGER.debug("DIFF :: " + jsonmapper.writeValueAsString(diff));
-                            } catch (JsonProcessingException e) {
-                                // DO NOTHING
-                            }
-                        });
 
-                Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
-                    analysis.replayid, jsonmapper);
-                rrstore.saveResult(res);
+                analysis.reqanalyzed++;
+                if (analysis.reqanalyzed % UPDBATCHSIZE == 0) {
+                    LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayid, analysis.reqanalyzed));
+                    rrstore.saveAnalysis(analysis);
+                }
 
-            } else {
-                analysis.reqnotmatched++;
-            }
-
-
-            analysis.reqanalyzed++;
-            if (analysis.reqanalyzed % UPDBATCHSIZE == 0) {
-                LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayid, analysis.reqanalyzed));
-                rrstore.saveAnalysis(analysis);
-            }
+            });
         });
         analysis.status = Analysis.Status.Completed;
 
@@ -277,14 +290,17 @@ public class Analyzer {
         //RequestComparator mspec = rmspec;
 
         return replay.flatMap(r -> {
-            Result<Request> reqs = r.getRequests(rrstore, true);
-            Analyzer analyzer = new Analyzer(replayid, (int) reqs.numResults()
+
+            Pair<Stream<List<Request>> , Long> result = r.getRequestBatches(20 , rrstore);
+
+            //Result<Request> reqs = r.getRequests(rrstore, true);
+            Analyzer analyzer = new Analyzer(replayid, result.getRight().intValue()
                    , jsonmapper , requestComparatorCache, responseComparatorCache);
             if (!rrstore.saveAnalysis(analyzer.analysis)) {
                 return Optional.empty();
             }
 
-            analyzer.analyze(rrstore, reqs.getObjects(), r);
+            analyzer.analyze(rrstore, result.getLeft(), r);
 
             // update the stored analysis
             rrstore.saveAnalysis(analyzer.analysis);

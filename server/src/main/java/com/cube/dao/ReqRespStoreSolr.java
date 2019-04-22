@@ -97,8 +97,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Result<Request> getRequests(String customerid, String app, String collection,
-                                       List<String> reqids, List<String> paths, RRBase.RR rrtype,
-                                       boolean expandOnTrace, List<String> intermediateServices) {
+                                       List<String> reqids, List<String> paths, RRBase.RR rrtype) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Request.toString());
@@ -116,39 +115,24 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));
 
-        if (expandOnTrace) {
-            return SolrIterator.getResultsWithTransformStream(solr , query , Optional.empty()
-                    , findIntermediateServiceRequests(intermediateServices));
-        } else {
-            return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
-        }
+        return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
+
     }
 
-    public Stream<Request> findIntermediateServiceRequests(List<String> services, String traceId, String collectionId) {
+    public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
+                                           String collectionId) {
+        List<String> traceIds = originalList.stream().map(request-> Utils.getCaseInsensitiveMatches(request.hdrs,
+                Config.DEFAULT_TRACE_FIELD)).flatMap(List::stream).collect(Collectors.toList());
+        if (traceIds.isEmpty() || intermediateServices.isEmpty()) return originalList.stream() ;
         SolrQuery query = new SolrQuery("*:*");
-        addFilter(query , METASERVICEF , services.stream().collect(Collectors.joining(" OR "
+        addFilter(query , METASERVICEF , intermediateServices.stream().collect(Collectors.joining(" OR "
                 , "(" , ")")) , false);
-        addFilter(query , HDRTRACEF , traceId);
         addFilter(query , TYPEF , Types.Request.toString());
         addFilter(query , COLLECTIONF , collectionId);
-        // TODO need to take this max results number from some config
-        Integer maxResult = 100;
-        return SolrIterator.getStream(solr, query , Optional.of(maxResult)).flatMap(d -> docToRequest(d).stream());
-    }
-
-    public Function<SolrDocument, Stream<Request>> findIntermediateServiceRequests(List<String> services) {
-        return (SolrDocument document) -> {
-            Optional<Request> request = docToRequest(document);
-            return request.map(r -> {
-                if (services.isEmpty()) return Stream.of(r);
-                List<String> traceIds = Utils.getCaseInsensitiveMatches(r.hdrs, Config.DEFAULT_TRACE_FIELD);
-                return Stream.concat(Stream.of(r) ,
-                        r.collection.flatMap(collection ->
-                        traceIds.stream().findFirst().flatMap(traceId ->
-                        Optional.of(findIntermediateServiceRequests(services, traceId, r.collection.get()))))
-                                .orElse(Stream.empty()));
-            }).orElse(Stream.empty());
-        };
+        addFilter(query , HDRTRACEF , traceIds.stream().collect(Collectors.joining("\" OR \"" , "(\""
+                , "\")")) , false);
+        return Stream.concat(originalList.stream() , SolrIterator.getStream(solr, query, Optional.of(traceIds.size()
+                * intermediateServices.size())).flatMap(doc -> docToRequest(doc).stream()));
     }
 
     

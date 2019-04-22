@@ -136,16 +136,14 @@ public class Replay {
 	 * @return
 	 */
 	@JsonIgnore
-	public Result<Request> getRequests(ReqRespStore rrstore, boolean expandOnTrace) {
-		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record
-				, expandOnTrace, intermediateServices);
+	public Result<Request> getRequests(ReqRespStore rrstore) {
+		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
 		return res;
 	}
 
 	@JsonIgnore
 	public Pair<Stream<List<Request>>, Long> getRequestBatches(int batchSize, ReqRespStore rrstore) {
-		Result<Request> requests = getRequests(rrstore , false);
-		
+		Result<Request> requests = getRequests(rrstore);
 		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
 	}
 

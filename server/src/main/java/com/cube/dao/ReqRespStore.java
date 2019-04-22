@@ -26,8 +26,8 @@ import com.cube.dao.Replay.ReplayStatus;
  *
  */
 public interface ReqRespStore {
-	
-	
+
+
 	public class ReqResp {
 				
 		
@@ -128,7 +128,7 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
-			, List<String> paths, RRBase.RR rrtype, boolean expandOnTrace, List<String> intermediateServices);
+			, List<String> paths, RRBase.RR rrtype);
 
 	/**
 	 * @param replay
@@ -390,4 +390,7 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
+
+	Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices, String collectionId);
+
 }
