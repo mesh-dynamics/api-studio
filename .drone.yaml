@@ -8,7 +8,7 @@ steps:
       username: cubeiocorp
       password: helloDocker1!
       repo: cubeiocorp/cubeui
-      tags: demo-v1
+      tags: ${DRONE_COMMIT}
 
   - name: deploy
     image: quay.io/honestbee/drone-kubernetes
@@ -19,7 +19,7 @@ steps:
       deployment: cubeui-v1
       repo: cubeiocorp/cubeui
       container: cubeui
-      tag: demo-v1
+      tag: ${DRONE_COMMIT}
     when:
       event:
         exclude:
