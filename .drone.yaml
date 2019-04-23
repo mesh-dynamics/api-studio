@@ -9,6 +9,19 @@ steps:
       password: helloDocker1!
       repo: cubeiocorp/cubeui
       tags: ${DRONE_COMMIT}
+    when:
+      event:
+        exclude:
+          - pull_request
+
+  - name: Test build
+    image: plugins/docker
+    settings:
+      username: cubeiocorp
+      password: helloDocker1!
+      repo: cubeiocorp/cubeui
+      tags: ${DRONE_COMMIT}
+      dry_run: true
 
   - name: deploy
     image: quay.io/honestbee/drone-kubernetes
