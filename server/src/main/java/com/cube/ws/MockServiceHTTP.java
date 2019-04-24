@@ -1,15 +1,15 @@
 package com.cube.ws;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.map.MultiValueMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -23,11 +23,11 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.*;
+import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.dao.RRBase;
+import com.cube.dao.*;
 import com.cube.dao.RRBase.*;
-import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 
 /**
@@ -100,6 +100,19 @@ public class MockServiceHTTP {
 		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
 	}
 
+	private Optional<Request> createRequestMock(String path, MultivaluedMap<String, String> formParams,
+												String customerId, String app, String instanceId, String service,
+												HttpHeaders headers) {
+		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
+		// we can generate a new request id here in the mock service
+		Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
+		return replayResultCache.getCurrentReplayId(customerId, app, instanceId).map(replayId -> new Request(
+				path, requestId, new MultivaluedHashMap<>(), formParams, headers.getRequestHeaders(), service ,
+				Optional.of(replayId) , Optional.of(RR.Replay), Optional.of(customerId) , Optional.of(app)
+		));
+
+	}
+
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
 			String customerid, String app, String instanceid, 
 			String service, HttpHeaders headers) {
@@ -107,6 +120,12 @@ public class MockServiceHTTP {
 		LOGGER.info(String.format("Mocking request for %s", path));
 
 		MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+		// first store the original request as a part of the replay
+		// this is optional as there might not be any running replay which is a rare case
+		// otherwise we'll always be able to construct a new request from the parameters
+		Optional<Request> mockRequest = createRequestMock(path, formParams, customerid, app, instanceid,
+				service, headers);
+		mockRequest.ifPresent(mRequest -> rrstore.save(mRequest));
 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
@@ -127,6 +146,7 @@ public class MockServiceHTTP {
 					return getDefaultResponse(r);
 				});
 
+
 	    return resp.map(respv -> {
 		    ResponseBuilder builder = Response.status(respv.status);
 		    respv.hdrs.forEach((f, vl) -> vl.forEach((v) -> {
@@ -137,14 +157,33 @@ public class MockServiceHTTP {
 					builder.header(f, v);
 			}));
 		    // Increment match counter in cache
-			replayResultCache.incrementReqMatchCounter(customerid, app, service, path);
+			replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+			// store a req-resp analysis match result for the mock request (during replay)
+			// and the matched recording request
+			mockRequest.ifPresent(mRequest -> respv.reqid.ifPresent(recordReqId -> {
+				Analysis.ReqRespMatchResult matchResult = new Analysis.ReqRespMatchResult(
+						recordReqId, mRequest.reqid.get(), Comparator.MatchType.ExactMatch,
+						1, Comparator.MatchType.ExactMatch, "", "", customerid,
+						app, service, path, mRequest.collection.get());
+				rrstore.saveResult(matchResult);
+			}));
 		    return builder.entity(respv.body).build();
-	    }).orElseGet(() ->
-			{
+	    }).orElseGet(() -> {
 				// Increment not match counter in cache
-				replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path);
+				replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+				//TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
+				//a recorded request, here in the mock we have a replay request which did not match
+				//with any recorded request, but still to properly calculate no match counts for
+				// virtualized services in facet queries, we are creating this dummy req resp
+				// match result for now.
+				mockRequest.ifPresent(mRequest -> {
+					Analysis.ReqRespMatchResult matchResult = new Analysis.ReqRespMatchResult("", mRequest.reqid.get(),
+									Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
+									customerid, app, service, path, mRequest.collection.get());
+					rrstore.saveResult(matchResult);
+				});
 				return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
-			});
+	    });
 	    
 	}
 

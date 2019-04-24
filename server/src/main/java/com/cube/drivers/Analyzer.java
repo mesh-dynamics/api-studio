@@ -6,11 +6,7 @@
 
 package com.cube.drivers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,13 +18,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.cube.core.Comparator.MatchType.ExactMatch;
-import static com.cube.core.Comparator.MatchType.NoMatch;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
+import com.cube.core.Comparator;
 import com.cube.core.*;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
@@ -76,15 +72,17 @@ public class Analyzer {
         Random random = new Random(seed);
 
         reqs.forEach(requestList -> {
+            // for each batch of requests, expand on trace id for the given list of intermediate services
+            // (a property of replay)
+            List<Request> filteredList = requestList.stream().filter(request ->
+                    replay.samplerate.map(sr -> random.nextDouble() <= sr).orElse(true))
+                    .collect(Collectors.toList());
 
-            Stream<Request> enhancedRequests = rrstore.expandOnTraceId(requestList , replay.intermediateServices
-                    , replay.collection);
+            Stream<Request> enhancedRequests = rrstore.expandOnTraceId(filteredList, replay.intermediateServices
+                    ,replay.collection);
 
             enhancedRequests.forEach(r -> {
 
-                if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
-                    return; // drop this request
-                }
 
                 // find matching request in replay
                 // most fields are same as request except
@@ -155,7 +153,7 @@ public class Analyzer {
                     LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonmapper).orElse("N/A"));
                     LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
                     LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
-                    bestmatch.getDiffs().stream().filter(diff -> true).forEach(
+                    bestmatch.getDiffs().forEach(
                             diff -> {
                                 try {
                                     LOGGER.debug("DIFF :: " + jsonmapper.writeValueAsString(diff));
@@ -290,7 +288,8 @@ public class Analyzer {
         //RequestComparator mspec = rmspec;
 
         return replay.flatMap(r -> {
-
+            // get request in batches ... for batching of corresponding trace id queries
+            // TODO need to get the batch size from some config
             Pair<Stream<List<Request>> , Long> result = r.getRequestBatches(20 , rrstore);
 
             //Result<Request> reqs = r.getRequests(rrstore, true);

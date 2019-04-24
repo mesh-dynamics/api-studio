@@ -2,6 +2,7 @@ package com.cube.cache;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -33,30 +34,33 @@ public class ReplayResultCache {
         public String app;
         @JsonIgnore
         public String service;
+        @JsonIgnore
+        public String instanceId;
         @JsonProperty("path")
         public String path;
         @JsonProperty("totalReq")
-        public Integer reqCount = 0;
+        public AtomicInteger reqCount = new AtomicInteger(0);
         @JsonProperty("matchReq")
-        public Integer matchCount = 0 ;
+        public AtomicInteger matchCount = new AtomicInteger(0) ;
         @JsonProperty("noMatchReq")
-        public Integer nonMatchCount = 0;
+        public AtomicInteger nonMatchCount = new AtomicInteger(0);
 
-        public ReplayPathStatistic(String customer, String app, String service, String path) {
+        public ReplayPathStatistic(String customer, String app, String service, String path, String instanceId) {
             this.customer = customer;
             this.app = app;
             this.service = service;
             this.path = path;
+            this.instanceId = instanceId;
         }
 
         public void incrementMatchCount() {
-            reqCount++;
-            matchCount++;
+            reqCount.incrementAndGet();
+            matchCount.incrementAndGet();
         }
 
         public void incrementNonMatchCount(){
-            reqCount++;
-            nonMatchCount++;
+            reqCount.incrementAndGet();
+            nonMatchCount.incrementAndGet();
         }
 
     }
@@ -71,11 +75,11 @@ public class ReplayResultCache {
     private ConcurrentHashMap<Integer , String> currentReplayId;
     private ReqRespStore reqRespStore;
 
-    public ReplayPathStatistic getPathStatistic(String customer, String app, String service, String path) {
-        Integer topLevelKey = Objects.hash(customer,app);
+    public ReplayPathStatistic getPathStatistic(String customer, String app, String service, String path, String instanceId) {
+        Integer topLevelKey = Objects.hash(customer,app,instanceId);
         Integer secondaryKey = Objects.hash(service,path);
         return replayStatisticsMap.computeIfAbsent(topLevelKey , k -> new ConcurrentHashMap<>())
-                .computeIfAbsent(secondaryKey , k -> new ReplayPathStatistic(customer,app,service,path));
+                .computeIfAbsent(secondaryKey , k -> new ReplayPathStatistic(customer,app,service,path,instanceId));
     }
 
     /**
@@ -85,8 +89,8 @@ public class ReplayResultCache {
      * @param service
      * @param path
      */
-    public void incrementReqMatchCounter(String customer, String app, String service, String path) {
-        getPathStatistic(customer,app,service,path).incrementMatchCount();
+    public void incrementReqMatchCounter(String customer, String app, String service, String path, String instanceId) {
+        getPathStatistic(customer,app,service,path,instanceId).incrementMatchCount();
     }
 
     /**
@@ -96,8 +100,8 @@ public class ReplayResultCache {
      * @param service
      * @param path
      */
-    public void incrementReqNotMatchCounter(String customer, String app, String service, String path) {
-        getPathStatistic(customer,app,service,path).incrementNonMatchCount();
+    public void incrementReqNotMatchCounter(String customer, String app, String service, String path, String instaceId) {
+        getPathStatistic(customer,app,service,path,instaceId).incrementNonMatchCount();
     }
 
     /**
@@ -115,6 +119,11 @@ public class ReplayResultCache {
         reqRespStore.saveReplayResult(serviceVsReplayPathStatistic , replayId);
     }
 
+    public Optional<String> getCurrentReplayId(String customer, String app, String instanceId) {
+        return Optional.ofNullable(currentReplayId.get(Objects.hash(customer,app,instanceId)));
+    }
+
+
     /**
      * Invalidate the keys once the replay is over
      * @param key
@@ -130,8 +139,8 @@ public class ReplayResultCache {
      * @param app
      * @param replayId
      */
-    public void stopReplay(String customer, String app, String replayId) {
-        Integer key = Objects.hash(customer , app);
+    public void stopReplay(String customer, String app, String instanceId, String replayId) {
+        Integer key = Objects.hash(customer, app, instanceId);
         materializeResults(key , replayId);
         invalidateCache(key);
     }
@@ -142,8 +151,8 @@ public class ReplayResultCache {
      * @param app
      * @param replayId
      */
-    public void startReplay(String customer, String app, String replayId) {
-        Integer key = Objects.hash(customer , app);
+    public void startReplay(String customer, String app, String instanceId , String replayId) {
+        Integer key = Objects.hash(customer , app, instanceId);
         currentReplayId.put(key , replayId);
         replayStatisticsMap.remove(key);
     }

@@ -391,6 +391,15 @@ public interface ReqRespStore {
 	 */
 	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
 
-	Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices, String collectionId);
+	/**
+	 * Given a request List, fetch requests from backend matching on trace id's of the original requests and belonging
+	 * to the service name list provided
+	 * @param requestList
+	 * @param intermediateServices
+	 * @param collectionId
+	 * @return
+	 */
+	Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
+			, String collectionId);
 
 }

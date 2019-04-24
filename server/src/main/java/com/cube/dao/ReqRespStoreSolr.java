@@ -131,8 +131,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query , COLLECTIONF , collectionId);
         addFilter(query , HDRTRACEF , traceIds.stream().collect(Collectors.joining("\" OR \"" , "(\""
                 , "\")")) , false);
-        return Stream.concat(originalList.stream() , SolrIterator.getStream(solr, query, Optional.of(traceIds.size()
-                * intermediateServices.size())).flatMap(doc -> docToRequest(doc).stream()));
+        return Stream.concat(originalList.stream() , SolrIterator.getStream(solr, query, Optional.empty())
+                .flatMap(doc -> docToRequest(doc).stream()));
     }
 
     
@@ -1038,8 +1038,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, SERVICEF, service);
         addFilter(query, REPLAYIDF, replayId);
+        addFilter(query, TYPEF, Types.ReplayStats.toString());
         Optional<Integer> maxresults = Optional.of(1);
-
         return SolrIterator.getStream(solr , query , maxresults)
                 .findFirst().map(doc -> getReplayStats(doc)).orElse(Collections.EMPTY_LIST);
     }
@@ -1315,13 +1315,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             List<FacetQ> otherfacets = new ArrayList<FacetQ>();
 
-            if (facetpath) {
-                Facet pathf = Facet.createTermFacet(PATHF, Optional.of(FACETLIMIT));
-                FacetQ pathfq = new FacetQ();
-                pathfq.addFacet(PATHFACET, pathf);
-                otherfacets.add(pathfq);        
-                facetFields.add(List.of(PATHFACET));
-            }
+
             if (service.isEmpty()) {
                 // facet on service as well
                 Facet servicef = Facet.createTermFacet(SERVICEF, Optional.of(FACETLIMIT));
@@ -1330,6 +1324,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 otherfacets.add(servicefq);
                 facetFields.add(List.of(SERVICEFACET));
             }
+
+            if (facetpath) {
+                Facet pathf = Facet.createTermFacet(PATHF, Optional.of(FACETLIMIT));
+                FacetQ pathfq = new FacetQ();
+                pathfq.addFacet(PATHFACET, pathf);
+                otherfacets.add(pathfq);        
+                facetFields.add(List.of(PATHFACET));
+            }
+
 
             // create the nesting 
             facetq.nest(otherfacets);
@@ -1364,7 +1367,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
         
         // if service filter was present initially, add it to all the results, since it was not
-        // included in the facet query
+        // included in the facet query (it was included in the filter query)
         service.ifPresent(servicev -> resMap.forEach((k, mra) -> mra.service = Optional.of(servicev)));
         
         return resMap.values();
@@ -1375,13 +1378,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param fr
      */
     private void updateMatchResult(MatchResultAggregate mra, FacetR fr) {
-
         fr.keys.forEach(frkey -> {
             if (frkey.facetName.equals(REQMTFACET)) {
-                Utils.valueOf(ReqMatchType.class, frkey.key).ifPresent(rmt -> {
+                Utils.valueOf(Comparator.MatchType.class, frkey.key).ifPresent(rmt -> {
                     switch (rmt) {
                         case ExactMatch: mra.reqmatched = fr.val; break;
-                        case PartialMatch: mra.reqpartiallymatched = fr.val; break;
+                        case FuzzyMatch: mra.reqpartiallymatched = fr.val; break;
                         case NoMatch: mra.reqnotmatched = fr.val; break;
                     }
                     
