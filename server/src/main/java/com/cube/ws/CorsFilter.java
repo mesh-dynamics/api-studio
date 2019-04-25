@@ -45,7 +45,7 @@ public class CorsFilter implements ContainerResponseFilter {
                 }
             });
         origin.ifPresent(originVal -> {
-            if (originVal.getHost().equals("localhost")) {
+            if (originVal.getHost().equals("localhost") || originVal.getHost().endsWith("cubecorp.io")) {
                 // only allowing from localhost for dev purposes
                 // Browsers will block cross-origin access unless the server sets these fields explicitly and
                 // specifies which domains to allow
