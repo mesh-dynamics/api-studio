@@ -1,4 +1,4 @@
-[![Build Status](http://3.14.60.60/api/badges/cube-io-corp/cubeui/status.svg)](http://3.14.60.60/cube-io-corp/cubeui)
+[![Build Status](http://drone.cubecorp.io/api/badges/cube-io-corp/cubeui/status.svg)](http://drone.cubecorp.io/cube-io-corp/cubeui)
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
