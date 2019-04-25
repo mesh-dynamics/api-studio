@@ -300,7 +300,7 @@ async function fetchAnalysis(collectionId, replayId) {
 
 async function fetchReport(collectionId, replayId) {
     let response, json;
-    let url = `${config.baseUrl}/as/aggrresult/${replayId}`;
+    let url = `${config.baseUrl}/as/aggrresult/${replayId}?bypath=y`;
     let report = {};
     try {
         response = await fetch(url, {

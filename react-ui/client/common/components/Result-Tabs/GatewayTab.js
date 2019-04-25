@@ -8,11 +8,24 @@ class GatewayTab extends Component{
     }
 
     render() {
-        const {res} =  this.props;
+        const {res, resByPath} =  this.props;
         const error =  res.respnotmatched;
         const errorP = Math.round((100 * error/res.reqcnt) * 100) / 100;
         const incomplete = res.reqcnt - (res.respmatched + res.resppartiallymatched + res.respnotmatched);
         const incompleteP = Math.round((100 * incomplete/res.reqcnt) * 100) / 100;
+
+        let errorByPath = resByPath.map(pathRes => (
+            <tr>
+                <td>{pathRes.path ? pathRes.path : '-'}</td>
+                <td>{res.reqcnt}</td>
+                <td>{pathRes.respnotmatched}</td>
+                <td>{Math.round((100 * pathRes.respnotmatched/res.reqcnt) * 100) / 100}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+        ));
 
         return (
             <div className="tab-panel">
@@ -54,6 +67,29 @@ class GatewayTab extends Component{
                 </Table>
                 </div>
                 <ScatterPlot/>
+
+                <div>
+                    <h4>
+                        Errors observed By Path
+                    </h4>
+                    <Table striped bordered hover>
+                        <thead>
+                        <tr>
+                            <th className="default">Path</th>
+                            <th className="default">Tested</th>
+                            <th className="default">Error</th>
+                            <th className="default">Error%</th>
+                            <th className="default">Avg. Error%</th>
+                            <th className="default">95% CI</th>
+                            <th className="default">Recommendation</th>
+                            <th className="default">7 Day Trend</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            {errorByPath}
+                        </tbody>
+                    </Table>
+                </div>
             </div>
         );
 

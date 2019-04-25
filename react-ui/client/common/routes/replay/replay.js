@@ -57,19 +57,6 @@ class replay extends Component {
             pieData.push({name: 'error', value: cube.analysis.respnotmatched});
             pieData.push({name: 'incomplete', value: cube.analysis.reqcnt - (cube.analysis.respmatched + cube.analysis.resppartiallymatched + cube.analysis.respnotmatched)});
 
-            result = (
-                <div className="result-container">
-                    <Tabs defaultActiveKey="result" id="uncontrolled-tab-example">
-                        <Tab eventKey="result" title="Test Results: Detailed view">
-                            <Results res={cube.analysis}/>
-                        </Tab>
-                        <Tab eventKey="analysis" title="Analysis" disabled>
-                            <div>In Prog</div>
-                        </Tab>
-                    </Tabs>
-                </div>
-            );
-
             rightPane = (
                 <div>
                     <div>
@@ -151,6 +138,21 @@ class replay extends Component {
                     </div>
                 </div>
             );
+        }
+
+        if (cube.analysis && cube.report) {
+            result = (
+            <div className="result-container">
+                <Tabs defaultActiveKey="result" id="uncontrolled-tab-example">
+                    <Tab eventKey="result" title="Test Results: Detailed view">
+                        <Results res={cube.analysis} resByPath={cube.report}/>
+                    </Tab>
+                    <Tab eventKey="analysis" title="Analysis" disabled>
+                        <div>In Prog</div>
+                    </Tab>
+                </Tabs>
+            </div>
+        );
         }
         return (
             <div>
