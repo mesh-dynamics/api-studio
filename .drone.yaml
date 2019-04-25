@@ -2,7 +2,7 @@ kind: pipeline
 name: default
 
 steps:
-  - name: docker build
+  - name: docker_build
     image: plugins/docker
     settings:
       username: cubeiocorp
