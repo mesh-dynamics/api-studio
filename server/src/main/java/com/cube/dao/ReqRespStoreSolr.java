@@ -135,7 +135,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .flatMap(doc -> docToRequest(doc).stream()));
     }
 
-    
+    @Override
+    public Stream<ReqRespMatchResult> expandOnTrace(String gatewayreqId, String replayId, boolean recordOrReplay) {
+        return getRequest(gatewayreqId).flatMap(gatewayReq ->
+            Utils.findFirstCaseInsensitiveMatch(gatewayReq.hdrs, Config.DEFAULT_TRACE_FIELD).flatMap(traceId -> {
+                SolrQuery query = new SolrQuery("*:*");
+                addFilter(query, TYPEF, Types.Request.toString());
+                addFilter(query, COLLECTIONF, gatewayReq.collection.get());
+                addFilter(query, HDRTRACEF, traceId);
+                List<String> reqIds = SolrIterator.getStream(solr, query, Optional.empty())
+                        .flatMap(doc -> docToRequest(doc).stream()).map(req -> req.reqid.get()).
+                                collect(Collectors.toList());
+                SolrQuery reqRespMatchResultQuery = new SolrQuery("*:*");
+                addFilter(reqRespMatchResultQuery, TYPEF, Types.ReqRespMatchResult.toString());
+                addFilter(reqRespMatchResultQuery, (recordOrReplay) ? RECORDREQIDF : REPLAYREQIDF, reqIds.stream()
+                        .collect(Collectors.joining(" OR ", "(", ")")), false);
+                addFilter(reqRespMatchResultQuery, REPLAYIDF, replayId);
+                return Optional.of(SolrIterator.getStream(solr, reqRespMatchResultQuery,
+                        Optional.of(reqIds.size())).flatMap(doc -> docToAnalysisMatchResult(doc).stream()));
+
+            })).orElse(Stream.empty());
+    }
+
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getResponse(java.lang.String)
      */

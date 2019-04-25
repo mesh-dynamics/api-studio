@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -226,9 +227,31 @@ public class AnalyzeWS {
 	}
 
 	/**
+	 * Given a stream of ReqRespMatchResult objects convert them to serialized json array
+	 * @param reqRespMatchResults
+	 * @return
+	 */
+	private String getJsonArrayString(Stream<Analysis.ReqRespMatchResult> reqRespMatchResults) {
+		return reqRespMatchResults.flatMap(result -> {
+			try {
+				return Stream.of(jsonmapper.writeValueAsString(result));
+			} catch (JsonProcessingException e) {
+				return Stream.empty();
+			}
+		}).collect(Collectors.joining("," , "[" , "]"));
+	}
+
+	/**
 	 * Api to access analysis result for a given recorded request and related replay.
-	 * Result would contain all the diffs calculated during analyis for the given request/response
-	 * combination
+	 * The function:
+	 * a) First finds the req resp match result for the given recorded request and replay id.
+	 * b) Expands the recorded request and replayed request on traceid's
+	 * c) returns a json array of all the match results for each request in recorded and replayed trace graphs.
+	 * Note that this api returns the results in a flat format. The reconstruction of the trace graphs
+	 * will happen at the UI end, since the UI already has the graph structure. We just have to super-impose
+	 * the requests on the graph template matching nodes based on service names. (on a second though we only
+	 * have service calling service edges and not path calling path edges at the UI end - need to expand on that)
+	 * (Maybe the graph can be constructed by using span id's)
 	 * @param urlInfo
 	 * @param recordReqId
 	 * @param replayId
@@ -240,19 +263,20 @@ public class AnalyzeWS {
 									  @PathParam("replayId") String replayId) {
 		Optional<Analysis.ReqRespMatchResult> matchResult =
 				rrstore.getAnalysisMatchResult(recordReqId, replayId);
-
 		return matchResult.map(mRes -> {
-			try {
-				return Response.ok().type(MediaType.
-						APPLICATION_JSON).entity(jsonmapper.writeValueAsString(mRes)).build();
-			} catch (JsonProcessingException e) {
-				return Response.serverError().type(MediaType.TEXT_PLAIN)
-						.entity("Error while processing analysis result for recordReqId:replayId " +
-								":: " + recordReqId + ":" + replayId + " :: " + e.getMessage()).build();
-			}
+			String recordedRequestId = mRes.recordreqid;
+			String replayRequestId = mRes.replayreqid;
+			Stream<Analysis.ReqRespMatchResult> recordMatchResultList = rrstore.
+					expandOnTrace(recordedRequestId, replayId, true);
+			Stream<Analysis.ReqRespMatchResult> replayMatchResultList = rrstore.
+					expandOnTrace(replayRequestId, replayId, false);
+			String recordJsonArray = getJsonArrayString(recordMatchResultList);
+			String replayJsonArray = getJsonArrayString(replayMatchResultList);
+			String resultJson = "{\"record\" : " + recordJsonArray + " , \"replay\" : " + replayJsonArray + " }";
+			return Response.ok().type(MediaType.
+					APPLICATION_JSON).entity(resultJson).build();
 		}).orElse(Response.serverError().type(MediaType.TEXT_PLAIN).entity("No Analysis Match Result Found for " +
 				"recordReqId:replayId :: " + recordReqId + ":" + replayId).build());
-
 	}
 
 
