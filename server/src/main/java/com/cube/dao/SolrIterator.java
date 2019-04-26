@@ -128,6 +128,32 @@ public class SolrIterator implements Iterator<SolrDocument> {
 				iter.numresults);
 	}
 
+	/**
+	 * Utility function to
+	 * a) query solr (in batches) for a given query
+	 * b) convert the obtained result stream to a another stream by applying the transformer function
+	 * Note that the transformer function is applied lazily (when get next on stream is called)
+	 * c) wrap the resulting stream in a Result object (containing total/absolute number of results)
+	 * @param solr
+	 * @param query
+	 * @param maxresults
+	 * @param transformToStream
+	 * @param <R>
+	 * @return
+	 */
+	static public <R> Result<R> getResultsWithTransformStream
+			(SolrClient solr, SolrQuery query, Optional<Integer> maxresults,
+										   Function<SolrDocument, Stream<R>> transformToStream) {
+		SolrIterator iter = new SolrIterator(solr , query , maxresults);
+		// just want to understand that this flatMap will be called on demand and the entire stream
+		// won't be transformed in the constructor of the Result object itself
+		// also num results only indicates top-level results , as the trasnformStream could be a
+		// one to many function
+		return new Result<R>(iter.toStream().flatMap(d -> transformToStream.apply(d)) , iter.numresults,
+				iter.numresults);
+
+	}
+
 	static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
 		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
 

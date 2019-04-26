@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.core.RequestComparator;
@@ -25,8 +26,8 @@ import com.cube.dao.Replay.ReplayStatus;
  *
  */
 public interface ReqRespStore {
-	
-	
+
+
 	public class ReqResp {
 				
 		
@@ -75,7 +76,8 @@ public interface ReqRespStore {
 		ReqRespMatchResult,
 		Recording,
 		ResponseCompareTemplate,
-		RequestCompareTemplate
+		RequestCompareTemplate,
+		ReplayStats
 	}
 
 	boolean save(Request req);
@@ -125,7 +127,8 @@ public interface ReqRespStore {
 	 * @param rrtype
 	 * @return
 	 */
-	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids, List<String> paths, RRBase.RR rrtype);
+	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
+			, List<String> paths, RRBase.RR rrtype);
 
 	/**
 	 * @param replay
@@ -360,4 +363,53 @@ public interface ReqRespStore {
 		public final Optional<Recording> recording;
 		public final Optional<Replay> replay;
 	}
+
+	/**
+	 * Get ReqResponseMatchResult for the given request and replay Id
+	 * @param recordReqId
+	 * @param replayId
+	 * @return
+	 */
+	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
+
+	/**
+	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
+	 * combination. The counts are stored in the backend path wise.
+	 * @param pathStatistics
+	 * @param replayId
+	 */
+	void saveReplayResult(Map<String , List<ReplayPathStatistic>> pathStatistics, String replayId);
+
+	/**
+	 * Get replay results (request match / not match counts) from the backend for a given customer/app/virtual(mock)
+	 * service and replay combination
+	 * @param customer
+	 * @param app
+	 * @param service
+	 * @param replayId
+	 * @return
+	 */
+	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
+
+	/**
+	 * Given a request List, fetch requests from backend matching on trace id's of the original requests and belonging
+	 * to the service name list provided
+	 * @param requestList
+	 * @param intermediateServices
+	 * @param collectionId
+	 * @return
+	 */
+	Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
+			, String collectionId);
+
+	/**
+	 * Given a request Id , find all the ReqRespMatchResults for Requests having the same traceId
+	 * as the given request in the same collection as Request (This function can be used for getting match results for
+	 * both record and replay)
+	 * @param gatewayreqId
+	 * @param replayId
+	 * @param recordingOrReplay
+	 * @return
+	 */
+	Stream<ReqRespMatchResult> expandOnTrace(String gatewayreqId, String replayId, boolean recordingOrReplay);
 }

@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -118,6 +120,28 @@ public class AnalyzeWS {
 		}		
 	}
 
+	/**
+	 * Api to get replay results for a given customer/app/virtual(mock) service and replay combination.
+	 * The result would contain request match / not match counts for all the paths covered by
+	 * the service during replay.
+	 * @param uriInfo
+	 * @param customerId
+	 * @param app
+	 * @param service
+	 * @param replayId
+	 * @return
+	 */
+	@GET
+	@Path("replayRes/{customerId}/{app}/{service}/{replayId}")
+	public Response replayResult(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
+								 @PathParam("app") String app, @PathParam("service") String service,
+								 @PathParam("replayId") String replayId) {
+		List<String> replayRequestCountResults = rrstore.getReplayRequestCounts(customerId,app,service,replayId);
+		String resultJson = replayRequestCountResults.stream().collect(Collectors.joining("," , "[" , "]"));
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity(resultJson).build();
+	}
+
+
 	@POST
 	@Path("registerTemplateApp/{type}/{customerId}/{appId}")
 	@Consumes({MediaType.APPLICATION_JSON})
@@ -202,6 +226,58 @@ public class AnalyzeWS {
 		}
 	}
 
+	/**
+	 * Given a stream of ReqRespMatchResult objects convert them to serialized json array
+	 * @param reqRespMatchResults
+	 * @return
+	 */
+	private String getJsonArrayString(Stream<Analysis.ReqRespMatchResult> reqRespMatchResults) {
+		return reqRespMatchResults.flatMap(result -> {
+			try {
+				return Stream.of(jsonmapper.writeValueAsString(result));
+			} catch (JsonProcessingException e) {
+				return Stream.empty();
+			}
+		}).collect(Collectors.joining("," , "[" , "]"));
+	}
+
+	/**
+	 * Api to access analysis result for a given recorded request and related replay.
+	 * The function:
+	 * a) First finds the req resp match result for the given recorded request and replay id.
+	 * b) Expands the recorded request and replayed request on traceid's
+	 * c) returns a json array of all the match results for each request in recorded and replayed trace graphs.
+	 * Note that this api returns the results in a flat format. The reconstruction of the trace graphs
+	 * will happen at the UI end, since the UI already has the graph structure. We just have to super-impose
+	 * the requests on the graph template matching nodes based on service names. (on a second though we only
+	 * have service calling service edges and not path calling path edges at the UI end - need to expand on that)
+	 * (Maybe the graph can be constructed by using span id's)
+	 * @param urlInfo
+	 * @param recordReqId
+	 * @param replayId
+	 * @return
+	 */
+	@GET
+	@Path("analysisRes/{replayId}/{recordReqId}")
+	public Response getAnalysisResult(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,
+									  @PathParam("replayId") String replayId) {
+		Optional<Analysis.ReqRespMatchResult> matchResult =
+				rrstore.getAnalysisMatchResult(recordReqId, replayId);
+		return matchResult.map(mRes -> {
+			String recordedRequestId = mRes.recordreqid;
+			String replayRequestId = mRes.replayreqid;
+			Stream<Analysis.ReqRespMatchResult> recordMatchResultList = rrstore.
+					expandOnTrace(recordedRequestId, replayId, true);
+			Stream<Analysis.ReqRespMatchResult> replayMatchResultList = rrstore.
+					expandOnTrace(replayRequestId, replayId, false);
+			String recordJsonArray = getJsonArrayString(recordMatchResultList);
+			String replayJsonArray = getJsonArrayString(replayMatchResultList);
+			String resultJson = "{\"record\" : " + recordJsonArray + " , \"replay\" : " + replayJsonArray + " }";
+			return Response.ok().type(MediaType.
+					APPLICATION_JSON).entity(resultJson).build();
+		}).orElse(Response.serverError().type(MediaType.TEXT_PLAIN).entity("No Analysis Match Result Found for " +
+				"recordReqId:replayId :: " + recordReqId + ":" + replayId).build());
+	}
 
 
 	/**

@@ -10,24 +10,21 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cube.core.Utils;
-import com.cube.dao.ReqRespStore;
-import com.cube.dao.Replay;
-import com.cube.dao.Replay.ReplayStatus;
-import com.cube.drivers.ReplayDriver;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.cube.cache.ReplayResultCache;
+import com.cube.core.Utils;
+import com.cube.dao.Replay;
+import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.ReqRespStore;
+import com.cube.drivers.ReplayDriver;
 
 /**
  * @author prasad
@@ -64,7 +61,8 @@ public class ReplayWS {
 		Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
 		List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
 		Optional<Double> samplerate = Optional.ofNullable(formParams.getFirst("samplerate")).flatMap(v -> Utils.strToDouble(v));
-		
+		List<String> intermediateServices = Optional.ofNullable(formParams.get("intermservice")).orElse(new ArrayList<>());
+
 		// TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
 		Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
 		String s = replays.map(r -> r.replayid).reduce("", (res, x) -> res + "; " + x);
@@ -83,7 +81,8 @@ public class ReplayWS {
 				.map(e -> {
 					return instanceid.map(inst -> {
 						// TODO: introduce response transforms as necessary
-						return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null, samplerate)
+						return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null, samplerate
+								, intermediateServices)
 								.map(replay -> {
 									String json;
 									try {
@@ -179,6 +178,7 @@ public class ReplayWS {
 			if (!rrstore.saveReplay(r)) {
 				return Response.serverError().build();
 			}
+			replayResultCache.stopReplay(r.customerid, r.app , r.instanceid, replayid);
 			return Response.ok(json, MediaType.APPLICATION_JSON).build();
 		}).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
 		return resp;
@@ -219,7 +219,7 @@ public class ReplayWS {
 		/// end block for testing
 		 */
 		 
-		Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, this.rrstore);
+		Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, this.rrstore,this.replayResultCache);
 		Response resp = replay.map(r -> {
 			boolean status = r.start();
 			if (status) {
@@ -241,9 +241,11 @@ public class ReplayWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
+		this.replayResultCache = config.replayResultCache;
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonmapper;
+	ReplayResultCache replayResultCache;
 }

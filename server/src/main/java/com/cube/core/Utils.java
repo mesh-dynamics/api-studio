@@ -91,4 +91,9 @@ public class Utils {
             entry -> entry.getValue()).orElse(Collections.emptyList());
 	}
 
+	public static Optional<String> findFirstCaseInsensitiveMatch(MultivaluedMap<String,String> mMap, String possibleKey) {
+		return getCaseInsensitiveMatches(mMap,possibleKey).stream().findFirst();
+	}
+
+
 }

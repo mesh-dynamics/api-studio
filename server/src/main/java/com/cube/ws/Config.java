@@ -14,6 +14,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
@@ -41,6 +42,8 @@ public class Config {
 
     public final ResponseComparatorCache responseComparatorCache;
 
+    public final ReplayResultCache replayResultCache;
+
 	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
 	
 	public Config() throws Exception {
@@ -62,6 +65,7 @@ public class Config {
             templateCache = new TemplateCache(rrstore);
             requestComparatorCache = new RequestComparatorCache(templateCache , jsonmapper);
             responseComparatorCache = new ResponseComparatorCache(templateCache , jsonmapper);
+            replayResultCache = new ReplayResultCache(rrstore);
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
             LOGGER.error(msg);

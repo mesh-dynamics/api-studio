@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,7 +34,9 @@ import org.apache.solr.common.util.NamedList;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
@@ -93,18 +96,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
      */
     @Override
-    public Result<Request> getRequests(String customerid, String app, String collection, 
-            List<String> reqids, List<String> paths,
-            RRBase.RR rrtype) {
-
+    public Result<Request> getRequests(String customerid, String app, String collection,
+                                       List<String> reqids, List<String> paths, RRBase.RR rrtype) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Request.toString());
         addFilter(query, CUSTOMERIDF, customerid);
         addFilter(query, APPF, app);
         addFilter(query, COLLECTIONF, collection);
-        
-        
         String reqfilter = reqids.stream().collect(Collectors.joining(" OR ", "(", ")"));
         if (reqids.size() > 0)
             addFilter(query, REQIDF, reqfilter, false);
@@ -113,15 +112,52 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (paths.size() > 0)
             addFilter(query, PATHF, pathfilter, false);
 
-        
-        query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));            
-                
-        
+
+        query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));
+
         return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
-        
+
     }
 
-    
+    public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
+                                           String collectionId) {
+        List<String> traceIds = originalList.stream().map(request-> Utils.getCaseInsensitiveMatches(request.hdrs,
+                Config.DEFAULT_TRACE_FIELD)).flatMap(List::stream).collect(Collectors.toList());
+        if (traceIds.isEmpty() || intermediateServices.isEmpty()) return originalList.stream() ;
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query , METASERVICEF , intermediateServices.stream().collect(Collectors.joining(" OR "
+                , "(" , ")")) , false);
+        addFilter(query , TYPEF , Types.Request.toString());
+        addFilter(query , COLLECTIONF , collectionId);
+        addFilter(query , HDRTRACEF , traceIds.stream().collect(Collectors.joining("\" OR \"" , "(\""
+                , "\")")) , false);
+        return Stream.concat(originalList.stream() , SolrIterator.getStream(solr, query, Optional.empty())
+                .flatMap(doc -> docToRequest(doc).stream()));
+    }
+
+    @Override
+    public Stream<ReqRespMatchResult> expandOnTrace(String gatewayreqId, String replayId, boolean recordOrReplay) {
+        return getRequest(gatewayreqId).flatMap(gatewayReq ->
+            Utils.findFirstCaseInsensitiveMatch(gatewayReq.hdrs, Config.DEFAULT_TRACE_FIELD).flatMap(traceId -> {
+                SolrQuery query = new SolrQuery("*:*");
+                addFilter(query, TYPEF, Types.Request.toString());
+                addFilter(query, COLLECTIONF, gatewayReq.collection.get());
+                addFilter(query, HDRTRACEF, traceId);
+                List<String> reqIds = SolrIterator.getStream(solr, query, Optional.empty())
+                        .flatMap(doc -> docToRequest(doc).stream()).map(req -> req.reqid.get()).
+                                collect(Collectors.toList());
+                SolrQuery reqRespMatchResultQuery = new SolrQuery("*:*");
+                addFilter(reqRespMatchResultQuery, TYPEF, Types.ReqRespMatchResult.toString());
+                addFilter(reqRespMatchResultQuery, (recordOrReplay) ? RECORDREQIDF : REPLAYREQIDF, reqIds.stream()
+                        .collect(Collectors.joining(" OR ", "(", ")")), false);
+                addFilter(reqRespMatchResultQuery, REPLAYIDF, replayId);
+                return Optional.of(SolrIterator.getStream(solr, reqRespMatchResultQuery,
+                        Optional.of(reqIds.size())).flatMap(doc -> docToAnalysisMatchResult(doc).stream()));
+
+            })).orElse(Stream.empty());
+    }
+
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getResponse(java.lang.String)
      */
@@ -232,7 +268,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String QPARAMS = "qp"; 
     private static final String FPARAMS = "fp"; 
     private static final String META = "meta"; 
-    private static final String HDR = "hdr"; 
+    private static final String HDR = "hdr";
+    private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + FSUFFIX;
+    private static final String METASERVICEF = META + "_service" + FSUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
@@ -398,8 +436,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(METHODF, req.method);
         addFieldsToDoc(doc, QPARAMS, req.qparams);
         addFieldsToDoc(doc, FPARAMS, req.fparams);
-        
-        
+
+
         return doc;
     }
 
@@ -519,7 +557,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
-    
+
+
     private static SolrInputDocument respToSolrDoc(Response resp) {
         final SolrInputDocument doc = new SolrInputDocument();
 
@@ -527,6 +566,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TYPEF, Types.Response.toString());
         doc.setField(STATUSF, resp.status);
         
+        return doc;
+    }
+
+    private static SolrInputDocument replayStatisticsToSolrDoc(String service, String replayId,
+                                                               List<ReplayPathStatistic> pathStatistics,
+                                                               ObjectMapper jsonMapper) {
+
+        final SolrInputDocument doc = new SolrInputDocument();
+        ReplayPathStatistic first = pathStatistics.get(0);
+        doc.setField(CUSTOMERIDF, first.customer);
+        doc.setField(APPF , first.app);
+        doc.setField(SERVICEF , service);
+        doc.setField(TYPEF , Types.ReplayStats.toString());
+        doc.setField(REPLAYIDF , replayId);
+        doc.setField(IDF , Types.ReplayStats.toString()+ "-"
+                + Objects.hash(replayId , first.customer, first.app , first.service));
+        pathStatistics.forEach(pathStatistic -> {
+            try {
+                doc.addField(REPLAYPATHSTATF, jsonMapper.writeValueAsString(pathStatistic));
+            } catch (JsonProcessingException e) {
+                LOGGER.error("Unable to write to solr path statistic for path ::" + pathStatistic.path + " :: service :: "
+                        + service +  " :: replayid :: " + replayId);
+            }
+        });
+
         return doc;
     }
 
@@ -606,6 +670,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQFAILEDF = CPREFIX + "reqfailed_i";
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
     private static final String SAMPLERATEF = CPREFIX + "samplerate_d";
+    private static final String REPLAYPATHSTATF = CPREFIX + "pathstat_ss";
+    private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv_ss" ;
+
 
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
@@ -636,6 +703,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
+        replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
 
         return doc;
@@ -686,6 +754,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
         Optional<String> creationTimestamp = getStrField(doc, CREATIONTIMESTAMPF);
         Optional<Double> samplerate = getDblField(doc, SAMPLERATEF);
+        List<String> intermediateService = getStrFieldMV(doc , INTERMEDIATESERVF);
         
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() && 
@@ -695,7 +764,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), 
 				        reqids, replayid.get(), async.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get(),
-                        samplerate));
+                        samplerate , intermediateService));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
 			}
@@ -935,6 +1004,97 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, res.replayid);
                 
         return doc;
+    }
+
+    /**
+     * Get request/response match result (as computed by analysis) for a given recorded request and
+     * replay Id combination. The assumption is there will be only one such result  in solr per request/replay.
+     * Ideally the analysis should overwrite the result, if we perform analysis for the same replay.
+     * @param recordReqId
+     * @param replayId
+     * @return
+     */
+    public Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId) {
+            SolrQuery query = new SolrQuery("*:*");
+            query.setFields("*");
+            addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+            addFilter(query, RECORDREQIDF, recordReqId);
+            addFilter(query, REPLAYIDF, replayId);
+
+            Optional<Integer> maxresults = Optional.of(1);
+            return SolrIterator.getStream(solr, query, maxresults).findFirst()
+                    .flatMap(doc -> docToAnalysisMatchResult(doc));
+    }
+
+
+    /**
+     * Save Replay Stats for a Virtual(Mock) Service. The stats (request match/not match counts)
+     * are stored path wise as a json string in the same solr document.
+     * @param pathStatistics
+     * @param replayId
+     */
+    @Override
+    public void saveReplayResult(Map<String, List<ReplayPathStatistic>> pathStatistics
+            , String replayId) {
+            pathStatistics.entrySet().forEach(entry-> {
+                SolrInputDocument inputDocument = replayStatisticsToSolrDoc(entry.getKey() , replayId
+                        , entry.getValue() ,config.jsonmapper);
+                saveDoc(inputDocument);
+            });
+    }
+
+    /**
+     * Get Request Match / Not Match Count for a given virtual(mock) service during replay.
+     * Return the statistics for each path in the service as a separate json string
+     * @param customer
+     * @param app
+     * @param service
+     * @param replayId
+     * @return
+     */
+    @Override
+    public List<String> getReplayRequestCounts(String customer, String app, String service, String replayId) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, CUSTOMERIDF, customer);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query, REPLAYIDF, replayId);
+        addFilter(query, TYPEF, Types.ReplayStats.toString());
+        Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr , query , maxresults)
+                .findFirst().map(doc -> getReplayStats(doc)).orElse(Collections.EMPTY_LIST);
+    }
+
+    private List<String> getReplayStats(SolrDocument document) {
+        return getStrFieldMV(document ,  REPLAYPATHSTATF);
+    }
+
+    /**
+     * Convert Solr document to corresponding ReqRespMatchResult object
+     * @param doc
+     * @return
+     */
+    private Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
+        // These three fields won't be null as the solr filter query is on them
+        String recordReqId = getStrField(doc , RECORDREQIDF).get();
+        String replayReqId = getStrField(doc, REPLAYREQIDF).get();
+        String replayId = getStrField(doc, REPLAYIDF).get();
+
+        Comparator.MatchType reqMatchType = getStrField(doc , REQMTF)
+                .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
+        Comparator.MatchType respMatchType = getStrField(doc, RESPMTF)
+                .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
+        Integer nummatch = getIntField(doc , NUMMATCHF).orElse(-1);
+        String respMatchMetaData = getStrField(doc , RESPMATCHMETADATAF).orElse("");
+        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("");
+        String customerId = getStrField(doc , CUSTOMERIDF).orElse("");
+        String app = getStrField(doc , APPF).orElse("");
+        String service = getStrField(doc, SERVICEF).orElse("");
+        String path = getStrField(doc, PATHF).orElse("");
+        return Optional.of(new ReqRespMatchResult(
+                recordReqId , replayReqId , reqMatchType , nummatch , respMatchType, respMatchMetaData,
+                diff, customerId, app, service, path, replayId));
     }
 
     /* (non-Javadoc)
@@ -1177,13 +1337,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             List<FacetQ> otherfacets = new ArrayList<FacetQ>();
 
-            if (facetpath) {
-                Facet pathf = Facet.createTermFacet(PATHF, Optional.of(FACETLIMIT));
-                FacetQ pathfq = new FacetQ();
-                pathfq.addFacet(PATHFACET, pathf);
-                otherfacets.add(pathfq);        
-                facetFields.add(List.of(PATHFACET));
-            }
+
             if (service.isEmpty()) {
                 // facet on service as well
                 Facet servicef = Facet.createTermFacet(SERVICEF, Optional.of(FACETLIMIT));
@@ -1192,6 +1346,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 otherfacets.add(servicefq);
                 facetFields.add(List.of(SERVICEFACET));
             }
+
+            if (facetpath) {
+                Facet pathf = Facet.createTermFacet(PATHF, Optional.of(FACETLIMIT));
+                FacetQ pathfq = new FacetQ();
+                pathfq.addFacet(PATHFACET, pathf);
+                otherfacets.add(pathfq);        
+                facetFields.add(List.of(PATHFACET));
+            }
+
 
             // create the nesting 
             facetq.nest(otherfacets);
@@ -1226,7 +1389,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
         
         // if service filter was present initially, add it to all the results, since it was not
-        // included in the facet query
+        // included in the facet query (it was included in the filter query)
         service.ifPresent(servicev -> resMap.forEach((k, mra) -> mra.service = Optional.of(servicev)));
         
         return resMap.values();
@@ -1237,13 +1400,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param fr
      */
     private void updateMatchResult(MatchResultAggregate mra, FacetR fr) {
-
         fr.keys.forEach(frkey -> {
             if (frkey.facetName.equals(REQMTFACET)) {
-                Utils.valueOf(ReqMatchType.class, frkey.key).ifPresent(rmt -> {
+                Utils.valueOf(Comparator.MatchType.class, frkey.key).ifPresent(rmt -> {
                     switch (rmt) {
                         case ExactMatch: mra.reqmatched = fr.val; break;
-                        case PartialMatch: mra.reqpartiallymatched = fr.val; break;
+                        case FuzzyMatch: mra.reqpartiallymatched = fr.val; break;
                         case NoMatch: mra.reqnotmatched = fr.val; break;
                     }
                     

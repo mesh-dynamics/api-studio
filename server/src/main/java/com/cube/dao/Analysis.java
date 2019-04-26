@@ -98,7 +98,7 @@ public class Analysis {
 			}
 		}
 	}
-		
+
 
 
 	public static class RespMatchWithReq  {
@@ -178,21 +178,44 @@ public class Analysis {
 								   Comparator.Match match,
 								   String customerid, String app,
 								   String service, String path, String replayid, ObjectMapper jsonmapper) {
+			this(recordreqid, replayreqid, reqmt, nummatch, match.mt, match.matchmeta,
+					match.getDiffAsJsonStr(jsonmapper), customerid, app, service, path, replayid);
+		}
+
+		/**
+		 *
+		 * @param recordreqid
+		 * @param replayreqid
+		 * @param reqMt
+		 * @param nummatch
+		 * @param respMt
+		 * @param matchMetaData
+		 * @param diff
+		 * @param customerid
+		 * @param app
+		 * @param service
+		 * @param path
+		 * @param replayid
+		 */
+		public ReqRespMatchResult(String recordreqid, String replayreqid, Comparator.MatchType reqMt, int nummatch,
+								   Comparator.MatchType respMt, String matchMetaData, String diff,
+								   String customerid, String app,
+								   String service, String path, String replayid) {
 			super();
 			this.recordreqid = recordreqid;
 			this.replayreqid = replayreqid;
-			this.reqmt = reqmt;
+			this.reqmt = reqMt;
 			this.nummatch = nummatch;
-			this.respmt = match.mt;
-			this.respmatchmetadata = match.matchmeta;
-			this.diff = match.getDiffAsJsonStr(jsonmapper);
+			this.respmt = respMt;
+			this.respmatchmetadata = matchMetaData;
+			this.diff = diff;
 			this.customerid = customerid;
 			this.app = app;
 			this.service = service;
 			this.path = path;
 			this.replayid = replayid;
 		}
-		
+
 		/**
 		 * @param rm
 		 * @param reqmt
