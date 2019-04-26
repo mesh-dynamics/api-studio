@@ -102,12 +102,12 @@ public class MockServiceHTTP {
 
 	private Optional<Request> createRequestMock(String path, MultivaluedMap<String, String> formParams,
 												String customerId, String app, String instanceId, String service,
-												HttpHeaders headers) {
+												HttpHeaders headers, MultivaluedMap<String,String> queryParams) {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
 		return replayResultCache.getCurrentReplayId(customerId, app, instanceId).map(replayId -> new Request(
-				path, requestId, new MultivaluedHashMap<>(), formParams, headers.getRequestHeaders(), service ,
+				path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
 				Optional.of(replayId) , Optional.of(RR.Replay), Optional.of(customerId) , Optional.of(app)
 		));
 
@@ -124,7 +124,7 @@ public class MockServiceHTTP {
 		// this is optional as there might not be any running replay which is a rare case
 		// otherwise we'll always be able to construct a new request from the parameters
 		Optional<Request> mockRequest = createRequestMock(path, formParams, customerid, app, instanceid,
-				service, headers);
+				service, headers, queryParams);
 		mockRequest.ifPresent(mRequest -> rrstore.save(mRequest));
 
 	    // pathParams are not used in our case, since we are matching full path
