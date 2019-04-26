@@ -36,10 +36,9 @@ class ServiceGraph extends Component {
                     shape: 'roundrectangle',
                     content: 'data(text)',
                     "text-wrap": "wrap",
-                    'width': '230px',
-                    'height': '70px',
-                    'font-family': 'Roboto Condensed',
-                    'font-size': '15px',
+                    'width': '260px',
+                    'height': '80px',
+                    'font-size': '20px',
                     //width: 'label',
                     'text-valign': 'center',
                     'text-halign': 'center',
@@ -259,13 +258,13 @@ class ServiceGraph extends Component {
                         </Modal.Header>
                         <Modal.Body>
                             <div className="left-json">
-                                <h4>Recorded</h4>
+                                <h4>Expected</h4>
                                 <textarea name="" id="myTextarea" cols="30" rows="10">
                                     {textedJson}
                                 </textarea>
                             </div>
                             <div className="right-json">
-                                <h4>Replay</h4>
+                                <h4>Actual</h4>
                                 <textarea name="" id="myTextarea" cols="30" rows="10">
                                     {textedJson1}
                                 </textarea>
