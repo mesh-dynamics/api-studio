@@ -110,7 +110,7 @@ export function cube (state = initialState, action) {
         case cubeConstants.REPLAY_STARTED:
             return{
                 ...state,
-                replayStatus: 'started'
+                replayStatus: 'Initializing'
             };
         case cubeConstants.REPLAY_STATUS_FETCHED:
             return{

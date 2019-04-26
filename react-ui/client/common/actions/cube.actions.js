@@ -101,6 +101,7 @@ function startReplay(collectionId, replayId) {
     return async dispatch => {
         // dispatch(request());
         try {
+            dispatch(success(Date.now()));
             let startReplay = await cubeService.startReplay(collectionId, replayId);
             dispatch(success(replayId, Date.now()));
         } catch (error) {
