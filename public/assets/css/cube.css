@@ -4442,6 +4442,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     display: inline-block;
     width: 50%;
 }
+.diff-json {
+    margin-top: 15px;
+}
 .left-json textarea, .right-json textarea {
     width: 100%;
 }

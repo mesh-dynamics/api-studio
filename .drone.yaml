@@ -14,7 +14,7 @@ steps:
         exclude:
         - pull_request
 
-  - name: Test build
+  - name: Test_build
     image: plugins/docker
     settings:
       username: cubeiocorp
