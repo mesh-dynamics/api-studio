@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import {
-    PieChart, Pie, Sector, Cell, Tooltip
+    PieChart, Pie, Sector, Cell, Tooltip, Legend
 } from 'recharts';
 
 
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#6FCF97', '#EB5757', '#BDBDBD', '#F2C94C'];
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({
@@ -102,6 +102,7 @@ class PiChart extends Component {
                     }
                 </Pie>
                 <Tooltip />
+                <Legend />
             </PieChart>
         );
     }
