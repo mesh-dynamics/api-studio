@@ -1,0 +1,49 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: docker_build
+    image: plugins/docker
+    settings:
+      username: cubeiocorp
+      password: S9qe2fJ8*vtk
+      repo: cubeiocorp/cubews
+      target: prod
+      tags: ${DRONE_COMMIT}
+    when:
+      event:
+        exclude:
+        - pull_request
+
+  - name: Test_build
+    image: plugins/docker
+    settings:
+      username: cubeiocorp
+      password: S9qe2fJ8*vtk
+      repo: cubeiocorp/cubews
+      target: prod
+      tags: ${DRONE_COMMIT}
+      dry_run: true
+    when:
+      event:
+        include:
+        - pull_request
+
+  - name: deploy
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tbmxuanYiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjQ4N2VkNmJiLTRjOWItMTFlOS04ZmM2LTAyNjRlYjM2ZjlhMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.nHnEKdEj73HH2gCzgaC9-yHf5XfrwnsyvEUtwI4KxKETjvWx87_kkco26zwk7VHzmLC8pQRQsBph90cIzITLdHcsZqcpG-VQtcECnJO4NjHbaXSFKO8T7_m274Qyifo-7uXMg0iSjmkicXg6kZtbDYZNH3IHUsCzOutu3lrFSulSqvHaGSyzPmJGP8JE-HlzWj5t6RkzPKIMMeGQ1hounbFW4Z7d1g2ffL4tkEUJJECLQmQ9pMtLtikfDIC_Ioyml2Hd-iQ26qOnRs-ZZpzmNqlqJ7fjRewPb03ctwwbjBs4OUAp7mQ-ou7ipB4_TMBbv1sMDb90J6GNQmsKyGnVbA
+      namespace: default
+      deployment: cubews-v1
+      repo: cubeiocorp/cubews
+      container: cubews
+      tag: ${DRONE_COMMIT}
+    when:
+      event:
+        include:
+        - tag
+
+trigger:
+  branch:
+  - master

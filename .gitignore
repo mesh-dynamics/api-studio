@@ -10,3 +10,6 @@ sample_apps/MIRest/WebContent/META-INF/
 .idea
 *.iml
 server/cube.log
+target
+.DS_Store
+cube.log
