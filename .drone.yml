@@ -8,6 +8,7 @@ steps:
       username: cubeiocorp
       password: S9qe2fJ8*vtk
       repo: cubeiocorp/cubews
+      target: prod
       tags: ${DRONE_COMMIT}
     when:
       event:
@@ -20,6 +21,7 @@ steps:
       username: cubeiocorp
       password: S9qe2fJ8*vtk
       repo: cubeiocorp/cubews
+      target: prod
       tags: ${DRONE_COMMIT}
       dry_run: true
     when:
