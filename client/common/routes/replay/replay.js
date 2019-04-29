@@ -7,6 +7,8 @@ import ReplayAttribute from "./ReplayAttribute";
 import "./ReplayAttribute.css";
 import Results from "./Results";
 import PiChart from "../../components/Graph/PiChart";
+import analysis from "../analysis/analysis"
+import Analysis from "../../components/Analysis/Analysis";
 
 class replay extends Component {
     constructor (props) {
@@ -147,8 +149,8 @@ class replay extends Component {
                     <Tab eventKey="result" title="Test Results: Detailed view">
                         <Results res={cube.analysis} resByPath={cube.report}/>
                     </Tab>
-                    <Tab eventKey="analysis" title="Analysis" disabled>
-                        <div>In Prog</div>
+                    <Tab eventKey="analysis" title="Analysis">
+                        <Analysis res={cube.analysis} resByPath={cube.report}/>
                     </Tab>
                 </Tabs>
             </div>
