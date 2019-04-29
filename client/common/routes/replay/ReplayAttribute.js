@@ -9,6 +9,167 @@ import {cubeConstants} from "../../constants";
 import {cubeActions} from "../../actions";
 import ScatterPlot from "../../components/Graph/ScatterPlot";
 
+const compTemp = [
+    {
+        "id": "ResponseTemplate-productpage",
+        "path": "productpage",
+        "service": "productpage",
+        "template": {
+            "prefixPath": "",
+            "rules": [
+
+            ]
+        }
+    },
+    {
+        "id": "ResponseTemplate-minfo-returnmovie",
+        "path": "minfo/returnmovie",
+        "service": "movieinfo",
+        "template": {
+            "prefixPath": "",
+            "rules": [
+                {
+                    "path": "/body/return_updates",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/payment_updates",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/rental_id",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                }
+            ]
+        }
+    },
+    {
+        "id": "ResponseTemplate-minfo-liststores",
+        "path": "minfo/liststores",
+        "service": "movieinfo",
+        "template": {
+            "prefixPath": "",
+            "rules": [
+                {
+                    "path": "/body/0/store_id",
+                    "pt": "Optional",
+                    "dt": "Int",
+                    "ct": "Default"
+                },
+                {
+                    "path": "/body/1/store_id",
+                    "pt": "Optional",
+                    "dt": "Int",
+                    "ct": "Default"
+                }
+            ]
+        }
+    },
+    {
+        "id": "ResponseTemplate-minfo-rentmovie",
+        "path": "minfo/rentmovie",
+        "service": "movieinfo",
+        "template": {
+            "prefixPath": "",
+            "rules": [
+                {
+                    "path": "/body/inventory_id",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/rent",
+                    "pt": "Required",
+                    "dt": "Float",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/num_updates",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                }
+            ]
+        }
+    },
+    {
+        "id": "ResponseTemplate-minfo-listmovies",
+        "path": "minfo/listmovies",
+        "service": "movieinfo",
+        "template": {
+            "prefixPath": "",
+            "rules": [
+                {
+                    "path": "/body/0/actors_lastnames",
+                    "pt": "Optional",
+                    "dt": "RptArray",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/0/display_actors",
+                    "pt": "Required",
+                    "dt": "RptArray",
+                    "ct": "EqualOptional"
+                },
+                {
+                    "path": "/body/0/display_actors/*",
+                    "pt": "Optional",
+                    "dt": "Str",
+                    "ct": "EqualOptional"
+                },
+                {
+                    "path": "/body/0/film_id",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/0/title",
+                    "pt": "Required",
+                    "dt": "Str",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/0/actors_firstnames",
+                    "pt": "Optional",
+                    "dt": "RptArray",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/0/film_counts",
+                    "pt": "Required",
+                    "dt": "RptArray",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/0/film_counts/*",
+                    "pt": "Required",
+                    "dt": "Int",
+                    "ct": "Equal"
+                },
+                {
+                    "path": "/body/0/bookinfo",
+                    "pt": "Optional",
+                    "dt": "RptArray"
+                },
+                {
+                    "path": "/body/0/timestamp",
+                    "pt": "Required",
+                    "dt": "Default",
+                    "ct": "EqualOptional",
+                    "customization": "[0-9]{14}"
+                }
+            ]
+        }
+    }
+];
 class ReplayAttribute extends Component {
     constructor(props) {
         super(props)
@@ -16,6 +177,7 @@ class ReplayAttribute extends Component {
             panelVisible: true,
             testIdPrefix: '',
             show: false,
+            showCT: false,
         };
         this.doAnalysis = true;
         this.statusInterval;
@@ -132,8 +294,17 @@ class ReplayAttribute extends Component {
         </div>
     }
 
+    showCT = () => {
+        this.setState({showCT: true});
+    }
+
+    handleClose = () => {
+        this.setState({ show: false, showCT: false });
+    }
+
     render() {
         const { user, cube } = this.props;
+        const ct = JSON.stringify(compTemp, undefined, 4);
 
         return (
             <div className="pos-rel" id="rep-attr">
@@ -167,7 +338,7 @@ class ReplayAttribute extends Component {
                     </div>
                     <div className="ra-row3">
                         <Row>
-                            <Col md={8}>
+                            <Col md={12}>
                                 <div className="inline-block">
                                     <span className="label">Collection</span><br/>
                                     {this.renderTestIds(cube)}&nbsp;&nbsp;
@@ -181,11 +352,25 @@ class ReplayAttribute extends Component {
 
                                 <span className="cube-btn" onClick={this.replay}>Test</span>&nbsp;&nbsp;
                                 <span className="cube-btn disabled">SAVE & RUN</span>&nbsp;&nbsp;
-                                <span className="cube-btn disabled">STOP TEST</span>
+                                <span className="cube-btn" onClick={this.showCT}>View Comparison Template</span>
                             </Col>
                         </Row>
                     </div>
                 </div>
+
+                <Modal show={this.state.showCT} onHide={this.handleClose}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Comparison Template</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <pre>
+                            {ct}
+                        </pre>
+                    </Modal.Body>
+                    <Modal.Footer>
+
+                    </Modal.Footer>
+                </Modal>
 
                 <Modal show={this.state.show}>
                     <Modal.Header closeButton>
