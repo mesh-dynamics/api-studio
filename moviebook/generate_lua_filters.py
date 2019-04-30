@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+import subprocess
+import sys
+subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'pyaml'])
+subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'jinja2'])
 
 import yaml
 import os
-import sys
 from jinja2 import Environment, FileSystemLoader
 
 env = Environment(loader=FileSystemLoader('moviebook/templates'))
