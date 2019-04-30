@@ -1,8 +1,18 @@
 package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -12,7 +22,6 @@ import org.json.JSONObject;
 import io.cube.utils.Tracing;
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Scope;
-import io.opentracing.Tracer;
 
 
 // TODO: @Secured decorators are all commented out since we have to modify request matching during replay and analysis to ignore certain fields.
