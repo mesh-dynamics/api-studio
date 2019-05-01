@@ -6,18 +6,32 @@ class Analysis extends Component {
         super(props);
     }
 
+    formatData() {
+        const {resByPath} =  this.props;
+        let temp = [];
+        for (const dp of resByPath) {
+            if (dp.path && dp.service) {
+                if (temp.indexOf(dp.service) == -1) {
+                    temp.push(dp.service);
+                }
+            }
+        }
+
+        console.log(temp);
+    }
+
     render() {
         const {res, resByPath} =  this.props;
-
+        this.formatData();
         let errorByPath = resByPath.map(pathRes => {
             if (pathRes.path) {
                 return (
                     <tr>
                         <td>{pathRes.path ? pathRes.path : '-'}</td>
-                        <td>{res.reqcnt}</td>
+                        <td>{pathRes.reqmatched + pathRes.reqpartiallymatched + pathRes.reqnotmatched}</td>
                         <td>{pathRes.respmatched + pathRes.resppartiallymatched}</td>
                         <td>{pathRes.respnotmatched}</td>
-                        <td>{res.reqcnt - (pathRes.respmatched + pathRes.resppartiallymatched + pathRes.respnotmatched)}</td>
+                        <td>{(pathRes.reqmatched + pathRes.reqpartiallymatched + pathRes.reqnotmatched) - (pathRes.respmatched + pathRes.resppartiallymatched + pathRes.respnotmatched)}</td>
                         <td>-</td>
                         <td>-</td>
                     </tr>
@@ -27,7 +41,7 @@ class Analysis extends Component {
             }
         });
 
-        return (<div>
+        return (<div style={{marginTop: '20px'}}>
             <Table striped bordered hover>
                 <thead>
                 <tr>
