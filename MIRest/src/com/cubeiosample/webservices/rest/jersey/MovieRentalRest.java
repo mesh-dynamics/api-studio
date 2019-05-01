@@ -71,8 +71,8 @@ public class MovieRentalRest {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   public Response authenticateUser(@FormParam("username") String username,
-                                   @FormParam("password") String password) {
-	  try (Scope scope = tracer.buildSpan("authenticate").startActive(true)) {
+                                   @FormParam("password") String password, @Context HttpHeaders httpHeaders) {
+	  try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders , "authenticate")) {
       scope.span().setTag("authenticate", username);
       
 	    Authenticator.authenticate(username, password);
@@ -141,8 +141,8 @@ public class MovieRentalRest {
 		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = null;
-		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "listmovies")) {
-      		scope.span().setTag("listmovies", filmId.toString());
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "liststores")) {
+      		scope.span().setTag("liststores", filmId.toString());
 			stores = mv.findAvailableStores(filmId);
 		} catch (Exception e) {
 			LOGGER.error("FindStoreswithFilm args: " + filmId + "; " + e.toString());
