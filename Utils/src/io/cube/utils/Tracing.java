@@ -10,6 +10,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.log4j.Logger;
 
 import io.jaegertracing.Configuration;
+import io.jaegertracing.Configuration.CodecConfiguration;
 import io.jaegertracing.Configuration.ReporterConfiguration;
 import io.jaegertracing.Configuration.SamplerConfiguration;
 import io.jaegertracing.internal.JaegerTracer;
@@ -33,13 +34,15 @@ public final class Tracing {
       SamplerConfiguration samplerConfig = SamplerConfiguration.fromEnv()
           .withType(ConstSampler.TYPE)
           .withParam(1);
-      
+
       ReporterConfiguration reporterConfig = ReporterConfiguration.fromEnv()
           .withLogSpans(true);
-      
+
+      CodecConfiguration codecConfiguration = CodecConfiguration.fromString("B3");
+
       Configuration config = new Configuration(service)
           .withSampler(samplerConfig)
-          .withReporter(reporterConfig);
+          .withReporter(reporterConfig).withCodec(codecConfiguration);
       LOGGER.debug("Returning JaegerTracer: " + config.toString());
       return config.getTracer();
     }

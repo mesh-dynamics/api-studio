@@ -1,15 +1,9 @@
 package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
-import io.cube.utils.Tracing;
-import io.jaegertracing.internal.JaegerTracer;
-import io.opentracing.Scope;
-
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,6 +18,10 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import io.cube.utils.Tracing;
+import io.jaegertracing.internal.JaegerTracer;
+import io.opentracing.Scope;
 
 
 // TODO: @Secured decorators are all commented out since we have to modify request matching during replay and analysis to ignore certain fields.
@@ -73,8 +71,8 @@ public class MovieRentalRest {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   public Response authenticateUser(@FormParam("username") String username,
-                                   @FormParam("password") String password) {
-	  try (Scope scope = tracer.buildSpan("authenticate").startActive(true)) {
+                                   @FormParam("password") String password, @Context HttpHeaders httpHeaders) {
+	  try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders , "authenticate")) {
       scope.span().setTag("authenticate", username);
       
 	    Authenticator.authenticate(username, password);
@@ -113,7 +111,8 @@ public class MovieRentalRest {
 //							               @HeaderParam("x-b3-flags") String xflags,
 //							               @HeaderParam("x-ot-span-context") String xotspan) {
 		JSONArray films = null;
-		try (Scope scope = tracer.buildSpan("listmovies").startActive(true)) {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "listmovies")) {
+
 		  LOGGER.debug("list movies headers: " + httpHeaders.toString());
 		  String listParams = filmname + ";" + keyword + ";" + actor;
 		  scope.span().setTag("listmovies", listParams);
@@ -142,8 +141,8 @@ public class MovieRentalRest {
 		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = null;
-		try (Scope scope = tracer.buildSpan("listmovies").startActive(true)) {
-      		scope.span().setTag("listmovies", filmId.toString());
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "liststores")) {
+      		scope.span().setTag("liststores", filmId.toString());
 			stores = mv.findAvailableStores(filmId);
 		} catch (Exception e) {
 			LOGGER.error("FindStoreswithFilm args: " + filmId + "; " + e.toString());
@@ -171,7 +170,7 @@ public class MovieRentalRest {
 //	    @HeaderParam("x-b3-sampled") String xsampled,
 //	    @HeaderParam("x-b3-flags") String xflags,
 //	    @HeaderParam("x-ot-span-context") String xotspan) {
-	  try (Scope scope = tracer.buildSpan("rentmovie").startActive(true)) {
+	  try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "rentmovie")) {
       scope.span().setTag("rentmovie", rentalInfoStr);
 	    JSONObject rentalInfo = new JSONObject(rentalInfoStr);
 	    int filmId = rentalInfo.getInt("filmId");
@@ -183,7 +182,7 @@ public class MovieRentalRest {
 	    if (filmId <= 0 || storeId <= 0 || customerId <= 0) {
 	      return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"Invalid query params\"}").build();
 	    }
-	    
+
 	    JSONObject result = mv.rentMovie(filmId, storeId, duration, customerId, staffId);
 	    
 	    return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
@@ -201,7 +200,7 @@ public class MovieRentalRest {
   //@Secured
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public Response ReturnMovie(String returnInfoStr) {
+  public Response ReturnMovie(String returnInfoStr, @Context HttpHeaders httpHeaders) {
     JSONObject returnInfo = new JSONObject(returnInfoStr);
     int inventoryId = returnInfo.getInt("inventoryId");
     int userId = returnInfo.getInt("userId");
@@ -209,7 +208,7 @@ public class MovieRentalRest {
     double rent = returnInfo.getDouble("rent");
  
     JSONObject result = null;
-    try (Scope scope = tracer.buildSpan("returnmovie").startActive(true)) {
+    try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "returnmovie")) {
       scope.span().setTag("returnmovie", returnInfoStr);
       LOGGER.debug("ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", " + rent);
       result = mv.returnMovie(inventoryId, userId, staffId, rent);
