@@ -281,7 +281,12 @@ public class AnalyzeWS {
 	}
 
     /**
-     * Return Time Line results for
+     * Return Time Line results for a given customer id , app , instance id combo
+     * Optional Parameters include restriction on <i>collection</i> id (later we should be able to specify
+     * a range of collection ids or dates)
+     * Return results segragated by path if <i>bypath</i> variable is set y in query params
+     * We can also restrict the results to a particular gateway service (which is what should
+     * be done ideally) using <i>service</i> query param
      * @param urlInfo
      * @param customer
      * @param app
