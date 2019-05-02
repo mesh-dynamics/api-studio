@@ -14,6 +14,8 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.core.Comparator;
+import com.cube.core.Utils;
+import com.cube.ws.Config;
 
 
 /**
@@ -174,12 +176,13 @@ public class Analysis {
 		 * @param replayid
 		 * @param jsonmapper
 		 */
-		private ReqRespMatchResult(String recordreqid, String replayreqid, Comparator.MatchType reqmt, int nummatch,
+		private ReqRespMatchResult(Optional<String> recordreqid, String replayreqid, Comparator.MatchType reqmt, int nummatch,
 								   Comparator.Match match,
 								   String customerid, String app,
-								   String service, String path, String replayid, ObjectMapper jsonmapper) {
+								   String service, String path, String replayid, ObjectMapper jsonmapper,
+                                   Optional<String> recordTraceId, Optional<String> replayTraceId) {
 			this(recordreqid, replayreqid, reqmt, nummatch, match.mt, match.matchmeta,
-					match.getDiffAsJsonStr(jsonmapper), customerid, app, service, path, replayid);
+					match.getDiffAsJsonStr(jsonmapper), customerid, app, service, path, replayid, recordTraceId, replayTraceId);
 		}
 
 		/**
@@ -197,10 +200,11 @@ public class Analysis {
 		 * @param path
 		 * @param replayid
 		 */
-		public ReqRespMatchResult(String recordreqid, String replayreqid, Comparator.MatchType reqMt, int nummatch,
+		public ReqRespMatchResult(Optional<String> recordreqid, String replayreqid, Comparator.MatchType reqMt, int nummatch,
 								   Comparator.MatchType respMt, String matchMetaData, String diff,
 								   String customerid, String app,
-								   String service, String path, String replayid) {
+								   String service, String path, String replayid,
+                                   Optional<String> recordTraceId, Optional<String> replayTraceId) {
 			super();
 			this.recordreqid = recordreqid;
 			this.replayreqid = replayreqid;
@@ -214,6 +218,8 @@ public class Analysis {
 			this.service = service;
 			this.path = path;
 			this.replayid = replayid;
+			this.recordTraceId = recordTraceId;
+			this.replayTraceId = replayTraceId;
 		}
 
 		/**
@@ -224,15 +230,20 @@ public class Analysis {
 		 * @param jsonmapper
 		 */
 		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
-			this(rm.recordreq.reqid.orElse(""), rm.replayreq.flatMap(req -> req.reqid).orElse(""), reqmt, size,
+		    this(rm.recordreq.reqid, rm.replayreq.flatMap(req -> req.reqid).orElse(""), reqmt, size,
 					rm.match,
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
 					rm.recordreq.getService().orElse(""), rm.recordreq.path,
-					replayid, jsonmapper);
+					replayid, jsonmapper,
+                    Utils.findFirstCaseInsensitiveMatch(rm.recordreq.hdrs , Config.DEFAULT_TRACE_FIELD),
+                    rm.replayreq.flatMap(replayreq -> Utils.findFirstCaseInsensitiveMatch(replayreq.hdrs
+                        , Config.DEFAULT_TRACE_FIELD))) ;
 		}
 
-		final public String recordreqid;
+		final public Optional<String> recordreqid;
 		final public String replayreqid;
+		final public Optional<String> recordTraceId;
+		final public Optional<String> replayTraceId;
 		final public Comparator.MatchType reqmt;
 		final public int nummatch;
 		final public Comparator.MatchType respmt;

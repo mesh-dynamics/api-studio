@@ -406,10 +406,9 @@ public interface ReqRespStore {
 	 * Given a request Id , find all the ReqRespMatchResults for Requests having the same traceId
 	 * as the given request in the same collection as Request (This function can be used for getting match results for
 	 * both record and replay)
-	 * @param gatewayreqId
-	 * @param replayId
+     * @param reqRespMatchResult
 	 * @param recordingOrReplay
 	 * @return
 	 */
-	Stream<ReqRespMatchResult> expandOnTrace(String gatewayreqId, String replayId, boolean recordingOrReplay);
+	Stream<ReqRespMatchResult> expandOnTrace(ReqRespMatchResult reqRespMatchResult, boolean recordingOrReplay);
 }

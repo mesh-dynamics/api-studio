@@ -55,11 +55,20 @@ public class JsonComparator implements Comparator {
 		List<Diff> result = new ArrayList<>();
 		try {
 			lhsroot = jsonMapper.readTree(lhs);
-			rhsroot = jsonMapper.readTree(rhs);
 		} catch (IOException e) {
-			LOGGER.error("Error in parsing json: " + lhs, e);
+		    LOGGER.error("Error in parsing json: " + lhs, e.getMessage()
+                + " " + UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
 			return new Match(MatchType.Exception, e.getMessage(), result);
 		}
+
+		// Need to log properly which json parsing caused error
+		try {
+		    rhsroot = jsonMapper.readTree(rhs);
+		} catch (IOException e) {
+		    LOGGER.error("Error in parsing json: " + rhs, e.getMessage()
+                + " " + UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+		    return new Match(MatchType.Exception, e.getMessage(), result);
+        }
 		
 		// first validate the rhs (new json)
 		validate(rhsroot, result);

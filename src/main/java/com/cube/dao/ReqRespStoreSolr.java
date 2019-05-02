@@ -136,25 +136,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Stream<ReqRespMatchResult> expandOnTrace(String gatewayreqId, String replayId, boolean recordOrReplay) {
-        return getRequest(gatewayreqId).flatMap(gatewayReq ->
-            Utils.findFirstCaseInsensitiveMatch(gatewayReq.hdrs, Config.DEFAULT_TRACE_FIELD).flatMap(traceId -> {
-                SolrQuery query = new SolrQuery("*:*");
-                addFilter(query, TYPEF, Types.Request.toString());
-                addFilter(query, COLLECTIONF, gatewayReq.collection.get());
-                addFilter(query, HDRTRACEF, traceId);
-                List<String> reqIds = SolrIterator.getStream(solr, query, Optional.empty())
-                        .flatMap(doc -> docToRequest(doc).stream()).map(req -> req.reqid.get()).
-                                collect(Collectors.toList());
-                SolrQuery reqRespMatchResultQuery = new SolrQuery("*:*");
-                addFilter(reqRespMatchResultQuery, TYPEF, Types.ReqRespMatchResult.toString());
-                addFilter(reqRespMatchResultQuery, (recordOrReplay) ? RECORDREQIDF : REPLAYREQIDF, reqIds.stream()
-                        .collect(Collectors.joining(" OR ", "(", ")")), false);
-                addFilter(reqRespMatchResultQuery, REPLAYIDF, replayId);
-                return Optional.of(SolrIterator.getStream(solr, reqRespMatchResultQuery,
-                        Optional.of(reqIds.size())).flatMap(doc -> docToAnalysisMatchResult(doc).stream()));
+    public Stream<ReqRespMatchResult> expandOnTrace(ReqRespMatchResult reqRespMatchResult, boolean recordOrReplay) {
+        String replayId = reqRespMatchResult.replayid;
+        Optional<String> traceId = (recordOrReplay) ? reqRespMatchResult.recordTraceId : reqRespMatchResult.replayTraceId;
 
-            })).orElse(Stream.empty());
+        return traceId.map(trace -> {
+            SolrQuery reqRespMatchResultQuery = new SolrQuery("*:*");
+            addFilter(reqRespMatchResultQuery, TYPEF, Types.ReqRespMatchResult.toString());
+            addFilter(reqRespMatchResultQuery, REPLAYIDF, replayId);
+            addFilter(reqRespMatchResultQuery, (recordOrReplay)? RECORDTRACEIDF : REPLAYTRACEIDF , trace);
+            return SolrIterator.getStream(solr, reqRespMatchResultQuery,
+                Optional.empty()).flatMap(doc -> docToAnalysisMatchResult(doc).stream());
+
+        }).orElse(Stream.of(reqRespMatchResult));
     }
 
 
@@ -965,6 +959,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata_s";
     private static final String DIFFF = CPREFIX + "diff_ni";
     private static final String SERVICEF = CPREFIX + "service_s";
+    private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid_s";
+    private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid_s";
     
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveResult(com.cube.dao.Analysis.Result)
@@ -1002,7 +998,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF, res.service);
         doc.setField(PATHF, res.path);
         doc.setField(REPLAYIDF, res.replayid);
-                
+        res.recordTraceId.ifPresent(traceId  -> doc.setField(RECORDTRACEIDF, traceId));
+        res.replayTraceId.ifPresent(traceId  -> doc.setField(REPLAYTRACEIDF, traceId));
         return doc;
     }
 
@@ -1077,9 +1074,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     private Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
         // These three fields won't be null as the solr filter query is on them
-        String recordReqId = getStrField(doc , RECORDREQIDF).get();
-        String replayReqId = getStrField(doc, REPLAYREQIDF).get();
-        String replayId = getStrField(doc, REPLAYIDF).get();
+        Optional<String> recordReqId = getStrField(doc , RECORDREQIDF);
+        String replayReqId = getStrField(doc, REPLAYREQIDF).orElse("");
+        String replayId = getStrField(doc, REPLAYIDF).orElse("");
 
         Comparator.MatchType reqMatchType = getStrField(doc , REQMTF)
                 .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
@@ -1092,9 +1089,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         String app = getStrField(doc , APPF).orElse("");
         String service = getStrField(doc, SERVICEF).orElse("");
         String path = getStrField(doc, PATHF).orElse("");
+        Optional<String> recordTraceId = getStrField(doc, RECORDTRACEIDF);
+        Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
         return Optional.of(new ReqRespMatchResult(
                 recordReqId , replayReqId , reqMatchType , nummatch , respMatchType, respMatchMetaData,
-                diff, customerId, app, service, path, replayId));
+                diff, customerId, app, service, path, replayId, recordTraceId, replayTraceId));
     }
 
     /* (non-Javadoc)

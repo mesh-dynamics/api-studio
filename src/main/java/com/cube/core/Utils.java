@@ -86,6 +86,7 @@ public class Utils {
 	public static List<String> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap
 			, String possibleKey) {
 		// TODO : use case insensitive maps in all these cases
+        if (mMap == null) return Collections.EMPTY_LIST;
         String searchKey = StringUtils.removeStart(possibleKey ,"/");
         return mMap.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(searchKey)).findFirst().map(
             entry -> entry.getValue()).orElse(Collections.emptyList());
