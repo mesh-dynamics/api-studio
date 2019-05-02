@@ -873,7 +873,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
-            ReplayStatus status) {
+                                    ReplayStatus status) {
+        return getReplay(customerid,app,instanceid,status,Optional.of(1),Optional.empty());
+    }
+
+    @Override
+    public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+            ReplayStatus status, Optional<Integer> numofResults, Optional<String> collection) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -882,14 +888,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceid);
         addFilter(query, REPLAYSTATUSF, status.toString());
+        addFilter(query, COLLECTIONF , collection);
         // Heuristic: getting the latest replayid if there are multiple. 
         // TODO: what happens if there are multiple replays running for the
         // same triple (customer, app, instance)
         addSort(query, CREATIONTIMESTAMPF, false /* desc */);    
         
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> docToReplay(doc, this).stream());
-
+        //Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
     }
     
     // Some useful functions
@@ -953,6 +959,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, analysis.replayid);
         doc.setField(OBJJSONF, json);
         doc.setField(TYPEF, type);
+        doc.setField(TIMESTAMPF , System.currentTimeMillis());
                 
         return doc;
     }
@@ -1170,6 +1177,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceid);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
+        doc.setField(TIMESTAMPF , System.currentTimeMillis());
         
         return doc;
     }
