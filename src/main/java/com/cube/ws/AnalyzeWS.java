@@ -287,6 +287,8 @@ public class AnalyzeWS {
      * Return results segragated by path if <i>bypath</i> variable is set y in query params
      * We can also restrict the results to a particular gateway service (which is what should
      * be done ideally) using <i>service</i> query param
+     * Note the replays are sorted in descending order of date/time once all the above filters are applied,
+     * and stats for only <i>numresults</i> number of results/replays are returned
      * @param urlInfo
      * @param customer
      * @param app
