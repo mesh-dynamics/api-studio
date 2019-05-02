@@ -9,7 +9,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 
-public class DeleteCollection {
+public class DeleteRecordingAndReplays {
 
     public static void main(String[] args){
         try {
