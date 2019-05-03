@@ -1073,7 +1073,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @return
      */
     private Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
-        // These three fields won't be null as the solr filter query is on them
         Optional<String> recordReqId = getStrField(doc , RECORDREQIDF);
         String replayReqId = getStrField(doc, REPLAYREQIDF).orElse("");
         String replayId = getStrField(doc, REPLAYIDF).orElse("");

@@ -235,9 +235,8 @@ public class Analysis {
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
 					rm.recordreq.getService().orElse(""), rm.recordreq.path,
 					replayid, jsonmapper,
-                    Utils.findFirstCaseInsensitiveMatch(rm.recordreq.hdrs , Config.DEFAULT_TRACE_FIELD),
-                    rm.replayreq.flatMap(replayreq -> Utils.findFirstCaseInsensitiveMatch(replayreq.hdrs
-                        , Config.DEFAULT_TRACE_FIELD))) ;
+                    Utils.getTraceId(rm.recordreq.hdrs),
+                    rm.replayreq.flatMap(replayreq -> Utils.getTraceId(replayreq.hdrs))) ;
 		}
 
 		final public Optional<String> recordreqid;

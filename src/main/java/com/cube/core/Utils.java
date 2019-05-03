@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.commons.lang.StringUtils;
 
+import com.cube.ws.Config;
+
 /**
  * @author prasad
  *
@@ -86,7 +88,6 @@ public class Utils {
 	public static List<String> getCaseInsensitiveMatches(MultivaluedMap<String , String> mMap
 			, String possibleKey) {
 		// TODO : use case insensitive maps in all these cases
-        if (mMap == null) return Collections.EMPTY_LIST;
         String searchKey = StringUtils.removeStart(possibleKey ,"/");
         return mMap.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(searchKey)).findFirst().map(
             entry -> entry.getValue()).orElse(Collections.emptyList());
@@ -96,5 +97,8 @@ public class Utils {
 		return getCaseInsensitiveMatches(mMap,possibleKey).stream().findFirst();
 	}
 
+	public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
+	    return findFirstCaseInsensitiveMatch(mMap,Config.DEFAULT_TRACE_FIELD);
+    }
 
 }
