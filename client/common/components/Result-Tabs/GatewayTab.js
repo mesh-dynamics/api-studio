@@ -16,9 +16,9 @@ class GatewayTab extends Component{
 
         let errorByPath = resByPath.map(pathRes => (
             <tr>
-                <td>{pathRes.path ? pathRes.path : '-'}</td>
+                <td>{pathRes.path ? pathRes.path : (pathRes.service ? pathRes.service : 'Overall')}</td>
                 <td>{res.reqcnt}</td>
-                <td>{pathRes.respnotmatched}</td>
+                <td>{pathRes.reqmatched + pathRes.reqpartiallymatched + pathRes.reqnotmatched}</td>
                 <td>{Math.round((100 * pathRes.respnotmatched/res.reqcnt) * 100) / 100}</td>
                 <td>-</td>
                 <td>-</td>

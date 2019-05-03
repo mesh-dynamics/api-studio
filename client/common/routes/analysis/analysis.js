@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 
 class analysis extends Component {
     render() {
-        return <div>hi</div>
+        return (<div>hidfdsf</div>)
     }
 }
 
