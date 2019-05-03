@@ -42,6 +42,7 @@ public class Recording {
 	public final String instanceid;
 	public final String collection; // unique within a (customerid, app)
 	public RecordingStatus status;
+	public long timestamp;
 
 	public static Optional<Recording> startRecording(String customerid, String app, String instanceid, 
 			String collection, ReqRespStore rrstore) {

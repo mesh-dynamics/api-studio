@@ -63,6 +63,7 @@ public class Analysis {
 	public int respmatched=0; // resp matched exactly
 	public int resppartiallymatched=0; // resp matched based on template
 	public int respnotmatched=0; // not matched
+    public long timestamp;
 	/*
 	 * invariants:
 	 * reqanalyzed = reqmatched + reqpartiallymatched  + reqnotmatched

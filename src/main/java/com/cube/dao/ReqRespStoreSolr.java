@@ -897,7 +897,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         //Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
     }
-    
+
     // Some useful functions
     private static SolrQuery reqMatchSpecToSolrQuery(Request qr, RequestComparator spec) {
         final SolrQuery query = new SolrQuery("*:*");
@@ -1130,7 +1130,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> json = getStrFieldMV(doc, OBJJSONF).stream().findFirst();
         Optional<Analysis> analysis = json.flatMap(j -> {
             try {
-                return Optional.ofNullable(config.jsonmapper.readValue(j, Analysis.class));
+                Analysis analysisFromJson = config.jsonmapper.readValue(j, Analysis.class);
+                getStrField(doc , TIMESTAMPF).ifPresent(timestamp -> analysisFromJson.timestamp = Long.valueOf(timestamp));
+                return Optional.ofNullable(analysisFromJson);
             } catch (IOException e) {
                 LOGGER.error(String.format("Not able to parse json into Analysis object: %s", j), e);
                 return Optional.empty();
@@ -1149,18 +1151,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-        
-        Optional<Recording> recording = Optional.empty();
+        Optional<Recording> recordingOptional = Optional.empty();
         if (customerid.isPresent() && app.isPresent() 
                 && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
-            recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(), 
-                    status.get()));
+            Recording recording = new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
+                status.get());
+            getStrField(doc, TIMESTAMPF).ifPresent(timestamp -> recording.timestamp = Long.valueOf(timestamp));
+            recordingOptional = Optional.of(recording);
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerid %s, app id %s, instance id %s", 
                     customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
         
-        return recording;
+        return recordingOptional;
     }
 
     private static SolrInputDocument recordingToSolrDoc(Recording recording) {
