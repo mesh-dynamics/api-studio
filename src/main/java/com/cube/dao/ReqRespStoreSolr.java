@@ -9,7 +9,6 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -44,7 +43,6 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
 import com.cube.core.Utils;
-import com.cube.dao.Analysis.ReqMatchType;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
@@ -959,7 +957,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, analysis.replayid);
         doc.setField(OBJJSONF, json);
         doc.setField(TYPEF, type);
-        doc.setField(TIMESTAMPF , System.currentTimeMillis());
                 
         return doc;
     }
@@ -1130,9 +1127,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> json = getStrFieldMV(doc, OBJJSONF).stream().findFirst();
         Optional<Analysis> analysis = json.flatMap(j -> {
             try {
-                Analysis analysisFromJson = config.jsonmapper.readValue(j, Analysis.class);
-                getStrField(doc , TIMESTAMPF).ifPresent(timestamp -> analysisFromJson.timestamp = Long.valueOf(timestamp));
-                return Optional.ofNullable(analysisFromJson);
+                return Optional.ofNullable(config.jsonmapper.readValue(j, Analysis.class));
             } catch (IOException e) {
                 LOGGER.error(String.format("Not able to parse json into Analysis object: %s", j), e);
                 return Optional.empty();
@@ -1151,19 +1146,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-        Optional<Recording> recordingOptional = Optional.empty();
+        Optional<Recording> recording = Optional.empty();
         if (customerid.isPresent() && app.isPresent() 
                 && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
-            Recording recording = new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
-                status.get());
-            getStrField(doc, TIMESTAMPF).ifPresent(timestamp -> recording.timestamp = Long.valueOf(timestamp));
-            recordingOptional = Optional.of(recording);
+            recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
+                status.get() , getStrField(doc, TIMESTAMPF).flatMap(Utils::strToLong)));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerid %s, app id %s, instance id %s", 
                     customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
         
-        return recordingOptional;
+        return recording;
     }
 
     private static SolrInputDocument recordingToSolrDoc(Recording recording) {
@@ -1180,7 +1173,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceid);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
-        doc.setField(TIMESTAMPF , System.currentTimeMillis());
+        recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp));
         
         return doc;
     }

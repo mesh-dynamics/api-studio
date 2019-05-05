@@ -38,6 +38,7 @@ public class Analysis {
 		this.replayid = replayid;
 		this.status = Status.Running;
 		this.reqcnt = reqcnt;
+		this.timestamp = System.currentTimeMillis();
 	}
 
 
@@ -49,6 +50,8 @@ public class Analysis {
 	private Analysis() {
 		super();
 		this.replayid = "";
+		// Assuming this value will be overwritten during json deserialization
+		this.timestamp = System.currentTimeMillis();
 	}
 
 
@@ -63,7 +66,7 @@ public class Analysis {
 	public int respmatched=0; // resp matched exactly
 	public int resppartiallymatched=0; // resp matched based on template
 	public int respnotmatched=0; // not matched
-    public long timestamp;
+    public final long timestamp;
 	/*
 	 * invariants:
 	 * reqanalyzed = reqmatched + reqpartiallymatched  + reqnotmatched
