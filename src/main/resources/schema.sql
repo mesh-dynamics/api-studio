@@ -12,7 +12,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 CREATE TABLE cube.cubeuser (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -35,7 +34,7 @@ CREATE TABLE cube.instance (
 
 CREATE TABLE cube.app (
   id BIGSERIAL UNIQUE,
-  customer_id BIGSERIAL REFERENCES cube.cubeuser(id) ON DELETE CASCADE,
+  customer_id BIGINT REFERENCES cube.cubeuser(id) ON DELETE CASCADE,
   instance_id INTEGER REFERENCES cube.instance(id) ON DELETE RESTRICT,
   name VARCHAR(200) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -91,15 +90,38 @@ BEFORE UPDATE ON cube.recording
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
+/*can this collection be a range instead of a single collection*/
+create TABLE cube.test (
+  id BIGSERIAL UNIQUE,
+  test_config_name TEXT NOT NULL,
+  description TEXT,
+  collection_id BIGINT REFERENCES cube.recording(id) ON DELETE CASCADE,
+  gateway_service_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
+  gateway_path_selection JSON,
+  endpoint TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (collection_id , test_config_name)
+);
+
+CREATE TRIGGER set_timestamp_test
+BEFORE UPDATE ON cube.test
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+create TABLE cube.test_virtualized_service (
+  test_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
+  service_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
+  UNIQUE (test_id , service_id)
+);
+
 /*
 Not creating a separate analysis table, including analysis as a json here itself
 */
 CREATE TABLE cube.replay (
   id BIGSERIAL UNIQUE,
   replay_name VARCHAR(200) NOT NULL,
-  collection_id BIGINT REFERENCES cube.recording(id) ON DELETE CASCADE,
-  endpoint TEXT NOT NULL,
-  paths JSON,
+  test_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
   status VARCHAR(50) NOT NULL,
   req_count INTEGER,
   req_sent INTEGER,
@@ -109,7 +131,7 @@ CREATE TABLE cube.replay (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ,
   sample_rate REAL,
-  PRIMARY KEY(collection_id, replay_name)
+  PRIMARY KEY(test_id, replay_name)
 );
 
 CREATE TRIGGER set_timestamp_replay
