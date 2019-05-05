@@ -264,12 +264,10 @@ public class AnalyzeWS {
 		Optional<Analysis.ReqRespMatchResult> matchResult =
 				rrstore.getAnalysisMatchResult(recordReqId, replayId);
 		return matchResult.map(mRes -> {
-			String recordedRequestId = mRes.recordreqid;
-			String replayRequestId = mRes.replayreqid;
 			Stream<Analysis.ReqRespMatchResult> recordMatchResultList = rrstore.
-					expandOnTrace(recordedRequestId, replayId, true);
+					expandOnTrace(mRes, true);
 			Stream<Analysis.ReqRespMatchResult> replayMatchResultList = rrstore.
-					expandOnTrace(replayRequestId, replayId, false);
+					expandOnTrace(mRes, false);
 			String recordJsonArray = getJsonArrayString(recordMatchResultList);
 			String replayJsonArray = getJsonArrayString(replayMatchResultList);
 			String resultJson = "{\"record\" : " + recordJsonArray + " , \"replay\" : " + replayJsonArray + " }";

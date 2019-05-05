@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.commons.lang.StringUtils;
 
+import com.cube.ws.Config;
+
 /**
  * @author prasad
  *
@@ -95,5 +97,8 @@ public class Utils {
 		return getCaseInsensitiveMatches(mMap,possibleKey).stream().findFirst();
 	}
 
+	public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
+	    return findFirstCaseInsensitiveMatch(mMap,Config.DEFAULT_TRACE_FIELD);
+    }
 
 }

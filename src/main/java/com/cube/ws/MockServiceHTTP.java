@@ -161,10 +161,12 @@ public class MockServiceHTTP {
 			// store a req-resp analysis match result for the mock request (during replay)
 			// and the matched recording request
 			mockRequest.ifPresent(mRequest -> respv.reqid.ifPresent(recordReqId -> {
-				Analysis.ReqRespMatchResult matchResult = new Analysis.ReqRespMatchResult(
-						recordReqId, mRequest.reqid.get(), Comparator.MatchType.ExactMatch,
-						1, Comparator.MatchType.ExactMatch, "", "", customerid,
-						app, service, path, mRequest.collection.get());
+				Analysis.ReqRespMatchResult matchResult =
+                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqid.get(),
+                        Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
+                        "", customerid, app, service, path, mRequest.collection.get(),
+                        Utils.getTraceId(respv.meta),
+                        Utils.getTraceId(mRequest.hdrs));
 				rrstore.saveResult(matchResult);
 			}));
 		    return builder.entity(respv.body).build();
@@ -177,9 +179,11 @@ public class MockServiceHTTP {
 				// virtualized services in facet queries, we are creating this dummy req resp
 				// match result for now.
 				mockRequest.ifPresent(mRequest -> {
-					Analysis.ReqRespMatchResult matchResult = new Analysis.ReqRespMatchResult("", mRequest.reqid.get(),
-									Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
-									customerid, app, service, path, mRequest.collection.get());
+					Analysis.ReqRespMatchResult matchResult =
+                        new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqid.get(),
+                            Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
+                            customerid, app, service, path, mRequest.collection.get(), Optional.empty(),
+                            Utils.getTraceId(mRequest.hdrs));
 					rrstore.saveResult(matchResult);
 				});
 				return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
