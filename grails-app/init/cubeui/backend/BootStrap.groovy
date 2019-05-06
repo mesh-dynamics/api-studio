@@ -20,8 +20,6 @@ class BootStrap {
         }
 //        def admin = User.findOrSaveWhere(username: "admin", password: "\$2a\$10\$RGvAqjRRfYXf1Mbogmtbjuz9bj3M4G08J8WBezhJEYEBukwucN.8i")
 //        def user = User.findOrSaveWhere(username: "vineetks", password: "\$2a\$10\$YRcExtbHlCro2OPrOZRwDuv2NmcmE36Sz4AFBcRvQJ/mLeImoPQq2")
-//        def admin = User.findOrSaveWhere(username: "admin", password: "admin")
-//        def user = User.findOrSaveWhere(username: "vineetks", password: "vineetks")
         if (admin.getAuthorities().isEmpty()) {
             UserRole.create(admin, adminRole)
         }
