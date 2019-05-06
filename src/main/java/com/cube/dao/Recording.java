@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -29,7 +30,7 @@ public class Recording {
 	 * @param status
 	 */
 	Recording(String customerid, String app, String instanceid, String collection, RecordingStatus status
-        , Optional<Long> updateTimestamp) {
+        , Optional<Instant> updateTimestamp) {
 		super();
 		this.customerid = customerid;
 		this.app = app;
@@ -44,12 +45,12 @@ public class Recording {
 	public final String instanceid;
 	public final String collection; // unique within a (customerid, app)
 	public RecordingStatus status;
-	public Optional<Long> updateTimestamp;
+	public Optional<Instant> updateTimestamp;
 
 	public static Optional<Recording> startRecording(String customerid, String app, String instanceid, 
 			String collection, ReqRespStore rrstore) {
 		Recording recording = new Recording(customerid, app, instanceid, collection, RecordingStatus.Running
-            , Optional.of(System.currentTimeMillis()));
+            , Optional.of(Instant.now()));
 		if (rrstore.saveRecording(recording))
 			return Optional.of(recording);
 		return Optional.empty();
@@ -58,7 +59,7 @@ public class Recording {
 	public static Recording stopRecording(Recording recording, ReqRespStore rrstore) {
 		if (recording.status == RecordingStatus.Running) {
 			recording.status = RecordingStatus.Completed;
-			recording.updateTimestamp = Optional.of(System.currentTimeMillis());
+			recording.updateTimestamp = Optional.of(Instant.now());
 			rrstore.saveRecording(recording);
 		}
 		return recording;

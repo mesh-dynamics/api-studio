@@ -1148,7 +1148,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (customerid.isPresent() && app.isPresent() 
                 && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
             recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
-                status.get() , getStrField(doc, TIMESTAMPF).flatMap(Utils::strToLong)));
+                status.get() ,  getTSField(doc, TIMESTAMPF)));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerid %s, app id %s, instance id %s", 
                     customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
@@ -1171,7 +1171,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceid);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
-        recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp));
+        recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
         
         return doc;
     }
