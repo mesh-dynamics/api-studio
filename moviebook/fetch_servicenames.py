@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import subprocess
+import sys
+subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'pyaml'])
+
 
 import yaml
 import os

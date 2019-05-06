@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+import subprocess
 import sys
+subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'requests'])
+
 import json
 import requests
 
