@@ -7,13 +7,15 @@ package io.cube.agent;
  */
 class FnReqResponse {
 
+    final String traceid;
     final int fnHash;
     final String name;
     final Integer[] argsHash;
     final String[] argVals;
     final String retVal;
 
-    FnReqResponse(int fnHash, String name, Integer[] argsHash, String[] argVals, String retVal) {
+    FnReqResponse(String traceid, int fnHash, String name, Integer[] argsHash, String[] argVals, String retVal) {
+        this.traceid = traceid;
         this.fnHash = fnHash;
         this.name = name;
         this.argsHash = argsHash;

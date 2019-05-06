@@ -14,6 +14,6 @@ public interface Mocker {
      * @param args The argument values as Java objects
      * @return The response value as Java object
      */
-    Object mock(Method function, Object... args);
+    Object mock(String traceid, Method function, Object... args);
 
 }

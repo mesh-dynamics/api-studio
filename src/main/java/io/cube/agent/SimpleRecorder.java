@@ -23,7 +23,7 @@ public class SimpleRecorder implements Recorder {
 
 
     @Override
-    public boolean record(Method function, Object response, Object... args) {
+    public boolean record(String traceid, Method function, Object response, Object... args) {
         String fnName = function.getName();
         String signature = Utils.getFunctionSignature(function);
 
@@ -37,7 +37,7 @@ public class SimpleRecorder implements Recorder {
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
             String respVal = jsonMapper.writeValueAsString(response);
 
-            FnReqResponse fnrr = new FnReqResponse(fnHash, fnName, argsHash, argVals, respVal);
+            FnReqResponse fnrr = new FnReqResponse(traceid, fnHash, fnName, argsHash, argVals, respVal);
 
             //TODO: Call cube api to log the FnReqResponse
 

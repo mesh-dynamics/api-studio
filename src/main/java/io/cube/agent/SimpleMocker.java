@@ -20,7 +20,7 @@ public class SimpleMocker implements Mocker {
 
 
     @Override
-    public Object mock(Method function, Object... args) {
+    public Object mock(String traceid, Method function, Object... args) {
 
         String signature = Utils.getFunctionSignature(function);
 
@@ -35,7 +35,7 @@ public class SimpleMocker implements Mocker {
 
 
             String respVal = "";
-            // TODO: call cube api to get response, passing fnHash and argsHash
+            // TODO: call cube api to get response, passing traceid, fnHash and argsHash
 
             return jsonMapper.readValue(respVal, function.getReturnType());
 

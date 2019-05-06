@@ -11,11 +11,12 @@ public interface Recorder {
 
 
     /**
+     * @param traceid The traceid
      * @param function The function object corresponding to the function being recorded
      * @param args The arg values
      * @param response The return value
      * @return success status
      */
-    boolean record(Method function, Object response, Object... args);
+    boolean record(String traceid, Method function, Object response, Object... args);
 
 }
