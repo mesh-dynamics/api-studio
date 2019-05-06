@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import {Clearfix, Table} from "react-bootstrap";
+import DataTable from 'react-data-table-component';
 
 class Analysis extends Component {
     constructor(props) {
@@ -9,6 +10,7 @@ class Analysis extends Component {
     formatData() {
         const {resByPath} =  this.props;
         let temp = [];
+        let formattedList = [];
         for (const dp of resByPath) {
             if (dp.path && dp.service) {
                 if (temp.indexOf(dp.service) == -1) {
@@ -17,12 +19,73 @@ class Analysis extends Component {
             }
         }
 
+        for (const key in temp) {
+
+        }
+
         console.log(temp);
+    }
+
+    formatDataForTable(resByPath) {
+        const formatted = [];
+        for (const pathRes of resByPath) {
+            if (pathRes.path) {
+                formatted.push({
+                    path: pathRes.path,
+                    requests: pathRes.reqmatched + pathRes.reqpartiallymatched + pathRes.reqnotmatched,
+                    respMatched: pathRes.respmatched + pathRes.resppartiallymatched,
+                    respNotMatched: pathRes.respnotmatched,
+                    incomplete: (pathRes.reqmatched + pathRes.reqpartiallymatched + pathRes.reqnotmatched) - (pathRes.respmatched + pathRes.resppartiallymatched + pathRes.respnotmatched),
+                    reviewed: '-',
+                    actions: '-'
+                });
+            }
+        }
+
+        return formatted;
     }
 
     render() {
         const {res, resByPath} =  this.props;
         this.formatData();
+        const tableData = this.formatDataForTable(resByPath);
+        const columns = [
+            {
+                name: 'Path',
+                selector: 'path',
+                sortable: true,
+            },
+            {
+                name: 'Requests',
+                selector: 'requests',
+                sortable: true,
+            },
+            {
+                name: 'Responses Matched',
+                selector: 'respMatched',
+                sortable: true,
+            },
+            {
+                name: 'Responses Not Matched',
+                selector: 'respNotMatched',
+                sortable: true,
+            },
+            {
+                name: 'Did Not Complete',
+                selector: 'incomplete',
+                sortable: true,
+            },
+            {
+                name: 'Reviewed',
+                selector: 'reviewed',
+                sortable: false,
+            },
+            {
+                name: 'Actions',
+                selector: 'actions',
+                sortable: false,
+            }
+        ];
         let errorByPath = resByPath.map(pathRes => {
             if (pathRes.path) {
                 return (
@@ -42,7 +105,12 @@ class Analysis extends Component {
         });
 
         return (<div style={{marginTop: '20px'}}>
-            <Table striped bordered hover>
+            <DataTable
+                columns={columns}
+                data={tableData}
+                pagination={true}
+            />
+            {/*<Table striped bordered hover>
                 <thead>
                 <tr>
                     <th className="default">Path</th>
@@ -57,7 +125,7 @@ class Analysis extends Component {
                 <tbody>
                 {errorByPath}
                 </tbody>
-            </Table>
+            </Table>*/}
         </div>)
     }
 }
