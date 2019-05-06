@@ -31,6 +31,7 @@ import com.cube.core.TemplateRegistry;
 import com.cube.core.UtilException;
 import com.cube.dao.Analysis;
 import com.cube.dao.MatchResultAggregate;
+import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.Analyzer;
 
@@ -277,6 +278,55 @@ public class AnalyzeWS {
 				"recordReqId:replayId :: " + recordReqId + ":" + replayId).build());
 	}
 
+    /**
+     * Return Time Line results for a given customer id , app , instance id combo
+     * Optional Parameters include restriction on <i>collection</i> id (later we should be able to specify
+     * a range of collection ids or dates)
+     * Return results segragated by path if <i>bypath</i> variable is set y in query params
+     * We can also restrict the results to a particular gateway service (which is what should
+     * be done ideally) using <i>service</i> query param
+     * Note the replays are sorted in descending order of date/time once all the above filters are applied,
+     * and stats for only <i>numresults</i> number of results/replays are returned
+     * @param urlInfo
+     * @param customer
+     * @param app
+     * @param instanceId
+     * @return
+     */
+    @GET
+	@Path("timelineres/{customer}/{app}/{instanceId}")
+	public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
+                                       @PathParam("app") String app, @PathParam("instanceId") String instanceId) {
+        MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
+        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
+        boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
+            .map(v -> v.equals("y")).orElse(false);
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
+            map(Integer::valueOf).or(() -> Optional.of(20));
+        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer),Optional.of(app),Optional.of(instanceId),
+            Replay.ReplayStatus.Completed , numResults, collection);
+        String finalJson = replays.map(replay -> {
+            String replayid = replay.replayid;
+            String creationTimeStamp = replay.creationTimeStamp;
+            Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
+            StringBuilder jsonBuilder = new StringBuilder();
+            String json;
+            jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" +  creationTimeStamp
+                + "\" , \"results\" : " );
+            try {
+                json = jsonmapper.writeValueAsString(res);
+                jsonBuilder.append(json);
+            } catch (JsonProcessingException e) {
+                jsonBuilder.append("[]");
+                LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s",
+                    replayid), e);
+            }
+            jsonBuilder.append("}");
+            return jsonBuilder.toString();
+        }).collect(Collectors.joining(" , " , "[" , "]"));
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
+    }
 
 	/**
 	 * @param config

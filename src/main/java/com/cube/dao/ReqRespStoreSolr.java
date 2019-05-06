@@ -9,7 +9,6 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -44,7 +43,6 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
 import com.cube.core.Utils;
-import com.cube.dao.Analysis.ReqMatchType;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
@@ -867,7 +865,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
-            ReplayStatus status) {
+                                    ReplayStatus status) {
+        return getReplay(customerid,app,instanceid,status,Optional.of(1),Optional.empty());
+    }
+
+    @Override
+    public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+            ReplayStatus status, Optional<Integer> numofResults, Optional<String> collection) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -876,16 +880,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceid);
         addFilter(query, REPLAYSTATUSF, status.toString());
+        addFilter(query, COLLECTIONF , collection);
         // Heuristic: getting the latest replayid if there are multiple. 
         // TODO: what happens if there are multiple replays running for the
         // same triple (customer, app, instance)
         addSort(query, CREATIONTIMESTAMPF, false /* desc */);    
         
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).flatMap(doc -> docToReplay(doc, this).stream());
-
+        //Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
     }
-    
+
     // Some useful functions
     private static SolrQuery reqMatchSpecToSolrQuery(Request qr, RequestComparator spec) {
         final SolrQuery query = new SolrQuery("*:*");
@@ -1140,12 +1144,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-        
         Optional<Recording> recording = Optional.empty();
         if (customerid.isPresent() && app.isPresent() 
                 && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
-            recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(), 
-                    status.get()));
+            recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
+                status.get() , getStrField(doc, TIMESTAMPF).flatMap(Utils::strToLong)));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerid %s, app id %s, instance id %s", 
                     customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
@@ -1168,6 +1171,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceid);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
+        recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp));
         
         return doc;
     }

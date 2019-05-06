@@ -66,6 +66,15 @@ public class Utils {
 		}
 	}
 
+
+    public static Optional<Long> strToLong(String s) {
+        try {
+            return Optional.ofNullable(Long.valueOf(s));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
 	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
 		CompletableFuture<Void> allDoneFuture =
 				CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));

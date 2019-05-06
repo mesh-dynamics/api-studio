@@ -161,18 +161,28 @@ public interface ReqRespStore {
 	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
 
 
-
+    /**
+     *
+     * @param customerid
+     * @param app
+     * @param instanceid
+     * @param status
+     * @param collection
+     * @param numOfResults
+     * @return
+     */
+	Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+                             ReplayStatus status, Optional<Integer> numOfResults, Optional<String> collection);
 
 	/**
-	 * @param customerid
-	 * @param app
-	 * @param instanceid
-	 * @param status
-	 * @return
-	 */
-	Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid, ReplayStatus status);
-
+     * @param customerid
+     * @param app
+     * @param instanceid
+     * @param status
+     * @return
+     */
+    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app,
+                             Optional<String> instanceid, ReplayStatus status);
 
 	static void main(String[] args) throws IOException{
 
