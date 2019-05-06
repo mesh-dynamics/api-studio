@@ -109,6 +109,8 @@ class Analysis extends Component {
                 columns={columns}
                 data={tableData}
                 pagination={true}
+                striped={true}
+                highlightOnHover={true}
             />
             {/*<Table striped bordered hover>
                 <thead>
