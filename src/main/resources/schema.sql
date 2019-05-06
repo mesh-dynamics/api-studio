@@ -67,7 +67,7 @@ Just reconstruction of the graph is required at the UI end
 Including the app id field so that the entire graph for an app can be retrieved in
 one single select query
 Also if we store in this format updates can be cumbersome*/
-CREATE TABLE cube.servicegraph (
+CREATE TABLE cube.service_graph (
   parent_id BIGINT REFERENCES cube.service(id) ON DELETE SET NULL,
   child_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
   app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE
@@ -97,7 +97,7 @@ create TABLE cube.test (
   description TEXT,
   collection_id BIGINT REFERENCES cube.recording(id) ON DELETE CASCADE,
   gateway_service_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
-  gateway_path_selection JSON,
+  gateway_path_selection JSON NOT NULL,
   endpoint TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -109,11 +109,35 @@ BEFORE UPDATE ON cube.test
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
+/*need to somehow make sure that the test id and service id correspond to the same app*/
 create TABLE cube.test_virtualized_service (
   test_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
   service_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
   UNIQUE (test_id , service_id)
 );
+
+/*need to somehow make sure that the test id and service id correspond to the same app*/
+create TABLE cube.test_intermediate_service (
+  test_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
+  service_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
+  UNIQUE(test_id, service_id)
+);
+
+create TABLE cube.compare_template (
+  id BIGSERIAL UNIQUE,
+  test_id BIGINT REFERENCES cube.test(id) ON DELETE CASCADE,
+  path TEXT NOT NULL,
+  template JSON NOT NULL,
+  type VARCHAR(100) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(test_id, type, path)
+);
+
+CREATE TRIGGER set_timestamp_template
+BEFORE UPDATE ON cube.compare_template
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
 
 /*
 Not creating a separate analysis table, including analysis as a json here itself
