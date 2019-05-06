@@ -6,7 +6,7 @@ steps:
     image: plugins/docker
     settings:
       username: cubeiocorp
-      password: helloDocker1!
+      password: 'S9qe2fJ8*vtk'
       repo: cubeiocorp/cubeui
       tags: ${DRONE_COMMIT}
     when:
@@ -18,7 +18,7 @@ steps:
     image: plugins/docker
     settings:
       username: cubeiocorp
-      password: helloDocker1!
+      password: 'S9qe2fJ8*vtk'
       repo: cubeiocorp/cubeui
       tags: ${DRONE_COMMIT}
       dry_run: true
