@@ -5,6 +5,7 @@ import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.web.AuthenticationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,22 +26,22 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequestMapping("/api/login")
 public class LoginController {
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
+    private JwtTokenProvider jwtTokenProvider;
+    private UserRepository userRepository;
 
-    @Autowired
-    JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    UserRepository users;
+    public LoginController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
+    }
 
     @PostMapping("")
-    public ResponseEntity signin(@RequestBody AuthenticationRequest data) {
-
+    public ResponseEntity login(@RequestBody AuthenticationRequest data) {
         try {
             String username = data.getUsername();
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, data.getPassword()));
-            User user = this.users.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
+            User user = this.userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
             String token = jwtTokenProvider.createToken(username, user.getRoles());
 
             Map<Object, Object> model = new HashMap<>();
@@ -51,7 +52,8 @@ public class LoginController {
             model.put("token_type", "Bearer");
             return ok(model);
         } catch (AuthenticationException e) {
-            throw new BadCredentialsException("Invalid username/password supplied");
+//            throw new BadCredentialsException("Invalid username/password supplied");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username/password supplied");
         }
     }
 }

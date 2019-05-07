@@ -29,26 +29,23 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.debug("Initializing data...");
-//        Arrays.asList("moto", "car").forEach(v -> //DO STUFF);
+        this.userRepository.save(User.builder()
+                .username("vineetks")
+                .password(this.passwordEncoder.encode("vineetks"))
+                .roles(Arrays.asList( "ROLE_USER"))
+                .build()
+        );
 
+        this.userRepository.save(User.builder()
+                .username("admin")
+                .password(this.passwordEncoder.encode("admin"))
+                .roles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"))
+                .build()
+        );
+        log.debug("printing all users...");
+        this.userRepository.findAll().forEach(v -> log.debug(" User :" + v.toString()));
 
         this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
         this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
-        this.userRepository.save(User.builder()
-            .username("vineetks")
-            .password(this.passwordEncoder.encode("vineetks"))
-            .roles(Arrays.asList( "ROLE_USER"))
-            .build()
-        );
-
-        this.userRepository.save(User.builder()
-            .username("admin")
-            .password(this.passwordEncoder.encode("admin"))
-            .roles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"))
-            .build()
-        );
-
-        log.debug("printing all users...");
-        this.userRepository.findAll().forEach(v -> log.debug(" User :" + v.toString()));
     }
 }
