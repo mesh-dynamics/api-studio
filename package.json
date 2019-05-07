@@ -14,10 +14,11 @@
     "file-saver": "^2.0.0",
     "plotly.js": "^1.42.5",
     "prop-types": "^15.6.2",
-    "react": "^16.5.2",
+    "react": "^16.6.0",
     "react-bootstrap": "^0.32.4",
     "react-cytoscapejs": "^1.1.0",
-    "react-dom": "^16.5.2",
+    "react-data-table-component": "^1.4.6",
+    "react-dom": "^16.6.0",
     "react-plotly.js": "^2.2.0",
     "react-redux": "^5.0.7",
     "react-router": "^4.3.1",
@@ -30,7 +31,8 @@
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
     "socket.io": "^2.2.0",
-    "socket.io-client": "^2.1.1"
+    "socket.io-client": "^2.1.1",
+    "styled-components": "^4.2.0"
   },
   "scripts": {
     "start": "set PORT=3006 && react-scripts start",
