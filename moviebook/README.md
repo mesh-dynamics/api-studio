@@ -16,10 +16,11 @@ where,
 `your-pword` is your Docker password.  
 `your-email` is your Docker email.  
 
-2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID`, `CUBE_USER`(optional) as Environment variables, for example:
+2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID`, `CUBE_ENV`(default or staging), `CUBE_USER`(optional) as Environment variables, for example:
 ```
 export CUBE_APPLICATION=movieinfo
 export CUBE_INSTANCEID=prod
+export CUBE_ENV=default
 export CUBE_USER=aakash
 ```
 >NOTE: if CUBE_USER is not exported, the script will use $USER as CUBE_USER

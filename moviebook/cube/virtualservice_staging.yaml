@@ -1,0 +1,79 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cubeui-staging
+  labels:
+    env: staging
+spec:
+  hosts:
+  - staging.cubecorp.io
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
+    - uri:
+        exact: /
+    - uri:
+        prefix: /assets
+    - uri:
+        regex: '^.*\.(ico|png|jpg|js|css)$'
+    route:
+    - destination:
+        host: cubeui.staging.svc.cluster.local
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cubews-staging
+  labels:
+    env: staging
+spec:
+  hosts:
+  - staging.cubecorp.io
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /ms
+    - uri:
+        prefix: /cs
+    - uri:
+        prefix: /rs
+    - uri:
+        prefix: /as
+    route:
+    - destination:
+        host: cubews.staging.svc.cluster.local
+        port:
+          number: 8080
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cubeui-to-cubews-staging
+  labels:
+    env: staging
+spec:
+  hosts:
+  - staging.cubecorp.io
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /cube
+    rewrite:
+      uri: " "
+    route:
+    - destination:
+        host: cubews.staging.svc.cluster.local
+        port:
+          number: 8080
+
+

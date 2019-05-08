@@ -14,7 +14,7 @@ export_aws_env_variables() {
 	export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
 }
 
-init() {
+init_default() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f cube/service.yaml
 	kubectl apply -f moviebook-gateway.yaml
@@ -24,8 +24,6 @@ init() {
 	kubectl apply -f cube/service_entry.yaml
 	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
-	./generate_lua_filters.py $CUBE_USER
-	echo "lua filters generated"
 	echo "waiting for cubews to come online"
 	until $(curl --output /dev/null --silent --head --fail http://$GATEWAY_URL/cs/health); do
 	  printf '.'
@@ -33,6 +31,31 @@ init() {
 	done
 	printf "\n"
 	setup
+}
+
+init_staging() {
+	kubectl create namespace staging
+	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml) -n staging
+	kubectl apply -f cube/service.yaml -n staging
+	kubectl apply -f moviebook-gateway.yaml
+	kubectl apply -f moviebook/bookinfo_virtualservice_staging.yaml
+	kubectl apply -f moviebook/movieinfo-v1_staging.yaml
+	kubectl apply -f cube/virtualservice_staging.yaml
+	kubectl apply -f cube/service_entry.yaml
+	kubectl apply -f cube/solr_service_entry.yaml
+	./fetch_servicenames.py
+	echo "waiting for cubews to come online"
+	until $(curl --output /dev/null --silent --head --fail -HHost:staging.cubecorp.io http://$GATEWAY_URL/cs/health); do
+	  printf '.'
+	  sleep 2
+	done
+	printf "\n"
+	HEADER="-H 'Host:staging.cubecorp.io'"
+	setup $HEADER
+}
+
+init() {
+		init_$CUBE_ENV
 }
 
 switch() {
@@ -60,17 +83,20 @@ setup() {
   http://$GATEWAY_URL/cs/setdefault/$CUBE_USER/movieinfo/restwrapjdbc/GET/restsql/initialize \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
+	$1 $2 \
   -d 'body=%7B%20%22status%22%3A%20%22Connection%20pool%20created.%22%7D&status=200&content-type=application%2Fjson&undefined='
 	curl -X POST \
   http://$GATEWAY_URL/cs/setdefault/$CUBE_USER/movieinfo/restwrapjdbc/POST/restsql/update \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
+	$1 $2 \
   -d 'body=%7B%22num_updates%22%3A1%7D&status=200&content-type=application%2Fjson&undefined='
 	echo "Setting response templates"
 	curl -X POST \
   http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/listmovies \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
+	$1 $2 \
   -d '{
       "prefixPath": "",
       "rules": [
@@ -86,6 +112,7 @@ setup() {
   http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/liststores \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
+	$1 $2 \
   -d '{
       "prefixPath": "",
       "rules": [
@@ -101,6 +128,7 @@ setup() {
   http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/rentmovie \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
+	$1 $2 \
   -d '{
       "prefixPath": "",
       "rules": [
@@ -116,6 +144,7 @@ setup() {
   http://$GATEWAY_URL/as/registerTemplate/response/$CUBE_USER/$CUBE_APPLICATION/movieinfo/minfo/returnmovie \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
+	$1 $2 \
   -d '{
       "prefixPath": "",
       "rules": [
@@ -128,10 +157,10 @@ setup() {
       ]
  }'
 }
-
-record() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+record_default() {
+	export NAMESPACE=default
+	./generate_lua_filters.py $CUBE_USER $NAMESPACE
+	echo "lua filters generated"
 	kubectl apply -f moviebook/moviebook-envoy-cs.yaml
 	curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_USER/$CUBE_APPLICATION/$CUBE_INSTANCEID/$COLLECTION_NAME \
@@ -139,7 +168,25 @@ record() {
   -H 'cache-control: no-cache'
 }
 
-stop_record() {
+record_staging() {
+	export NAMESPACE=staging
+	./generate_lua_filters.py $CUBE_USER $NAMESPACE
+	echo "lua filters generated"
+	kubectl apply -f moviebook/moviebook-envoy-cs.yaml -n staging
+	curl -X POST \
+  http://$GATEWAY_URL/cs/start/$CUBE_USER/$CUBE_APPLICATION/$CUBE_INSTANCEID/$COLLECTION_NAME \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'Host:staging.cubecorp.io' \
+  -H 'cache-control: no-cache'
+}
+
+record() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	record_$CUBE_ENV
+}
+
+stop_record_default() {
 	COLLECTION_NAME=$(curl -X GET \
   "http://$GATEWAY_URL/cs/currentcollection?customerid=$CUBE_USER&app=$CUBE_APPLICATION&instanceid=$CUBE_INSTANCEID" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -147,8 +194,26 @@ stop_record() {
 	curl -X POST \
   http://$GATEWAY_URL/cs/stop/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache'
+  -H 'cache-control: no-cache' \
 	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
+}
+
+stop_record_staging() {
+	COLLECTION_NAME=$(curl -X GET \
+  "http://$GATEWAY_URL/cs/currentcollection?customerid=$CUBE_USER&app=$CUBE_APPLICATION&instanceid=$CUBE_INSTANCEID" \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'Host:staging.cubecorp.io' \
+  -H 'cache-control: no-cache')
+	curl -X POST \
+  http://$GATEWAY_URL/cs/stop/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache' \
+	-H 'Host:staging.cubecorp.io'
+	kubectl delete -f moviebook/moviebook-envoy-cs.yaml -n staging
+}
+
+stop_record() {
+	stop_record_$CUBE_ENV
 }
 
 generate_mock_all_yaml() {
@@ -198,15 +263,16 @@ custom_replay() {
 	fi
 }
 
-replay_setup() {
-	generate_mock_all_yaml
+replay_setup_default() {
+	export NAMESPACE=default
+	./generate_lua_filters.py $CUBE_USER $NAMESPACE
 	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl apply -f moviebook/mock-all-except-moviebook.yaml
 	echo "Which version of movieinfo you want to test?(v1/v2)"
 	read VERSION
 	if [ "$VERSION" = "v1" ]; then
 		echo "Routing traffic to v1"
-		kubectl apply -f moviebook/movieinfo-v1.yaml
+		kubectl apply -f moviebook/movieinfo-v2.yaml
 	elif [ "$VERSION" = "v2" ]; then
 		echo "Routing traffic to v2"
 		kubectl apply -f moviebook/movieinfo-v2.yaml
@@ -214,6 +280,30 @@ replay_setup() {
 		echo "Invalid Input, enter a valid version(v1/v2)"
 		exit 1
 	fi
+}
+
+replay_setup_staging() {
+	export NAMESPACE=staging
+	./generate_lua_filters.py $CUBE_USER $NAMESPACE
+	kubectl apply -f moviebook/moviebook-envoy-replay-cs.yaml -n staging
+	kubectl apply -f moviebook/mock-all-except-moviebook.yaml -n staging
+	echo "Which version of movieinfo you want to test?(v1/v2)"
+	read VERSION
+	if [ "$VERSION" = "v1" ]; then
+		echo "Routing traffic to v1"
+		kubectl apply -f moviebook/movieinfo-v1_staging.yaml
+	elif [ "$VERSION" = "v2" ]; then
+		echo "Routing traffic to v2"
+		kubectl apply -f moviebook/movieinfo-v2_staging.yaml
+	else
+		echo "Invalid Input, enter a valid version(v1/v2)"
+		exit 1
+	fi
+}
+
+replay_setup() {
+	generate_mock_all_yaml
+	replay_setup_$CUBE_ENV
 }
 
 replay() {
@@ -239,10 +329,18 @@ replay() {
 	echo $REPLAY_ID > replayid.temp
 }
 
-stop_replay() {
+stop_replay_default() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
 	kubectl apply -f moviebook/movieinfo-v1.yaml
+}
+stop_replay_staging() {
+	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml -n staging
+	kubectl delete -f moviebook/mock-all-except-moviebook.yaml -n staging
+	kubectl apply -f moviebook/movieinfo-v1_staging.yaml
+}
+stop_replay() {
+	stop_replay_$CUBE_ENV
 }
 
 analyze() {
@@ -253,7 +351,8 @@ analyze() {
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 }
-clean() {
+
+clean_default() {
 	stop_replay 2> /dev/null
 	kubectl delete -f moviebook/moviebook.yaml
 	kubectl delete -f cube/service.yaml 2> /dev/null
@@ -264,6 +363,13 @@ clean() {
 	kubectl delete -f cube/virtualservice.yaml
 	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
+}
+clean_staging() {
+	kubectl delete namespaces staging
+	kubectl delete virtualservice -l env=staging
+}
+clean() {
+	clean_$CUBE_ENV
 	if [ -f replayid.temp ]; then
 	  rm replayid.temp
 	fi
@@ -280,6 +386,14 @@ get_environment() {
 	else
 	  export_aws_env_variables
 	  echo "Environment varibales set for AWS environment"
+	fi
+	if [ "$CUBE_ENV" = "default" ]; then
+		echo "Environment set to default"
+	elif [ "$CUBE_ENV" = "staging" ]; then
+		echo "Environment set to staging"
+	else
+		echo "Kindly export CUBE_ENV varible, valid values are default, staging"
+		exit 1
 	fi
 }
 
