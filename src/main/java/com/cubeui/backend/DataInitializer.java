@@ -1,9 +1,11 @@
 package com.cubeui.backend;
 
+import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.Product;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.ProductRepository;
 import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -18,33 +20,29 @@ import java.util.HashSet;
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired
-    UserRepository userRepository;
+    private UserService userService;
+    private ProductRepository productRepository;
 
-    @Autowired
-    ProductRepository productRepository;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
+    public DataInitializer(UserService userService, ProductRepository productRepository) {
+        this.userService = userService;
+        this.productRepository = productRepository;
+    }
 
     @Override
     public void run(String... args) throws Exception {
         log.debug("Initializing data...");
-        this.userRepository.save(User.builder()
-                .username("vineetks")
-                .password(this.passwordEncoder.encode("vineetks"))
-                .roles(new HashSet<>(Arrays.asList( "ROLE_USER")))
-                .build()
-        );
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername("vineetks");
+        userDTO.setPassword("vineetks");
+        userDTO.setRoles(Arrays.asList("ROLE_USER"));
+        this.userService.save(userDTO);
 
-        this.userRepository.save(User.builder()
-                .username("admin")
-                .password(this.passwordEncoder.encode("admin"))
-                .roles(new HashSet<>(Arrays.asList("ROLE_USER", "ROLE_ADMIN")))
-                .build()
-        );
+        userDTO.setUsername("admin");
+        userDTO.setPassword("admin");
+        userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
+        this.userService.save(userDTO);
         log.debug("printing all users...");
-        this.userRepository.findAll().forEach(v -> log.debug(" User :" + v.toString()));
+        this.userService.getAllUsers().forEach(v -> log.debug(" User :" + v.toString()));
 
         this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
         this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());

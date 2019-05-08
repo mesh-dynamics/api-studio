@@ -1,8 +1,8 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.User;
-import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
+import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.AuthenticationRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.http.ResponseEntity.status;
 
 @RestController
 @RequestMapping("/api/login")
@@ -27,12 +29,12 @@ public class LoginController {
 
     private AuthenticationManager authenticationManager;
     private JwtTokenProvider jwtTokenProvider;
-    private UserRepository userRepository;
+    private UserService userService;
 
-    public LoginController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+    public LoginController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     @PostMapping("")
@@ -40,7 +42,7 @@ public class LoginController {
         try {
             String username = data.getUsername();
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, data.getPassword()));
-            User user = this.userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
+            User user = this.userService.getByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
             String token = jwtTokenProvider.createToken(username, new ArrayList<String>(user.getRoles()));
 
             Map<Object, Object> model = new HashMap<>();
@@ -52,7 +54,7 @@ public class LoginController {
             return ok(model);
         } catch (AuthenticationException e) {
 //            throw new BadCredentialsException("Invalid username/password supplied");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username/password supplied");
+            return status(UNAUTHORIZED).body("Invalid username/password supplied");
         }
     }
 }

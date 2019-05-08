@@ -10,14 +10,13 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
-
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @RequestMapping("/api/product")
-@Secured("ROLE_USER")
+//@Secured({"ROLE_ADMIN"})
 public class ProductController {
 
     private ProductRepository productRepository;
@@ -26,12 +25,13 @@ public class ProductController {
         this.productRepository = productRepository;
     }
 
-
+    @Secured("ROLE_USER")
     @GetMapping("")
     public ResponseEntity all() {
         return ok(this.productRepository.findAll());
     }
 
+    @Secured("ROLE_ADMIN")
     @PostMapping("")
     public ResponseEntity save(@RequestBody ProductDTO productDTO, HttpServletRequest request) {
         Product saved = this.productRepository.save(Product.builder().name(productDTO.getName()).price(productDTO.getPrice()).build());
