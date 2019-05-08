@@ -47,3 +47,25 @@ spec:
         host: cubews
         port:
           number: 8080
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cubeui-to-cubews
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /cube
+    rewrite:
+      uri: " "
+    route:
+    - destination:
+        host: cubews
+        port:
+          number: 8080
