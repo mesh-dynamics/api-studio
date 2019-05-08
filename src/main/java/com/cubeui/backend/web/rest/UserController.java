@@ -1,6 +1,7 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -14,9 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.ResponseEntity.*;
@@ -43,10 +43,17 @@ public class UserController {
     public ResponseEntity save(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         Optional<User> user = this.userRepository.findByUsername(userDTO.getUsername());
         if (user.isEmpty()) {
+            Set<String> roles = new HashSet<>();
+            if (userDTO.getRoles() != null) {
+                Set<String> allRoles = Role.getAllRoles();
+                roles = userDTO.getRoles().stream()
+                        .filter(allRoles::contains)
+                        .collect(Collectors.toSet());
+            }
             User saved = this.userRepository.save(User.builder()
                     .username(userDTO.getUsername())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
-                    .roles(userDTO.getRoles())
+                    .roles(roles)
                     .build()
             );
             return created(
@@ -55,7 +62,7 @@ public class UserController {
                             .path("/api/users/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
-                    .body(user);
+                    .body(saved);
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User with username '" + user.get().getUsername() + "' already exists.");
         }
@@ -65,10 +72,17 @@ public class UserController {
     public ResponseEntity update(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         Optional<User> user = this.userRepository.findByUsername(userDTO.getUsername());
         if (user.isPresent()) {
+            Set<String> roles = new HashSet<>();
+            if (userDTO.getRoles() != null) {
+                Set<String> allRoles = Role.getAllRoles();
+                roles = userDTO.getRoles().stream()
+                        .filter(allRoles::contains)
+                        .collect(Collectors.toSet());
+            }
             User saved = this.userRepository.save(User.builder()
                     .username(userDTO.getUsername())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
-                    .roles(userDTO.getRoles())
+                    .roles(roles)
                     .build()
             );
             return created(

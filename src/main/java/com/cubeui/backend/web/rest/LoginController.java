@@ -4,11 +4,9 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.web.AuthenticationRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class LoginController {
             String username = data.getUsername();
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, data.getPassword()));
             User user = this.userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
-            String token = jwtTokenProvider.createToken(username, user.getRoles());
+            String token = jwtTokenProvider.createToken(username, new ArrayList<String>(user.getRoles()));
 
             Map<Object, Object> model = new HashMap<>();
             model.put("username", username);

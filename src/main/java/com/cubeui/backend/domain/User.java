@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +11,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 
@@ -30,13 +31,15 @@ public class User implements UserDetails {
     @NotEmpty
     private String username;
 
+    @JsonIgnore
     @NotEmpty
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Builder.Default
-    private List<String> roles = new ArrayList<>();
+    private Set<String> roles = new HashSet<>();
 
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles.stream().map(SimpleGrantedAuthority::new).collect(toList());
