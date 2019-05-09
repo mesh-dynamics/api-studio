@@ -79,6 +79,7 @@ class Diff extends Component {
                             {typeof c.value == 'string' ? (<span className="removed">{c.value}</span>) : (
                                 <pre><div className="removed">{JSON.stringify(c.value, undefined, 4)}</div></pre>
                                 )}
+                                <span className="pull-right small">{c.resolution}</span>
                         </div>
                     )
                 } else if (c.op == 'replace') {
@@ -87,6 +88,7 @@ class Diff extends Component {
                             <span>{ck[ck.length-1] + ': '}</span>
                             <span className="removed">{c.fromValue}</span>&nbsp;
                             <span className="added">{c.value}</span>
+                            <span className="pull-right small">{c.resolution}</span>
                         </div>
                     )
                 } else if (c.op == 'add') {
@@ -95,6 +97,7 @@ class Diff extends Component {
                             <span>{ck[ck.length-1] + ': '}</span>
                             <span className="removed">{c.fromValue ? c.fromValue : tempBef}</span>&nbsp;
                             <span className="added">{c.value}</span>
+                            <span className="pull-right small">{c.resolution}</span>
                         </div>
                     )
                 }
