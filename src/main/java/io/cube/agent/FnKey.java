@@ -15,7 +15,7 @@ public class FnKey {
         this.app = app;
         this.instanceId = instanceId;
         this.service = service;
-        this.traceId = traceId;
+        this.function = function;
 
         this.fnName = function.getName();
         this.signature = Utils.getFunctionSignature(function);
@@ -28,7 +28,7 @@ public class FnKey {
     final String app;
     final String instanceId;
     final String service;
-    final Optional<String> traceId;
+    final Method function;
     final String signature;
     final int    fnSigatureHash;
     final String fnName;

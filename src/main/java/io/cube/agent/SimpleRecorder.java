@@ -25,7 +25,11 @@ public class SimpleRecorder implements Recorder {
 
 
     @Override
-    public boolean record(FnKey fnKey, Optional<Instant> prevRespTS, Object response, Object... args) {
+    public boolean record(FnKey fnKey, Optional<String> traceId,
+                          Optional<String> spanId,
+                          Optional<String> parentSpanId,
+                          Object response,
+                          Object... args) {
 
         ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -36,7 +40,9 @@ public class SimpleRecorder implements Recorder {
             String respVal = jsonMapper.writeValueAsString(response);
 
             FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId, fnKey.service,
-                    fnKey.traceId, fnKey.fnSigatureHash, fnKey.fnName, prevRespTS, argsHash, argVals, respVal);
+                    fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
+                    Optional.ofNullable(Instant.now()), argsHash,
+                    argVals, respVal);
 
             //TODO: Call cube api to log the FnReqResponse
 

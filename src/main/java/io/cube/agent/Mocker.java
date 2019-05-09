@@ -1,6 +1,8 @@
 package io.cube.agent;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
+import java.util.Optional;
 
 /*
  * Created by IntelliJ IDEA.
@@ -10,10 +12,18 @@ import java.lang.reflect.Method;
 public interface Mocker {
 
     /**
-     * @param function The function to mocked
+     * @param fnKey The key to the function to mocked
+     * @param traceId The current traceid of the calling sequence
+     * @param spanId The span that the current call belongs to
+     * @param prevRespTS The timestamp of the previous response
      * @param args The argument values as Java objects
      * @return The response value as Java object
      */
-    Object mock(String traceid, Method function, Object... args);
+    Object mock(FnKey fnKey,
+                Optional<String> traceId,
+                Optional<String> spanId,
+                Optional<String> parentSpanId,
+                Optional<Instant> prevRespTS,
+                Object... args);
 
 }
