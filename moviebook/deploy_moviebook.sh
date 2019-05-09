@@ -50,7 +50,7 @@ init_staging() {
 	  sleep 2
 	done
 	printf "\n"
-	HEADER="-H 'Host:staging.cubecorp.io'"
+	HEADER="-H Host:staging.cubecorp.io"
 	setup $HEADER
 }
 
