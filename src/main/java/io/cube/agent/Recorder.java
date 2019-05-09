@@ -1,6 +1,7 @@
 package io.cube.agent;
 
-import java.lang.reflect.Method;
+import java.time.Instant;
+import java.util.Optional;
 
 /*
  * Created by IntelliJ IDEA.
@@ -11,12 +12,14 @@ public interface Recorder {
 
 
     /**
-     * @param traceid The traceid
-     * @param function The function object corresponding to the function being recorded
+     * @param fnKey The object storing the function key, that will not change on each invocation of the function
      * @param args The arg values
      * @param response The return value
      * @return success status
      */
-    boolean record(String traceid, Method function, Object response, Object... args);
+    boolean record(FnKey fnKey,
+                   Optional<Instant> prevRespTS,
+                   Object response,
+                   Object... args);
 
 }

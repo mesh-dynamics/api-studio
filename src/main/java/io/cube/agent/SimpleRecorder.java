@@ -2,8 +2,10 @@ package io.cube.agent;
 
 import java.lang.reflect.Method;
 import java.security.Signature;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,11 +25,7 @@ public class SimpleRecorder implements Recorder {
 
 
     @Override
-    public boolean record(String traceid, Method function, Object response, Object... args) {
-        String fnName = function.getName();
-        String signature = Utils.getFunctionSignature(function);
-
-        int fnHash = signature.hashCode();
+    public boolean record(FnKey fnKey, Optional<Instant> prevRespTS, Object response, Object... args) {
 
         ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -37,14 +35,15 @@ public class SimpleRecorder implements Recorder {
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
             String respVal = jsonMapper.writeValueAsString(response);
 
-            FnReqResponse fnrr = new FnReqResponse(traceid, fnHash, fnName, argsHash, argVals, respVal);
+            FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId, fnKey.service,
+                    fnKey.traceId, fnKey.fnSigatureHash, fnKey.fnName, prevRespTS, argsHash, argVals, respVal);
 
             //TODO: Call cube api to log the FnReqResponse
 
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException
             String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
-            LOGGER.error("Error in recording function, skipping:: " + signature + " " + e.getMessage() + " " + stackTraceError);
+            LOGGER.error("Error in recording function, skipping:: " + fnKey.signature + " " + e.getMessage() + " " + stackTraceError);
             return false;
         }
 

@@ -35,7 +35,7 @@ public class SimpleMocker implements Mocker {
 
 
             String respVal = "";
-            // TODO: call cube api to get response, passing traceid, fnHash and argsHash
+            // TODO: call cube api to get response, passing traceid, fnSignatureHash and argsHash
 
             return jsonMapper.readValue(respVal, function.getReturnType());
 
