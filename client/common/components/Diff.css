@@ -1,0 +1,21 @@
+.removed {
+    text-decoration: line-through;
+    background: #ffbbbb;
+}
+.added {
+    background: #bbffbb;
+}
+.tabbed {
+    margin-left: 20px;
+}
+pre{
+    margin: 0;
+    padding: 0;
+    border: none;
+    background-clip: content-box;
+    width: fit-content;
+}
+pre div{
+    width: fit-content;
+    background: transparent;
+}
