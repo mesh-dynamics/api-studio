@@ -16,7 +16,7 @@ import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @RequestMapping("/api/product")
-//@Secured({"ROLE_ADMIN"})
+@Secured({"ROLE_USER"})
 public class ProductController {
 
     private ProductRepository productRepository;
@@ -49,7 +49,7 @@ public class ProductController {
         return ok(this.productRepository.findById(id));
     }
 
-
+    @Secured("ROLE_ADMIN")
     @DeleteMapping("/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
         Optional<Product> existed = this.productRepository.findById(id);

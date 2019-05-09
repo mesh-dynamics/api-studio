@@ -4,8 +4,6 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +46,7 @@ public class UserService {
         if (userDTO.getRoles() != null) {
             Set<String> allRoles = Role.getAllRoles();
             roles = userDTO.getRoles().stream()
+                    .map(String::toUpperCase)
                     .filter(allRoles::contains)
                     .collect(Collectors.toSet());
         }
