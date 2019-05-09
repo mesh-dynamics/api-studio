@@ -76,7 +76,9 @@ class Diff extends Component {
                     return (
                         <div key={c.path} className="tabbed">
                             <span>{ck[ck.length-1] + ': '}</span>
-                            <pre><div className="removed">{JSON.stringify(c.value, undefined, 4)}</div></pre>
+                            {typeof c.value == 'string' ? (<span className="removed">{c.value}</span>) : (
+                                <pre><div className="removed">{JSON.stringify(c.value, undefined, 4)}</div></pre>
+                                )}
                         </div>
                     )
                 } else if (c.op == 'replace') {
