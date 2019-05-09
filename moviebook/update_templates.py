@@ -5,11 +5,18 @@ subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'requests'])
 
 import json
 import requests
+import os
 
 request_filename_prefix = "templates/template_request_"
 response_filename_prefix = "templates/template_response_"
 json_file_suffix = ".json"
-headers = {'Content-type': 'application/json'}
+if os.environ['CUBE_ENV'] == "default":
+    headers = {'Content-type': 'application/json'}
+elif os.environ['CUBE_ENV'] == "staging":
+    headers =  {'Content-type': 'application/json', 'Host': 'staging.cubecorp.io'}
+else:
+    print ("Invalid Environment")
+
 
 def main():
     version = sys.argv[1]
