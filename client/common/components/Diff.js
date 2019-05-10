@@ -101,8 +101,8 @@ class Diff extends Component {
                     return (
                         <div key={c.path} className="tabbed">
                             <span>{ck[ck.length-1] + ': '}</span>
-                            <span className="removed">{c.fromValue}</span>&nbsp;
-                            <span className="added">{c.value}</span>
+                            <span className="removed">{JSON.stringify(c.fromValue)}</span>&nbsp;&nbsp;
+                            <span className="added">{JSON.stringify(c.value)}</span>
                             {this.getButton(c.resolution)}
                         </div>
                     )
@@ -110,8 +110,8 @@ class Diff extends Component {
                     return (
                         <div key={c.path} className="tabbed">
                             <span>{ck[ck.length-1] + ': '}</span>
-                            <span className="removed">{c.fromValue ? c.fromValue : tempBef}</span>&nbsp;
-                            <span className="added">{c.value}</span>
+                            <span className="removed">{c.fromValue ? JSON.stringify(c.fromValue) : JSON.stringify(tempBef)}</span>&nbsp;&nbsp;
+                            <span className="added">{JSON.stringify(c.value)}</span>
                             {this.getButton(c.resolution)}
                         </div>
                     )
@@ -173,7 +173,10 @@ class Diff extends Component {
 
         return (
             <div style={{marginTop: '20px'}}>
-                {formattedDiffElements}
+                <div className="diff-wrapper">
+                    <h3>Expected vs Actual:</h3>
+                    {formattedDiffElements}
+                </div>
             </div>
         )
     }

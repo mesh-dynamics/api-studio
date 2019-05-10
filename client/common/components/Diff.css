@@ -1,3 +1,6 @@
+.diff-wrapper {
+    padding: 10px 30px;
+}
 .removed {
     text-decoration: line-through;
     background: #ffbbbb;
@@ -8,7 +11,7 @@
 .tabbed {
     margin-left: 20px;
     position: relative;
-    background: #EFEFEF;
+    background: #f1f1f1;
     margin-bottom: 5px;
 }
 pre{
