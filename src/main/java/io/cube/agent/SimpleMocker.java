@@ -8,6 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /*
  * Created by IntelliJ IDEA.
@@ -23,15 +25,15 @@ public class SimpleMocker implements Mocker {
 
     public SimpleMocker() {
         jsonMapper = new ObjectMapper();
-        CubeClient client = new CubeClient(jsonMapper);
+        jsonMapper.registerModule(new Jdk8Module());
+        jsonMapper.registerModule(new JavaTimeModule());
+        cubeClient = new CubeClient(jsonMapper);
     }
 
 
     @Override
     public Object mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
                        Optional<Instant> prevRespTS, Object... args) {
-
-
         try {
             String[] argVals =
                     Arrays.stream(args).map(UtilException.rethrowFunction(jsonMapper::writeValueAsString)).toArray(String[]::new);
@@ -43,13 +45,10 @@ public class SimpleMocker implements Mocker {
                     fnKey.service, fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
                     prevRespTS, argsHash, argVals, "");
 
-            cubeClient.getMockResponse(fnReqResponse);
-
-            String respVal = "";
-            // TODO: call cube api to get response, passing fnkey fields, traceid, spanId, parentSpanId, prevRespTS and
-            //  argsHash
-
-            return jsonMapper.readValue(respVal, fnKey.function.getReturnType());
+            return cubeClient.getMockResponse(fnReqResponse).
+                    map(UtilException.rethrowFunction(response ->
+                            jsonMapper.readValue(response, fnKey.function.getReturnType())))
+                    .orElseThrow(() ->new Exception("No Matching response received"));
 
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException

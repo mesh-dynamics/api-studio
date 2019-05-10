@@ -10,7 +10,7 @@ import java.util.Optional;
  */
 public class FnKey {
 
-    public FnKey(String customerId, String app, String instanceId, String service, Optional<String> traceId, Method function) {
+    public FnKey(String customerId, String app, String instanceId, String service, Method function) {
         this.customerId = customerId;
         this.app = app;
         this.instanceId = instanceId;

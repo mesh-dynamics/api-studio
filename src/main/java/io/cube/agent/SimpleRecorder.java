@@ -8,7 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 
 /*
@@ -26,6 +27,8 @@ public class SimpleRecorder implements Recorder {
 
     public SimpleRecorder() {
         this.jsonMapper = new ObjectMapper();
+        jsonMapper.registerModule(new Jdk8Module());
+        jsonMapper.registerModule(new JavaTimeModule());
         this.cubeClient = new CubeClient(jsonMapper);
     }
 
@@ -35,8 +38,6 @@ public class SimpleRecorder implements Recorder {
                           Optional<String> parentSpanId,
                           Object response,
                           Object... args) {
-
-
         try {
             String[] argVals =
                     Arrays.stream(args).map(UtilException.rethrowFunction(jsonMapper::writeValueAsString)).toArray(String[]::new);
@@ -49,14 +50,13 @@ public class SimpleRecorder implements Recorder {
                     argVals, respVal);
 
             Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
-
+            //cubeResponse.ifPresent(responseStr -> System.out.println(responseStr));
+            return true;
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException
             String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
             LOGGER.error("Error in recording function, skipping:: " + fnKey.signature + " " + e.getMessage() + " " + stackTraceError);
             return false;
         }
-
-        return true;
     }
 }

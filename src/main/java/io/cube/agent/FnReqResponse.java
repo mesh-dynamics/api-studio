@@ -10,20 +10,24 @@ import java.util.Optional;
  */
 public class FnReqResponse {
 
-    public final String customerId;
-    public final String app;
-    public final String instanceId;
-    public final String service;
-    public final int fnSignatureHash;
-    public final String name;
-    public final Optional<String> traceId;
-    public final Optional<String> spanId;
-    public final Optional<String> parentSpanId;
-    public final Optional<Instant> respTS;
-    public final Integer[] argsHash;
-    public final String[] argVals;
-    public final String retVal;
+    public String customerId;
+    public String app;
+    public String instanceId;
+    public String service;
+    public  int fnSignatureHash;
+    public  String name;
+    public  Optional<String> traceId;
+    public  Optional<String> spanId;
+    public  Optional<String> parentSpanId;
+    public  Optional<Instant> respTS;
+    public  Integer[] argsHash;
+    public  String[] argVals;
+    public  String retVal;
 
+
+    public FnReqResponse() {
+
+    }
 
     public FnReqResponse(String customerId, String app, String instanceId, String service,
                          int fnSignatureHash, String name, Optional<String> traceId,
