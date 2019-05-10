@@ -68,7 +68,7 @@ class GatewayTab extends Component{
                 </div>
                 <ScatterPlot/>
 
-                <div>
+                {/*<div>
                     <h4>
                         Errors observed By Path
                     </h4>
@@ -89,7 +89,7 @@ class GatewayTab extends Component{
                             {errorByPath}
                         </tbody>
                     </Table>
-                </div>
+                </div>*/}
             </div>
         );
 

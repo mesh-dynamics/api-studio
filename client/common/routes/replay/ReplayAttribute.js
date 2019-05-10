@@ -8,6 +8,7 @@ import './ReplayAttribute.css';
 import {cubeConstants} from "../../constants";
 import {cubeActions} from "../../actions";
 import ScatterPlot from "../../components/Graph/ScatterPlot";
+import Diff from "../../components/Diff";
 
 const compTemp = [
     {
@@ -305,7 +306,6 @@ class ReplayAttribute extends Component {
     render() {
         const { user, cube } = this.props;
         const ct = JSON.stringify(compTemp, undefined, 4);
-
         return (
             <div className="pos-rel" id="rep-attr">
                 <div className="row2-dummy"></div>

@@ -1,0 +1,46 @@
+.diff-wrapper {
+    padding: 10px 30px;
+}
+.removed {
+    text-decoration: line-through;
+    background: #ffbbbb;
+}
+.added {
+    background: #bbffbb;
+}
+.tabbed {
+    margin-left: 20px;
+    position: relative;
+    background: #f1f1f1;
+    margin-bottom: 5px;
+}
+pre{
+    margin: 0;
+    padding: 0;
+    border: none;
+    background-clip: content-box;
+    width: fit-content;
+}
+pre div{
+    width: fit-content;
+    background: transparent;
+}
+span.small {
+    position: absolute;
+    width: 180px;
+    text-align: center;
+    right:0;
+    color: #FFFFFF;
+    top: calc(50% - 9px);
+    display: inline-block;
+    padding: 1px 15px;
+}
+.orange-b {
+    background: #F2C94C;
+}
+.red-b {
+    background: #EB5757;
+}
+.green-b {
+    background: #6FCF97;
+}

@@ -133,8 +133,8 @@ class replay extends Component {
                     <div className="right-head">
                         Replay
                     </div>
-                    <div className="padding-15" style={{'padding-top': 0}}>
-                        <input type="radio" name="replayType" value="male" checked /> <span className="rep">Replay All</span><br/>
+                    <div className="padding-15" style={{'paddingTop': 0}}>
+                        <input type="radio" name="replayType" value="male" /> <span className="rep">Replay All</span><br/>
                         <input type="radio" name="replayType" value="female" /> <span className="rep">Filter by Paths</span><br/>
                         <input type="radio" name="replayType" value="other" /> <span className="rep">Filter for Specific Requests (max 25)</span>
                     </div>
