@@ -1,10 +1,7 @@
 package io.cube.agent;
 
-import java.lang.reflect.Method;
-import java.security.Signature;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +19,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SimpleRecorder implements Recorder {
 
     private static final Logger LOGGER = LogManager.getLogger(SimpleRecorder.class);
+    private static final String cubeRecordServiceUrl = "";
 
+    private CubeClient cubeClient;
+    private ObjectMapper jsonMapper;
+
+    public SimpleRecorder() {
+        this.jsonMapper = new ObjectMapper();
+        this.cubeClient = new CubeClient(jsonMapper);
+    }
 
     @Override
     public boolean record(FnKey fnKey, Optional<String> traceId,
@@ -31,7 +36,6 @@ public class SimpleRecorder implements Recorder {
                           Object response,
                           Object... args) {
 
-        ObjectMapper jsonMapper = new ObjectMapper();
 
         try {
             String[] argVals =
@@ -44,7 +48,7 @@ public class SimpleRecorder implements Recorder {
                     Optional.ofNullable(Instant.now()), argsHash,
                     argVals, respVal);
 
-            //TODO: Call cube api to log the FnReqResponse
+            Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
 
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException
