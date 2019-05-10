@@ -31,6 +31,8 @@ public class Config {
     private static final Logger LOGGER = LogManager.getLogger(Config.class);
     private static final String CONFFILE = "cube.conf";
 	public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
+    public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
+    public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
 
 	final Properties properties;
 	final SolrClient solr;

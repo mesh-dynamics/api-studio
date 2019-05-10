@@ -1,5 +1,6 @@
 package com.cube.ws;
 
+import java.io.IOException;
 import java.util.*;
 
 import javax.inject.Inject;
@@ -14,8 +15,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.FnReqResponse;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
@@ -99,6 +102,25 @@ public class MockServiceHTTP {
 		}
 		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
 	}
+
+	@POST
+    @Path("/fr")
+    @Consumes(MediaType.TEXT_PLAIN)
+    public Response funcJson(@Context UriInfo uInfo,
+                             String fnReqResponseAsString) {
+	    try {
+	        FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString , FnReqResponse.class);
+            return rrstore.getFunctionReturnValue(fnReqResponse).map(retValue ->
+                Response.ok().type(MediaType.APPLICATION_JSON).entity(retValue).build()).
+                orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
+                    entity("{\"reason\" : \"Unable to find matching function request\"}").build());
+        } catch (IOException e) {
+	        return Response.serverError().type(MediaType.APPLICATION_JSON).
+                entity("{\"reason\" : \"Unable to parse function request object "+ e.getMessage()
+                    +  " \"}").build();
+        }
+    }
+
 
 	private Optional<Request> createRequestMock(String path, MultivaluedMap<String, String> formParams,
 												String customerId, String app, String instanceId, String service,

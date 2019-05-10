@@ -35,6 +35,8 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.FnReqResponse;
+
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
@@ -149,6 +151,70 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }).orElse(Stream.of(reqRespMatchResult));
     }
 
+    private static final String CPREFIX = "";
+    private static final String FSUFFIX = "_ss"; // set of strings in Solr
+    private static final String SINGLE_VALUED_SUFFIX = "_s";
+    private static final String SINGLE_VALUED_INT_SUFFIX = "_i";
+    private static final String FUNC_PREFIX  = "func_";
+    private static final String FUNC_NAME = CPREFIX + FUNC_PREFIX + "name"  + SINGLE_VALUED_SUFFIX;
+    private static final String FUNC_SIG_HASH = CPREFIX + FUNC_PREFIX + "sighash" + SINGLE_VALUED_INT_SUFFIX;
+    private static final String FUNC_ARG_HASH_PREFIX = CPREFIX + FUNC_PREFIX + "arghash_";
+    private static final String FUNC_ARG_VAL_PREFIX = CPREFIX + FUNC_PREFIX + "argval_";
+    private static final String FUNC_RET_VAL = CPREFIX + FUNC_PREFIX + "retval" + SINGLE_VALUED_SUFFIX;
+
+
+
+    public SolrInputDocument funcReqResponseToSolrDoc(FnReqResponse fnReqResponse) {
+        SolrInputDocument solrDocument = new SolrInputDocument();
+        solrDocument.setField(TYPEF, Types.FuncReqResp.toString());
+        solrDocument.setField(TIMESTAMPF , Instant.now().toString());
+        solrDocument.setField(CUSTOMERIDF , fnReqResponse.customerId);
+        solrDocument.setField(APPF , fnReqResponse.app);
+        solrDocument.setField(INSTANCEIDF, fnReqResponse.instanceId);
+        solrDocument.setField(SERVICEF, fnReqResponse.service);
+        fnReqResponse.traceId.ifPresent(trace -> solrDocument.setField(HDRTRACEF , trace));
+        fnReqResponse.spanId.ifPresent(span -> solrDocument.setField(HDRSPANF , span));
+        fnReqResponse.parentSpanId.ifPresent(parentSpanId -> solrDocument.setField(HDRPARENTSPANF, parentSpanId));
+        solrDocument.setField(FUNC_NAME , fnReqResponse.name);
+        solrDocument.setField(FUNC_SIG_HASH, fnReqResponse.fnSignatureHash);
+        var counter = new Object(){int x = 0;};
+        Arrays.asList(fnReqResponse.argVals).stream()
+            .forEachOrdered(argVal -> solrDocument.setField(FUNC_ARG_VAL_PREFIX + ++counter.x
+                + SINGLE_VALUED_SUFFIX , argVal));
+        counter.x = 0;
+        Arrays.asList(fnReqResponse.argsHash).stream()
+            .forEachOrdered(argHash -> solrDocument.setField(FUNC_ARG_HASH_PREFIX + ++counter.x
+                + SINGLE_VALUED_INT_SUFFIX, argHash));
+        solrDocument.setField(FUNC_RET_VAL, fnReqResponse.retVal);
+        fnReqResponse.respTS.ifPresent(timestamp -> solrDocument.setField(TIMESTAMPF , timestamp.toString()));
+        return solrDocument;
+    }
+
+    @Override
+    public boolean storeFunctionReqResp(FnReqResponse funcReqResponse) {
+        SolrInputDocument doc = funcReqResponseToSolrDoc(funcReqResponse);
+        return saveDoc(doc);
+    }
+
+    @Override
+    public Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse) {
+        StringBuilder argsQuery = new StringBuilder();
+        var counter = new Object(){int x =0;};
+        Arrays.asList(funcReqResponse.argsHash).
+            stream().forEachOrdered(argHashVal ->  argsQuery.append(((counter.x) != 0 ? " OR ":"") +
+            FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX + ":" + argHashVal));
+        // not sure if we'll be able to keep trace same for record and replay
+        funcReqResponse.traceId.ifPresent(trace ->
+            argsQuery.append(" OR ").append(HDRTRACEF).append(":").append(trace));
+        SolrQuery query = new SolrQuery(argsQuery.toString());
+        addFilter(query, FUNC_SIG_HASH, funcReqResponse.fnSignatureHash);
+        funcReqResponse.respTS.ifPresent(timestamp -> query.addFilterQuery(TIMESTAMPF + ":[" + timestamp.toString() + " TO *]"));
+        //query.addSort(TIMESTAMPF , ORDER.asc);
+        Optional<Integer> maxResults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxResults).
+            findFirst().flatMap(doc -> getStrField(doc, FUNC_RET_VAL));
+    }
+
 
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getResponse(java.lang.String)
@@ -228,8 +294,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private final SolrClient solr;
     private final Config config;
     
-    private static final String CPREFIX = "";
-    
+
     private static final String TYPEF = CPREFIX + "type_s";
 
     // field names in Solr
@@ -253,15 +318,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return String.format("%s%s%s", CPREFIX, getFieldName(fname, fkey), FSUFFIX);
     }
 
-    private static final String FSUFFIX = "_ss"; // set of strings in Solr
+
     // ensure that this pattern is consistent with the prefix and suffixes used above
     private static final String patternStr = "^" + CPREFIX + "([^_]+)_(.*)_ss$";
     private static final Pattern pattern = Pattern.compile(patternStr);
     private static final String QPARAMS = "qp"; 
     private static final String FPARAMS = "fp"; 
-    private static final String META = "meta"; 
+    private static final String META = "meta";
     private static final String HDR = "hdr";
     private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + FSUFFIX;
+    private static final String HDRSPANF = HDR + "_"  + Config.DEFAULT_SPAN_FIELD + FSUFFIX;
+    private static final String HDRPARENTSPANF = HDR + "_"  + Config.DEFAULT_PARENT_SPAN_FIELD + FSUFFIX;
     private static final String METASERVICEF = META + "_service" + FSUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
@@ -284,6 +351,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional.ofNullable(fvalmap.get(keytoadd)).ifPresent(vals -> vals.forEach(v -> {
             addFilter(query, f, v);
         }));
+    }
+
+    private static void addFilter(SolrQuery query, String fieldname, Integer fval) {
+        addFilter(query, fieldname, String.valueOf(fval));
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
@@ -428,7 +499,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(METHODF, req.method);
         addFieldsToDoc(doc, QPARAMS, req.qparams);
         addFieldsToDoc(doc, FPARAMS, req.fparams);
-
 
         return doc;
     }

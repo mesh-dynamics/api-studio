@@ -8,6 +8,7 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * @author prasad
@@ -30,7 +31,7 @@ public class CubeObjectMapperProvider implements ContextResolver<ObjectMapper> {
     static ObjectMapper createDefaultMapper() {
         final ObjectMapper result = new ObjectMapper();
         result.registerModule(new Jdk8Module());
- 
+        result.registerModule(new JavaTimeModule());
         return result;
     }
 }
