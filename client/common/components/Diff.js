@@ -6,6 +6,21 @@ class Diff extends Component {
         super(props);
     }
 
+    getButton(resolution) {
+        switch (resolution) {
+            case 'OK_Optional':
+                return (<span className="pull-right small orange-b">OPTIONAL</span>);
+            case 'OK_OptionalMismatch':
+                return (<span className="pull-right small orange-b">OPTIONAL MISMATCH</span>);
+            case 'OK_OtherValInvalid':
+                return (<span className="pull-right small orange-b">OPTIONAL VALUE INVALID</span>);
+            case 'ERR_ValTypeMismatch':
+                return (<span className="pull-right small red-b">ERROR VAL TYPE MISMATCH</span>);
+            case 'OK':
+                return (<span className="pull-right small green-b">OK</span>);
+        }
+    }
+
     formatDiff() {
         let {diff} = this.props;
         let formattedDiff = [];
@@ -79,7 +94,7 @@ class Diff extends Component {
                             {typeof c.value == 'string' ? (<span className="removed">{c.value}</span>) : (
                                 <pre><div className="removed">{JSON.stringify(c.value, undefined, 4)}</div></pre>
                                 )}
-                                <span className="pull-right small">{c.resolution}</span>
+                                {this.getButton(c.resolution)}
                         </div>
                     )
                 } else if (c.op == 'replace') {
@@ -88,7 +103,7 @@ class Diff extends Component {
                             <span>{ck[ck.length-1] + ': '}</span>
                             <span className="removed">{c.fromValue}</span>&nbsp;
                             <span className="added">{c.value}</span>
-                            <span className="pull-right small">{c.resolution}</span>
+                            {this.getButton(c.resolution)}
                         </div>
                     )
                 } else if (c.op == 'add') {
@@ -97,7 +112,7 @@ class Diff extends Component {
                             <span>{ck[ck.length-1] + ': '}</span>
                             <span className="removed">{c.fromValue ? c.fromValue : tempBef}</span>&nbsp;
                             <span className="added">{c.value}</span>
-                            <span className="pull-right small">{c.resolution}</span>
+                            {this.getButton(c.resolution)}
                         </div>
                     )
                 }

@@ -25,9 +25,17 @@ pre div{
 span.small {
     position: absolute;
     right:0;
+    color: #FFFFFF;
     top: calc(50% - 9px);
-    background: #00a0aa;
     display: inline-block;
     padding: 1px 15px;
-    border-radius: 5px;
+}
+.orange-b {
+    background: #F2C94C;
+}
+.red-b {
+    background: #EB5757;
+}
+.green-b {
+    background: #6FCF97;
 }
