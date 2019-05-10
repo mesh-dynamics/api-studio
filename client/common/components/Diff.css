@@ -27,6 +27,8 @@ pre div{
 }
 span.small {
     position: absolute;
+    width: 180px;
+    text-align: center;
     right:0;
     color: #FFFFFF;
     top: calc(50% - 9px);
