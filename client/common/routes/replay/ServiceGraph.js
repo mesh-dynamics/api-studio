@@ -143,13 +143,7 @@ class ServiceGraph extends Component {
     }
 
     handleShow() {
-        const { cube } = this.props;
-        if (cube.analysis) {
-            this.setState({ showDiff: true });
-        } else {
-            this.setState({ show: true });
-        }
-
+        this.setState({ show: true });
     }
 
     render() {
@@ -174,8 +168,7 @@ class ServiceGraph extends Component {
             {"op":"remove","path":"/0/book_info","value":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"},"resolution":"OK"}
         ];
 
-        var textedJson = JSON.stringify(recordedResponse, undefined, 4);
-        var textedJson1 = JSON.stringify(replayRes1, undefined, 4);
+
 
         if (cube.analysis) {
             diffElem = diff1.map(item => (
@@ -258,32 +251,6 @@ class ServiceGraph extends Component {
                             <div className="text-center">
                                 <span className={"cube-btn " + (this.state.replaySelected ? 'disabled' : '')} onClick={this.setRP}>Set Gateway Point</span><br/><br/>
                                 <span className="cube-btn" onClick={this.setVP}>Set Virtualization Point</span>
-                            </div>
-                        </Modal.Body>
-                    </Modal>
-
-                    <Modal show={this.state.showDiff} onHide={this.handleClose}>
-                        <Modal.Header closeButton>
-                            <Modal.Title>Response Diff</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <div className="left-json">
-                                <h4>Expected</h4>
-                                <textarea disabled name="" id="myTextarea" cols="30" rows="10">
-                                    {textedJson}
-                                </textarea>
-                            </div>
-                            <div className="right-json">
-                                <h4>Actual</h4>
-                                <textarea disabled name="" id="myTextarea" cols="30" rows="10">
-                                    {textedJson1}
-                                </textarea>
-                            </div>
-                            <div className="diff-json">
-                                <h4>Diff</h4>
-                                <pre>
-                                    {diffElem}
-                                </pre>
                             </div>
                         </Modal.Body>
                     </Modal>

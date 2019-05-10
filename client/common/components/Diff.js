@@ -1,9 +1,15 @@
 import React, { Component } from 'react';
 import './Diff.css'
+import Modal from "react-bootstrap/es/Modal";
 
 class Diff extends Component {
     constructor(props) {
         super(props);
+        this.handleShow = this.handleShow.bind(this);
+        this.handleClose = this.handleClose.bind(this);
+        this.state = {
+            show: false,
+        };
     }
 
     getButton(resolution) {
@@ -66,9 +72,20 @@ class Diff extends Component {
         return (formattedDiff);
     }
 
+    handleShow() {
+        this.setState({ show: true });
+    }
+
+    handleClose() {
+        this.setState({ show: false });
+    }
+
     render() {
         let {recorded, replayRes, diff} = this.props;
         const formattedDiff = this.formatDiff();
+
+        var textedJson = JSON.stringify(recorded, undefined, 4);
+        var textedJson1 = JSON.stringify(replayRes, undefined, 4);
 
         let formattedDiffElements = formattedDiff.map((d, i, fde) => {
             const keys = d.pArr.indexOf('--') != -1 ? d.pArr.split('--') : [d.pArr];
@@ -174,9 +191,32 @@ class Diff extends Component {
         return (
             <div style={{marginTop: '20px'}}>
                 <div className="diff-wrapper">
-                    <h3>Expected vs Actual:</h3>
+                    <h3>
+                        Expected vs Actual:&nbsp;&nbsp;
+                        <span className="cube-btn" onClick={this.handleShow}>View JSON</span>
+                    </h3>
                     {formattedDiffElements}
                 </div>
+
+                <Modal show={this.state.show} onHide={this.handleClose}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Response Diff</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className="left-json">
+                            <h4>Expected</h4>
+                            <textarea disabled name="" id="myTextarea" cols="30" rows="22">
+                                {textedJson}
+                            </textarea>
+                        </div>
+                        <div className="right-json">
+                            <h4>Actual</h4>
+                            <textarea disabled name="" id="myTextarea" cols="30" rows="22">
+                                {textedJson1}
+                            </textarea>
+                        </div>
+                    </Modal.Body>
+                </Modal>
             </div>
         )
     }
