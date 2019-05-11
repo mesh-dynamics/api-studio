@@ -13,8 +13,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import io.cube.agent.FnReqResponse;
 
+import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
@@ -428,7 +428,7 @@ public interface ReqRespStore {
 	 */
 	Stream<ReqRespMatchResult> expandOnTrace(ReqRespMatchResult reqRespMatchResult, boolean recordingOrReplay);
 
-	boolean storeFunctionReqResp(FnReqResponse funcReqResponse);
+	boolean storeFunctionReqResp(FnReqResponse funcReqResponse, String collection);
 
-	Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse);
+	Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection);
 }

@@ -35,8 +35,8 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.FnReqResponse;
 
+import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
@@ -164,7 +164,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
 
-    public SolrInputDocument funcReqResponseToSolrDoc(FnReqResponse fnReqResponse) {
+    public SolrInputDocument funcReqResponseToSolrDoc(FnReqResponse fnReqResponse, String collection) {
         SolrInputDocument solrDocument = new SolrInputDocument();
         solrDocument.setField(TYPEF, Types.FuncReqResp.toString());
         solrDocument.setField(TIMESTAMPF , Instant.now().toString());
@@ -172,6 +172,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDocument.setField(APPF , fnReqResponse.app);
         solrDocument.setField(INSTANCEIDF, fnReqResponse.instanceId);
         solrDocument.setField(SERVICEF, fnReqResponse.service);
+        solrDocument.setField(COLLECTIONF, collection);
         fnReqResponse.traceId.ifPresent(trace -> solrDocument.setField(HDRTRACEF , trace));
         fnReqResponse.spanId.ifPresent(span -> solrDocument.setField(HDRSPANF , span));
         fnReqResponse.parentSpanId.ifPresent(parentSpanId -> solrDocument.setField(HDRPARENTSPANF, parentSpanId));
@@ -191,25 +192,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean storeFunctionReqResp(FnReqResponse funcReqResponse) {
-        SolrInputDocument doc = funcReqResponseToSolrDoc(funcReqResponse);
+    public boolean storeFunctionReqResp(FnReqResponse funcReqResponse, String collection) {
+        SolrInputDocument doc = funcReqResponseToSolrDoc(funcReqResponse, collection);
         return saveDoc(doc);
     }
 
     @Override
-    public Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse) {
+    public Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection) {
         StringBuilder argsQuery = new StringBuilder();
+        argsQuery.append("*:*");
         var counter = new Object(){int x =0;};
-        Arrays.asList(funcReqResponse.argsHash).
-            stream().forEachOrdered(argHashVal ->  argsQuery.append(((counter.x) != 0 ? " OR ":"") +
-            FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX + ":" + argHashVal));
         // not sure if we'll be able to keep trace same for record and replay
         funcReqResponse.traceId.ifPresent(trace ->
             argsQuery.append(" OR ").append(HDRTRACEF).append(":").append(trace));
         SolrQuery query = new SolrQuery(argsQuery.toString());
+        query.setFields("*");
         addFilter(query, FUNC_SIG_HASH, funcReqResponse.fnSignatureHash);
+        addFilter(query, COLLECTIONF, collection);
+        addFilter(query, SERVICEF, funcReqResponse.service);
+        Arrays.asList(funcReqResponse.argsHash).
+            stream().forEachOrdered(argHashVal ->  addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX , argHashVal));
         funcReqResponse.respTS.ifPresent(timestamp -> query.addFilterQuery(TIMESTAMPF + ":[" + timestamp.toString() + " TO *]"));
-        //query.addSort(TIMESTAMPF , ORDER.asc);
         Optional<Integer> maxResults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxResults).
             findFirst().flatMap(doc -> getStrField(doc, FUNC_RET_VAL));

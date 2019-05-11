@@ -30,8 +30,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.FnReqResponse;
-
+import com.cube.agent.FnReqResponse;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
@@ -188,11 +187,16 @@ public class CubeStore {
                               @PathParam("service") String service*/) {
         try {
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
-            boolean saveResult = rrstore.storeFunctionReqResp(functionReqResp);
+            Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
+                Optional.of(functionReqResp.app) , Optional.of(functionReqResp.instanceId));
+            return collection.map(collec -> {
+            boolean saveResult = rrstore.storeFunctionReqResp(functionReqResp , collec);
             return (saveResult) ? Response.ok().type(MediaType.APPLICATION_JSON)
                 .entity("{\"reason\" : \"Successfully stored function response details\"}").build() :
                 Response.serverError().type(MediaType.APPLICATION_JSON)
-                    .entity("{\"reason\" : \"Unable to store function response details\"}").build();
+                    .entity("{\"reason\" : \"Unable to store function response details\"}").build(); })
+                .orElse(Response.serverError().type(MediaType.APPLICATION_JSON)
+                    .entity("{\"reason\" : \"No ongoing recording, dropping request\"}").build());
         } catch (Exception e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON)
                 .entity("{\"reason\" : \"Error while deserializing " + e.getMessage() + "\" }").build();

@@ -219,6 +219,7 @@
           <scope>test</scope>
     </dependency>
 	  <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+	  <!-- these modules are needed for correct handling of time objects by jackson -->
 	  <dependency>
 		  <groupId>com.fasterxml.jackson.module</groupId>
 		  <artifactId>jackson-module-parameter-names</artifactId>
@@ -239,12 +240,6 @@
 		  <groupId>com.sun.xml.bind</groupId>
 		  <artifactId>jaxb-core</artifactId>
 		  <version>2.3.0.1</version>
-	  </dependency>
-	  <dependency>
-		  <groupId>io.cube</groupId>
-		  <artifactId>agent</artifactId>
-		  <version>1.0-SNAPSHOT</version>
-		  <scope>compile</scope>
 	  </dependency>
   </dependencies>
   <groupId>com.cube</groupId>
