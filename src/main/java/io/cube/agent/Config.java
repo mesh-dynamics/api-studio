@@ -13,6 +13,9 @@ public class Config {
     final Properties properties;
     public final String CUBE_RECORD_SERVICE_URI;
     public final String CUBE_MOCK_SERVICE_URI;
+    public final int READ_TIMEOUT;
+    public final int CONNECT_TIMEOUT;
+    public final int RETRIES;
 
     private static final Logger LOGGER = LogManager.getLogger(Config.class);
 
@@ -26,6 +29,9 @@ public class Config {
         }
         CUBE_RECORD_SERVICE_URI = properties.getProperty("cube_record_service" , "http://cubews:9080");
         CUBE_MOCK_SERVICE_URI = properties.getProperty("cube_mock_service" , "http://cubews:9080");
+        READ_TIMEOUT = Integer.valueOf(properties.getProperty("read_timeout" , "100000"));
+        CONNECT_TIMEOUT = Integer.valueOf(properties.getProperty("connect_timeout" , "100000"));
+        RETRIES = Integer.valueOf(properties.getProperty("retries" , "3"));
         LOGGER.info("CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI);
     }
 

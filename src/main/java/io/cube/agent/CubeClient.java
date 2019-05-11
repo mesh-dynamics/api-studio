@@ -26,7 +26,7 @@ public class CubeClient {
     private Client restClient = null;
     private WebTarget cubeRecordService = null;
     private WebTarget cubeMockService = null;
-    private int maxNumberOfAttempts = 3;
+    private final int maxNumberOfAttempts;
     private ObjectMapper jsonMapper;
 
     private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
@@ -34,11 +34,12 @@ public class CubeClient {
     public CubeClient(ObjectMapper jsonMapper) {
         Config config = new Config();
         ClientConfig clientConfig = new ClientConfig()
-                .property(ClientProperties.READ_TIMEOUT, 100000)
-                .property(ClientProperties.CONNECT_TIMEOUT, 10000);
+                .property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
+                .property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
         restClient = ClientBuilder.newClient(clientConfig);
         cubeRecordService = restClient.target(config.CUBE_RECORD_SERVICE_URI);
         cubeMockService = restClient.target(config.CUBE_MOCK_SERVICE_URI);
+        maxNumberOfAttempts = config.RETRIES;
         this.jsonMapper = jsonMapper;
     }
 
