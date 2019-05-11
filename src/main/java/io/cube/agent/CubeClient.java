@@ -31,16 +31,14 @@ public class CubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
-    private static String CUBE_RECORD_SERVICE_URI = "http://192.168.99.100:31380/";
-    private static String CUBE_MOCK_SERVICE_URI = "http://192.168.99.100:31380/";
-
     public CubeClient(ObjectMapper jsonMapper) {
+        Config config = new Config();
         ClientConfig clientConfig = new ClientConfig()
                 .property(ClientProperties.READ_TIMEOUT, 100000)
                 .property(ClientProperties.CONNECT_TIMEOUT, 10000);
         restClient = ClientBuilder.newClient(clientConfig);
-        cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
-        cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
+        cubeRecordService = restClient.target(config.CUBE_RECORD_SERVICE_URI);
+        cubeMockService = restClient.target(config.CUBE_MOCK_SERVICE_URI);
         this.jsonMapper = jsonMapper;
     }
 
