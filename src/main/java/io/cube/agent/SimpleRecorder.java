@@ -1,17 +1,15 @@
 package io.cube.agent;
 
-import java.lang.reflect.Method;
-import java.security.Signature;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 
 /*
@@ -22,7 +20,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SimpleRecorder implements Recorder {
 
     private static final Logger LOGGER = LogManager.getLogger(SimpleRecorder.class);
+    private static final String cubeRecordServiceUrl = "";
 
+    private CubeClient cubeClient;
+    private ObjectMapper jsonMapper;
+
+    public SimpleRecorder() {
+        this.jsonMapper = new ObjectMapper();
+        jsonMapper.registerModule(new Jdk8Module());
+        jsonMapper.registerModule(new JavaTimeModule());
+        this.cubeClient = new CubeClient(jsonMapper);
+    }
 
     @Override
     public boolean record(FnKey fnKey, Optional<String> traceId,
@@ -30,9 +38,6 @@ public class SimpleRecorder implements Recorder {
                           Optional<String> parentSpanId,
                           Object response,
                           Object... args) {
-
-        ObjectMapper jsonMapper = new ObjectMapper();
-
         try {
             String[] argVals =
                     Arrays.stream(args).map(UtilException.rethrowFunction(jsonMapper::writeValueAsString)).toArray(String[]::new);
@@ -44,15 +49,14 @@ public class SimpleRecorder implements Recorder {
                     Optional.ofNullable(Instant.now()), argsHash,
                     argVals, respVal);
 
-            //TODO: Call cube api to log the FnReqResponse
-
+            Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
+            //cubeResponse.ifPresent(responseStr -> System.out.println(responseStr));
+            return true;
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException
             String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
             LOGGER.error("Error in recording function, skipping:: " + fnKey.signature + " " + e.getMessage() + " " + stackTraceError);
             return false;
         }
-
-        return true;
     }
 }
