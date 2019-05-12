@@ -207,6 +207,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             argsQuery.append(" OR ").append(HDRTRACEF).append(":").append(trace));
         SolrQuery query = new SolrQuery(argsQuery.toString());
         query.setFields("*");
+        addFilter(query, TYPEF, Types.FuncReqResp.toString());
         addFilter(query, FUNC_SIG_HASH, funcReqResponse.fnSignatureHash);
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
