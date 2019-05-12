@@ -10,9 +10,19 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.cube.agent.FnReqResponse;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
@@ -169,6 +180,30 @@ public class CubeStore {
 	}
 
 	@POST
+    @Path("/fr")
+    @Consumes(MediaType.TEXT_PLAIN)
+    public Response storeFunc(String functionReqRespString /* @PathParam("customer") String customer,
+                              @PathParam("instance") String instance, @PathParam("app") String app,
+                              @PathParam("service") String service*/) {
+        try {
+            FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
+            Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
+                Optional.of(functionReqResp.app) , Optional.of(functionReqResp.instanceId));
+            return collection.map(collec -> {
+            boolean saveResult = rrstore.storeFunctionReqResp(functionReqResp , collec);
+            return (saveResult) ? Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity("{\"reason\" : \"Successfully stored function response details\"}").build() :
+                Response.serverError().type(MediaType.APPLICATION_JSON)
+                    .entity("{\"reason\" : \"Unable to store function response details\"}").build(); })
+                .orElse(Response.serverError().type(MediaType.APPLICATION_JSON)
+                    .entity("{\"reason\" : \"No ongoing recording, dropping request\"}").build());
+        } catch (Exception e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON)
+                .entity("{\"reason\" : \"Error while deserializing " + e.getMessage() + "\" }").build();
+        }
+    }
+
+	@POST
 	@Path("/setdefault/{customerid}/{app}/{serviceid}/{method}/{var:.+}")
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
 	public Response setDefault(@Context UriInfo ui, @PathParam("var") String path, 
@@ -206,7 +241,7 @@ public class CubeStore {
 			com.cube.dao.Response resp,
 			@PathParam("method") String method) {
 		
-						
+
 		if (saveDefaultResponse(path, method, resp)) {
 			return Response.ok().build();
 		} 
@@ -358,7 +393,7 @@ public class CubeStore {
 
 	
 	/**
-	 * @param rrstore
+	 * @param config
 	 */
 	@Inject
 	public CubeStore(Config config) {

@@ -219,11 +219,15 @@
           <scope>test</scope>
     </dependency>
 	  <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+	  <!-- these modules are needed for correct handling of time objects by jackson -->
+	  <dependency>
+		  <groupId>com.fasterxml.jackson.module</groupId>
+		  <artifactId>jackson-module-parameter-names</artifactId>
+	  </dependency>
 	  <dependency>
 		  <groupId>com.fasterxml.jackson.datatype</groupId>
 		  <artifactId>jackson-datatype-jsr310</artifactId>
 		  <version>2.9.8</version>
-		  <scope>test</scope>
 	  </dependency>
 	  <!-- related to jaxb-bom above -->
 	  <!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl -->

@@ -1,15 +1,28 @@
 package com.cube.ws;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.map.MultiValueMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -19,15 +32,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
+import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.TemplateKey;
-import com.cube.core.*;
 import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.dao.*;
+import com.cube.core.ReqMatchSpec;
+import com.cube.core.RequestComparator;
+import com.cube.core.TemplateEntry;
+import com.cube.core.TemplatedRequestComparator;
+import com.cube.core.Utils;
+import com.cube.dao.Analysis;
+import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.*;
+import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 
 /**
@@ -99,6 +120,31 @@ public class MockServiceHTTP {
 		}
 		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
 	}
+
+	@POST
+    @Path("/fr")
+    @Consumes(MediaType.TEXT_PLAIN)
+    public Response funcJson(@Context UriInfo uInfo,
+                             String fnReqResponseAsString) {
+	    try {
+	        FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString , FnReqResponse.class);
+            Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
+                Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
+            return collection.map(collec ->
+                rrstore.getFunctionReturnValue(fnReqResponse, collec).map(retValue ->
+                Response.ok().type(MediaType.APPLICATION_JSON).entity(retValue).build()).
+                orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
+                    entity("{\"reason\" : \"Unable to find matching function request\"}").build()))
+                .orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
+                    entity("{\"reason\" : \"Unable to locate collection for given customer, app, instance combo\"}")
+                    .build());
+        } catch (IOException e) {
+	        return Response.serverError().type(MediaType.APPLICATION_JSON).
+                entity("{\"reason\" : \"Unable to parse function request object "+ e.getMessage()
+                    +  " \"}").build();
+        }
+    }
+
 
 	private Optional<Request> createRequestMock(String path, MultivaluedMap<String, String> formParams,
 												String customerId, String app, String instanceId, String service,
