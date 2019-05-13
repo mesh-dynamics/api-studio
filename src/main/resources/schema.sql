@@ -26,11 +26,11 @@ BEFORE UPDATE ON cube.cubeuser
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
-CREATE TYPE cube.instace_name AS ENUM ('Prod' , 'Dev' , 'Staging');
+CREATE TYPE cube.instance_name AS ENUM ('Prod' , 'Dev' , 'Staging');
 
 CREATE TABLE cube.instance (
   id SERIAL PRIMARY KEY,
-  name cube.instace_name NOT NULL,
+  name cube.instance_name NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -51,16 +51,19 @@ BEFORE UPDATE ON cube.app
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
+CREATE TYPE cube.service_type AS ENUM ('gateway', 'intermediate', 'virtualized');
+
 CREATE TABLE cube.service (
   id BIGSERIAL PRIMARY KEY,
   app_id  BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
+  type cube.service_type NOT NULL,
   name VARCHAR(200) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (app_id, name)
 );
 
-CREATE INDEX service_index ON cube.service(app_id);
+CREATE INDEX service_index ON cube.service(app_id,type);
 
 CREATE TRIGGER set_timestamp_service
 BEFORE UPDATE ON cube.service
@@ -74,9 +77,8 @@ Including the app id field so that the entire graph for an app can be retrieved 
 one single select query
 Also if we store in this format updates can be cumbersome*/
 CREATE TABLE cube.service_graph (
-  parent_id BIGINT REFERENCES cube.service(id) ON DELETE SET NULL,
-  child_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
-  app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE
+  app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
+  service_graph JSON NOT NULL
 );
 
 CREATE INDEX service_graph_index ON cube.service_graph(app_id);
