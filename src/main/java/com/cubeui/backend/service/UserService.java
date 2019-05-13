@@ -52,29 +52,24 @@ public class UserService {
                     .filter(allRoles::contains)
                     .collect(Collectors.toSet());
         }
+        final Set<String> finalRoles = roles;
         Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
-        if (user.isPresent()){
-            return this.userRepository.save(User.builder()
-                    .id(user.get().getId())
+        user.ifPresent(u -> {
+            u.setName(userDTO.getName());
+            u.setPassword(this.passwordEncoder.encode(userDTO.getPassword()));
+            u.setRoles(finalRoles);
+            this.userRepository.save(u);
+        });
+        if (user.isEmpty()){
+            user = Optional.of(this.userRepository.save(User.builder()
                     .name(userDTO.getName())
                     .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .roles(roles)
-                    .createdAt(user.get().getCreatedAt())
-                    .updatedAt(LocalDateTime.now())
                     .build()
-            );
-        } else {
-            return this.userRepository.save(User.builder()
-                    .name(userDTO.getName())
-                    .username(userDTO.getEmail())
-                    .password(this.passwordEncoder.encode(userDTO.getPassword()))
-                    .roles(roles)
-                    .createdAt(LocalDateTime.now())
-                    .build()
-            );
+            ));
         }
-
+        return user.get();
     }
 
     public boolean deleteUser(Long id) {

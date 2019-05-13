@@ -1,10 +1,9 @@
 package com.cubeui.backend.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +23,8 @@ import static java.util.stream.Collectors.toList;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+//@Getter
+//@Setter
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -49,8 +50,10 @@ public class User implements UserDetails {
         return this.roles.stream().map(SimpleGrantedAuthority::new).collect(toList());
     }
 
+    @CreationTimestamp
     LocalDateTime createdAt;
 
+    @UpdateTimestamp
     LocalDateTime updatedAt;
 
     @Override
@@ -64,21 +67,25 @@ public class User implements UserDetails {
     }
 
     @Override
+    @Transient
     public boolean isAccountNonExpired() {
         return true;
     }
 
     @Override
+    @Transient
     public boolean isAccountNonLocked() {
         return true;
     }
 
     @Override
+    @Transient
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
     @Override
+    @Transient
     public boolean isEnabled() {
         return true;
     }
