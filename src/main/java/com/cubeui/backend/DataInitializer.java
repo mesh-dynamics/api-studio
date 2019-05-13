@@ -32,12 +32,14 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.debug("Initializing data...");
         UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("vineetks");
+        userDTO.setName("Vineet Kumar Singh");
+        userDTO.setEmail("vineetks");
         userDTO.setPassword("vineetks");
         userDTO.setRoles(Arrays.asList("ROLE_USER"));
         this.userService.save(userDTO);
 
-        userDTO.setUsername("admin");
+        userDTO.setName("Administrator");
+        userDTO.setEmail("admin");
         userDTO.setPassword("admin");
         userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
         this.userService.save(userDTO);

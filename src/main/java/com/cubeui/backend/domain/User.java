@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +30,9 @@ public class User implements UserDetails {
     Long id;
 
     @NotEmpty
+    private String name;
+
+    @NotEmpty
     private String username;
 
     @JsonIgnore
@@ -44,6 +48,10 @@ public class User implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles.stream().map(SimpleGrantedAuthority::new).collect(toList());
     }
+
+    LocalDateTime createdAt;
+
+    LocalDateTime updatedAt;
 
     @Override
     public String getPassword() {

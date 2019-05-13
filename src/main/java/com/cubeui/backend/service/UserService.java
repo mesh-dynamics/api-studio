@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,7 @@ public class UserService {
 
     public User save(UserDTO userDTO) {
         Set<String> roles = new HashSet<>();
+//        roles.add("ROLE_USER");
         if (userDTO.getRoles() != null) {
             Set<String> allRoles = Role.getAllRoles();
             roles = userDTO.getRoles().stream()
@@ -50,20 +52,25 @@ public class UserService {
                     .filter(allRoles::contains)
                     .collect(Collectors.toSet());
         }
-        Optional<User> user = userRepository.findByUsername(userDTO.getUsername());
+        Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
         if (user.isPresent()){
             return this.userRepository.save(User.builder()
                     .id(user.get().getId())
-                    .username(userDTO.getUsername())
+                    .name(userDTO.getName())
+                    .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .roles(roles)
+                    .createdAt(user.get().getCreatedAt())
+                    .updatedAt(LocalDateTime.now())
                     .build()
             );
         } else {
             return this.userRepository.save(User.builder()
-                    .username(userDTO.getUsername())
+                    .name(userDTO.getName())
+                    .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .roles(roles)
+                    .createdAt(LocalDateTime.now())
                     .build()
             );
         }
