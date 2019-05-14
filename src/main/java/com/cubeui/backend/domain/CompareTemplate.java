@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,13 +34,16 @@ public class CompareTemplate {
     @JoinColumn(name = "test_id")
     Test testId;
 
+    @NotEmpty
     @Column(nullable = false)
     String path;
 
     //VNT: unknown JSON
+    @NotEmpty
     @Column(nullable = false)
     String template;
 
+    @NotEmpty
     @Column(nullable = false)
     TemplateType type;
 

@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +27,7 @@ public class Test {
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
+    @NotEmpty
     @Column(name = "test_config_name", nullable = false)
     String testConfigName;
 
@@ -42,6 +44,7 @@ public class Test {
     //unknown JSON type
     String gatewayPathSelection;
 
+    @NotEmpty
     @Column(nullable = false)
     String endpoint;
 

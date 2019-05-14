@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
@@ -28,6 +29,7 @@ public class Replay {
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
+    @NotEmpty
     @Column(name = "replay_name", nullable = false, length = 200)
     String replayName;
 
@@ -35,14 +37,21 @@ public class Replay {
     @JoinColumn(name = "test_id")
     Test testId;
 
+    @NotEmpty
     @Column(nullable = false)
     ReplayStatus status;
 
+    @Column
     int reqCount;
+
+    @Column
     int reqSent;
+
+    @Column
     int reqFailed;
 
     //VNT: unknown JSON
+    @Column
     String analysis;
 
     @CreationTimestamp
@@ -54,5 +63,5 @@ public class Replay {
     LocalDateTime completedAt;
 
     //VNT: unknown type REAL
-    String sampleRate;
+    Double sampleRate;
 }

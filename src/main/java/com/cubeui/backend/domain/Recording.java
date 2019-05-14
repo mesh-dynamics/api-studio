@@ -37,6 +37,7 @@ public class Recording {
     @Column(name = "collection_name", nullable = false, length = 200)
     private String collectionName;
 
+    @NotEmpty
     @Column(nullable = false)
     RecordingStatus status;
 

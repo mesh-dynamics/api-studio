@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 
 @Entity
 @Table(name="service_graph",
@@ -26,6 +27,7 @@ public class ServiceGraph {
     App appId;
 
     //unknown JSON type
+    @NotEmpty
     @Column(nullable = false)
     String serviceGraph;
 

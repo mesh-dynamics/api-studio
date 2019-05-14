@@ -821,3 +821,593 @@ Caused by: org.hibernate.AnnotationException: Unable to create unique key constr
 2019-05-14 16:11:49.565  INFO 7664 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
 2019-05-14 16:11:49.568  INFO 7664 --- [main] com.cubeui.backend.BackendApplication    : Started BackendApplication in 5.155 seconds (JVM running for 5.491)
 2019-05-14 16:11:49.583  INFO 7664 --- [main] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2019-05-14 18:09:37.833  INFO 7664 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:09:37.837  INFO 7664 --- [Thread-3] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:09:37.837  INFO 7664 --- [Thread-3] .SchemaDropperImpl$DelayedDropActionImpl : HHH000477: Starting delayed evictData of schema as part of SessionFactory shut-down'
+2019-05-14 18:09:38.114  INFO 7664 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2019-05-14 18:09:38.131  INFO 7664 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2019-05-14 18:09:41.905  INFO 22024 --- [main] com.cubeui.backend.BackendApplication    : Starting BackendApplication on vineetks with PID 22024 (/home/beehyv/Documents/Cube/cubeui-backend/target/classes started by beehyv in /home/beehyv/Documents/Cube/cubeui-backend)
+2019-05-14 18:09:41.907  INFO 22024 --- [main] com.cubeui.backend.BackendApplication    : No active profile set, falling back to default profiles: default
+2019-05-14 18:09:42.433  INFO 22024 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-05-14 18:09:42.480  INFO 22024 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 43ms. Found 10 repository interfaces.
+2019-05-14 18:09:42.691  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$5c51758f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.724  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration' of type [org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration$$EnhancerBySpringCGLIB$$f4ff3dc9] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.728  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'objectPostProcessor' of type [org.springframework.security.config.annotation.configuration.AutowireBeanFactoryObjectPostProcessor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.729  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@441fbe89' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.731  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityConfig' of type [com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$2902c911] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.736  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration' of type [org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration$$EnhancerBySpringCGLIB$$3f28f891] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.738  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'jsr250MethodSecurityMetadataSource' of type [org.springframework.security.access.annotation.Jsr250MethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.739  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.742  INFO 22024 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.hateoas.config.HateoasConfiguration' of type [org.springframework.hateoas.config.HateoasConfiguration$$EnhancerBySpringCGLIB$$dbd1c2c1] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:09:42.984  INFO 22024 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2019-05-14 18:09:42.999  INFO 22024 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2019-05-14 18:09:42.999  INFO 22024 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.17]
+2019-05-14 18:09:43.056  INFO 22024 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2019-05-14 18:09:43.056  INFO 22024 --- [main] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1120 ms
+2019-05-14 18:09:43.210  INFO 22024 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2019-05-14 18:09:43.319  INFO 22024 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2019-05-14 18:09:43.348  INFO 22024 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2019-05-14 18:09:43.370  INFO 22024 --- [main] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.9.Final}
+2019-05-14 18:09:43.371  INFO 22024 --- [main] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2019-05-14 18:09:43.419  INFO 22024 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2019-05-14 18:09:43.483  INFO 22024 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.PostgreSQL95Dialect
+2019-05-14 18:09:43.562  INFO 22024 --- [main] o.h.e.j.e.i.LobCreatorBuilderImpl        : HHH000421: Disabling contextual LOB creation as hibernate.jdbc.lob.non_contextual_creation is true
+2019-05-14 18:09:43.565  INFO 22024 --- [main] org.hibernate.type.BasicTypeRegistry     : HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@73ddb7ef
+2019-05-14 18:09:43.979  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.979  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:09:43.980  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.980  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:09:43.980  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.980  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "compare_template" does not exist, skipping
+2019-05-14 18:09:43.980  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.980  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:09:43.981  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.981  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:09:43.981  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.981  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "recording" does not exist, skipping
+2019-05-14 18:09:43.981  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.981  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "replay" does not exist, skipping
+2019-05-14 18:09:43.982  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.982  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "service_graph" does not exist, skipping
+2019-05-14 18:09:43.982  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.982  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "services" does not exist, skipping
+2019-05-14 18:09:43.982  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.982  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:09:43.983  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.983  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:09:43.983  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.983  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:09:43.983  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.983  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "user_roles" does not exist, skipping
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.984  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "apps" does not exist, skipping
+2019-05-14 18:09:43.985  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.985  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "compare_template" does not exist, skipping
+2019-05-14 18:09:43.985  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.985  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "instances" does not exist, skipping
+2019-05-14 18:09:43.985  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.985  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "products" does not exist, skipping
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "recording" does not exist, skipping
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "replay" does not exist, skipping
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "service_graph" does not exist, skipping
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "services" does not exist, skipping
+2019-05-14 18:09:43.986  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_intermediate_services" does not exist, skipping
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_virtualized_services" does not exist, skipping
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "tests" does not exist, skipping
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "user_roles" does not exist, skipping
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.987  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "users" does not exist, skipping
+2019-05-14 18:09:43.988  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:09:43.988  WARN 22024 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : sequence "hibernate_sequence" does not exist, skipping
+2019-05-14 18:09:45.675  INFO 22024 --- [main] o.h.t.schema.internal.SchemaCreatorImpl  : HHH000476: Executing import script 'org.hibernate.tool.schema.internal.exec.ScriptSourceInputNonExistentImpl@578c99ac'
+2019-05-14 18:09:45.682  INFO 22024 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:09:46.294 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.all()]] with attributes [ROLE_USER]
+2019-05-14 18:09:46.299 DEBUG 22024 --- [main] o.s.s.a.i.a.MethodSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:09:46.300 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.get(java.lang.Long)]] with attributes [ROLE_USER]
+2019-05-14 18:09:46.300 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.300 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.save(com.cubeui.backend.domain.DTO.ProductDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.304 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.getAll()]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.304 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.currentUser(org.springframework.security.core.userdetails.UserDetails)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.304 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.get(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.304 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.update(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.304 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.305 DEBUG 22024 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.save(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:09:46.462  INFO 22024 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:09:46.692 DEBUG 22024 --- [main] eGlobalAuthenticationAutowiredConfigurer : Eagerly initializing {methodSecurityConfig=com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$2902c911@72976b4, org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration=org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration$$EnhancerBySpringCGLIB$$79e09fc4@23b02f37}
+2019-05-14 18:09:46.765 DEBUG 22024 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/login']
+2019-05-14 18:09:46.766 DEBUG 22024 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/data']
+2019-05-14 18:09:46.766 DEBUG 22024 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'authenticated', for any request
+2019-05-14 18:09:46.769 DEBUG 22024 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:09:46.769 DEBUG 22024 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:09:46.772  INFO 22024 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: any request, [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@74e111a8, org.springframework.security.web.context.SecurityContextPersistenceFilter@203ba07, org.springframework.security.web.header.HeaderWriterFilter@2bb03136, org.springframework.security.web.authentication.logout.LogoutFilter@11c372e9, com.cubeui.backend.security.jwt.JwtTokenFilter@6e6ec9c, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@69c53b72, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@5d729af6, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7aecff85, org.springframework.security.web.session.SessionManagementFilter@c725dfa, org.springframework.security.web.access.ExceptionTranslationFilter@593d0173, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@63574d76]
+2019-05-14 18:09:46.832  INFO 22024 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2019-05-14 18:09:46.834  INFO 22024 --- [main] com.cubeui.backend.BackendApplication    : Started BackendApplication in 5.195 seconds (JVM running for 5.566)
+2019-05-14 18:09:46.852  INFO 22024 --- [main] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2019-05-14 18:10:40.364  INFO 22024 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:10:40.366  INFO 22024 --- [Thread-3] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:10:40.367  INFO 22024 --- [Thread-3] .SchemaDropperImpl$DelayedDropActionImpl : HHH000477: Starting delayed evictData of schema as part of SessionFactory shut-down'
+2019-05-14 18:10:40.633  INFO 22024 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2019-05-14 18:10:40.666  INFO 22024 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2019-05-14 18:10:44.044  INFO 22341 --- [main] com.cubeui.backend.BackendApplication    : Starting BackendApplication on vineetks with PID 22341 (/home/beehyv/Documents/Cube/cubeui-backend/target/classes started by beehyv in /home/beehyv/Documents/Cube/cubeui-backend)
+2019-05-14 18:10:44.045  INFO 22341 --- [main] com.cubeui.backend.BackendApplication    : No active profile set, falling back to default profiles: default
+2019-05-14 18:10:44.518  INFO 22341 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-05-14 18:10:44.564  INFO 22341 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 43ms. Found 10 repository interfaces.
+2019-05-14 18:10:44.772  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$fe7c491f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.791  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration' of type [org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration$$EnhancerBySpringCGLIB$$972a1159] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.795  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'objectPostProcessor' of type [org.springframework.security.config.annotation.configuration.AutowireBeanFactoryObjectPostProcessor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.796  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@3af58f76' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.798  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityConfig' of type [com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$cb2d9ca1] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.803  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration' of type [org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration$$EnhancerBySpringCGLIB$$e153cc21] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.805  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'jsr250MethodSecurityMetadataSource' of type [org.springframework.security.access.annotation.Jsr250MethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.806  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:44.809  INFO 22341 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.hateoas.config.HateoasConfiguration' of type [org.springframework.hateoas.config.HateoasConfiguration$$EnhancerBySpringCGLIB$$7dfc9651] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:10:45.057  INFO 22341 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2019-05-14 18:10:45.073  INFO 22341 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2019-05-14 18:10:45.073  INFO 22341 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.17]
+2019-05-14 18:10:45.128  INFO 22341 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2019-05-14 18:10:45.128  INFO 22341 --- [main] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1064 ms
+2019-05-14 18:10:45.272  INFO 22341 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2019-05-14 18:10:45.387  INFO 22341 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2019-05-14 18:10:45.417  INFO 22341 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2019-05-14 18:10:45.439  INFO 22341 --- [main] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.9.Final}
+2019-05-14 18:10:45.440  INFO 22341 --- [main] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2019-05-14 18:10:45.498  INFO 22341 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2019-05-14 18:10:45.555  INFO 22341 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.PostgreSQL95Dialect
+2019-05-14 18:10:45.632  INFO 22341 --- [main] o.h.e.j.e.i.LobCreatorBuilderImpl        : HHH000421: Disabling contextual LOB creation as hibernate.jdbc.lob.non_contextual_creation is true
+2019-05-14 18:10:45.635  INFO 22341 --- [main] org.hibernate.type.BasicTypeRegistry     : HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@795faad
+2019-05-14 18:10:46.035  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.035  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:10:46.035  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.035  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:10:46.035  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "compare_template" does not exist, skipping
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.036  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "recording" does not exist, skipping
+2019-05-14 18:10:46.037  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.037  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "replay" does not exist, skipping
+2019-05-14 18:10:46.037  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.037  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "service_graph" does not exist, skipping
+2019-05-14 18:10:46.037  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.037  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "services" does not exist, skipping
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.038  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "user_roles" does not exist, skipping
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.039  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "apps" does not exist, skipping
+2019-05-14 18:10:46.040  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.040  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "compare_template" does not exist, skipping
+2019-05-14 18:10:46.040  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.040  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "instances" does not exist, skipping
+2019-05-14 18:10:46.040  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.040  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "products" does not exist, skipping
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "recording" does not exist, skipping
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "replay" does not exist, skipping
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "service_graph" does not exist, skipping
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.041  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "services" does not exist, skipping
+2019-05-14 18:10:46.042  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.042  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_intermediate_services" does not exist, skipping
+2019-05-14 18:10:46.042  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.042  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_virtualized_services" does not exist, skipping
+2019-05-14 18:10:46.042  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.042  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "tests" does not exist, skipping
+2019-05-14 18:10:46.043  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.043  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "user_roles" does not exist, skipping
+2019-05-14 18:10:46.043  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.043  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "users" does not exist, skipping
+2019-05-14 18:10:46.043  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:10:46.043  WARN 22341 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : sequence "hibernate_sequence" does not exist, skipping
+2019-05-14 18:10:47.962  INFO 22341 --- [main] o.h.t.schema.internal.SchemaCreatorImpl  : HHH000476: Executing import script 'org.hibernate.tool.schema.internal.exec.ScriptSourceInputNonExistentImpl@6f6c6c70'
+2019-05-14 18:10:47.968  INFO 22341 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:10:48.575 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.all()]] with attributes [ROLE_USER]
+2019-05-14 18:10:48.581 DEBUG 22341 --- [main] o.s.s.a.i.a.MethodSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:10:48.581 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.get(java.lang.Long)]] with attributes [ROLE_USER]
+2019-05-14 18:10:48.581 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.582 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.save(com.cubeui.backend.domain.DTO.ProductDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.584 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.getAll()]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.585 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.currentUser(org.springframework.security.core.userdetails.UserDetails)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.585 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.get(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.585 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.update(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.585 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.585 DEBUG 22341 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.save(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:10:48.732  INFO 22341 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:10:48.979 DEBUG 22341 --- [main] eGlobalAuthenticationAutowiredConfigurer : Eagerly initializing {methodSecurityConfig=com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$cb2d9ca1@60e3c26e, org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration=org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration$$EnhancerBySpringCGLIB$$1c0b7354@13cec4ff}
+2019-05-14 18:10:49.030 DEBUG 22341 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/login']
+2019-05-14 18:10:49.031 DEBUG 22341 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/data']
+2019-05-14 18:10:49.031 DEBUG 22341 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'authenticated', for any request
+2019-05-14 18:10:49.033 DEBUG 22341 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:10:49.034 DEBUG 22341 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:10:49.037  INFO 22341 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: any request, [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5397d41e, org.springframework.security.web.context.SecurityContextPersistenceFilter@25c756f0, org.springframework.security.web.header.HeaderWriterFilter@484dde7d, org.springframework.security.web.authentication.logout.LogoutFilter@48900d4a, com.cubeui.backend.security.jwt.JwtTokenFilter@f6b128b, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3e8c9981, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@54e39504, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@470fc16c, org.springframework.security.web.session.SessionManagementFilter@16117d9, org.springframework.security.web.access.ExceptionTranslationFilter@768967cf, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@3dbcde0b]
+2019-05-14 18:10:49.092  INFO 22341 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2019-05-14 18:10:49.095  INFO 22341 --- [main] com.cubeui.backend.BackendApplication    : Started BackendApplication in 5.263 seconds (JVM running for 5.59)
+2019-05-14 18:10:49.111  INFO 22341 --- [main] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2019-05-14 18:11:13.344  INFO 22341 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:11:13.348  INFO 22341 --- [Thread-3] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:11:13.348  INFO 22341 --- [Thread-3] .SchemaDropperImpl$DelayedDropActionImpl : HHH000477: Starting delayed evictData of schema as part of SessionFactory shut-down'
+2019-05-14 18:11:13.648  INFO 22341 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2019-05-14 18:11:13.678  INFO 22341 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2019-05-14 18:11:17.091  INFO 22636 --- [main] com.cubeui.backend.BackendApplication    : Starting BackendApplication on vineetks with PID 22636 (/home/beehyv/Documents/Cube/cubeui-backend/target/classes started by beehyv in /home/beehyv/Documents/Cube/cubeui-backend)
+2019-05-14 18:11:17.093  INFO 22636 --- [main] com.cubeui.backend.BackendApplication    : No active profile set, falling back to default profiles: default
+2019-05-14 18:11:17.570  INFO 22636 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-05-14 18:11:17.615  INFO 22636 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 42ms. Found 10 repository interfaces.
+2019-05-14 18:11:17.823  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$c90945c5] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.841  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration' of type [org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration$$EnhancerBySpringCGLIB$$61b70dff] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.845  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'objectPostProcessor' of type [org.springframework.security.config.annotation.configuration.AutowireBeanFactoryObjectPostProcessor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.846  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@7112ce6' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.848  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityConfig' of type [com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$95ba9947] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.853  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration' of type [org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration$$EnhancerBySpringCGLIB$$abe0c8c7] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.854  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'jsr250MethodSecurityMetadataSource' of type [org.springframework.security.access.annotation.Jsr250MethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.855  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:17.858  INFO 22636 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.hateoas.config.HateoasConfiguration' of type [org.springframework.hateoas.config.HateoasConfiguration$$EnhancerBySpringCGLIB$$488992f7] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:11:18.075  INFO 22636 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2019-05-14 18:11:18.090  INFO 22636 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2019-05-14 18:11:18.090  INFO 22636 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.17]
+2019-05-14 18:11:18.174  INFO 22636 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2019-05-14 18:11:18.174  INFO 22636 --- [main] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1055 ms
+2019-05-14 18:11:18.320  INFO 22636 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2019-05-14 18:11:18.459  INFO 22636 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2019-05-14 18:11:18.490  INFO 22636 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2019-05-14 18:11:18.513  INFO 22636 --- [main] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.9.Final}
+2019-05-14 18:11:18.514  INFO 22636 --- [main] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2019-05-14 18:11:18.565  INFO 22636 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2019-05-14 18:11:18.625  INFO 22636 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.PostgreSQL95Dialect
+2019-05-14 18:11:18.706  INFO 22636 --- [main] o.h.e.j.e.i.LobCreatorBuilderImpl        : HHH000421: Disabling contextual LOB creation as hibernate.jdbc.lob.non_contextual_creation is true
+2019-05-14 18:11:18.708  INFO 22636 --- [main] org.hibernate.type.BasicTypeRegistry     : HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@3c87e851
+2019-05-14 18:11:19.111  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.111  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:11:19.112  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.112  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:11:19.112  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.112  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "compare_template" does not exist, skipping
+2019-05-14 18:11:19.112  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.112  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:11:19.113  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.113  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:11:19.113  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.113  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "recording" does not exist, skipping
+2019-05-14 18:11:19.113  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.113  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "replay" does not exist, skipping
+2019-05-14 18:11:19.114  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.114  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "service_graph" does not exist, skipping
+2019-05-14 18:11:19.114  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.114  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "services" does not exist, skipping
+2019-05-14 18:11:19.114  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.114  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:11:19.115  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.116  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:11:19.116  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.116  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:11:19.116  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.116  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "user_roles" does not exist, skipping
+2019-05-14 18:11:19.116  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "apps" does not exist, skipping
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "compare_template" does not exist, skipping
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "instances" does not exist, skipping
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.117  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "products" does not exist, skipping
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "recording" does not exist, skipping
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "replay" does not exist, skipping
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "service_graph" does not exist, skipping
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.118  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "services" does not exist, skipping
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_intermediate_services" does not exist, skipping
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_virtualized_services" does not exist, skipping
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "tests" does not exist, skipping
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.119  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "user_roles" does not exist, skipping
+2019-05-14 18:11:19.120  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.120  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "users" does not exist, skipping
+2019-05-14 18:11:19.120  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:11:19.120  WARN 22636 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : sequence "hibernate_sequence" does not exist, skipping
+2019-05-14 18:11:20.879  INFO 22636 --- [main] o.h.t.schema.internal.SchemaCreatorImpl  : HHH000476: Executing import script 'org.hibernate.tool.schema.internal.exec.ScriptSourceInputNonExistentImpl@4f5bfbca'
+2019-05-14 18:11:20.885  INFO 22636 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:11:21.507 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.all()]] with attributes [ROLE_USER]
+2019-05-14 18:11:21.513 DEBUG 22636 --- [main] o.s.s.a.i.a.MethodSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:11:21.514 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.get(java.lang.Long)]] with attributes [ROLE_USER]
+2019-05-14 18:11:21.514 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.514 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.save(com.cubeui.backend.domain.DTO.ProductDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.517 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.getAll()]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.517 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.currentUser(org.springframework.security.core.userdetails.UserDetails)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.517 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.get(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.517 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.update(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.518 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.518 DEBUG 22636 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.save(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:11:21.656  INFO 22636 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:11:21.875 DEBUG 22636 --- [main] eGlobalAuthenticationAutowiredConfigurer : Eagerly initializing {methodSecurityConfig=com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$95ba9947@2f10f633, org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration=org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration$$EnhancerBySpringCGLIB$$e6986ffa@6421e9e7}
+2019-05-14 18:11:21.926 DEBUG 22636 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/login']
+2019-05-14 18:11:21.927 DEBUG 22636 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/data']
+2019-05-14 18:11:21.927 DEBUG 22636 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'authenticated', for any request
+2019-05-14 18:11:21.929 DEBUG 22636 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:11:21.929 DEBUG 22636 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:11:21.932  INFO 22636 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: any request, [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5702232d, org.springframework.security.web.context.SecurityContextPersistenceFilter@704ddfad, org.springframework.security.web.header.HeaderWriterFilter@12dd3501, org.springframework.security.web.authentication.logout.LogoutFilter@3a8cc099, com.cubeui.backend.security.jwt.JwtTokenFilter@5cbf9aee, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7b6558aa, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@497cf31a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@35920655, org.springframework.security.web.session.SessionManagementFilter@5e609b42, org.springframework.security.web.access.ExceptionTranslationFilter@490dfe25, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@5f910283]
+2019-05-14 18:11:21.987  INFO 22636 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2019-05-14 18:11:21.990  INFO 22636 --- [main] com.cubeui.backend.BackendApplication    : Started BackendApplication in 5.146 seconds (JVM running for 5.476)
+2019-05-14 18:11:22.006  INFO 22636 --- [main] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2019-05-14 18:12:32.650  INFO 22636 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:12:32.652  INFO 22636 --- [Thread-3] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:12:32.653  INFO 22636 --- [Thread-3] .SchemaDropperImpl$DelayedDropActionImpl : HHH000477: Starting delayed evictData of schema as part of SessionFactory shut-down'
+2019-05-14 18:12:32.958  INFO 22636 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2019-05-14 18:12:32.980  INFO 22636 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2019-05-14 18:12:36.232  INFO 23008 --- [main] com.cubeui.backend.BackendApplication    : Starting BackendApplication on vineetks with PID 23008 (/home/beehyv/Documents/Cube/cubeui-backend/target/classes started by beehyv in /home/beehyv/Documents/Cube/cubeui-backend)
+2019-05-14 18:12:36.234  INFO 23008 --- [main] com.cubeui.backend.BackendApplication    : No active profile set, falling back to default profiles: default
+2019-05-14 18:12:36.693  INFO 23008 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-05-14 18:12:36.737  INFO 23008 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 41ms. Found 10 repository interfaces.
+2019-05-14 18:12:36.945  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$66fc833f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.964  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration' of type [org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration$$EnhancerBySpringCGLIB$$ffaa4b79] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.967  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'objectPostProcessor' of type [org.springframework.security.config.annotation.configuration.AutowireBeanFactoryObjectPostProcessor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.969  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@798dad3d' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.985  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityConfig' of type [com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$33add6c1] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.990  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration' of type [org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration$$EnhancerBySpringCGLIB$$49d40641] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.991  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'jsr250MethodSecurityMetadataSource' of type [org.springframework.security.access.annotation.Jsr250MethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.992  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:36.996  INFO 23008 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.hateoas.config.HateoasConfiguration' of type [org.springframework.hateoas.config.HateoasConfiguration$$EnhancerBySpringCGLIB$$e67cd071] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:12:37.231  INFO 23008 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2019-05-14 18:12:37.246  INFO 23008 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2019-05-14 18:12:37.246  INFO 23008 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.17]
+2019-05-14 18:12:37.294  INFO 23008 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2019-05-14 18:12:37.294  INFO 23008 --- [main] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1042 ms
+2019-05-14 18:12:37.430  INFO 23008 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2019-05-14 18:12:37.543  INFO 23008 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2019-05-14 18:12:37.572  INFO 23008 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2019-05-14 18:12:37.594  INFO 23008 --- [main] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.9.Final}
+2019-05-14 18:12:37.595  INFO 23008 --- [main] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2019-05-14 18:12:37.644  INFO 23008 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2019-05-14 18:12:37.702  INFO 23008 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.PostgreSQL95Dialect
+2019-05-14 18:12:37.783  INFO 23008 --- [main] o.h.e.j.e.i.LobCreatorBuilderImpl        : HHH000421: Disabling contextual LOB creation as hibernate.jdbc.lob.non_contextual_creation is true
+2019-05-14 18:12:37.785  INFO 23008 --- [main] org.hibernate.type.BasicTypeRegistry     : HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@42edde25
+2019-05-14 18:12:38.208  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.208  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:12:38.208  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.208  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:12:38.209  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.209  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "compare_template" does not exist, skipping
+2019-05-14 18:12:38.209  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.209  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:12:38.209  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.209  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:12:38.210  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.210  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "recording" does not exist, skipping
+2019-05-14 18:12:38.210  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.210  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "replay" does not exist, skipping
+2019-05-14 18:12:38.211  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.211  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "service_graph" does not exist, skipping
+2019-05-14 18:12:38.211  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.211  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "services" does not exist, skipping
+2019-05-14 18:12:38.211  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.211  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:12:38.212  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.213  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:12:38.213  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.213  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:12:38.213  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.213  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "user_roles" does not exist, skipping
+2019-05-14 18:12:38.213  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "apps" does not exist, skipping
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "compare_template" does not exist, skipping
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "instances" does not exist, skipping
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.214  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "products" does not exist, skipping
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "recording" does not exist, skipping
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "replay" does not exist, skipping
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "service_graph" does not exist, skipping
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.215  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "services" does not exist, skipping
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_intermediate_services" does not exist, skipping
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_virtualized_services" does not exist, skipping
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "tests" does not exist, skipping
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.216  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "user_roles" does not exist, skipping
+2019-05-14 18:12:38.217  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.217  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "users" does not exist, skipping
+2019-05-14 18:12:38.217  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:12:38.217  WARN 23008 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : sequence "hibernate_sequence" does not exist, skipping
+2019-05-14 18:12:40.105  INFO 23008 --- [main] o.h.t.schema.internal.SchemaCreatorImpl  : HHH000476: Executing import script 'org.hibernate.tool.schema.internal.exec.ScriptSourceInputNonExistentImpl@6318ff9'
+2019-05-14 18:12:40.108  INFO 23008 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:12:40.707 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.all()]] with attributes [ROLE_USER]
+2019-05-14 18:12:40.712 DEBUG 23008 --- [main] o.s.s.a.i.a.MethodSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:12:40.713 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.get(java.lang.Long)]] with attributes [ROLE_USER]
+2019-05-14 18:12:40.713 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.713 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.save(com.cubeui.backend.domain.DTO.ProductDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.716 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.getAll()]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.716 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.currentUser(org.springframework.security.core.userdetails.UserDetails)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.716 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.get(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.716 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.update(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.716 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.717 DEBUG 23008 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.save(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:12:40.863  INFO 23008 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:12:41.128 DEBUG 23008 --- [main] eGlobalAuthenticationAutowiredConfigurer : Eagerly initializing {methodSecurityConfig=com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$33add6c1@2c63762b, org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration=org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration$$EnhancerBySpringCGLIB$$848bad74@6b9b9cb9}
+2019-05-14 18:12:41.184 DEBUG 23008 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/login']
+2019-05-14 18:12:41.185 DEBUG 23008 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/data']
+2019-05-14 18:12:41.185 DEBUG 23008 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'authenticated', for any request
+2019-05-14 18:12:41.187 DEBUG 23008 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:12:41.187 DEBUG 23008 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:12:41.190  INFO 23008 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: any request, [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@30be6a05, org.springframework.security.web.context.SecurityContextPersistenceFilter@64404db6, org.springframework.security.web.header.HeaderWriterFilter@5fe19d0e, org.springframework.security.web.authentication.logout.LogoutFilter@2052c49f, com.cubeui.backend.security.jwt.JwtTokenFilter@6812708d, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@4dfbe8c2, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2cc7b63d, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7a4c1a6c, org.springframework.security.web.session.SessionManagementFilter@497cf31a, org.springframework.security.web.access.ExceptionTranslationFilter@57f9f387, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@6f749a1f]
+2019-05-14 18:12:41.250  INFO 23008 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2019-05-14 18:12:41.253  INFO 23008 --- [main] com.cubeui.backend.BackendApplication    : Started BackendApplication in 5.232 seconds (JVM running for 5.558)
+2019-05-14 18:12:41.272  INFO 23008 --- [main] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory
+2019-05-14 18:15:18.756  INFO 23008 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:15:18.759  INFO 23008 --- [Thread-3] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:15:18.759  INFO 23008 --- [Thread-3] .SchemaDropperImpl$DelayedDropActionImpl : HHH000477: Starting delayed evictData of schema as part of SessionFactory shut-down'
+2019-05-14 18:15:19.022  INFO 23008 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2019-05-14 18:15:19.062  INFO 23008 --- [Thread-3] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2019-05-14 18:15:22.310  INFO 23612 --- [main] com.cubeui.backend.BackendApplication    : Starting BackendApplication on vineetks with PID 23612 (/home/beehyv/Documents/Cube/cubeui-backend/target/classes started by beehyv in /home/beehyv/Documents/Cube/cubeui-backend)
+2019-05-14 18:15:22.312  INFO 23612 --- [main] com.cubeui.backend.BackendApplication    : No active profile set, falling back to default profiles: default
+2019-05-14 18:15:22.804  INFO 23612 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-05-14 18:15:22.852  INFO 23612 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 44ms. Found 10 repository interfaces.
+2019-05-14 18:15:23.056  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$962967ad] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.088  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration' of type [org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration$$EnhancerBySpringCGLIB$$2ed72fe7] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.092  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'objectPostProcessor' of type [org.springframework.security.config.annotation.configuration.AutowireBeanFactoryObjectPostProcessor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.093  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@64942607' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.095  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityConfig' of type [com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$62dabb2f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.101  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration' of type [org.springframework.security.config.annotation.method.configuration.Jsr250MetadataSourceConfiguration$$EnhancerBySpringCGLIB$$7900eaaf] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.103  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'jsr250MethodSecurityMetadataSource' of type [org.springframework.security.access.annotation.Jsr250MethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.104  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.107  INFO 23612 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.hateoas.config.HateoasConfiguration' of type [org.springframework.hateoas.config.HateoasConfiguration$$EnhancerBySpringCGLIB$$15a9b4df] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-05-14 18:15:23.354  INFO 23612 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2019-05-14 18:15:23.369  INFO 23612 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2019-05-14 18:15:23.369  INFO 23612 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.17]
+2019-05-14 18:15:23.423  INFO 23612 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2019-05-14 18:15:23.423  INFO 23612 --- [main] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1092 ms
+2019-05-14 18:15:23.568  INFO 23612 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2019-05-14 18:15:23.681  INFO 23612 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2019-05-14 18:15:23.712  INFO 23612 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [
+	name: default
+	...]
+2019-05-14 18:15:23.736  INFO 23612 --- [main] org.hibernate.Version                    : HHH000412: Hibernate Core {5.3.9.Final}
+2019-05-14 18:15:23.737  INFO 23612 --- [main] org.hibernate.cfg.Environment            : HHH000206: hibernate.properties not found
+2019-05-14 18:15:23.788  INFO 23612 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+2019-05-14 18:15:23.848  INFO 23612 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.PostgreSQL95Dialect
+2019-05-14 18:15:23.925  INFO 23612 --- [main] o.h.e.j.e.i.LobCreatorBuilderImpl        : HHH000421: Disabling contextual LOB creation as hibernate.jdbc.lob.non_contextual_creation is true
+2019-05-14 18:15:23.928  INFO 23612 --- [main] org.hibernate.type.BasicTypeRegistry     : HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@25e95af1
+2019-05-14 18:15:24.328  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.328  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:15:24.328  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.328  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "apps" does not exist, skipping
+2019-05-14 18:15:24.329  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.329  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "compare_template" does not exist, skipping
+2019-05-14 18:15:24.329  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.329  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:15:24.329  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.329  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "products" does not exist, skipping
+2019-05-14 18:15:24.330  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.330  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "recording" does not exist, skipping
+2019-05-14 18:15:24.330  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.330  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "replay" does not exist, skipping
+2019-05-14 18:15:24.330  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.330  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "service_graph" does not exist, skipping
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "services" does not exist, skipping
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_intermediate_services" does not exist, skipping
+2019-05-14 18:15:24.331  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "test_virtualized_services" does not exist, skipping
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.332  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "tests" does not exist, skipping
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : relation "user_roles" does not exist, skipping
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "apps" does not exist, skipping
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "compare_template" does not exist, skipping
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.333  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "instances" does not exist, skipping
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "products" does not exist, skipping
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "recording" does not exist, skipping
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "replay" does not exist, skipping
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.334  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "service_graph" does not exist, skipping
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "services" does not exist, skipping
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_intermediate_services" does not exist, skipping
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "test_virtualized_services" does not exist, skipping
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.335  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "tests" does not exist, skipping
+2019-05-14 18:15:24.336  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.336  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "user_roles" does not exist, skipping
+2019-05-14 18:15:24.336  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.336  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : table "users" does not exist, skipping
+2019-05-14 18:15:24.336  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2019-05-14 18:15:24.336  WARN 23612 --- [main] o.h.engine.jdbc.spi.SqlExceptionHelper   : sequence "hibernate_sequence" does not exist, skipping
+2019-05-14 18:15:26.291  INFO 23612 --- [main] o.h.t.schema.internal.SchemaCreatorImpl  : HHH000476: Executing import script 'org.hibernate.tool.schema.internal.exec.ScriptSourceInputNonExistentImpl@1bb78ae'
+2019-05-14 18:15:26.298  INFO 23612 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2019-05-14 18:15:26.931 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.all()]] with attributes [ROLE_USER]
+2019-05-14 18:15:26.937 DEBUG 23612 --- [main] o.s.s.a.i.a.MethodSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:15:26.938 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.get(java.lang.Long)]] with attributes [ROLE_USER]
+2019-05-14 18:15:26.938 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.938 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.ProductController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.ProductController.save(com.cubeui.backend.domain.DTO.ProductDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.941 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.getAll()]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.942 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.currentUser(org.springframework.security.core.userdetails.UserDetails)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.942 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.get(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.942 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.update(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.942 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.delete(java.lang.Long)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:26.942 DEBUG 23612 --- [main] m.DelegatingMethodSecurityMetadataSource : Caching method [CacheKey[com.cubeui.backend.web.rest.UserController; public org.springframework.http.ResponseEntity com.cubeui.backend.web.rest.UserController.save(com.cubeui.backend.domain.DTO.UserDTO,javax.servlet.http.HttpServletRequest)]] with attributes [ROLE_ADMIN]
+2019-05-14 18:15:27.095  INFO 23612 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-05-14 18:15:27.342 DEBUG 23612 --- [main] eGlobalAuthenticationAutowiredConfigurer : Eagerly initializing {methodSecurityConfig=com.cubeui.backend.config.MethodSecurityConfig$$EnhancerBySpringCGLIB$$62dabb2f@2404b5a, org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration=org.springframework.boot.autoconfigure.security.servlet.WebSecurityEnablerConfiguration$$EnhancerBySpringCGLIB$$b3b891e2@75937998}
+2019-05-14 18:15:27.394 DEBUG 23612 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/login']
+2019-05-14 18:15:27.395 DEBUG 23612 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'permitAll', for Ant [pattern='/api/data']
+2019-05-14 18:15:27.395 DEBUG 23612 --- [main] edFilterInvocationSecurityMetadataSource : Adding web access control expression 'authenticated', for any request
+2019-05-14 18:15:27.397 DEBUG 23612 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:15:27.398 DEBUG 23612 --- [main] o.s.s.w.a.i.FilterSecurityInterceptor    : Validated configuration attributes
+2019-05-14 18:15:27.424  INFO 23612 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Creating filter chain: any request, [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4f0381cd, org.springframework.security.web.context.SecurityContextPersistenceFilter@768967cf, org.springframework.security.web.header.HeaderWriterFilter@1f9a5d3b, org.springframework.security.web.authentication.logout.LogoutFilter@52b2713a, com.cubeui.backend.security.jwt.JwtTokenFilter@7eb006bd, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3bd5dff5, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@441c2d2a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@633dce39, org.springframework.security.web.session.SessionManagementFilter@203ba07, org.springframework.security.web.access.ExceptionTranslationFilter@53f18591, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@7959fbe3]
+2019-05-14 18:15:27.492  INFO 23612 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2019-05-14 18:15:27.494  INFO 23612 --- [main] com.cubeui.backend.BackendApplication    : Started BackendApplication in 5.406 seconds (JVM running for 5.74)
+2019-05-14 18:15:27.512  INFO 23612 --- [main] o.h.h.i.QueryTranslatorFactoryInitiator  : HHH000397: Using ASTQueryTranslatorFactory

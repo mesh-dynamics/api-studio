@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
@@ -28,9 +29,11 @@ public class Service {
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
-    @Column(nullable = false)
+    @NotEmpty
+    @Column(nullable = false, length = 200)
     String name;
 
+    @NotEmpty
     @Column(nullable = false)
     ServiceType type;
 

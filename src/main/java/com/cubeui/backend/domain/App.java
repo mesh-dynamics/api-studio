@@ -29,7 +29,7 @@ public class App {
     Long id;
 
     @NotEmpty
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     String name;
 
     @ManyToOne
