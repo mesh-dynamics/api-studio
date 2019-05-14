@@ -13,7 +13,7 @@ spec:
       uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/reviews/reviews
     route:
     - destination:
-        host: cubews
+        host: cubews-mock
         port:
           number: 8080
 ---
@@ -32,7 +32,7 @@ spec:
         uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/ratings/ratings
     route:
     - destination:
-        host: cubews
+        host: cubews-mock
         port:
           number: 8080
 ---
@@ -51,7 +51,7 @@ spec:
         uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/details/details
     route:
     - destination:
-        host: cubews
+        host: cubews-mock
         port:
           number: 8080
 ---
@@ -70,6 +70,6 @@ spec:
         uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/restwrapjdbc/restsql
     route:
     - destination:
-        host: cubews
+        host: cubews-mock
         port:
           number: 8080

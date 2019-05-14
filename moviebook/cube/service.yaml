@@ -1,29 +1,30 @@
 ##################################################################################################
-# Cube Web Services
+# Cube Web Services - Record
 ##################################################################################################
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: cubews
+  name: cubews-record
   labels:
-    app: cubews
+    app: cubews-record
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: cubews
+    app: cubews-record
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: cubews-v1
+  name: cubews-record-v1
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: cubews
+        app: cubews-record
         version: v1
     spec:
       containers:
@@ -35,6 +36,81 @@ spec:
       imagePullSecrets:
       - name: regcred
 
+##################################################################################################
+# Cube Web Services - Mock
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-mock
+  labels:
+    app: cubews-mock
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubews-mock
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubews-mock-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubews-mock
+        version: v1
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:demo-1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+
+##################################################################################################
+# Cube Web Services - Replay
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-replay
+  labels:
+    app: cubews-replay
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubews-replay
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubews-replay-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubews-replay
+        version: v1
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:demo-1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
 ##################################################################################################
 # Cube UI
 ##################################################################################################

@@ -26,7 +26,27 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cubews
+  name: cubews-record
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /cs
+    route:
+    - destination:
+        host: cubews-record
+        port:
+          number: 8080
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cubews-mock
 spec:
   hosts:
   - "*"
@@ -36,14 +56,30 @@ spec:
   - match:
     - uri:
         prefix: /ms
-    - uri:
-        prefix: /cs
+    route:
+    - destination:
+        host: cubews-mock
+        port:
+          number: 8080
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cubews-replay
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - moviebook-gateway
+  http:
+  - match:
     - uri:
         prefix: /rs
     - uri:
         prefix: /as
     route:
     - destination:
-        host: cubews
+        host: cubews-replay
         port:
           number: 8080
