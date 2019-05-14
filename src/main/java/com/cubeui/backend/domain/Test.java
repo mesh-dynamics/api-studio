@@ -8,37 +8,42 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="apps",
-        uniqueConstraints=@UniqueConstraint(columnNames={"name", "customer_id", "instance_id"}),
+@Table(name="tests",
+        uniqueConstraints=@UniqueConstraint(columnNames={"collection_id", "test_config_name"}),
         indexes = {
-                @Index(columnList = "customer_id", name = "app_index"),
-                @Index(columnList = "instance_id", name = "app_index")
+                @Index(columnList = "collection_id", name = "test_index")
         })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class App {
+public class Test {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
-    @NotEmpty
+    @Column(name = "test_config_name", nullable = false)
+    String testConfigName;
+
+    String description;
+
+    @ManyToOne
+    @JoinColumn(name = "collection_id")
+    Recording collectionId;
+
+    @ManyToOne
+    @JoinColumn(name = "gateway_service_id")
+    Service gatewayServiceId;
+
+    //unknown JSON type
+    String gatewayPathSelection;
+
     @Column(nullable = false)
-    String name;
-
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
-    User customerId;
-
-    @ManyToOne
-    @JoinColumn(name = "instance_id")
-    Instance instanceId;
+    String endpoint;
 
     @CreationTimestamp
     LocalDateTime createdAt;

@@ -1,20 +1,17 @@
 package com.cubeui.backend;
 
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.Instance;
+import com.cubeui.backend.domain.enums.InstanceName;
 import com.cubeui.backend.domain.Product;
-import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.ProductRepository;
-import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.HashSet;
 
 @Component
 @Slf4j
@@ -22,10 +19,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private UserService userService;
     private ProductRepository productRepository;
+    private InstanceRepository instanceRepository;
 
-    public DataInitializer(UserService userService, ProductRepository productRepository) {
+    public DataInitializer(UserService userService, ProductRepository productRepository, InstanceRepository instanceRepository) {
         this.userService = userService;
         this.productRepository = productRepository;
+        this.instanceRepository = instanceRepository;
     }
 
     @Override
@@ -48,5 +47,6 @@ public class DataInitializer implements CommandLineRunner {
 
         this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
         this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
+        this.instanceRepository.saveAndFlush(Instance.builder().name(InstanceName.Dev).build());
     }
 }

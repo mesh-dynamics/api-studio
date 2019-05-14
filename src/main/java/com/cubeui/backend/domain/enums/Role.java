@@ -1,4 +1,4 @@
-package com.cubeui.backend.domain;
+package com.cubeui.backend.domain.enums;
 
 import java.util.Set;
 import java.util.stream.Collectors;

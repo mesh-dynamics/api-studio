@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.cubeui.backend.domain.enums.RecordingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,37 +13,38 @@ import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="apps",
-        uniqueConstraints=@UniqueConstraint(columnNames={"name", "customer_id", "instance_id"}),
+@Table(name="recording",
+        uniqueConstraints=@UniqueConstraint(columnNames={"app_id", "collection_name"}),
         indexes = {
-                @Index(columnList = "customer_id", name = "app_index"),
-                @Index(columnList = "instance_id", name = "app_index")
+                @Index(columnList = "app_id", name = "recording_index"),
+                @Index(columnList = "status", name = "recording_index")
         })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class App {
+public class Recording {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "app_id")
+    App appId;
+
     @NotEmpty
+    @Column(name = "collection_name", nullable = false, length = 200)
+    private String collectionName;
+
     @Column(nullable = false)
-    String name;
-
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
-    User customerId;
-
-    @ManyToOne
-    @JoinColumn(name = "instance_id")
-    Instance instanceId;
+    RecordingStatus status;
 
     @CreationTimestamp
     LocalDateTime createdAt;
 
     @UpdateTimestamp
     LocalDateTime updatedAt;
+
+    LocalDateTime completedAt;
 }

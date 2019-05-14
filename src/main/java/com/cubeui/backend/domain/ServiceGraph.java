@@ -1,31 +1,32 @@
 package com.cubeui.backend.domain;
 
-import com.cubeui.backend.domain.enums.InstanceName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name="instances")
+@Table(name="service_graph",
+        indexes = {@Index(columnList = "app_id", name = "service_graph_index")})
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Instance {
+public class ServiceGraph {
 
+    //Need id to save
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
-    @Column(nullable = false)
-    InstanceName name;
+    @ManyToOne
+    @JoinColumn(name = "app_id")
+    App appId;
 
-    @CreationTimestamp
-    LocalDateTime createdAt;
+    //unknown JSON type
+    @Column(nullable = false)
+    String serviceGraph;
 
 }
