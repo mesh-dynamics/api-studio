@@ -8,6 +8,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
@@ -43,13 +45,12 @@ public class CubeClient {
         this.jsonMapper = jsonMapper;
     }
 
-    private Optional<String> getResponse(Invocation.Builder builder, FnReqResponse fnReqResponse) {
-        try {
-        String jsonEntity = jsonMapper.writeValueAsString(fnReqResponse);
+
+    private Optional<String> getResponse(Invocation invocation) {
         int numberOfAttempts = 0;
         while (numberOfAttempts < maxNumberOfAttempts) {
             try {
-                Response response = builder.post(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN));
+                Response response = invocation.invoke();
                 if (response.getStatus() == Response.Status.OK.getStatusCode()) {
                     return Optional.of(response.readEntity(String.class));
                 }
@@ -58,7 +59,16 @@ public class CubeClient {
                 LOGGER.error("Error while sending request to cube service :: " + e.getMessage());
                 numberOfAttempts++;
             }
-        }} catch (JsonProcessingException e) {
+        }
+        return Optional.empty();
+    }
+
+
+    private Optional<String> getResponse(Invocation.Builder builder, FnReqResponse fnReqResponse) {
+        try {
+            String jsonEntity = jsonMapper.writeValueAsString(fnReqResponse);
+            return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
+        } catch (JsonProcessingException e) {
             LOGGER.error("Error while serializing function req/resp object :: "
                     + e.getMessage());
         }
@@ -76,4 +86,41 @@ public class CubeClient {
         return getResponse(builder, fnReqResponse);
     }
 
+    public Optional<String> startRecording(String customerid, String app, String instanceid, String collection) {
+        Invocation.Builder builder =
+                cubeRecordService.path("cs").path("start").path(customerid).path(app).path(instanceid).path(collection)
+                        .request(MediaType.APPLICATION_FORM_URLENCODED);
+        return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
+    }
+
+    public Optional<String> stopRecording(String customerid, String app, String collection) {
+        Invocation.Builder builder =
+                cubeRecordService.path("cs").path("stop").path(customerid).path(app).path(collection)
+                        .request(MediaType.APPLICATION_FORM_URLENCODED);
+        return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
+    }
+
+    public Optional<String> initReplay(String customerid, String app, String instanceid, String collection,
+                                       String endpoint) {
+        Invocation.Builder builder =
+                cubeRecordService.path("rs").path("init").path(customerid).path(app).path(collection)
+                        .request(MediaType.APPLICATION_FORM_URLENCODED);
+        MultivaluedMap<String, String> params = new MultivaluedHashMap();
+        params.add("instanceid", instanceid);
+        params.add("endpoint", endpoint);
+        return getResponse(builder.buildPost(Entity.form(params)));
+    }
+
+    public Optional<String> forceStartReplay(String replayid) {
+        Invocation.Builder builder =
+                cubeRecordService.path("rs").path("forcestart").path(replayid).request();
+        return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
+    }
+
+
+    public Optional<String> forceCompleteReplay(String replayid) {
+        Invocation.Builder builder =
+                cubeRecordService.path("rs").path("forcecomplete").path(replayid).request();
+        return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
+    }
 }
