@@ -1,11 +1,14 @@
 package com.cubeui.backend.domain;
 
 import com.cubeui.backend.domain.enums.ReplayStatus;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -23,6 +26,10 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TypeDef(
+        name = "jsonb",
+        typeClass = JsonBinaryType.class
+)
 public class Replay {
 
     @Id
@@ -50,8 +57,8 @@ public class Replay {
     @Column
     int reqFailed;
 
-    //VNT: unknown JSON
-    @Column
+    @Type(type = "jsonb")
+    @Column(nullable = false, columnDefinition = "jsonb")
     String analysis;
 
     @CreationTimestamp
@@ -62,6 +69,5 @@ public class Replay {
 
     LocalDateTime completedAt;
 
-    //VNT: unknown type REAL
     Double sampleRate;
 }

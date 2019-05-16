@@ -1,10 +1,13 @@
 package com.cubeui.backend.domain;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -21,6 +24,10 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TypeDef(
+        name = "jsonb",
+        typeClass = JsonBinaryType.class
+)
 public class Test {
 
     @Id
@@ -41,7 +48,8 @@ public class Test {
     @JoinColumn(name = "gateway_service_id")
     Service gatewayServiceId;
 
-    //unknown JSON type
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb")
     String gatewayPathSelection;
 
     @NotEmpty

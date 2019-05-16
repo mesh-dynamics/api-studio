@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
@@ -34,11 +36,14 @@ public class App {
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
-    User customerId;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    User customer;
 
+    //VNT: Many to many, not sure right now
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.NO_ACTION)
     @JoinColumn(name = "instance_id")
-    Instance instanceId;
+    Instance instance;
 
     @CreationTimestamp
     LocalDateTime createdAt;

@@ -1,11 +1,14 @@
 package com.cubeui.backend.domain;
 
 import com.cubeui.backend.domain.enums.TemplateType;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -24,6 +27,10 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TypeDef(
+        name = "jsonb",
+        typeClass = JsonBinaryType.class
+)
 public class CompareTemplate {
 
     @Id
@@ -38,9 +45,9 @@ public class CompareTemplate {
     @Column(nullable = false)
     String path;
 
-    //VNT: unknown JSON
     @NotEmpty
-    @Column(nullable = false)
+    @Type(type = "jsonb")
+    @Column(nullable = false, columnDefinition = "jsonb")
     String template;
 
     @NotEmpty

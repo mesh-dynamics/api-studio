@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -39,6 +41,7 @@ public class Service {
 
     @ManyToOne
     @JoinColumn(name = "app_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     App appId;
 
     @CreationTimestamp
