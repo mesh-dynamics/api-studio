@@ -272,7 +272,7 @@ replay_setup_default() {
 	read VERSION
 	if [ "$VERSION" = "v1" ]; then
 		echo "Routing traffic to v1"
-		kubectl apply -f moviebook/movieinfo-v2.yaml
+		kubectl apply -f moviebook/movieinfo-v1.yaml
 	elif [ "$VERSION" = "v2" ]; then
 		echo "Routing traffic to v2"
 		kubectl apply -f moviebook/movieinfo-v2.yaml
