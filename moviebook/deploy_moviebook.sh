@@ -36,7 +36,7 @@ init_default() {
 init_staging() {
 	kubectl create namespace staging
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml) -n staging
-	kubectl apply -f cube/service.yaml -n staging
+	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml) -n staging
 	kubectl apply -f moviebook-gateway.yaml
 	kubectl apply -f moviebook/bookinfo_virtualservice_staging.yaml
 	kubectl apply -f moviebook/movieinfo-v1_staging.yaml
