@@ -3,6 +3,8 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubeui-dogfooding
+  labels:
+    env: cube
 spec:
   hosts:
   - "dogfooding.cubecorp.io"
@@ -27,6 +29,8 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubews-record-dogfooding
+  labels:
+    env: cube
 spec:
   hosts:
   - "dogfooding.cubecorp.io"
@@ -47,6 +51,8 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubews-mock-dogfooding
+  labels:
+    env: cube
 spec:
   hosts:
   - "dogfooding.cubecorp.io"
@@ -67,6 +73,8 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubews-replay-dogfooding
+  labels:
+    env: cube
 spec:
   hosts:
   - "dogfooding.cubecorp.io"
