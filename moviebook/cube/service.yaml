@@ -142,7 +142,7 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:v2
+        image: cubeiocorp/cubeui:v-0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
