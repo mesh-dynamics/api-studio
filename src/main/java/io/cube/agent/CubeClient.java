@@ -81,9 +81,10 @@ public class CubeClient {
         return getResponse(builder , fnReqResponse);
     }
 
-    public Optional<String> getMockResponse(FnReqResponse fnReqResponse) {
+    public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
         Invocation.Builder builder = cubeMockService.path("ms").path("fr").request(MediaType.TEXT_PLAIN);
-        return getResponse(builder, fnReqResponse);
+        // TODO: server should directly return FnResponse
+        return getResponse(builder, fnReqResponse).map(response -> new FnResponse(response, Optional.empty()));
     }
 
     public Optional<String> startRecording(String customerid, String app, String instanceid, String collection) {

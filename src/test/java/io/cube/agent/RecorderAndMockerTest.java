@@ -64,17 +64,22 @@ class RecorderAndMockerTest {
     static Optional<String> traceid = Optional.empty();
     static Optional<String> spanid = Optional.empty();
     static Optional<String> parentSpanid = Optional.empty();
-    static Optional<Instant> timestamp = Optional.empty();
 
     static class ProdDiscount {
 
         public ProdDiscount(Map<String, Double> discountMap, String name) {
             this.discountMap = discountMap;
             this.name = name;
+            randomGen = new Random();
+            resTimeStamp = Optional.empty();
         }
 
-        Map<String, Double> discountMap;
-        String name;
+        final Map<String, Double> discountMap;
+        final String name;
+        final Random randomGen;
+
+        // instrumented for mocking
+        Optional<Instant> resTimeStamp;
 
         static class ProdPrice {
             String productId;
@@ -95,11 +100,15 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                return (double) mocker.mock(dpk, traceid, spanid, parentSpanid,
-                        timestamp, productId, price);
+                FnResponseObj ret = mocker.mock(dpk, traceid, spanid, parentSpanid,
+                        resTimeStamp, productId, price);
+                resTimeStamp = ret.timeStamp;
+                return (double) ret.retVal;
             }
 
             double discount = Optional.ofNullable(discountMap.get(productId)).orElse(Double.valueOf(0));
+            // add a random variation to make this function non idempotent - for testing record/mock based on timestamp
+            discount += randomGen.nextDouble()*0.1; // random delta < 0.1
 
             double ret = price*(1-discount);
             if (mode == Mode.Record) {
@@ -117,8 +126,10 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                return (double) mocker.mock(dpk2, traceid, spanid, parentSpanid,
-                        timestamp, pp);
+                FnResponseObj ret = mocker.mock(dpk2, traceid, spanid, parentSpanid,
+                        resTimeStamp, pp);
+                resTimeStamp = ret.timeStamp;
+                return (double) ret.retVal;
             }
 
             double ret = (pp != null) ? discountedPrice(pp.productId, pp.price) : 0;
@@ -138,9 +149,11 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                return (String) mocker.mock(gpnk, traceid, spanid,
+                FnResponseObj ret = mocker.mock(gpnk, traceid, spanid,
                         parentSpanid,
-                        timestamp);
+                        resTimeStamp);
+                resTimeStamp = ret.timeStamp;
+                return (String) ret.retVal;
             }
 
             String ret = name;
@@ -239,19 +252,22 @@ class RecorderAndMockerTest {
     }
 
     private Double[] callProdDisc(ProdDiscount prodDiscount, ProdDiscount.ProdPrice[] prodPrice, boolean asObj,
-                                  boolean nullObj) {
-        return Arrays.stream(prodPrice).map(pp -> {
-            if (nullObj) {
-                return prodDiscount.discountedPrice(null);
-            } else if (asObj) {
-                return prodDiscount.discountedPrice(pp);
-            } else {
-                return prodDiscount.discountedPrice(pp.productId, pp.price);
-            }
+                                  boolean nullObj, int seqSize) {
+        return Arrays.stream(prodPrice).flatMap(pp -> {
+            // call the same function multiple times
+            return IntStream.range(0, seqSize).mapToObj(i -> {
+                if (nullObj) {
+                    return prodDiscount.discountedPrice(null);
+                } else if (asObj) {
+                    return prodDiscount.discountedPrice(pp);
+                } else {
+                    return prodDiscount.discountedPrice(pp.productId, pp.price);
+                }
+            });
         }).toArray(Double[]::new);
     }
 
-    private void testFnMultiArgs(boolean asObj, boolean nullObj) {
+    private void testFnMultiArgs(boolean asObj, boolean nullObj, int seqSize) {
 
         // start recording
         cubeClient.startRecording(CUSTID, APPID, INSTANCEID, COLLECTION);
@@ -270,11 +286,11 @@ class RecorderAndMockerTest {
 
         // call fn
         traceid = Optional.of(trace + ".1");
-        Double[] ret1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj);
+        Double[] ret1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize);
         traceid = Optional.of(trace + ".2");
-        Double[] ret2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj);
+        Double[] ret2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize);
         traceid = Optional.of(trace + ".3");
-        Double[] ret3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj);
+        Double[] ret3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize);
 
 
         // stop recording
@@ -302,11 +318,11 @@ class RecorderAndMockerTest {
 
                     // call fn
                     traceid = Optional.of(trace + ".1");
-                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj);
+                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize);
                     traceid = Optional.of(trace + ".2");
-                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj);
+                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize);
                     traceid = Optional.of(trace + ".3");
-                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj);
+                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize);
 
                     // stop replay
                     cubeClient.forceCompleteReplay(replayidv);
@@ -326,18 +342,18 @@ class RecorderAndMockerTest {
 
     @Test
     void testFnMultipleArgs() {
-        testFnMultiArgs(false, false);
+        testFnMultiArgs(false, false, 1);
     }
 
     @Test
     void testFnObjArgs() {
-        testFnMultiArgs(true, false);
+        testFnMultiArgs(true, false, 1);
     }
 
 
     @Test
     void testFnNullObjArgs() {
-        testFnMultiArgs(true, true);
+        testFnMultiArgs(true, true, 1);
     }
 
 
@@ -348,4 +364,11 @@ class RecorderAndMockerTest {
         ProdDiscount[] prodDiscounts = {new ProdDiscount(new HashMap<String, Double>(), null)};
         testGetPromoName(prodDiscounts);
     }
+
+
+    @Test
+    void testFnSeqOfCalls() {
+        testFnMultiArgs(false, false, 5);
+    }
+
 }
