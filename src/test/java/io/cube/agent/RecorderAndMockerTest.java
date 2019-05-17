@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,7 +121,7 @@ class RecorderAndMockerTest {
                         timestamp, pp);
             }
 
-            double ret = discountedPrice(pp.productId, pp.price);
+            double ret = (pp != null) ? discountedPrice(pp.productId, pp.price) : 0;
             if (mode == Mode.Record) {
                 RecorderAndMockerTest.recorder.record(dpk2, traceid, spanid,
                         parentSpanid,
@@ -165,8 +166,7 @@ class RecorderAndMockerTest {
         this.randomGen = new Random();
     }
 
-    @Test
-    void testFnNoArgs() {
+    void testGetPromoName(ProdDiscount[] prodDiscounts) {
 
         // start recording
         cubeClient.startRecording(CUSTID, APPID, INSTANCEID, COLLECTION);
@@ -177,12 +177,10 @@ class RecorderAndMockerTest {
         spanid=Optional.of("1");
 
         // call fn
-        traceid = Optional.of(trace + ".1");
-        String ret1 = prodDiscount1.getPromoName();
-        traceid = Optional.of(trace + ".2");
-        String ret2 = prodDiscount2.getPromoName();
-        traceid = Optional.of(trace + ".3");
-        String ret3 = prodDiscount3.getPromoName();
+        String[] ret = IntStream.range(0, prodDiscounts.length).mapToObj(i -> {
+            traceid = Optional.of(trace + "." + i);
+            return prodDiscounts[i].getPromoName();
+        }).toArray(String[]::new);
 
 
         // stop recording
@@ -209,23 +207,27 @@ class RecorderAndMockerTest {
                     mode = Mode.Mock;
 
                     // call fn
-                    traceid = Optional.of(trace + ".1");
-                    String replayRet1 = prodDiscount1.getPromoName();
-                    traceid = Optional.of(trace + ".2");
-                    String replayRet2 = prodDiscount2.getPromoName();
-                    traceid = Optional.of(trace + ".3");
-                    String replayRet3 = prodDiscount3.getPromoName();
+                    String[] replayRet = IntStream.range(0, prodDiscounts.length).mapToObj(i -> {
+                        traceid = Optional.of(trace + "." + i);
+                        return prodDiscounts[i].getPromoName();
+                    }).toArray(String[]::new);
 
                     // stop replay
                     cubeClient.forceCompleteReplay(replayidv);
 
                     // compare values
-                    assertEquals(ret1, replayRet1);
-                    assertEquals(ret2, replayRet2);
-                    assertEquals(ret3, replayRet3);
+                    assertArrayEquals(ret, replayRet);
                 },
                 () -> fail("Replay cannot be inited or started"));
 
+    }
+
+
+    @Test
+    void testFnNoArgs() {
+
+        ProdDiscount[] prodDiscounts = {prodDiscount1, prodDiscount2, prodDiscount3};
+        testGetPromoName(prodDiscounts);
     }
 
     private double callProdDisc(ProdDiscount prodDiscount, ProdDiscount.ProdPrice prodPrice, boolean asObj) {
@@ -236,9 +238,12 @@ class RecorderAndMockerTest {
         }
     }
 
-    private Double[] callProdDisc(ProdDiscount prodDiscount, ProdDiscount.ProdPrice[] prodPrice, boolean asObj) {
+    private Double[] callProdDisc(ProdDiscount prodDiscount, ProdDiscount.ProdPrice[] prodPrice, boolean asObj,
+                                  boolean nullObj) {
         return Arrays.stream(prodPrice).map(pp -> {
-            if (asObj) {
+            if (nullObj) {
+                return prodDiscount.discountedPrice(null);
+            } else if (asObj) {
                 return prodDiscount.discountedPrice(pp);
             } else {
                 return prodDiscount.discountedPrice(pp.productId, pp.price);
@@ -246,7 +251,7 @@ class RecorderAndMockerTest {
         }).toArray(Double[]::new);
     }
 
-    private void testFnMultiArgs(boolean asObj) {
+    private void testFnMultiArgs(boolean asObj, boolean nullObj) {
 
         // start recording
         cubeClient.startRecording(CUSTID, APPID, INSTANCEID, COLLECTION);
@@ -265,11 +270,11 @@ class RecorderAndMockerTest {
 
         // call fn
         traceid = Optional.of(trace + ".1");
-        Double[] ret1 = callProdDisc(prodDiscount1, ppArr, asObj);
+        Double[] ret1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj);
         traceid = Optional.of(trace + ".2");
-        Double[] ret2 = callProdDisc(prodDiscount2, ppArr, asObj);
+        Double[] ret2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj);
         traceid = Optional.of(trace + ".3");
-        Double[] ret3 = callProdDisc(prodDiscount3, ppArr, asObj);
+        Double[] ret3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj);
 
 
         // stop recording
@@ -297,11 +302,11 @@ class RecorderAndMockerTest {
 
                     // call fn
                     traceid = Optional.of(trace + ".1");
-                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj);
+                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj);
                     traceid = Optional.of(trace + ".2");
-                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj);
+                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj);
                     traceid = Optional.of(trace + ".3");
-                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj);
+                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj);
 
                     // stop replay
                     cubeClient.forceCompleteReplay(replayidv);
@@ -321,11 +326,26 @@ class RecorderAndMockerTest {
 
     @Test
     void testFnMultipleArgs() {
-        testFnMultiArgs(false);
+        testFnMultiArgs(false, false);
     }
 
     @Test
     void testFnObjArgs() {
-        testFnMultiArgs(true);
+        testFnMultiArgs(true, false);
+    }
+
+
+    @Test
+    void testFnNullObjArgs() {
+        testFnMultiArgs(true, true);
+    }
+
+
+
+    @Test
+    void testFnNullReturnVal() {
+        // create ProdDiscount with null promo name
+        ProdDiscount[] prodDiscounts = {new ProdDiscount(new HashMap<String, Double>(), null)};
+        testGetPromoName(prodDiscounts);
     }
 }
