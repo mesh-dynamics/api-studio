@@ -14,3 +14,18 @@ spec:
     protocol: TCP
   resolution: DNS
   location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: aws-solr
+spec:
+  hosts:
+  - 18.191.135.125
+  ports:
+  - number: 8983
+    name: solr
+    protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL
