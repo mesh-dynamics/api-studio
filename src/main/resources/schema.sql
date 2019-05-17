@@ -114,7 +114,7 @@ create TABLE cube.test_config (
   gateway_path_selection JSON NOT NULL,
   gateway_req_selection JSON,
   max_run_time_min INTEGER,
-  emai_id TEXT,
+  email_id TEXT,
   slack_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
