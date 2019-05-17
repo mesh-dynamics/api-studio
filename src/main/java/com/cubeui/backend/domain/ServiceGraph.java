@@ -31,7 +31,7 @@ public class ServiceGraph {
 
     @OneToOne
     @JoinColumn(name = "app_id")
-    App appId;
+    App app;
 
     @NotEmpty
     @Type(type = "jsonb")

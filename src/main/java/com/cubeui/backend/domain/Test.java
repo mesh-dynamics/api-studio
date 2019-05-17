@@ -42,11 +42,11 @@ public class Test {
 
     @ManyToOne
     @JoinColumn(name = "collection_id")
-    Recording collectionId;
+    Recording collection;
 
     @ManyToOne
     @JoinColumn(name = "gateway_service_id")
-    Service gatewayServiceId;
+    Service gatewayService;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")

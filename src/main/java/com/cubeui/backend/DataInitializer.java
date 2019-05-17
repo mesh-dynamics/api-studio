@@ -47,6 +47,5 @@ public class DataInitializer implements CommandLineRunner {
 
         this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
         this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
-        this.instanceRepository.saveAndFlush(Instance.builder().name(InstanceName.Dev).build());
     }
 }

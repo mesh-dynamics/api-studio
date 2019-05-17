@@ -22,6 +22,7 @@ public class Instance {
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     InstanceName name;
 

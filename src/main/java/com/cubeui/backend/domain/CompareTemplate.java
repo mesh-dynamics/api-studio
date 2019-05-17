@@ -39,7 +39,7 @@ public class CompareTemplate {
 
     @ManyToOne
     @JoinColumn(name = "test_id")
-    Test testId;
+    Test test;
 
     @NotEmpty
     @Column(nullable = false)
@@ -51,6 +51,7 @@ public class CompareTemplate {
     String template;
 
     @NotEmpty
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     TemplateType type;
 

@@ -36,13 +36,14 @@ public class Service {
     String name;
 
     @NotEmpty
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     ServiceType type;
 
     @ManyToOne
     @JoinColumn(name = "app_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    App appId;
+    App app;
 
     @CreationTimestamp
     LocalDateTime createdAt;

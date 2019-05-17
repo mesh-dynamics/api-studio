@@ -31,13 +31,14 @@ public class Recording {
 
     @ManyToOne
     @JoinColumn(name = "app_id")
-    App appId;
+    App app;
 
     @NotEmpty
     @Column(name = "collection_name", nullable = false, length = 200)
     String collectionName;
 
     @NotEmpty
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     RecordingStatus status;
 
