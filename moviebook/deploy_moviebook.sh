@@ -16,13 +16,12 @@ export_aws_env_variables() {
 
 init_default() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
-	kubectl apply -f cube/service.yaml
+	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
 	kubectl apply -f moviebook-gateway.yaml
 	kubectl apply -f moviebook/bookinfo_virtualservice.yaml
 	kubectl apply -f moviebook/movieinfo-v1.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
-	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
 	echo "waiting for cubews to come online"
 	until $(curl --output /dev/null --silent --head --fail http://$GATEWAY_URL/cs/health); do
@@ -361,7 +360,6 @@ clean_default() {
 	kubectl delete -f moviebook/bookinfo_virtualservice.yaml
 	kubectl delete -f moviebook/movieinfo-v1.yaml
 	kubectl delete -f cube/virtualservice.yaml
-	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
 }
 clean_staging() {
