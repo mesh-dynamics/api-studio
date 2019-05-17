@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:demo-1.0
+        image: cubeiocorp/cubews:v-0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -67,7 +67,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:demo-1.0
+        image: cubeiocorp/cubews:v-0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -105,7 +105,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:demo-1.0
+        image: cubeiocorp/cubews:v-0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -142,7 +142,7 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:v2
+        image: cubeiocorp/cubeui:v-0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
