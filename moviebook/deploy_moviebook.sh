@@ -16,13 +16,12 @@ export_aws_env_variables() {
 
 init() {
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
-	kubectl apply -f cube/service.yaml
+	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
 	kubectl apply -f moviebook-gateway.yaml
 	kubectl apply -f moviebook/bookinfo_virtualservice.yaml
 	kubectl apply -f moviebook/movieinfo-v1.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
-	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
 	./generate_lua_filters.py $CUBE_USER
 	echo "lua filters generated"
@@ -262,7 +261,6 @@ clean() {
 	kubectl delete -f moviebook/bookinfo_virtualservice.yaml
 	kubectl delete -f moviebook/movieinfo-v1.yaml
 	kubectl delete -f cube/virtualservice.yaml
-	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
 	if [ -f replayid.temp ]; then
 	  rm replayid.temp
