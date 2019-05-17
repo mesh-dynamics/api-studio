@@ -2,18 +2,14 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.AppDTO;
-import com.cubeui.backend.domain.DTO.ProductDTO;
 import com.cubeui.backend.domain.Instance;
-import com.cubeui.backend.domain.Product;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.InstanceRepository;
-import com.cubeui.backend.repository.ProductRepository;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -48,7 +44,7 @@ public class AppController {
         if (appDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + appDTO.getId() +"' already exists."));
         }
-        Optional<Instance> instance = instanceRepository.findById(appDTO.getId());
+        Optional<Instance> instance = instanceRepository.findById(appDTO.getInstanceId());
         Optional<User> user = userService.getById(appDTO.getCustomerId());
         if (instance.isPresent() && user.isPresent()) {
             App saved = this.appRepository.save(App.builder().name(appDTO.getName()).customer(user.get()).instance(instance.get()).build());

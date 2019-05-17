@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Service class for managing users.
+ * ServiceDTO class for managing users.
  */
 @Service
 @Transactional

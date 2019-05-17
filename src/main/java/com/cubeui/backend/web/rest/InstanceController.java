@@ -5,7 +5,6 @@ import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -15,7 +14,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
@@ -45,7 +43,7 @@ public class InstanceController {
                 .path("/api/instance/{id}")
                 .buildAndExpand(saved.getId())
                 .toUri())
-            .build();
+            .body(saved);
     }
 
     @PutMapping("")
