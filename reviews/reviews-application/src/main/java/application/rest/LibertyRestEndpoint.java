@@ -15,25 +15,24 @@
  *******************************************************************************/
 package application.rest;
 
-import java.io.StringReader;
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.client.ResponseProcessingException;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.StringReader;
+import java.util.Random;
 
 @Path("/")
 public class LibertyRestEndpoint extends Application {
@@ -43,6 +42,19 @@ public class LibertyRestEndpoint extends Application {
     private final static String services_domain = System.getenv("SERVICES_DOMAIN") == null ? "" : ("." + System.getenv("SERVICES_DOMAIN"));
     private final static String ratings_hostname = System.getenv("RATINGS_HOSTNAME") == null ? "ratings" : System.getenv("RATINGS_HOSTNAME");
     private final static String ratings_service = "http://" + ratings_hostname + services_domain + ":9080/ratings";
+    private static Double FAIL_PERCENT = 0.01;
+    private static Double FAIL_PERCENT_STD_DEV = 0.002;
+
+    static {
+        String failPercent = System.getenv("FAIL_PERCENT");
+        String failPercentStdDev     = System.getenv("FAIL_PERCENT");
+        if (failPercent != null) {
+            FAIL_PERCENT = Double.parseDouble(failPercent);
+        }
+        if(failPercentStdDev != null) {
+            FAIL_PERCENT_STD_DEV = Double.parseDouble(failPercentStdDev);
+        }
+    }
 
     private String getJsonResponse (String productId, int starsReviewer1, int starsReviewer2) {
     	String result = "{";
@@ -151,6 +163,13 @@ public class LibertyRestEndpoint extends Application {
                                     @HeaderParam("x-b3-sampled") String xsampled,
                                     @HeaderParam("x-b3-flags") String xflags,
                                     @HeaderParam("x-ot-span-context") String xotspan) {
+        Random random = new Random();
+        Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
+        if(random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .header(HttpHeaders.RETRY_AFTER, " :=120")
+                    .build();
+        }
       int starsReviewer1 = -1;
       int starsReviewer2 = -1;
 

@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.util.Properties;
+import java.util.Random;
 
 public class BookInfo {
     private Client restClient = null;
@@ -27,6 +28,7 @@ public class BookInfo {
     private Config config = null;
 
     final static Logger LOGGER = Logger.getLogger(BookInfo.class);
+    private final Random random = new Random();
 
     private static String PRODUCTPAGE_URI = "http://productpage:9080";
     private static String BOOKDETAILS_URI = "http://details:9080";
@@ -54,13 +56,19 @@ public class BookInfo {
         JSONObject bookInfo = new JSONObject();
     	JSONObject result = null;
         try {
+            Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
+
         	// get details
-        	response = RestUtils.callWithRetries(tracer, 
-        			bookDetailsService.path("details").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON), 
-        	   	    null, "GET", 3, config.ADD_TRACING_HEADERS);
-            result = new JSONObject(response.readEntity(String.class));
-            bookInfo.put("details", result);
-            
+            if(random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+                JSONObject detailsResult = null;
+                bookInfo.put("details", detailsResult);
+            } else {
+                response = RestUtils.callWithRetries(tracer,
+                        bookDetailsService.path("details").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON),
+                        null, "GET", 3, config.ADD_TRACING_HEADERS);
+                result = new JSONObject(response.readEntity(String.class));
+                bookInfo.put("details", result);
+            }
             
             // get ratings
             response = RestUtils.callWithRetries(tracer, 

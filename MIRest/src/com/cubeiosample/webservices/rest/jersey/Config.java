@@ -41,6 +41,11 @@ public class Config {
     public boolean RATINGS_5PT_SCALE = true;
     public int NUM_ACTORS_TO_DISPLAY = 2;
     public boolean CONCAT_BUG = false;
+    public double FAIL_PERCENT = 0.01;
+    public double FAIL_PERCENT_STD_DEV = 0.002;
+    public static final String V1 = "v1";
+    public static final String V2 = "v2";
+    public String VERSION = "v1";
 	
 	public Config() {
 		LOGGER.info("Creating config");
@@ -131,11 +136,24 @@ public class Config {
         	CONCAT_BUG = false;
         }
 
+        String failPercent = this.getProperty("FAIL_PERCENT");
+        if(failPercent != null) {
+            FAIL_PERCENT = Double.parseDouble(failPercent);
+        }
+
+        String failPercentStdDev = this.getProperty("FAIL_PERCENT_STD_DEV");
+        if(failPercent != null) {
+            FAIL_PERCENT_STD_DEV = Double.parseDouble(failPercentStdDev);
+        }
+
         // NUM_ACTORS_TO_DISPLAY
         String numActorsToDisplay = this.getProperty("NUM_ACTORS_TO_DISPLAY");
         if (numActorsToDisplay != null) {
         	NUM_ACTORS_TO_DISPLAY = Integer.parseInt(numActorsToDisplay);
-        } 
+        }
+
+        String version = this.getProperty("VERSION");
+        VERSION = (version == null || version.isBlank()) ? VERSION : version;
         
         if (USE_KUBE) {
         	overrideConfigWithKubeSettings();
@@ -269,6 +287,20 @@ public class Config {
                 CONCAT_BUG = false;
             }
         }
+
+        String failPercent = System.getenv("FAIL_PERCENT");
+        if (failPercent != null) {
+            FAIL_PERCENT = Double.parseDouble(failPercent);
+        }
+
+        String failPercentStdDev = System.getenv("FAIL_PERCENT_STD_DEV");
+        if (failPercentStdDev != null) {
+            FAIL_PERCENT = Double.parseDouble(failPercentStdDev);
+        }
+
+        String version = this.getProperty("VERSION");
+        VERSION = (version == null || version.isBlank()) ? VERSION : version;
+
         // NUM_ACTORS_TO_DISPLAY
         String numActorsToDisplay = System.getenv("NUM_ACTORS_TO_DISPLAY");
         if (numActorsToDisplay != null) {

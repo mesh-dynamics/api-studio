@@ -139,8 +139,16 @@ dispatcher.onGet(/^\/ratings\/[0-9]*/, function (req, res) {
       })
     }
   } else {
-    res.writeHead(200, {'Content-type': 'application/json'})
-    res.end(JSON.stringify(getLocalReviews(productId)))
+    var failPercent = process.env.FAIL_PERCENT,
+        randomPercent = Math.random();
+    console.log("failPercent: ", failPercent);
+    if(failPercent && randomPercent < failPercent) {
+        res.writeHead(500, {'Content-type': 'application/json'})
+        res.end(JSON.stringify({"error": "Internal server error. Please try later."}))
+    } else {
+        res.writeHead(200, {'Content-type': 'application/json'})
+        res.end(JSON.stringify(getLocalReviews(productId)))
+    }
   }
 })
 

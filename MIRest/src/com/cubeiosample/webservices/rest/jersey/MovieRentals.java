@@ -62,14 +62,19 @@ public class MovieRentals {
 	    	try {
 		    	JSONArray films = null;
 		    	films = listMovieByName(filmnameOrKeywordForRequest);
-		    	if (films != null && films.length() > 0) {
-	                return films;
-		    	}
-
-		    	films = listMoviesByKeyword(filmnameOrKeywordForRequest);
-	    		if (films != null && films.length() > 0) {
-	    			return films;
+	    		if (films == null || films.length() == 0) {
+					films = listMoviesByKeyword(filmnameOrKeywordForRequest);
 	    		}
+				if (films != null && films.length() > 0) {
+					if(Config.V1.equalsIgnoreCase(config.VERSION)) {
+						for (int i = 0; i < films.length(); ++i) {
+							JSONObject film = films.getJSONObject(i);
+							JSONArray nearByStores = this.findAvailableStores(film.getInt("film_id"));
+							film.put("nearby_stores", nearByStores);
+						}
+					}
+					return films;
+				}
 	    	} catch (Exception e) {
 	    		LOGGER.error("Couldn't list movies; " + e.toString());
 	    	}
