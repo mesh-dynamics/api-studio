@@ -64,9 +64,13 @@ public class ReplayController {
             return status(FORBIDDEN).body(new ErrorResponse("Replay id not provided"));
         }
         Optional<Replay> replay = replayRepository.findById(replayDTO.getId());
+        Optional<Test> test = testRepository.findById(replayDTO.getTestId());
+        if (test.isEmpty()){
+            throw new RecordFoundException("Test with ID '" + replayDTO.getTestId() + "' not found.");
+        }
         if (replay.isPresent()) {
             replay.ifPresent(rep -> {
-                rep.setTest(testRepository.findById(replayDTO.getTestId()).get());
+                rep.setTest(test.get());
                 rep.setAnalysis(replayDTO.getAnalysis());
                 rep.setStatus(replayDTO.getStatus());
                 rep.setReplayName(replayDTO.getReplayName());
