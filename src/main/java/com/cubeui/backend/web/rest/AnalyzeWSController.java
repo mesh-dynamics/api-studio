@@ -1,11 +1,11 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.service.CubeServerService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MultivaluedMap;
 
 import static org.springframework.http.ResponseEntity.noContent;
 
@@ -71,9 +71,8 @@ public class AnalyzeWSController {
         return noContent().build();
     }
 
-    @PostMapping("/analyze/{replayid}")
-//    @Consumes("application/x-www-form-urlencoded")
-    public ResponseEntity analyze(@PathVariable("replayid") String replayid, MultivaluedMap<String, String> formParams) {
+    @PostMapping(value = "/analyze/{replayid}")
+    public ResponseEntity analyze(@PathVariable("replayid") String replayid, HttpServletRequest request) {
         return cubeServerService.fetchGetResponse(baseHref + "/analyze/" + replayid);
     }
 }

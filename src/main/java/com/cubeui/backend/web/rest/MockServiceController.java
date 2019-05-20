@@ -1,9 +1,12 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.service.CubeServerService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -34,11 +37,10 @@ public class MockServiceController {
         return cubeServerService.fetchGetResponse(baseHref + "/"+customerid+"/"+app+"/"+instanceid+"/"+service+"/"+path/*var:.+}"*/);
     }
 
-    @PostMapping("/{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-//    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @PostMapping(value = "/{customerid}/{app}/{instanceid}/{service}/{var:.+}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity postForms(@PathVariable("var") String path,
                                     MultivaluedMap<String, String> formParams,
-//                                   @Context HttpHeaders headers,
+                                    @Context HttpHeaders headers,
                                     @PathVariable("customerid") String customerid,
                                     @PathVariable("app") String app,
                                     @PathVariable("instanceid") String instanceid,
@@ -46,8 +48,7 @@ public class MockServiceController {
         return noContent().build();
     }
 
-    @PostMapping("/{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-//    @Consumes(MediaType.APPLICATION_JSON)
+    @PostMapping(value = "/{customerid}/{app}/{instanceid}/{service}/{var:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity postJson(@PathVariable("var") String path,
                                    @PathVariable("customerid") String customerid,
                                    @PathVariable("app") String app,
@@ -58,8 +59,7 @@ public class MockServiceController {
         return noContent().build();
     }
 
-    @PostMapping("/fr")
-//    @Consumes(MediaType.TEXT_PLAIN)
+    @PostMapping(value = "/fr", consumes = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity funcJson(String fnReqResponseAsString) {
         return noContent().build();
     }
