@@ -3,6 +3,7 @@ package io.cube.agent;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,6 +13,10 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 /*
  * Created by IntelliJ IDEA.
@@ -23,6 +28,7 @@ public class SimpleMocker implements Mocker {
     private static final Logger LOGGER = LogManager.getLogger(SimpleMocker.class);
 
     private ObjectMapper jsonMapper;
+    private Gson gson;
     CubeClient cubeClient;
 
     public SimpleMocker() {
@@ -31,6 +37,8 @@ public class SimpleMocker implements Mocker {
         jsonMapper.registerModule(new JavaTimeModule());
         jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         cubeClient = new CubeClient(jsonMapper);
+        gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
+                .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
     }
 
 
@@ -39,7 +47,7 @@ public class SimpleMocker implements Mocker {
                               Optional<Instant> prevRespTS, Object... args) {
         try {
             String[] argVals =
-                    Arrays.stream(args).map(UtilException.rethrowFunction(jsonMapper::writeValueAsString)).toArray(String[]::new);
+                    Arrays.stream(args).map(UtilException.rethrowFunction(gson::toJson)).toArray(String[]::new);
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
 
             // forming a dummy req response object with empty ret value, we can just serialize this object
@@ -57,7 +65,7 @@ public class SimpleMocker implements Mocker {
                 return new FnResponseObj(null, Optional.empty());
             } else {
                 FnResponse response = ret.get();
-                Object retVal = jsonMapper.readValue(response.retVal, fnKey.function.getReturnType());
+                Object retVal = gson.fromJson(response.retVal, fnKey.function.getReturnType());
                 return new FnResponseObj(retVal, response.timeStamp);
             }
 

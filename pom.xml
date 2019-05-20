@@ -12,6 +12,8 @@
         <version.java>11</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.jersey>2.27</version.jersey>
+        <version.gson>2.8.5</version.gson>
+        <version.jaeger>0.32.0</version.jaeger>
     </properties>
 
     <dependencyManagement>
@@ -130,7 +132,8 @@
             <artifactId>activation</artifactId>
             <version>1.1.1</version>
         </dependency>
-       <!--  For junit testing -->
+
+        <!--  For junit testing -->
         <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -138,8 +141,23 @@
             <version>5.4.0</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${version.gson}</version>
+        </dependency>
+        <!--  To deal with java 8 optional and time objects in gson -->
+        <dependency>
+            <groupId>net.dongliu</groupId>
+            <artifactId>gson-java8-datatype</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-client</artifactId>
+            <version>${version.jaeger}</version>
+        </dependency>
     </dependencies>
-
-
 
 </project>
