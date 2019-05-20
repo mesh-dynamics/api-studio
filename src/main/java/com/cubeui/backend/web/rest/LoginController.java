@@ -43,7 +43,7 @@ public class LoginController {
             String username = data.getUsername();
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, data.getPassword()));
             User user = this.userService.getByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
-            String token = jwtTokenProvider.createToken(username, new ArrayList<String>(user.getRoles()));
+            String token = jwtTokenProvider.createToken(username, new ArrayList<>(user.getRoles()));
 
             Map<Object, Object> model = new HashMap<>();
             model.put("username", username);

@@ -42,7 +42,7 @@ public class AppController {
     @PostMapping("")
     public ResponseEntity save(@RequestBody AppDTO appDTO, HttpServletRequest request) {
         if (appDTO.getId() != null) {
-            return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + appDTO.getId() +"' already exists."));
+            return status(FORBIDDEN).body(new ErrorResponse("App with ID '" + appDTO.getId() +"' already exists."));
         }
         Optional<Instance> instance = instanceRepository.findById(appDTO.getInstanceId());
         Optional<User> user = userService.getById(appDTO.getCustomerId());

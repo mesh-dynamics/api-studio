@@ -40,7 +40,7 @@ public class App {
     User customer;
 
     //VNT: Many to many, not sure right now
-    @ManyToOne
+    @OneToOne
     @OnDelete(action = OnDeleteAction.NO_ACTION)
     @JoinColumn(name = "instance_id")
     Instance instance;
