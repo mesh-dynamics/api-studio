@@ -27,8 +27,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.opentracing.Scope;
+import io.opentracing.Tracer;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
@@ -76,9 +79,10 @@ public class MockServiceHTTP {
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("service") String service, 
 			@Context HttpHeaders headers) {
-		
-		LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
-		return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
+        try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-get")) {
+            LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
+            return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
+        }
 	}
 	
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two. 
@@ -95,8 +99,10 @@ public class MockServiceHTTP {
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("service") String service, 
 			@Context HttpHeaders headers) {
-		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
-		return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
+	    try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-post-form")) {
+            LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
+            return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
+        }
 	}
 
 	@POST
@@ -110,35 +116,48 @@ public class MockServiceHTTP {
 			@PathParam("service") String service, 
 			@Context HttpHeaders headers, 
 			String body) {
-		LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
-		JSONObject obj = new JSONObject(body);
-		MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
-		for (String key : obj.keySet()) {
-			ArrayList<String> l = new ArrayList<>();
-			l.add(obj.get(key).toString());
-			mmap.put(key, l);
-		}
-		return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
+        try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-post-json")) {
+            LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
+            JSONObject obj = new JSONObject(body);
+            MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
+            for (String key : obj.keySet()) {
+                ArrayList<String> l = new ArrayList<>();
+                l.add(obj.get(key).toString());
+                mmap.put(key, l);
+            }
+            return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
+        }
 	}
 
 	@POST
     @Path("/fr")
     @Consumes(MediaType.TEXT_PLAIN)
     public Response funcJson(@Context UriInfo uInfo,
+                             @Context HttpHeaders headers,
                              String fnReqResponseAsString) {
-	    try {
+	    try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-func")) {
+	        scope.span().setBaggageItem("action", "func");
 	        FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString , FnReqResponse.class);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
             return collection.map(collec ->
-                rrstore.getFunctionReturnValue(fnReqResponse, collec).map(retValue ->
-                Response.ok().type(MediaType.APPLICATION_JSON).entity(retValue).build()).
+                rrstore.getFunctionReturnValue(fnReqResponse, collec).map(retValue -> {
+                        try {
+                            String retValueAsString = jsonmapper.writeValueAsString(retValue);
+                            return Response.ok().type(MediaType.APPLICATION_JSON).entity(retValueAsString).build();
+                        } catch(JsonProcessingException e) {
+                            return Response.serverError().type(MediaType.APPLICATION_JSON).
+                                entity("{\"reason\" : \"Unable to parse function response object "+ e.getMessage()
+                                    +  " \"}").build();
+                        }
+                    }
+                ).
                 orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
                     entity("{\"reason\" : \"Unable to find matching function request\"}").build()))
                 .orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
                     entity("{\"reason\" : \"Unable to locate collection for given customer, app, instance combo\"}")
                     .build());
-        } catch (IOException e) {
+        } catch (Exception e) {
 	        return Response.serverError().type(MediaType.APPLICATION_JSON).
                 entity("{\"reason\" : \"Unable to parse function request object "+ e.getMessage()
                     +  " \"}").build();
@@ -254,6 +273,7 @@ public class MockServiceHTTP {
 		this.jsonmapper = config.jsonmapper;
 		this.requestComparatorCache = config.requestComparatorCache;
 		this.replayResultCache = config.replayResultCache;
+		this.tracer = config.tracer;
 		LOGGER.info("Cube mock service started");
 	}
 
@@ -263,6 +283,7 @@ public class MockServiceHTTP {
 	private RequestComparatorCache requestComparatorCache;
 	private ReplayResultCache replayResultCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
+	private Tracer tracer;
 	
 	// TODO - make trace field configurable
 	private static RequestComparator mspec = (ReqMatchSpec) ReqMatchSpec.builder()

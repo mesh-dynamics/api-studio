@@ -9,6 +9,7 @@
 	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
 	  <version.java>11</version.java>
 	  <version.jaxb>2.3.2</version.jaxb>
+	  <version.jaeger>0.32.0</version.jaeger>
   </properties>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -240,6 +241,16 @@
 		  <groupId>com.sun.xml.bind</groupId>
 		  <artifactId>jaxb-core</artifactId>
 		  <version>2.3.0.1</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>io.cube</groupId>
+		  <artifactId>agent</artifactId>
+		  <version>1.0-SNAPSHOT</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>io.jaegertracing</groupId>
+		  <artifactId>jaeger-client</artifactId>
+		  <version>${version.jaeger}</version>
 	  </dependency>
   </dependencies>
   <groupId>com.cube</groupId>

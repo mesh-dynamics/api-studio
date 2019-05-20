@@ -1,15 +1,25 @@
 package com.cube.cache;
 
+import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.cache.*;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+
+import io.cube.agent.FnKey;
 
 import com.cube.core.CompareTemplate;
+import com.cube.core.ResponseComparator;
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;
+import com.cube.ws.Config;
 
 
 /**
@@ -20,15 +30,15 @@ public class TemplateCache {
 
 
     private LoadingCache<TemplateKey, CompareTemplate> templateCache;
-
-
+    private Config config;
     private static final Logger LOGGER = LogManager.getLogger(TemplateCache.class);
 
     /**
      *
      * @param rrStore
      */
-    public TemplateCache(ReqRespStore rrStore) {
+    public TemplateCache(ReqRespStore rrStore, Config config) {
+        this.config = config;
         templateCache = CacheBuilder.newBuilder().maximumSize(200).removalListener(
                 new RemovalListener<>() {
                     @Override
@@ -47,10 +57,27 @@ public class TemplateCache {
         );
     }
 
+    private FnKey cacheFnKey;
 
     public CompareTemplate fetchCompareTemplate(TemplateKey key) throws CacheException {
+        if (cacheFnKey == null) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            cacheFnKey = new FnKey(config.customerId, config.app, config.instance,
+                config.serviceName, method);
+        }
+
+        if (config.getState() == Config.AppState.Mock) {
+            return (CompareTemplate) config.mocker.mock(cacheFnKey, Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), key).retVal;
+        }
+
+
         try {
-            return templateCache.get(key);
+            CompareTemplate toReturn = templateCache.get(key);
+            if (config.getState() == Config.AppState.Record) {
+                config.recorder.record(cacheFnKey, Optional.empty(), Optional.empty(), Optional.empty(), toReturn, key);
+            }
+            return toReturn;
         }  catch (ExecutionException e) {
             // wrapping all exceptions in CacheException class
             throw new CacheException("Error while fetching template for :".concat(key.toString()) , e);

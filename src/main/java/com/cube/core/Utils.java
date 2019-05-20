@@ -3,16 +3,33 @@
  */
 package com.cube.core;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import org.apache.commons.lang.StringUtils;
+
+import io.jaegertracing.Configuration;
+import io.jaegertracing.internal.JaegerTracer;
+import io.jaegertracing.internal.samplers.ConstSampler;
+import io.opentracing.Scope;
+import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
+import io.opentracing.propagation.Format;
+import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.tag.Tags;
 
 import com.cube.ws.Config;
 
@@ -108,6 +125,45 @@ public class Utils {
 
 	public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
 	    return findFirstCaseInsensitiveMatch(mMap,Config.DEFAULT_TRACE_FIELD);
+    }
+
+    public static Scope startServerSpan(Tracer tracer, javax.ws.rs.core.HttpHeaders httpHeaders, String operationName) {
+        // format the headers for extraction
+        MultivaluedMap<String, String> rawHeaders = httpHeaders.getRequestHeaders();
+        final HashMap<String, String> headers = new HashMap<String, String>();
+        for (String key : rawHeaders.keySet()) {
+            headers.put(key, rawHeaders.get(key).get(0));
+        }
+
+        Tracer.SpanBuilder spanBuilder;
+        try {
+            SpanContext parentSpanCtx = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headers));
+            if (parentSpanCtx == null) {
+                spanBuilder = tracer.buildSpan(operationName);
+            } else {
+                spanBuilder = tracer.buildSpan(operationName).asChildOf(parentSpanCtx);
+            }
+        } catch (IllegalArgumentException e) {
+            spanBuilder = tracer.buildSpan(operationName);
+        }
+        // TODO could add more tags like http.url
+        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
+    }
+
+    public static JaegerTracer init(String service) {
+        Configuration.SamplerConfiguration samplerConfig = Configuration.SamplerConfiguration.fromEnv()
+            .withType(ConstSampler.TYPE)
+            .withParam(1);
+
+        Configuration.ReporterConfiguration reporterConfig = Configuration.ReporterConfiguration.fromEnv()
+            .withLogSpans(true);
+
+        Configuration.CodecConfiguration codecConfiguration = Configuration.CodecConfiguration.fromString("B3");
+
+        Configuration config = new Configuration(service)
+            .withSampler(samplerConfig)
+            .withReporter(reporterConfig).withCodec(codecConfiguration);
+        return config.getTracer();
     }
 
 }

@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -25,6 +26,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
@@ -35,6 +37,9 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
+import io.cube.agent.FnKey;
+import io.cube.agent.FnResponse;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
@@ -197,14 +202,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(doc);
     }
 
+    public Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
+        return getStrField(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal , getTSField(doc,TIMESTAMPF)));
+    }
+
     @Override
-    public Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection) {
+    public Optional<FnResponse> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection) {
         StringBuilder argsQuery = new StringBuilder();
         argsQuery.append("*:*");
         var counter = new Object(){int x =0;};
         // not sure if we'll be able to keep trace same for record and replay
         funcReqResponse.traceId.ifPresent(trace ->
             argsQuery.append(" OR ").append(HDRTRACEF).append(":").append(trace));
+        funcReqResponse.respTS.ifPresent(timestamp -> argsQuery.
+            append(" OR ").append(TIMESTAMPF + ":[" + timestamp.toString() + " TO *]"));
+
         SolrQuery query = new SolrQuery(argsQuery.toString());
         query.setFields("*");
         addFilter(query, TYPEF, Types.FuncReqResp.toString());
@@ -213,10 +225,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, SERVICEF, funcReqResponse.service);
         Arrays.asList(funcReqResponse.argsHash).
             stream().forEachOrdered(argHashVal ->  addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX , argHashVal));
-        funcReqResponse.respTS.ifPresent(timestamp -> query.addFilterQuery(TIMESTAMPF + ":[" + timestamp.toString() + " TO *]"));
         Optional<Integer> maxResults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxResults).
-            findFirst().flatMap(doc -> getStrField(doc, FUNC_RET_VAL));
+        return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(doc -> solrDocToFnResponse(doc));
     }
 
 
@@ -293,6 +303,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         super();
         this.solr = solr;
         this.config = config;
+        SolrIterator.setConfig(config);
     }
 
     private final SolrClient solr;
@@ -712,15 +723,40 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
-    private boolean saveDoc(SolrInputDocument doc) {
+    private FnKey saveFuncKey;
 
+    private boolean saveDoc(SolrInputDocument doc) {
+        Optional<String> action = config.getCurrentActionFromScope();
+        if (saveFuncKey == null) {
+            try {
+                Method currentMethod = solr.getClass().getMethod("add", doc.getClass());
+                saveFuncKey = new FnKey(config.customerId, config.app,
+                    config.instance, config.serviceName, currentMethod);
+            } catch (Exception e) {
+                LOGGER.error("Couldn't Initiate save function key :: " + e.getMessage());
+            }
+        }
+
+        if (!action.orElse("").equals("func") && this.config.getState() == Config.AppState.Mock) {
+            UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), doc).retVal;
+            return fromSolr != null;
+        }
+
+        UpdateResponse fromSolr = null;
+        boolean toReturn = false;
         try {
-            solr.add(doc);
+            fromSolr = solr.add(doc);
+            toReturn = true;
+
         } catch (SolrServerException | IOException e) {
             LOGGER.error("Error in saving response", e);
-            return false;
-        }        
-        return true;
+        }
+        if (!action.orElse("").equals("func") && this.config.getState() == Config.AppState.Record) {
+            config.recorder.record(saveFuncKey , Optional.empty()
+                , Optional.empty() , Optional.empty() , fromSolr, doc);
+        }
+        return toReturn;
     }
     
     // field names in Solr for Replay object
