@@ -1,15 +1,10 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
-import com.cubeui.backend.domain.DTO.AppDTO;
 import com.cubeui.backend.domain.DTO.RecordingDTO;
-import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.Recording;
-import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.RecordingRepository;
-import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
 import org.springframework.http.ResponseEntity;
