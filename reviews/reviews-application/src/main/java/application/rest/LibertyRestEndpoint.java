@@ -51,7 +51,7 @@ public class LibertyRestEndpoint extends Application {
         if (failPercent != null) {
             FAIL_PERCENT = Double.parseDouble(failPercent);
         }
-        if(failPercentStdDev != null) {
+        if (failPercentStdDev != null) {
             FAIL_PERCENT_STD_DEV = Double.parseDouble(failPercentStdDev);
         }
     }
@@ -165,7 +165,7 @@ public class LibertyRestEndpoint extends Application {
                                     @HeaderParam("x-ot-span-context") String xotspan) {
         Random random = new Random();
         Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
-        if(random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+        if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .header(HttpHeaders.RETRY_AFTER, " :=120")
                     .build();

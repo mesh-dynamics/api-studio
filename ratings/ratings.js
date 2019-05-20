@@ -142,7 +142,7 @@ dispatcher.onGet(/^\/ratings\/[0-9]*/, function (req, res) {
     var failPercent = process.env.FAIL_PERCENT,
         randomPercent = Math.random();
     console.log("failPercent: ", failPercent);
-    if(failPercent && randomPercent < failPercent) {
+    if (failPercent && randomPercent < failPercent) {
         res.writeHead(500, {'Content-type': 'application/json'})
         res.end(JSON.stringify({"error": "Internal server error. Please try later."}))
     } else {

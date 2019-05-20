@@ -21,7 +21,7 @@ public class RandomResponseFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
         Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
         try {
-            if(random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+            if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
                 containerRequestContext.wait(1000000);
                 containerRequestContext.abortWith(
                         Response.status(Response.Status.INTERNAL_SERVER_ERROR)

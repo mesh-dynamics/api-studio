@@ -137,12 +137,12 @@ public class Config {
         }
 
         String failPercent = this.getProperty("FAIL_PERCENT");
-        if(failPercent != null) {
+        if (failPercent != null) {
             FAIL_PERCENT = Double.parseDouble(failPercent);
         }
 
         String failPercentStdDev = this.getProperty("FAIL_PERCENT_STD_DEV");
-        if(failPercent != null) {
+        if (failPercentStdDev != null) {
             FAIL_PERCENT_STD_DEV = Double.parseDouble(failPercentStdDev);
         }
 

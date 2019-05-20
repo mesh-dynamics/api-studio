@@ -59,7 +59,7 @@ public class BookInfo {
             Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
 
         	// get details
-            if(random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+            if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
                 JSONObject detailsResult = null;
                 bookInfo.put("details", detailsResult);
             } else {

@@ -66,7 +66,7 @@ public class MovieRentals {
 					films = listMoviesByKeyword(filmnameOrKeywordForRequest);
 	    		}
 				if (films != null && films.length() > 0) {
-					if(Config.V1.equalsIgnoreCase(config.VERSION)) {
+					if (Config.V2.equalsIgnoreCase(config.VERSION)) {
 						for (int i = 0; i < films.length(); ++i) {
 							JSONObject film = films.getJSONObject(i);
 							JSONArray nearByStores = this.findAvailableStores(film.getInt("film_id"));
