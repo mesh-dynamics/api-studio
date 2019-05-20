@@ -1,15 +1,10 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
-import com.cubeui.backend.domain.DTO.AppDTO;
 import com.cubeui.backend.domain.DTO.ServiceDTO;
-import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.Service;
-import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.ServiceRepository;
-import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
 import org.springframework.http.ResponseEntity;
@@ -58,7 +53,7 @@ public class ServiceController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("User with ID '" + serviceDTO.getId() + "' not found.");
+            throw new RecordFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
         }
     }
 
@@ -78,7 +73,7 @@ public class ServiceController {
                 service1.setName(serviceDTO.getName());
                 service1.setType(serviceDTO.getType());
             });
-            this.appRepository.save(app.get());
+            this.serviceRepository.save(service.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
