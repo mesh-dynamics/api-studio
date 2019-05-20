@@ -38,7 +38,7 @@ public class UserController {
 
     @PostMapping("/save")
     public ResponseEntity save(@RequestBody UserDTO userDTO, HttpServletRequest request) {
-        Optional<User> user = this.userService.getByUsername(userDTO.getUsername());
+        Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isEmpty()) {
             User saved = this.userService.save(userDTO);
             return created(
@@ -55,7 +55,7 @@ public class UserController {
 
     @PostMapping("/update")
     public ResponseEntity update(@RequestBody UserDTO userDTO, HttpServletRequest request) {
-        Optional<User> user = this.userService.getByUsername(userDTO.getUsername());
+        Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isPresent()) {
             User saved = this.userService.save(userDTO);
             return created(
@@ -66,7 +66,7 @@ public class UserController {
                             .toUri())
                     .body("User '" + saved.getUsername() + "' updated");
         } else {
-            throw new RecordFoundException("User with username '" + userDTO.getUsername() + "' not found.");
+            throw new RecordFoundException("User with username '" + userDTO.getEmail() + "' not found.");
         }
     }
 

@@ -1,7 +1,7 @@
 package com.cubeui.backend.service;
 
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.domain.Role;
+import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Service class for managing users.
+ * ServiceDTO class for managing users.
  */
 @Service
 @Transactional
@@ -43,6 +43,7 @@ public class UserService {
 
     public User save(UserDTO userDTO) {
         Set<String> roles = new HashSet<>();
+//        roles.add("ROLE_USER");
         if (userDTO.getRoles() != null) {
             Set<String> allRoles = Role.getAllRoles();
             roles = userDTO.getRoles().stream()
@@ -50,24 +51,24 @@ public class UserService {
                     .filter(allRoles::contains)
                     .collect(Collectors.toSet());
         }
-        Optional<User> user = userRepository.findByUsername(userDTO.getUsername());
-        if (user.isPresent()){
-            return this.userRepository.save(User.builder()
-                    .id(user.get().getId())
-                    .username(userDTO.getUsername())
+        final Set<String> finalRoles = roles;
+        Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
+        user.ifPresent(u -> {
+            u.setName(userDTO.getName());
+            u.setPassword(this.passwordEncoder.encode(userDTO.getPassword()));
+            u.setRoles(finalRoles);
+            this.userRepository.save(u);
+        });
+        if (user.isEmpty()){
+            user = Optional.of(this.userRepository.save(User.builder()
+                    .name(userDTO.getName())
+                    .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .roles(roles)
                     .build()
-            );
-        } else {
-            return this.userRepository.save(User.builder()
-                    .username(userDTO.getUsername())
-                    .password(this.passwordEncoder.encode(userDTO.getPassword()))
-                    .roles(roles)
-                    .build()
-            );
+            ));
         }
-
+        return user.get();
     }
 
     public boolean deleteUser(Long id) {
