@@ -1,13 +1,8 @@
 package com.cubeui.backend.web.rest;
 
-import com.cubeui.backend.domain.App;
-import com.cubeui.backend.domain.DTO.RecordingDTO;
 import com.cubeui.backend.domain.DTO.ReplayDTO;
-import com.cubeui.backend.domain.Recording;
 import com.cubeui.backend.domain.Replay;
 import com.cubeui.backend.domain.Test;
-import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ReplayRepository;
 import com.cubeui.backend.repository.TestRepository;
 import com.cubeui.backend.web.ErrorResponse;
