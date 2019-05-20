@@ -35,8 +35,8 @@ public class SimpleMocker implements Mocker {
 
 
     @Override
-    public Object mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
-                       Optional<Instant> prevRespTS, Object... args) {
+    public FnResponseObj mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
+                              Optional<Instant> prevRespTS, Object... args) {
         try {
             String[] argVals =
                     Arrays.stream(args).map(UtilException.rethrowFunction(jsonMapper::writeValueAsString)).toArray(String[]::new);
@@ -48,10 +48,18 @@ public class SimpleMocker implements Mocker {
                     fnKey.service, fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
                     prevRespTS, argsHash, argVals, "");
 
-            return cubeClient.getMockResponse(fnReqResponse).
-                    map(UtilException.rethrowFunction(response ->
-                            jsonMapper.readValue(response, fnKey.function.getReturnType())))
-                    .orElseThrow(() ->new Exception("No Matching response received"));
+            Optional<FnResponse> ret = cubeClient.getMockResponse(fnReqResponse);
+
+            // need to check is before trying to convert return value, otherwise null return value also leads to
+            // empty optional
+            if (ret.isEmpty()) {
+                LOGGER.error("Error in mocking function, no matching response received, returning null");
+                return new FnResponseObj(null, Optional.empty());
+            } else {
+                FnResponse response = ret.get();
+                Object retVal = jsonMapper.readValue(response.retVal, fnKey.function.getReturnType());
+                return new FnResponseObj(retVal, response.timeStamp);
+            }
 
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException

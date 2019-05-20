@@ -1,6 +1,5 @@
 package io.cube.agent;
 
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -17,9 +16,9 @@ public interface Mocker {
      * @param spanId The span that the current call belongs to
      * @param prevRespTS The timestamp of the previous response
      * @param args The argument values as Java objects
-     * @return The response value as Java object
+     * @return The response value as Java object, along with a timestamp
      */
-    Object mock(FnKey fnKey,
+    FnResponseObj mock(FnKey fnKey,
                 Optional<String> traceId,
                 Optional<String> spanId,
                 Optional<String> parentSpanId,
