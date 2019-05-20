@@ -1,9 +1,9 @@
 package com.cubeui.backend.web.rest;
 
-import com.cubeui.backend.domain.DTO.TestDTO;
+import com.cubeui.backend.domain.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.Recording;
 import com.cubeui.backend.domain.Service;
-import com.cubeui.backend.domain.Test;
+import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestRepository;
@@ -40,21 +40,21 @@ public class TestController {
     }
 
     @PostMapping("")
-    public ResponseEntity save(@RequestBody TestDTO testDTO, HttpServletRequest request) {
+    public ResponseEntity save(@RequestBody TestConfigDTO testDTO, HttpServletRequest request) {
         if (testDTO.getId() != null) {
-            return status(FORBIDDEN).body(new ErrorResponse("Test with ID '" + testDTO.getId() +"' already exists."));
+            return status(FORBIDDEN).body(new ErrorResponse("TestConfig with ID '" + testDTO.getId() +"' already exists."));
         }
         Optional<Service> service = serviceRepository.findById(testDTO.getGatewayServiceId());
         Optional<Recording> recording = recordingRepository.findById(testDTO.getCollectionId());
         if (service.isPresent() && recording.isPresent()) {
-            Test saved = this.testRepository.save(
-                    Test.builder().collection(recording.get()).gatewayService(service.get()).description(testDTO.getDescription())
+            TestConfig saved = this.testRepository.save(
+                    TestConfig.builder().collection(recording.get()).gatewayService(service.get()).description(testDTO.getDescription())
                             .endpoint(testDTO.getEndpoint()).gatewayPathSelection(testDTO.getGatewayPathSelection())
                             .testConfigName(testDTO.getTestConfigName()).build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/test/{id}")
+                            .path("/api/testConfig/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
                     .body(saved);
@@ -68,11 +68,11 @@ public class TestController {
     }
 
     @PutMapping("")
-    public ResponseEntity update(@RequestBody TestDTO testDTO, HttpServletRequest request) {
+    public ResponseEntity update(@RequestBody TestConfigDTO testDTO, HttpServletRequest request) {
         if (testDTO.getId() == null) {
-            return status(FORBIDDEN).body(new ErrorResponse("Test id not provided"));
+            return status(FORBIDDEN).body(new ErrorResponse("TestConfig id not provided"));
         }
-        Optional<Test> test = testRepository.findById(testDTO.getId());
+        Optional<TestConfig> test = testRepository.findById(testDTO.getId());
         Optional<Service> service = serviceRepository.findById(testDTO.getGatewayServiceId());
         Optional<Recording> recording = recordingRepository.findById(testDTO.getCollectionId());
         if (service.isEmpty()){
@@ -94,12 +94,12 @@ public class TestController {
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/test/{id}")
+                            .path("/api/testConfig/{id}")
                             .buildAndExpand(recording.get().getId())
                             .toUri())
                     .body(test);
         } else {
-            throw new RecordFoundException("Test with ID '" + testDTO.getId() + "' not found.");
+            throw new RecordFoundException("TestConfig with ID '" + testDTO.getId() + "' not found.");
         }
     }
 
@@ -110,7 +110,7 @@ public class TestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
-        Optional<Test> existed = this.testRepository.findById(id);
+        Optional<TestConfig> existed = this.testRepository.findById(id);
         this.testRepository.delete(existed.get());
         return noContent().build();
     }

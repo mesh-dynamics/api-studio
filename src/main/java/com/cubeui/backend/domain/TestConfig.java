@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
         name = "jsonb",
         typeClass = JsonBinaryType.class
 )
-public class Test {
+public class TestConfig {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

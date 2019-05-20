@@ -2,7 +2,7 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.DTO.ReplayDTO;
 import com.cubeui.backend.domain.Replay;
-import com.cubeui.backend.domain.Test;
+import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.repository.ReplayRepository;
 import com.cubeui.backend.repository.TestRepository;
 import com.cubeui.backend.web.ErrorResponse;
@@ -40,11 +40,11 @@ public class ReplayController {
         if (replayDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Replay with ID '" + replayDTO.getId() +"' already exists."));
         }
-        Optional<Test> test = testRepository.findById(replayDTO.getTestId());
+        Optional<TestConfig> test = testRepository.findById(replayDTO.getTestId());
         if (test.isPresent()) {
             Replay saved = this.replayRepository.save(
                     Replay.builder().replayName(replayDTO.getReplayName()).analysis(replayDTO.getAnalysis()).completedAt(replayDTO.getCompletedAt())
-                            .test(test.get()).reqCount(replayDTO.getReqCount()).reqFailed(replayDTO.getReqFailed())
+                            .testConfig(test.get()).reqCount(replayDTO.getReqCount()).reqFailed(replayDTO.getReqFailed())
                             .reqSent(replayDTO.getReqSent()).sampleRate(replayDTO.getSampleRate()).status(replayDTO.getStatus()).build());
             return created(
                     ServletUriComponentsBuilder
@@ -54,7 +54,7 @@ public class ReplayController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("Test with ID '" + replayDTO.getTestId() + "' not found.");
+            throw new RecordFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
         }
     }
 
@@ -64,13 +64,13 @@ public class ReplayController {
             return status(FORBIDDEN).body(new ErrorResponse("Replay id not provided"));
         }
         Optional<Replay> replay = replayRepository.findById(replayDTO.getId());
-        Optional<Test> test = testRepository.findById(replayDTO.getTestId());
+        Optional<TestConfig> test = testRepository.findById(replayDTO.getTestId());
         if (test.isEmpty()){
-            throw new RecordFoundException("Test with ID '" + replayDTO.getTestId() + "' not found.");
+            throw new RecordFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
         }
         if (replay.isPresent()) {
             replay.ifPresent(rep -> {
-                rep.setTest(test.get());
+                rep.setTestConfig(test.get());
                 rep.setAnalysis(replayDTO.getAnalysis());
                 rep.setStatus(replayDTO.getStatus());
                 rep.setReplayName(replayDTO.getReplayName());

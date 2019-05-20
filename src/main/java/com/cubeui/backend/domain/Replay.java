@@ -42,7 +42,7 @@ public class Replay {
 
     @ManyToOne
     @JoinColumn(name = "test_id")
-    Test test;
+    TestConfig testConfig;
 
     @NotEmpty
     @Enumerated(EnumType.STRING)

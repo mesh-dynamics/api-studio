@@ -39,7 +39,7 @@ public class CompareTemplate {
 
     @ManyToOne
     @JoinColumn(name = "test_id")
-    Test test;
+    TestConfig testConfig;
 
     @NotEmpty
     @Column(nullable = false)
