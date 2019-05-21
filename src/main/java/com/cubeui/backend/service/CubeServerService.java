@@ -7,15 +7,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Optional;
 
 import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -30,14 +28,6 @@ public class CubeServerService {
     public CubeServerService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
-
-//    public ResponseEntity fetchGetResponse(HttpServletRequest request){
-//        String path = CUBE_SERVER_HREF + request.getRequestURI() + "?";
-//        if (request.getQueryString() != null) {
-//            path += request.getQueryString();
-//        }
-//        return fetchGetResponse(path);
-//    }
 
     public ResponseEntity fetchGetResponse(String path){
         try {
@@ -69,22 +59,11 @@ public class CubeServerService {
         try {
             URI uri = new URI(path);
             HttpHeaders headers = new HttpHeaders();
-            Iterator<String> it = request.getHeaderNames().asIterator();
-            while (it.hasNext()) {
-                String key = it.next();
-                headers.set(key, request.getHeader(key));
-            }
+            request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
 //            MultiValueMap<String, String[]> map = new LinkedMultiValueMap<>();
-//            Map<String, String[]> params = request.getParameterMap();
-//            for (Map.Entry<String, String[]> entry : params.entrySet()){
-//                map.add(entry.getKey(), entry.getValue());
-//            }
-            HttpEntity entity;
-            if (requestBody.isPresent()){
-                entity = new HttpEntity(requestBody.get(), headers);
-            } else {
-                entity = new HttpEntity(headers);
-            }
+//            request.getParameterMap().forEach(map::add);
+            HttpEntity<String> entity;
+            entity = requestBody.map(body -> new HttpEntity<>(body, headers)).orElseGet(() -> new HttpEntity<>(headers));
 //            return restTemplate.postForEntity(uri, entity, String.class);
             return restTemplate.exchange(uri, method, entity, String.class);
         } catch (URISyntaxException e){
