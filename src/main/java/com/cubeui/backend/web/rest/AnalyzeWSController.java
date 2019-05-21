@@ -6,15 +6,13 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
-import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
-import static org.springframework.http.ResponseEntity.noContent;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/as")
 public class AnalyzeWSController {
 
     private CubeServerService cubeServerService;
-    private String baseHref =  CUBE_SERVER_HREF + "/as";
 
     public AnalyzeWSController(CubeServerService cubeServerService) {
         this.cubeServerService = cubeServerService;
@@ -45,28 +43,18 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request);
     }
 
-    @PostMapping("registerTemplate/{type}/{customerId}/{appId}/{serviceName}/{path:.+}")
-//    @Consumes({MediaType.APPLICATION_JSON})
-    public ResponseEntity registerTemplate(@PathVariable("appId") String appId,
-                                           @PathVariable("customerId") String customerId,
-                                           @PathVariable("serviceName") String serviceName,
-                                           @PathVariable("path") String path,
-                                           @PathVariable("type") String type,
-                                           String templateAsJson) {
-        return noContent().build();
+    @PostMapping("/registerTemplate/{type}/{customerId}/{appId}/{serviceName}/{path:.+}")
+    public ResponseEntity registerTemplate(HttpServletRequest request, @RequestBody String requestBody) {
+        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
     }
 
-    @PostMapping("registerTemplateApp/{type}/{customerId}/{appId}")
-//    @Consumes({MediaType.APPLICATION_JSON})
-    public ResponseEntity registerTemplateApp(@PathVariable("type") String type,
-                                              @PathVariable("customerId") String customerId ,
-                                              @PathVariable("appId") String appId,
-                                              String templateRegistryArray) {
-        return noContent().build();
+    @PostMapping("/registerTemplateApp/{type}/{customerId}/{appId}")
+    public ResponseEntity registerTemplateApp(HttpServletRequest request, @RequestBody String requestBody) {
+        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
     }
 
     @PostMapping(value = "/analyze/{replayid}")
-    public ResponseEntity analyze(@PathVariable("replayid") String replayid, HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(baseHref + "/analyze/" + replayid);
+    public ResponseEntity analyze(HttpServletRequest request, @RequestBody String requestBody) {
+        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
     }
 }
