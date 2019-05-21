@@ -46,6 +46,7 @@ public class Config {
     public static final String V1 = "v1";
     public static final String V2 = "v2";
     public String VERSION = "v1";
+    public double TIME_BETWEEN_RUNS = 60000;
 	
 	public Config() {
 		LOGGER.info("Creating config");
@@ -154,6 +155,11 @@ public class Config {
 
         String version = this.getProperty("VERSION");
         VERSION = (version == null || version.isBlank()) ? VERSION : version;
+
+        String timeBetweenRuns = this.getProperty("TIME_BETWEEN_RUNS");
+        if (timeBetweenRuns != null) {
+            TIME_BETWEEN_RUNS = Long.parseLong(timeBetweenRuns);
+        }
         
         if (USE_KUBE) {
         	overrideConfigWithKubeSettings();
@@ -298,8 +304,13 @@ public class Config {
             FAIL_PERCENT = Double.parseDouble(failPercentStdDev);
         }
 
-        String version = this.getProperty("VERSION");
+        String version = System.getenv("VERSION");
         VERSION = (version == null || version.isBlank()) ? VERSION : version;
+
+        String timeBetweenRuns = System.getenv("TIME_BETWEEN_RUNS");
+        if (timeBetweenRuns != null) {
+            TIME_BETWEEN_RUNS = Long.parseLong(timeBetweenRuns);
+        }
 
         // NUM_ACTORS_TO_DISPLAY
         String numActorsToDisplay = System.getenv("NUM_ACTORS_TO_DISPLAY");

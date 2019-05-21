@@ -15,6 +15,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Date;
 import java.util.Properties;
 import java.util.Random;
 
@@ -29,6 +30,9 @@ public class BookInfo {
 
     final static Logger LOGGER = Logger.getLogger(BookInfo.class);
     private final Random random = new Random();
+
+    private Double randomGuassianPercentGivenStdDevAndMean;
+    private long requestTimeStamp;
 
     private static String PRODUCTPAGE_URI = "http://productpage:9080";
     private static String BOOKDETAILS_URI = "http://details:9080";
@@ -47,6 +51,9 @@ public class BookInfo {
 
         this.tracer = tracer;
         this.config = config;
+
+        randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
+        requestTimeStamp = new Date().getTime();
     }
 
     // get book info
@@ -56,9 +63,24 @@ public class BookInfo {
         JSONObject bookInfo = new JSONObject();
     	JSONObject result = null;
         try {
-            Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
+            // get details
+            /*
+                Randomly not making the request call to 'details' rest application to mimic null response,
+                unlike for the other two ('ratings' and 'reviews' apps, where the code to fail the response randomly is written).
+                Ideally we can do in the details (ruby application) but since not familiar with the ruby syntax at this point of time, doing it here temporarily.
+             */
 
-        	// get details
+            /*
+                Changing the random fail percent between runs.
+                Ideally it should be updated with an API hook when a new replay starts.
+                For now it is updated every 60 seconds assuming we dont run replays too often
+             */
+            long currentRequestTimeStamp = new Date().getTime();
+            if (requestTimeStamp + config.TIME_BETWEEN_RUNS < currentRequestTimeStamp) {
+                LOGGER.debug("Random fail percent updated");
+                requestTimeStamp = currentRequestTimeStamp;
+                randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
+            }
             if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
                 JSONObject detailsResult = null;
                 bookInfo.put("details", detailsResult);
@@ -85,7 +107,7 @@ public class BookInfo {
             bookInfo.put("reviews", result);
             
         	response.close();
-  	    return result;
+  	    return bookInfo;
   	  } catch (Exception e) {
   		  LOGGER.error(String.format("getBookInfo failed: %s, params: %d; %s", title, id, e.toString()));
   		  if (response != null) {
