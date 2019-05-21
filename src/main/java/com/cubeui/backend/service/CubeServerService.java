@@ -81,7 +81,7 @@ public class CubeServerService {
 //            }
             HttpEntity entity;
             if (requestBody.isPresent()){
-                entity = new HttpEntity(requestBody, headers);
+                entity = new HttpEntity(requestBody.get(), headers);
             } else {
                 entity = new HttpEntity(headers);
             }
