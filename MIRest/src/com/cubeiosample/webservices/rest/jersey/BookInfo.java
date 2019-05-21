@@ -76,11 +76,12 @@ public class BookInfo {
                 For now it is updated every 60 seconds assuming we dont run replays too often
              */
             long currentRequestTimeStamp = new Date().getTime();
-            if (requestTimeStamp + config.TIME_BETWEEN_RUNS < currentRequestTimeStamp) {
+            if (requestTimeStamp + config.TIME_BETWEEN_RUNS > currentRequestTimeStamp) {
                 LOGGER.debug("Random fail percent updated");
-                requestTimeStamp = currentRequestTimeStamp;
                 randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * config.FAIL_PERCENT_STD_DEV + config.FAIL_PERCENT;
             }
+            requestTimeStamp = currentRequestTimeStamp;
+
             if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
                 JSONObject detailsResult = null;
                 bookInfo.put("details", detailsResult);

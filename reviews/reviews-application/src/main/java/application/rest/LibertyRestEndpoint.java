@@ -180,10 +180,11 @@ public class LibertyRestEndpoint extends Application {
             For now it is updated every 60 seconds assuming we dont run replays too often
          */
         long currentRequestTimeStamp = new Date().getTime();
-        if (requestTimeStamp + TIME_BETWEEN_RUNS < currentRequestTimeStamp) {
-            requestTimeStamp = currentRequestTimeStamp;
+        if (requestTimeStamp + TIME_BETWEEN_RUNS > currentRequestTimeStamp) {
             randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
         }
+        requestTimeStamp = currentRequestTimeStamp;
+
         if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .header(HttpHeaders.RETRY_AFTER, " :=120")
