@@ -1,12 +1,12 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.service.CubeServerService;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
 import static org.springframework.http.ResponseEntity.noContent;
 
 @RestController
@@ -14,7 +14,7 @@ import static org.springframework.http.ResponseEntity.noContent;
 public class AnalyzeWSController {
 
     private CubeServerService cubeServerService;
-    private String baseHref =  "/as";
+    private String baseHref =  CUBE_SERVER_HREF + "/as";
 
     public AnalyzeWSController(CubeServerService cubeServerService) {
         this.cubeServerService = cubeServerService;
@@ -22,33 +22,27 @@ public class AnalyzeWSController {
 
     @GetMapping("/health")
     public ResponseEntity getData1(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(baseHref + "/health");
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/aggrresult/{replayid}")
-    public ResponseEntity getResultAggregate(@PathVariable("replayid") String replayid) {
-        return cubeServerService.fetchGetResponse(baseHref + "/aggrresult/" + replayid);
+    public ResponseEntity getResultAggregate(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/replayRes/{customerId}/{app}/{service}/{replayId}")
-    public ResponseEntity replayResult(@PathVariable("customerId") String customerId,
-                                       @PathVariable("app") String app,
-                                       @PathVariable("service") String service,
-                                       @PathVariable("replayId") String replayId) {
-        return cubeServerService.fetchGetResponse(baseHref + "/replayRes/" + customerId +"/" + app + "/" + service + "/" + replayId);
+    public ResponseEntity replayResult(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/analysisRes/{replayId}/{recordReqId}")
-    public ResponseEntity getAnalysisResult(@PathVariable("recordReqId") String recordReqId,
-                                            @PathVariable("replayId") String replayId) {
-        return cubeServerService.fetchGetResponse(baseHref + "/analysisRes/" + replayId + "/" + recordReqId);
+    public ResponseEntity getAnalysisResult(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/timelineres/{customer}/{app}/{instanceId}")
-    public ResponseEntity getTimelineResults(@PathVariable("customer") String customer,
-                                             @PathVariable("app") String app,
-                                             @PathVariable("instanceId") String instanceId) {
-        return cubeServerService.fetchGetResponse(baseHref + "/timelineres/" + customer + "/" + app + "/" + instanceId);
+    public ResponseEntity getTimelineResults(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @PostMapping("registerTemplate/{type}/{customerId}/{appId}/{serviceName}/{path:.+}")

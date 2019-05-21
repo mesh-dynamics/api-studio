@@ -6,15 +6,18 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
+
+import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("/ms")
 public class MockServiceController {
 
-    private String baseHref =  "/ms";
+    private String baseHref =  CUBE_SERVER_HREF + "/ms";
     private CubeServerService cubeServerService;
 
     public MockServiceController(CubeServerService cubeServerService) {
@@ -22,19 +25,15 @@ public class MockServiceController {
     }
 
     @GetMapping("/health")
-    public ResponseEntity health() {
-        return cubeServerService.fetchGetResponse(baseHref + "/health");
+    public ResponseEntity health(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
 
     @GetMapping("/{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-    public ResponseEntity get(@PathVariable("var") String path,
-//                              @Context HttpHeaders headers
-                        @PathVariable("customerid") String customerid,
-                        @PathVariable("app") String app,
-                        @PathVariable("instanceid") String instanceid,
-                        @PathVariable("service") String service) {
-        return cubeServerService.fetchGetResponse(baseHref + "/"+customerid+"/"+app+"/"+instanceid+"/"+service+"/"+path/*var:.+}"*/);
+    public ResponseEntity get(HttpServletRequest request) {
+//                              @Context HttpHeaders headers) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @PostMapping(value = "/{customerid}/{app}/{instanceid}/{service}/{var:.+}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)

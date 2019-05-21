@@ -4,10 +4,12 @@ import com.cubeui.backend.service.CubeServerService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 
-import static org.springframework.http.ResponseEntity.noContent;
+import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
+import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("/cs")
@@ -15,34 +17,32 @@ public class CubeStoreController {
 
 
     private CubeServerService cubeServerService;
-    private String baseHref =  "/cs";
+    private RestTemplate restTemplate;
+    private String baseHref =  CUBE_SERVER_HREF + "/cs";
 
-    public CubeStoreController(CubeServerService cubeServerService) {
+    public CubeStoreController(CubeServerService cubeServerService, RestTemplate restTemplate) {
         this.cubeServerService = cubeServerService;
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping("/health")
     public ResponseEntity getData1(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(baseHref + "/health");
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/status/{customerid}/{app}/{collection}")
-    public ResponseEntity status(
-//            @Context UriInfo ui,
-            @PathVariable("collection") String collection,
-            @PathVariable("customerid") String customerid,
-            @PathVariable("app") String app) {
-        return cubeServerService.fetchGetResponse(baseHref + "/status/" + customerid + "/" + app + "/" + collection);
+    public ResponseEntity status(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/recordings")
-    public ResponseEntity recordings(/*@Context UriInfo ui*/) {
-        return cubeServerService.fetchGetResponse(baseHref + "/recordings");
+    public ResponseEntity recordings(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @GetMapping("/currentcollection")
-    public ResponseEntity currentcollection(/*@Context UriInfo ui*/) {
-        return cubeServerService.fetchGetResponse(baseHref + "/currentcollection");
+    public ResponseEntity currentcollection(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
     }
 
     @PostMapping(value = "/req")
@@ -101,4 +101,5 @@ public class CubeStoreController {
             @PathVariable("app") String app) {
         return noContent().build();
     }
+
 }

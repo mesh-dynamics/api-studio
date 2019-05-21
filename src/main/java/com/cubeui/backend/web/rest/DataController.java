@@ -1,5 +1,6 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.web.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,25 +26,17 @@ import static org.springframework.http.ResponseEntity.*;
 public class DataController {
 
     private RestTemplate restTemplate;
+    private CubeServerService cubeServerService;
 
-    public DataController(RestTemplate restTemplate) {
+    public DataController(RestTemplate restTemplate, CubeServerService cubeServerService) {
         this.restTemplate = restTemplate;
+        this.cubeServerService = cubeServerService;
     }
 
     @GetMapping("")
     public ResponseEntity getData1() {
         String urlString = "https://my-json-server.typicode.com/typicode/demo/db";
-        try {
-            URI uri = new URI(urlString);
-            String result = restTemplate.getForObject(uri, String.class);
-            return ok().body(result);
-        } catch (URISyntaxException e){
-            return noContent().build();
-        } catch (HttpClientErrorException e){
-            return status(e.getStatusCode()).body(new ErrorResponse(e.getLocalizedMessage()));
-        } catch (Exception e){
-            return status(NOT_FOUND).body(e);
-        }
+        return cubeServerService.fetchGetResponse(urlString);
     }
 
     @PostMapping("")
