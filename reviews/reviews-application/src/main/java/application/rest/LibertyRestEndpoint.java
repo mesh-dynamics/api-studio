@@ -15,25 +15,25 @@
  *******************************************************************************/
 package application.rest;
 
-import java.io.StringReader;
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.client.ResponseProcessingException;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.StringReader;
+import java.util.Random;
+import java.util.Date;
 
 @Path("/")
 public class LibertyRestEndpoint extends Application {
@@ -43,6 +43,29 @@ public class LibertyRestEndpoint extends Application {
     private final static String services_domain = System.getenv("SERVICES_DOMAIN") == null ? "" : ("." + System.getenv("SERVICES_DOMAIN"));
     private final static String ratings_hostname = System.getenv("RATINGS_HOSTNAME") == null ? "ratings" : System.getenv("RATINGS_HOSTNAME");
     private final static String ratings_service = "http://" + ratings_hostname + services_domain + ":9080/ratings";
+
+    private Random random = new Random();
+    private static Double FAIL_PERCENT = 0.01;
+    private static Double FAIL_PERCENT_STD_DEV = 0.002;
+    private static long TIME_BETWEEN_RUNS = 60000L;
+
+    private long requestTimeStamp = new Date().getTime();
+    private Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
+
+    static {
+        String failPercent = System.getenv("FAIL_PERCENT");
+        String failPercentStdDev = System.getenv("FAIL_PERCENT");
+        String timeBetweenRuns = System.getenv("TIME_BETWEEN_RUNS");
+        if (failPercent != null) {
+            FAIL_PERCENT = Double.parseDouble(failPercent);
+        }
+        if (failPercentStdDev != null) {
+            FAIL_PERCENT_STD_DEV = Double.parseDouble(failPercentStdDev);
+        }
+        if (timeBetweenRuns != null) {
+            TIME_BETWEEN_RUNS = Long.parseLong(timeBetweenRuns);
+        }
+    }
 
     private String getJsonResponse (String productId, int starsReviewer1, int starsReviewer2) {
     	String result = "{";
@@ -151,6 +174,22 @@ public class LibertyRestEndpoint extends Application {
                                     @HeaderParam("x-b3-sampled") String xsampled,
                                     @HeaderParam("x-b3-flags") String xflags,
                                     @HeaderParam("x-ot-span-context") String xotspan) {
+        /*
+            Changing the random fail percent between runs.
+            Ideally it should be updated with an API hook when a new replay starts.
+            For now it is updated every 60 seconds assuming we dont run replays too often
+         */
+        long currentRequestTimeStamp = new Date().getTime();
+        if (requestTimeStamp + TIME_BETWEEN_RUNS > currentRequestTimeStamp) {
+            randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
+        }
+        requestTimeStamp = currentRequestTimeStamp;
+
+        if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .header(HttpHeaders.RETRY_AFTER, " :=120")
+                    .build();
+        }
       int starsReviewer1 = -1;
       int starsReviewer2 = -1;
 
