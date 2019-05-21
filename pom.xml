@@ -10,7 +10,15 @@
 	  <version.java>11</version.java>
 	  <version.jaxb>2.3.2</version.jaxb>
 	  <version.jaeger>0.32.0</version.jaeger>
+	  <version.gson>2.8.5</version.gson>
   </properties>
+
+	<repositories>
+		<repository>
+			<id>local-repo</id>
+			<url>${project.basedir}/src/main/resources/agent-1.0-SNAPSHOT.jar</url>
+		</repository>
+	</repositories>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
     <dependencies>
@@ -30,6 +38,7 @@
 			<version>${version.jaxb}</version>
 			<type>pom</type>
 		</dependency>
+
 	</dependencies>
   </dependencyManagement>
   <build>
@@ -88,12 +97,7 @@
 		</plugin>
     </plugins>
   </build>
-	<repositories>
-		<repository>
-			<id>local-repo</id>
-			<url>file://${basedir}/src/main/resources/agent-1.0-SNAPSHOT.jar</url>
-		</repository>
-	</repositories>
+
   <dependencies>
 
 
@@ -252,14 +256,28 @@
 		  <version>2.3.0.1</version>
 	  </dependency>
 	  <dependency>
-		  <groupId>io.cube</groupId>
-		  <artifactId>agent</artifactId>
-		  <version>1.0-SNAPSHOT</version>
-	  </dependency>
-	  <dependency>
 		  <groupId>io.jaegertracing</groupId>
 		  <artifactId>jaeger-client</artifactId>
 		  <version>${version.jaeger}</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>io.cube</groupId>
+		  <artifactId>agent</artifactId>
+		  <version>1.0-SNAPSHOT</version>
+		  <scope>system</scope>
+		  <systemPath>${project.basedir}/src/main/resources/agent-1.0-SNAPSHOT.jar</systemPath>
+	  </dependency>
+
+	  <dependency>
+		  <groupId>com.google.code.gson</groupId>
+		  <artifactId>gson</artifactId>
+		  <version>${version.gson}</version>
+	  </dependency>
+	  <!--  To deal with java 8 optional and time objects in gson -->
+	  <dependency>
+		  <groupId>net.dongliu</groupId>
+		  <artifactId>gson-java8-datatype</artifactId>
+		  <version>1.1.0</version>
 	  </dependency>
   </dependencies>
   <groupId>com.cube</groupId>
