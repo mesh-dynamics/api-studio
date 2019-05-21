@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
-import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("/cs")
