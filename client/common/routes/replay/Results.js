@@ -36,7 +36,7 @@ class Results extends Component {
 
     render() {
         const {tabs, currentView} = this.state;
-        const {res, resByPath} = this.props;
+        const {res, resByPath, timeline} = this.props;
         let tabElem = tabs.map(item => (
             <div onClick={() => {this.changeTab(item.value)}} className={currentView == item.value ? 'selected res-tab' : 'res-tab'}>
                 {item.name}
@@ -46,7 +46,7 @@ class Results extends Component {
         let view;
         switch (this.state.currentView) {
             case "gateway_service":
-                view = (<GatewayTab res={res} resByPath={resByPath}/>);
+                view = (<GatewayTab res={res} resByPath={resByPath} timeline={timeline}/>);
                 break;
 
             case "supporting_services":

@@ -142,12 +142,12 @@ class replay extends Component {
             );
         }
 
-        if (cube.analysis && cube.report) {
+        if (cube.analysis && cube.report && cube.timelineData) {
             result = (
             <div className="result-container">
                 <Tabs defaultActiveKey="result" id="uncontrolled-tab-example">
                     <Tab eventKey="result" title="Test Results: Detailed view">
-                        <Results res={cube.analysis} resByPath={cube.report}/>
+                        <Results res={cube.analysis} resByPath={cube.report} timeline={cube.timelineData}/>
                     </Tab>
                     <Tab eventKey="analysis" title="Analysis">
                         <Analysis res={cube.analysis} resByPath={cube.report}/>
