@@ -39,6 +39,8 @@ class ScatterPlot extends Component {
             }
         }
 
+        graphData = graphData.reverse();
+
         console.log(graphData);
 
         return (
