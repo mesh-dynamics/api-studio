@@ -12,6 +12,7 @@ export const cubeActions = {
     getReplayStatus,
     getAnalysis,
     getReport,
+    getTimelineData,
     clear
 };
 
@@ -97,10 +98,10 @@ function getReplayId(testIdLabel) {
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 
-function getTimelineData(replayData) {
+function getTimelineData(collectionId, replayData) {
     return async dispatch => {
         try {
-            let timeline = await cubeService.fetchTimelineData(replayId);
+            let timeline = await cubeService.fetchTimelineData(collectionId, replayData);
             dispatch(success(timeline, Date.now()));
         } catch (error) {
 

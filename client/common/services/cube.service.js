@@ -324,9 +324,9 @@ async function fetchReport(collectionId, replayId) {
     return report;
 }
 
-async function fetchTimelineData(replayData) {
+async function fetchTimelineData(collectionId, replayData) {
     let response, json;
-    let url = `${config.baseUrl}/timelineres/${replayData.customerid}/${replayData.app}/${replayData.instanceid}`;
+    let url = `${config.baseUrl}/as/timelineres/${replayData.customerid}/${replayData.app}/${replayData.instanceid}?collectionId=${collectionId}`;
     let timelineData = {};
     try {
         response = await fetch(url, {
