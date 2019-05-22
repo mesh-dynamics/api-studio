@@ -1097,7 +1097,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
-        doc.setField(RECORDREQIDF, res.recordreqid);
+        res.recordreqid.ifPresent(recordReqId ->  doc.setField(RECORDREQIDF, recordReqId));
         doc.setField(REPLAYREQIDF, res.replayreqid);
         doc.setField(REQMTF, res.reqmt.toString());
         doc.setField(NUMMATCHF, res.nummatch);
