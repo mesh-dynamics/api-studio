@@ -1,10 +1,7 @@
 package com.cubeui.backend;
 
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.domain.Instance;
-import com.cubeui.backend.domain.enums.InstanceName;
 import com.cubeui.backend.domain.Product;
-import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.ProductRepository;
 import com.cubeui.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +16,10 @@ public class DataInitializer implements CommandLineRunner {
 
     private UserService userService;
     private ProductRepository productRepository;
-    private InstanceRepository instanceRepository;
 
-    public DataInitializer(UserService userService, ProductRepository productRepository, InstanceRepository instanceRepository) {
+    public DataInitializer(UserService userService, ProductRepository productRepository) {
         this.userService = userService;
         this.productRepository = productRepository;
-        this.instanceRepository = instanceRepository;
     }
 
     @Override

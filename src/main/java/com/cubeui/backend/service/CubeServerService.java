@@ -52,9 +52,9 @@ public class CubeServerService {
     }
 
     private ResponseEntity fetchResponse(HttpServletRequest request, Optional<String> requestBody, HttpMethod method){
-        String path = CUBE_SERVER_HREF + request.getRequestURI() + "?";
+        String path = CUBE_SERVER_HREF + request.getRequestURI();
         if (request.getQueryString() != null) {
-            path += request.getQueryString();
+            path += "?" + request.getQueryString();
         }
         try {
             URI uri = new URI(path);
