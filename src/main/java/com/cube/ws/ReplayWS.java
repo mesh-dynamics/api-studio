@@ -183,9 +183,44 @@ public class ReplayWS {
 		}).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
 		return resp;
 	}
-	
 
-	@POST
+
+    /**
+     * This is used only for unit testing purposes to explicitly have a replay in start mode, so that mocking
+     * can be tested
+     * @param ui
+     * @param replayid
+     * @return
+     */
+    @POST
+    @Path("forcestart/{replayid}")
+    public Response forceStart(@Context UriInfo ui,
+                                  @PathParam("replayid") String replayid) {
+        Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
+
+        Response resp = replay.map(r -> {
+            if (r.status != ReplayStatus.Init) {
+                return Response.ok(String.format("Replay id state is not Init: %s", r.status.toString())).build();
+            }
+            String json;
+            try {
+                r.status = ReplayStatus.Running;
+                json = jsonmapper.writeValueAsString(r);
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
+                return Response.serverError().build();
+            }
+            if (!rrstore.saveReplay(r)) {
+                return Response.serverError().build();
+            }
+            replayResultCache.startReplay(r.customerid, r.app , r.instanceid, replayid);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
+        return resp;
+    }
+
+
+    @POST
 	@Path("start/{customerid}/{app}/{collection}/{replayid}")
 	@Consumes("application/x-www-form-urlencoded")
 	public Response start(@Context UriInfo ui, @PathParam("collection") String collection, 
