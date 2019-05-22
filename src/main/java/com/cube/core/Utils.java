@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.jaegertracing.Configuration;
+import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.opentracing.Scope;
@@ -30,6 +31,7 @@ import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapExtractAdapter;
 import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 
 import com.cube.ws.Config;
 
@@ -91,6 +93,13 @@ public class Utils {
             return Optional.empty();
         }
     }
+    public static Optional<String> longToStr(long l) {
+	    try {
+            return Optional.of(String.valueOf(l));
+        } catch (Exception e) {
+	        return Optional.empty();
+        }
+    }
 
 	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
 		CompletableFuture<Void> allDoneFuture =
@@ -127,14 +136,12 @@ public class Utils {
 	    return findFirstCaseInsensitiveMatch(mMap,Config.DEFAULT_TRACE_FIELD);
     }
 
-    public static Scope startServerSpan(Tracer tracer, javax.ws.rs.core.HttpHeaders httpHeaders, String operationName) {
+    public static Scope startServerSpan(javax.ws.rs.core.HttpHeaders httpHeaders, String operationName) {
         // format the headers for extraction
+        Tracer tracer = GlobalTracer.get();
         MultivaluedMap<String, String> rawHeaders = httpHeaders.getRequestHeaders();
         final HashMap<String, String> headers = new HashMap<String, String>();
-        for (String key : rawHeaders.keySet()) {
-            headers.put(key, rawHeaders.get(key).get(0));
-        }
-
+        rawHeaders.forEach((k , v) -> {if (v.size() > 0) {headers.put(k, v.get(0));}});
         Tracer.SpanBuilder spanBuilder;
         try {
             SpanContext parentSpanCtx = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headers));
@@ -165,5 +172,42 @@ public class Utils {
             .withReporter(reporterConfig).withCodec(codecConfiguration);
         return config.getTracer();
     }
+
+    private static Optional<JaegerSpanContext> getCurrentContext() {
+	    if (GlobalTracer.isRegistered()) {
+            Tracer currentTracer = GlobalTracer.get();
+            if (currentTracer.activeSpan() != null && currentTracer.activeSpan().context() != null) {
+                return Optional.of((JaegerSpanContext) currentTracer.activeSpan().context());
+            } else {
+                return Optional.empty();
+            }
+        } else {
+	        return Optional.empty();
+        }
+    }
+
+    public static Optional<String> getCurrentTraceId() {
+	    return getCurrentContext().map(JaegerSpanContext::getTraceId);
+    }
+
+    public static Optional<String> getCurrentSpanId() {
+	    return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getSpanId()));
+    }
+
+    public static Optional<String> getParentSpanId() {
+        return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getParentId()));
+    }
+    public static Optional<String> getCurrentActionFromScope() {
+        Optional<String> action = Optional.empty();
+	    if (GlobalTracer.isRegistered()) {
+            Tracer tracer = GlobalTracer.get();
+            Scope scope = tracer.scopeManager().active();
+            if (scope != null && scope.span() != null) {
+                action = Optional.ofNullable(scope.span().getBaggageItem("action"));
+            }
+        }
+        return action;
+    }
+
 
 }

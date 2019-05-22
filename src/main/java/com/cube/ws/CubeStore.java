@@ -36,6 +36,7 @@ import io.opentracing.Scope;
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.TemplateKey;
 import com.cube.core.ResponseComparator;
+import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
@@ -96,7 +97,7 @@ public class CubeStore {
 							@PathParam("var") String path,
 							@Context HttpHeaders httpHeaders,
 							ReqRespStore.ReqResp rr) {
-        try (Scope scope =  Utils.startServerSpan(config.tracer, httpHeaders , "store-req-resp")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "store-req-resp")) {
             MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
             MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
@@ -190,7 +191,7 @@ public class CubeStore {
     public Response storeFunc(String functionReqRespString ,@Context HttpHeaders httpHeaders/* @PathParam("customer") String customer,
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
-        try (Scope scope =  Utils.startServerSpan(config.tracer, httpHeaders , "store-func-ret")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "store-func-ret")) {
             scope.span().setBaggageItem("action" , "func");
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
@@ -212,13 +213,15 @@ public class CubeStore {
 	@POST
 	@Path("/setdefault/{customerid}/{app}/{serviceid}/{method}/{var:.+}")
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
-	public Response setDefault(@Context UriInfo ui, @PathParam("var") String path, 
+	public Response setDefault(@Context UriInfo ui,
+                               @Context HttpHeaders httpHeaders,
+                               @PathParam("var") String path,
 			MultivaluedMap<String, String> formParams,
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app,
 			@PathParam("serviceid") String serviceid,
 			@PathParam("method") String method) {
-		
+		try (Scope scope =  Utils.startServerSpan(httpHeaders , "set-default-resp")){
 		String respbody = Optional.ofNullable(formParams.getFirst("body")).orElse("");
 		Optional<String> contenttype = Optional.ofNullable(formParams.getFirst("content-type"));
 		int status = Status.OK.getStatusCode();
@@ -236,7 +239,11 @@ public class CubeStore {
 		if (saveDefaultResponse(customerid, app, serviceid, path, method, respbody, status, contenttype)) {
 			return Response.ok().build();
 		} 
-		return Response.serverError().entity("Not able to store default response").build();
+
+		} catch (Exception e) {
+		    // do nothing
+        }
+        return Response.serverError().entity("Not able to store default response").build();
 	}
 
 	/* here the body is the full json response */
@@ -265,7 +272,7 @@ public class CubeStore {
 			@PathParam("customerid") String customerid,
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("collection") String collection) {
-        try (Scope scope =  Utils.startServerSpan(config.tracer, httpHeaders , "start-recording")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "start-recording")) {
             // check if recording or replay is ongoing for (customer, app, instanceid)
             Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
                 Optional.ofNullable(instanceid));
@@ -315,7 +322,7 @@ public class CubeStore {
                            @PathParam("collection") String collection,
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
-        try (Scope scope =  Utils.startServerSpan(config.tracer, httpHeaders , "status-recording")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "status-recording")) {
             Optional<Recording> recording = rrstore.getRecordingByCollection(customerid,
                 app, collection);
 
@@ -384,7 +391,7 @@ public class CubeStore {
                          @PathParam("collection") String collection,
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
-        try (Scope scope =  Utils.startServerSpan(config.tracer, httpHeaders , "stop-recording")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "stop-recording")) {
             Optional<Recording> recording = rrstore.getRecordingByCollection(customerid,
                 app, collection);
             LOGGER.info(String.format("Stoppping recording for customer %s, app %s, collection %s",
@@ -432,14 +439,15 @@ public class CubeStore {
      */
     @GET
     @Path("/warmupcache")
-    public Response warmUpCache(@Context UriInfo uriInfo) {
-	    try {
+    public Response warmUpCache(@Context UriInfo uriInfo, @Context HttpHeaders httpHeaders) {
+	    try (Scope scope =  Utils.startServerSpan(httpHeaders , "warmupcache")) {
 	        TemplateKey key = new TemplateKey("ravivj" , "movieinfo"
                 , "movieinfo" , "minfo/listmovies" , TemplateKey.Type.Response);
             ResponseComparator comparator = this.config.responseComparatorCache.getResponseComparator(key);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());
         } catch (Exception e) {
-
+            LOGGER.error("Error occured :: " + e.getMessage() +  " "
+                + UtilException.extractFirstStackTraceLocation(e.getStackTrace()) );
         }
 	    return Response.ok().build();
     }

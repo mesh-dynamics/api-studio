@@ -16,7 +16,7 @@ import com.google.common.cache.RemovalNotification;
 import io.cube.agent.FnKey;
 
 import com.cube.core.CompareTemplate;
-import com.cube.core.ResponseComparator;
+import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;
 import com.cube.ws.Config;
@@ -67,15 +67,16 @@ public class TemplateCache {
         }
 
         if (config.getState() == Config.AppState.Mock) {
-            return (CompareTemplate) config.mocker.mock(cacheFnKey, Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), key).retVal;
+            return (CompareTemplate) config.mocker.mock(cacheFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key).retVal;
         }
 
 
         try {
             CompareTemplate toReturn = templateCache.get(key);
             if (config.getState() == Config.AppState.Record) {
-                config.recorder.record(cacheFnKey, Optional.empty(), Optional.empty(), Optional.empty(), toReturn, key);
+                config.recorder.record(cacheFnKey,  Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn, key);
             }
             return toReturn;
         }  catch (ExecutionException e) {

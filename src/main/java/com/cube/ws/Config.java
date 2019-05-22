@@ -24,6 +24,7 @@ import io.cube.agent.SimpleMocker;
 import io.cube.agent.SimpleRecorder;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
@@ -60,7 +61,7 @@ public class Config {
 
 	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
 
-	public final Tracer tracer = Utils.init("Cube");
+	//public final Tracer tracer = Utils.init("Cube");
 
 	public Recorder recorder = new SimpleRecorder();
 	public Mocker mocker = new SimpleMocker();
@@ -99,6 +100,12 @@ public class Config {
             requestComparatorCache = new RequestComparatorCache(templateCache , jsonmapper);
             responseComparatorCache = new ResponseComparatorCache(templateCache , jsonmapper);
             replayResultCache = new ReplayResultCache(rrstore, this);
+            Tracer tracer = Utils.init("tracer");
+            try {
+                GlobalTracer.register(tracer);
+            } catch (IllegalStateException e) {
+                LOGGER.error("Trying to register a tracer when one is already registered");
+            }
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
             LOGGER.error(msg);
@@ -132,14 +139,5 @@ public class Config {
 		String value = this.properties.getProperty(key);
 		return value;
 	}
-
-	public Optional<String> getCurrentActionFromScope() {
-        Scope scope =  tracer.scopeManager().active();
-        Optional<String> action = Optional.empty();
-        if (scope != null) {
-            action = Optional.ofNullable(scope.span().getBaggageItem("action"));
-        }
-        return action;
-    }
 
 }

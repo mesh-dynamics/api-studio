@@ -79,7 +79,7 @@ public class MockServiceHTTP {
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("service") String service, 
 			@Context HttpHeaders headers) {
-        try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-get")) {
+        try (Scope scope =  Utils.startServerSpan(headers , "mock-get")) {
             LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
             return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
         }
@@ -99,7 +99,7 @@ public class MockServiceHTTP {
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("service") String service, 
 			@Context HttpHeaders headers) {
-	    try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-post-form")) {
+	    try (Scope scope =  Utils.startServerSpan(headers , "mock-post-form")) {
             LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
             return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
         }
@@ -116,7 +116,7 @@ public class MockServiceHTTP {
 			@PathParam("service") String service, 
 			@Context HttpHeaders headers, 
 			String body) {
-        try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-post-json")) {
+        try (Scope scope =  Utils.startServerSpan(headers , "mock-post-json")) {
             LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
             JSONObject obj = new JSONObject(body);
             MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
@@ -135,7 +135,7 @@ public class MockServiceHTTP {
     public Response funcJson(@Context UriInfo uInfo,
                              @Context HttpHeaders headers,
                              String fnReqResponseAsString) {
-	    try (Scope scope =  Utils.startServerSpan(tracer, headers , "mock-func")) {
+	    try (Scope scope =  Utils.startServerSpan(headers , "mock-func")) {
 	        scope.span().setBaggageItem("action", "func");
 	        FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString , FnReqResponse.class);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
@@ -273,7 +273,6 @@ public class MockServiceHTTP {
 		this.jsonmapper = config.jsonmapper;
 		this.requestComparatorCache = config.requestComparatorCache;
 		this.replayResultCache = config.replayResultCache;
-		this.tracer = config.tracer;
 		LOGGER.info("Cube mock service started");
 	}
 
@@ -283,7 +282,6 @@ public class MockServiceHTTP {
 	private RequestComparatorCache requestComparatorCache;
 	private ReplayResultCache replayResultCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
-	private Tracer tracer;
 	
 	// TODO - make trace field configurable
 	private static RequestComparator mspec = (ReqMatchSpec) ReqMatchSpec.builder()

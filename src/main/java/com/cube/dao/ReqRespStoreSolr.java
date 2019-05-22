@@ -19,6 +19,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -169,7 +170,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
 
-    public SolrInputDocument funcReqResponseToSolrDoc(FnReqResponse fnReqResponse, String collection) {
+    private SolrInputDocument funcReqResponseToSolrDoc(FnReqResponse fnReqResponse, String collection) {
         SolrInputDocument solrDocument = new SolrInputDocument();
         solrDocument.setField(TYPEF, Types.FuncReqResp.toString());
         solrDocument.setField(TIMESTAMPF , Instant.now().toString());
@@ -184,13 +185,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDocument.setField(FUNC_NAME , fnReqResponse.name);
         solrDocument.setField(FUNC_SIG_HASH, fnReqResponse.fnSignatureHash);
         var counter = new Object(){int x = 0;};
-        Arrays.asList(fnReqResponse.argVals).stream()
-            .forEachOrdered(argVal -> solrDocument.setField(FUNC_ARG_VAL_PREFIX + ++counter.x
-                + SINGLE_VALUED_SUFFIX , argVal));
+        Arrays.asList(fnReqResponse.argVals).forEach(argVal -> solrDocument.setField(FUNC_ARG_VAL_PREFIX
+            + ++counter.x + SINGLE_VALUED_SUFFIX , argVal));
         counter.x = 0;
-        Arrays.asList(fnReqResponse.argsHash).stream()
-            .forEachOrdered(argHash -> solrDocument.setField(FUNC_ARG_HASH_PREFIX + ++counter.x
-                + SINGLE_VALUED_INT_SUFFIX, argHash));
+        Arrays.asList(fnReqResponse.argsHash).forEach(argHash -> solrDocument.setField(FUNC_ARG_HASH_PREFIX
+            + ++counter.x + SINGLE_VALUED_INT_SUFFIX, argHash));
         solrDocument.setField(FUNC_RET_VAL, fnReqResponse.retVal);
         fnReqResponse.respTS.ifPresent(timestamp -> solrDocument.setField(TIMESTAMPF , timestamp.toString()));
         return solrDocument;
@@ -202,7 +201,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(doc);
     }
 
-    public Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
+    private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
         return getStrField(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal , getTSField(doc,TIMESTAMPF)));
     }
 
@@ -211,22 +210,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         StringBuilder argsQuery = new StringBuilder();
         argsQuery.append("*:*");
         var counter = new Object(){int x =0;};
-        // not sure if we'll be able to keep trace same for record and replay
         funcReqResponse.traceId.ifPresent(trace ->
-            argsQuery.append(" OR ").append(HDRTRACEF).append(":").append(trace));
+            argsQuery.append(" OR ").append("(").append(HDRTRACEF).append(":").append(trace).append(")^2"));
         funcReqResponse.respTS.ifPresent(timestamp -> argsQuery.
-            append(" OR ").append(TIMESTAMPF + ":[" + timestamp.toString() + " TO *]"));
-
+            append(" OR ").append(TIMESTAMPF).append(":[").append(timestamp.toString()).append(" TO *]"));
         SolrQuery query = new SolrQuery(argsQuery.toString());
         query.setFields("*");
         addFilter(query, TYPEF, Types.FuncReqResp.toString());
         addFilter(query, FUNC_SIG_HASH, funcReqResponse.fnSignatureHash);
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
-        Arrays.asList(funcReqResponse.argsHash).
-            stream().forEachOrdered(argHashVal ->  addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX , argHashVal));
+        Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
+            addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX , argHashVal));
         Optional<Integer> maxResults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(doc -> solrDocToFnResponse(doc));
+        return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToFnResponse);
     }
 
 
@@ -726,7 +723,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey saveFuncKey;
 
     private boolean saveDoc(SolrInputDocument doc) {
-        Optional<String> action = config.getCurrentActionFromScope();
+        Optional<String> action = Utils.getCurrentActionFromScope();
         if (saveFuncKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("add", doc.getClass());
@@ -738,8 +735,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (!action.orElse("").equals("func") && this.config.getState() == Config.AppState.Mock) {
-            UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), doc).retVal;
+            UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc).retVal;
             return fromSolr != null;
         }
 
@@ -753,8 +750,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error("Error in saving response", e);
         }
         if (!action.orElse("").equals("func") && this.config.getState() == Config.AppState.Record) {
-            config.recorder.record(saveFuncKey , Optional.empty()
-                , Optional.empty() , Optional.empty() , fromSolr, doc);
+            config.recorder.record(saveFuncKey , Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr, doc);
         }
         return toReturn;
     }

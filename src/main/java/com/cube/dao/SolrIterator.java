@@ -24,6 +24,7 @@ import org.apache.solr.common.params.SolrParams;
 
 import io.cube.agent.FnKey;
 
+import com.cube.core.Utils;
 import com.cube.ws.Config;
 
 /**
@@ -169,7 +170,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
     private static FnKey queryFnKey;
 
     static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
-        Optional<String> action = config.getCurrentActionFromScope();
+        LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
+        Optional<String> action = Utils.getCurrentActionFromScope();
         if (queryFnKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("query", SolrParams.class);
@@ -180,8 +182,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
             }
         }
         if (config.getState() == Config.AppState.Mock && !action.orElse("").equals("func")) {
-            return Optional.ofNullable((QueryResponse) config.mocker.mock(queryFnKey, Optional.empty(), Optional.empty()
-                , Optional.empty(), Optional.empty(), query).retVal);
+            return Optional.ofNullable((QueryResponse) config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query).retVal);
         }
 
         QueryResponse response = null;
@@ -194,8 +196,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
         }
 
         if (config.getState() == Config.AppState.Record && !action.orElse("").equals("func")) {
-            config.recorder.record(queryFnKey, Optional.empty(), Optional.empty(), Optional.empty(),
-                response, query);
+            config.recorder.record(queryFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, query);
         }
         return toReturn;
     }

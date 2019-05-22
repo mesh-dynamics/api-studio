@@ -135,7 +135,6 @@ public class ReplayResultCache {
      * @param key
      */
     private void invalidateCache(Integer key){
-        if (config.getState() == Config.AppState.Mock) return;
         currentReplayId.remove(key);
         replayStatisticsMap.remove(key);
     }
@@ -147,10 +146,10 @@ public class ReplayResultCache {
      * @param replayId
      */
     public void stopReplay(String customer, String app, String instanceId, String replayId) {
-        if (config.getState() == Config.AppState.Mock) return;
         Integer key = Objects.hash(customer, app, instanceId);
-        materializeResults(key , replayId);
         invalidateCache(key);
+        if (config.getState() == Config.AppState.Mock) return;
+        materializeResults(key , replayId);
     }
 
     /**

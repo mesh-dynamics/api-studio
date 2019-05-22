@@ -15,8 +15,9 @@
 
 	<repositories>
 		<repository>
-			<id>local-repo</id>
-			<url>${project.basedir}/src/main/resources/agent-1.0-SNAPSHOT.jar</url>
+			<id>project.local</id>
+			<name>maven-repository</name>
+			<url>file:///${project.basedir}/repo</url>
 		</repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
@@ -264,10 +265,7 @@
 		  <groupId>io.cube</groupId>
 		  <artifactId>agent</artifactId>
 		  <version>1.0-SNAPSHOT</version>
-		  <scope>system</scope>
-		  <systemPath>${project.basedir}/src/main/resources/agent-1.0-SNAPSHOT.jar</systemPath>
 	  </dependency>
-
 	  <dependency>
 		  <groupId>com.google.code.gson</groupId>
 		  <artifactId>gson</artifactId>
