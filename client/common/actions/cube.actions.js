@@ -97,6 +97,19 @@ function getReplayId(testIdLabel) {
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 
+function getTimelineData(replayData) {
+    return async dispatch => {
+        try {
+            let timeline = await cubeService.fetchTimelineData(replayId);
+            dispatch(success(timeline, Date.now()));
+        } catch (error) {
+
+        }
+    };
+
+    function success(timeline, date) { return { type: cubeConstants.TIMELINE_DATA_SUCCESS, data: timeline, date: date } }
+}
+
 function startReplay(collectionId, replayId) {
     return async dispatch => {
         // dispatch(request());
