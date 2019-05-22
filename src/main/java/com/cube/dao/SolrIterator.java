@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -19,6 +20,12 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.params.SolrParams;
+
+import io.cube.agent.FnKey;
+
+import com.cube.core.Utils;
+import com.cube.ws.Config;
 
 /**
  * @author prasad
@@ -28,8 +35,13 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
     private static final Logger LOGGER = LogManager.getLogger(SolrIterator.class);
 
-	
-	/**
+    private static Config config;
+
+    public static void setConfig(Config config) {
+        SolrIterator.config = config;
+    }
+
+    /**
 	 * @param query
 	 */
 	private SolrIterator(SolrClient solr, SolrQuery query, Optional<Integer> maxresults) {
@@ -41,7 +53,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 		numresults = 0;
 		iterator = Optional.empty();
-		numread = 0;						
+		numread = 0;
 
 		int toread = maxresults.map(mr -> Math.min(BATCHSIZE, mr)).orElse(BATCHSIZE);
 		
@@ -53,7 +65,6 @@ public class SolrIterator implements Iterator<SolrDocument> {
 			iterator = Optional.ofNullable(r.iterator());
 			numread = r.size();			
 		});
-		
 	}
 
 	/* (non-Javadoc)
@@ -154,16 +165,40 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 	}
 
-	static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
-		LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
 
-		QueryResponse response;
-		try {
-			response = solr.query(query);
-		} catch (SolrServerException | IOException e) {
-			LOGGER.error("Error in querying Solr", e);
-			return Optional.empty();
-		}
-		return Optional.ofNullable(response);		
-	}
+    // TODO mock this function for all solr queries
+    private static FnKey queryFnKey;
+
+    static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
+        LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
+        Optional<String> action = Utils.getCurrentActionFromScope();
+        if (queryFnKey == null) {
+            try {
+                Method currentMethod = solr.getClass().getMethod("query", SolrParams.class);
+                queryFnKey = new FnKey(config.customerId, config.app, config.instance,
+                    config.serviceName, currentMethod);
+            } catch (Exception e) {
+                LOGGER.error("Unable to find solr query method by reflection :: " + e.getMessage());
+            }
+        }
+        if (config.getState() == Config.AppState.Mock && !action.orElse("").equals("func")) {
+            return Optional.ofNullable((QueryResponse) config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query).retVal);
+        }
+
+        QueryResponse response = null;
+        Optional<QueryResponse> toReturn = Optional.empty();
+        try {
+            response = solr.query(query);
+            toReturn = Optional.of(response);
+        } catch (SolrServerException | IOException e) {
+            LOGGER.error("Error in querying Solr", e);
+        }
+
+        if (config.getState() == Config.AppState.Record && !action.orElse("").equals("func")) {
+            config.recorder.record(queryFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, query);
+        }
+        return toReturn;
+    }
 }

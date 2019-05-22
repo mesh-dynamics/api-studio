@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 
+import io.cube.agent.FnResponse;
+
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
@@ -430,5 +432,5 @@ public interface ReqRespStore {
 
 	boolean storeFunctionReqResp(FnReqResponse funcReqResponse, String collection);
 
-	Optional<String> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection);
+	Optional<FnResponse> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection);
 }
