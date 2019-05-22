@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.cube.dao.ReqRespStore;
+import com.cube.ws.Config;
 
 /**
  * TODO in case of a distributed deployment of cube service, these caches need to be separated
@@ -65,17 +66,19 @@ public class ReplayResultCache {
 
     }
 
-    public ReplayResultCache(ReqRespStore reqRespStore) {
+    public ReplayResultCache(ReqRespStore reqRespStore, Config config) {
         replayStatisticsMap = new ConcurrentHashMap<>();
         currentReplayId = new ConcurrentHashMap<>();
         this.reqRespStore = reqRespStore;
+        this.config = config;
     }
 
     private ConcurrentHashMap<Integer , ConcurrentHashMap<Integer , ReplayPathStatistic>> replayStatisticsMap;
     private ConcurrentHashMap<Integer , String> currentReplayId;
     private ReqRespStore reqRespStore;
+    private Config config;
 
-    public ReplayPathStatistic getPathStatistic(String customer, String app, String service, String path, String instanceId) {
+    private ReplayPathStatistic getPathStatistic(String customer, String app, String service, String path, String instanceId) {
         Integer topLevelKey = Objects.hash(customer,app,instanceId);
         Integer secondaryKey = Objects.hash(service,path);
         return replayStatisticsMap.computeIfAbsent(topLevelKey , k -> new ConcurrentHashMap<>())
@@ -90,6 +93,7 @@ public class ReplayResultCache {
      * @param path
      */
     public void incrementReqMatchCounter(String customer, String app, String service, String path, String instanceId) {
+        if (config.getState() == Config.AppState.Mock) return;
         getPathStatistic(customer,app,service,path,instanceId).incrementMatchCount();
     }
 
@@ -101,6 +105,7 @@ public class ReplayResultCache {
      * @param path
      */
     public void incrementReqNotMatchCounter(String customer, String app, String service, String path, String instaceId) {
+        if (config.getState() == Config.AppState.Mock) return;
         getPathStatistic(customer,app,service,path,instaceId).incrementNonMatchCount();
     }
 
@@ -110,6 +115,7 @@ public class ReplayResultCache {
      * @param replayId
      */
     private void materializeResults(Integer key, String replayId) {
+        if (config.getState() == Config.AppState.Mock) return;
         Map<String,List<ReplayPathStatistic>> serviceVsReplayPathStatistic = new HashMap<>();
         replayStatisticsMap.getOrDefault(key , new ConcurrentHashMap<>())
                 .entrySet().stream().map(Map.Entry::getValue).forEach(pathStatistic -> {
@@ -141,8 +147,9 @@ public class ReplayResultCache {
      */
     public void stopReplay(String customer, String app, String instanceId, String replayId) {
         Integer key = Objects.hash(customer, app, instanceId);
-        materializeResults(key , replayId);
         invalidateCache(key);
+        if (config.getState() == Config.AppState.Mock) return;
+        materializeResults(key , replayId);
     }
 
     /**
@@ -152,6 +159,7 @@ public class ReplayResultCache {
      * @param replayId
      */
     public void startReplay(String customer, String app, String instanceId , String replayId) {
+        if (config.getState() == Config.AppState.Mock) return;
         Integer key = Objects.hash(customer , app, instanceId);
         currentReplayId.put(key , replayId);
         replayStatisticsMap.remove(key);
