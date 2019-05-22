@@ -30,7 +30,9 @@ const initialState = {
     replayStatusObj: null,
 
     analysis: null,
-    report: null
+    report: null,
+
+    timelineData: null,
 };
 
 export function cube (state = initialState, action) {
@@ -128,6 +130,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 report: action.data
             };
+        case cubeConstants.TIMELINE_DATA_SUCCESS:
+            return {
+                ...state,
+                timelineData: action.data
+            };
         case cubeConstants.CLEAR_PREVIOUS_DATA:
             return {
                 ...state,
@@ -143,7 +150,8 @@ export function cube (state = initialState, action) {
                 replayStatusObj: null,
 
                 analysis: null,
-                report: null
+                report: null,
+                timelineData: null,
             };
 
         default:

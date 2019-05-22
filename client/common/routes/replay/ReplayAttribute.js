@@ -213,6 +213,7 @@ class ReplayAttribute extends Component {
                 dispatch(cubeActions.getAnalysis(cube.selectedTestId, cube.replayId.replayid));
                 if (cube.analysis) {
                     dispatch(cubeActions.getReport(cube.selectedTestId, cube.replayId.replayid));
+                    dispatch(cubeActions.getTimelineData(cube.selectedTestId, cube.replayId));
                     this.doAnalysis = false;
                 }
             }

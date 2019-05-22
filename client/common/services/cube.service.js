@@ -9,7 +9,8 @@ export const cubeService = {
     startReplay,
     checkStatusForReplay,
     fetchAnalysis,
-    fetchReport
+    fetchReport,
+    fetchTimelineData,
 };
 
 async function fetchAppsList() {
@@ -321,4 +322,29 @@ async function fetchReport(collectionId, replayId) {
         throw e;
     }
     return report;
+}
+
+async function fetchTimelineData(collectionId, replayData) {
+    let response, json;
+    let url = `${config.baseUrl}/as/timelineres/${replayData.customerid}/${replayData.app}/${replayData.instanceid}?collectionId=${collectionId}`;
+    let timelineData = {};
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "cache-control": "no-cache"
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            timelineData = json;
+        } else {
+            console.log("Response not ok in fetchTimeline", response);
+            throw new Error("Response not ok fetchTimeline");
+        }
+    } catch (e) {
+        console.log("fetchTimeline has errors!", e);
+        throw e;
+    }
+    return timelineData;
 }

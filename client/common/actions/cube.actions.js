@@ -12,6 +12,7 @@ export const cubeActions = {
     getReplayStatus,
     getAnalysis,
     getReport,
+    getTimelineData,
     clear
 };
 
@@ -95,6 +96,19 @@ function getReplayId(testIdLabel) {
     function request() { return { type: cubeConstants.TESTIDS_REQUEST } }
     function success(replayId, date) { return { type: cubeConstants.REPLAY_ID_SUCCESS, data: replayId, date: date } }
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
+}
+
+function getTimelineData(collectionId, replayData) {
+    return async dispatch => {
+        try {
+            let timeline = await cubeService.fetchTimelineData(collectionId, replayData);
+            dispatch(success(timeline, Date.now()));
+        } catch (error) {
+
+        }
+    };
+
+    function success(timeline, date) { return { type: cubeConstants.TIMELINE_DATA_SUCCESS, data: timeline, date: date } }
 }
 
 function startReplay(collectionId, replayId) {

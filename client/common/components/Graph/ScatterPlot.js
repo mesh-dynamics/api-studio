@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {
-    ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine
+    LineChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Legend, Line
 } from 'recharts';
 
 const data01 = [
@@ -19,22 +19,51 @@ const data01 = [
 class ScatterPlot extends Component {
 
     render() {
+        const {timeline} = this.props;
+        let graphData = [];
+        for (const unit of timeline) {
+            if (unit.results && unit.results.length > 0) {
+                let obj = {
+                    date: unit.timestamp,
+                };
+                for (const res of unit.results) {
+                    if (res.service) {
+                        obj[res.service] = ((res.respnotmatched/(res.reqmatched + res.reqnotmatched + res.reqpartiallymatched)) * 100).toFixed(2);
+                    } else {
+                        obj['overall'] = ((res.respnotmatched/(res.reqmatched + res.reqnotmatched + res.reqpartiallymatched)) * 100).toFixed(2);
+                    }
+
+                }
+
+                graphData.push(obj);
+            }
+        }
+
+        graphData = graphData.reverse();
+
+        console.log(graphData);
+
         return (
-            <ScatterChart
+            <LineChart
                 width={800}
-                height={200}
+                height={250}
+                data={graphData}
                 margin={{
-                    top: 20, right: 20, bottom: 20, left: 20,
+                    top: 5, right: 30, left: 20, bottom: 5,
                 }}
             >
-                <CartesianGrid vertical={false}/>
-                <XAxis dataKey="x" name="Date" unit="" />
-                <YAxis yAxisId="left" type="number" dataKey="y" name="Error" unit="%" stroke="#8884d8" />
-                <ReferenceLine yAxisId="left" y={0.15} label="" stroke="yellow" />
-                <ReferenceLine yAxisId="left" y={0.25} label="" stroke="red" />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                <Scatter yAxisId="left" name="A school" data={data01} fill="#8884d8" />
-            </ScatterChart>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis name="Error" unit="%"/>
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="overall" stroke="#8884d8" />
+                <Line type="monotone" dataKey="restwrapjdbc" stroke="#82ca9d"  />
+                <Line type="monotone" dataKey="reviews" stroke="#6FCF97"  />
+                <Line type="monotone" dataKey="ratings" stroke="#EB5757"  />
+                <Line type="monotone" dataKey="details" stroke="#F2C94C"  />
+                <Line type="monotone" dataKey="movieinfo" stroke="#F2C94C"  />
+            </LineChart>
         );
     }
 }

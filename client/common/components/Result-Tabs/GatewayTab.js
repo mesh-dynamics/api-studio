@@ -8,7 +8,7 @@ class GatewayTab extends Component{
     }
 
     render() {
-        const {res, resByPath} =  this.props;
+        const {res, resByPath, timeline} =  this.props;
         const error =  res.respnotmatched;
         const errorP = Math.round((100 * error/res.reqcnt) * 100) / 100;
         const incomplete = res.reqcnt - (res.respmatched + res.resppartiallymatched + res.respnotmatched);
@@ -66,7 +66,7 @@ class GatewayTab extends Component{
                     </tbody>
                 </Table>
                 </div>
-                <ScatterPlot/>
+                <ScatterPlot timeline={timeline}/>
 
                 {/*<div>
                     <h4>
