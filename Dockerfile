@@ -6,7 +6,7 @@ COPY pom.xml ./pom.xml
 # download maven dependencies
 RUN mvn verify clean --fail-never
 COPY src ./src
-RUN mvn package
+RUN mvn -U package
 #########################################
 ####Copy build to production image####
 #########################################
