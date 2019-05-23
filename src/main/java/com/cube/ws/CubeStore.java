@@ -59,34 +59,39 @@ public class CubeStore {
 	@Path("/health")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response health() {
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Cube store service status\": \"CS is healthy\"}").build();
-	}
+    public Response health(@Context HttpHeaders headers) {
+        try (Scope scope = Utils.startServerSpan(headers, "record-health")) {
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Cube store service status\": \"CS is healthy\"}").build();
+        }
+    }
 
 
 	@POST
 	@Path("/req")
     @Consumes({MediaType.APPLICATION_JSON})
-	public Response storereq(Request req) {
-		
-		setCollection(req);
-		if (rrstore.save(req)) {
-			return Response.ok().build();
-		} else
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store request").build();
-		
+	public Response storereq(Request req, @Context HttpHeaders headers) {
+	    try (Scope scope = Utils.startServerSpan(headers, "record-req"))  {
+            setCollection(req);
+            if (rrstore.save(req)) {
+                return Response.ok().build();
+            } else {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store request").build();
+            }
+        }
 	}
 	
 	@POST
 	@Path("/resp")
     @Consumes({MediaType.APPLICATION_JSON})
-	public Response storeresp(com.cube.dao.Response resp) {
-		
-		setCollection(resp);
-		if (rrstore.save(resp)) {
-			return Response.ok().build();
-		} else
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store response").build();		
+	public Response storeresp(com.cube.dao.Response resp, @Context HttpHeaders headers) {
+        try (Scope scope = Utils.startServerSpan(headers, "record-resp")) {
+            setCollection(resp);
+            if (rrstore.save(resp)) {
+                return Response.ok().build();
+            } else {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store response").build();
+            }
+        }
 	}
 	
 
@@ -97,7 +102,7 @@ public class CubeStore {
 							@PathParam("var") String path,
 							@Context HttpHeaders httpHeaders,
 							ReqRespStore.ReqResp rr) {
-        try (Scope scope =  Utils.startServerSpan(httpHeaders , "store-req-resp")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "record-req-resp")) {
             MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
             MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
@@ -191,7 +196,7 @@ public class CubeStore {
     public Response storeFunc(String functionReqRespString ,@Context HttpHeaders httpHeaders/* @PathParam("customer") String customer,
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
-        try (Scope scope =  Utils.startServerSpan(httpHeaders , "store-func-ret")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "record-func-ret")) {
             scope.span().setBaggageItem("action" , "func");
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
@@ -213,38 +218,37 @@ public class CubeStore {
 	@POST
 	@Path("/setdefault/{customerid}/{app}/{serviceid}/{method}/{var:.+}")
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
-	public Response setDefault(@Context UriInfo ui,
+    public Response setDefault(@Context UriInfo ui,
                                @Context HttpHeaders httpHeaders,
                                @PathParam("var") String path,
-			MultivaluedMap<String, String> formParams,
-			@PathParam("customerid") String customerid,
-			@PathParam("app") String app,
-			@PathParam("serviceid") String serviceid,
-			@PathParam("method") String method) {
-		try (Scope scope =  Utils.startServerSpan(httpHeaders , "set-default-resp")){
-		String respbody = Optional.ofNullable(formParams.getFirst("body")).orElse("");
-		Optional<String> contenttype = Optional.ofNullable(formParams.getFirst("content-type"));
-		int status = Status.OK.getStatusCode();
-		
-		Optional<String> sparam = Optional.ofNullable(formParams.getFirst("status"));
-		if (sparam.isPresent()) {
-			Optional<Integer> sval = Utils.strToInt(sparam.get());
-			if (sval.isEmpty()) {
-				return Response.status(Status.BAD_REQUEST).entity("Status parameter is not an integer").build();
-			} else {
-				status = sval.get();
-			}
-		}
-				
-		if (saveDefaultResponse(customerid, app, serviceid, path, method, respbody, status, contenttype)) {
-			return Response.ok().build();
-		} 
+                               MultivaluedMap<String, String> formParams,
+                               @PathParam("customerid") String customerid,
+                               @PathParam("app") String app,
+                               @PathParam("serviceid") String serviceid,
+                               @PathParam("method") String method) {
+        try (Scope scope = Utils.startServerSpan(httpHeaders, "set-default-resp")) {
+            String respbody = Optional.ofNullable(formParams.getFirst("body")).orElse("");
+            Optional<String> contenttype = Optional.ofNullable(formParams.getFirst("content-type"));
+            int status = Status.OK.getStatusCode();
+            Optional<String> sparam = Optional.ofNullable(formParams.getFirst("status"));
+            if (sparam.isPresent()) {
+                Optional<Integer> sval = Utils.strToInt(sparam.get());
+                if (sval.isEmpty()) {
+                    return Response.status(Status.BAD_REQUEST).entity("Status parameter is not an integer").build();
+                } else {
+                    status = sval.get();
+                }
+            }
 
-		} catch (Exception e) {
-		    // do nothing
+            if (saveDefaultResponse(customerid, app, serviceid, path, method, respbody, status, contenttype)) {
+                return Response.ok().build();
+            }
+
+        } catch (Exception e) {
+            // do nothing
         }
         return Response.serverError().entity("Not able to store default response").build();
-	}
+    }
 
 	/* here the body is the full json response */
 	@POST
@@ -252,13 +256,13 @@ public class CubeStore {
 	@Consumes({MediaType.APPLICATION_JSON})
 	public Response setDefaultFullResp(@Context UriInfo ui, @PathParam("var") String path,
 			com.cube.dao.Response resp,
-			@PathParam("method") String method) {
-		
-
-		if (saveDefaultResponse(path, method, resp)) {
-			return Response.ok().build();
-		} 
-		return Response.serverError().entity("Not able to store default response").build();
+			@PathParam("method") String method, @Context HttpHeaders headers) {
+		try (Scope scope = Utils.startServerSpan(headers, "set-default-full-resp")) {
+            if (saveDefaultResponse(path, method, resp)) {
+                return Response.ok().build();
+            }
+            return Response.serverError().entity("Not able to store default response").build();
+        }
 	}
 	
 
@@ -272,7 +276,7 @@ public class CubeStore {
 			@PathParam("customerid") String customerid,
 			@PathParam("instanceid") String instanceid, 
 			@PathParam("collection") String collection) {
-        try (Scope scope =  Utils.startServerSpan(httpHeaders , "start-recording")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "record-start")) {
             // check if recording or replay is ongoing for (customer, app, instanceid)
             Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
                 Optional.ofNullable(instanceid));
@@ -322,7 +326,7 @@ public class CubeStore {
                            @PathParam("collection") String collection,
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
-        try (Scope scope =  Utils.startServerSpan(httpHeaders , "status-recording")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "record-status")) {
             Optional<Recording> recording = rrstore.getRecordingByCollection(customerid,
                 app, collection);
 
@@ -343,46 +347,43 @@ public class CubeStore {
 
 	@GET
 	@Path("recordings")
-	public Response recordings(@Context UriInfo ui) {
-		
-		
-	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-	    Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
-	    Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
-	    Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-	    Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst("status"))
-	    		.flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-	    
-	    List<Recording> recordings = rrstore.getRecording(customerid, app, instanceid, status)
-	    		.collect(Collectors.toList());
+    public Response recordings(@Context UriInfo ui, @Context HttpHeaders headers) {
+        try (Scope scope = Utils.startServerSpan(headers, "recordings")) {
+            MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+            Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
+            Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+            Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+            Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst("status"))
+                .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
 
-		String json;
-		try {
-			json = jsonmapper.writeValueAsString(recordings);
-			return Response.ok(json, MediaType.APPLICATION_JSON).build();
-		} catch (JsonProcessingException e) {
-			LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, instance %s.", 
-					customerid.orElse(""), app.orElse(""), instanceid.orElse("")), e);
-			return Response.serverError().build();
-		}
-	}
+            List<Recording> recordings = rrstore.getRecording(customerid, app, instanceid, status)
+                .collect(Collectors.toList());
+
+            String json;
+            try {
+                json = jsonmapper.writeValueAsString(recordings);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, instance %s.",
+                    customerid.orElse(""), app.orElse(""), instanceid.orElse("")), e);
+                return Response.serverError().build();
+            }
+        }
+    }
 
 	@GET
 	@Path("currentcollection")
-	public Response currentcollection(@Context UriInfo ui) {
-		
-		
-	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-	    Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
-	    Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
-	    Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-	    
-	    
-	    String currentcollection = rrstore.getCurrentCollection(customerid, app, instanceid)
-	    		.orElse("No current collection");
-
-	    return Response.ok(currentcollection).build();	    
-	}
+    public Response currentcollection(@Context UriInfo ui, @Context HttpHeaders headers) {
+        try (Scope scope = Utils.startServerSpan(headers, "current-collec")) {
+            MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+            Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
+            Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+            Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+            String currentcollection = rrstore.getCurrentCollection(customerid, app, instanceid)
+                .orElse("No current collection");
+            return Response.ok(currentcollection).build();
+        }
+    }
 	
 	@POST
 	@Path("stop/{customerid}/{app}/{collection}")
@@ -391,7 +392,7 @@ public class CubeStore {
                          @PathParam("collection") String collection,
 			@PathParam("customerid") String customerid,
 			@PathParam("app") String app) {
-        try (Scope scope =  Utils.startServerSpan(httpHeaders , "stop-recording")) {
+        try (Scope scope =  Utils.startServerSpan(httpHeaders , "record-stop")) {
             Optional<Recording> recording = rrstore.getRecordingByCollection(customerid,
                 app, collection);
             LOGGER.info(String.format("Stoppping recording for customer %s, app %s, collection %s",
@@ -414,21 +415,24 @@ public class CubeStore {
 
 	@GET
     @Path("/togglestate/{state}")
-    public Response toggleClientState(@Context UriInfo uriInfo, @PathParam("state") String state){
-	    switch(state) {
-            case "record":
-                config.setState(Config.AppState.Record);
-                break;
-            case "mock":
-                config.setState(Config.AppState.Mock);
-                break;
-            case "normal":
-                config.setState(Config.AppState.Normal);
-                break;
+    public Response toggleClientState(@Context UriInfo uriInfo, @PathParam("state") String state,
+                                      @Context HttpHeaders headers) {
+        try (Scope scope = Utils.startServerSpan(headers, "toggle-state")) {
+            switch (state) {
+                case "record":
+                    config.setState(Config.AppState.Record);
+                    break;
+                case "mock":
+                    config.setState(Config.AppState.Mock);
+                    break;
+                case "normal":
+                    config.setState(Config.AppState.Normal);
+                    break;
                 default:
                     return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"State Not identified\"}").build();
+            }
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
         }
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
     }
 
 
@@ -440,7 +444,7 @@ public class CubeStore {
     @GET
     @Path("/warmupcache")
     public Response warmUpCache(@Context UriInfo uriInfo, @Context HttpHeaders httpHeaders) {
-	    try (Scope scope =  Utils.startServerSpan(httpHeaders , "warmupcache")) {
+	    try (Scope scope =  Utils.startServerSpan(httpHeaders , "warmup-cache")) {
 	        TemplateKey key = new TemplateKey("ravivj" , "movieinfo"
                 , "movieinfo" , "minfo/listmovies" , TemplateKey.Type.Response);
             ResponseComparator comparator = this.config.responseComparatorCache.getResponseComparator(key);

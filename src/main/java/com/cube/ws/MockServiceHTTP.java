@@ -66,8 +66,10 @@ public class MockServiceHTTP {
 	@Path("/health")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response health() {
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
+	public Response health(@Context HttpHeaders headers) {
+	    try (Scope scope =  Utils.startServerSpan(headers , "mock-health"))  {
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
+        }
 	}
 
 
