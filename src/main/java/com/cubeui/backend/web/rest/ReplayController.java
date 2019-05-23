@@ -63,31 +63,31 @@ public class ReplayController {
         if (replayDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("Replay id not provided"));
         }
-        Optional<Replay> replay = replayRepository.findById(replayDTO.getId());
+        Optional<Replay> existing = replayRepository.findById(replayDTO.getId());
         Optional<TestConfig> testConfig = testConfigRepository.findById(replayDTO.getTestId());
         if (testConfig.isEmpty()){
             throw new RecordFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
         }
-        if (replay.isPresent()) {
-            replay.ifPresent(rep -> {
-                rep.setTestConfig(testConfig.get());
-                rep.setAnalysis(replayDTO.getAnalysis());
-                rep.setStatus(replayDTO.getStatus());
-                rep.setReplayName(replayDTO.getReplayName());
-                rep.setReqCount(replayDTO.getReqCount());
-                rep.setReqFailed(replayDTO.getReqFailed());
-                rep.setReqSent(replayDTO.getReqSent());
-                rep.setSampleRate(replayDTO.getSampleRate());
-                rep.setCompletedAt(replayDTO.getCompletedAt());
+        if (existing.isPresent()) {
+            existing.ifPresent(replay -> {
+                replay.setTestConfig(testConfig.get());
+                replay.setAnalysis(replayDTO.getAnalysis());
+                replay.setStatus(replayDTO.getStatus());
+                replay.setReplayName(replayDTO.getReplayName());
+                replay.setReqCount(replayDTO.getReqCount());
+                replay.setReqFailed(replayDTO.getReqFailed());
+                replay.setReqSent(replayDTO.getReqSent());
+                replay.setSampleRate(replayDTO.getSampleRate());
+                replay.setCompletedAt(replayDTO.getCompletedAt());
             });
-            this.replayRepository.save(replay.get());
+            this.replayRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/replay/{id}")
-                            .buildAndExpand(replay.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .body(replay);
+                    .body(existing);
         } else {
             throw new RecordFoundException("Replay with ID '" + replayDTO.getId() + "' not found.");
         }

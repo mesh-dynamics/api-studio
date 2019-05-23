@@ -62,21 +62,21 @@ public class RecordingController {
         if (recordingDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("Recording id not provided"));
         }
-        Optional<Recording> recording = recordingRepository.findById(recordingDTO.getId());
-        if (recording.isPresent()) {
-            recording.ifPresent(rec -> {
-                rec.setApp(appRepository.findById(recordingDTO.getAppId()).get());
-                rec.setCollectionName(recordingDTO.getCollectionName());
-                rec.setStatus(recordingDTO.getStatus());
+        Optional<Recording> existing = recordingRepository.findById(recordingDTO.getId());
+        if (existing.isPresent()) {
+            existing.ifPresent(recording -> {
+                recording.setApp(appRepository.findById(recordingDTO.getAppId()).get());
+                recording.setCollectionName(recordingDTO.getCollectionName());
+                recording.setStatus(recordingDTO.getStatus());
             });
-            this.recordingRepository.save(recording.get());
+            this.recordingRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/recording/{id}")
-                            .buildAndExpand(recording.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .body(recording);
+                    .body(existing);
         } else {
             throw new RecordFoundException("Recording with ID '" + recordingDTO.getId() + "' not found.");
         }

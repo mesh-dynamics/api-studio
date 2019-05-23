@@ -48,7 +48,7 @@ public class TestIntermediateServiceController {
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         if (testConfig.isPresent() && service.isPresent()) {
             TestIntermediateService saved = this.testIntermediateServiceRepository.save(
-                    TestIntermediateService.builder().service(service.get()).test(testConfig.get()).build());
+                    TestIntermediateService.builder().service(service.get()).testConfig(testConfig.get()).build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -72,26 +72,26 @@ public class TestIntermediateServiceController {
         }
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
-        Optional<TestIntermediateService> testIntermediateService = testIntermediateServiceRepository.findById(testServiceDTO.getId());
+        Optional<TestIntermediateService> existing = testIntermediateServiceRepository.findById(testServiceDTO.getId());
         if (service.isEmpty()){
             throw new RecordFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
         }
         if (testConfig.isEmpty()) {
             throw new RecordFoundException("TestConfig with ID '" + testServiceDTO.getTestId() + "' not found.");
         }
-        if (testIntermediateService.isPresent()) {
-            testIntermediateService.ifPresent(tiService -> {
-                tiService.setService(service.get());
-                tiService.setTest(testConfig.get());
+        if (existing.isPresent()) {
+            existing.ifPresent(testIntermediateService -> {
+                testIntermediateService.setService(service.get());
+                testIntermediateService.setTestConfig(testConfig.get());
             });
-            this.testIntermediateServiceRepository.save(testIntermediateService.get());
+            this.testIntermediateServiceRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/test_intermediate_services/{id}")
-                            .buildAndExpand(testIntermediateService.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .body(testIntermediateService);
+                    .body(existing);
         } else {
             throw new RecordFoundException("TestIntermediateService with ID '" + testServiceDTO.getId() + "' not found.");
         }

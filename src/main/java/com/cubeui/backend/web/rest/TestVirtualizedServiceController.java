@@ -48,7 +48,7 @@ public class TestVirtualizedServiceController {
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         if (testConfig.isPresent() && service.isPresent()) {
             TestVirtualizedService saved = this.testVirtualizedServiceRepository.save(
-                    TestVirtualizedService.builder().service(service.get()).test(testConfig.get()).build());
+                    TestVirtualizedService.builder().service(service.get()).testConfig(testConfig.get()).build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -72,26 +72,26 @@ public class TestVirtualizedServiceController {
         }
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
-        Optional<TestVirtualizedService> testIntermediateService = testVirtualizedServiceRepository.findById(testServiceDTO.getId());
+        Optional<TestVirtualizedService> existing = testVirtualizedServiceRepository.findById(testServiceDTO.getId());
         if (service.isEmpty()){
             throw new RecordFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
         }
         if (testConfig.isEmpty()) {
             throw new RecordFoundException("TestConfig with ID '" + testServiceDTO.getTestId() + "' not found.");
         }
-        if (testIntermediateService.isPresent()) {
-            testIntermediateService.ifPresent(tiService -> {
-                tiService.setService(service.get());
-                tiService.setTest(testConfig.get());
+        if (existing.isPresent()) {
+            existing.ifPresent(testVirtualizedService -> {
+                testVirtualizedService.setService(service.get());
+                testVirtualizedService.setTestConfig(testConfig.get());
             });
-            this.testVirtualizedServiceRepository.save(testIntermediateService.get());
+            this.testVirtualizedServiceRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/test_virtualized_services/{id}")
-                            .buildAndExpand(testIntermediateService.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .body(testIntermediateService);
+                    .body(existing);
         } else {
             throw new RecordFoundException("TestVirtualizedService with ID '" + testServiceDTO.getId() + "' not found.");
         }

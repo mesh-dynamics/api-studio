@@ -36,7 +36,7 @@ public class InstanceController {
         if (instanceDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + instanceDTO.getId() +"' already exists."));
         }
-        Instance saved = this.instanceRepository.save(Instance.builder().name(instanceDTO.getName()).build());
+        Instance saved = this.instanceRepository.save(Instance.builder().name(instanceDTO.getName()).gatewayEndpoint(instanceDTO.getGatewayEndpoint()).build());
         return created(
             ServletUriComponentsBuilder
                 .fromContextPath(request)
@@ -48,20 +48,21 @@ public class InstanceController {
 
     @PutMapping("")
     public ResponseEntity update(@RequestBody InstanceDTO instanceDTO, HttpServletRequest request) {
-        Optional<Instance> saved = this.instanceRepository.findById(instanceDTO.getId());
-        if (saved.isPresent()) {
-            saved.ifPresent(instance -> {
+        Optional<Instance> existing = this.instanceRepository.findById(instanceDTO.getId());
+        if (existing.isPresent()) {
+            existing.ifPresent(instance -> {
                 instance.setName(instanceDTO.getName());
+                instance.setGatewayEndpoint(instanceDTO.getGatewayEndpoint());
                 this.instanceRepository.save(instance);
             });
-            this.instanceRepository.save(saved.get());
+            this.instanceRepository.save(existing.get());
             return created(
                 ServletUriComponentsBuilder
                         .fromContextPath(request)
                         .path("/api/instance/{id}")
-                        .buildAndExpand(saved.get().getId())
+                        .buildAndExpand(existing.get().getId())
                         .toUri())
-                .body("Instance with ID '" + saved.get().getId() + "' updated");
+                .body("Instance with ID '" + existing.get().getId() + "' updated");
         } else {
             throw new RecordFoundException("Instance with ID '" + instanceDTO.getId() + "' not found.");
         }

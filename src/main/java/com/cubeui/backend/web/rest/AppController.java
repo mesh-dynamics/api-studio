@@ -47,14 +47,16 @@ public class AppController {
         Optional<Instance> instance = instanceRepository.findById(appDTO.getInstanceId());
         Optional<User> user = userService.getById(appDTO.getCustomerId());
         if (instance.isPresent() && user.isPresent()) {
-            App saved = this.appRepository.save(App.builder().name(appDTO.getName()).customer(user.get()).instance(instance.get()).build());
+            App saved = this.appRepository.save(
+                    App.builder().name(appDTO.getName()).customer(user.get()).instance(instance.get())
+                            .build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/app/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
-                    .build();
+                    .body(saved);
         } else {
             if (instance.isEmpty()){
                 throw new RecordFoundException("Instance with ID '" + appDTO.getInstanceId() + "' not found.");
@@ -69,21 +71,21 @@ public class AppController {
         if (appDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("App id not provided"));
         }
-        Optional<App> app = appRepository.findById(appDTO.getId());
-        if (app.isPresent()) {
-            app.ifPresent(app1 -> {
-                app1.setInstance(instanceRepository.findById(appDTO.getInstanceId()).get());
-                app1.setCustomer(userService.getById(appDTO.getCustomerId()).get());
-                app1.setName(appDTO.getName());
+        Optional<App> existing = appRepository.findById(appDTO.getId());
+        if (existing.isPresent()) {
+            existing.ifPresent(app -> {
+                app.setInstance(instanceRepository.findById(appDTO.getInstanceId()).get());
+                app.setCustomer(userService.getById(appDTO.getCustomerId()).get());
+                app.setName(appDTO.getName());
             });
-            this.appRepository.save(app.get());
+            this.appRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/app/{id}")
-                            .buildAndExpand(app.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .build();
+                    .body(existing);
         } else {
             throw new RecordFoundException("App with ID '" + appDTO.getId() + "' not found.");
         }

@@ -14,6 +14,8 @@ public class InstanceDTO {
 
     private InstanceName name;
 
+    private String gatewayEndpoint;
+
     private LocalDateTime createdAt;
 
 }

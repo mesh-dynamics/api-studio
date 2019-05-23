@@ -62,25 +62,25 @@ public class ServiceController {
         if (serviceDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("Service id not provided"));
         }
-        Optional<Service> service = serviceRepository.findById(serviceDTO.getId());
+        Optional<Service> existing = serviceRepository.findById(serviceDTO.getId());
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
         if (app.isEmpty()){
             throw new RecordFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
         }
-        if (service.isPresent()) {
-            service.ifPresent(service1 -> {
-                service1.setApp(app.get());
-                service1.setName(serviceDTO.getName());
-                service1.setType(serviceDTO.getType());
+        if (existing.isPresent()) {
+            existing.ifPresent(service -> {
+                service.setApp(app.get());
+                service.setName(serviceDTO.getName());
+                service.setType(serviceDTO.getType());
             });
-            this.serviceRepository.save(service.get());
+            this.serviceRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/service/{id}")
                             .buildAndExpand(app.get().getId())
                             .toUri())
-                    .body(service);
+                    .body(existing);
         } else {
             throw new RecordFoundException("Service with ID '" + serviceDTO.getId() + "' not found.");
         }

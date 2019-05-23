@@ -68,38 +68,38 @@ public class TestConfigController {
     }
 
     @PutMapping("")
-    public ResponseEntity update(@RequestBody TestConfigDTO testDTO, HttpServletRequest request) {
-        if (testDTO.getId() == null) {
+    public ResponseEntity update(@RequestBody TestConfigDTO testConfigDTO, HttpServletRequest request) {
+        if (testConfigDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("TestConfig id not provided"));
         }
-        Optional<TestConfig> testConfig = testConfigRepository.findById(testDTO.getId());
-        Optional<Service> service = serviceRepository.findById(testDTO.getGatewayServiceId());
-        Optional<Recording> recording = recordingRepository.findById(testDTO.getCollectionId());
+        Optional<TestConfig> existing = testConfigRepository.findById(testConfigDTO.getId());
+        Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
+        Optional<Recording> recording = recordingRepository.findById(testConfigDTO.getCollectionId());
         if (service.isEmpty()){
-            throw new RecordFoundException("Service with ID '" + testDTO.getGatewayServiceId() + "' not found.");
+            throw new RecordFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
         }
         if (recording.isEmpty()) {
-            throw new RecordFoundException("Recording with ID '" + testDTO.getCollectionId() + "' not found.");
+            throw new RecordFoundException("Recording with ID '" + testConfigDTO.getCollectionId() + "' not found.");
         }
-        if (testConfig.isPresent()) {
-            testConfig.ifPresent(test1 -> {
-                test1.setCollection(recording.get());
-                test1.setGatewayService(service.get());
-                test1.setDescription(testDTO.getDescription());
-                test1.setEndpoint(testDTO.getEndpoint());
-                test1.setGatewayPathSelection(testDTO.getGatewayPathSelection());
-                test1.setTestConfigName(testDTO.getTestConfigName());
+        if (existing.isPresent()) {
+            existing.ifPresent(testConfig -> {
+                testConfig.setCollection(recording.get());
+                testConfig.setGatewayService(service.get());
+                testConfig.setDescription(testConfigDTO.getDescription());
+                testConfig.setEndpoint(testConfigDTO.getEndpoint());
+                testConfig.setGatewayPathSelection(testConfigDTO.getGatewayPathSelection());
+                testConfig.setTestConfigName(testConfigDTO.getTestConfigName());
             });
-            this.testConfigRepository.save(testConfig.get());
+            this.testConfigRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/testConfig/{id}")
                             .buildAndExpand(recording.get().getId())
                             .toUri())
-                    .body(testConfig);
+                    .body(existing);
         } else {
-            throw new RecordFoundException("TestConfig with ID '" + testDTO.getId() + "' not found.");
+            throw new RecordFoundException("TestConfig with ID '" + testConfigDTO.getId() + "' not found.");
         }
     }
 
