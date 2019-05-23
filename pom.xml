@@ -21,7 +21,7 @@
 		</repository> -->
 		<repository>
 			<id>local-repo</id>
-			<url>${project.basedir}/src/main/resources/agent-1.0-SNAPSHOT.jar</url>
+			<url>${project.basedir}/WebContent/WEB-INF/lib/agent-1.0-SNAPSHOT.jar</url>
 		</repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
