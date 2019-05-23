@@ -44,11 +44,11 @@ public class SolrIterator implements Iterator<SolrDocument> {
     /**
 	 * @param query
 	 */
-	private SolrIterator(SolrClient solr, SolrQuery query, Optional<Integer> maxresults) {
+	private SolrIterator(SolrClient solr, SolrQuery query, Optional<Integer> maxresults, Optional<Integer> start) {
 		super();
 		this.solr = solr;
 		this.query = query;
-		this.start = 0;
+		this.start = start.orElse(0);
 		this.maxresults = maxresults;
 
 		numresults = 0;
@@ -58,6 +58,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 		int toread = maxresults.map(mr -> Math.min(BATCHSIZE, mr)).orElse(BATCHSIZE);
 		
 		query.setRows(toread);
+		query.setStart(this.start);
 		results = query();
 		results.ifPresent(r -> {
 			numresults = maxresults.map(mr -> Math.min(r.getNumFound(), mr)).orElse(r.getNumFound());
@@ -127,14 +128,19 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	// maxresults is set
 	
 	static public Stream<SolrDocument> getStream(SolrClient solr, SolrQuery query, Optional<Integer> maxresults) {
-		SolrIterator iter = new SolrIterator(solr, query, maxresults);
-		return iter.toStream();
+	    return getStream(solr, query, maxresults, Optional.empty());
 	}
 
-	static public <R> Result<R> getResults(SolrClient solr, SolrQuery query, 
+    static public Stream<SolrDocument> getStream(SolrClient solr, SolrQuery query, Optional<Integer> maxresults,
+                                                 Optional<Integer> start) {
+        SolrIterator iter = new SolrIterator(solr, query, maxresults, start);
+        return iter.toStream();
+    }
+
+    static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
 			Optional<Integer> maxresults,
 			Function<SolrDocument, Optional<R>> transform) {
-		SolrIterator iter = new SolrIterator(solr, query, maxresults);
+		SolrIterator iter = new SolrIterator(solr, query, maxresults, Optional.empty());
 		return new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults,
 				iter.numresults);
 	}
@@ -155,7 +161,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	static public <R> Result<R> getResultsWithTransformStream
 			(SolrClient solr, SolrQuery query, Optional<Integer> maxresults,
 										   Function<SolrDocument, Stream<R>> transformToStream) {
-		SolrIterator iter = new SolrIterator(solr , query , maxresults);
+		SolrIterator iter = new SolrIterator(solr , query , maxresults, Optional.empty());
 		// just want to understand that this flatMap will be called on demand and the entire stream
 		// won't be transformed in the constructor of the Result object itself
 		// also num results only indicates top-level results , as the trasnformStream could be a
@@ -201,4 +207,26 @@ public class SolrIterator implements Iterator<SolrDocument> {
         }
         return toReturn;
     }
+
+    /**
+     * This is a modification of SolrJ ClientUtils.escapeQueryChars. Only difference is that
+     * '*' is not escaped to allow for wildcard search strings to be passed from the top
+     * @param s The solr query string
+     * @return the escaped string
+     */
+    public static String escapeQueryChars(String s) {
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 0; i < s.length(); ++i) {
+            char c = s.charAt(i);
+            if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':' || c == '^' || c == '[' || c == ']' || c == '"' || c == '{' || c == '}' || c == '~' /*|| c == '*'*/ || c == '?' || c == '|' || c == '&' || c == ';' || c == '/' || Character.isWhitespace(c)) {
+                sb.append('\\');
+            }
+
+            sb.append(c);
+        }
+
+        return sb.toString();
+    }
+
 }

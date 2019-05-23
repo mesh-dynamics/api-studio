@@ -96,8 +96,18 @@ public interface ReqRespStore {
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
 	Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches);
-	
-	/**
+
+    /**
+     * @param queryrequest
+     * @param mspec - the matching specification
+     * @param nummatches - max number of matches
+     * @param start - skip the first "start" number of matches (for paging)
+     * @return the requests matching queryrequest based on the matching spec
+     */
+    Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches,
+                                Optional<Integer> start);
+
+    /**
 	 * @param reqid
 	 * @return the matching response on the reqid 
 	 */

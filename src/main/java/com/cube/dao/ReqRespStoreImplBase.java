@@ -5,10 +5,12 @@ package com.cube.dao;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cube.core.RequestComparator;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 
@@ -20,7 +22,13 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 	private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreImplBase.class);
 
-	/* (non-Javadoc)
+
+    @Override
+    public Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches) {
+        return getRequests(queryrequest, mspec, nummatches, Optional.empty());
+    }
+
+    /* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentCollection(java.util.Optional, java.util.Optional, java.util.Optional)
 	 * For a (cust, app, instance), there is one current collection. Either a recording is going on or a replay or nothing. This 
 	 * looks up the state and caches it for quick retrieval

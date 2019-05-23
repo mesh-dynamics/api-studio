@@ -3,6 +3,10 @@
  */
 package com.cube.ws;
 
+import static com.cube.dao.RRBase.*;
+import static com.cube.dao.RRBase.SERVICEFIELD;
+import static com.cube.dao.Request.PATHPATH;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -35,9 +39,7 @@ import io.opentracing.Scope;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.TemplateKey;
-import com.cube.core.ResponseComparator;
-import com.cube.core.UtilException;
-import com.cube.core.Utils;
+import com.cube.core.*;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording;
@@ -453,7 +455,58 @@ public class CubeStore {
     }
 
 
-	/**
+    /**
+     *
+     * @param ui
+     * @return the requests corresponding to a path
+     */
+    @GET
+    @Path("requests")
+    public Response requests(@Context UriInfo ui) {
+
+
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
+        String service = Optional.ofNullable(queryParams.getFirst("service")).orElse("*");
+        String path = Optional.ofNullable(queryParams.getFirst("path")).orElse("*"); // the path to drill down on
+        Optional<String> pattern =  Optional.ofNullable(queryParams.getFirst("pattern")); // the url should match
+        // this pattern
+        Optional<Integer> start =  Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        // paging
+        Optional<Integer> nummatches =
+            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
+        // for paging
+
+        MultivaluedMap<String, String> emptyMap = new MultivaluedHashMap<>();
+
+        MultivaluedMap<String, String> qparams = emptyMap;
+        MultivaluedMap<String, String> fparams = emptyMap;
+        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
+        pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
+
+        Request queryRequest = new Request(path, Optional.empty(), qparams, fparams, hdrs, service, collection,
+            Optional.of(RR.Record), customerid, app);
+
+        List<String> requests =
+            rrstore.getRequests(queryRequest, mspecForDrillDownQuery, nummatches, start)
+                .map(req -> req.reqid).flatMap(Optional::stream).collect(Collectors.toList());
+
+        String json;
+        try {
+            json = jsonmapper.writeValueAsString(requests);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Request list to Json for customer %s, app %s, " +
+                    "collection %s.",
+                customerid.orElse(""), app.orElse(""), collection.orElse("")), e);
+            return Response.serverError().build();
+        }
+    }
+
+
+    /**
 	 * @param config
 	 */
 	@Inject
@@ -513,4 +566,23 @@ public class CubeStore {
 		}
 		return false;
 	}
+
+    private CompareTemplate drilldownQueryReqTemplate = new CompareTemplate();
+    static RequestComparator mspecForDrillDownQuery;
+
+    {
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(HDRPATH + "/" + HDRPATHFIELD,
+            CompareTemplate.DataType.Str,
+            CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+
+        // comment below line if earlier ReqMatchSpec is to be used
+        mspecForDrillDownQuery = new TemplatedRequestComparator(drilldownQueryReqTemplate, jsonmapper);
+    }
+
 }

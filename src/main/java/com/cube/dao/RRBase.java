@@ -163,6 +163,7 @@ public class RRBase {
 
 	public static final String SERVICEFIELD = "service";
 	public static final String INSTANCEIDFIELD = "instanceid";
+	public static final String HDRPATHFIELD = "_path";
 
 	public static final String HDRPATH = "/hdr";
 	public static final String METAPATH = "/meta";
