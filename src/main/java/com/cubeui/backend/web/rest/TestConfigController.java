@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ServiceRepository;
-import com.cubeui.backend.repository.TestRepository;
+import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
 import org.springframework.http.ResponseEntity;
@@ -22,21 +22,21 @@ import static org.springframework.http.ResponseEntity.*;
 @RestController
 @RequestMapping("/api/test")
 //@Secured({"ROLE_USER"})
-public class TestController {
+public class TestConfigController {
 
-    private TestRepository testRepository;
+    private TestConfigRepository testConfigRepository;
     private ServiceRepository serviceRepository;
     private RecordingRepository recordingRepository;
 
-    public TestController(TestRepository testRepository, ServiceRepository serviceRepository, RecordingRepository recordingRepository) {
-        this.testRepository = testRepository;
+    public TestConfigController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, RecordingRepository recordingRepository) {
+        this.testConfigRepository = testConfigRepository;
         this.serviceRepository = serviceRepository;
         this.recordingRepository = recordingRepository;
     }
 
     @GetMapping("")
     public ResponseEntity all() {
-        return ok(this.testRepository.findAll());
+        return ok(this.testConfigRepository.findAll());
     }
 
     @PostMapping("")
@@ -47,7 +47,7 @@ public class TestController {
         Optional<Service> service = serviceRepository.findById(testDTO.getGatewayServiceId());
         Optional<Recording> recording = recordingRepository.findById(testDTO.getCollectionId());
         if (service.isPresent() && recording.isPresent()) {
-            TestConfig saved = this.testRepository.save(
+            TestConfig saved = this.testConfigRepository.save(
                     TestConfig.builder().collection(recording.get()).gatewayService(service.get()).description(testDTO.getDescription())
                             .endpoint(testDTO.getEndpoint()).gatewayPathSelection(testDTO.getGatewayPathSelection())
                             .testConfigName(testDTO.getTestConfigName()).build());
@@ -72,7 +72,7 @@ public class TestController {
         if (testDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("TestConfig id not provided"));
         }
-        Optional<TestConfig> test = testRepository.findById(testDTO.getId());
+        Optional<TestConfig> testConfig = testConfigRepository.findById(testDTO.getId());
         Optional<Service> service = serviceRepository.findById(testDTO.getGatewayServiceId());
         Optional<Recording> recording = recordingRepository.findById(testDTO.getCollectionId());
         if (service.isEmpty()){
@@ -81,8 +81,8 @@ public class TestController {
         if (recording.isEmpty()) {
             throw new RecordFoundException("Recording with ID '" + testDTO.getCollectionId() + "' not found.");
         }
-        if (test.isPresent()) {
-            test.ifPresent(test1 -> {
+        if (testConfig.isPresent()) {
+            testConfig.ifPresent(test1 -> {
                 test1.setCollection(recording.get());
                 test1.setGatewayService(service.get());
                 test1.setDescription(testDTO.getDescription());
@@ -90,14 +90,14 @@ public class TestController {
                 test1.setGatewayPathSelection(testDTO.getGatewayPathSelection());
                 test1.setTestConfigName(testDTO.getTestConfigName());
             });
-            this.testRepository.save(test.get());
+            this.testConfigRepository.save(testConfig.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/testConfig/{id}")
                             .buildAndExpand(recording.get().getId())
                             .toUri())
-                    .body(test);
+                    .body(testConfig);
         } else {
             throw new RecordFoundException("TestConfig with ID '" + testDTO.getId() + "' not found.");
         }
@@ -105,13 +105,13 @@ public class TestController {
 
     @GetMapping("/{id}")
     public ResponseEntity get(@PathVariable("id") Long id) {
-        return ok(this.testRepository.findById(id));
+        return ok(this.testConfigRepository.findById(id));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
-        Optional<TestConfig> existed = this.testRepository.findById(id);
-        this.testRepository.delete(existed.get());
+        Optional<TestConfig> existed = this.testConfigRepository.findById(id);
+        this.testConfigRepository.delete(existed.get());
         return noContent().build();
     }
 }

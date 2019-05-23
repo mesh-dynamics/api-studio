@@ -29,7 +29,7 @@ public class TestVirtualizedService {
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "test_id")
-    TestConfig test;
+    TestConfig testConfig;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)

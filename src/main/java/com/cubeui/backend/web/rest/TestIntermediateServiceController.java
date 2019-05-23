@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.domain.TestIntermediateService;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestIntermediateServiceRepository;
-import com.cubeui.backend.repository.TestRepository;
+import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +24,12 @@ import static org.springframework.http.ResponseEntity.*;
 //@Secured({"ROLE_USER"})
 public class TestIntermediateServiceController {
 
-    private TestRepository testRepository;
+    private TestConfigRepository testConfigRepository;
     private ServiceRepository serviceRepository;
     private TestIntermediateServiceRepository testIntermediateServiceRepository;
 
-    public TestIntermediateServiceController(TestRepository testRepository, ServiceRepository serviceRepository, TestIntermediateServiceRepository testIntermediateServiceRepository) {
-        this.testRepository = testRepository;
+    public TestIntermediateServiceController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, TestIntermediateServiceRepository testIntermediateServiceRepository) {
+        this.testConfigRepository = testConfigRepository;
         this.serviceRepository = serviceRepository;
         this.testIntermediateServiceRepository = testIntermediateServiceRepository;
     }
@@ -45,7 +45,7 @@ public class TestIntermediateServiceController {
             return status(FORBIDDEN).body(new ErrorResponse("TestIntermediateService with ID '" + testServiceDTO.getId() +"' already exists."));
         }
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
-        Optional<TestConfig> testConfig = testRepository.findById(testServiceDTO.getTestId());
+        Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         if (testConfig.isPresent() && service.isPresent()) {
             TestIntermediateService saved = this.testIntermediateServiceRepository.save(
                     TestIntermediateService.builder().service(service.get()).test(testConfig.get()).build());
@@ -71,7 +71,7 @@ public class TestIntermediateServiceController {
             return status(FORBIDDEN).body(new ErrorResponse("TestIntermediateService id not provided"));
         }
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
-        Optional<TestConfig> testConfig = testRepository.findById(testServiceDTO.getTestId());
+        Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         Optional<TestIntermediateService> testIntermediateService = testIntermediateServiceRepository.findById(testServiceDTO.getId());
         if (service.isEmpty()){
             throw new RecordFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");

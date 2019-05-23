@@ -3,11 +3,9 @@ package com.cubeui.backend.web.rest;
 import com.cubeui.backend.domain.DTO.TestServiceDTO;
 import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.domain.TestConfig;
-import com.cubeui.backend.domain.TestIntermediateService;
 import com.cubeui.backend.domain.TestVirtualizedService;
 import com.cubeui.backend.repository.ServiceRepository;
-import com.cubeui.backend.repository.TestIntermediateServiceRepository;
-import com.cubeui.backend.repository.TestRepository;
+import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.repository.TestVirtualizedServiceRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
@@ -26,12 +24,12 @@ import static org.springframework.http.ResponseEntity.*;
 //@Secured({"ROLE_USER"})
 public class TestVirtualizedServiceController {
 
-    private TestRepository testRepository;
+    private TestConfigRepository testConfigRepository;
     private ServiceRepository serviceRepository;
     private TestVirtualizedServiceRepository testVirtualizedServiceRepository;
 
-    public TestVirtualizedServiceController(TestRepository testRepository, ServiceRepository serviceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository) {
-        this.testRepository = testRepository;
+    public TestVirtualizedServiceController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository) {
+        this.testConfigRepository = testConfigRepository;
         this.serviceRepository = serviceRepository;
         this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
     }
@@ -47,7 +45,7 @@ public class TestVirtualizedServiceController {
             return status(FORBIDDEN).body(new ErrorResponse("TestVirtualizedService with ID '" + testServiceDTO.getId() +"' already exists."));
         }
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
-        Optional<TestConfig> testConfig = testRepository.findById(testServiceDTO.getTestId());
+        Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         if (testConfig.isPresent() && service.isPresent()) {
             TestVirtualizedService saved = this.testVirtualizedServiceRepository.save(
                     TestVirtualizedService.builder().service(service.get()).test(testConfig.get()).build());
@@ -73,7 +71,7 @@ public class TestVirtualizedServiceController {
             return status(FORBIDDEN).body(new ErrorResponse("TestVirtualizedService id not provided"));
         }
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
-        Optional<TestConfig> testConfig = testRepository.findById(testServiceDTO.getTestId());
+        Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         Optional<TestVirtualizedService> testIntermediateService = testVirtualizedServiceRepository.findById(testServiceDTO.getId());
         if (service.isEmpty()){
             throw new RecordFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
