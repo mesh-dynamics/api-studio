@@ -17,9 +17,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="compare_template",
-        uniqueConstraints=@UniqueConstraint(columnNames={"test_id", "type", "path"}),
+        uniqueConstraints=@UniqueConstraint(columnNames={"app_id", "service_id", "type", "path"}),
         indexes = {
-                @Index(columnList = "test_id", name = "compare_template_index"),
+                @Index(columnList = "app_id", name = "compare_template_index"),
+                @Index(columnList = "service_id", name = "compare_template_index"),
                 @Index(columnList = "type", name = "compare_template_index"),
                 @Index(columnList = "path", name = "compare_template_index")
         })
