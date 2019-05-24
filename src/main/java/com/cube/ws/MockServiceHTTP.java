@@ -1,6 +1,5 @@
 package com.cube.ws;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,8 +29,6 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.opentracing.Scope;
-import io.opentracing.Tracer;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.*;
 
@@ -65,81 +62,72 @@ public class MockServiceHTTP {
 
 	@Path("/health")
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response health(@Context HttpHeaders headers) {
-	    try (Scope scope =  Utils.startServerSpan(headers , "mock-health"))  {
-            return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
-        }
-	}
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response health() {
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
+    }
 
 
 	@GET
-	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-	public Response get(@Context UriInfo ui, @PathParam("var") String path, 
-			@PathParam("customerid") String customerid,
-			@PathParam("app") String app, 
-			@PathParam("instanceid") String instanceid, 
-			@PathParam("service") String service, 
-			@Context HttpHeaders headers) {
-        try (Scope scope =  Utils.startServerSpan(headers , "mock-get")) {
-            LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
-            return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
-        }
-	}
+    @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+    public Response get(@Context UriInfo ui, @PathParam("var") String path,
+                        @Context HttpHeaders headers,
+                        @PathParam("customerid") String customerid,
+                        @PathParam("app") String app,
+                        @PathParam("instanceid") String instanceid,
+                        @PathParam("service") String service) {
+        LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
+    }
 	
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two. 
 	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
 	@POST
-	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-	public Response postForms(@Context UriInfo ui, 
-			@PathParam("var") String path, 
-			MultivaluedMap<String, String> formParams,
-			@PathParam("customerid") String customerid,
-			@PathParam("app") String app, 
-			@PathParam("instanceid") String instanceid, 
-			@PathParam("service") String service, 
-			@Context HttpHeaders headers) {
-	    try (Scope scope =  Utils.startServerSpan(headers , "mock-post-form")) {
-            LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
-            return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
-        }
-	}
+    @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response postForms(@Context UriInfo ui,
+                              @Context HttpHeaders headers,
+                              @PathParam("var") String path,
+                              MultivaluedMap<String, String> formParams,
+                              @PathParam("customerid") String customerid,
+                              @PathParam("app") String app,
+                              @PathParam("instanceid") String instanceid,
+                              @PathParam("service") String service) {
+        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
+        return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
+    }
 
 	@POST
 	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-	@Consumes(MediaType.APPLICATION_JSON)
-	public Response postJson(@Context UriInfo ui,
-			@PathParam("var") String path, 
-			@PathParam("customerid") String customerid,
-			@PathParam("app") String app, 
-			@PathParam("instanceid") String instanceid, 
-			@PathParam("service") String service, 
-			@Context HttpHeaders headers, 
-			String body) {
-        try (Scope scope =  Utils.startServerSpan(headers , "mock-post-json")) {
-            LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
-            JSONObject obj = new JSONObject(body);
-            MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
-            for (String key : obj.keySet()) {
-                ArrayList<String> l = new ArrayList<>();
-                l.add(obj.get(key).toString());
-                mmap.put(key, l);
-            }
-            return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response postJson(@Context UriInfo ui,
+                             @PathParam("var") String path,
+                             @PathParam("customerid") String customerid,
+                             @PathParam("app") String app,
+                             @PathParam("instanceid") String instanceid,
+                             @PathParam("service") String service,
+                             @Context HttpHeaders headers,
+                             String body) {
+        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
+        JSONObject obj = new JSONObject(body);
+        MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
+        for (String key : obj.keySet()) {
+            ArrayList<String> l = new ArrayList<>();
+            l.add(obj.get(key).toString());
+            mmap.put(key, l);
         }
-	}
+        return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
+    }
 
 	@POST
     @Path("/fr")
     @Consumes(MediaType.TEXT_PLAIN)
     public Response funcJson(@Context UriInfo uInfo,
-                             @Context HttpHeaders headers,
                              String fnReqResponseAsString) {
-	    try (Scope scope =  Utils.startServerSpan(headers , "mock-func")) {
-	        scope.span().setBaggageItem("action", "func");
-	        FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString , FnReqResponse.class);
+        try {
+            Utils.setActionInScope("func");
+            FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
             return collection.map(collec ->
@@ -147,22 +135,22 @@ public class MockServiceHTTP {
                         try {
                             String retValueAsString = jsonmapper.writeValueAsString(retValue);
                             return Response.ok().type(MediaType.APPLICATION_JSON).entity(retValueAsString).build();
-                        } catch(JsonProcessingException e) {
+                        } catch (JsonProcessingException e) {
                             return Response.serverError().type(MediaType.APPLICATION_JSON).
-                                entity("{\"reason\" : \"Unable to parse function response object "+ e.getMessage()
-                                    +  " \"}").build();
+                                entity("{\"reason\" : \"Unable to parse function response object " + e.getMessage()
+                                    + " \"}").build();
                         }
                     }
                 ).
-                orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
-                    entity("{\"reason\" : \"Unable to find matching function request\"}").build()))
+                    orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
+                        entity("{\"reason\" : \"Unable to find matching function request\"}").build()))
                 .orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
                     entity("{\"reason\" : \"Unable to locate collection for given customer, app, instance combo\"}")
                     .build());
         } catch (Exception e) {
-	        return Response.serverError().type(MediaType.APPLICATION_JSON).
-                entity("{\"reason\" : \"Unable to parse function request object "+ e.getMessage()
-                    +  " \"}").build();
+            return Response.serverError().type(MediaType.APPLICATION_JSON).
+                entity("{\"reason\" : \"Unable to parse function request object " + e.getMessage()
+                    + " \"}").build();
         }
     }
 
