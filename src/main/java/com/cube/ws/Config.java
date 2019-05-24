@@ -84,10 +84,10 @@ public class Config {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
             solrurl = properties.getProperty("solrurl");
-            customerId = properties.getProperty("customer" , "ravivj");
-            app = properties.getProperty("app" , "cubews");
-            instance = properties.getProperty("instance" , "dev");
-            serviceName = properties.getProperty("service" , "cube");
+            customerId = fromEnvOrProperties("customer_dogfood" , "ravivj");
+            app = fromEnvOrProperties("app_dogfood" , "cubews");
+            instance = fromEnvOrProperties("instance_dogfood" , "dev");
+            serviceName = fromEnvOrProperties("service_dogfood" , "cube");
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
@@ -133,6 +133,15 @@ public class Config {
 	        readLock.unlock();
         }
     }
+
+    private String fromEnvOrProperties(String propertyName, String defaultValue) {
+        String fromEnv =  System.getenv(propertyName);
+        if (fromEnv != null) {
+            return fromEnv;
+        }
+        return  properties.getProperty(propertyName , defaultValue);
+    }
+
 
 	public String getProperty(String key)
 	{

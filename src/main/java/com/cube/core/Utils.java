@@ -136,10 +136,9 @@ public class Utils {
 	    return findFirstCaseInsensitiveMatch(mMap,Config.DEFAULT_TRACE_FIELD);
     }
 
-    public static Scope startServerSpan(javax.ws.rs.core.HttpHeaders httpHeaders, String operationName) {
+    public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders, String operationName) {
         // format the headers for extraction
         Tracer tracer = GlobalTracer.get();
-        MultivaluedMap<String, String> rawHeaders = httpHeaders.getRequestHeaders();
         final HashMap<String, String> headers = new HashMap<String, String>();
         rawHeaders.forEach((k , v) -> {if (v.size() > 0) {headers.put(k, v.get(0));}});
         Tracer.SpanBuilder spanBuilder;
@@ -156,6 +155,7 @@ public class Utils {
         // TODO could add more tags like http.url
         return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
     }
+
 
     public static JaegerTracer init(String service) {
         Configuration.SamplerConfiguration samplerConfig = Configuration.SamplerConfiguration.fromEnv()
@@ -207,6 +207,16 @@ public class Utils {
             }
         }
         return action;
+    }
+
+    public static void setActionInScope(String action) {
+        if (GlobalTracer.isRegistered()) {
+            Tracer tracer = GlobalTracer.get();
+            Scope scope = tracer.scopeManager().active();
+            if (scope != null && scope.span() != null) {
+                scope.span().setBaggageItem("action" , action);
+            }
+        }
     }
 
 
