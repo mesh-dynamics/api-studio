@@ -6,12 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
@@ -37,9 +37,19 @@ public class CompareTemplate {
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
+//    @ManyToOne
+//    @JoinColumn(name = "test_id")
+//    TestConfig testConfig;
+
     @ManyToOne
-    @JoinColumn(name = "test_id")
-    TestConfig testConfig;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "app_id")
+    App app;
+
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "service_id")
+    Service service;
 
     @NotEmpty
     @Column(nullable = false)
