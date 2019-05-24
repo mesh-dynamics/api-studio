@@ -5,20 +5,20 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="tests",
-        uniqueConstraints=@UniqueConstraint(columnNames={"collection_id", "test_config_name"}),
+@Table(name="test_config",
+        uniqueConstraints=@UniqueConstraint(columnNames={"app_id", "test_config_name"}),
         indexes = {
-                @Index(columnList = "collection_id", name = "test_index")
+                @Index(columnList = "app_id", name = "test_index")
         })
 @Data
 @Builder
@@ -38,13 +38,19 @@ public class TestConfig {
     @Column(name = "test_config_name", nullable = false)
     String testConfigName;
 
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "app_id")
+    App app;
+
     String description;
 
-    @ManyToOne
-    @JoinColumn(name = "collection_id")
-    Recording collection;
+//    @ManyToOne
+//    @JoinColumn(name = "collection_id")
+//    Recording collection;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "gateway_service_id")
     Service gatewayService;
 
@@ -52,9 +58,20 @@ public class TestConfig {
     @Column(columnDefinition = "jsonb")
     String gatewayPathSelection;
 
-    @NotEmpty
-    @Column(nullable = false)
-    String endpoint;
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb")
+    String gatewayReqSelection;
+
+    @Column
+    int maxRunTimeMin;
+
+    String emailId;
+
+    String slackId;
+
+//    @NotEmpty
+//    @Column(nullable = false)
+//    String endpoint;
 
     @CreationTimestamp
     LocalDateTime createdAt;

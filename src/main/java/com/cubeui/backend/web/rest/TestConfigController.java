@@ -1,9 +1,11 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.Recording;
 import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.domain.TestConfig;
+import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
@@ -26,12 +28,12 @@ public class TestConfigController {
 
     private TestConfigRepository testConfigRepository;
     private ServiceRepository serviceRepository;
-    private RecordingRepository recordingRepository;
+    private AppRepository appRepository;
 
-    public TestConfigController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, RecordingRepository recordingRepository) {
+    public TestConfigController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, AppRepository appRepository) {
         this.testConfigRepository = testConfigRepository;
         this.serviceRepository = serviceRepository;
-        this.recordingRepository = recordingRepository;
+        this.appRepository = appRepository;
     }
 
     @GetMapping("")
@@ -40,17 +42,25 @@ public class TestConfigController {
     }
 
     @PostMapping("")
-    public ResponseEntity save(@RequestBody TestConfigDTO testDTO, HttpServletRequest request) {
-        if (testDTO.getId() != null) {
-            return status(FORBIDDEN).body(new ErrorResponse("TestConfig with ID '" + testDTO.getId() +"' already exists."));
+    public ResponseEntity save(@RequestBody TestConfigDTO testConfigDTO, HttpServletRequest request) {
+        if (testConfigDTO.getId() != null) {
+            return status(FORBIDDEN).body(new ErrorResponse("TestConfig with ID '" + testConfigDTO.getId() +"' already exists."));
         }
-        Optional<Service> service = serviceRepository.findById(testDTO.getGatewayServiceId());
-        Optional<Recording> recording = recordingRepository.findById(testDTO.getCollectionId());
-        if (service.isPresent() && recording.isPresent()) {
+        Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
+        Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
+        if (service.isPresent() && app.isPresent()) {
             TestConfig saved = this.testConfigRepository.save(
-                    TestConfig.builder().collection(recording.get()).gatewayService(service.get()).description(testDTO.getDescription())
-                            .endpoint(testDTO.getEndpoint()).gatewayPathSelection(testDTO.getGatewayPathSelection())
-                            .testConfigName(testDTO.getTestConfigName()).build());
+                    TestConfig.builder()
+                            .testConfigName(testConfigDTO.getTestConfigName())
+                            .app(app.get())
+                            .gatewayService(service.get())
+                            .description(testConfigDTO.getDescription())
+                            .gatewayPathSelection(testConfigDTO.getGatewayPathSelection())
+                            .gatewayReqSelection(testConfigDTO.getGatewayReqSelection())
+                            .maxRunTimeMin(testConfigDTO.getMaxRunTimeMin())
+                            .emailId(testConfigDTO.getEmailId())
+                            .slackId(testConfigDTO.getSlackId())
+                            .build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -60,9 +70,9 @@ public class TestConfigController {
                     .body(saved);
         } else {
             if (service.isEmpty()){
-                throw new RecordFoundException("Service with ID '" + testDTO.getGatewayServiceId() + "' not found.");
+                throw new RecordFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
             } else {
-                throw new RecordFoundException("Recording with ID '" + testDTO.getCollectionId() + "' not found.");
+                throw new RecordFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
             }
         }
     }
@@ -74,28 +84,31 @@ public class TestConfigController {
         }
         Optional<TestConfig> existing = testConfigRepository.findById(testConfigDTO.getId());
         Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
-        Optional<Recording> recording = recordingRepository.findById(testConfigDTO.getCollectionId());
+        Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
         if (service.isEmpty()){
             throw new RecordFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
         }
-        if (recording.isEmpty()) {
-            throw new RecordFoundException("Recording with ID '" + testConfigDTO.getCollectionId() + "' not found.");
+        if (app.isEmpty()) {
+            throw new RecordFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(testConfig -> {
-                testConfig.setCollection(recording.get());
+                testConfig.setTestConfigName(testConfigDTO.getTestConfigName());
+                testConfig.setApp(app.get());
                 testConfig.setGatewayService(service.get());
                 testConfig.setDescription(testConfigDTO.getDescription());
-                testConfig.setEndpoint(testConfigDTO.getEndpoint());
                 testConfig.setGatewayPathSelection(testConfigDTO.getGatewayPathSelection());
-                testConfig.setTestConfigName(testConfigDTO.getTestConfigName());
+                testConfig.setGatewayReqSelection(testConfigDTO.getGatewayReqSelection());
+                testConfig.setEmailId(testConfigDTO.getEmailId());
+                testConfig.setSlackId(testConfigDTO.getSlackId());
+                testConfig.setMaxRunTimeMin(testConfigDTO.getMaxRunTimeMin());
             });
             this.testConfigRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/testConfig/{id}")
-                            .buildAndExpand(recording.get().getId())
+                            .buildAndExpand(testConfigDTO.getId())
                             .toUri())
                     .body(existing);
         } else {

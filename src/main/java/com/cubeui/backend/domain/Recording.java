@@ -33,12 +33,13 @@ public class Recording {
     Long id;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "app_id")
     App app;
 
     //VNT: Many to many, not sure right now
     @OneToOne
-    @OnDelete(action = OnDeleteAction.NO_ACTION)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "instance_id")
     Instance instance;
 
