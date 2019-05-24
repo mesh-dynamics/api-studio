@@ -67,11 +67,7 @@ spec:
                   -- handle:logErr(data)
                   handle:logErr("Making http call to cube: " .. "/cs/rr" .. path)
                   local hhdr, hbody = handle:httpCall(
-<<<<<<< HEAD
                   "outbound|8080||cubews-record.{{namespace}}.svc.cluster.local",
-=======
-                  "outbound|8080||cubews.{{namespace}}.svc.cluster.local",
->>>>>>> 85feb1ea00033cce14e635a3ba0f084291ebea92
                   {
                     [":method"] = "POST",
                     [":path"] = "/cs/rr" .. path,
