@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 @Table(name="services",
         uniqueConstraints=@UniqueConstraint(columnNames={"name", "app_id"}),
         indexes = {
-                @Index(columnList = "app_id", name = "service_index"),
-                @Index(columnList = "type", name = "service_index")
+                @Index(columnList = "app_id", name = "service_index")
+//                @Index(columnList = "type", name = "service_index")
         })
 @Data
 @Builder
@@ -35,10 +35,10 @@ public class Service {
     @Column(nullable = false, length = 200)
     String name;
 
-    @NotEmpty
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    ServiceType type;
+//    @NotEmpty
+//    @Enumerated(EnumType.STRING)
+//    @Column(nullable = false)
+//    ServiceType type;
 
     @ManyToOne
     @JoinColumn(name = "app_id")

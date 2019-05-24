@@ -44,7 +44,11 @@ public class ServiceController {
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
         if (app.isPresent()) {
             Service saved = this.serviceRepository.save(
-                    Service.builder().app(app.get()).name(serviceDTO.getName()).type(serviceDTO.getType()).build());
+                    Service.builder()
+                            .app(app.get())
+                            .name(serviceDTO.getName())
+//                            .type(serviceDTO.getType())
+                            .build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -71,7 +75,7 @@ public class ServiceController {
             existing.ifPresent(service -> {
                 service.setApp(app.get());
                 service.setName(serviceDTO.getName());
-                service.setType(serviceDTO.getType());
+//                service.setType(serviceDTO.getType());
             });
             this.serviceRepository.save(existing.get());
             return created(

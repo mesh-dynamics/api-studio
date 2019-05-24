@@ -41,7 +41,7 @@ public class ProductController {
                 .path("/api/products/{id}")
                 .buildAndExpand(saved.getId())
                 .toUri())
-            .build();
+            .body(saved);
     }
 
     @GetMapping("/{id}")
