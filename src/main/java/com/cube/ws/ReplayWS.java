@@ -273,8 +273,26 @@ public class ReplayWS {
 
         return resp;
     }
-	
-	
+
+    @GET
+    @Path("/togglestate/{state}")
+    public Response toggleClientState(@Context UriInfo uriInfo, @PathParam("state") String state) {
+        switch (state) {
+            case "record":
+                config.setState(Config.AppState.Record);
+                break;
+            case "mock":
+                config.setState(Config.AppState.Mock);
+                break;
+            case "normal":
+                config.setState(Config.AppState.Normal);
+                break;
+            default:
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"State Not identified\"}").build();
+        }
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
+    }
+    
 	/**
 	 * @param config
 	 */
@@ -284,10 +302,12 @@ public class ReplayWS {
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
 		this.replayResultCache = config.replayResultCache;
+		this.config = config;
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonmapper;
 	ReplayResultCache replayResultCache;
+	private final Config config;
 }
