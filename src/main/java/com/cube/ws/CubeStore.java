@@ -493,9 +493,9 @@ public class CubeStore {
         Request queryRequest = new Request(path, Optional.empty(), qparams, fparams, hdrs, service, collection,
             Optional.of(RR.Record), customerid, app);
 
-        List<String> requests =
+        List<Request> requests =
             rrstore.getRequests(queryRequest, mspecForDrillDownQuery, nummatches, start)
-                .map(req -> req.reqid).flatMap(Optional::stream).collect(Collectors.toList());
+                .collect(Collectors.toList());
 
         String json;
         try {
