@@ -250,8 +250,25 @@ public class MockServiceHTTP {
 	private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
 		return rrstore.getRespForReq(queryrequest, mspecForDefault);
 	}
-	
 
+    @GET
+    @Path("/togglestate/{state}")
+    public Response toggleClientState(@Context UriInfo uriInfo, @PathParam("state") String state) {
+        switch (state) {
+            case "record":
+                config.setState(Config.AppState.Record);
+                break;
+            case "mock":
+                config.setState(Config.AppState.Mock);
+                break;
+            case "normal":
+                config.setState(Config.AppState.Normal);
+                break;
+            default:
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"State Not identified\"}").build();
+        }
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
+    }
 	
 	/**
 	 * @param config
@@ -259,6 +276,7 @@ public class MockServiceHTTP {
 	@Inject
 	public MockServiceHTTP(Config config) {
 		super();
+		this.config = config;
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
 		this.requestComparatorCache = config.requestComparatorCache;
@@ -272,6 +290,7 @@ public class MockServiceHTTP {
 	private RequestComparatorCache requestComparatorCache;
 	private ReplayResultCache replayResultCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
+	private final Config config;
 	
 	// TODO - make trace field configurable
 	private static RequestComparator mspec = (ReqMatchSpec) ReqMatchSpec.builder()
