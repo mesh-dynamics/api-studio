@@ -214,7 +214,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         funcReqResponse.traceId.ifPresent(trace ->
             argsQuery.append(" OR ").append("(").append(HDRTRACEF).append(":").append(trace).append(")^2"));
         funcReqResponse.respTS.ifPresent(timestamp -> argsQuery.
-            append(" OR ").append(TIMESTAMPF).append(":[").append(timestamp.toString()).append(" TO *]"));
+            append(" OR ").append(TIMESTAMPF).append(":{").append(timestamp.toString()).append(" TO *]"));
         SolrQuery query = new SolrQuery(argsQuery.toString());
         query.setFields("*");
         addFilter(query, TYPEF, Types.FuncReqResp.toString());
