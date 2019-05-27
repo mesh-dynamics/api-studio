@@ -85,7 +85,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 								.findFirst()
 								.map(replay -> RecordOrReplay.createFromReplay(replay));
 					});
-			rr.ifPresent(rrv -> currentCollectionMap.put(ckey, rrv));
+			//rr.ifPresent(rrv -> currentCollectionMap.put(ckey, rrv));
 			return rr;
 		});
 	}
