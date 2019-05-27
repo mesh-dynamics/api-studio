@@ -27,6 +27,7 @@ record() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
 	kubectl apply -f cube/envoy_record_cs.yaml -n staging
+	kubectl apply -f cube/envoy_mock_cs.yaml -n staging
 	curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_USER/cube/$CUBE_INSTANCEID/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
