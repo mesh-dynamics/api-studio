@@ -26,21 +26,28 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.debug("Initializing data...");
         UserDTO userDTO = new UserDTO();
-        userDTO.setName("Vineet Kumar Singh");
-        userDTO.setEmail("vineetks");
-        userDTO.setPassword("vineetks");
-        userDTO.setRoles(Arrays.asList("ROLE_USER"));
-        this.userService.save(userDTO);
+        if (userService.getByUsername("vineetks").isEmpty()){
+            userDTO.setName("Vineet Kumar Singh");
+            userDTO.setEmail("vineetks");
+            userDTO.setPassword("vineetks");
+            userDTO.setRoles(Arrays.asList("ROLE_USER"));
+            this.userService.save(userDTO);
+        }
 
-        userDTO.setName("Administrator");
-        userDTO.setEmail("admin");
-        userDTO.setPassword("admin");
-        userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
-        this.userService.save(userDTO);
+        if (userService.getByUsername("admin").isEmpty()){
+            userDTO.setName("Administrator");
+            userDTO.setEmail("admin");
+            userDTO.setPassword("admin");
+            userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
+            this.userService.save(userDTO);
+        }
+
         log.debug("printing all users...");
         this.userService.getAllUsers().forEach(v -> log.debug(" User :" + v.toString()));
 
-        this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
-        this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
+        if (productRepository.findAll().isEmpty()){
+            this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
+            this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
+        }
     }
 }
