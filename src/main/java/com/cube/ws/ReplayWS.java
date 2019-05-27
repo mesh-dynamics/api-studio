@@ -292,7 +292,14 @@ public class ReplayWS {
         }
         return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
     }
-    
+
+    @GET
+    @Path("/getstate")
+    public Response getClientState(@Context UriInfo uriInfo) {
+        return Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("{\"state\" : \"" + config.getState().toString()  + "\"}").build();
+    }
+
 	/**
 	 * @param config
 	 */

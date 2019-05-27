@@ -1,6 +1,7 @@
 package com.cube.ws;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -28,6 +29,8 @@ public class TracingFilter implements ContainerRequestFilter , ContainerResponse
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
         LOGGER.debug("Inside Method :: " + resourceInfo.getResourceMethod().getName() + " "
             + resourceInfo.getResourceClass().getName());
+        Optional<String> state = Utils.getCurrentStateFromScope();
+        LOGGER.info("Got state from scope :: " + state.orElse(" N/A"));
         Scope scope = Utils.startServerSpan(containerRequestContext.getHeaders() ,
             resourceInfo.getResourceClass().getSimpleName() + "-" + resourceInfo.getResourceMethod().getName());
         containerRequestContext.setProperty("scope" , scope);

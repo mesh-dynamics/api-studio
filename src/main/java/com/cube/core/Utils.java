@@ -197,24 +197,29 @@ public class Utils {
     public static Optional<String> getParentSpanId() {
         return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getParentId()));
     }
-    public static Optional<String> getCurrentActionFromScope() {
+    public static Optional<String> getCurrentStateFromScope() {
         Optional<String> action = Optional.empty();
 	    if (GlobalTracer.isRegistered()) {
             Tracer tracer = GlobalTracer.get();
             Scope scope = tracer.scopeManager().active();
             if (scope != null && scope.span() != null) {
-                action = Optional.ofNullable(scope.span().getBaggageItem("action"));
+                action = Optional.ofNullable(scope.span().getBaggageItem("state"));
             }
         }
         return action;
     }
 
-    public static void setActionInScope(String action) {
+    /**
+     * Not that this is just a precautionary measure, ideally we are
+     * setting the state baggage item to normal in the agent, and the same should be
+     * propagated in the trace
+     */
+    public static void setStateToNormal() {
         if (GlobalTracer.isRegistered()) {
             Tracer tracer = GlobalTracer.get();
             Scope scope = tracer.scopeManager().active();
             if (scope != null && scope.span() != null) {
-                scope.span().setBaggageItem("action" , action);
+                scope.span().setBaggageItem("state" , "normal");
             }
         }
     }

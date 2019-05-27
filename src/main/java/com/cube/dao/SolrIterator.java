@@ -177,7 +177,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
     static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
         LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
-        Optional<String> action = Utils.getCurrentActionFromScope();
+        Optional<String> state = Utils.getCurrentStateFromScope();
+        LOGGER.info("Current state in trace scope " + state.orElse(" N/A"));
         if (queryFnKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("query", SolrParams.class);
@@ -187,7 +188,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
                 LOGGER.error("Unable to find solr query method by reflection :: " + e.getMessage());
             }
         }
-        if (config.getState() == Config.AppState.Mock && !action.orElse("").equals("func")) {
+        if (config.getState() == Config.AppState.Mock && state.orElse("mock").equals("mock")) {
             return Optional.ofNullable((QueryResponse) config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query).retVal);
         }
@@ -201,7 +202,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
             LOGGER.error("Error in querying Solr", e);
         }
 
-        if (config.getState() == Config.AppState.Record && !action.orElse("").equals("func")) {
+        if (config.getState() == Config.AppState.Record && state.orElse("record").equals("record")) {
             config.recorder.record(queryFnKey,  Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, query);
         }

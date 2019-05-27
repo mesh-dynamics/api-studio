@@ -19,7 +19,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -726,7 +725,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey saveFuncKey;
 
     private boolean saveDoc(SolrInputDocument doc) {
-        Optional<String> action = Utils.getCurrentActionFromScope();
+        Optional<String> state = Utils.getCurrentStateFromScope();
+        LOGGER.info("Current state in trace scope " + state.orElse(" N/A"));
         if (saveFuncKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("add", doc.getClass());
@@ -736,8 +736,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 LOGGER.error("Couldn't Initiate save function key :: " + e.getMessage());
             }
         }
-
-        if (!action.orElse("").equals("func") && this.config.getState() == Config.AppState.Mock) {
+        // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
+        if (state.orElse("mock").equals("mock") && this.config.getState() == Config.AppState.Mock) {
             UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc).retVal;
             return fromSolr != null;
@@ -752,7 +752,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         } catch (SolrServerException | IOException e) {
             LOGGER.error("Error in saving response", e);
         }
-        if (!action.orElse("").equals("func") && this.config.getState() == Config.AppState.Record) {
+        // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
+        if (state.orElse("record").equals("record") && this.config.getState() == Config.AppState.Record) {
             config.recorder.record(saveFuncKey , Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr, doc);
         }
