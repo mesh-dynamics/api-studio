@@ -49,7 +49,8 @@ public class SimpleMocker implements Mocker {
             String[] argVals =
                     Arrays.stream(args).map(UtilException.rethrowFunction(gson::toJson)).toArray(String[]::new);
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
-
+            LOGGER.info("Trying to mock function :: " + fnKey.function.getName());
+            Arrays.stream(argVals).forEach(arg -> LOGGER.info("Argument while mocking :: " + arg));
             // forming a dummy req response object with empty ret value, we can just serialize this object
             // and send it to cube mock service to get appropriate response
             FnReqResponse fnReqResponse = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId,
@@ -65,6 +66,7 @@ public class SimpleMocker implements Mocker {
                 return new FnResponseObj(null, Optional.empty());
             } else {
                 FnResponse response = ret.get();
+                LOGGER.info("Return value received while mocking :: " + response.retVal);
                 Object retVal = gson.fromJson(response.retVal, fnKey.function.getReturnType());
                 return new FnResponseObj(retVal, response.timeStamp);
             }

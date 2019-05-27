@@ -29,9 +29,12 @@ class Utils {
 
     }
 
-    public static void addTraceHeaders(Tracer tracer, Invocation.Builder requestBuilder, String requestType) {
+    public static void addTraceHeaders(Tracer tracer, Invocation.Builder requestBuilder, String requestType , boolean removeStateBaggage) {
         Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
         Tags.HTTP_METHOD.set(tracer.activeSpan(), requestType);
+        if (removeStateBaggage) {
+            tracer.activeSpan().setBaggageItem("state", "normal");
+        }
         //Tags.HTTP_URL.set(tracer.activeSpan(), requestBuilder.toString());
         tracer.inject(tracer.activeSpan().context(), Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
     }
