@@ -1,0 +1,65 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: cubews-record-lua
+spec:
+  workloadLabels:
+    app: cubews-record
+  filters:
+  - listenerMatch:
+      #portNumber: 8080
+      listenerType: SIDECAR_INBOUND #will match with the inbound listener for cubews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                function envoy_on_request(request_handle)
+                  request_handle:headers():add("baggage-state", "mock")
+                end
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: cubews-mock-lua
+spec:
+  workloadLabels:
+    app: cubews-mock
+  filters:
+  - listenerMatch:
+      #portNumber: 8080
+      listenerType: SIDECAR_INBOUND #will match with the inbound listener for cubews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                function envoy_on_request(request_handle)
+                  request_handle:headers():add("baggage-state", "mock")
+                end
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: cubews-replay-lua
+spec:
+  workloadLabels:
+    app: cubews-replay
+  filters:
+  - listenerMatch:
+      #portNumber: 8080
+      listenerType: SIDECAR_INBOUND #will match with the inbound listener for cubews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                function envoy_on_request(request_handle)
+                  request_handle:headers():add("baggage-state", "mock")
+                end
