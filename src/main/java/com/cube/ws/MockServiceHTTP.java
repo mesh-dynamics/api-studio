@@ -126,7 +126,7 @@ public class MockServiceHTTP {
     public Response funcJson(@Context UriInfo uInfo,
                              String fnReqResponseAsString) {
         try {
-            Utils.setActionInScope("func");
+            Utils.setStateToNormal();
             FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
@@ -269,7 +269,14 @@ public class MockServiceHTTP {
         }
         return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
     }
-	
+
+    @GET
+    @Path("/getstate")
+    public Response getClientState(@Context UriInfo uriInfo) {
+        return Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("{\"state\" : \"" + config.getState().toString()  + "\"}").build();
+    }
+
 	/**
 	 * @param config
 	 */

@@ -193,7 +193,7 @@ public class CubeStore {
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
         try {
-            Utils.setActionInScope("func");
+            Utils.setStateToNormal();
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
                 Optional.of(functionReqResp.app), Optional.of(functionReqResp.instanceId));
@@ -406,6 +406,12 @@ public class CubeStore {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
     }
 
+    @GET
+    @Path("/getstate")
+    public Response getClientState(@Context UriInfo uriInfo) {
+        return Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("{\"state\" : \"" + config.getState().toString()  + "\"}").build();
+    }
 
     /**
      * This is just a test api
