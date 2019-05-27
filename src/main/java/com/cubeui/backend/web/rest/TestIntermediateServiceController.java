@@ -20,7 +20,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
-@RequestMapping("/api/test_intermediate_services")
+@RequestMapping("/api/test_intermediate_service")
 //@Secured({"ROLE_USER"})
 public class TestIntermediateServiceController {
 
@@ -52,7 +52,7 @@ public class TestIntermediateServiceController {
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/test_intermediate_services/{id}")
+                            .path("/api/test_intermediate_service/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
                     .body(saved);
@@ -88,7 +88,7 @@ public class TestIntermediateServiceController {
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/test_intermediate_services/{id}")
+                            .path("/api/test_intermediate_service/{id}")
                             .buildAndExpand(existing.get().getId())
                             .toUri())
                     .body(existing);

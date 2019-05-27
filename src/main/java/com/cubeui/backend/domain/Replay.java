@@ -51,7 +51,6 @@ public class Replay {
     @JoinColumn(name = "collection_id")
     Recording recording;
 
-    @NotEmpty
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     ReplayStatus status;

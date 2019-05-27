@@ -57,7 +57,6 @@ public class CompareTemplate {
     @Column(nullable = false, columnDefinition = "jsonb")
     String template;
 
-    @NotEmpty
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     TemplateType type;

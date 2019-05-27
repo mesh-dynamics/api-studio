@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
-@RequestMapping("/api/test")
+@RequestMapping("/api/test_config")
 //@Secured({"ROLE_USER"})
 public class TestConfigController {
 
@@ -64,7 +64,7 @@ public class TestConfigController {
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/testConfig/{id}")
+                            .path("/api/test_config/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
                     .body(saved);
@@ -107,7 +107,7 @@ public class TestConfigController {
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/testConfig/{id}")
+                            .path("/api/test_config/{id}")
                             .buildAndExpand(testConfigDTO.getId())
                             .toUri())
                     .body(existing);
