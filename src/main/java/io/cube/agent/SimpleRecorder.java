@@ -55,7 +55,9 @@ public class SimpleRecorder implements Recorder {
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
             //String respVal = jsonMapper.writeValueAsString(response);
             String respVal = gson.toJson(response);
-            LOGGER.debug("Function return value serialized :: " + respVal);
+            LOGGER.info("Trying to record function :: " + fnKey.function.getName());
+            Arrays.stream(argVals).forEach(arg -> LOGGER.info("Argument while storing :: " + arg));
+            LOGGER.info("Function return value serialized :: " + respVal);
             FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId, fnKey.service,
                     fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
                     Optional.ofNullable(Instant.now()), argsHash,
