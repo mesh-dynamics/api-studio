@@ -15,11 +15,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="apps",
-//        uniqueConstraints=@UniqueConstraint(columnNames={"name", "customer_id", "instance_id"}),
         uniqueConstraints=@UniqueConstraint(columnNames={"customer_id"}),
         indexes = {
                 @Index(columnList = "customer_id", name = "app_index")
-//                @Index(columnList = "instance_id", name = "app_index")
         })
 @Data
 @Builder
@@ -39,12 +37,6 @@ public class App {
     @JoinColumn(name = "customer_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
     User customer;
-
-    //VNT: Many to many, not sure right now
-//    @OneToOne
-//    @OnDelete(action = OnDeleteAction.NO_ACTION)
-//    @JoinColumn(name = "instance_id")
-//    Instance instance;
 
     @CreationTimestamp
     LocalDateTime createdAt;

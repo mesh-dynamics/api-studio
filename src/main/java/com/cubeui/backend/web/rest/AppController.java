@@ -2,10 +2,8 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.AppDTO;
-import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.RecordFoundException;
@@ -25,12 +23,10 @@ import static org.springframework.http.ResponseEntity.*;
 public class AppController {
 
     private AppRepository appRepository;
-//    private InstanceRepository instanceRepository;
     private UserService userService;
 
-    public AppController(AppRepository appRepository/*, InstanceRepository instanceRepository*/, UserService userService) {
+    public AppController(AppRepository appRepository, UserService userService) {
         this.appRepository = appRepository;
-//        this.instanceRepository = instanceRepository;
         this.userService = userService;
     }
 
@@ -44,14 +40,12 @@ public class AppController {
         if (appDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("App with ID '" + appDTO.getId() +"' already exists."));
         }
-//        Optional<Instance> instance = instanceRepository.findById(appDTO.getInstanceId());
         Optional<User> user = userService.getById(appDTO.getCustomerId());
-        if (/*instance.isPresent() && */user.isPresent()) {
+        if (user.isPresent()) {
             App saved = this.appRepository.save(
                     App.builder()
                             .name(appDTO.getName())
                             .customer(user.get())
-//                            .instance(instance.get())
                             .build());
             return created(
                     ServletUriComponentsBuilder
@@ -61,11 +55,7 @@ public class AppController {
                             .toUri())
                     .body(saved);
         } else {
-//            if (instance.isEmpty()){
-//                throw new RecordFoundException("Instance with ID '" + appDTO.getInstanceId() + "' not found.");
-//            } else {
-                throw new RecordFoundException("User with ID '" + appDTO.getCustomerId() + "' not found.");
-//            }
+            throw new RecordFoundException("User with ID '" + appDTO.getCustomerId() + "' not found.");
         }
     }
 
@@ -77,7 +67,6 @@ public class AppController {
         Optional<App> existing = appRepository.findById(appDTO.getId());
         if (existing.isPresent()) {
             existing.ifPresent(app -> {
-//                app.setInstance(instanceRepository.findById(appDTO.getInstanceId()).get());
                 app.setCustomer(userService.getById(appDTO.getCustomerId()).get());
                 app.setName(appDTO.getName());
             });

@@ -45,10 +45,6 @@ public class TestConfig {
 
     String description;
 
-//    @ManyToOne
-//    @JoinColumn(name = "collection_id")
-//    Recording collection;
-
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "gateway_service_id")

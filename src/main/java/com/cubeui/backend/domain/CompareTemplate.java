@@ -38,10 +38,6 @@ public class CompareTemplate {
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "test_id")
-//    TestConfig testConfig;
-
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "app_id")

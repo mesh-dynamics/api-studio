@@ -47,7 +47,6 @@ public class ServiceController {
                     Service.builder()
                             .app(app.get())
                             .name(serviceDTO.getName())
-//                            .type(serviceDTO.getType())
                             .build());
             return created(
                     ServletUriComponentsBuilder
@@ -75,7 +74,6 @@ public class ServiceController {
             existing.ifPresent(service -> {
                 service.setApp(app.get());
                 service.setName(serviceDTO.getName());
-//                service.setType(serviceDTO.getType());
             });
             this.serviceRepository.save(existing.get());
             return created(
