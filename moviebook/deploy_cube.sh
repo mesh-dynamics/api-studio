@@ -54,6 +54,25 @@ stop_record() {
 	kubectl delete -f cube/envoy_record_cs.yaml -n staging
 }
 
+replay() {
+	echo "Enter Collection name"
+	read COLLECTION_NAME
+	REPLAY_ID=$(curl -X POST http://dogfooding.cubecorp.io/rs/init/$CUBE_USER/cube/$COLLECTION_NAME \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'cache-control: no-cache' \
+		-d "endpoint=http://staging.cubecorp.io&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	curl -f -X POST \
+		http://dogfooding.cubecorp.io/rs/start/$CUBE_USER/cube/$COLLECTION_NAME/REPLAY_ID \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'cache-control: no-cache'
+	if [ $? -eq 0 ]; then
+		echo "Replay Started"
+	else
+		echo "Replay did not start"
+	fi
+	echo $REPLAY_ID > dogfooding_replayid.temp
+}
+
 clean() {
 	kubectl delete namespaces cube
 	kubectl delete virtualservices -l env=cube
@@ -85,8 +104,9 @@ get_environment
     init) shift; init "$@";;
     record) shift; record "$@";;
     stop_recording) shift; stop_record "$@";;
+		replay) shift; replay "$@";;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, clean).";;
   esac
 }
 
