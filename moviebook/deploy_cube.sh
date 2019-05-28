@@ -56,6 +56,7 @@ stop_record() {
 
 clean() {
 	kubectl delete namespaces cube
+	kubectl delete virtualservices -l env=cube
 }
 
 get_environment() {
