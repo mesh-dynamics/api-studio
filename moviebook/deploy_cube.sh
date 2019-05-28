@@ -23,9 +23,14 @@ init() {
 	kubectl apply -f cube/service_entry.yaml -n cube
 }
 
+generate_record_cs_yaml() {
+	sed -e "s/{{customer}}/$CUBE_USER/g" cube/templates/envoy_record_cs.j2 > cube/envoy_record_cs.yaml
+	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" cube/envoy_record_cs.yaml
+}
 record() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
+	generate_record_cs_yaml
 	kubectl apply -f cube/envoy_record_cs.yaml -n staging
 	kubectl apply -f cube/envoy_mock_cs.yaml -n staging
 	curl -X POST \
