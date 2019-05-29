@@ -51,6 +51,11 @@ public class Utils {
 	// TODO: Always keep this in sync
     private static final Set<String> DISALLOWED_HEADERS_SET;
 
+	private static final String BAGGAGE_INTENT = "intent";
+    private static final String INTENT_RECORD = "record";
+    private static final String INTENT_MOCK = "mock";
+    private static final String NO_INTENT = "normal";
+
     static {
         // A case insensitive TreeSet of strings.
         TreeSet<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -197,16 +202,24 @@ public class Utils {
     public static Optional<String> getParentSpanId() {
         return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getParentId()));
     }
-    public static Optional<String> getCurrentStateFromScope() {
+    public static Optional<String> getCurrentIntentFromScope() {
         Optional<String> action = Optional.empty();
 	    if (GlobalTracer.isRegistered()) {
             Tracer tracer = GlobalTracer.get();
             Scope scope = tracer.scopeManager().active();
             if (scope != null && scope.span() != null) {
-                action = Optional.ofNullable(scope.span().getBaggageItem("state"));
+                action = Optional.ofNullable(scope.span().getBaggageItem(BAGGAGE_INTENT));
             }
         }
         return action;
+    }
+
+    public static boolean isIntentToRecord() {
+	    return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_RECORD);
+    }
+
+    public static boolean isIntentToMock() {
+        return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_MOCK);
     }
 
     /**
@@ -214,12 +227,12 @@ public class Utils {
      * setting the state baggage item to normal in the agent, and the same should be
      * propagated in the trace
      */
-    public static void setStateToNormal() {
+    public static void removeAnyIntent() {
         if (GlobalTracer.isRegistered()) {
             Tracer tracer = GlobalTracer.get();
             Scope scope = tracer.scopeManager().active();
             if (scope != null && scope.span() != null) {
-                scope.span().setBaggageItem("state" , "normal");
+                scope.span().setBaggageItem(BAGGAGE_INTENT, NO_INTENT);
             }
         }
     }

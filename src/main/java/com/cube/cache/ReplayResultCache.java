@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.ws.Config;
 
@@ -93,7 +94,7 @@ public class ReplayResultCache {
      * @param path
      */
     public void incrementReqMatchCounter(String customer, String app, String service, String path, String instanceId) {
-        if (config.getState() == Config.AppState.Mock) return;
+        if (Utils.isIntentToMock()) return;
         getPathStatistic(customer,app,service,path,instanceId).incrementMatchCount();
     }
 
@@ -105,7 +106,7 @@ public class ReplayResultCache {
      * @param path
      */
     public void incrementReqNotMatchCounter(String customer, String app, String service, String path, String instaceId) {
-        if (config.getState() == Config.AppState.Mock) return;
+        if (Utils.isIntentToMock()) return;
         getPathStatistic(customer,app,service,path,instaceId).incrementNonMatchCount();
     }
 
@@ -115,7 +116,7 @@ public class ReplayResultCache {
      * @param replayId
      */
     private void materializeResults(Integer key, String replayId) {
-        if (config.getState() == Config.AppState.Mock) return;
+        if (Utils.isIntentToMock()) return;
         Map<String,List<ReplayPathStatistic>> serviceVsReplayPathStatistic = new HashMap<>();
         replayStatisticsMap.getOrDefault(key , new ConcurrentHashMap<>())
                 .entrySet().stream().map(Map.Entry::getValue).forEach(pathStatistic -> {
@@ -148,7 +149,7 @@ public class ReplayResultCache {
     public void stopReplay(String customer, String app, String instanceId, String replayId) {
         Integer key = Objects.hash(customer, app, instanceId);
         invalidateCache(key);
-        if (config.getState() == Config.AppState.Mock) return;
+        if (Utils.isIntentToMock()) return;
         materializeResults(key , replayId);
     }
 
@@ -159,9 +160,9 @@ public class ReplayResultCache {
      * @param replayId
      */
     public void startReplay(String customer, String app, String instanceId , String replayId) {
-        if (config.getState() == Config.AppState.Mock) return;
         Integer key = Objects.hash(customer , app, instanceId);
         currentReplayId.put(key , replayId);
+        if (Utils.isIntentToMock()) return;
         replayStatisticsMap.remove(key);
     }
 

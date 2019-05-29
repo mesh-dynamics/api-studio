@@ -66,7 +66,7 @@ public class TemplateCache {
                 config.serviceName, method);
         }
 
-        if (config.getState() == Config.AppState.Mock) {
+        if (Utils.isIntentToMock()) {
             return (CompareTemplate) config.mocker.mock(cacheFnKey,  Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key).retVal;
         }
@@ -74,7 +74,7 @@ public class TemplateCache {
 
         try {
             CompareTemplate toReturn = templateCache.get(key);
-            if (config.getState() == Config.AppState.Record) {
+            if (Utils.isIntentToRecord()) {
                 config.recorder.record(cacheFnKey,  Utils.getCurrentTraceId(),
                     Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn, key);
             }

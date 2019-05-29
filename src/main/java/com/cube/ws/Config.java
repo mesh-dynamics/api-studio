@@ -68,13 +68,7 @@ public class Config {
 
 	ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
 
-	public enum AppState {
-        Mock , Record , Normal
-    }
-
     public String customerId, app, instance, serviceName;
-
-    public AppState state = AppState.Normal;
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -113,26 +107,6 @@ public class Config {
         }
 
 	}
-
-	public void setState(AppState state) {
-	    ReentrantReadWriteLock.WriteLock writeLock = reentrantLock.writeLock();
-	    try {
-            writeLock.lock();
-            this.state = state;
-        }  finally {
-	        writeLock.unlock();
-	    }
-    }
-
-    public AppState getState() {
-	    ReentrantReadWriteLock.ReadLock readLock = reentrantLock.readLock();
-	    try {
-            readLock.lock();
-            return this.state;
-        } finally {
-	        readLock.unlock();
-        }
-    }
 
     private String fromEnvOrProperties(String propertyName, String defaultValue) {
         String fromEnv =  System.getenv(propertyName);
