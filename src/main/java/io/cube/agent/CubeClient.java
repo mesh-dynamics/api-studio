@@ -71,7 +71,7 @@ public class CubeClient {
         try {
             String jsonEntity = jsonMapper.writeValueAsString(fnReqResponse);
             if (GlobalTracer.isRegistered()) {
-                Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST" , true);
+                Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST");
             }
             return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
         } catch (JsonProcessingException e) {
@@ -105,7 +105,7 @@ public class CubeClient {
                 cubeRecordService.path("cs").path("start").path(customerid).path(app).path(instanceid).path(collection)
                         .request(MediaType.APPLICATION_FORM_URLENCODED);
         if (GlobalTracer.isRegistered()) {
-            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST" , false);
+            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST");
         }
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
@@ -115,7 +115,7 @@ public class CubeClient {
                 cubeRecordService.path("cs").path("stop").path(customerid).path(app).path(collection)
                         .request(MediaType.APPLICATION_FORM_URLENCODED);
         if (GlobalTracer.isRegistered()) {
-            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST" , false);
+            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST");
         }
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
@@ -129,7 +129,7 @@ public class CubeClient {
         params.add("instanceid", instanceid);
         params.add("endpoint", endpoint);
         if (GlobalTracer.isRegistered()) {
-            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST" , false);
+            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST");
         }
         return getResponse(builder.buildPost(Entity.form(params)));
     }
@@ -138,7 +138,7 @@ public class CubeClient {
         Invocation.Builder builder =
                 cubeRecordService.path("rs").path("forcestart").path(replayid).request();
         if (GlobalTracer.isRegistered()) {
-            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST", false);
+            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST");
         }
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
@@ -148,7 +148,7 @@ public class CubeClient {
         Invocation.Builder builder =
                 cubeRecordService.path("rs").path("forcecomplete").path(replayid).request();
         if (GlobalTracer.isRegistered()) {
-            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST" , false);
+            Utils.addTraceHeaders(GlobalTracer.get() , builder , "POST");
         }
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
