@@ -16,10 +16,11 @@ where,
 `your-pword` is your Docker password.  
 `your-email` is your Docker email.  
 
-2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID`, `CUBE_USER`(optional) as Environment variables, for example:
+2. Export `CUBE_APPLICATION`, `CUBE_INSTANCEID`, `CUBE_ENV`(default or staging), `CUBE_USER`(optional) as Environment variables, for example:
 ```
 export CUBE_APPLICATION=movieinfo
 export CUBE_INSTANCEID=prod
+export CUBE_ENV=default
 export CUBE_USER=aakash
 ```
 >NOTE: if CUBE_USER is not exported, the script will use $USER as CUBE_USER
@@ -98,11 +99,11 @@ This will delete moviebook app from the kubernetes cluster
 ./deploy_moviebook.sh register_templates $version
 ```
 
-where version can 1,2 or 3. This is primarily for demo purposes
+where version can `req_no_match`, `resp_no_match` and `resp_partial_match`. This is primarily for demo purposes
 
-* Version 1 - No request matches
-* Version 2 - All request partially match. But no response matches
-* Version 3 - All response either match or partially match (template based)
+* req_no_match - No request matches
+* resp_no_match - All request partially match. But no response matches
+* resp_partial_match - All response either match or partially match (template based)
 
 Beyond this, we can replay again with the buggy version of the app. We will get no matches because template version 3 doesn't catch the buggy changes.
 

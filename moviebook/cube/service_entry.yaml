@@ -14,3 +14,33 @@ spec:
     protocol: TCP
   resolution: DNS
   location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: cubeservice
+spec:
+  hosts:
+  - staging.cubecorp.io
+  ports:
+  - number: 80
+    name: cubeservice
+    protocol: http
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: doogfooding
+spec:
+  hosts:
+  - dogfooding.cubecorp.io
+  ports:
+  - number: 80
+    name: cubeservice
+    protocol: http
+  resolution: DNS
+  location: MESH_EXTERNAL

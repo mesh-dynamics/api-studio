@@ -2,10 +2,12 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cubeui
+  name: cubeui-staging
+  labels:
+    env: staging
 spec:
   hosts:
-  - "*"
+  - staging.cubecorp.io
   gateways:
   - moviebook-gateway
   http:
@@ -18,7 +20,7 @@ spec:
         regex: '^.*\.(ico|png|jpg|js|css)$'
     route:
     - destination:
-        host: cubeui
+        host: cubeui.staging.svc.cluster.local
         port:
           number: 80
 
@@ -26,10 +28,12 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cubews-record
+  name: cubews-record-staging
+  labels:
+    env: staging
 spec:
   hosts:
-  - "*"
+  - staging.cubecorp.io
   gateways:
   - moviebook-gateway
   http:
@@ -38,7 +42,7 @@ spec:
         prefix: /cs
     route:
     - destination:
-        host: cubews-record
+        host: cubews-record.staging.svc.cluster.local
         port:
           number: 8080
 
@@ -46,10 +50,12 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cubews-mock
+  name: cubews-mock-staging
+  labels:
+    env: staging
 spec:
   hosts:
-  - "*"
+  - staging.cubecorp.io
   gateways:
   - moviebook-gateway
   http:
@@ -58,7 +64,7 @@ spec:
         prefix: /ms
     route:
     - destination:
-        host: cubews-mock
+        host: cubews-mock.staging.svc.cluster.local
         port:
           number: 8080
 
@@ -66,10 +72,12 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cubews-replay
+  name: cubews-replay-staging
+  labels:
+    env: staging
 spec:
   hosts:
-  - "*"
+  - staging.cubecorp.io
   gateways:
   - moviebook-gateway
   http:
@@ -80,6 +88,8 @@ spec:
         prefix: /as
     route:
     - destination:
-        host: cubews-replay
+        host: cubews-replay.staging.svc.cluster.local
         port:
           number: 8080
+
+
