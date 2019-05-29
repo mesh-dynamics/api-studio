@@ -1,4 +1,4 @@
-package com.cubeui.backend.web.rest;
+package com.cubeui.backend.web.ext;
 
 import com.cubeui.backend.service.CubeServerService;
 import org.springframework.http.ResponseEntity;

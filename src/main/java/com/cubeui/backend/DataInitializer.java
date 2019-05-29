@@ -1,8 +1,6 @@
 package com.cubeui.backend;
 
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.domain.Product;
-import com.cubeui.backend.repository.ProductRepository;
 import com.cubeui.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -15,11 +13,9 @@ import java.util.Arrays;
 public class DataInitializer implements CommandLineRunner {
 
     private UserService userService;
-    private ProductRepository productRepository;
 
-    public DataInitializer(UserService userService, ProductRepository productRepository) {
+    public DataInitializer(UserService userService) {
         this.userService = userService;
-        this.productRepository = productRepository;
     }
 
     @Override
@@ -44,10 +40,5 @@ public class DataInitializer implements CommandLineRunner {
 
         log.debug("printing all users...");
         this.userService.getAllUsers().forEach(v -> log.debug(" User :" + v.toString()));
-
-        if (productRepository.findAll().isEmpty()){
-            this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
-            this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
-        }
     }
 }
