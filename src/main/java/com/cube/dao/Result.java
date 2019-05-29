@@ -24,8 +24,8 @@ public class Result<T> {
 	}
 	
 	final Stream<T> objects;
-	final long numResults;  // number of results
-	final long numFound; // number of results possible in no limit is passed
+	public final long numResults;  // number of results
+	public final long numFound; // number of results possible in no limit is passed
 
 	/**
 	 * @return
@@ -34,10 +34,4 @@ public class Result<T> {
 		return objects;
 	}
 
-	/**
-	 * @return
-	 */
-	public long numResults() {
-		return numResults;
-	}
 }

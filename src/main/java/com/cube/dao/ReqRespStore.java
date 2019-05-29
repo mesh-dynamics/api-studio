@@ -19,6 +19,7 @@ import io.cube.agent.FnResponse;
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
+import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
@@ -32,7 +33,8 @@ import com.cube.dao.Replay.ReplayStatus;
 public interface ReqRespStore {
 
 
-	public class ReqResp {
+
+    public class ReqResp {
 				
 		
 		/**
@@ -397,7 +399,24 @@ public interface ReqRespStore {
 	 */
 	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
 
-	/**
+
+    /**
+     * Get results matching a path and other constraints
+     * @param replayId
+     * @param service
+     * @param path
+     * @param reqmt
+     * @param respmt
+     * @param start
+     * @param nummatches
+     * @return
+     */
+    Result<ReqRespMatchResult>
+    getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
+                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
+
+
+    /**
 	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
 	 * combination. The counts are stored in the backend path wise.
 	 * @param pathStatistics

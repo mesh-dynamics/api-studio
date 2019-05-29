@@ -1126,6 +1126,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param replayId
      * @return
      */
+    @Override
     public Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId) {
             SolrQuery query = new SolrQuery("*:*");
             query.setFields("*");
@@ -1138,6 +1139,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
     }
 
+    @Override
+    public Result<ReqRespMatchResult>
+    getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
+                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches) {
+
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+        addFilter(query, REPLAYIDF, replayId);
+        addFilter(query, SERVICEF, service);
+        addFilter(query, PATHF, path);
+        addFilter(query, REQMTF, reqmt.map(Enum::toString));
+        addFilter(query, RESPMTF, respmt.map(Enum::toString));
+
+        return SolrIterator.getResults(solr, query, nummatches, ReqRespStoreSolr::docToAnalysisMatchResult, start);
+    }
 
     /**
      * Save Replay Stats for a Virtual(Mock) Service. The stats (request match/not match counts)
@@ -1187,7 +1204,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param doc
      * @return
      */
-    private Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
+    private static Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
         Optional<String> recordReqId = getStrField(doc , RECORDREQIDF);
         String replayReqId = getStrField(doc, REPLAYREQIDF).orElse("");
         String replayId = getStrField(doc, REPLAYIDF).orElse("");
