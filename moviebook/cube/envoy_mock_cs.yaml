@@ -17,7 +17,7 @@ spec:
     filterConfig:
       inlineCode: |
                 function envoy_on_request(request_handle)
-                  request_handle:headers():add("baggage-state", "mock")
+                  request_handle:headers():add("baggage-intent", "mock")
                 end
 
 ---
@@ -39,7 +39,7 @@ spec:
     filterConfig:
       inlineCode: |
                 function envoy_on_request(request_handle)
-                  request_handle:headers():add("baggage-state", "mock")
+                  request_handle:headers():add("baggage-intent", "mock")
                 end
 
 ---
@@ -61,5 +61,5 @@ spec:
     filterConfig:
       inlineCode: |
                 function envoy_on_request(request_handle)
-                  request_handle:headers():add("baggage-state", "mock")
+                  request_handle:headers():add("baggage-intent", "mock")
                 end
