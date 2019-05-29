@@ -4,37 +4,28 @@
 package com.cube.ws;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.opentracing.Scope;
-import static com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
-import com.cube.core.CompareTemplate;
-import com.cube.core.TemplateRegistries;
-import com.cube.core.TemplateRegistry;
-import com.cube.core.UtilException;
-import com.cube.core.Utils;
-import com.cube.dao.Analysis;
-import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.Replay;
-import com.cube.dao.ReqRespStore;
+import com.cube.core.*;
+import com.cube.core.Comparator;
+import com.cube.dao.*;
 import com.cube.drivers.Analyzer;
 
 /**
@@ -326,7 +317,70 @@ public class AnalyzeWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
-	/**
+
+    /**
+     *
+     * @param ui
+     * @return the results for reqids matching a path and other constraints
+     */
+    @GET
+    @Path("analysisResByPath/{replayId}")
+    public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
+        Optional<String> path = Optional.ofNullable(queryParams.getFirst("path")); // the path to drill
+        // down on
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        // paging
+        Optional<Integer> nummatches =
+            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
+        // for paging
+        Optional<Comparator.MatchType> reqmt = Optional.ofNullable(queryParams.getFirst("reqmt"))
+                .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+        Optional<Comparator.MatchType> respmt = Optional.ofNullable(queryParams.getFirst("respmt"))
+            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+
+
+        Long[] numFound = {0L};
+
+        List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
+
+            Result<Analysis.ReqRespMatchResult> result = rrstore.getAnalysisMatchResults(replayId, service, path,
+                reqmt, respmt, start, nummatches);
+            numFound[0] = result.numFound;
+            List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
+            List<String> reqids = res.stream().map(r -> r.recordreqid).flatMap(Optional::stream).collect(Collectors.toList());
+
+            Map<String, com.cube.dao.Request> requestMap = new HashMap<>();
+            if (!reqids.isEmpty()) {
+                // empty reqid list would lead to returning of all requests, so check for it
+                Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerid, replay.app, replay.collection,
+                    reqids, Collections.emptyList(), RRBase.RR.Record);
+                requestResult.getObjects().forEach(req -> req.reqid.ifPresent(reqidv -> requestMap.put(reqidv, req)));
+            }
+
+            return res.stream().map(matchRes -> {
+                Optional<com.cube.dao.Request> request =
+                    matchRes.recordreqid.flatMap(reqid -> Optional.ofNullable(requestMap.get(reqid)));
+                return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
+                    matchRes.respmt, matchRes.respmatchmetadata, matchRes.diff, matchRes.path,
+                    request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
+                    request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method));
+            }).collect(Collectors.toList());
+        }).orElse(Collections.emptyList());
+
+        String json;
+        try {
+            json = jsonmapper.writeValueAsString(new MatchResults(matchResList, numFound[0]));
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Match results list to Json for replayid %s, app %s, " +
+                    "collection %s.", replayId));
+            return Response.serverError().build();
+        }
+    }
+
+    /**
 	 * @param config
 	 */
 	@Inject
@@ -344,4 +398,51 @@ public class AnalyzeWS {
 	// Template cache to retrieve analysis templates from solr
 	final RequestComparatorCache requestComparatorCache;
 	final ResponseComparatorCache responseComparatorCache;
+
+    /**
+     * some fields from ReqRespMatchResult and some from Request to be returned by some api calls
+     */
+	static class MatchRes {
+
+        public MatchRes(Optional<String> recordreqid, String replayreqid, Comparator.MatchType reqmt, int nummatch,
+                        Comparator.MatchType respmt, String respmatchmetadata, String diff, String path,
+                        MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams, Optional<String> method) {
+            this.recordreqid = recordreqid;
+            this.replayreqid = replayreqid;
+            this.reqmt = reqmt;
+            this.nummatch = nummatch;
+            this.respmt = respmt;
+            this.respmatchmetadata = respmatchmetadata;
+            this.diff = diff;
+            this.path = path;
+            this.qparams = qparams;
+            this.fparams = fparams;
+            this.method = method;
+        }
+
+        public final Optional<String> recordreqid;
+        public final String replayreqid;
+        public final Comparator.MatchType reqmt;
+        public final int nummatch;
+        public final Comparator.MatchType respmt;
+        public final String respmatchmetadata;
+        public final String diff;
+        public final String path;
+        @JsonDeserialize(as=MultivaluedHashMap.class)
+        public final MultivaluedMap<String, String> qparams; // query params
+        @JsonDeserialize(as=MultivaluedHashMap.class)
+        public final MultivaluedMap<String, String> fparams; // form params
+        public final Optional<String> method;
+
+    }
+
+    static class MatchResults {
+        public MatchResults(List<MatchRes> res, long numFound) {
+            this.res = res;
+            this.numFound = numFound;
+        }
+
+        public final List<MatchRes> res;
+	    public final long numFound;
+    }
 }

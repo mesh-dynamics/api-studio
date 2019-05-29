@@ -21,6 +21,7 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
+import org.checkerframework.checker.nullness.Opt;
 
 import io.cube.agent.FnKey;
 
@@ -139,13 +140,20 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
     static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
 			Optional<Integer> maxresults,
-			Function<SolrDocument, Optional<R>> transform) {
-		SolrIterator iter = new SolrIterator(solr, query, maxresults, Optional.empty());
+			Function<SolrDocument, Optional<R>> transform, Optional<Integer> start) {
+		SolrIterator iter = new SolrIterator(solr, query, maxresults, start);
 		return new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults,
-				iter.numresults);
+				iter.numFound);
 	}
 
-	/**
+    static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
+                                           Optional<Integer> maxresults,
+                                           Function<SolrDocument, Optional<R>> transform) {
+	    return getResults(solr, query, maxresults, transform, Optional.empty());
+    }
+
+
+    /**
 	 * Utility function to
 	 * a) query solr (in batches) for a given query
 	 * b) convert the obtained result stream to a another stream by applying the transformer function
