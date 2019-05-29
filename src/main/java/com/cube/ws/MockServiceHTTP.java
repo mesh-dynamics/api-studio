@@ -126,7 +126,6 @@ public class MockServiceHTTP {
     public Response funcJson(@Context UriInfo uInfo,
                              String fnReqResponseAsString) {
         try {
-            Utils.removeAnyIntent();
             FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));

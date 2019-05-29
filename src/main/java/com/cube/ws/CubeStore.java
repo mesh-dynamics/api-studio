@@ -193,7 +193,6 @@ public class CubeStore {
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
         try {
-            Utils.removeAnyIntent();
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
                 Optional.of(functionReqResp.app), Optional.of(functionReqResp.instanceId));

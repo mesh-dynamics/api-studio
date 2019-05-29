@@ -70,6 +70,8 @@ public class Config {
 
     public String customerId, app, instance, serviceName;
 
+    public Boolean isMaster;
+
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
@@ -82,6 +84,8 @@ public class Config {
             app = fromEnvOrProperties("app_dogfood" , "cubews");
             instance = fromEnvOrProperties("instance_dogfood" , "dev");
             serviceName = fromEnvOrProperties("service_dogfood" , "cube");
+            isMaster = fromEnvOrProperties("cube_level" , "master")
+                .equalsIgnoreCase("master");
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
