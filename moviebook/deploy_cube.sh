@@ -32,7 +32,6 @@ record() {
 	read COLLECTION_NAME
 	generate_record_cs_yaml
 	kubectl apply -f cube/envoy_record_cs.yaml -n staging
-	kubectl apply -f cube/envoy_mock_cs.yaml -n staging
 	curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_USER/cube/$CUBE_INSTANCEID/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -57,6 +56,7 @@ stop_record() {
 replay() {
 	echo "Enter Collection name"
 	read COLLECTION_NAME
+	kubectl apply -f cube/envoy_mock_cs.yaml -n staging
 	REPLAY_ID=$(curl -X POST http://dogfooding.cubecorp.io/rs/init/$CUBE_USER/cube/$COLLECTION_NAME \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H 'cache-control: no-cache' \
@@ -71,6 +71,10 @@ replay() {
 		echo "Replay did not start"
 	fi
 	echo $REPLAY_ID > dogfooding_replayid.temp
+}
+
+stop_replay() {
+	kubectl delete -f cube/envoy_mock_cs.yaml -n staging
 }
 
 clean() {
@@ -105,6 +109,7 @@ get_environment
     record) shift; record "$@";;
     stop_recording) shift; stop_record "$@";;
 		replay) shift; replay "$@";;
+		stop_replay) shift; stop_replay "$@";;
     clean) shift; clean "$@";;
     *) echo "This script expect one of these system argument(init, record, stop_recording, replay, clean).";;
   esac
