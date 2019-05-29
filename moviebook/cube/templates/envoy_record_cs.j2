@@ -115,7 +115,7 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
-                  request_handle:headers():add("baggage-state", "record")
+                  request_handle:headers():add("baggage-intent", "record")
                   request_handle:logInfo("Trace id : " .. xb3traceid)
                   logHdrBody(request_handle, meta)
                 end
@@ -237,7 +237,7 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
-                  request_handle:headers():add("baggage-state", "record")
+                  request_handle:headers():add("baggage-intent", "record")
                   request_handle:logInfo("Trace id : " .. xb3traceid)
                   logHdrBody(request_handle, meta)
                 end
@@ -359,7 +359,7 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
-                  request_handle:headers():add("baggage-state", "record")
+                  request_handle:headers():add("baggage-intent", "record")
                   request_handle:logInfo("Trace id : " .. xb3traceid)
                   logHdrBody(request_handle, meta)
                 end
