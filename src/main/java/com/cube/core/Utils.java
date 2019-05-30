@@ -51,6 +51,11 @@ public class Utils {
 	// TODO: Always keep this in sync
     private static final Set<String> DISALLOWED_HEADERS_SET;
 
+	private static final String BAGGAGE_INTENT = "intent";
+    private static final String INTENT_RECORD = "record";
+    private static final String INTENT_MOCK = "mock";
+    private static final String NO_INTENT = "normal";
+
     static {
         // A case insensitive TreeSet of strings.
         TreeSet<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -197,32 +202,7 @@ public class Utils {
     public static Optional<String> getParentSpanId() {
         return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getParentId()));
     }
-    public static Optional<String> getCurrentStateFromScope() {
-        Optional<String> action = Optional.empty();
-	    if (GlobalTracer.isRegistered()) {
-            Tracer tracer = GlobalTracer.get();
-            Scope scope = tracer.scopeManager().active();
-            if (scope != null && scope.span() != null) {
-                action = Optional.ofNullable(scope.span().getBaggageItem("state"));
-            }
-        }
-        return action;
-    }
 
-    /**
-     * Not that this is just a precautionary measure, ideally we are
-     * setting the state baggage item to normal in the agent, and the same should be
-     * propagated in the trace
-     */
-    public static void setStateToNormal() {
-        if (GlobalTracer.isRegistered()) {
-            Tracer tracer = GlobalTracer.get();
-            Scope scope = tracer.scopeManager().active();
-            if (scope != null && scope.span() != null) {
-                scope.span().setBaggageItem("state" , "normal");
-            }
-        }
-    }
 
 
 }

@@ -725,8 +725,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey saveFuncKey;
 
     private boolean saveDoc(SolrInputDocument doc) {
-        Optional<String> state = Utils.getCurrentStateFromScope();
-        LOGGER.info("Current state in trace scope " + state.orElse(" N/A"));
         if (saveFuncKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("add", doc.getClass());
@@ -737,7 +735,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
-        if (state.orElse("mock").equals("mock") && this.config.getState() == Config.AppState.Mock) {
+        if (config.intentResolver.isIntentToMock()) {
             UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc).retVal;
             return fromSolr != null;
@@ -753,7 +751,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error("Error in saving response", e);
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
-        if (state.orElse("record").equals("record") && this.config.getState() == Config.AppState.Record) {
+        if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(saveFuncKey , Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr, doc);
         }

@@ -18,10 +18,12 @@ import org.apache.solr.common.params.AppendedSolrParams;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
 import io.cube.agent.SimpleRecorder;
+import io.cube.agent.TraceIntentResolver;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -68,13 +70,9 @@ public class Config {
 
 	ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
 
-	public enum AppState {
-        Mock , Record , Normal
-    }
-
     public String customerId, app, instance, serviceName;
 
-    public AppState state = AppState.Normal;
+    public IntentResolver intentResolver = new TraceIntentResolver();
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -113,26 +111,6 @@ public class Config {
         }
 
 	}
-
-	public void setState(AppState state) {
-	    ReentrantReadWriteLock.WriteLock writeLock = reentrantLock.writeLock();
-	    try {
-            writeLock.lock();
-            this.state = state;
-        }  finally {
-	        writeLock.unlock();
-	    }
-    }
-
-    public AppState getState() {
-	    ReentrantReadWriteLock.ReadLock readLock = reentrantLock.readLock();
-	    try {
-            readLock.lock();
-            return this.state;
-        } finally {
-	        readLock.unlock();
-        }
-    }
 
     private String fromEnvOrProperties(String propertyName, String defaultValue) {
         String fromEnv =  System.getenv(propertyName);

@@ -193,7 +193,6 @@ public class CubeStore {
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
         try {
-            Utils.setStateToNormal();
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
                 Optional.of(functionReqResp.app), Optional.of(functionReqResp.instanceId));
@@ -385,32 +384,6 @@ public class CubeStore {
         }).orElse(Response.status(Response.Status.NOT_FOUND).
             entity(String.format("Status not found for for customer %s, app %s, collection %s.", customerid, app, collection)).build());
         return resp;
-    }
-
-	@GET
-    @Path("/togglestate/{state}")
-    public Response toggleClientState(@Context UriInfo uriInfo, @PathParam("state") String state) {
-        switch (state) {
-            case "record":
-                config.setState(Config.AppState.Record);
-                break;
-            case "mock":
-                config.setState(Config.AppState.Mock);
-                break;
-            case "normal":
-                config.setState(Config.AppState.Normal);
-                break;
-            default:
-                return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"State Not identified\"}").build();
-        }
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"reason\" : \"Successfully toggled client state\"}").build();
-    }
-
-    @GET
-    @Path("/getstate")
-    public Response getClientState(@Context UriInfo uriInfo) {
-        return Response.ok().type(MediaType.APPLICATION_JSON)
-            .entity("{\"state\" : \"" + config.getState().toString()  + "\"}").build();
     }
 
     /**
