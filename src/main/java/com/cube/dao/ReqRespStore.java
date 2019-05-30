@@ -399,6 +399,17 @@ public interface ReqRespStore {
 	 */
 	Optional<ReqRespMatchResult> getAnalysisMatchResult(String recordReqId , String replayId);
 
+    /**
+     * Get ReqResponseMatchResult for the given replay Id, record req id and replay req id
+     * It matches on both record and replay reqid. If any of them are empty, it requires the matching result to also
+     * have empty value for that field
+     * @param recordReqId
+     * @param replayId
+     * @return
+     */
+    Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
+                                                        String replayId);
+
 
     /**
      * Get results matching a path and other constraints

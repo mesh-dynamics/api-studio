@@ -26,6 +26,7 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.*;
 import com.cube.core.Comparator;
 import com.cube.dao.*;
+import com.cube.dao.Request;
 import com.cube.drivers.Analyzer;
 
 /**
@@ -341,6 +342,7 @@ public class AnalyzeWS {
             .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
 
 
+        /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
 
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
@@ -363,7 +365,7 @@ public class AnalyzeWS {
                 Optional<com.cube.dao.Request> request =
                     matchRes.recordreqid.flatMap(reqid -> Optional.ofNullable(requestMap.get(reqid)));
                 return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
-                    matchRes.respmt, matchRes.respmatchmetadata, matchRes.diff, matchRes.path,
+                    matchRes.respmt, matchRes.path,
                     request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
                     request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method));
             }).collect(Collectors.toList());
@@ -379,6 +381,39 @@ public class AnalyzeWS {
             return Response.serverError().build();
         }
     }
+
+    /**
+     * Api to access analysis result for a given recorded request and related replay.
+     * Returns the responses for the requests as well
+     * @param uriInfo
+     * @param replayId
+     * @return
+     */
+    @GET
+    @Path("analysisResByReq/{replayId}")
+    public Response getResultByReq(@Context UriInfo uriInfo,
+                                      @PathParam("replayId") String replayId) {
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        Optional<String> recordReqId = Optional.ofNullable(queryParams.getFirst("recordReqId"));
+        Optional<String> replayReqId = Optional.ofNullable(queryParams.getFirst("replayReqId"));
+
+        Optional<Analysis.ReqRespMatchResult> matchResult =
+            rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
+        Optional<com.cube.dao.Response> recordResponse = recordReqId.flatMap(rrstore::getResponse);
+        Optional<com.cube.dao.Response> replayResponse = replayReqId.flatMap(rrstore::getResponse);
+
+
+        String json;
+        try {
+            json = jsonmapper.writeValueAsString(new RespAndMatchResults(recordResponse, replayResponse, matchResult));
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting response and match results to Json for replayid %s, " +
+                "recordreqid %s, replay reqid %s", replayId, recordReqId, replayReqId));
+            return Response.serverError().build();
+        }
+    }
+
 
     /**
 	 * @param config
@@ -405,15 +440,13 @@ public class AnalyzeWS {
 	static class MatchRes {
 
         public MatchRes(Optional<String> recordreqid, String replayreqid, Comparator.MatchType reqmt, int nummatch,
-                        Comparator.MatchType respmt, String respmatchmetadata, String diff, String path,
+                        Comparator.MatchType respmt, String path,
                         MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams, Optional<String> method) {
             this.recordreqid = recordreqid;
             this.replayreqid = replayreqid;
             this.reqmt = reqmt;
             this.nummatch = nummatch;
             this.respmt = respmt;
-            this.respmatchmetadata = respmatchmetadata;
-            this.diff = diff;
             this.path = path;
             this.qparams = qparams;
             this.fparams = fparams;
@@ -425,8 +458,6 @@ public class AnalyzeWS {
         public final Comparator.MatchType reqmt;
         public final int nummatch;
         public final Comparator.MatchType respmt;
-        public final String respmatchmetadata;
-        public final String diff;
         public final String path;
         @JsonDeserialize(as=MultivaluedHashMap.class)
         public final MultivaluedMap<String, String> qparams; // query params
@@ -444,5 +475,20 @@ public class AnalyzeWS {
 
         public final List<MatchRes> res;
 	    public final long numFound;
+    }
+
+    static class RespAndMatchResults {
+
+
+        public RespAndMatchResults(Optional<com.cube.dao.Response> recordResponse, Optional<com.cube.dao.Response> replayResponse,
+                                   Optional<Analysis.ReqRespMatchResult> matchResult) {
+            this.recordResponse = recordResponse;
+            this.replayResponse = replayResponse;
+            this.matchResult = matchResult;
+        }
+
+        public final Optional<com.cube.dao.Response> recordResponse;
+	    public final Optional<com.cube.dao.Response> replayResponse;
+	    public final Optional<Analysis.ReqRespMatchResult> matchResult;
     }
 }
