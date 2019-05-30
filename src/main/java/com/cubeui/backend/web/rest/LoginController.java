@@ -4,6 +4,7 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.AuthenticationRequest;
+import com.cubeui.backend.web.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -52,9 +53,9 @@ public class LoginController {
             model.put("expires_in", jwtTokenProvider.getValidity());
             model.put("token_type", "Bearer");
             return ok(model);
-        } catch (AuthenticationException e) {
-//            throw new BadCredentialsException("Invalid username/password supplied");
-            return status(UNAUTHORIZED).body("Invalid username/password supplied");
+        } catch (AuthenticationException ex) {
+            ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), "Invalid username/password supplied", UNAUTHORIZED.value());
+            return status(UNAUTHORIZED).body(errorResponse);
         }
     }
 }

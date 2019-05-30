@@ -18,12 +18,13 @@ public class RestExceptionHandler {
     @ExceptionHandler(value = {InvalidJwtAuthenticationException.class})
     public ResponseEntity invalidJwtAuthentication(InvalidJwtAuthenticationException ex, WebRequest request) {
         log.debug("handling InvalidJwtAuthenticationException...");
-        return status(UNAUTHORIZED).body("Invalid authentication token");
+        ErrorResponse errorResponse = new ErrorResponse("Unauthorized", ex.getMessage(), UNAUTHORIZED.value());
+        return status(UNAUTHORIZED).body(errorResponse);
     }
 
     @ExceptionHandler(value = {RecordFoundException.class})
-    public ResponseEntity userNotFound(RecordFoundException ex, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+    public ResponseEntity recordNotFound(RecordFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse("Record Not Found", ex.getMessage(), NOT_FOUND.value());
         return status(NOT_FOUND).body(errorResponse);
     }
 }
