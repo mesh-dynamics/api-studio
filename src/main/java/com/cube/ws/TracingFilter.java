@@ -31,8 +31,6 @@ public class TracingFilter implements ContainerRequestFilter , ContainerResponse
             + resourceInfo.getResourceClass().getName());
         Scope scope = Utils.startServerSpan(containerRequestContext.getHeaders() ,
             resourceInfo.getResourceClass().getSimpleName() + "-" + resourceInfo.getResourceMethod().getName());
-        Optional<String> state = Utils.getCurrentIntentFromScope();
-        LOGGER.info("Got state from scope  (in tracing filter) :: " + state.orElse(" N/A"));
         containerRequestContext.setProperty("scope" , scope);
     }
 
