@@ -735,7 +735,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
-        if (Utils.isIntentToMock() && !config.isMaster) {
+        if (config.intentResolver.isIntentToMock()) {
             UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc).retVal;
             return fromSolr != null;
@@ -751,7 +751,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error("Error in saving response", e);
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
-        if (Utils.isIntentToRecord() && !config.isMaster) {
+        if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(saveFuncKey , Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr, doc);
         }

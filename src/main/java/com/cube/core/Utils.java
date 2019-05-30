@@ -202,40 +202,7 @@ public class Utils {
     public static Optional<String> getParentSpanId() {
         return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getParentId()));
     }
-    public static Optional<String> getCurrentIntentFromScope() {
-        Optional<String> action = Optional.empty();
-	    if (GlobalTracer.isRegistered()) {
-            Tracer tracer = GlobalTracer.get();
-            Scope scope = tracer.scopeManager().active();
-            if (scope != null && scope.span() != null) {
-                action = Optional.ofNullable(scope.span().getBaggageItem(BAGGAGE_INTENT));
-            }
-        }
-        return action;
-    }
 
-    public static boolean isIntentToRecord() {
-	    return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_RECORD);
-    }
-
-    public static boolean isIntentToMock() {
-        return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_MOCK);
-    }
-
-    /**
-     * Not that this is just a precautionary measure, ideally we are
-     * setting the state baggage item to normal in the agent, and the same should be
-     * propagated in the trace
-     */
-    public static void removeAnyIntent() {
-        if (GlobalTracer.isRegistered()) {
-            Tracer tracer = GlobalTracer.get();
-            Scope scope = tracer.scopeManager().active();
-            if (scope != null && scope.span() != null) {
-                scope.span().setBaggageItem(BAGGAGE_INTENT, NO_INTENT);
-            }
-        }
-    }
 
 
 }

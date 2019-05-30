@@ -193,7 +193,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
                 LOGGER.error("Unable to find solr query method by reflection :: " + e.getMessage());
             }
         }
-        if (Utils.isIntentToMock() && !config.isMaster) {
+        if (config.intentResolver.isIntentToMock()) {
             return Optional.ofNullable((QueryResponse) config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query).retVal);
         }
@@ -207,7 +207,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
             LOGGER.error("Error in querying Solr", e);
         }
 
-        if (Utils.isIntentToRecord() && !config.isMaster) {
+        if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(queryFnKey,  Utils.getCurrentTraceId(),
                 Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, query);
         }

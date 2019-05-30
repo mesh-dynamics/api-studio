@@ -94,7 +94,7 @@ public class ReplayResultCache {
      * @param path
      */
     public void incrementReqMatchCounter(String customer, String app, String service, String path, String instanceId) {
-        if (Utils.isIntentToMock() && !config.isMaster) return;
+        if (config.intentResolver.isIntentToMock()) return;
         getPathStatistic(customer,app,service,path,instanceId).incrementMatchCount();
     }
 
@@ -106,7 +106,7 @@ public class ReplayResultCache {
      * @param path
      */
     public void incrementReqNotMatchCounter(String customer, String app, String service, String path, String instaceId) {
-        if (Utils.isIntentToMock() && !config.isMaster) return;
+        if (config.intentResolver.isIntentToMock()) return;
         getPathStatistic(customer,app,service,path,instaceId).incrementNonMatchCount();
     }
 
@@ -116,7 +116,7 @@ public class ReplayResultCache {
      * @param replayId
      */
     private void materializeResults(Integer key, String replayId) {
-        if (Utils.isIntentToMock() && !config.isMaster) return;
+        if (config.intentResolver.isIntentToMock()) return;
         Map<String,List<ReplayPathStatistic>> serviceVsReplayPathStatistic = new HashMap<>();
         replayStatisticsMap.getOrDefault(key , new ConcurrentHashMap<>())
                 .entrySet().stream().map(Map.Entry::getValue).forEach(pathStatistic -> {
@@ -149,7 +149,7 @@ public class ReplayResultCache {
     public void stopReplay(String customer, String app, String instanceId, String replayId) {
         Integer key = Objects.hash(customer, app, instanceId);
         invalidateCache(key);
-        if (Utils.isIntentToMock() && !config.isMaster) return;
+        if (config.intentResolver.isIntentToMock()) return;
         materializeResults(key , replayId);
     }
 
@@ -162,7 +162,7 @@ public class ReplayResultCache {
     public void startReplay(String customer, String app, String instanceId , String replayId) {
         Integer key = Objects.hash(customer , app, instanceId);
         currentReplayId.put(key , replayId);
-        if (Utils.isIntentToMock() && !config.isMaster) return;
+        if (config.intentResolver.isIntentToMock()) return;
         replayStatisticsMap.remove(key);
     }
 

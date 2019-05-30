@@ -18,10 +18,12 @@ import org.apache.solr.common.params.AppendedSolrParams;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
 import io.cube.agent.SimpleRecorder;
+import io.cube.agent.TraceIntentResolver;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -70,7 +72,7 @@ public class Config {
 
     public String customerId, app, instance, serviceName;
 
-    public Boolean isMaster;
+    public IntentResolver intentResolver = new TraceIntentResolver();
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -84,8 +86,6 @@ public class Config {
             app = fromEnvOrProperties("app_dogfood" , "cubews");
             instance = fromEnvOrProperties("instance_dogfood" , "dev");
             serviceName = fromEnvOrProperties("service_dogfood" , "cube");
-            isMaster = fromEnvOrProperties("cube_level" , "master")
-                .equalsIgnoreCase("master");
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
