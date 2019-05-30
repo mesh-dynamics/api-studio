@@ -49,9 +49,11 @@ class Utils {
             //Tags.HTTP_URL.set(tracer.activeSpan(), requestBuilder.toString());
             if (tracer.activeSpan() != null) {
                 Span activeSpan = tracer.activeSpan();
+                String currentIntent = activeSpan.getBaggageItem(BAGGAGE_INTENT);
                 activeSpan.setBaggageItem(BAGGAGE_INTENT , null);
                 tracer.inject(activeSpan.context(),
                         Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
+                activeSpan.setBaggageItem(BAGGAGE_INTENT , currentIntent);
             }
         }
     }
