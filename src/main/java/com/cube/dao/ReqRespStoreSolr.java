@@ -356,7 +356,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
     
     private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
-        fval.ifPresent(val -> addFilter(query, fieldname, val));
+        addFilter(query, fieldname, fval, false);
+    }
+
+    private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval, boolean enforceEmpty) {
+        fval.ifPresentOrElse(val -> addFilter(query, fieldname, val),
+            () -> {
+                if (enforceEmpty) {
+                    query.addFilterQuery(String.format("-%s:*", fieldname));
+                }
+            });
     }
 
     private static void addFilter(SolrQuery query, String fieldname, MultivaluedMap<String, String> fvalmap, String keytoadd) {
@@ -1136,6 +1145,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             return SolrIterator.getStream(solr, query, maxresults).findFirst()
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
     }
+
+    @Override
+    public Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
+                                                        String replayId) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+        addFilter(query, RECORDREQIDF, recordReqId, true);
+        addFilter(query, REPLAYREQIDF, replayReqId, true);
+        addFilter(query, REPLAYIDF, replayId);
+
+        Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxresults).findFirst()
+            .flatMap(doc -> docToAnalysisMatchResult(doc));
+    }
+
 
     @Override
     public Result<ReqRespMatchResult>
