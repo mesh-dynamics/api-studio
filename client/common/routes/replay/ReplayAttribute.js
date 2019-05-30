@@ -204,7 +204,6 @@ class ReplayAttribute extends Component {
     componentWillReceiveProps(nextProps, prevState) {
         // do things with nextProps.someProp and prevState.cachedSomeProp
         const cube = nextProps.cube;
-        console.log(typeof cube.replayStatusObj);
         if (cube.replayStatusObj && (cube.replayStatusObj.status == 'Completed' || cube.replayStatusObj.status == 'Error')) {
             clearInterval(this.statusInterval);
             this.setState({show: false, toAnalysis: true});
@@ -225,7 +224,6 @@ class ReplayAttribute extends Component {
     handleChangeForApps (e) {
         const { user, match, history, dispatch, nctData } = this.props;
         if (e && e.label) {
-            console.log('label is: ', e.label);
             dispatch(cubeActions.setSelectedApp(e.label));
             dispatch(cubeActions.getTestIds(e.label));
             dispatch(cubeActions.setSelectedTestId(''));
@@ -258,7 +256,6 @@ class ReplayAttribute extends Component {
         const { user, match, history, dispatch, cube } = this.props;
         cube.selectedTestId = e.target.value;
         if (e) {
-            console.log('test-id label is: ', e.target.value);
             dispatch(cubeActions.clear());
             dispatch(cubeActions.setSelectedTestId(e.target.value));
             dispatch(cubeActions.getGraphData());
