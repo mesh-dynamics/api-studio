@@ -342,6 +342,7 @@ public class AnalyzeWS {
             .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
 
 
+        /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
 
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
