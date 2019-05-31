@@ -12,11 +12,15 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -33,6 +37,7 @@ import io.opentracing.propagation.TextMapExtractAdapter;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
+import com.cube.agent.FnReqResponse;
 import com.cube.ws.Config;
 
 /**
@@ -40,6 +45,8 @@ import com.cube.ws.Config;
  *
  */
 public class Utils {
+
+    private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
 	    return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
@@ -203,6 +210,32 @@ public class Utils {
         return getCurrentContext().flatMap(jaegerSpanContext ->  longToStr(jaegerSpanContext.getParentId()));
     }
 
+    public static Pattern analysisTimestampPattern = Pattern.compile("\\\\\"timestamp\\\\\":\\d{13},");
+	public static Pattern recordingTimestampPattern = Pattern.compile(",\"timestamp_dt\":\\{\"name\":\"timestamp_dt\",\"value\":\".+\"\\}");
+
+	public static String removePatternFromString(String val, Pattern pattern) {
+	    Matcher matcher = pattern.matcher(val);
+	    return matcher.replaceAll("");
+    }
+
+    public static void preProcess(FnReqResponse fnReqResponse) {
+	    try {
+            if (fnReqResponse.name.equals("add")
+                && fnReqResponse.argVals.length > 0) {
+                if (fnReqResponse.argVals[0].contains("\"type_s\":{\"name\":\"type_s\",\"value\":\"Analysis\"}")) {
+                    String newVal = removePatternFromString(fnReqResponse.argVals[0], analysisTimestampPattern);
+                    fnReqResponse.argVals[0] = newVal;
+                    fnReqResponse.argsHash[0] = newVal.hashCode();
+                } else if (fnReqResponse.argVals[0].contains("{\"type_s\":{\"name\":\"type_s\",\"value\":\"Recording\"}")) {
+                    String newVal = removePatternFromString(fnReqResponse.argVals[0], recordingTimestampPattern);
+                    fnReqResponse.argVals[0] = newVal;
+                    fnReqResponse.argsHash[0] = newVal.hashCode();
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error while preprocessing fn req resp object :: " + e.getMessage());
+        }
+    }
 
 
 }
