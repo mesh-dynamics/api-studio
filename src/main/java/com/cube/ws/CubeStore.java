@@ -194,6 +194,7 @@ public class CubeStore {
                               @PathParam("service") String service*/) {
         try {
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
+            Utils.preProcess(functionReqResp);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
                 Optional.of(functionReqResp.app), Optional.of(functionReqResp.instanceId));
             return collection.map(collec -> {
