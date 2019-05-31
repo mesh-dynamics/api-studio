@@ -115,6 +115,7 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  request_handle:headers():remove("baggage-intent")
                   request_handle:headers():add("baggage-intent", "record")
                   request_handle:logInfo("Trace id : " .. xb3traceid)
                   logHdrBody(request_handle, meta)
@@ -190,7 +191,7 @@ spec:
                   -- handle:logErr(data)
                   handle:logErr("Making http call to cube: " .. "/cs/rr" .. path)
                   local hhdr, hbody = handle:httpCall(
-                  "outbound|8080||cubews-mock.cube.svc.cluster.local",
+                  "outbound|8080||cubews-record.cube.svc.cluster.local",
                   {
                     [":method"] = "POST",
                     [":path"] = "/cs/rr" .. path,
@@ -237,6 +238,7 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  request_handle:headers():remove("baggage-intent")
                   request_handle:headers():add("baggage-intent", "record")
                   request_handle:logInfo("Trace id : " .. xb3traceid)
                   logHdrBody(request_handle, meta)
@@ -312,7 +314,7 @@ spec:
                   -- handle:logErr(data)
                   handle:logErr("Making http call to cube: " .. "/cs/rr" .. path)
                   local hhdr, hbody = handle:httpCall(
-                  "outbound|8080||cubews-replay.cube.svc.cluster.local",
+                  "outbound|8080||cubews-record.cube.svc.cluster.local",
                   {
                     [":method"] = "POST",
                     [":path"] = "/cs/rr" .. path,
@@ -359,6 +361,7 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  request_handle:headers():remove("baggage-intent")
                   request_handle:headers():add("baggage-intent", "record")
                   request_handle:logInfo("Trace id : " .. xb3traceid)
                   logHdrBody(request_handle, meta)
