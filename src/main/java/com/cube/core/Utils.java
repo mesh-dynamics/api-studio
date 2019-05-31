@@ -24,7 +24,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.google.gson.Gson;
 
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerSpanContext;
@@ -40,7 +39,6 @@ import io.opentracing.util.GlobalTracer;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.ws.Config;
-import com.cube.ws.MockServiceHTTP;
 
 /**
  * @author prasad
