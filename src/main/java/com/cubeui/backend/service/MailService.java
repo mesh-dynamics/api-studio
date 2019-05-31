@@ -4,7 +4,6 @@ import com.cubeui.backend.domain.User;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
-import org.springframework.core.SpringProperties;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -34,6 +33,9 @@ public class MailService {
     @Value("${server.baseUrl}")
     private String baseUrl;
 
+    @Value("${spring.mail.username}")
+    private String emailSender;
+
     public MailService(JavaMailSender javaMailSender, MessageSource messageSource, SpringTemplateEngine templateEngine) {
         this.javaMailSender = javaMailSender;
         this.messageSource = messageSource;
@@ -41,11 +43,12 @@ public class MailService {
     }
 
     public void sendEmail() {
-//        SimpleMailMessage msg = new SimpleMailMessage();
-//        msg.setTo("vineetks.iitk@gmail.com", "to_2@gmail.com", "to_3@yahoo.com");
-//        msg.setSubject("Testing from Spring Boot");
-//        msg.setText("Hello World \n Spring Boot Email");
-//        javaMailSender.send(msg);
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo("abc@gmail.com", "xyz@gmail.com", "def@yahoo.com");
+        msg.setSubject("Testing from Spring Boot");
+        msg.setText("Hello World \n Spring Boot Email");
+        msg.setFrom(emailSender);
+        javaMailSender.send(msg);
     }
 
     @Async
@@ -56,7 +59,7 @@ public class MailService {
         try {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, CharEncoding.UTF_8);
             message.setTo(to);
-//            message.setFrom(jHipsterProperties.getMail().getFrom());
+            message.setFrom(emailSender);
             message.setSubject(subject);
             message.setText(content, isHtml);
             javaMailSender.send(mimeMessage);
@@ -76,6 +79,10 @@ public class MailService {
         Context context = new Context();
         context.setVariable("user", user);
         context.setVariable("baseUrl", baseUrl);
+        //TODO Get frontend login url and change it
+        context.setVariable("loginUrl", baseUrl);
+        //TODO Get frontend reset url and change it
+        context.setVariable("resetUrl", baseUrl);
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
         sendEmail(user.getUsername(), subject, content, true, true);

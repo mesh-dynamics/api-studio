@@ -1,4 +1,4 @@
-package com.cubeui.backend.web.ext;
+package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.service.CubeServerService;
 import org.springframework.http.MediaType;

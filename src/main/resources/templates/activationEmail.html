@@ -58,11 +58,11 @@
                                 It is mandatory to change your password upon activation.
                             </div>
                             <div style="padding: 30px">
-                                <a th:href="@{|${baseUrl}/activate?key=${user.activationKey}|}" class="activation-btn">Activate Now</a>
+                                <a th:href="@{|${baseUrl}/api/account/activate?key=${user.activationKey}|}" class="activation-btn">Activate Now</a>
                             </div>
                             <div class="m-1">OR COPY-PASTE THE LINK BELOW</div>
                             <div class="m-1">
-                                <a th:href="@{|${baseUrl}/activate?key=${user.activationKey}|}" th:text="@{|${baseUrl}/activate?key=${user.activationKey}|}">Activattion link</a>
+                                <a th:href="@{|${baseUrl}/api/account/activate?key=${user.activationKey}|}" th:text="@{|${baseUrl}/api/account/activate?key=${user.activationKey}|}">Activattion link</a>
                             </div>
                             <div class="my-3">
                                 <div class="m-1" th:text="#{email.activation.text2}"> </div>

@@ -4,7 +4,7 @@ import com.cubeui.backend.domain.DTO.InstanceDTO;
 import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordNotFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;

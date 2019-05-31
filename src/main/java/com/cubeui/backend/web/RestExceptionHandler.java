@@ -1,6 +1,9 @@
 package com.cubeui.backend.web;
 
 import com.cubeui.backend.security.jwt.InvalidJwtAuthenticationException;
+import com.cubeui.backend.web.exception.DuplicateRecordException;
+import com.cubeui.backend.web.exception.InvalidDataException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

@@ -4,19 +4,14 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordNotFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-
-import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -83,6 +78,5 @@ public class UserController {
         } else {
             throw new RecordNotFoundException("User with id '" + id + "' not found.");
         }
-
     }
 }

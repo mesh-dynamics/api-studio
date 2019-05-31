@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.utils.RandomUtil;
-import com.cubeui.backend.web.InvalidDataException;
+import com.cubeui.backend.web.exception.InvalidDataException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -134,6 +134,7 @@ public class UserService {
         return userRepository.findByActivationKey(key)
                 .map(user -> {
                     user.setActivated(true);
+                    user.setPassword("********"); // To hide password while sending creation email
                     return user;
                 });
     }

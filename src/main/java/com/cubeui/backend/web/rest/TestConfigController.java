@@ -2,15 +2,13 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.TestConfigDTO;
-import com.cubeui.backend.domain.Recording;
 import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordNotFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;

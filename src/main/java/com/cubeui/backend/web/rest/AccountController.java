@@ -6,10 +6,9 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.UserService;
-import com.cubeui.backend.web.DuplicateRecordException;
-import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.InvalidDataException;
-import com.cubeui.backend.web.RecordNotFoundException;
+import com.cubeui.backend.web.exception.DuplicateRecordException;
+import com.cubeui.backend.web.exception.InvalidDataException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -27,7 +26,6 @@ import java.util.Optional;
 import static com.cubeui.backend.security.Constants.PASSWORD_MAX_LENGTH;
 import static com.cubeui.backend.security.Constants.PASSWORD_MIN_LENGTH;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController()

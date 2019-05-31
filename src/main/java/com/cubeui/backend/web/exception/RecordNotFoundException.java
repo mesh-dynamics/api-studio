@@ -1,4 +1,4 @@
-package com.cubeui.backend.web;
+package com.cubeui.backend.web.exception;
 
 import org.springframework.web.bind.annotation.ResponseStatus;
 
