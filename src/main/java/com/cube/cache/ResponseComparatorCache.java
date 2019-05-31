@@ -40,6 +40,9 @@ public class ResponseComparatorCache {
                     @Override
                     public ResponseComparator load(TemplateKey templateKey) throws Exception {
                         CompareTemplate template = templateCache.fetchCompareTemplate(templateKey);
+                        if (template == null) {
+                            throw new Exception("The compare template received from template cache is null");
+                        }
                         LOGGER.info("Successfully loaded into cache response comparator for key :: " + templateKey);
                         return new TemplatedResponseComparator(template , jsonMapper);
                     }
@@ -52,8 +55,8 @@ public class ResponseComparatorCache {
         try {
             return responseComparatorCache.get(key);
         } catch (ExecutionException e) {
-            LOGGER.error("Unable to find template key :: " + key
-                    + " in Response Comparator Cache , sending default key");
+            LOGGER.error("Unable to find template key :: " + key +
+                " in Response Comparator Cache , sending default key " + e.getMessage() );
             return defaultResponseComparator;
         }
     }
