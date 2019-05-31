@@ -1,4 +1,5 @@
 server:
+    baseUrl: http://localhost:8080
     port: 8080
 
 spring:
@@ -28,7 +29,7 @@ spring:
         show_sql: true
         generate-ddl: true
         hibernate:
-            ddl-auto: update
+            ddl-auto: create-drop
             dialect: org.hibernate.dialect.PostgreSQLDialect
         properties:
             # fixes Caused by: java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc.PgConnection.createClob() is not yet implemented.
@@ -37,6 +38,34 @@ spring:
     data:
         jpa:
             repositories.enabled: true
+
+    mail:
+#        host: smtp.office365.com
+#        port: 587
+#        username: sender@cubecorp.io
+#        password: Welcome123!
+#        properties:
+#            mail.smtp:
+#                    auth: true
+#                    connectiontimeout: 5000
+#                    timeout: 5000
+#                    writetimeout: 5000
+#                    starttls.enable: true
+        host: smtp.gmail.com
+        port: 587
+        username: aakashbeehyv@gmail.com
+        password: beehyv123
+        properties:
+            mail.smtp:
+                    auth: true
+                    connectiontimeout: 5000
+                    timeout: 5000
+                    writetimeout: 5000
+                    starttls.enable: true
+
+# SSL, post 465
+#spring.mail.properties.mail.smtp.socketFactory.port = 465
+#spring.mail.properties.mail.smtp.socketFactory.class = javax.net.ssl.SSLSocketFactory
 
 security:
     jwt:
