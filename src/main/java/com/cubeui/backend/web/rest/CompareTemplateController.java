@@ -11,7 +11,7 @@ import com.cubeui.backend.repository.CompareTemplateRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -67,9 +67,9 @@ public class CompareTemplateController {
                     .body(saved);
         } else {
             if (service.isEmpty()){
-                throw new RecordFoundException("Service with ID '" + compareTemplateDTO.getServiceId() + "' not found.");
+                throw new RecordNotFoundException("Service with ID '" + compareTemplateDTO.getServiceId() + "' not found.");
             } else {
-                throw new RecordFoundException("App with ID '" + compareTemplateDTO.getAppId() + "' not found.");
+                throw new RecordNotFoundException("App with ID '" + compareTemplateDTO.getAppId() + "' not found.");
             }
         }
     }
@@ -83,10 +83,10 @@ public class CompareTemplateController {
         Optional<Service> service = serviceRepository.findById(compareTemplateDTO.getServiceId());
         Optional<App> app = appRepository.findById(compareTemplateDTO.getAppId());
         if (service.isEmpty()){
-            throw new RecordFoundException("Service with ID '" + compareTemplateDTO.getServiceId() + "' not found.");
+            throw new RecordNotFoundException("Service with ID '" + compareTemplateDTO.getServiceId() + "' not found.");
         }
         if (app.isEmpty()) {
-            throw new RecordFoundException("App with ID '" + compareTemplateDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + compareTemplateDTO.getAppId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(compareTemplate -> {
@@ -105,7 +105,7 @@ public class CompareTemplateController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("CompareTemplate with ID '" + compareTemplateDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("CompareTemplate with ID '" + compareTemplateDTO.getId() + "' not found.");
         }
     }
 

@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.ServiceGraph;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ServiceGraphRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -53,7 +53,7 @@ public class ServiceGraphController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("App with ID '" + serviceGraphDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceGraphDTO.getId() + "' not found.");
         }
     }
 
@@ -65,7 +65,7 @@ public class ServiceGraphController {
         Optional<ServiceGraph> existing = serviceGraphRepository.findById(serviceGraphDTO.getId());
         Optional<App> app = appRepository.findById(serviceGraphDTO.getAppId());
         if (app.isEmpty()){
-            throw new RecordFoundException("App with ID '" + serviceGraphDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceGraphDTO.getAppId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(serviceGraph -> {
@@ -81,7 +81,7 @@ public class ServiceGraphController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("ServiceGraph with ID '" + serviceGraphDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("ServiceGraph with ID '" + serviceGraphDTO.getId() + "' not found.");
         }
     }
 

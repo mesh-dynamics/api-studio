@@ -4,7 +4,7 @@ import com.cubeui.backend.domain.DTO.InstanceDTO;
 import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -64,7 +64,7 @@ public class InstanceController {
                         .toUri())
                 .body("Instance with ID '" + existing.get().getId() + "' updated");
         } else {
-            throw new RecordFoundException("Instance with ID '" + instanceDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Instance with ID '" + instanceDTO.getId() + "' not found.");
         }
     }
 

@@ -8,7 +8,7 @@ import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -59,9 +59,9 @@ public class RecordingController {
                     .body(saved);
         } else {
             if (instance.isEmpty()){
-                throw new RecordFoundException("Instance with ID '" + recordingDTO.getInstanceId() + "' not found.");
+                throw new RecordNotFoundException("Instance with ID '" + recordingDTO.getInstanceId() + "' not found.");
             } else {
-                throw new RecordFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
+                throw new RecordNotFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
             }
         }
     }
@@ -75,10 +75,10 @@ public class RecordingController {
         Optional<App> app = appRepository.findById(recordingDTO.getAppId());
         Optional<Instance> instance = instanceRepository.findById(recordingDTO.getInstanceId());
         if (app.isEmpty()){
-            throw new RecordFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
         }
         if (instance.isEmpty()) {
-            throw new RecordFoundException("Instance with ID '" + recordingDTO.getInstanceId() + "' not found.");
+            throw new RecordNotFoundException("Instance with ID '" + recordingDTO.getInstanceId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(recording -> {
@@ -96,7 +96,7 @@ public class RecordingController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("Recording with ID '" + recordingDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Recording with ID '" + recordingDTO.getId() + "' not found.");
         }
     }
 

@@ -4,7 +4,7 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
@@ -40,7 +40,7 @@ public class UserController {
     public ResponseEntity save(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isEmpty()) {
-            User saved = this.userService.save(userDTO);
+            User saved = this.userService.save(userDTO, false);
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -57,7 +57,7 @@ public class UserController {
     public ResponseEntity update(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isPresent()) {
-            User saved = this.userService.save(userDTO);
+            User saved = this.userService.save(userDTO, userDTO.isActivated());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -66,36 +66,23 @@ public class UserController {
                             .toUri())
                     .body("User '" + saved.getUsername() + "' updated");
         } else {
-            throw new RecordFoundException("User with username '" + userDTO.getEmail() + "' not found.");
+            throw new RecordNotFoundException("User with username '" + userDTO.getEmail() + "' not found.");
         }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity get(@PathVariable("id") Long id) {
         return ok(this.userService.getById(id)
-                .orElseThrow(() -> new RecordFoundException("User with id '" + id + "' not found.")));
+                .orElseThrow(() -> new RecordNotFoundException("User with id '" + id + "' not found.")));
     }
-
 
     @GetMapping("/delete/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
         if (userService.deleteUser(id)) {
             return ok("User '" + id + "' removed successfully");
         } else {
-            throw new RecordFoundException("User with id '" + id + "' not found.");
+            throw new RecordNotFoundException("User with id '" + id + "' not found.");
         }
 
-    }
-
-    @GetMapping("/current")
-    public ResponseEntity currentUser(@AuthenticationPrincipal UserDetails userDetails){
-        Map<Object, Object> model = new HashMap<>();
-        model.put("username", userDetails.getUsername());
-        model.put("roles", userDetails.getAuthorities()
-            .stream()
-            .map(a -> ((GrantedAuthority) a).getAuthority())
-            .collect(toList())
-        );
-        return ok(model);
     }
 }

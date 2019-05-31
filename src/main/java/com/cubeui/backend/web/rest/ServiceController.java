@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -56,7 +56,7 @@ public class ServiceController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
         }
     }
 
@@ -68,7 +68,7 @@ public class ServiceController {
         Optional<Service> existing = serviceRepository.findById(serviceDTO.getId());
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
         if (app.isEmpty()){
-            throw new RecordFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(service -> {
@@ -84,7 +84,7 @@ public class ServiceController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("Service with ID '" + serviceDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Service with ID '" + serviceDTO.getId() + "' not found.");
         }
     }
 

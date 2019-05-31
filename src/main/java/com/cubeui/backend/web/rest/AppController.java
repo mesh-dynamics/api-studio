@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -55,7 +55,7 @@ public class AppController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("User with ID '" + appDTO.getCustomerId() + "' not found.");
+            throw new RecordNotFoundException("User with ID '" + appDTO.getCustomerId() + "' not found.");
         }
     }
 
@@ -79,7 +79,7 @@ public class AppController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("App with ID '" + appDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + appDTO.getId() + "' not found.");
         }
     }
 

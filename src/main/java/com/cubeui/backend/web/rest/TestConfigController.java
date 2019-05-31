@@ -10,7 +10,7 @@ import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -70,9 +70,9 @@ public class TestConfigController {
                     .body(saved);
         } else {
             if (service.isEmpty()){
-                throw new RecordFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
+                throw new RecordNotFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
             } else {
-                throw new RecordFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
+                throw new RecordNotFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
             }
         }
     }
@@ -86,10 +86,10 @@ public class TestConfigController {
         Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
         Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
         if (service.isEmpty()){
-            throw new RecordFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
+            throw new RecordNotFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
         }
         if (app.isEmpty()) {
-            throw new RecordFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(testConfig -> {
@@ -112,7 +112,7 @@ public class TestConfigController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("TestConfig with ID '" + testConfigDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("TestConfig with ID '" + testConfigDTO.getId() + "' not found.");
         }
     }
 

@@ -7,8 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.status;
 
 @RestControllerAdvice
@@ -22,8 +21,8 @@ public class RestExceptionHandler {
         return status(UNAUTHORIZED).body(errorResponse);
     }
 
-    @ExceptionHandler(value = {RecordFoundException.class})
-    public ResponseEntity recordNotFound(RecordFoundException ex, WebRequest request) {
+    @ExceptionHandler(value = {RecordNotFoundException.class})
+    public ResponseEntity recordNotFound(RecordNotFoundException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse("Record Not Found", ex.getMessage(), NOT_FOUND.value());
         return status(NOT_FOUND).body(errorResponse);
     }

@@ -6,7 +6,7 @@ import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ReplayRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -67,9 +67,9 @@ public class ReplayController {
                     .body(saved);
         } else {
             if (recording.isEmpty()){
-                throw new RecordFoundException("Collection with ID '" + replayDTO.getCollectionId() + "' not found.");
+                throw new RecordNotFoundException("Collection with ID '" + replayDTO.getCollectionId() + "' not found.");
             } else {
-                throw new RecordFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
+                throw new RecordNotFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
             }
         }
     }
@@ -83,10 +83,10 @@ public class ReplayController {
         Optional<TestConfig> testConfig = testConfigRepository.findById(replayDTO.getTestId());
         Optional<Recording> recording = recordingRepository.findById(replayDTO.getCollectionId());
         if (testConfig.isEmpty()){
-            throw new RecordFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
+            throw new RecordNotFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
         }
         if (recording.isEmpty()){
-            throw new RecordFoundException("Collection with ID '" + replayDTO.getCollectionId() + "' not found.");
+            throw new RecordNotFoundException("Collection with ID '" + replayDTO.getCollectionId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(replay -> {
@@ -110,7 +110,7 @@ public class ReplayController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("Replay with ID '" + replayDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Replay with ID '" + replayDTO.getId() + "' not found.");
         }
     }
 

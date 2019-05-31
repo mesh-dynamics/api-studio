@@ -8,7 +8,7 @@ import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.repository.TestVirtualizedServiceRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -58,9 +58,9 @@ public class TestVirtualizedServiceController {
                     .body(saved);
         } else {
             if (service.isEmpty()){
-                throw new RecordFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
+                throw new RecordNotFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
             } else {
-                throw new RecordFoundException("TestConfig with ID '" + testServiceDTO.getTestId() + "' not found.");
+                throw new RecordNotFoundException("TestConfig with ID '" + testServiceDTO.getTestId() + "' not found.");
             }
         }
     }
@@ -74,10 +74,10 @@ public class TestVirtualizedServiceController {
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         Optional<TestVirtualizedService> existing = testVirtualizedServiceRepository.findById(testServiceDTO.getId());
         if (service.isEmpty()){
-            throw new RecordFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
+            throw new RecordNotFoundException("Service with ID '" + testServiceDTO.getServiceId() + "' not found.");
         }
         if (testConfig.isEmpty()) {
-            throw new RecordFoundException("TestConfig with ID '" + testServiceDTO.getTestId() + "' not found.");
+            throw new RecordNotFoundException("TestConfig with ID '" + testServiceDTO.getTestId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(testVirtualizedService -> {
@@ -93,7 +93,7 @@ public class TestVirtualizedServiceController {
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordFoundException("TestVirtualizedService with ID '" + testServiceDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("TestVirtualizedService with ID '" + testServiceDTO.getId() + "' not found.");
         }
     }
 
