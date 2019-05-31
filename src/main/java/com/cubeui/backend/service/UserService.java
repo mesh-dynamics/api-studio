@@ -1,13 +1,20 @@
 package com.cubeui.backend.service;
 
+import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.service.utils.RandomUtil;
+import com.cubeui.backend.web.InvalidDataException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +24,7 @@ import java.util.stream.Collectors;
 /**
  * ServiceDTO class for managing users.
  */
+@Slf4j
 @Service
 @Transactional
 public class UserService {
@@ -41,7 +49,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User save(UserDTO userDTO) {
+    public User save(UserDTO userDTO, boolean isActivated) {
         Set<String> roles = new HashSet<>();
 //        roles.add("ROLE_USER");
         if (userDTO.getRoles() != null) {
@@ -57,6 +65,7 @@ public class UserService {
             u.setName(userDTO.getName());
             u.setPassword(this.passwordEncoder.encode(userDTO.getPassword()));
             u.setRoles(finalRoles);
+            u.setActivated(isActivated);
             this.userRepository.save(u);
         });
         if (user.isEmpty()){
@@ -65,6 +74,8 @@ public class UserService {
                     .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .roles(roles)
+                    .activationKey(RandomUtil.generateActivationKey())
+                    .activated(isActivated)
                     .build()
             ));
         }
@@ -79,6 +90,60 @@ public class UserService {
         } else {
             return false;
         }
+    }
 
+    public Optional<User> completePasswordReset(String newPassword, String key) {
+        log.debug("Reset user password for reset key {}", key);
+        return userRepository.findByResetKey(key)
+                .filter(user -> user.getResetDate().isAfter(Instant.now().minusSeconds(86400)))
+                .map(user -> {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                    user.setResetKey(null);
+                    user.setResetDate(null);
+                    return user;
+                });
+    }
+
+    public Optional<User> requestPasswordReset(String mail) {
+        return userRepository.findByUsername(mail)
+                .filter(User::isEnabled)
+                .map(user -> {
+                    user.setResetKey(RandomUtil.generateResetKey());
+                    user.setResetDate(Instant.now());
+                    return user;
+                });
+    }
+
+    public void changePassword(ChangePasswordDTO changePasswordDTO, String username) {
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        CharSequence oldPassword = changePasswordDTO.getOldPassword();
+        if (optionalUser.isPresent()) {
+            if (!passwordEncoder.matches(oldPassword, optionalUser.get().getPassword())) {
+                throw new InvalidDataException("Old password does not match");
+            } else {
+                optionalUser.map(user -> {
+                    user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+                    return userRepository.save(user);
+                });
+            }
+        }
+    }
+
+    public Optional<User> activateUser(String key) {
+        log.debug("Activating user for activation key {}", key);
+        return userRepository.findByActivationKey(key)
+                .map(user -> {
+                    user.setActivated(true);
+                    return user;
+                });
+    }
+
+    @Scheduled(cron = "0 0 1 * * ?")
+    public void removeNotActivatedUsers() {
+        List<User> users = userRepository.findAllByActivatedIsFalseAndCreatedAtBefore(LocalDateTime.now().minusDays(30));
+        for (User user : users) {
+            log.debug("Deleting not activated user {}", user.getUsername());
+            userRepository.delete(user);
+        }
     }
 }

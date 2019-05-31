@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
@@ -54,6 +56,23 @@ public class User implements UserDetails {
     @UpdateTimestamp
     LocalDateTime updatedAt;
 
+//    @NotNull
+    @Column(nullable = false)
+    private boolean activated = false;
+
+    @Size(max = 20)
+    @Column(name = "activation_key", length = 20)
+    @JsonIgnore
+    private String activationKey;
+
+    @Size(max = 20)
+    @Column(name = "reset_key", length = 20)
+    @JsonIgnore
+    private String resetKey;
+
+    @Column(name = "reset_date")
+    private Instant resetDate = null;
+
     @Override
     public String getPassword() {
         return this.password;
@@ -84,7 +103,5 @@ public class User implements UserDetails {
 
     @Override
     @Transient
-    public boolean isEnabled() {
-        return true;
-    }
+    public boolean isEnabled() { return true; }
 }
