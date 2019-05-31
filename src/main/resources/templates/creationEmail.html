@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>CubeIO account activated</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="shortcut icon" th:href="@{|${baseUrl}/favicon.ico|}" />
+    <style>
+        .email-container{
+            background: whitesmoke;
+            padding: 50px;
+            display: flex;
+            justify-content: center;
+            font-family: 'Roboto', sans-serif;
+        }
+        .email-box{
+            background: white;
+            padding: 25px;
+            margin: 0 auto;
+            font-size: 16px;
+            color: #444;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
+        .activation-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background: blueviolet;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 2px;
+            font-size: 20px;
+        }
+        .m-1{
+            margin: 4px;
+        }
+        .my-3{
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+        .footer{
+            color: gray;
+            font-size: 14px;
+        }
+        .text-center{
+            text-align: center;
+        }
+        .border-y-silver{
+            border-top: 1px solid silver;
+            border-bottom: 1px solid silver;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div style="margin: 0 auto; border: 1px solid #E8E8E8; border-radius: 5px">
+        <div style="border: 1px solid #D1D1D1; border-radius: 4px">
+            <div style="border: 1px solid #B3B3B3; border-radius: 3px;">
+                <div class="email-box">
+                    <h1 style="font-weight: 500; margin-top: 0">Account activated</h1>
+                    <div class="m-1"><span th:text="#{email.reset.greeting(${user.name})}">Dear</span>,</div>
+                    <div class="m-1">Thank you for registering and activating your account with CubeIO</div>
+                    <div class="m-1 border-y-silver" style="font-size: 20px; margin: 8px 4px; padding: 8px">Your account is now active!</div>
+                    <div style="padding: 4px 24px">
+                        <div class="m-1"><b>Email: </b><span th:text="${user.username}"></span></div>
+                        <div class="m-1"><b>Password: </b><span th:text="${user.password}"></span></div>
+                    </div>
+                    <div style="padding: 10px" class="text-center">
+                        <a th:href="@{|${baseUrl}|}" class="activation-btn">Login to CubeIO</a>
+                    </div>
+                    <div class="my-3 border-y-silver">
+                        <div class="m-1" th:text="#{email.activation.text2}"> </div>
+                        <div class="m-1"><em th:text="#{email.signature}">CubeIO.</em></div>
+                    </div>
+                    <div class="footer m-1">Note: This is system generated email. Please don't reply to this email</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

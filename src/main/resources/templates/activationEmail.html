@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title th:text="#{email.activation.title}">Account activation</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link rel="shortcut icon" th:href="@{|${baseUrl}/favicon.ico|}" />
+        <style>
+            .email-container{
+                background: whitesmoke;
+                padding: 50px;
+                display: flex;
+                justify-content: center;
+                font-family: 'Roboto', sans-serif;
+            }
+            .email-box{
+                background: white;
+                padding: 25px 50px;
+                margin: 0 auto;
+                text-align: center;
+                font-size: 16px;
+                color: #444;
+                box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            }
+            .activation-btn {
+                display: inline-block;
+                padding: 6px 12px;
+                background: blueviolet;
+                color: white !important;
+                text-decoration: none;
+                border-radius: 2px;
+                font-size: 20px;
+            }
+            .m-1{
+                margin: 4px;
+            }
+            .my-3{
+                margin-top: 16px;
+                margin-bottom: 16px;
+            }
+            .footer{
+                color: gray;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div style="margin: 0 auto; border: 1px solid #E8E8E8; border-radius: 5px">
+                <div style="border: 1px solid #D1D1D1; border-radius: 4px">
+                    <div style="border: 1px solid #B3B3B3; border-radius: 3px;">
+                        <div class="email-box">
+                            <h1 style="font-weight: 500">Activate your account</h1>
+                            <div class="m-1"><span th:text="#{email.activation.greeting(${user.getName()})}">Dear</span>, your CubeIO account has been created</div>
+            <!--                <div class="m-1" th:text="#{email.activation.userName(${user.login})}">-->
+            <!--                    Your username to signin to your account is-->
+            <!--                </div>-->
+                            <div class="m-1">
+                                It is mandatory to change your password upon activation.
+                            </div>
+                            <div style="padding: 30px">
+                                <a th:href="@{|${baseUrl}/activate?key=${user.activationKey}|}" class="activation-btn">Activate Now</a>
+                            </div>
+                            <div class="m-1">OR COPY-PASTE THE LINK BELOW</div>
+                            <div class="m-1">
+                                <a th:href="@{|${baseUrl}/activate?key=${user.activationKey}|}" th:text="@{|${baseUrl}/activate?key=${user.activationKey}|}">Activattion link</a>
+                            </div>
+                            <div class="my-3">
+                                <div class="m-1" th:text="#{email.activation.text2}"> </div>
+                                <div class="m-1"><em th:text="#{email.signature}">CubeIO.</em></div>
+                            </div>
+                            <div class="footer m-1">Note: This is system generated email. Please don't reply to this email</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
