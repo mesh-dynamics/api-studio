@@ -29,10 +29,19 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:47e29fd808e6ccf6928c3bb537019a7ff8524308
+        image: cubeiocorp/cubews:c07238d674a9c4ca453cbe81cf8c1f469294689a
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        env:
+          - name: app_dogfood
+            value: cube
+          - name: instance_dogfood
+            value: staging
+          - name: service_dogfood
+            value: cube
+          - name: customer_dogfood
+            value: ravivj
       imagePullSecrets:
       - name: regcred
 
@@ -67,10 +76,19 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:47e29fd808e6ccf6928c3bb537019a7ff8524308
+        image: cubeiocorp/cubews:c07238d674a9c4ca453cbe81cf8c1f469294689a
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        env:
+          - name: app_dogfood
+            value: cube
+          - name: instance_dogfood
+            value: staging
+          - name: service_dogfood
+            value: cube
+          - name: customer_dogfood
+            value: ravivj
       imagePullSecrets:
       - name: regcred
 
@@ -105,10 +123,19 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:47e29fd808e6ccf6928c3bb537019a7ff8524308
+        image: cubeiocorp/cubews:c07238d674a9c4ca453cbe81cf8c1f469294689a
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        env:
+          - name: app_dogfood
+            value: cube
+          - name: instance_dogfood
+            value: staging
+          - name: service_dogfood
+            value: cube
+          - name: customer_dogfood
+            value: ravivj
       imagePullSecrets:
       - name: regcred
 ##################################################################################################
