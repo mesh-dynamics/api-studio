@@ -26,4 +26,16 @@ public class RestExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("Record Not Found", ex.getMessage(), NOT_FOUND.value());
         return status(NOT_FOUND).body(errorResponse);
     }
+
+    @ExceptionHandler(value = {InvalidDataException.class})
+    public ResponseEntity invalidData(InvalidDataException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse("Invalid Data Received", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {DuplicateRecordException.class})
+    public ResponseEntity invalidData(DuplicateRecordException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse("Record Already Exists", ex.getMessage(), FORBIDDEN.value());
+        return status(FORBIDDEN).body(errorResponse);
+    }
 }
