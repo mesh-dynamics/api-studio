@@ -15,6 +15,7 @@ export_aws_env_variables() {
 }
 
 init_default() {
+	kubectl apply -f cube/secret.yaml
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
 	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
 	kubectl apply -f moviebook-gateway.yaml
@@ -34,6 +35,7 @@ init_default() {
 
 init_staging() {
 	kubectl create namespace staging
+	kubectl apply -f cube/secret.yaml -n staging
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml) -n staging
 	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml) -n staging
 	kubectl apply -f moviebook-gateway.yaml
@@ -41,7 +43,6 @@ init_staging() {
 	kubectl apply -f moviebook/movieinfo-v1_staging.yaml
 	kubectl apply -f cube/virtualservice_staging.yaml
 	kubectl apply -f cube/service_entry.yaml
-	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
 	echo "waiting for cubews to come online"
 	until $(curl --output /dev/null --silent --head --fail -HHost:staging.cubecorp.io http://$GATEWAY_URL/cs/health); do
