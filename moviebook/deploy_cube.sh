@@ -17,7 +17,7 @@ export_aws_env_variables() {
 
 init() {
 	kubectl apply -f cube/cube_namespace.yaml
-	kubectl apply -f cube/secret.yaml
+	kubectl apply -f cube/secret.yaml -n cube
 	kubectl apply -f cube/service.yaml -n cube
 	kubectl apply -f cube/dogfooding_virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml -n cube
