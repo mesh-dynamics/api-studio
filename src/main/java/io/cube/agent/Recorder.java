@@ -18,14 +18,18 @@ public interface Recorder {
      *               within a fixed traceId
      * @param parentSpanId The parent span id
      * @param args The arg values
-     * @param response The return value
+     * @param responseOrException The return value or the exception value
+     * @param retStatus Success or exception
+     * @param exceptionType Type of exception if any
      * @return success status
      */
     boolean record(FnKey fnKey,
                    Optional<String> traceId,
                    Optional<String> spanId,
                    Optional<String> parentSpanId,
-                   Object response,
+                   Object responseOrException,
+                   FnReqResponse.RetStatus retStatus,
+                   Optional<String> exceptionType,
                    Object... args);
 
 }
