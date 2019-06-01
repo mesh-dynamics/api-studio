@@ -26,7 +26,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        mailService.sendEmail();
+//        mailService.sendEmail();
         log.debug("Initializing data...");
         UserDTO userDTO = new UserDTO();
         if (userService.getByUsername("vineetks.iitk@gmail.com").isEmpty()){

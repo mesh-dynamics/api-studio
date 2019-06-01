@@ -40,28 +40,17 @@ spring:
             repositories.enabled: true
 
     mail:
-#        host: smtp.office365.com
-#        port: 587
-#        username: sender@cubecorp.io
-#        password: Welcome123!
-#        properties:
-#            mail.smtp:
-#                    auth: true
-#                    connectiontimeout: 5000
-#                    timeout: 5000
-#                    writetimeout: 5000
-#                    starttls.enable: true
-        host: smtp.gmail.com
+        host: smtp.office365.com
         port: 587
-        username: aakashbeehyv@gmail.com
-        password: beehyv123
+        username: email.sender@cubecorp.io
+        password: welcome@cube123
         properties:
             mail.smtp:
-                    auth: true
-                    connectiontimeout: 5000
-                    timeout: 5000
-                    writetimeout: 5000
-                    starttls.enable: true
+                auth: true
+                connectiontimeout: 5000
+                timeout: 5000
+                writetimeout: 5000
+                starttls.enable: true
 
 # SSL, post 465
 #spring.mail.properties.mail.smtp.socketFactory.port = 465
