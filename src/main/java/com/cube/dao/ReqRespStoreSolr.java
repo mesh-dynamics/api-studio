@@ -39,7 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 import io.cube.agent.FnKey;
-import io.cube.agent.FnResponse;
+import com.cube.agent.FnResponse;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
@@ -167,6 +167,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String FUNC_ARG_HASH_PREFIX = CPREFIX + FUNC_PREFIX + "arghash_";
     private static final String FUNC_ARG_VAL_PREFIX = CPREFIX + FUNC_PREFIX + "argval_";
     private static final String FUNC_RET_VAL = CPREFIX + FUNC_PREFIX + "retval" + SINGLE_VALUED_SUFFIX;
+    private static final String FUNC_RET_STATUSF = CPREFIX + FUNC_PREFIX + "funcstatus"  + SINGLE_VALUED_SUFFIX;
+    private static final String FUNC_EXCEPTION_TYPEF = CPREFIX + FUNC_PREFIX + "exceptiontype"  + SINGLE_VALUED_SUFFIX;
+
 
 
 
@@ -190,8 +193,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         counter.x = 0;
         Arrays.asList(fnReqResponse.argsHash).forEach(argHash -> solrDocument.setField(FUNC_ARG_HASH_PREFIX
             + ++counter.x + SINGLE_VALUED_INT_SUFFIX, argHash));
-        solrDocument.setField(FUNC_RET_VAL, fnReqResponse.retVal);
+        solrDocument.setField(FUNC_RET_VAL, fnReqResponse.retOrExceptionVal);
         fnReqResponse.respTS.ifPresent(timestamp -> solrDocument.setField(TIMESTAMPF , timestamp.toString()));
+        solrDocument.setField(FUNC_RET_STATUSF, fnReqResponse.retStatus.toString());
+        fnReqResponse.exceptionType.ifPresent(etype -> solrDocument.setField(FUNC_EXCEPTION_TYPEF, etype));
         return solrDocument;
     }
 
@@ -202,7 +207,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
-        return getStrField(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal , getTSField(doc,TIMESTAMPF)));
+        Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
+
+        FnReqResponse.RetStatus retStatus =
+            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
+            rs)).orElse(FnReqResponse.RetStatus.Success);
+        Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
+        return getStrField(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
+            retStatus, exceptionType));
     }
 
     @Override
@@ -762,7 +774,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(saveFuncKey , Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr, doc);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr,
+                io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), doc);
         }
         return toReturn;
     }
