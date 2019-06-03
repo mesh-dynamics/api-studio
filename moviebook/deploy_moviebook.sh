@@ -333,7 +333,7 @@ replay_staging() {
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-H 'Host: staging.cubecorp.io' \
-	-d "$1" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	-d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://staging.cubecorp.io&instanceid=staging" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
