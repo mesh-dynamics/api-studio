@@ -91,6 +91,7 @@ public class MailService {
         Context context = new Context();
         context.setVariable("user", user);
         //TODO Get frontend login url and change it
+        context.setVariable("baseUrl", baseUrl);
         context.setVariable("loginUrl", baseUrl + loginEndpoint);
         //TODO Get frontend reset url and change it
         context.setVariable("resetUrl", baseUrl + resetEndpoint);
