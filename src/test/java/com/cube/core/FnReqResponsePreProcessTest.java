@@ -23,7 +23,8 @@ public class FnReqResponsePreProcessTest {
         System.out.println(argHash);
         FnReqResponse fnReqResponse = new FnReqResponse("ravivj" , "moveinfo" , "dev",
             "movieinfo", 1, "add", Optional.empty() , Optional.empty() , Optional.empty(),
-            Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random");
+            Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random",
+            FnReqResponse.RetStatus.Success, Optional.empty());
 
 
         Utils.preProcess(fnReqResponse);
@@ -40,7 +41,8 @@ public class FnReqResponsePreProcessTest {
         System.out.println(argHash);
         fnReqResponse = new FnReqResponse("ravivj" , "moveinfo" , "dev",
             "movieinfo", 1, "add", Optional.empty() , Optional.empty() , Optional.empty(),
-            Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random");
+            Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random",
+            FnReqResponse.RetStatus.Success, Optional.empty());
 
         Utils.preProcess(fnReqResponse);
         System.out.println(fnReqResponse.argVals[0]);
