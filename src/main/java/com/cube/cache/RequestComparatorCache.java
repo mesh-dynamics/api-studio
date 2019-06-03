@@ -67,10 +67,6 @@ public class RequestComparatorCache {
                     @Override
                     public RequestComparator load(TemplateKey templateKey) throws Exception {
                         CompareTemplate template = templateCache.fetchCompareTemplate(templateKey);
-                        // could happen while mocking TemplateCache
-                        if (template == null) {
-                            throw new Exception("The compare template received from template cache is null");
-                        }
                         LOGGER.info("Successfully loaded into cache request comparator for key :: " + templateKey);
                         return new TemplatedRequestComparator(template , jsonMapper);
                     }
