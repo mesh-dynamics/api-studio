@@ -72,9 +72,7 @@ public class MailService {
             message.setFrom(emailSender);
             message.setSubject(subject);
             message.setText(content, isHtml);
-            long t = System.currentTimeMillis();
             javaMailSender.send(mimeMessage);
-            System.out.println(System.currentTimeMillis()-t);
             log.debug("Email sent to User '{}'", to);
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
