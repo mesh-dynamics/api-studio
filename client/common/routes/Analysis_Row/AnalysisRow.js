@@ -46,7 +46,7 @@ class AnalysisRow extends Component {
             disp = (<div className="padding-15">No Data</div>)
         } else {
             disp = replayList.map(item => (
-                <Row key={item.replayreqid}>
+                <Row key={item.replayreqid} style={{marginBottom: '10px'}}>
                     <Col md={4}><a className="links" onClick={() => this.getDiff(item)}>{item.replayreqid}</a></Col>
                     <Col md={4}>{JSON.stringify(item.qparams)}</Col>
                     <Col md={4}>{JSON.stringify(item.qparams)}</Col>
@@ -54,7 +54,7 @@ class AnalysisRow extends Component {
             ));
         }
 
-        return (<div>{disp}</div>);
+        return (<div className="padding-15">{disp}</div>);
     }
 
     async fetchReplayList() {
