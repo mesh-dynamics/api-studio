@@ -46,10 +46,11 @@ class AnalysisRow extends Component {
             disp = (<div className="padding-15">No Data</div>)
         } else {
             disp = replayList.map(item => (
-                <Row key={item.replayreqid} style={{marginBottom: '10px'}}>
-                    <Col md={4}><a className="links" onClick={() => this.getDiff(item)}>{item.replayreqid}</a></Col>
-                    <Col md={4}>{JSON.stringify(item.qparams)}</Col>
-                    <Col md={4}>{JSON.stringify(item.qparams)}</Col>
+                <Row key={item.replayreqid} style={{marginBottom: '15px'}}>
+                    <Col md={6}><a className="links" onClick={() => this.getDiff(item)}>
+                        {(item.qparams && Object.keys(item.qparams).length > 0) ? JSON.stringify(item.qparams) : JSON.stringify(item.qparams)}</a>
+                    </Col>
+                    <Col md={6}>{item.method}</Col>
                 </Row>
             ));
         }
