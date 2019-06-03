@@ -306,9 +306,7 @@ replay_setup() {
 	replay_setup_$CUBE_ENV
 }
 
-replay() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+replay_default() {
 	echo "Do you want to replay with default paths?(yes/no)"
 	read CHOICE
 	if [ "$CHOICE" = "no" ]; then
@@ -329,6 +327,32 @@ replay() {
 	echo $REPLAY_ID > replayid.temp
 }
 
+replay_staging() {
+	REPLAY_ID=$(curl -X POST \
+	http://$GATEWAY_URL/rs/init/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	-H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'cache-control: no-cache' \
+	-H 'Host: staging.cubecorp.io' \
+	-d "$1" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	curl -f -X POST \
+  http://$GATEWAY_URL/rs/start/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache' \
+	-H 'Host: staging.cubecorp.io'
+	if [ $? -eq 0 ]; then
+		echo "Replay started"
+	else
+		echo "ERROR!! Replay did not started"
+	fi
+	echo $REPLAY_ID > replayid.temp
+}
+
+replay() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	replay_$CUBE_ENV
+}
+
 stop_replay_default() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
@@ -346,10 +370,18 @@ stop_replay() {
 analyze() {
 	REPLAY_ID=$(cat replayid.temp)
 	echo "Analyzing for replay ID:" $REPLAY_ID
-	curl -X POST \
-  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache'
+	if [ "$CUBE_ENV" = "staging" ]; then
+		curl -X POST \
+		http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'cache-control: no-cache' \
+		-H 'Host: staging.cubecorp.io'
+	else
+		curl -X POST \
+	  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
+	  -H 'Content-Type: application/x-www-form-urlencoded' \
+	  -H 'cache-control: no-cache'
+	fi
 }
 
 clean_default() {
