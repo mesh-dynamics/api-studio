@@ -129,7 +129,12 @@ public final class UtilException {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <E extends Throwable> void throwAsUnchecked(Exception exception) throws E {
+	public static <E extends Throwable> void throwAsUnchecked(Exception exception) throws E {
+		throw (E) exception;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <E extends Throwable> void throwAsUnchecked(Throwable exception) throws E {
 		throw (E) exception;
 	}
 

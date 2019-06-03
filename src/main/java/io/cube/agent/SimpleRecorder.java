@@ -47,21 +47,23 @@ public class SimpleRecorder implements Recorder {
     public boolean record(FnKey fnKey, Optional<String> traceId,
                           Optional<String> spanId,
                           Optional<String> parentSpanId,
-                          Object response,
+                          Object responseOrException,
+                          FnReqResponse.RetStatus retStatus,
+                          Optional<String> exceptionType,
                           Object... args) {
         try {
             String[] argVals =
                     Arrays.stream(args).map(UtilException.rethrowFunction(gson::toJson)).toArray(String[]::new);
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
-            //String respVal = jsonMapper.writeValueAsString(response);
-            String respVal = gson.toJson(response);
+            //String respVal = jsonMapper.writeValueAsString(responseOrException);
+            String respVal = gson.toJson(responseOrException);
             LOGGER.info("Trying to record function :: " + fnKey.function.getName());
             Arrays.stream(argVals).forEach(arg -> LOGGER.info("Argument while storing :: " + arg));
             LOGGER.info("Function return value serialized :: " + respVal);
             FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId, fnKey.service,
                     fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
                     Optional.ofNullable(Instant.now()), argsHash,
-                    argVals, respVal);
+                    argVals, respVal, retStatus, exceptionType);
 
             Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
             //cubeResponse.ifPresent(responseStr -> System.out.println(responseStr));

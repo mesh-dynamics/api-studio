@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import io.cube.agent.FnReqResponse.RetStatus;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-05-10
@@ -94,13 +96,13 @@ class RecorderAndMockerTest {
 
         double discountedPrice(String productId, float price) {
 
-            if (dpk == null) {
+            if (discountedPriceFnKey == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
-                dpk = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
+                discountedPriceFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(dpk, traceid, spanid, parentSpanid,
+                FnResponseObj ret = mocker.mock(discountedPriceFnKey, traceid, spanid, parentSpanid,
                         resTimeStamp, productId, price);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
@@ -112,21 +114,21 @@ class RecorderAndMockerTest {
 
             double ret = price*(1-discount);
             if (mode == Mode.Record) {
-                RecorderAndMockerTest.recorder.record(dpk, traceid, spanid,
+                RecorderAndMockerTest.recorder.record(discountedPriceFnKey, traceid, spanid,
                         parentSpanid,
-                        Double.valueOf(ret), productId, price);
+                        Double.valueOf(ret), RetStatus.Success, Optional.empty(), productId, price);
             }
             return ret;
         }
 
         double discountedPrice(ProdPrice pp) {
-            if (dpk2 == null) {
+            if (discountedPriceFnKey2 == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
-                dpk2 = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
+                discountedPriceFnKey2 = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(dpk2, traceid, spanid, parentSpanid,
+                FnResponseObj ret = mocker.mock(discountedPriceFnKey2, traceid, spanid, parentSpanid,
                         resTimeStamp, pp);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
@@ -134,22 +136,111 @@ class RecorderAndMockerTest {
 
             double ret = (pp != null) ? discountedPrice(pp.productId, pp.price) : 0;
             if (mode == Mode.Record) {
-                RecorderAndMockerTest.recorder.record(dpk2, traceid, spanid,
+                RecorderAndMockerTest.recorder.record(discountedPriceFnKey2, traceid, spanid,
                         parentSpanid,
-                        ret, pp);
+                        ret, RetStatus.Success, Optional.empty(), pp);
             }
             return ret;
         }
 
-        String getPromoName() {
-
-            if (gpnk == null) {
+        /**
+         * can throw runtime null pointer exception
+         * @param pp
+         * v@return
+         */
+        double discountedPriceRuntimeException(ProdPrice pp) {
+            if (discountedPriceRuntimeExceptionFnKey == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
-                gpnk = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
+                discountedPriceRuntimeExceptionFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(gpnk, traceid, spanid,
+                FnResponseObj ret = mocker.mock(discountedPriceRuntimeExceptionFnKey, traceid, spanid, parentSpanid,
+                        resTimeStamp, pp);
+                resTimeStamp = ret.timeStamp;
+                if (ret.retStatus == RetStatus.Exception) {
+                    UtilException.throwAsUnchecked((Throwable)ret.retVal);
+                }
+                return ret.retVal != null ? (double) ret.retVal : 0;
+            }
+
+            // no null check
+            try {
+                double ret = discountedPrice(pp.productId, pp.price);
+                if (mode == Mode.Record) {
+                    RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey, traceid, spanid,
+                            parentSpanid,
+                            ret, RetStatus.Success, Optional.empty(), pp);
+                }
+                return ret;
+            } catch (Throwable e) {
+                if (mode == Mode.Record) {
+                    RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey, traceid, spanid,
+                            parentSpanid,
+                            e, RetStatus.Exception, Optional.of(e.getClass().getName()), pp);
+                }
+                throw e;
+            }
+        }
+
+        static class PriceException extends  Exception {
+
+            public PriceException(String msg) {
+                super(msg);
+            }
+        }
+
+        /**
+         * can throw checked exception
+         * @param pp
+         * v@return
+         */
+        double discountedPriceTypedException(ProdPrice pp) throws PriceException {
+            if (discountedPriceTypedExceptionFnKey == null) {
+                Method function = new Object(){}.getClass().getEnclosingMethod();
+                discountedPriceTypedExceptionFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
+            }
+
+            if (mode == Mode.Mock) {
+                FnResponseObj ret = mocker.mock(discountedPriceTypedExceptionFnKey, traceid, spanid, parentSpanid,
+                        resTimeStamp, pp);
+                resTimeStamp = ret.timeStamp;
+                if (ret.retStatus == RetStatus.Exception) {
+                    UtilException.throwAsUnchecked((Throwable)ret.retVal);
+                }
+                return ret.retVal != null ? (double) ret.retVal : 0;
+            }
+
+            // no null check
+            try {
+                double ret = 0D;
+                if (pp == null) throw new PriceException("Price Exception");
+                if (mode == Mode.Record) {
+                    RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey, traceid, spanid,
+                            parentSpanid,
+                            ret, RetStatus.Success, Optional.empty(), pp);
+                }
+                return ret;
+            } catch (Throwable e) {
+                if (mode == Mode.Record) {
+                    RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey, traceid, spanid,
+                            parentSpanid,
+                            e, RetStatus.Exception, Optional.of(e.getClass().getName()), pp);
+                }
+                throw e;
+            }
+        }
+
+
+        String getPromoName() {
+
+            if (getPromoNameFnKey == null) {
+                Method function = new Object(){}.getClass().getEnclosingMethod();
+                getPromoNameFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
+            }
+
+            if (mode == Mode.Mock) {
+                FnResponseObj ret = mocker.mock(getPromoNameFnKey, traceid, spanid,
                         parentSpanid,
                         resTimeStamp);
                 resTimeStamp = ret.timeStamp;
@@ -158,16 +249,19 @@ class RecorderAndMockerTest {
 
             String ret = name;
             if (mode == Mode.Record) {
-                RecorderAndMockerTest.recorder.record(gpnk, traceid, spanid,
+                RecorderAndMockerTest.recorder.record(getPromoNameFnKey, traceid, spanid,
                         parentSpanid,
-                        ret);
+                        ret, RetStatus.Success, Optional.empty());
             }
             return ret;
         }
 
-        static FnKey dpk; // for discountedPrice
-        static FnKey dpk2;
-        static FnKey gpnk; // for getPromoName
+
+        static FnKey discountedPriceFnKey; // for discountedPrice
+        static FnKey discountedPriceFnKey2;
+        static FnKey discountedPriceRuntimeExceptionFnKey;
+        static FnKey discountedPriceTypedExceptionFnKey;
+        static FnKey getPromoNameFnKey; // for getPromoName
     }
 
     public RecorderAndMockerTest() {
@@ -251,12 +345,33 @@ class RecorderAndMockerTest {
         }
     }
 
+    enum ExceptionTestType {
+        None,
+        ExceptionRuntime,
+        ExceptionChecked
+    }
+
     private Double[] callProdDisc(ProdDiscount prodDiscount, ProdDiscount.ProdPrice[] prodPrice, boolean asObj,
-                                  boolean nullObj, int seqSize) {
+                                  boolean nullObj, int seqSize, ExceptionTestType testException) {
         return Arrays.stream(prodPrice).flatMap(pp -> {
             // call the same function multiple times
+            prodDiscount.resTimeStamp = Optional.empty();
             return IntStream.range(0, seqSize).mapToObj(i -> {
-                if (nullObj) {
+                if (testException == ExceptionTestType.ExceptionRuntime) {
+                    try {
+                        return prodDiscount.discountedPriceRuntimeException(null);
+                    } catch (Exception e) {
+                        LOGGER.info("Got exception in calling discountedPriceRuntimeException");
+                        return 100D; // any value other than 0
+                    }
+                } else if (testException == ExceptionTestType.ExceptionChecked) {
+                    try {
+                        return prodDiscount.discountedPriceTypedException(null);
+                    } catch (Exception e) {
+                        LOGGER.info("Got exception in calling discountedPriceTypedException");
+                        return 100D; // any value other than 0
+                    }
+                } else if (nullObj) {
                     return prodDiscount.discountedPrice(null);
                 } else if (asObj) {
                     return prodDiscount.discountedPrice(pp);
@@ -267,7 +382,7 @@ class RecorderAndMockerTest {
         }).toArray(Double[]::new);
     }
 
-    private void testFnMultiArgs(boolean asObj, boolean nullObj, int seqSize) {
+    private void testFnMultiArgs(boolean asObj, boolean nullObj, int seqSize, ExceptionTestType testException) {
 
         // start recording
         cubeClient.startRecording(CUSTID, APPID, INSTANCEID, COLLECTION);
@@ -279,18 +394,18 @@ class RecorderAndMockerTest {
 
         ProdDiscount.ProdPrice[] ppArr = new ProdDiscount.ProdPrice[4];
 
-        ppArr[0] = new ProdDiscount.ProdPrice("Prod1", 50);
+        ppArr[0] = new ProdDiscount.ProdPrice("Prod0", 50);
         ppArr[1] = new ProdDiscount.ProdPrice("Prod1", (float) 90.5);
         ppArr[2] = new ProdDiscount.ProdPrice("Prod2", (float) 110.10);
         ppArr[3] = new ProdDiscount.ProdPrice("Prod3", 120);
 
         // call fn
         traceid = Optional.of(trace + ".1");
-        Double[] ret1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize);
+        Double[] ret1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize, testException);
         traceid = Optional.of(trace + ".2");
-        Double[] ret2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize);
+        Double[] ret2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize, testException);
         traceid = Optional.of(trace + ".3");
-        Double[] ret3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize);
+        Double[] ret3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize, testException);
 
 
         // stop recording
@@ -318,11 +433,11 @@ class RecorderAndMockerTest {
 
                     // call fn
                     traceid = Optional.of(trace + ".1");
-                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize);
+                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize, testException);
                     traceid = Optional.of(trace + ".2");
-                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize);
+                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize, testException);
                     traceid = Optional.of(trace + ".3");
-                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize);
+                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize, testException);
 
                     // stop replay
                     cubeClient.forceCompleteReplay(replayidv);
@@ -342,21 +457,29 @@ class RecorderAndMockerTest {
 
     @Test
     void testFnMultipleArgs() {
-        testFnMultiArgs(false, false, 1);
+        testFnMultiArgs(false, false, 1, ExceptionTestType.None);
     }
 
     @Test
     void testFnObjArgs() {
-        testFnMultiArgs(true, false, 1);
+        testFnMultiArgs(true, false, 1, ExceptionTestType.None);
     }
 
 
     @Test
     void testFnNullObjArgs() {
-        testFnMultiArgs(true, true, 1);
+        testFnMultiArgs(true, true, 1, ExceptionTestType.None);
     }
 
+    @Test
+    void testFnException() {
+        testFnMultiArgs(true, true, 1, ExceptionTestType.ExceptionRuntime);
+    }
 
+    @Test
+    void testFnExceptionChecked() {
+        testFnMultiArgs(true, true, 1, ExceptionTestType.ExceptionChecked);
+    }
 
     @Test
     void testFnNullReturnVal() {
@@ -368,7 +491,7 @@ class RecorderAndMockerTest {
 
     @Test
     void testFnSeqOfCalls() {
-        testFnMultiArgs(false, false, 5);
+        testFnMultiArgs(false, false, 5, ExceptionTestType.None);
     }
 
 }
