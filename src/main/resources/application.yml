@@ -1,5 +1,4 @@
 server:
-    baseUrl: http://localhost:8080
     port: 8080
 
 spring:
@@ -26,7 +25,7 @@ spring:
 
     jpa:
         openInView: false
-        show_sql: true
+        show_sql: false
         generate-ddl: true
         hibernate:
             ddl-auto: create-drop
@@ -43,18 +42,21 @@ spring:
         host: smtp.office365.com
         port: 587
         username: email.sender@cubecorp.io
-        password: welcome@cube123
+        password: Welcome@cube123
         properties:
             mail.smtp:
                 auth: true
-                connectiontimeout: 5000
-                timeout: 5000
+                connectiontimeout: 30000
+                timeout: 30000
                 writetimeout: 5000
                 starttls.enable: true
+                # Change timeout if authentication/read exception is being thrown
 
-# SSL, post 465
-#spring.mail.properties.mail.smtp.socketFactory.port = 465
-#spring.mail.properties.mail.smtp.socketFactory.class = javax.net.ssl.SSLSocketFactory
+        frontend:
+            baseUrl: http://localhost:8080
+            loginEndpoint: /login
+            resetEndpoint: /reset
+            activationEndpoint: /activate
 
 security:
     jwt:
@@ -65,6 +67,6 @@ logging:
     level:
         org.springframework.web: INFO
         org.springframework.security: DEBUG
-        com.example: DEBUG
+        com.cubeui.backend: DEBUG
     file: app.log
   
