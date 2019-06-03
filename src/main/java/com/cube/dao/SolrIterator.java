@@ -23,6 +23,9 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
 
 import io.cube.agent.FnKey;
+import io.cube.agent.FnReqResponse.RetStatus;
+import io.cube.agent.FnResponseObj;
+import io.cube.agent.UtilException;
 
 import com.cube.core.Utils;
 import com.cube.ws.Config;
@@ -194,8 +197,12 @@ public class SolrIterator implements Iterator<SolrDocument> {
             }
         }
         if (config.intentResolver.isIntentToMock()) {
-            return Optional.ofNullable((QueryResponse) config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query).retVal);
+            FnResponseObj ret = config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query);
+            if (ret.retStatus == RetStatus.Exception) {
+                UtilException.throwAsUnchecked((Throwable)ret.retVal);
+            }
+            return Optional.ofNullable((QueryResponse) ret.retVal);
         }
 
         QueryResponse response = null;
@@ -209,7 +216,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
         if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(queryFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, query);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, RetStatus.Success,
+                Optional.empty(), query);
         }
         return toReturn;
     }

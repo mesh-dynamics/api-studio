@@ -39,6 +39,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 import io.cube.agent.FnKey;
+import io.cube.agent.FnResponseObj;
+import io.cube.agent.UtilException;
+
 import com.cube.agent.FnResponse;
 
 import com.cube.agent.FnReqResponse;
@@ -207,8 +210,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
-        Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
-
         FnReqResponse.RetStatus retStatus =
             getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
             rs)).orElse(FnReqResponse.RetStatus.Success);
@@ -757,8 +758,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            UpdateResponse fromSolr = (UpdateResponse) config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc).retVal;
+            FnResponseObj ret = config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc);
+            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+                UtilException.throwAsUnchecked((Throwable)ret.retVal);
+            }
+            UpdateResponse fromSolr = (UpdateResponse) ret.retVal;
             return fromSolr != null;
         }
 

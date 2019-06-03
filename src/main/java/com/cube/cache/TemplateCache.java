@@ -7,13 +7,12 @@ import java.util.concurrent.ExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.*;
 
 import io.cube.agent.FnKey;
+import io.cube.agent.FnReqResponse.RetStatus;
+import io.cube.agent.FnResponseObj;
+import io.cube.agent.UtilException;
 
 import com.cube.core.CompareTemplate;
 import com.cube.core.Utils;
@@ -67,8 +66,12 @@ public class TemplateCache {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            return (CompareTemplate) config.mocker.mock(cacheFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key).retVal;
+            FnResponseObj ret = config.mocker.mock(cacheFnKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key);
+            if (ret.retStatus == RetStatus.Exception) {
+                UtilException.throwAsUnchecked((Throwable)ret.retVal);
+            }
+            return (CompareTemplate) ret.retVal;
         }
 
 
@@ -76,7 +79,8 @@ public class TemplateCache {
             CompareTemplate toReturn = templateCache.get(key);
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(cacheFnKey,  Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn, key);
+                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn, RetStatus.Success,
+                    Optional.empty(), key);
             }
             return toReturn;
         }  catch (ExecutionException e) {
