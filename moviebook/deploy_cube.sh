@@ -62,7 +62,7 @@ replay() {
 		-H 'cache-control: no-cache' \
 		-d "endpoint=http://staging.cubecorp.io&instanceid=$CUBE_INSTANCEID" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 	curl -f -X POST \
-		http://dogfooding.cubecorp.io/rs/start/$CUBE_USER/cube/$COLLECTION_NAME/REPLAY_ID \
+		http://dogfooding.cubecorp.io/rs/start/$CUBE_USER/cube/$COLLECTION_NAME/$REPLAY_ID \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H 'cache-control: no-cache'
 	if [ $? -eq 0 ]; then
