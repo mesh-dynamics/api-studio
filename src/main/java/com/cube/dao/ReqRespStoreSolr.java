@@ -777,12 +777,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error("Error in saving response", e);
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(saveFuncKey , Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(),  fromSolr,
-                io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), doc);
+        try {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(saveFuncKey, Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), fromSolr,
+                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), doc);
+            }
+            return toReturn;
+        } catch (Throwable e) {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(saveFuncKey, Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(),
+                    Utils.getParentSpanId(),
+                    e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
+            }
+            throw e;
         }
-        return toReturn;
     }
     
     // field names in Solr for Replay object

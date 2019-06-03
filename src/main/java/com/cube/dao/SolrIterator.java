@@ -214,12 +214,22 @@ public class SolrIterator implements Iterator<SolrDocument> {
             LOGGER.error("Error in querying Solr", e);
         }
 
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(queryFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, RetStatus.Success,
-                Optional.empty(), query);
+        try {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(queryFnKey, Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, RetStatus.Success,
+                    Optional.empty(), query);
+            }
+            return toReturn;
+        } catch (Throwable e) {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(queryFnKey, Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(),
+                    Utils.getParentSpanId(),
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
+            }
+            throw e;
         }
-        return toReturn;
     }
 
     /**

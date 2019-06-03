@@ -85,8 +85,14 @@ public class TemplateCache {
             return toReturn;
         }  catch (ExecutionException e) {
             // wrapping all exceptions in CacheException class
-            throw new CacheException("Error while fetching template for :".concat(key.toString()) , e);
-
+            CacheException ce = new CacheException("Error while fetching template for :".concat(key.toString()) , e);
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(cacheFnKey, Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(),
+                    Utils.getParentSpanId(),
+                    ce, RetStatus.Exception, Optional.of(ce.getClass().getName()), key);
+            }
+            throw ce;
         }
     }
 
