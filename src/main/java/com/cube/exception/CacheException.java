@@ -5,7 +5,7 @@ package com.cube.exception;
  */
 public class CacheException extends Exception {
 
-    public CacheException(String msg , Exception e) {
+    public CacheException(String msg , Throwable e) {
         super(msg , e);
     }
 

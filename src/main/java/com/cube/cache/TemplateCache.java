@@ -83,7 +83,7 @@ public class TemplateCache {
                     Optional.empty(), key);
             }
             return toReturn;
-        }  catch (ExecutionException e) {
+        }  catch (Throwable e) {
             // wrapping all exceptions in CacheException class
             CacheException ce = new CacheException("Error while fetching template for :".concat(key.toString()) , e);
             if (config.intentResolver.isIntentToRecord()) {
