@@ -11,9 +11,9 @@ import java.util.Optional;
 public class FnResponseObj {
 
     final public Object retVal;
-    final Optional<Instant> timeStamp;
-    FnReqResponse.RetStatus retStatus;
-    Optional<String> exceptionType;
+    final public Optional<Instant> timeStamp;
+    final public FnReqResponse.RetStatus retStatus;
+    final Optional<String> exceptionType;
 
 
 
