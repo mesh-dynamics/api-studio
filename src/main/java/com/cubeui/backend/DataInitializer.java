@@ -5,7 +5,6 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -17,11 +16,11 @@ public class DataInitializer implements CommandLineRunner {
 
     private UserService userService;
 
-    @Autowired
     private MailService mailService;
 
-    public DataInitializer(UserService userService) {
+    public DataInitializer(UserService userService, MailService mailService) {
         this.userService = userService;
+        this.mailService = mailService;
     }
 
     @Override
@@ -35,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setRoles(Arrays.asList("ROLE_USER"));
             userDTO.setActivated(false);
             User user = this.userService.save(userDTO, false);
+            log.info("User with email '{}' created", user.getUsername());
             mailService.sendActivationEmail(user);
         }
 
@@ -45,9 +45,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTO.setActivated(true);
             this.userService.save(userDTO, true);
+            log.info("User with username '{}' created", userDTO.getEmail());
         }
-
-        log.debug("printing all users...");
-        this.userService.getAllUsers().forEach(v -> log.debug(" User :" + v.toString()));
     }
 }
