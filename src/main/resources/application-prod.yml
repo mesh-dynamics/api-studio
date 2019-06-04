@@ -1,23 +1,4 @@
-server:
-    port: 8080
-
 spring:
-    application:
-        name: CubeIO Backend
-    profiles:
-        active: @spring.profiles.active@
-    jackson:
-        mapper:
-            DEFAULT_VIEW_INCLUSION: true
-        serialization:
-            indent_output: true
-            WRITE_DATES_AS_TIMESTAMPS: false
-        deserialization:
-            FAIL_ON_IGNORED_PROPERTIES: false
-            FAIL_ON_UNKNOWN_PROPERTIES: false
-            ACCEPT_SINGLE_VALUE_AS_ARRAY: true
-        default-property-inclusion: non_empty
-
     datasource:
         url: jdbc:postgresql://localhost:5432/cube?schema=qui
         username: cube
@@ -32,15 +13,11 @@ spring:
         show_sql: false
         generate-ddl: true
         hibernate:
-            ddl-auto: create-drop
+            ddl-auto: update
             dialect: org.hibernate.dialect.PostgreSQLDialect
         properties:
             # fixes Caused by: java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc.PgConnection.createClob() is not yet implemented.
             hibernate.jdbc.lob.non_contextual_creation: true
-
-    data:
-        jpa:
-            repositories.enabled: true
 
     mail:
         host: smtp.office365.com
@@ -65,7 +42,7 @@ spring:
 security:
     jwt:
         token:
-            secret-key: "secret"
+            secret-key: "prod-secret"
             expire-length: 3600
 logging:
     level:
