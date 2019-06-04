@@ -33,14 +33,13 @@ public class SimpleRecorder implements Recorder {
     private ObjectMapper jsonMapper;
     private Gson gson;
 
-    public SimpleRecorder() {
+    public SimpleRecorder(Gson gson) {
         this.jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new Jdk8Module());
         jsonMapper.registerModule(new JavaTimeModule());
         jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         this.cubeClient = new CubeClient(jsonMapper);
-        gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-                .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
+        this.gson = gson;
     }
 
     @Override
