@@ -14,10 +14,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.AppendedSolrParams;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import io.cube.agent.GsonBuilderProvider;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
@@ -32,6 +36,7 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
+import com.cube.core.SolrDocumentListSerializer;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
@@ -65,8 +70,8 @@ public class Config {
 
 	//public final Tracer tracer = Utils.init("Cube");
 
-	public Recorder recorder = new SimpleRecorder();
-	public Mocker mocker = new SimpleMocker();
+	public final Recorder recorder;
+	public final Mocker mocker;
 
 	ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
 
@@ -109,7 +114,11 @@ public class Config {
             LOGGER.error(msg);
             throw new Exception(msg);
         }
-
+        GsonBuilder builder = GsonBuilderProvider.getGsonBuilder();
+        Gson gson = builder.registerTypeAdapter(SolrDocumentList.class,
+            new SolrDocumentListSerializer()).create();
+        recorder = new SimpleRecorder(gson);
+        mocker = new SimpleMocker(gson);
 	}
 
     private String fromEnvOrProperties(String propertyName, String defaultValue) {
