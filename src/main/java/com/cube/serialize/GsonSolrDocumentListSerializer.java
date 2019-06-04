@@ -1,4 +1,4 @@
-package com.cube.core;
+package com.cube.serialize;
 
 import java.lang.reflect.Type;
 
@@ -15,7 +15,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class SolrDocumentListSerializer implements JsonSerializer<SolrDocumentList> , JsonDeserializer<SolrDocumentList> {
+public class GsonSolrDocumentListSerializer implements JsonSerializer<SolrDocumentList> , JsonDeserializer<SolrDocumentList> {
 
     private static final String NUM_FOUND = "numFound";
     private static final String START = "start";

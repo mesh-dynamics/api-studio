@@ -14,13 +14,15 @@ import com.google.gson.GsonBuilder;
 import io.cube.agent.GsonPatternDeserializer;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
+import com.cube.serialize.GsonSolrDocumentListSerializer;
+
 public class GsonSerializationTest {
 
     public static void main(String[] args){
         try {
             Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
                 .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).registerTypeAdapter(SolrDocumentList.class,
-                    new SolrDocumentListSerializer()).create();
+                    new GsonSolrDocumentListSerializer()).create();
             String urlString = "http://18.191.135.125:8983/solr/cube";
             SolrClient Solr = new HttpSolrClient.Builder(urlString).build();
 
