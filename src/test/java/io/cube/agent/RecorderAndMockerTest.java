@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,8 +17,11 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import io.cube.agent.FnReqResponse.RetStatus;
+import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 /*
  * Created by IntelliJ IDEA.
@@ -48,9 +52,10 @@ class RecorderAndMockerTest {
 
     static Mode mode;
 
-
-    static Recorder recorder = new SimpleRecorder();
-    static Mocker mocker = new SimpleMocker();
+    static Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
+            .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
+    static Recorder recorder = new SimpleRecorder(gson);
+    static Mocker mocker = new SimpleMocker(gson);
     static Map<String, Double> disc1 = new HashMap<String, Double>();
     static Map<String, Double> disc2 = new HashMap<String, Double>();
     static Map<String, Double> disc3 = new HashMap<String, Double>();
