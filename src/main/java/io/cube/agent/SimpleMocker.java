@@ -34,14 +34,13 @@ public class SimpleMocker implements Mocker {
     private Gson gson;
     CubeClient cubeClient;
 
-    public SimpleMocker() {
+    public SimpleMocker(Gson gson) {
         jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new Jdk8Module());
         jsonMapper.registerModule(new JavaTimeModule());
         jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         cubeClient = new CubeClient(jsonMapper);
-        gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-                .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
+        this.gson = gson;
     }
 
 

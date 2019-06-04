@@ -2,13 +2,23 @@ package io.cube.agent;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.regex.Pattern;
+
+import org.ietf.jgss.GSSContext;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 public class TestCubeAgent {
 
 
     public static void main(String[] args) {
-        SimpleRecorder recorder = new SimpleRecorder();
-        SimpleMocker mocker = new SimpleMocker();
+        Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
+                .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
+        SimpleRecorder recorder = new SimpleRecorder(gson);
+        SimpleMocker mocker = new SimpleMocker(gson);
         try {
             Class classzz = CubeClient.class;
             FnKey fnKey = new FnKey("ravivj", "movieinfo", "dev", "movieinfo"
