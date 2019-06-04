@@ -33,6 +33,8 @@ const initialState = {
     report: null,
 
     timelineData: null,
+
+    diffData: null,
 };
 
 export function cube (state = initialState, action) {
@@ -152,6 +154,11 @@ export function cube (state = initialState, action) {
                 analysis: null,
                 report: null,
                 timelineData: null,
+            };
+        case cubeConstants.DIFF_SUCCESS:
+            return {
+                ...state,
+                diffData: action.data
             };
 
         default:

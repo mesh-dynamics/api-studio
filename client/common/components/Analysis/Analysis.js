@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import {Clearfix, Table} from "react-bootstrap";
 import DataTable from 'react-data-table-component';
 import Diff from "../Diff";
+import AnalysisRow from "../../routes/Analysis_Row/AnalysisRow";
+import {connect} from "react-redux";
 
 class Analysis extends Component {
     constructor(props) {
@@ -10,6 +12,7 @@ class Analysis extends Component {
 
     formatData() {
         const {resByPath} =  this.props;
+        console.log(resByPath)
         let temp = [];
         let formattedList = [];
         for (const dp of resByPath) {
@@ -32,6 +35,8 @@ class Analysis extends Component {
         for (const pathRes of resByPath) {
             if (pathRes.path) {
                 formatted.push({
+                    app: pathRes.app,
+                    service: pathRes.service,
                     path: pathRes.path,
                     requests: pathRes.reqmatched + pathRes.reqpartiallymatched + pathRes.reqnotmatched,
                     respMatched: pathRes.respmatched + pathRes.resppartiallymatched,
@@ -47,10 +52,10 @@ class Analysis extends Component {
     }
 
     render() {
-        const {res, resByPath} =  this.props;
-        const recordedResponse = [{"actors_lastnames":["HARRIS","WILLIS","TEMPLE"],"display_actors":["DAN HARRIS","HUMPHREY WILLIS","BURT TEMPLE"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","HUMPHREY","BURT"],"film_counts":[28,26,23],"timestamp":1641491700530174,"book_info":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"}}];
-        const replayRes = [{"display_actors":["HARRIS,DAN","WILLIS,HUMPHREY","TEMPLE,BURT"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","BURT","HUMPHREY"],"film_counts":["28","23","26"],"timestamp":27523407007561}];
-        const diff = [
+        const {res, resByPath, cube} =  this.props;
+        let recordedResponse = [{"actors_lastnames":["HARRIS","WILLIS","TEMPLE"],"display_actors":["DAN HARRIS","HUMPHREY WILLIS","BURT TEMPLE"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","HUMPHREY","BURT"],"film_counts":[28,26,23],"timestamp":1641491700530174,"book_info":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"}}];
+        let replayRes = [{"display_actors":["HARRIS,DAN","WILLIS,HUMPHREY","TEMPLE,BURT"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","BURT","HUMPHREY"],"film_counts":["28","23","26"],"timestamp":27523407007561}];
+        let diff = [
             {"op":"remove","path":"/0/actors_lastnames","value":["HARRIS","WILLIS","TEMPLE"],"resolution":"OK_Optional"},
             {"op":"replace","path":"/0/display_actors/0","value":"HARRIS,DAN","fromValue":"DAN HARRIS","resolution":"OK_OptionalMismatch"},
             {"op":"replace","path":"/0/display_actors/1","value":"WILLIS,HUMPHREY","fromValue":"HUMPHREY WILLIS","resolution":"OK_OptionalMismatch"},
@@ -63,6 +68,16 @@ class Analysis extends Component {
             {"op":"replace","path":"/0/timestamp","value":27523407007561,"fromValue":1641491700530174,"resolution":"OK_OptionalMismatch"},
             {"op":"remove","path":"/0/book_info","value":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"},"resolution":"OK"}
         ];
+
+        if (cube.diffData) {
+            recordedResponse = JSON.parse(cube.diffData.recordResponse.body);
+            replayRes = JSON.parse(cube.diffData.replayResponse.body);
+            let st = JSON.parse(cube.diffData.matchResult.diff);
+            for (const s of st) {
+                s.path = s.path.split('/body')[1];
+            }
+            diff = st;
+        }
         this.formatData();
         const tableData = this.formatDataForTable(resByPath);
         const columns = [
@@ -110,6 +125,8 @@ class Analysis extends Component {
                 pagination={true}
                 striped={true}
                 highlightOnHover={true}
+                expandableRows={true}
+                expandableRowsComponent={<AnalysisRow />}
             />
 
             <Diff recorded={recordedResponse} replayRes={replayRes} diff={diff}/>
@@ -117,4 +134,15 @@ class Analysis extends Component {
     }
 }
 
-export default Analysis;
+function mapStateToProps(state) {
+    const { user } = state.authentication;
+    const cube = state.cube;
+    return {
+        user, cube
+    }
+}
+
+
+
+const connectedAnalysis = connect(mapStateToProps)(Analysis);
+export default connectedAnalysis

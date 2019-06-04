@@ -11,6 +11,7 @@ export const cubeService = {
     fetchAnalysis,
     fetchReport,
     fetchTimelineData,
+    getDiffData,
 };
 
 async function fetchAppsList() {
@@ -40,29 +41,6 @@ async function fetchAppsList() {
 }
 
 async function getGraphData() {
-    /*let response, json;
-    let url = `${config.apiUrl}/api/getGraphData`;
-    let graphData = {};
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            graphData = json;
-        } else {
-            console.log("Response not ok in getGraphData", response);
-            throw new Error("Response not ok getGraphData");
-        }
-    } catch (e) {
-        console.log("getGraphData has errors!", e);
-        throw e;
-    }
-    console.log('getGraphData success: ', JSON.stringify(graphData, null, 4));
-    return graphData;*/
     return {
         nodes: [
             {
@@ -151,7 +129,6 @@ async function getTestIds (options) {
         });
         if (response.ok) {
             json = await response.json();
-            console.log(`return JSON: `, JSON.stringify(json));
             return json;
         } else {
             throw new Error("Response not ok getTestIds");
@@ -211,7 +188,6 @@ async function getReplayId(collectionId) {
         });
         if (response.ok) {
             json = await response.json();
-            console.log(`return JSON: `, JSON.stringify(json));
             return json;
         } else {
             throw new Error("Response not ok getReplayId");
@@ -235,7 +211,6 @@ async function startReplay(collectionId, replayId) {
         });
         if (response.ok) {
             json = await response.json();
-            console.log(`return JSON: `, JSON.stringify(json));
             return json;
         } else {
             throw new Error("Response not ok startReplay");
@@ -347,4 +322,30 @@ async function fetchTimelineData(collectionId, replayData) {
         throw e;
     }
     return timelineData;
+}
+
+async function getDiffData(replayId, recordReqId, replayReqId) {
+    let response, json;
+    let url = `${config.baseUrl}/as/analysisResByReq/${replayId}?recordReqId=${recordReqId}&replayReqId=${replayReqId}`;
+    let diffData = {};
+
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "cache-control": "no-cache"
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            diffData = json;
+        } else {
+            console.log("Response not ok in diffData", response);
+            throw new Error("Response not ok diffData");
+        }
+    } catch (e) {
+        console.log("diffData has errors!", e);
+        throw e;
+    }
+    return diffData;
 }

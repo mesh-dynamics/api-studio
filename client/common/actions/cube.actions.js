@@ -13,6 +13,7 @@ export const cubeActions = {
     getAnalysis,
     getReport,
     getTimelineData,
+    getDiffData,
     clear
 };
 
@@ -44,6 +45,18 @@ function getApps () {
 
 function setSelectedApp ( appLabel ) {
     return {type: cubeConstants.SET_SELECTED_APP, data: appLabel}
+}
+
+function getDiffData(replayId, recordReqId, replayReqId) {
+    return async dispatch => {
+        try {
+            let diffData = await cubeService.getDiffData(replayId, recordReqId, replayReqId);
+            dispatch(success(diffData, Date.now()));
+        } catch (error) {
+        }
+    };
+
+    function success(diffData, date) { return { type: cubeConstants.DIFF_SUCCESS, data: diffData, date: date }; }
 }
 
 function getTestIds () {
