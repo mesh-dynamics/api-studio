@@ -59,15 +59,8 @@ public class BackendApplication {
                         "External: \t{}://{}:{}{}\n\t" +
                         "Profile(s): \t{}\n" +
                         "-------------------------------------------------------------",
-                env.getProperty("spring.application.name"),
-                protocol,
-                serverPort,
-                contextPath,
-                protocol,
-                hostAddress,
-                serverPort,
-                contextPath,
-                env.getActiveProfiles());
+                env.getProperty("spring.application.name"), protocol, serverPort, contextPath, protocol, hostAddress,
+                serverPort, contextPath, env.getActiveProfiles());
     }
 
     private static void addDefaultProfile(SpringApplication app) {
