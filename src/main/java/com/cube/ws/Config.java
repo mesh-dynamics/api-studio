@@ -3,10 +3,9 @@
  */
 package com.cube.ws;
 
-import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
 
@@ -15,28 +14,27 @@ import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.params.AppendedSolrParams;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import io.cube.agent.GsonBuilderProvider;
+import com.cube.serialize.GsonPatternSerializer;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
 import io.cube.agent.SimpleRecorder;
 import io.cube.agent.TraceIntentResolver;
-import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
-import com.cube.core.SolrDocumentListSerializer;
+import com.cube.serialize.GsonSolrDocumentListSerializer;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
@@ -114,9 +112,9 @@ public class Config {
             LOGGER.error(msg);
             throw new Exception(msg);
         }
-        GsonBuilder builder = GsonBuilderProvider.getGsonBuilder();
-        Gson gson = builder.registerTypeAdapter(SolrDocumentList.class,
-            new SolrDocumentListSerializer()).create();
+        Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
+            .registerTypeAdapter(Pattern.class, new GsonPatternSerializer()).registerTypeAdapter(SolrDocumentList.class,
+            new GsonSolrDocumentListSerializer()).create();
         recorder = new SimpleRecorder(gson);
         mocker = new SimpleMocker(gson);
 	}
