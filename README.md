@@ -37,13 +37,13 @@ You can change the name by modifying profile section of `pom.xml` file:
         </build>
     </profile>
 
-##Information
+## Information
 
 -   Separate databases need to be created for `dev` and `prod` profiles. See `applpication-dev.yml` and `applpication-prod.yml` for details
 -   Mail will be sent to user upon signup, activation and password-reset request. User can only access API's on activation.
 -   Use postman to test the features with base path [http://localhost:8080](http://localhost:8080).
 
-####Modifications required in `*.yml` files
+#### Modifications required in `*.yml` files
 
 -   Change database username/passwords if required
 -   Frontend `basepath` url and `activation`, `login`, `reset` url endpoints.
