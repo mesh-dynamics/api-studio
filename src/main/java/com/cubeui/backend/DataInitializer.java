@@ -1,11 +1,8 @@
 package com.cubeui.backend;
 
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.domain.Instance;
-import com.cubeui.backend.domain.enums.InstanceName;
-import com.cubeui.backend.domain.Product;
-import com.cubeui.backend.repository.InstanceRepository;
-import com.cubeui.backend.repository.ProductRepository;
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -18,34 +15,37 @@ import java.util.Arrays;
 public class DataInitializer implements CommandLineRunner {
 
     private UserService userService;
-    private ProductRepository productRepository;
-    private InstanceRepository instanceRepository;
 
-    public DataInitializer(UserService userService, ProductRepository productRepository, InstanceRepository instanceRepository) {
+    private MailService mailService;
+
+    public DataInitializer(UserService userService, MailService mailService) {
         this.userService = userService;
-        this.productRepository = productRepository;
-        this.instanceRepository = instanceRepository;
+        this.mailService = mailService;
     }
 
     @Override
     public void run(String... args) throws Exception {
         log.debug("Initializing data...");
         UserDTO userDTO = new UserDTO();
-        userDTO.setName("Vineet Kumar Singh");
-        userDTO.setEmail("vineetks");
-        userDTO.setPassword("vineetks");
-        userDTO.setRoles(Arrays.asList("ROLE_USER"));
-        this.userService.save(userDTO);
+        if (userService.getByUsername("vineetks.iitk@gmail.com").isEmpty()){
+            userDTO.setName("Vineet Kumar Singh");
+            userDTO.setEmail("vineetks.iitk@gmail.com");
+            userDTO.setPassword("vineetks");
+            userDTO.setRoles(Arrays.asList("ROLE_USER"));
+            userDTO.setActivated(false);
+            User user = this.userService.save(userDTO, false);
+            log.info("User with email '{}' created", user.getUsername());
+            mailService.sendActivationEmail(user);
+        }
 
-        userDTO.setName("Administrator");
-        userDTO.setEmail("admin");
-        userDTO.setPassword("admin");
-        userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
-        this.userService.save(userDTO);
-        log.debug("printing all users...");
-        this.userService.getAllUsers().forEach(v -> log.debug(" User :" + v.toString()));
-
-        this.productRepository.saveAndFlush(Product.builder().name("Sandisk Pen drive").price(849).build());
-        this.productRepository.saveAndFlush(Product.builder().name("Redmi Note 3").price(11999).build());
+        if (userService.getByUsername("admin").isEmpty()){
+            userDTO.setName("Administrator");
+            userDTO.setEmail("admin");
+            userDTO.setPassword("admin");
+            userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
+            userDTO.setActivated(true);
+            this.userService.save(userDTO, true);
+            log.info("User with username '{}' created", userDTO.getEmail());
+        }
     }
 }

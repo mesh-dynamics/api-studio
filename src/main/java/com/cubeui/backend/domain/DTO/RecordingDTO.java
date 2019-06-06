@@ -15,6 +15,8 @@ public class RecordingDTO {
 
     private Long appId;
 
+    private Long instanceId;
+
     private String collectionName;
 
     private RecordingStatus status;

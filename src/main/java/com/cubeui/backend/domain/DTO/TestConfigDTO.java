@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class TestDTO {
+public class TestConfigDTO {
 
     private Long id;
 
@@ -15,13 +15,19 @@ public class TestDTO {
 
     private String description;
 
-    private Long collectionId;
+    private Long appId;
 
     private Long gatewayServiceId;
 
     private String gatewayPathSelection;
 
-    private String endpoint;
+    private String gatewayReqSelection;
+
+    private int maxRunTimeMin;
+
+    private String emailId;
+
+    private String slackId;
 
     private LocalDateTime createdAt;
 

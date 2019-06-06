@@ -1,5 +1,7 @@
 HELP.md
 /target/
+/app.log
+/app.log.*
 !.mvn/wrapper/maven-wrapper.jar
 
 ### STS ###

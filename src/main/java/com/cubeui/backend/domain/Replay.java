@@ -6,20 +6,21 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name="replay",
-        uniqueConstraints=@UniqueConstraint(columnNames={"test_id", "replay_name"}),
+        uniqueConstraints=@UniqueConstraint(columnNames={"test_id", "collection_id", "replay_name"}),
         indexes = {
                 @Index(columnList = "test_id", name = "replay_index"),
+                @Index(columnList = "collection_id", name = "replay_index"),
                 @Index(columnList = "status", name = "replay_index")
         })
 @Data
@@ -41,10 +42,15 @@ public class Replay {
     String replayName;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "test_id")
-    Test test;
+    TestConfig testConfig;
 
-    @NotEmpty
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "collection_id")
+    Recording recording;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     ReplayStatus status;

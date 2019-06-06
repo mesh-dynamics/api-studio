@@ -2,11 +2,13 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.RecordingDTO;
+import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.Recording;
 import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -23,10 +25,12 @@ import static org.springframework.http.ResponseEntity.*;
 public class RecordingController {
 
     private AppRepository appRepository;
+    private InstanceRepository instanceRepository;
     private RecordingRepository recordingRepository;
 
-    public RecordingController(AppRepository appRepository, RecordingRepository recordingRepository) {
+    public RecordingController(AppRepository appRepository, InstanceRepository instanceRepository, RecordingRepository recordingRepository) {
         this.appRepository = appRepository;
+        this.instanceRepository = instanceRepository;
         this.recordingRepository = recordingRepository;
     }
 
@@ -41,7 +45,8 @@ public class RecordingController {
             return status(FORBIDDEN).body(new ErrorResponse("Recording with ID '" + recordingDTO.getId() +"' already exists."));
         }
         Optional<App> app = appRepository.findById(recordingDTO.getAppId());
-        if (app.isPresent()) {
+        Optional<Instance> instance = instanceRepository.findById(recordingDTO.getInstanceId());
+        if (app.isPresent() && instance.isPresent()) {
             Recording saved = this.recordingRepository.save(
                     Recording.builder().app(app.get()).collectionName(recordingDTO.getCollectionName())
                             .status(recordingDTO.getStatus()).build());
@@ -53,7 +58,11 @@ public class RecordingController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
+            if (instance.isEmpty()){
+                throw new RecordNotFoundException("Instance with ID '" + recordingDTO.getInstanceId() + "' not found.");
+            } else {
+                throw new RecordNotFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
+            }
         }
     }
 
@@ -62,23 +71,32 @@ public class RecordingController {
         if (recordingDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("Recording id not provided"));
         }
-        Optional<Recording> recording = recordingRepository.findById(recordingDTO.getId());
-        if (recording.isPresent()) {
-            recording.ifPresent(rec -> {
-                rec.setApp(appRepository.findById(recordingDTO.getAppId()).get());
-                rec.setCollectionName(recordingDTO.getCollectionName());
-                rec.setStatus(recordingDTO.getStatus());
+        Optional<Recording> existing = recordingRepository.findById(recordingDTO.getId());
+        Optional<App> app = appRepository.findById(recordingDTO.getAppId());
+        Optional<Instance> instance = instanceRepository.findById(recordingDTO.getInstanceId());
+        if (app.isEmpty()){
+            throw new RecordNotFoundException("App with ID '" + recordingDTO.getAppId() + "' not found.");
+        }
+        if (instance.isEmpty()) {
+            throw new RecordNotFoundException("Instance with ID '" + recordingDTO.getInstanceId() + "' not found.");
+        }
+        if (existing.isPresent()) {
+            existing.ifPresent(recording -> {
+                recording.setApp(app.get());
+                recording.setInstance(instance.get());
+                recording.setCollectionName(recordingDTO.getCollectionName());
+                recording.setStatus(recordingDTO.getStatus());
             });
-            this.recordingRepository.save(recording.get());
+            this.recordingRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/recording/{id}")
-                            .buildAndExpand(recording.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .body(recording);
+                    .body(existing);
         } else {
-            throw new RecordFoundException("Recording with ID '" + recordingDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Recording with ID '" + recordingDTO.getId() + "' not found.");
         }
     }
 

@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.ServiceGraph;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ServiceGraphRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -18,7 +18,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
-@RequestMapping("/api/service-graph")
+@RequestMapping("/api/service_graph")
 //@Secured({"ROLE_USER"})
 public class ServiceGraphController {
 
@@ -48,12 +48,12 @@ public class ServiceGraphController {
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/service-graph/{id}")
+                            .path("/api/service_graph/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("App with ID '" + serviceGraphDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceGraphDTO.getId() + "' not found.");
         }
     }
 
@@ -62,26 +62,26 @@ public class ServiceGraphController {
         if (serviceGraphDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("ServiceGraph id not provided"));
         }
-        Optional<ServiceGraph> serviceGraph = serviceGraphRepository.findById(serviceGraphDTO.getId());
+        Optional<ServiceGraph> existing = serviceGraphRepository.findById(serviceGraphDTO.getId());
         Optional<App> app = appRepository.findById(serviceGraphDTO.getAppId());
         if (app.isEmpty()){
-            throw new RecordFoundException("App with ID '" + serviceGraphDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceGraphDTO.getAppId() + "' not found.");
         }
-        if (serviceGraph.isPresent()) {
-            serviceGraph.ifPresent(sg -> {
-                sg.setApp(app.get());
-                sg.setServiceGraph(serviceGraphDTO.getServiceGraph());
+        if (existing.isPresent()) {
+            existing.ifPresent(serviceGraph -> {
+                serviceGraph.setApp(app.get());
+                serviceGraph.setServiceGraph(serviceGraphDTO.getServiceGraph());
             });
-            this.serviceGraphRepository.save(serviceGraph.get());
+            this.serviceGraphRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/service-graph/{id}")
+                            .path("/api/service_graph/{id}")
                             .buildAndExpand(app.get().getId())
                             .toUri())
-                    .body(serviceGraph);
+                    .body(existing);
         } else {
-            throw new RecordFoundException("ServiceGraph with ID '" + serviceGraphDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("ServiceGraph with ID '" + serviceGraphDTO.getId() + "' not found.");
         }
     }
 

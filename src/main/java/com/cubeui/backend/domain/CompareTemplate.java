@@ -6,20 +6,21 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name="compare_template",
-        uniqueConstraints=@UniqueConstraint(columnNames={"test_id", "type", "path"}),
+        uniqueConstraints=@UniqueConstraint(columnNames={"app_id", "service_id", "type", "path"}),
         indexes = {
-                @Index(columnList = "test_id", name = "compare_template_index"),
+                @Index(columnList = "app_id", name = "compare_template_index"),
+                @Index(columnList = "service_id", name = "compare_template_index"),
                 @Index(columnList = "type", name = "compare_template_index"),
                 @Index(columnList = "path", name = "compare_template_index")
         })
@@ -38,8 +39,14 @@ public class CompareTemplate {
     Long id;
 
     @ManyToOne
-    @JoinColumn(name = "test_id")
-    Test test;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "app_id")
+    App app;
+
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "service_id")
+    Service service;
 
     @NotEmpty
     @Column(nullable = false)
@@ -50,7 +57,6 @@ public class CompareTemplate {
     @Column(nullable = false, columnDefinition = "jsonb")
     String template;
 
-    @NotEmpty
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     TemplateType type;

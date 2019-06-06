@@ -12,7 +12,9 @@ public class CompareTemplateDTO {
 
     private Long id;
 
-    private Long testId;
+    private Long appId;
+
+    private Long serviceId;
 
     private String path;
 

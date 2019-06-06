@@ -128,7 +128,7 @@ BEFORE UPDATE ON cube.test_config
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
-/*need to somehow make sure that the test id and service id correspond to the same app*/
+/*need to somehow make sure that the testConfig id and service id correspond to the same app*/
 create TABLE cube.test_virtualized_service (
   test_id BIGINT REFERENCES cube.test_config(id) ON DELETE CASCADE,
   service_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
@@ -137,7 +137,7 @@ create TABLE cube.test_virtualized_service (
 
 CREATE INDEX virtualized_service_index ON cube.test_virtualized_service(test_id);
 
-/*need to somehow make sure that the test id and service id correspond to the same app*/
+/*need to somehow make sure that the testConfig id and service id correspond to the same app*/
 create TABLE cube.test_intermediate_service (
   test_id BIGINT REFERENCES cube.test_config(id) ON DELETE CASCADE,
   service_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,

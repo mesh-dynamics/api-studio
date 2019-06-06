@@ -1,6 +1,5 @@
 package com.cubeui.backend.domain.DTO;
 
-import com.cubeui.backend.domain.enums.ServiceType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,8 +12,6 @@ public class ServiceDTO {
     private Long id;
 
     private String name;
-
-    private ServiceType type;
 
     private long appId;
 

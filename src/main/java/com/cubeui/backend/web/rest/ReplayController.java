@@ -1,12 +1,12 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.*;
 import com.cubeui.backend.domain.DTO.ReplayDTO;
-import com.cubeui.backend.domain.Replay;
-import com.cubeui.backend.domain.Test;
+import com.cubeui.backend.repository.RecordingRepository;
 import com.cubeui.backend.repository.ReplayRepository;
-import com.cubeui.backend.repository.TestRepository;
+import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -22,12 +22,14 @@ import static org.springframework.http.ResponseEntity.*;
 //@Secured({"ROLE_USER"})
 public class ReplayController {
 
-    private TestRepository testRepository;
+    private TestConfigRepository testConfigRepository;
     private ReplayRepository replayRepository;
+    private RecordingRepository recordingRepository;
 
-    public ReplayController(TestRepository testRepository, ReplayRepository replayRepository) {
-        this.testRepository = testRepository;
+    public ReplayController(TestConfigRepository testConfigRepository, ReplayRepository replayRepository, RecordingRepository recordingRepository) {
+        this.testConfigRepository = testConfigRepository;
         this.replayRepository = replayRepository;
+        this.recordingRepository = recordingRepository;
     }
 
     @GetMapping("")
@@ -40,12 +42,22 @@ public class ReplayController {
         if (replayDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Replay with ID '" + replayDTO.getId() +"' already exists."));
         }
-        Optional<Test> test = testRepository.findById(replayDTO.getTestId());
-        if (test.isPresent()) {
+        Optional<TestConfig> testConfig = testConfigRepository.findById(replayDTO.getTestId());
+        Optional<Recording> recording = recordingRepository.findById(replayDTO.getCollectionId());
+        if (testConfig.isPresent() && recording.isPresent()) {
             Replay saved = this.replayRepository.save(
-                    Replay.builder().replayName(replayDTO.getReplayName()).analysis(replayDTO.getAnalysis()).completedAt(replayDTO.getCompletedAt())
-                            .test(test.get()).reqCount(replayDTO.getReqCount()).reqFailed(replayDTO.getReqFailed())
-                            .reqSent(replayDTO.getReqSent()).sampleRate(replayDTO.getSampleRate()).status(replayDTO.getStatus()).build());
+                    Replay.builder()
+                            .replayName(replayDTO.getReplayName())
+                            .analysis(replayDTO.getAnalysis())
+                            .completedAt(replayDTO.getCompletedAt())
+                            .testConfig(testConfig.get())
+                            .recording(recording.get())
+                            .reqCount(replayDTO.getReqCount())
+                            .reqFailed(replayDTO.getReqFailed())
+                            .reqSent(replayDTO.getReqSent())
+                            .sampleRate(replayDTO.getSampleRate())
+                            .status(replayDTO.getStatus())
+                            .build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -54,7 +66,11 @@ public class ReplayController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("Test with ID '" + replayDTO.getTestId() + "' not found.");
+            if (recording.isEmpty()){
+                throw new RecordNotFoundException("Collection with ID '" + replayDTO.getCollectionId() + "' not found.");
+            } else {
+                throw new RecordNotFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
+            }
         }
     }
 
@@ -63,33 +79,38 @@ public class ReplayController {
         if (replayDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("Replay id not provided"));
         }
-        Optional<Replay> replay = replayRepository.findById(replayDTO.getId());
-        Optional<Test> test = testRepository.findById(replayDTO.getTestId());
-        if (test.isEmpty()){
-            throw new RecordFoundException("Test with ID '" + replayDTO.getTestId() + "' not found.");
+        Optional<Replay> existing = replayRepository.findById(replayDTO.getId());
+        Optional<TestConfig> testConfig = testConfigRepository.findById(replayDTO.getTestId());
+        Optional<Recording> recording = recordingRepository.findById(replayDTO.getCollectionId());
+        if (testConfig.isEmpty()){
+            throw new RecordNotFoundException("TestConfig with ID '" + replayDTO.getTestId() + "' not found.");
         }
-        if (replay.isPresent()) {
-            replay.ifPresent(rep -> {
-                rep.setTest(test.get());
-                rep.setAnalysis(replayDTO.getAnalysis());
-                rep.setStatus(replayDTO.getStatus());
-                rep.setReplayName(replayDTO.getReplayName());
-                rep.setReqCount(replayDTO.getReqCount());
-                rep.setReqFailed(replayDTO.getReqFailed());
-                rep.setReqSent(replayDTO.getReqSent());
-                rep.setSampleRate(replayDTO.getSampleRate());
-                rep.setCompletedAt(replayDTO.getCompletedAt());
+        if (recording.isEmpty()){
+            throw new RecordNotFoundException("Collection with ID '" + replayDTO.getCollectionId() + "' not found.");
+        }
+        if (existing.isPresent()) {
+            existing.ifPresent(replay -> {
+                replay.setTestConfig(testConfig.get());
+                replay.setRecording(recording.get());
+                replay.setAnalysis(replayDTO.getAnalysis());
+                replay.setStatus(replayDTO.getStatus());
+                replay.setReplayName(replayDTO.getReplayName());
+                replay.setReqCount(replayDTO.getReqCount());
+                replay.setReqFailed(replayDTO.getReqFailed());
+                replay.setReqSent(replayDTO.getReqSent());
+                replay.setSampleRate(replayDTO.getSampleRate());
+                replay.setCompletedAt(replayDTO.getCompletedAt());
             });
-            this.replayRepository.save(replay.get());
+            this.replayRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/replay/{id}")
-                            .buildAndExpand(replay.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
-                    .body(replay);
+                    .body(existing);
         } else {
-            throw new RecordFoundException("Replay with ID '" + replayDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Replay with ID '" + replayDTO.getId() + "' not found.");
         }
     }
 

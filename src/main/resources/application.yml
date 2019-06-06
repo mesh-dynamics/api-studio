@@ -2,6 +2,10 @@ server:
     port: 8080
 
 spring:
+    application:
+        name: CubeIO Backend
+    profiles:
+        active: @spring.profiles.active@
     jackson:
         mapper:
             DEFAULT_VIEW_INCLUSION: true
@@ -15,9 +19,9 @@ spring:
         default-property-inclusion: non_empty
 
     datasource:
-        url: jdbc:postgresql://localhost:5432/cube?schema=qui
-        username: cube
-        password: cubeio
+#        url: jdbc:postgresql://localhost:5432/cube?schema=qui
+#        username: cube
+#        password: cubeio
         cachePrepStmts: true
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
@@ -25,7 +29,7 @@ spring:
 
     jpa:
         openInView: false
-        show_sql: true
+        show_sql: false
         generate-ddl: true
         hibernate:
             ddl-auto: create-drop
@@ -38,6 +42,26 @@ spring:
         jpa:
             repositories.enabled: true
 
+    mail:
+        host: smtp.office365.com
+        port: 587
+        username: email.sender@cubecorp.io
+        password: Welcome@cube123
+        properties:
+            mail.smtp:
+                auth: true
+                connectiontimeout: 30000
+                timeout: 30000
+                writetimeout: 5000
+                starttls.enable: true
+                # Change timeout if authentication/read exception is being thrown
+
+        frontend:
+            baseUrl: http://localhost:8080
+            loginEndpoint: /login
+            resetEndpoint: /reset
+            activationEndpoint: /activate
+
 security:
     jwt:
         token:
@@ -47,6 +71,6 @@ logging:
     level:
         org.springframework.web: INFO
         org.springframework.security: DEBUG
-        com.example: DEBUG
+        com.cubeui.backend: DEBUG
     file: app.log
   

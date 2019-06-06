@@ -15,8 +15,6 @@ public class AppDTO {
 
     private Long customerId;
 
-    private Long instanceId;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

@@ -26,6 +26,9 @@ public class Instance {
     @Column(nullable = false)
     InstanceName name;
 
+    @Column(nullable = false)
+    String gatewayEndpoint;
+
     @CreationTimestamp
     LocalDateTime createdAt;
 

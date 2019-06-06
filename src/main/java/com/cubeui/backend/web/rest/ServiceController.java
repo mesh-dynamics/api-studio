@@ -6,7 +6,7 @@ import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.web.ErrorResponse;
-import com.cubeui.backend.web.RecordFoundException;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -44,7 +44,10 @@ public class ServiceController {
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
         if (app.isPresent()) {
             Service saved = this.serviceRepository.save(
-                    Service.builder().app(app.get()).name(serviceDTO.getName()).type(serviceDTO.getType()).build());
+                    Service.builder()
+                            .app(app.get())
+                            .name(serviceDTO.getName())
+                            .build());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -53,7 +56,7 @@ public class ServiceController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
         }
     }
 
@@ -62,27 +65,26 @@ public class ServiceController {
         if (serviceDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("Service id not provided"));
         }
-        Optional<Service> service = serviceRepository.findById(serviceDTO.getId());
+        Optional<Service> existing = serviceRepository.findById(serviceDTO.getId());
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
         if (app.isEmpty()){
-            throw new RecordFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
         }
-        if (service.isPresent()) {
-            service.ifPresent(service1 -> {
-                service1.setApp(app.get());
-                service1.setName(serviceDTO.getName());
-                service1.setType(serviceDTO.getType());
+        if (existing.isPresent()) {
+            existing.ifPresent(service -> {
+                service.setApp(app.get());
+                service.setName(serviceDTO.getName());
             });
-            this.serviceRepository.save(service.get());
+            this.serviceRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/service/{id}")
                             .buildAndExpand(app.get().getId())
                             .toUri())
-                    .body(service);
+                    .body(existing);
         } else {
-            throw new RecordFoundException("Service with ID '" + serviceDTO.getId() + "' not found.");
+            throw new RecordNotFoundException("Service with ID '" + serviceDTO.getId() + "' not found.");
         }
     }
 

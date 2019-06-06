@@ -16,6 +16,8 @@ public class ReplayDTO {
 
     private Long testId;
 
+    private Long collectionId;
+
     private ReplayStatus status;
 
     private int reqCount;

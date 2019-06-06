@@ -2,6 +2,7 @@ package com.cubeui.backend.web;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.Date;
 
 @Getter
@@ -9,19 +10,22 @@ import java.util.Date;
 public class ErrorResponse {
 
     private Date timestamp;
+    private String error;
+    private int status;
     private String message;
-    private String details;
 
-    public ErrorResponse(String message) {
-        super();
+    public ErrorResponse(String error) {
         this.timestamp = new Date();
+        this.error = error;
+    }
+
+    public ErrorResponse(String error, String message) {
+        this(error);
         this.message = message;
     }
 
-    public ErrorResponse(String message, String details) {
-        super();
-        this.timestamp = new Date();
-        this.message = message;
-        this.details = details;
+    public ErrorResponse(String error, String message, int status) {
+        this(error, message);
+        this.status = status;
     }
 }
