@@ -1,6 +1,10 @@
 # CubeIO Backend
 
-This application was generated using Spring-Boot.
+This application was generated using `Spring-Boot (v4.3.18)`.  
+Minimum requirement: 
+
+    Java version : 11
+    PostgreSQL   : 10.8
 
 ## Development
 
@@ -24,7 +28,7 @@ To create war package for deployment for production, run:
 
     ./mvnw -Pprod clean package
     
-War package will be created in `./target` folder with name `backend-0.0.1.war`.
+War package will be created in `./target` folder with name `backend-0.0.1.war`.  
 You can change the name by modifying profile section of `pom.xml` file:
 
     <profile>
@@ -39,7 +43,7 @@ You can change the name by modifying profile section of `pom.xml` file:
 
 ## Information
 
--   Separate databases need to be created for `dev` and `prod` profiles. See `applpication-dev.yml` and `applpication-prod.yml` for details
+-   Separate databases need to be created for `dev` and `prod` profiles. See `application-dev.yml` and `application-prod.yml` for details
 -   Mail will be sent to user upon signup, activation and password-reset request. User can only access API's on activation.
 -   Use postman to test the features with base path [http://localhost:8080](http://localhost:8080).
 
