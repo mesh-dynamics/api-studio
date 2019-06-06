@@ -37,7 +37,7 @@ spring:
             baseUrl: http://localhost:8080
             loginEndpoint: /login
             resetEndpoint: /reset
-            activationEndpoint: /activate
+            activationEndpoint: /api/account/activate
 
 security:
     jwt:
