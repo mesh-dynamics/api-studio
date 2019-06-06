@@ -134,16 +134,18 @@ public class CubeStore {
         Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
         Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
 
-        LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
+        //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
         Optional<String> collection = getCurrentCollectionIfEmpty(inpcollection, customerid, app, instanceid);
 
-        LOGGER.info(String.format("Got store for type %s, for collection %s, reqid %s, path %s", type.orElse("<empty>"), collection.orElse("<empty>"), rid.orElse("<empty>"), path));
-
         if (collection.isEmpty()) {
             // Dropping if collection is empty, i.e. recording is not started
-            LOGGER.info(String.format("Dropping store for type %s, reqid %s since collection is empty", type.orElse("<empty>"), rid.orElse("<empty>")));
+            LOGGER.info(String.format("Dropping store for type %s, reqid %s since collection is empty"
+                , type.orElse("<empty>"), rid.orElse("<empty>")));
             return Response.ok().build();
+        } else {
+            LOGGER.info(String.format("Performing store for type %s, for collection %s, reqid %s, path %s"
+                , type.orElse("<empty>"), collection.orElse("<empty>"), rid.orElse("<empty>"), path));
         }
 
 

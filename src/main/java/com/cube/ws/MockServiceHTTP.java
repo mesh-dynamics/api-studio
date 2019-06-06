@@ -1,6 +1,7 @@
 package com.cube.ws;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -127,6 +128,11 @@ public class MockServiceHTTP {
                              String fnReqResponseAsString) {
         try {
             FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
+            LOGGER.info("TRYING TO MOCK FUNC :: " + fnReqResponse.name);
+            if (fnReqResponse.argVals != null) {
+                Arrays.asList(fnReqResponse.argVals).stream()
+                    .forEach(argVal -> LOGGER.info("ARG VAL :: " + argVal));
+            }
             Utils.preProcess(fnReqResponse);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));

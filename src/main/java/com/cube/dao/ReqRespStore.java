@@ -387,6 +387,11 @@ public interface ReqRespStore {
 			return rr;
 		}
 
+		@Override
+        public String toString() {
+		    return getCollection().or(() -> getRecordingCollection()).orElse("N/A");
+        }
+
 		public final Optional<Recording> recording;
 		public final Optional<Replay> replay;
 	}

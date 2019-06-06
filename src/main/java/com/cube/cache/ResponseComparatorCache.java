@@ -55,6 +55,9 @@ public class ResponseComparatorCache {
             LOGGER.error("Unable to find template key :: " + key +
                 " in Response Comparator Cache , sending default key " + e.getMessage() );
             return defaultResponseComparator;
+        } catch (Throwable e) {
+            LOGGER.error("Unhandled exception occured (re-throwing) :: " + e.getMessage());
+            throw e;
         }
     }
 
