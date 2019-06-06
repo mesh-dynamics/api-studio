@@ -44,6 +44,11 @@ public class LoginController {
             String username = data.getUsername();
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, data.getPassword()));
             User user = this.userService.getByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username " + username + "not found"));
+            if (!user.isActivated()){
+                return status(UNAUTHORIZED)
+                        .body(new ErrorResponse("Authentication Failed", "User not activated yet. Please check your email", UNAUTHORIZED.value()));
+
+            }
             String token = jwtTokenProvider.createToken(username, new ArrayList<>(user.getRoles()));
 
             Map<Object, Object> model = new HashMap<>();
@@ -54,8 +59,8 @@ public class LoginController {
             model.put("token_type", "Bearer");
             return ok(model);
         } catch (AuthenticationException ex) {
-            ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), "Invalid username/password supplied", UNAUTHORIZED.value());
-            return status(UNAUTHORIZED).body(errorResponse);
+            return status(UNAUTHORIZED)
+                    .body(new ErrorResponse(ex.getMessage(), "Invalid username/password supplied", UNAUTHORIZED.value()));
         }
     }
 }

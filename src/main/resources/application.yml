@@ -19,9 +19,9 @@ spring:
         default-property-inclusion: non_empty
 
     datasource:
-        url: jdbc:postgresql://localhost:5432/cube?schema=qui
-        username: cube
-        password: cubeio
+#        url: jdbc:postgresql://localhost:5432/cube?schema=qui
+#        username: cube
+#        password: cubeio
         cachePrepStmts: true
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048

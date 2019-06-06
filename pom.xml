@@ -148,6 +148,9 @@
             <properties>
                 <spring.profiles.active>prod</spring.profiles.active>
             </properties>
+<!--            <build>-->
+<!--                <finalName>ROOT-PROD-${version}</finalName>-->
+<!--            </build>-->
         </profile>
     </profiles>
 </project>
