@@ -70,12 +70,16 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		Optional<String> ninstanceid = instanceid.or(() -> Optional.of("")); 
 		
 		Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
-		LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
-		return cachedrr.or(() -> {
+		String customerAppInstance = "Cust :: " + customerid.orElse("") + " App :: " + app.orElse("") +
+            "Instance :: " + instanceid.orElse("");
+
+		//LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
+		return cachedrr.map(cachedRRVal -> {
+		    LOGGER.info("Retrieved Record/Replay from Cache for " + customerAppInstance + " :: " + cachedRRVal.toString());
+		    return cachedRRVal;
+        }).or(() -> {
 			// not cached, read from underlying store
-			LOGGER.info("Not found in cache, looking up current recording");
-			
-			// check if there is a recording going on
+            // check if there is a recording going on
 			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running))
 					.findFirst()
 					.map(recording -> RecordOrReplay.createFromRecording(recording))
@@ -86,6 +90,10 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 								.map(replay -> RecordOrReplay.createFromReplay(replay));
 					});
 			//rr.ifPresent(rrv -> currentCollectionMap.put(ckey, rrv));
+            rr.ifPresentOrElse
+                (rrVal ->
+                LOGGER.info("Retrieved Record/Replay from Solr for " + customerAppInstance + " :: " + rrVal.toString())
+                    , () -> LOGGER.info("No Record/Replay retrieved from Cache/Solr for " + customerAppInstance));
 			return rr;
 		});
 	}

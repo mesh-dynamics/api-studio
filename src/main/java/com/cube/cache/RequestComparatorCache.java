@@ -86,6 +86,9 @@ public class RequestComparatorCache {
             }
             return defaultRequestComparatorWithoutReqId;
             //throw new CacheException("Error while fetching request comparator for key " + key , e);
+        } catch (Throwable e) {
+            LOGGER.error("Unhandled exception occured (re-throwing) :: " + e.getMessage());
+            throw e;
         }
     }
 
