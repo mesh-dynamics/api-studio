@@ -6,6 +6,7 @@ metadata:
 spec:
   workloadLabels:
     app: cubews-record
+    namespace: {{cube_env}}
   filters:
   - listenerMatch:
       #portNumber: 8080
@@ -129,6 +130,7 @@ metadata:
 spec:
   workloadLabels:
     app: cubews-mock
+    namespace: {{cube_env}}
   filters:
   - listenerMatch:
       #portNumber: 8080
@@ -252,6 +254,7 @@ metadata:
 spec:
   workloadLabels:
     app: cubews-replay
+    namespace: {{cube_env}}
   filters:
   - listenerMatch:
       #portNumber: 8080
