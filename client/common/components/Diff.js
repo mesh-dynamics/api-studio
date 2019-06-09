@@ -2,6 +2,10 @@ import React, { Component } from 'react';
 import './Diff.css'
 import Modal from "react-bootstrap/es/Modal";
 
+import ReactDiffViewer from '../utils/diff/diff-main';
+import generator from '../utils/generator/json-path-generator';
+import ReduceDiff from '../utils/ReduceDiff';
+
 class Diff extends Component {
     constructor(props) {
         super(props);
@@ -82,23 +86,52 @@ class Diff extends Component {
 
     render() {
         let {recorded, replayRes, diff} = this.props;
-        const formattedDiff = this.formatDiff();
+        //const formattedDiff = this.formatDiff();
+        let actJSON = JSON.stringify(replayRes),
+            expJSON = JSON.stringify(recorded);
+        console.log("actJSON - replayRes: ", actJSON);
+        console.log("expJSON - recorded: ", expJSON);
+        console.log(diff);
+        let reduceDiff = new ReduceDiff("", actJSON, expJSON, diff);
+        let reductedDiffArray = reduceDiff.computeDiffArray();
+        const newStyles = {
+            variables: {
+                addedBackground: '#e6ffed !important',
+                addedColor: '#24292e  !important',
+                removedBackground: '#ffeef0  !important',
+                removedColor: '#24292e  !important',
+                wordAddedBackground: '#acf2bd  !important',
+                wordRemovedBackground: '#fdb8c0  !important',
+                addedGutterBackground: '#cdffd8  !important',
+                removedGutterBackground: '#ffdce0  !important',
+                gutterBackground: '#f7f7f7  !important',
+                gutterBackgroundDark: '#f3f1f1  !important',
+                highlightBackground: '#fffbdd  !important',
+                highlightGutterBackground: '#fff5b1  !important',
+            },
+            line: {
+                padding: '10px 2px',
+                '&:hover': {
+                    background: '#f7f7f7',
+                },
+            }
+        };
 
         var textedJson = JSON.stringify(recorded, undefined, 4);
         var textedJson1 = JSON.stringify(replayRes, undefined, 4);
 
-        let formattedDiffElements = formattedDiff.map((d, i, fde) => {
+        /*let formattedDiffElements = formattedDiff.map((d, i, fde) => {
             const keys = d.pArr.indexOf('--') != -1 ? d.pArr.split('--') : [d.pArr];
 
             let childrenElem = d.children.map(c => {
-                console.log(c.path);
+                //console.log(c.path);
                 let ck = c.path.indexOf('/') != -1 ? c.path.split('/') : [c.path];
                 let tempBef = JSON.parse(JSON.stringify(recorded));
                 ck.shift();
-                /*keys.shift();
-                for (const key of ck) {
-                    temp = temp[key];
-                }*/
+                // keys.shift();
+                // for (const key of ck) {
+                //     temp = temp[key];
+                // }
 
                 for (let i = 0; i < ck.length; i++) {
                     tempBef = tempBef[ck[i]];
@@ -152,9 +185,9 @@ class Diff extends Component {
                     </div>
                 )
             }
-        });
+        });*/
 
-        let diffElems = diff.map((d, i, darr) => {
+        /*let diffElems = diff.map((d, i, darr) => {
             const keys = d.path.split('/');
             let temp = JSON.parse(JSON.stringify(recorded));
             let tempBef = JSON.parse(JSON.stringify(recorded));
@@ -186,7 +219,7 @@ class Diff extends Component {
                 )
             }
 
-        });
+        });*/
 
         return (
             <div style={{marginTop: '20px'}}>
@@ -195,7 +228,16 @@ class Diff extends Component {
                         Expected vs Actual:&nbsp;&nbsp;
                         <span className="cube-btn" onClick={this.handleShow}>View JSON</span>
                     </h3>
-                    {formattedDiffElements}
+                    {/*formattedDiffElements*/}
+                    < ReactDiffViewer 
+                    styles = {newStyles}
+                    oldValue = {""}
+                    newValue = {""}
+                    splitView = {true}
+                    disableWordDiff = {false}
+                    diffArray = {reductedDiffArray}
+                    onLineNumberClick = {() => {console.log(arguments)}}
+                    />
                 </div>
 
                 <Modal show={this.state.show} onHide={this.handleClose}>
