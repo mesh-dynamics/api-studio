@@ -138,6 +138,7 @@ public class MockServiceHTTP {
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
             return collection.map(collec ->
                 rrstore.getFunctionReturnValue(fnReqResponse, collec).map(retValue -> {
+                        LOGGER.info("FOUND RETURN VALUE :: " + retValue.retVal);
                         try {
                             String retValueAsString = jsonmapper.writeValueAsString(retValue);
                             return Response.ok().type(MediaType.APPLICATION_JSON).entity(retValueAsString).build();
