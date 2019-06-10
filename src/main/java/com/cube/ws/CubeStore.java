@@ -4,6 +4,7 @@
 package com.cube.ws;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -196,6 +197,11 @@ public class CubeStore {
                               @PathParam("service") String service*/) {
         try {
             FnReqResponse functionReqResp = jsonmapper.readValue(functionReqRespString, FnReqResponse.class);
+            LOGGER.info("STORING FUNCTION  :: " + functionReqResp.name);
+            if (functionReqResp.argVals != null) {
+                Arrays.asList(functionReqResp.argVals).stream().forEach(argVal
+                    -> LOGGER.info("ARG VALUE :: " + argVal));
+            }
             Utils.preProcess(functionReqResp);
             Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(functionReqResp.customerId),
                 Optional.of(functionReqResp.app), Optional.of(functionReqResp.instanceId));
