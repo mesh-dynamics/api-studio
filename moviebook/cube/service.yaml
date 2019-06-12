@@ -148,7 +148,43 @@ spec:
         - containerPort: 80
       imagePullSecrets:
       - name: regcred
+#################################################################################################
+# CubeUI backend
+#################################################################################################
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubeui-backend
+  labels:
+    app: cubeui-backend
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubeui-backend
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubeui-backend-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubeui-backend
+        version: v1
+    spec:
+      containers:
+      - name: cubeui-backend
+        image: cubeiocorp/cubeuibackend:v-1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
 # TODO: the following exernalname didn't work for a service that didn't go through port 80
 # apiVersion: v1
 # kind: Service
