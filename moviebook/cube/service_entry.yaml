@@ -44,3 +44,18 @@ spec:
     protocol: http
   resolution: DNS
   location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: aws-rds-cubedb
+spec:
+  hosts:
+  - cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com
+  ports:
+  - number: 5432
+    name: psql
+    protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL
