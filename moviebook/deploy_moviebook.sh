@@ -194,8 +194,8 @@ stop_record_default() {
 	curl -X POST \
   http://$GATEWAY_URL/cs/stop/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache' \
-	kubectl delete -f moviebook/moviebook-envoy-cs.yaml
+  -H 'cache-control: no-cache' 
+  kubectl delete -f moviebook/moviebook-envoy-cs.yaml
 }
 
 stop_record_staging() {
