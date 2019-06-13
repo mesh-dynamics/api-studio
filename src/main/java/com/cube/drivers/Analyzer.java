@@ -167,6 +167,10 @@ public class Analyzer {
                     rrstore.saveResult(res);
 
                 } else {
+                    Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(new Analysis.RespMatchWithReq(r,
+                        Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty()),
+                        Comparator.MatchType.NoMatch, matches.size(), analysis.replayid, jsonmapper);
+                    rrstore.saveResult(res);
                     analysis.reqnotmatched++;
                 }
 
