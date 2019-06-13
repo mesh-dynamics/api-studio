@@ -26,6 +26,7 @@ init() {
 generate_record_cs_yaml() {
 	sed -e "s/{{customer}}/$CUBE_USER/g" cube/templates/envoy_record_cs.j2 > cube/envoy_record_cs.yaml
 	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" cube/envoy_record_cs.yaml
+	sed -i '' -e "s/{{cube_env}}/$CUBE_ENV/g" cube/envoy_record_cs.yaml
 }
 record() {
 	echo "Enter collection name"
