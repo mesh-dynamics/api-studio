@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:c07238d674a9c4ca453cbe81cf8c1f469294689a
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -76,7 +76,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:c07238d674a9c4ca453cbe81cf8c1f469294689a
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -123,7 +123,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:c07238d674a9c4ca453cbe81cf8c1f469294689a
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
