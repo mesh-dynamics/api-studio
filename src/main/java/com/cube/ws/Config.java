@@ -13,13 +13,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import com.cube.serialize.GsonPatternSerializer;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
@@ -34,10 +34,12 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
-import com.cube.serialize.GsonSolrDocumentListSerializer;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.cube.serialize.GsonPatternSerializer;
+import com.cube.serialize.GsonSolrDocumentListSerializer;
+import com.cube.serialize.GsonSolrDocumentSerializer;
 
 /**
  * @author prasad
@@ -113,8 +115,10 @@ public class Config {
             throw new Exception(msg);
         }
         Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-            .registerTypeAdapter(Pattern.class, new GsonPatternSerializer()).registerTypeAdapter(SolrDocumentList.class,
-            new GsonSolrDocumentListSerializer()).create();
+            .registerTypeAdapter(Pattern.class, new GsonPatternSerializer())
+            .registerTypeAdapter(SolrDocumentList.class, new GsonSolrDocumentListSerializer())
+            .registerTypeAdapter(SolrDocument.class, new GsonSolrDocumentSerializer())
+            .create();
         recorder = new SimpleRecorder(gson);
         mocker = new SimpleMocker(gson);
 	}
