@@ -1,7 +1,8 @@
+[![Build Status](http://drone.cubecorp.io/api/badges/cube-io-corp/cubeui-backend/status.svg)](http://drone.cubecorp.io/cube-io-corp/cubeui-backend)
 # CubeIO Backend
 
 This application was generated using `Spring-Boot (v4.3.18)`.  
-Minimum requirement: 
+Minimum requirement:
 
     Java version : 11
     PostgreSQL   : 10.8
@@ -10,7 +11,7 @@ Minimum requirement:
 
 
 The `./mvnw` or `./mvnw -Pdev` command will run the project in development mode.
-    
+
 #### Building war for dev
 
 To create war package for deployment for development, run:
@@ -27,7 +28,7 @@ The `./mvnw -Pprod` command will run the project in production mode.
 To create war package for deployment for production, run:
 
     ./mvnw -Pprod clean package
-    
+
 War package will be created in `./target` folder with name `backend-0.0.1.war`.  
 You can change the name by modifying profile section of `pom.xml` file:
 
