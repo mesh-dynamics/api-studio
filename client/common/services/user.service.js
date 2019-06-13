@@ -19,7 +19,7 @@ function login(username, password) {
         body: JSON.stringify({ username, password })
     };
 
-    return fetch(`${config.apiUrl}/loginviareact`, requestOptions)
+    return fetch(`${config.baseUrl}/api/login`, requestOptions)
         .then(handleResponse)
         .then(user => {
             // login successful if there's a jwt token in the response
