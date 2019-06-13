@@ -27,6 +27,13 @@ generate_record_cs_yaml() {
 	sed -e "s/{{customer}}/$CUBE_USER/g" cube/templates/envoy_record_cs.j2 > cube/envoy_record_cs.yaml
 	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" cube/envoy_record_cs.yaml
 }
+
+generate_replay_cs_yaml() {
+	sed -e "s/{{customer}}/$CUBE_USER/g" cube/templates/envoy_replay_cs.j2 > cube/envoy_mock_cs.yaml
+	sed -i '' -e "s/{{cube_instance}}/$CUBE_INSTANCEID/g" cube/envoy_mock_cs.yaml
+	sed -i '' -e "s/{{cube_env}}/$CUBE_ENV/g" cube/envoy_mock_cs.yaml
+}
+
 record() {
 	echo "Enter collection name"
 	read COLLECTION_NAME
@@ -53,10 +60,23 @@ stop_record() {
 	kubectl delete -f cube/envoy_record_cs.yaml -n staging
 }
 
+analyze() {
+	REPLAY_ID=$(cat dogfooding_replayid.temp)
+	echo "Analyzing for replay ID:" $REPLAY_ID
+	curl -X POST \
+		http://dogfooding.cubecorp.io/as/analyze/$REPLAY_ID \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'cache-control: no-cache'
+}
+
 replay() {
 	echo "Enter Collection name"
 	read COLLECTION_NAME
+	generate_replay_cs_yaml
 	kubectl apply -f cube/envoy_mock_cs.yaml -n staging
+	## sleep for some time
+	echo "Sleeping for 30 seconds"
+	sleep 30
 	REPLAY_ID=$(curl -X POST http://dogfooding.cubecorp.io/rs/init/$CUBE_USER/cube/$COLLECTION_NAME \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H 'cache-control: no-cache' \
@@ -110,8 +130,9 @@ get_environment
     stop_recording) shift; stop_record "$@";;
 		replay) shift; replay "$@";;
 		stop_replay) shift; stop_replay "$@";;
+		analyze) shift; analyze "$@" ;;
     clean) shift; clean "$@";;
-    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, clean).";;
+    *) echo "This script expect one of these system argument(init, record, stop_recording, replay, analyze, clean).";;
   esac
 }
 
