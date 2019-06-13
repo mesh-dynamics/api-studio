@@ -4,8 +4,10 @@ server:
 spring:
     application:
         name: CubeIO Backend
+
     profiles:
         active: @spring.profiles.active@
+
     jackson:
         mapper:
             DEFAULT_VIEW_INCLUSION: true
@@ -17,6 +19,7 @@ spring:
             FAIL_ON_UNKNOWN_PROPERTIES: false
             ACCEPT_SINGLE_VALUE_AS_ARRAY: true
         default-property-inclusion: non_empty
+
 
     datasource:
 #        url: jdbc:postgresql://localhost:5432/cube?schema=qui
@@ -61,6 +64,10 @@ spring:
             loginEndpoint: /login
             resetEndpoint: /reset
             activationEndpoint: /activate
+
+    mvc:
+        favicon:
+            enabled: false
 
 security:
     jwt:

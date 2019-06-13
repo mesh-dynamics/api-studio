@@ -79,6 +79,12 @@ public class AccountController {
         }
     }
 
+    /**
+     * GET  /activate : activate the registered user.
+     *
+     * @param activationKey the activation key
+     * @throws RecordNotFoundException if the user couldn't be activated
+     */
     @GetMapping("/activate")
     public ResponseEntity activateAccount(@RequestParam(value = "key") String activationKey) {
         Optional<User> optionalUser = userService.activateUser(activationKey);

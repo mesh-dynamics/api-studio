@@ -100,6 +100,7 @@ public class UserService {
                     user.setPassword(passwordEncoder.encode(newPassword));
                     user.setResetKey(null);
                     user.setResetDate(null);
+//                    userRepository.save(user);
                     return user;
                 });
     }
@@ -110,6 +111,7 @@ public class UserService {
                 .map(user -> {
                     user.setResetKey(RandomUtil.generateResetKey());
                     user.setResetDate(Instant.now());
+//                    userRepository.save(user);
                     return user;
                 });
     }
@@ -134,7 +136,8 @@ public class UserService {
         return userRepository.findByActivationKey(key)
                 .map(user -> {
                     user.setActivated(true);
-                    user.setPassword("********"); // To hide password while sending creation email
+                    user.setActivationKey(null);
+//                    userRepository.save(user);
                     return user;
                 });
     }
