@@ -213,7 +213,12 @@ public class Utils {
     public static Pattern analysisTimestampPattern = Pattern.compile("\\\\\"timestamp\\\\\":\\d{13},");
 	public static Pattern recordingTimestampPattern = Pattern.compile(",\"timestamp_dt\":\\{\"name\":\"timestamp_dt\",\"value\":\".+\"\\}");
 
-	public static String removePatternFromString(String val, Pattern pattern) {
+    public static Pattern replayMetaIdPattern = Pattern.compile("\"id\":\\{\"name\":\"id\",\"value\":\"(.+?)\"},");
+    public static Pattern replayIdPattern = Pattern.compile("\"replayid_s\":\\{\"name\":\"replayid_s\",\"value\":\"(.+?)\"},");
+    public static Pattern timestampIdPattern = Pattern.compile(",\"creationtimestamp_s\":\\{\"name\":\"creationtimestamp_s\",\"value\":\"(.+?)\"}");
+
+
+    public static String removePatternFromString(String val, Pattern pattern) {
 	    Matcher matcher = pattern.matcher(val);
 	    return matcher.replaceAll("");
     }
@@ -228,6 +233,12 @@ public class Utils {
                     fnReqResponse.argsHash[0] = newVal.hashCode();
                 } else if (fnReqResponse.argVals[0].contains("{\"type_s\":{\"name\":\"type_s\",\"value\":\"Recording\"}")) {
                     String newVal = removePatternFromString(fnReqResponse.argVals[0], recordingTimestampPattern);
+                    fnReqResponse.argVals[0] = newVal;
+                    fnReqResponse.argsHash[0] = newVal.hashCode();
+                } else if (fnReqResponse.argVals[0].startsWith("{\"id\":{\"name\":\"id\",\"value\":\"ReplayMeta-")) {
+                    String newVal = removePatternFromString(fnReqResponse.argVals[0], replayMetaIdPattern);
+                    newVal = removePatternFromString(newVal, replayIdPattern);
+                    newVal = removePatternFromString(newVal, timestampIdPattern);
                     fnReqResponse.argVals[0] = newVal;
                     fnReqResponse.argsHash[0] = newVal.hashCode();
                 }
