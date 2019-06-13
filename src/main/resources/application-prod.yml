@@ -1,8 +1,8 @@
 spring:
     datasource:
-        url: jdbc:postgresql://localhost:5432/cube?schema=qui
-        username: cube
-        password: cubeio
+        url: jdbc:postgresql://cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com:5432/cubeproddb?schema=qui
+        username: springboot
+        password: 2XPZxVqH9Fm%o$#
         cachePrepStmts: true
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
@@ -50,4 +50,3 @@ logging:
         org.springframework.security: DEBUG
         com.cubeui.backend: DEBUG
     file: app.log
-  
