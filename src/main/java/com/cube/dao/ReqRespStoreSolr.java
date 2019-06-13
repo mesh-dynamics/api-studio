@@ -245,7 +245,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Optional<Response> getResponse(String reqid) {
-        LOGGER.info("TRYING TO FIND RESPONSE ASSOCIATED WITH REQUEST IN SOLR :: "  + reqid) ;
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         //query.setRows(1);
@@ -649,10 +648,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final String b = body.orElse("");
         return type.map(t -> {
             if (t.equals(Types.Request.toString())) {
-                LOGGER.info("Converted Solr Doc To Request :: " + reqid);
                 return new Request(p, reqid, qparams, fparams, meta, hdrs, m, b, collection, timestamp, rrtype, customerid, app);
             } else {
-                LOGGER.info("Could Not Convert Solr Doc To Request");
                 return null;
             }
         });
@@ -731,10 +728,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final String b = body.orElse("");
         return type.flatMap(t -> {
             if (t.equals(Types.Response.toString())) {
-                LOGGER.info("Successully converted Solr Doc To Response :: " + reqid);
                 return status.map(sv -> new Response(reqid, sv, meta, hdrs, b, collection, timestamp,rrtype, customerid, app));
             } else {
-                LOGGER.info("Could Not Convert Solr Doc To Response") ;
                 return Optional.empty();
             }
         });
