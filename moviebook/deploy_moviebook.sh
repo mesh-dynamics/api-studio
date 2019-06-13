@@ -15,14 +15,14 @@ export_aws_env_variables() {
 }
 
 init_default() {
+	kubectl apply -f cube/secret.yaml
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml)
-	kubectl apply -f cube/service.yaml
+	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml)
 	kubectl apply -f moviebook-gateway.yaml
 	kubectl apply -f moviebook/bookinfo_virtualservice.yaml
 	kubectl apply -f moviebook/movieinfo-v1.yaml
 	kubectl apply -f cube/virtualservice.yaml
 	kubectl apply -f cube/service_entry.yaml
-	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
 	echo "waiting for cubews to come online"
 	until $(curl --output /dev/null --silent --head --fail http://$GATEWAY_URL/cs/health); do
@@ -35,6 +35,7 @@ init_default() {
 
 init_staging() {
 	kubectl create namespace staging
+	kubectl apply -f cube/secret.yaml -n staging
 	kubectl apply -f <(istioctl kube-inject -f moviebook/moviebook.yaml) -n staging
 	kubectl apply -f <(istioctl kube-inject -f cube/service.yaml) -n staging
 	kubectl apply -f moviebook-gateway.yaml
@@ -42,7 +43,6 @@ init_staging() {
 	kubectl apply -f moviebook/movieinfo-v1_staging.yaml
 	kubectl apply -f cube/virtualservice_staging.yaml
 	kubectl apply -f cube/service_entry.yaml
-	kubectl apply -f cube/solr_service_entry.yaml
 	./fetch_servicenames.py
 	echo "waiting for cubews to come online"
 	until $(curl --output /dev/null --silent --head --fail -HHost:staging.cubecorp.io http://$GATEWAY_URL/cs/health); do
@@ -306,9 +306,7 @@ replay_setup() {
 	replay_setup_$CUBE_ENV
 }
 
-replay() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+replay_default() {
 	echo "Do you want to replay with default paths?(yes/no)"
 	read CHOICE
 	if [ "$CHOICE" = "no" ]; then
@@ -329,6 +327,32 @@ replay() {
 	echo $REPLAY_ID > replayid.temp
 }
 
+replay_staging() {
+	REPLAY_ID=$(curl -X POST \
+	http://$GATEWAY_URL/rs/init/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME \
+	-H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'cache-control: no-cache' \
+	-H 'Host: staging.cubecorp.io' \
+	-d "paths=minfo%2Flistmovies&paths=minfo%2Fliststores&paths=minfo%2Frentmovie&paths=minfo%2Freturnmovie&endpoint=http://staging.cubecorp.io&instanceid=staging" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	curl -f -X POST \
+  http://$GATEWAY_URL/rs/start/$CUBE_USER/$CUBE_APPLICATION/$COLLECTION_NAME/$REPLAY_ID \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'cache-control: no-cache' \
+	-H 'Host: staging.cubecorp.io'
+	if [ $? -eq 0 ]; then
+		echo "Replay started"
+	else
+		echo "ERROR!! Replay did not started"
+	fi
+	echo $REPLAY_ID > replayid.temp
+}
+
+replay() {
+	echo "Enter collection name"
+	read COLLECTION_NAME
+	replay_$CUBE_ENV
+}
+
 stop_replay_default() {
 	kubectl delete -f moviebook/moviebook-envoy-replay-cs.yaml
 	kubectl delete -f moviebook/mock-all-except-moviebook.yaml
@@ -346,10 +370,18 @@ stop_replay() {
 analyze() {
 	REPLAY_ID=$(cat replayid.temp)
 	echo "Analyzing for replay ID:" $REPLAY_ID
-	curl -X POST \
-  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache'
+	if [ "$CUBE_ENV" = "staging" ]; then
+		curl -X POST \
+		http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'cache-control: no-cache' \
+		-H 'Host: staging.cubecorp.io'
+	else
+		curl -X POST \
+	  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
+	  -H 'Content-Type: application/x-www-form-urlencoded' \
+	  -H 'cache-control: no-cache'
+	fi
 }
 
 clean_default() {
@@ -361,7 +393,6 @@ clean_default() {
 	kubectl delete -f moviebook/bookinfo_virtualservice.yaml
 	kubectl delete -f moviebook/movieinfo-v1.yaml
 	kubectl delete -f cube/virtualservice.yaml
-	kubectl delete -f cube/solr_service_entry.yaml
 	kubectl delete deployments cubews 2> /dev/null
 }
 clean_staging() {
