@@ -6,7 +6,7 @@ import NotificationsMenuItem from './NotificationsMenuItem'
 
 class Top extends Component {
   render () {
-    const { user, toggleCb, needMargin} = this.props;
+    const { user, toggleCb, needMargin, lo} = this.props;
     return (
       <div className={ needMargin ? "top_nav" : "" }>
         <div className="nav_menu">
@@ -19,7 +19,7 @@ class Top extends Component {
                 </h3>
             </div>
             <TopNavBar>
-              <UserMenuItem user={ user }/>
+              <UserMenuItem lo={lo} user={ user }/>
               <NotificationsMenuItem user={ user }/>
             </TopNavBar>
           </nav>

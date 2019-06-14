@@ -3,7 +3,7 @@ import { Item } from '../components/TopNavBar'
 
 class UserMenuItem extends Component {
   render() {
-    const { user } = this.props;
+    const { user, lo } = this.props;
     return (
       <Item {...this.props}>
         <Item.Content className="user-profile">
@@ -19,7 +19,7 @@ class UserMenuItem extends Component {
             </a>
           </li>
           <li><a href="#!">Help</a></li>
-          <li><a href="login.html"><i className="fa fa-sign-out pull-right"></i> Log Out</a></li>
+          <li><a onClick={lo}><i className="fa fa-sign-out pull-right"></i> Log Out</a></li>
         </Item.SubMenu>
       </Item>
     )

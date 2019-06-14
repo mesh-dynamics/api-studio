@@ -4,6 +4,7 @@ import { Left, Top, Footer } from '../navigation';
 import PageContent, { Menu } from '../routes';
 import { connect } from 'react-redux';
 import SideBar, { GroupMenuItem, MenuItem } from './SideBar';
+import {userActions} from "../actions/user.actions";
 
 class App extends Component {
     constructor (props) {
@@ -11,7 +12,8 @@ class App extends Component {
         this.state = {
             leftVisible: true
         };
-        this.toggleLeft = this.toggleLeft.bind(this);        
+        this.toggleLeft = this.toggleLeft.bind(this);
+        this.handleLogout = this.handleLogout.bind(this);
     }
     toggleLeft () {
         this.setState({
@@ -19,6 +21,10 @@ class App extends Component {
             //leftVisible: !this.state.leftVisible
             leftVisible: true
         });        
+    }
+    handleLogout() {
+        const { dispatch } = this.props;
+        dispatch(userActions.logout());
     }
     render() {
         const { user, left } = this.props;
@@ -28,7 +34,7 @@ class App extends Component {
         return (
             <div className="container body">
                 <div className="main_container">
-                    <Top user={ user } toggleCb={ this.toggleLeft }/>
+                    <Top lo={this.handleLogout} user={ user } toggleCb={ this.toggleLeft }/>
                     <PageContent/>
                     <Footer/>
                 </div>
