@@ -62,8 +62,8 @@ public class UserService {
         final Set<String> finalRoles = roles;
         Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
         user.ifPresent(u -> {
-            u.setName(userDTO.getName());
-            u.setPassword(this.passwordEncoder.encode(userDTO.getPassword()));
+            Optional.ofNullable(userDTO.getName()).ifPresent(name -> u.setName(name));
+            Optional.ofNullable(userDTO.getPassword()).ifPresent(password -> u.setPassword(this.passwordEncoder.encode(password)));
             u.setRoles(finalRoles);
             u.setActivated(isActivated);
             this.userRepository.save(u);
