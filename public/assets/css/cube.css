@@ -4455,3 +4455,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     background: #00B2FF !important;
     color: white;
 }
+.login-widget {
+    width: 40%;
+    margin: 100px auto;
+}

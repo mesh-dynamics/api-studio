@@ -268,4 +268,7 @@ form:after {
   font-size: 150%;
   text-transform: uppercase;
 }
-  
+.login-widget {
+	width: 40%;
+	margin: 100px auto;
+}

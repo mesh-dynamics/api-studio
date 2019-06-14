@@ -1,7 +1,7 @@
 import { userConstants } from '../constants';
 import { userService } from '../services';
-import { alertActions } from './';
 import { history } from '../helpers';
+import {alertActions} from "./alert.actions";
 
 export const userActions = {
     login,
@@ -19,10 +19,11 @@ function login(username, password) {
             let user = await userService.login(username, password);
             console.log("user", user);
             dispatch(success(user));
-            //history.push('/ui');
+            //history.push('/home');
+            //window.location.reload();
         } catch (error) {
-            //dispatch(failure(error.toString()));
-            //dispatch(alertActions.error(error.toString()));
+            dispatch(failure(error.toString()));
+            dispatch(alertActions.error(error.toString()));
             dispatch(failure("Login incorrect: username or password is wrong"));
             dispatch(alertActions.error("Login incorrect: username or password is wrong"));
         }

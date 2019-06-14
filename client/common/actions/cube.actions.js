@@ -59,11 +59,11 @@ function getDiffData(replayId, recordReqId, replayReqId) {
     function success(diffData, date) { return { type: cubeConstants.DIFF_SUCCESS, data: diffData, date: date }; }
 }
 
-function getTestIds () {
+function getTestIds (app) {
     return async dispatch => {
         dispatch(request());
         try {
-            let collections = await cubeService.fetchCollectionList();
+            let collections = await cubeService.fetchCollectionList(app);
             dispatch(success(collections, Date.now()));
         } catch (error) {
             dispatch(failure("Failed to getTestIds", Date.now()));
@@ -79,11 +79,11 @@ function setSelectedTestId ( testIdLabel ) {
     return {type: cubeConstants.SET_SELECTED_TESTID, data: testIdLabel};
 }
 
-function getGraphData () {
+function getGraphData (app) {
     return async dispatch => {
         dispatch(request());
         try {
-            let gd = await cubeService.getGraphData();
+            let gd = await cubeService.getGraphData(app);
             dispatch(success(gd, Date.now()));
         } catch (error) {
             dispatch(failure("Failed to getTestIds", Date.now()));
@@ -95,11 +95,11 @@ function getGraphData () {
     function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
-function getReplayId(testIdLabel) {
+function getReplayId(testIdLabel, app) {
     return async dispatch => {
         // dispatch(request());
         try {
-            let replayId = await cubeService.getReplayId(testIdLabel);
+            let replayId = await cubeService.getReplayId(testIdLabel, app);
             dispatch(success(replayId, Date.now()));
         } catch (error) {
             // dispatch(failure("Failed to getTestIds", Date.now()));
@@ -124,12 +124,12 @@ function getTimelineData(collectionId, replayData) {
     function success(timeline, date) { return { type: cubeConstants.TIMELINE_DATA_SUCCESS, data: timeline, date: date } }
 }
 
-function startReplay(collectionId, replayId) {
+function startReplay(collectionId, replayId, app) {
     return async dispatch => {
         // dispatch(request());
         try {
             dispatch(success(Date.now()));
-            let startReplay = await cubeService.startReplay(collectionId, replayId);
+            let startReplay = await cubeService.startReplay(collectionId, replayId, app);
             dispatch(success(replayId, Date.now()));
         } catch (error) {
             // dispatch(failure("Failed to getTestIds", Date.now()));
@@ -138,11 +138,11 @@ function startReplay(collectionId, replayId) {
     function success(date) { return { type: cubeConstants.REPLAY_STARTED, date: date } }
 }
 
-function getReplayStatus(collectionId, replayId) {
+function getReplayStatus(collectionId, replayId, app) {
     return async dispatch => {
         // dispatch(request());
         try {
-            let replayStatus = await cubeService.checkStatusForReplay(collectionId, replayId);
+            let replayStatus = await cubeService.checkStatusForReplay(collectionId, replayId, app);
             dispatch(success(replayStatus, Date.now()));
         } catch (error) {
             // dispatch(failure("Failed to getTestIds", Date.now()));

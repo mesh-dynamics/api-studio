@@ -1,6 +1,5 @@
 import React from "react";
-//import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import { Router, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Provider } from "react-redux";
 import App from "./App";
@@ -14,10 +13,9 @@ const Root = ( { store } ) => (
         <Router history={history}>
             <div>
                 <Switch>
-                    {/* 
                     <Route path="/login" component={LoginPage} />
                     <PrivateRoute path="/*" component={App} />
-                    */}
+
                     <Route path="/*" component={App} />
                 </Switch>
             </div>
