@@ -1,6 +1,8 @@
 import config from '../config';
 import axios from 'axios';
 
+let user = JSON.parse(localStorage.getItem('user'));
+
 export const cubeService = {
     fetchAppsList,
     getGraphData,
@@ -16,13 +18,14 @@ export const cubeService = {
 
 async function fetchAppsList() {
     let response, json;
-    let url = `${config.apiUrl}/api/getApps`;
+    let url = `${config.baseUrl}/api/app`;
     let appsList = {};
     try {
         response = await fetch(url, {
             method: "get",
             headers: new Headers({
                 "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
             })
         });
         if (response.ok) {
@@ -40,7 +43,61 @@ async function fetchAppsList() {
 
 }
 
-async function getGraphData() {
+async function getGraphData(app) {
+    if (app == 'Cube') {
+        return {
+            "edges": [
+                {
+                    "id": "ui_record",
+                    "source": 17,
+                    "target": 14
+                },
+                {
+                    "id": "ui_replay",
+                    "source": 17,
+                    "target": 15
+                }
+            ],
+            "nodes": [
+                {
+                    "data": {
+                        "id": 14,
+                        "text": "Record"
+                    },
+                    "style": {
+                        "text-wrap": "wrap"
+                    }
+                },
+                {
+                    "data": {
+                        "id": 15,
+                        "text": "Replay"
+                    },
+                    "style": {
+                        "text-wrap": "wrap"
+                    }
+                },
+                {
+                    "data": {
+                        "id": 16,
+                        "text": "Mock"
+                    },
+                    "style": {
+                        "text-wrap": "wrap"
+                    }
+                },
+                {
+                    "data": {
+                        "id": 17,
+                        "text": "UI"
+                    },
+                    "style": {
+                        "text-wrap": "wrap"
+                    }
+                }
+            ]
+        };
+    }
     return {
         nodes: [
             {
@@ -138,9 +195,9 @@ async function getTestIds (options) {
     }
 }
 
-async function fetchCollectionList() {
+async function fetchCollectionList(app) {
     let response, json;
-    let url = `${config.baseUrl}/cs/recordings?customerid=ravivj&app=movieinfo`;
+    let url = `${config.baseUrl}/cs/recordings?customerid=${user.username}&app=${app}`;
     let collections = [];
     try {
         response = await fetch(url, {
@@ -164,12 +221,13 @@ async function fetchCollectionList() {
     return collections;
 }
 
-async function getReplayId(collectionId) {
+async function getReplayId(collectionId, app) {
     let response, json;
-    let url = `${config.baseUrl}/rs/init/ravivj/movieinfo/${collectionId}`;
+    let url = `${config.baseUrl}/rs/init/${user.username}/${app}/${collectionId}`;
     let replayId;
     const searchParams = new URLSearchParams();
-    searchParams.set('endpoint', `${config.baseUrl}`);
+    const ep = app == 'Cube' ? 'staging.cubecorp.io' : 'dogfooding.cubecorp.io';
+    searchParams.set('endpoint', ep);
     searchParams.set('instanceid', 'prod');
     searchParams.set('paths', 'minfo/listmovies')
     searchParams.append('paths', 'minfo/returnmovie')
@@ -197,9 +255,9 @@ async function getReplayId(collectionId) {
     }
 }
 
-async function startReplay(collectionId, replayId) {
+async function startReplay(collectionId, replayId, app) {
     let response, json;
-    let url = `${config.baseUrl}/rs/start/ravivj/movieinfo/${collectionId}/${replayId}`;
+    let url = `${config.baseUrl}/rs/start/${user.username}/${app}/${collectionId}/${replayId}`;
 
     try {
         let urrl = url;
@@ -220,9 +278,9 @@ async function startReplay(collectionId, replayId) {
     }
 }
 
-async function checkStatusForReplay(collectionId, replayId) {
+async function checkStatusForReplay(collectionId, replayId, app) {
     let response, json;
-    let url = `${config.baseUrl}/rs/status/ravivj/movieinfo/${collectionId}/${replayId}`;
+    let url = `${config.baseUrl}/rs/status/${user.username}/${app}/${collectionId}/${replayId}`;
     let status = {};
     try {
         response = await fetch(url, {

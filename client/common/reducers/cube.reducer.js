@@ -12,8 +12,8 @@ const initialState = {
 
     appsListReqStatus: cubeConstants.REQ_NOT_DONE,
     appsListReqErr: '',
-    appsList: [],
-    selectedApp: '',
+    appsList: ['MovieInfo', 'Cube'],
+    selectedApp: 'MovieInfo',
 
     testIdsReqStatus: cubeConstants.REQ_NOT_DONE,
     testIdsReqErr: '',

@@ -195,7 +195,8 @@ class ReplayAttribute extends Component {
             dispatch,
             cube
         } = this.props;
-        dispatch(cubeActions.getTestIds());
+        //dispatch(cubeActions.getApps());
+        dispatch(cubeActions.getTestIds(cube.selectedApp));
         /*if (cube.selectedTestId == cubeConstants.CREATE_NEW) {
             this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
         }*/
@@ -223,9 +224,9 @@ class ReplayAttribute extends Component {
 
     handleChangeForApps (e) {
         const { user, match, history, dispatch, nctData } = this.props;
-        if (e && e.label) {
-            dispatch(cubeActions.setSelectedApp(e.label));
-            dispatch(cubeActions.getTestIds(e.label));
+        if (e && e.target.value) {
+            dispatch(cubeActions.setSelectedApp(e.target.value));
+            dispatch(cubeActions.getTestIds(e.target.value));
             dispatch(cubeActions.setSelectedTestId(''));
         }
     }
@@ -236,7 +237,7 @@ class ReplayAttribute extends Component {
             alert('select collection to replay');
         } else {
             this.setState({show: true});
-            dispatch(cubeActions.startReplay(cube.selectedTestId, cube.replayId.replayid));
+            dispatch(cubeActions.startReplay(cube.selectedTestId, cube.replayId.replayid, cube.selectedApp));
             this.doAnalysis = true;
             this.statusInterval = setInterval(checkStatus, 400);
         }
@@ -248,7 +249,7 @@ class ReplayAttribute extends Component {
 
     getReplayStatus() {
         const {cube, dispatch} = this.props;
-        dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid));
+        dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid, cube.selectedApp));
     }
 
 
@@ -257,9 +258,23 @@ class ReplayAttribute extends Component {
         cube.selectedTestId = e.target.value;
         if (e) {
             dispatch(cubeActions.clear());
+            dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestId(e.target.value));
-            dispatch(cubeActions.getGraphData());
-            dispatch(cubeActions.getReplayId(e.target.value));
+            dispatch(cubeActions.getReplayId(e.target.value, cube.selectedApp));
+        }
+    }
+
+    renderAppList (cube) {
+        if (cube.appsListReqStatus != cubeConstants.REQ_SUCCESS) {
+            return ''
+        }
+        let options = [];
+        options = cube.appsList.map(item => (<option key={item.id} value={item.name}>{item.name}</option>));
+        let jsxContent = '';
+        if (options.length) {
+            let selectedApp = '';
+            if (cube.selectedApp)
+                console.log(selectedApp);
         }
     }
 
@@ -316,8 +331,9 @@ class ReplayAttribute extends Component {
                                     <Row>
                                         <Col md={6}>
                                             <span className="label">Application</span><br/>
-                                            <select name="" id="app-sel">
-                                                <option value="">MovieInfo</option>
+                                            <select onChange={this.handleChangeForApps} name="" id="app-sel">
+                                                <option value="MovieInfo">MovieInfo</option>
+                                                <option value="Cube">Cube</option>
                                             </select> &nbsp;&nbsp;
                                             <span className="cube-btn">NEW TEST</span>
                                         </Col>
