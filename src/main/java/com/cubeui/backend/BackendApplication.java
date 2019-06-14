@@ -43,7 +43,7 @@ public class BackendApplication {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/login").allowedOrigins("http://localhost:3006", "http://staging.cubecorp.io", "http://demo.cubecorp.io");
+                registry.addMapping("/**").allowedOrigins("http://localhost:3006", "http://staging.cubecorp.io", "http://demo.cubecorp.io");
             }
         };
     }
