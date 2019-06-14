@@ -29,10 +29,19 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:47e29fd808e6ccf6928c3bb537019a7ff8524308
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        env:
+          - name: app_dogfood
+            value: cube
+          - name: instance_dogfood
+            value: staging
+          - name: service_dogfood
+            value: cube
+          - name: customer_dogfood
+            value: ravivj
       imagePullSecrets:
       - name: regcred
 
@@ -67,10 +76,19 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:47e29fd808e6ccf6928c3bb537019a7ff8524308
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        env:
+          - name: app_dogfood
+            value: cube
+          - name: instance_dogfood
+            value: staging
+          - name: service_dogfood
+            value: cube
+          - name: customer_dogfood
+            value: ravivj
       imagePullSecrets:
       - name: regcred
 
@@ -105,10 +123,19 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:47e29fd808e6ccf6928c3bb537019a7ff8524308
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        env:
+          - name: app_dogfood
+            value: cube
+          - name: instance_dogfood
+            value: staging
+          - name: service_dogfood
+            value: cube
+          - name: customer_dogfood
+            value: ravivj
       imagePullSecrets:
       - name: regcred
 ##################################################################################################
@@ -142,7 +169,7 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:v2
+        image: cubeiocorp/cubeui:v-0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
