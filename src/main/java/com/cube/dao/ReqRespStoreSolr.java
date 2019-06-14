@@ -400,7 +400,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         {
             pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
             String escapedPath =  SolrIterator.escapeQueryChars(pathBuffer.toString())
-                    .concat((countWrapper.count != pathElements.length -1)? SolrIterator.escapeQueryChars("/*") : "") ;
+                    .concat((countWrapper.count != pathElements.length -1)? SolrIterator.escapeQueryChars("*") : "") ;
             queryBuffer.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
                     .append("^").append(++countWrapper.count);
         });

@@ -163,7 +163,7 @@ public class JsonComparator implements Comparator {
 					}
 					break;
 				case Float:
-					if (!node.isFloat() && !node.isDouble() && !node.isInt()) valTypeMismatch = true;
+					if (!node.isFloat() && !node.isDouble() && !node.isInt() && !node.isLong()) valTypeMismatch = true;
 					break;
 				case Int:
 					if (!node.isInt()) valTypeMismatch = true;
@@ -211,7 +211,7 @@ public class JsonComparator implements Comparator {
 		// TODO take care of null pointer exception here
 		if (node.isTextual()) return DataType.Str;
 		if (node.isInt()) return DataType.Int;
-		if (node.isDouble() || node.isFloat()) return DataType.Float;
+		if (node.isDouble() || node.isFloat() || node.isLong()) return DataType.Float;
 		if (node.isObject()) return DataType.Obj;
 		return DataType.Default;
 	}
@@ -243,8 +243,8 @@ public class JsonComparator implements Comparator {
 				Optional<Integer> rhs = value.map(JsonNode::asInt);
 				return rule.checkMatchInt(lhs, rhs);
 			}
-			if (toVal.isDouble() || toVal.isFloat()) {
-				if (!fromValue.map(fv -> fv.isDouble() || fv.isFloat()).orElse(true)) {
+			if (toVal.isDouble() || toVal.isFloat() || toVal.isLong()) {
+				if (!fromValue.map(fv -> fv.isDouble() || fv.isFloat() || fv.isLong()).orElse(true)) {
 					return ERR_ValTypeMismatch;
 				}
 				Optional<Double> lhs = fromValue.map(JsonNode::asDouble);
