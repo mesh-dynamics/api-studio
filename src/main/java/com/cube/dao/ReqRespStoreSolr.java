@@ -399,8 +399,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Arrays.asList(pathElements).stream().forEachOrdered(elem ->
         {
             pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
-            String escapedPath = "\"" +StringEscapeUtils.escapeJava(pathBuffer.toString())
-                    .concat((countWrapper.count != pathElements.length -1)? ClientUtils.escapeQueryChars("/*") : "") + "\"";
+            String escapedPath =  SolrIterator.escapeQueryChars(pathBuffer.toString())
+                    .concat((countWrapper.count != pathElements.length -1)? SolrIterator.escapeQueryChars("/*") : "") ;
             queryBuffer.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
                     .append("^").append(++countWrapper.count);
         });
