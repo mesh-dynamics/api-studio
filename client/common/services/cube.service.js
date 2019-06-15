@@ -229,11 +229,12 @@ async function getReplayId(collectionId, app) {
     const ep = app == 'Cube' ? 'staging.cubecorp.io' : 'dogfooding.cubecorp.io';
     searchParams.set('endpoint', ep);
     searchParams.set('instanceid', 'prod');
-    searchParams.set('paths', 'minfo/listmovies')
-    searchParams.append('paths', 'minfo/returnmovie')
-    searchParams.append('paths', 'minfo/rentmovie')
-    searchParams.append('paths', 'minfo/liststores')
-
+    if (app != 'Cube') {
+        searchParams.set('paths', 'minfo/listmovies');
+        searchParams.append('paths', 'minfo/returnmovie');
+        searchParams.append('paths', 'minfo/rentmovie');
+        searchParams.append('paths', 'minfo/liststores');
+    }
     try {
         let urrl = url;
         response = await fetch(urrl, {
