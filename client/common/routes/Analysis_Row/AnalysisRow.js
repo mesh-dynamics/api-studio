@@ -34,7 +34,6 @@ class AnalysisRow extends Component {
     }
 
     getDiff (res) {
-        console.log(res);
         const {cube, dispatch} = this.props;
         dispatch(cubeActions.getDiffData(cube.replayId.replayid, res.recordreqid, res.replayreqid));
     }
@@ -75,7 +74,7 @@ class AnalysisRow extends Component {
         const {cube} = this.props;
         console.log(cube);
         let response, json;
-        let url = `${config.baseUrl}/as/analysisResByPath/${cube.replayId.replayid}?service=${data.service}&path=${data.path}%2A&start=20&nummatches=20&respmt=NoMatch`;
+        let url = `${config.baseUrl}/as/analysisResByPath/${cube.replayId.replayid}?service=${data.service}&path=${data.path}%2A&start=0&nummatches=20&respmt=NoMatch`;
         let dataList = {};
         try {
             response = await fetch(url, {
@@ -103,7 +102,7 @@ class AnalysisRow extends Component {
         const {cube} = this.props;
         console.log(cube);
         let response, json;
-        let url = `${config.baseUrl}/as/analysisResByPath/${cube.replayId.replayid}?service=${data.service}&path=${data.path}%2A&start=20&nummatches=20&respmt=Exception`;
+        let url = `${config.baseUrl}/as/analysisResByPath/${cube.replayId.replayid}?service=${data.service}&path=${data.path}%2A&start=0&nummatches=20&respmt=Exception`;
         let dataList = {};
         try {
             response = await fetch(url, {
