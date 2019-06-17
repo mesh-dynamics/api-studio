@@ -226,7 +226,7 @@ async function getReplayId(collectionId, app) {
     let url = `${config.baseUrl}/rs/init/${user.username}/${app}/${collectionId}`;
     let replayId;
     const searchParams = new URLSearchParams();
-    const ep = app == 'Cube' ? 'staging.cubecorp.io' : 'dogfooding.cubecorp.io';
+    const ep = app == 'Cube' ? 'http://staging.cubecorp.io' : 'http://dogfooding.cubecorp.io';
     searchParams.set('endpoint', ep);
     searchParams.set('instanceid', 'prod');
     if (app != 'Cube') {
