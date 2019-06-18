@@ -345,8 +345,9 @@ class ReplayAttribute extends Component {
                                 </div>
                             </Col>
                             <Col md={4}>
-                                <input style={{'marginTop': '10px'}} placeholder="Search Application" type="text"/>&nbsp;&nbsp;
-                                <span className="cube-btn">VIEW SCHEDULE</span>
+                                <div style={{marginTop: '15px'}}>
+                                    <span className="cube-btn" onClick={this.showCT}>View Comparison Rules</span>
+                                </div>
                             </Col>
                         </Row>
                     </div>
@@ -366,7 +367,6 @@ class ReplayAttribute extends Component {
 
                                 <span className="cube-btn" onClick={this.replay}>Test</span>&nbsp;&nbsp;
                                 <span className="cube-btn disabled">SAVE & RUN</span>&nbsp;&nbsp;
-                                <span className="cube-btn" onClick={this.showCT}>View Comparison Template</span>
                             </Col>
                         </Row>
                     </div>
@@ -374,7 +374,7 @@ class ReplayAttribute extends Component {
 
                 <Modal show={this.state.showCT} onHide={this.handleClose}>
                     <Modal.Header closeButton>
-                        <Modal.Title>Comparison Template</Modal.Title>
+                        <Modal.Title>Comparison Rules</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <pre>

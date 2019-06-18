@@ -72,7 +72,7 @@ class replay extends Component {
                         <div className="right-head">
                             Test Configuration
                         </div>
-                        <div className="padding-15" style={{'padding-top': 0}}>
+                        <div className="padding-15" style={{'paddingTop': 0}}>
                             <div className="row">
                                 <div className="col-md-4">
                                     Test Configuration
@@ -147,9 +147,9 @@ class replay extends Component {
             <div className="result-container">
                 <Tabs defaultActiveKey="result" id="uncontrolled-tab-example">
                     <Tab eventKey="result" title="Test Results: Detailed view">
-                        <Results res={cube.analysis} resByPath={cube.report} timeline={cube.timelineData}/>
+                        <Results app={cube.selectedApp} res={cube.analysis} resByPath={cube.report} timeline={cube.timelineData}/>
                     </Tab>
-                    <Tab eventKey="analysis" title="Analysis">
+                    <Tab eventKey="analysis" title="Results Review">
                         <Analysis res={cube.analysis} resByPath={cube.report}/>
                     </Tab>
                 </Tabs>

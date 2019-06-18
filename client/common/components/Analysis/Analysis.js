@@ -53,7 +53,7 @@ class Analysis extends Component {
 
     render() {
         const {res, resByPath, cube} =  this.props;
-        let recordedResponse = [{"actors_lastnames":["HARRIS","WILLIS","TEMPLE"],"display_actors":["DAN HARRIS","HUMPHREY WILLIS","BURT TEMPLE"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","HUMPHREY","BURT"],"film_counts":[28,26,23],"timestamp":1641491700530174,"book_info":{"reviews":[{"reviewer":"Reviewer1","text":"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!"},{"reviewer":"Reviewer2","text":"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare."}],"id":"851"}}];
+        let recordedResponse = null;
         let replayRes = [{"display_actors":["HARRIS,DAN","WILLIS,HUMPHREY","TEMPLE,BURT"],"film_id":851,"title":"STRAIGHT HOURS","actors_firstnames":["DAN","BURT","HUMPHREY"],"film_counts":["28","23","26"],"timestamp":27523407007561}];
         let diff = [
             {"op":"remove","path":"/0/actors_lastnames","value":["HARRIS","WILLIS","TEMPLE"],"resolution":"OK_Optional"},
@@ -128,8 +128,8 @@ class Analysis extends Component {
                 expandableRows={true}
                 expandableRowsComponent={<AnalysisRow />}
             />
+            {recordedResponse ? <Diff recorded={recordedResponse} replayRes={replayRes} diff={diff}/> : ''}
 
-            <Diff recorded={recordedResponse} replayRes={replayRes} diff={diff}/>
         </div>)
     }
 }

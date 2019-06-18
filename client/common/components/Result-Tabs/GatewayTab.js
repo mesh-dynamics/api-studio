@@ -8,7 +8,7 @@ class GatewayTab extends Component{
     }
 
     render() {
-        const {res, resByPath, timeline} =  this.props;
+        const {res, resByPath, timeline, app} =  this.props;
         const error =  res.respnotmatched;
         const errorP = Math.round((100 * error/res.reqcnt) * 100) / 100;
         const incomplete = res.reqcnt - (res.respmatched + res.resppartiallymatched + res.respnotmatched);
@@ -50,7 +50,7 @@ class GatewayTab extends Component{
                     <tr>
                         <td>Errors</td>
                         <td>{error}</td>
-                        <td>{errorP}</td>
+                        <td className={errorP > 10 ? 'color-red' : ''}>{errorP}</td>
                         <td>0.63</td>
                         <td>0.78</td>
                         <td>-</td>
@@ -66,30 +66,7 @@ class GatewayTab extends Component{
                     </tbody>
                 </Table>
                 </div>
-                <ScatterPlot timeline={timeline}/>
-
-                {/*<div>
-                    <h4>
-                        Errors observed By Path
-                    </h4>
-                    <Table striped bordered hover>
-                        <thead>
-                        <tr>
-                            <th className="default">Path</th>
-                            <th className="default">Tested</th>
-                            <th className="default">Error</th>
-                            <th className="default">Error%</th>
-                            <th className="default">Avg. Error%</th>
-                            <th className="default">95% CI</th>
-                            <th className="default">Recommendation</th>
-                            <th className="default">7 Day Trend</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                            {errorByPath}
-                        </tbody>
-                    </Table>
-                </div>*/}
+                <ScatterPlot app={app} timeline={timeline}/>
             </div>
         );
 

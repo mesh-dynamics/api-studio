@@ -112,7 +112,7 @@ async function getGraphData(app) {
             {
                 "data": {
                     "id": "restwrapjdbc",
-                    "text": "RestWrapJDBC"
+                    "text": "Rentals"
                 },
                 "style": {
                     "text-wrap": "wrap",
@@ -121,7 +121,7 @@ async function getGraphData(app) {
             {
                 "data": {
                     "id": "details",
-                    "text": "ProductDetails"
+                    "text": "Details"
                 },
                 "style": {
                     "text-wrap": "wrap",
@@ -130,7 +130,7 @@ async function getGraphData(app) {
             {
                 "data": {
                     "id": "ratings",
-                    "text": "ProductRatings"
+                    "text": "Ratings"
                 },
                 "style": {
                     "text-wrap": "wrap",
@@ -139,7 +139,7 @@ async function getGraphData(app) {
             {
                 "data": {
                     "id": "reviews",
-                    "text": "ProductReviews"
+                    "text": "Reviews"
                 },
                 "style": {
                     "text-wrap": "wrap",

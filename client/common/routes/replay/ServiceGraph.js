@@ -182,7 +182,7 @@ class ServiceGraph extends Component {
             /*this.cy.destroy();
             this.cy = {};*/
             this.renderServiceGraph(this.cy, cube);
-            this.focusDivWithoutScroll(element)
+            // this.focusDivWithoutScroll(element)
         } else {
             //setTimeout(this.render, 1);
         }
