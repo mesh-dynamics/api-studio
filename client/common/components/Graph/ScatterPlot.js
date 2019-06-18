@@ -19,19 +19,21 @@ const data01 = [
 class ScatterPlot extends Component {
 
     render() {
-        const {timeline} = this.props;
+        const {timeline, app} = this.props;
         let graphData = [];
         for (const unit of timeline) {
             if (unit.results && unit.results.length > 0) {
+                let tt = unit.timestamp.split(' ');
+                let ot = tt[1].split(':');
                 let obj = {
-                    date: unit.timestamp,
+                    date: ot[0] + ':' + ot[1],
                 };
                 for (const res of unit.results) {
-                    if (res.service) {
-                        obj[res.service] = ((res.respnotmatched/(res.reqmatched + res.reqnotmatched + res.reqpartiallymatched)) * 100).toFixed(2);
-                    } else {
+                    if (res.service && res.service.toLocaleLowerCase() == app.toLowerCase()) {
+                        obj[res.service.toLowerCase()] = ((res.respnotmatched/(res.reqmatched + res.reqnotmatched + res.reqpartiallymatched)) * 100).toFixed(2);
+                    }/* else {
                         obj['overall'] = ((res.respnotmatched/(res.reqmatched + res.reqnotmatched + res.reqpartiallymatched)) * 100).toFixed(2);
-                    }
+                    }*/
 
                 }
 
@@ -57,12 +59,12 @@ class ScatterPlot extends Component {
                 <YAxis name="Error" unit="%"/>
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="overall" stroke="#8884d8" />
-                <Line type="monotone" dataKey="restwrapjdbc" stroke="#82ca9d"  />
-                <Line type="monotone" dataKey="reviews" stroke="#6FCF97"  />
+                {/*<Line type="monotone" dataKey="overall" stroke="#8884d8" />*/}
+                <Line type="monotone" dataKey={app.toLowerCase()} stroke="#82ca9d"  />
+                {/*<Line type="monotone" dataKey="reviews" stroke="#6FCF97"  />
                 <Line type="monotone" dataKey="ratings" stroke="#EB5757"  />
                 <Line type="monotone" dataKey="details" stroke="#F2C94C"  />
-                <Line type="monotone" dataKey="movieinfo" stroke="#F2C94C"  />
+                <Line type="monotone" dataKey="movieinfo" stroke="#F2C94C"  />*/}
             </LineChart>
         );
     }
