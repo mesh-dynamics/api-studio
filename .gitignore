@@ -5,3 +5,4 @@ mock-all-except-moviebook.yaml
 replayid.temp
 envoy_record_cs.yaml
 *.log
+.DS_Store
