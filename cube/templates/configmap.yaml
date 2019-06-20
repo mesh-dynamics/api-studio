@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cubews
+  namespace: {{namespace}}
+data:
+  APP_DOGFOOD: "cube"
+  INSTANCE_DOGFOOD: "staging"
+  SERVICE_DOGFOOD: "cube"
+  CUSTOMER_DOGFOOD: "ravivj"
