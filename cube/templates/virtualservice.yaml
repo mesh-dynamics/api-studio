@@ -6,7 +6,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - "{{namepace_host}}"
+  - "{{namespace_host}}"
   gateways:
   - {{namespace}}-gateway
   http:
@@ -31,7 +31,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - "{{namepace_host}}"
+  - "{{namespace_host}}"
   gateways:
   - {{namespace}}-gateway
   http:
@@ -52,7 +52,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - "{{namepace_host}}"
+  - "{{namespace_host}}"
   gateways:
   - {{namespace}}-gateway
   http:
@@ -73,7 +73,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - "{{namepace_host}}"
+  - "{{namespace_host}}"
   gateways:
   - {{namespace}}-gateway
   http:
@@ -96,7 +96,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - "{{namepace_host}}"
+  - "{{namespace_host}}"
   gateways:
   - {{namespace}}-gateway
   http:
