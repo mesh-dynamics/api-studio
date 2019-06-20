@@ -6,3 +6,9 @@ replayid.temp
 envoy_record_cs.yaml
 *.log
 .DS_Store
+common/kubernetes/*
+cube/kubernetes/*
+moviebook/kubernetes/*
+!moviebook/kubernetes/.gitkeep
+!common/kubernetes/.gitkeep
+!cube/kubernetes/.gitkeep
