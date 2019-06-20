@@ -23,3 +23,24 @@ spec:
         host: productpage
         port:
           number: 9080
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: restwrapjdbc
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - "{{namespace_host}}"
+  gateways:
+  - {{namespace}}-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /restsql
+    route:
+    - destination:
+        host: restwrapjdbc
+        port:
+          number: 8080
