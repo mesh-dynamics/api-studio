@@ -16,6 +16,12 @@ generate_menifest() {
 	fi
 }
 
+init() {
+	kubectl apply -f $COMMON_DIR/kubernetes/namespace.yaml
+	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
+	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
+	kubectl apply -f $APP_DIR/kubernetes
+}
 main () {
 	# To debug this script, run it with TRACE=1 in the enviornment
 	# -x option will trace each command that is run
@@ -28,7 +34,7 @@ main () {
 		exit 1 #Exist with nonzero exit code
 	fi
 	case "$1" in
-		init) OPERATION="init"; shift; generate_menifest $1;;
+		init) OPERATION="init"; shift; generate_menifest $1; shift; init "$@";;
 	esac
 }
 
