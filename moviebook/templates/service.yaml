@@ -263,11 +263,11 @@ spec:
           - name: DISPLAYNAME_LASTFIRST
             value: "true"
           - name: NUM_ACTORS_TO_DISPLAY
-            value: 4
+            value: "4"
           - name: RATINGS_5PT_SCALE
             value: "true"
           - name: CONCAT_BUG
-            value: false
+            value: "false"
 
 ---
 apiVersion: extensions/v1beta1
@@ -315,11 +315,11 @@ spec:
           - name: DISPLAYNAME_LASTFIRST
             value: "flase"
           - name: NUM_ACTORS_TO_DISPLAY
-            value: 2
+            value: "2"
           - name: RATINGS_5PT_SCALE
             value: "true"
           - name: CONCAT_BUG
-            value: true
+            value: "true"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
@@ -355,9 +355,9 @@ spec:
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
-namespace: {{namespace}}
 metadata:
   name: restwrapjdbc-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
