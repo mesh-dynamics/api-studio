@@ -37,13 +37,25 @@ spec:
         - containerPort: 8080
         env:
           - name: app_dogfood
-            value: cube
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: APP_DOGFOOD
           - name: instance_dogfood
-            value: staging
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: INSTANCE_DOGFOOD
           - name: service_dogfood
-            value: cube
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SERVICE_DOGFOOD
           - name: customer_dogfood
-            value: ravivj
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUSTOMER_DOGFOOD
       imagePullSecrets:
       - name: regcred
 
@@ -86,13 +98,25 @@ spec:
         - containerPort: 8080
         env:
           - name: app_dogfood
-            value: cube
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: APP_DOGFOOD
           - name: instance_dogfood
-            value: staging
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: INSTANCE_DOGFOOD
           - name: service_dogfood
-            value: cube
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SERVICE_DOGFOOD
           - name: customer_dogfood
-            value: ravivj
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUSTOMER_DOGFOOD
       imagePullSecrets:
       - name: regcred
 
@@ -135,13 +159,25 @@ spec:
         - containerPort: 8080
         env:
           - name: app_dogfood
-            value: cube
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: APP_DOGFOOD
           - name: instance_dogfood
-            value: staging
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: INSTANCE_DOGFOOD
           - name: service_dogfood
-            value: cube
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SERVICE_DOGFOOD
           - name: customer_dogfood
-            value: ravivj
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUSTOMER_DOGFOOD
       imagePullSecrets:
       - name: regcred
 ##################################################################################################
