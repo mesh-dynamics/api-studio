@@ -195,8 +195,8 @@ class ReplayAttribute extends Component {
             dispatch,
             cube
         } = this.props;
-        //dispatch(cubeActions.getApps());
-        dispatch(cubeActions.getTestIds(cube.selectedApp));
+        dispatch(cubeActions.getApps());
+        //dispatch(cubeActions.getTestIds(cube.selectedApp));
         /*if (cube.selectedTestId == cubeConstants.CREATE_NEW) {
             this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
         }*/
@@ -265,22 +265,35 @@ class ReplayAttribute extends Component {
     }
 
     renderAppList (cube) {
-        if (cube.appsListReqStatus != cubeConstants.REQ_SUCCESS) {
+        if (cube.appsListReqStatus != cubeConstants.REQ_SUCCESS || !cube.appsList) {
             return ''
         }
         let options = [];
         options = cube.appsList.map(item => (<option key={item.id} value={item.name}>{item.name}</option>));
         let jsxContent = '';
         if (options.length) {
-            let selectedApp = '';
-            if (cube.selectedApp)
-                console.log(selectedApp);
+            jsxContent = <div className="inline-block">
+                <select onChange={this.handleChangeForApps} value={cube.selectedApp} placeholder={'Select...'}>
+                    <option value="">Select App</option>
+                    {options}
+                </select>
+            </div>
+        } else {
+            <select onChange={this.handleChangeForApps} value={cube.selectedApp} placeholder={'Select...'}>
+                <option value="">Select App</option>
+            </select>
         }
+
+        return <div className="inline-block">
+            { jsxContent }
+        </div>
     }
 
     renderTestIds ( cube ) {
-        if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS)
-            return '';
+        if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
+           return <select disabled value={cube.selectedTestId} placeholder={'Select...'}>
+                <option value="">No App Selected</option>
+            </select>
         let options = [];
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
             options = cube.testIds.map(item => (<option key={item.collection} value={item.collection}>{item.collection}</option>));
@@ -331,10 +344,7 @@ class ReplayAttribute extends Component {
                                     <Row>
                                         <Col md={6}>
                                             <span className="label">Application</span><br/>
-                                            <select onChange={this.handleChangeForApps} name="" id="app-sel">
-                                                <option value="MovieInfo">MovieInfo</option>
-                                                <option value="Cube">Cube</option>
-                                            </select> &nbsp;&nbsp;
+                                            {this.renderAppList(cube)}&nbsp;&nbsp;
                                             <span className="cube-btn">NEW TEST</span>
                                         </Col>
                                         <Col md={6}>

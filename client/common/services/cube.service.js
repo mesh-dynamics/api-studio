@@ -19,7 +19,7 @@ export const cubeService = {
 async function fetchAppsList() {
     let response, json;
     let url = `${config.baseUrl}/api/app`;
-    let appsList = {};
+    let appsList;
     try {
         response = await fetch(url, {
             method: "get",
@@ -30,7 +30,7 @@ async function fetchAppsList() {
         });
         if (response.ok) {
             json = await response.json();
-            appsList = json.apps;
+            appsList = json;
         } else {
             console.log("Response not ok in fetchAppsList", response);
             throw new Error("Response not ok fetchAppsList");
