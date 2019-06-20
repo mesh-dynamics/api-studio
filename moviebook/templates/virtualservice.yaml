@@ -1,14 +1,13 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: bookinfo-staging
-  labels:
-    env: staging
+  name: bookinfo
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "staging.cubecorp.io"
+  - "{{namespace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:
@@ -21,6 +20,6 @@ spec:
         prefix: /api/v1/products
     route:
     - destination:
-        host: productpage.staging.svc.cluster.local
+        host: productpage
         port:
           number: 9080

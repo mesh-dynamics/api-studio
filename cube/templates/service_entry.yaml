@@ -1,25 +1,9 @@
-##############
-# External service
-###############
-apiVersion: networking.istio.io/v1alpha3
-kind: ServiceEntry
-metadata:
-  name: aws-mysql-sakila
-spec:
-  hosts:
-  - sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
-  ports:
-  - number: 3306
-    name: mysql
-    protocol: TCP
-  resolution: DNS
-  location: MESH_EXTERNAL
-
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: ServiceEntry
 metadata:
   name: aws-solr
+  namespace: {{namespace}}
 spec:
   hosts:
   - 18.191.135.125
@@ -33,7 +17,8 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: ServiceEntry
 metadata:
-  name: cubeservice
+  name: cubeservicestaging
+  namespace: {{namespace}}
 spec:
   hosts:
   - staging.cubecorp.io
@@ -48,7 +33,8 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: ServiceEntry
 metadata:
-  name: doogfooding
+  name: cubeservicedoogfooding
+  namespace: {{namespace}}
 spec:
   hosts:
   - dogfooding.cubecorp.io
@@ -64,6 +50,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: ServiceEntry
 metadata:
   name: aws-rds-cubedb
+  namespace: {{namespace}}
 spec:
   hosts:
   - cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com

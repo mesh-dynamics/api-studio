@@ -2,11 +2,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: movieinfo
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "*"
+  - "{{namespace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:
@@ -14,6 +15,6 @@ spec:
     route:
     - destination:
         host: movieinfo
-        subset: v2
+        subset: v1
         port:
           number: 8080

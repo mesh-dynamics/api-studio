@@ -3,11 +3,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubeui
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "*"
+  - "{{namepace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:
@@ -27,11 +28,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubews-record
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "*"
+  - "{{namepace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:
@@ -47,11 +49,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubews-mock
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "*"
+  - "{{namepace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:
@@ -67,11 +70,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubews-replay
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "*"
+  - "{{namepace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:
@@ -89,11 +93,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cubeui-backend
+  namespace: {{namespace}}
 spec:
   hosts:
-  - "*"
+  - "{{namepace_host}}"
   gateways:
-  - moviebook-gateway
+  - {{namespace}}-gateway
   http:
   - match:
     - uri:

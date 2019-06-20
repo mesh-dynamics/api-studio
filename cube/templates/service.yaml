@@ -6,6 +6,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cubews-record
+  namespace: {{namespace}}
   labels:
     app: cubews-record
 spec:
@@ -19,6 +20,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: cubews-record-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -53,6 +55,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cubews-mock
+  namespace: {{namespace}}
   labels:
     app: cubews-mock
 spec:
@@ -66,6 +69,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: cubews-mock-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -100,6 +104,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cubews-replay
+  namespace: {{namespace}}
   labels:
     app: cubews-replay
 spec:
@@ -113,6 +118,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: cubews-replay-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -146,6 +152,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cubeui
+  namespace: {{namespace}}
   labels:
     app: cubeui
 spec:
@@ -159,6 +166,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: cubeui-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -183,6 +191,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cubeui-backend
+  namespace: {{namespace}}
   labels:
     app: cubeui-backend
 spec:
@@ -196,6 +205,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: cubeui-backend-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -206,7 +216,7 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:v-1.0.0
+        image: cubeiocorp/cubeuibackend:aef7ddcf0775a2d9b56158f154b33ab199253f4a
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

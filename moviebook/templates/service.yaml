@@ -19,6 +19,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: details
+  namespace: {{namespace}}
   labels:
     app: details
 spec:
@@ -32,6 +33,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: details-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -54,6 +56,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ratings
+  namespace: {{namespace}}
   labels:
     app: ratings
 spec:
@@ -67,6 +70,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: ratings-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -89,12 +93,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: reviews
+  namespace: {{namespace}}
   labels:
     app: reviews
 spec:
   ports:
-
-
   - port: 9080
     name: http
   selector:
@@ -104,6 +107,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: reviews-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -123,6 +127,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: reviews-v2
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -142,6 +147,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: reviews-v3
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -164,6 +170,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: productpage
+  namespace: {{namespace}}
   labels:
     app: productpage
 spec:
@@ -177,6 +184,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: productpage-v1
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -200,6 +208,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: movieinfo
+  namespace: {{namespace}}
   labels:
     app: movieinfo
 spec:
@@ -213,6 +222,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: movieinfo-v1  #movieinfo without bugs
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -264,6 +274,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: movieinfo-v2    #Movieinfo with bugs
+  namespace: {{namespace}}
 spec:
   replicas: 1
   template:
@@ -314,6 +325,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: movieinfo
+  namespace: {{namespace}}
 spec:
   host: movieinfo
   subsets:
@@ -331,6 +343,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: restwrapjdbc
+  namespace: {{namespace}}
   labels:
     app: restwrapjdbc
 spec:
@@ -342,6 +355,7 @@ spec:
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
+namespace: {{namespace}}
 metadata:
   name: restwrapjdbc-v1
 spec:
