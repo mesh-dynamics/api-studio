@@ -22,7 +22,8 @@ var __rest = (this && this.__rest) || function (s, e) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var emotion_1 = require("emotion");
 exports.default = (function (styleOverride) {
-    var _a, _b;
+    // author raj.maddireddy@cubecorp.io
+    var _a, _b, _c;
     var overrideVariables = styleOverride.variables, styles = __rest(styleOverride, ["variables"]);
     var variables = __assign({
         addedBackground: '#e6ffed',
@@ -98,7 +99,9 @@ exports.default = (function (styleOverride) {
             minWidth: 50,
             paddingLeft: 10,
             userSelect: 'none',
-            label: 'marker'
+            label: 'marker',
+            // author raj.maddireddy@cubecorp.io
+            textAlign: 'right'
         },
         _a["&." + diffAdded] = {
             pre: {
@@ -111,6 +114,26 @@ exports.default = (function (styleOverride) {
             }
         },
         _a));
+    // author raj.maddireddy@cubecorp.io
+    var actions = emotion_1.css((_c = {
+            minWidth: 50,
+            paddingLeft: 10,
+            userSelect: 'none',
+            label: 'actions',
+            textAlign: 'right',
+            verticalAlign: 'middle'
+        },
+        _c["&." + diffAdded] = {
+            pre: {
+                color: variables.addedColor,
+            }
+        },
+        _c["&." + diffRemoved] = {
+            pre: {
+                color: variables.removedColor,
+            }
+        },
+        _c));
     var hightlightedLine = emotion_1.css({
         background: variables.highlightBackground,
         label: 'hightlighted-line',
@@ -124,7 +147,8 @@ exports.default = (function (styleOverride) {
             padding: '0 10px',
             label: 'gutter',
             cursor: 'pointer',
-            textAlign: 'right',
+            // author raj.maddireddy@cubecorp.io
+            textAlign: 'center',
             background: variables.gutterBackground,
             '&:hover': {
                 background: variables.gutterBackgroundDark,
@@ -180,6 +204,8 @@ exports.default = (function (styleOverride) {
         diffRemoved: diffRemoved,
         diffAdded: diffAdded,
         marker: marker,
+        // author raj.maddireddy@cubecorp.io
+        actions: actions,
         hightlightedGutter: hightlightedGutter,
         hightlightedLine: hightlightedLine,
         gutter: gutter,

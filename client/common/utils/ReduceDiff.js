@@ -40,24 +40,27 @@ class ReduceDiff {
         return null;
     }
 
-    _updateReducedDiffArray(diffReason, currentDiffReason, jsonStringLine, tempReducedDiffArray, reducedDiffArray) {
+    _updateReducedDiffArray(diffReason, currentDiffReason, jsonStringLine, tempReducedDiffArray, reducedDiffArray, serverSideDiff, currentJsonPath) {
         /*
             This method updates the pre-final result to final result. The pre-final result (tempReducedDiffArray) has line by line diff changes and once a diff reason changes, empty this pre-final result to combine similar groups and add to the final result.
             This method is to combine similar diffed blocks (removed or added or no changes) to the final result. 
         */
+        // FIX: refactor this method. Current logic doesnt need if and else but just the push
         if(diffReason === currentDiffReason) {
             tempReducedDiffArray.push(jsonStringLine);
         } else {
-            reducedDiffArray.push({
-                value: tempReducedDiffArray.join(""),
-                removed: diffReason === NA ? false : diffReason === REMOVED ? true : false,
-                added: diffReason === NA ? false : diffReason === ADDED ? true : false,
-                count: (tempReducedDiffArray.join("").match(/(?:\r\n|\r|\n)/g) || []).length
-            });
             tempReducedDiffArray = [];
             diffReason = currentDiffReason;
             tempReducedDiffArray.push(jsonStringLine);
         }
+        reducedDiffArray.push({
+            value: jsonStringLine,
+            removed: currentDiffReason === NA ? false : currentDiffReason === REMOVED ? true : false,
+            added: currentDiffReason === NA ? false : currentDiffReason === ADDED ? true : false,
+            count: 1,
+            serverSideDiff: serverSideDiff,
+            jsonPath: currentJsonPath
+        });
         return [diffReason, tempReducedDiffArray];
     }
 
@@ -68,12 +71,12 @@ class ReduceDiff {
         let jsonPathWOBegin = jsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, ""),
         jsonPathWOEND;
         while (jsonPathWOEND !== jsonPathWOBegin) {
-            [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray);
+            [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray, null, jsonPath);
             iter++;
             jsonPath = jsonPathArray[iter] ? jsonPathArray[iter][0] : "";
             jsonPathWOEND = jsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, "");
         }
-        [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray);
+        [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray, null, jsonPath);
         return [diffReason, tempReducedDiffArray, iter];
     }
 
@@ -91,15 +94,16 @@ class ReduceDiff {
                 if they are in fact objects then add them to respective stacks.
                 and pop them out once the object is completely traversed
             */
+           // FIX: remove unused stacks.
             if(tempExpJsonPath && tempActJsonPath && tempExpJsonPath ===  tempActJsonPath) {
                 if(tempExpJsonPath.indexOf(BEGIN_BRACKET) > -1) {
                     leftStack.push(tempExpJsonPath);
                     rightStack.push(tempExpJsonPath);
-                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, NA, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray);
+                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, NA, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
                 } else if (tempExpJsonPath.indexOf(END_BRACKET) > -1) {
                     leftStack.pop();
                     rightStack.pop();
-                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, NA, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray);
+                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, NA, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
                 } else {
                     /* 
                         When tow paths are same and they are not objects, then either their values too same or not.
@@ -109,20 +113,20 @@ class ReduceDiff {
                     if(tempExpJsonPath) removedPathObject = this._findPathInComputedDiff(tempExpJsonPath, this.computedDiff);
                     if(tempActJsonPath) addedPathObject = this._findPathInComputedDiff(tempActJsonPath, this.computedDiff);
                     if(removedPathObject) {
-                        [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray);
+                        [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, removedPathObject, tempExpJsonPath);
                     }
                     if(addedPathObject) {
-                        [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray);
+                        [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray, addedPathObject, tempActJsonPath);
                     }
                     if(!removedPathObject && !addedPathObject) {
                         /*
                             If paths and their values are same, but due to syntax the pretty printed lines may be different (eg: commas before a removed path or an added path), in that case showing them as different for now. but later should be shown differently other than reg or green shades.
                         */
                         if(this.prettyPrintedExpJSONLines[expIter] !== this.prettyPrintedActJSONLines[actIter]) {
-                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray);
-                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray);
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray, null, tempActJsonPath);
                         } else {
-                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, NA, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray);
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, NA, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
                         }
                         
                     }
@@ -144,7 +148,7 @@ class ReduceDiff {
                     } else if (tempExpJsonPath.indexOf(END_BRACKET) > -1) {
                         tempStack.pop();
                     }
-                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray);
+                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, removedPathObject, tempExpJsonPath);
                     expIter++;
                 }
                 if(addedPathObject) {
@@ -153,11 +157,11 @@ class ReduceDiff {
                     } else if (tempActJsonPath.indexOf(END_BRACKET) > -1) {
                         tempStack.pop();
                     }
-                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray);
+                    [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray, addedPathObject, tempActJsonPath);
                     actIter++;
                 }
                 /*
-                    If its not removed or added, assume its removed. TBD.
+                    Its not removed or added, its TBD.
                 */
                if(!removedPathObject && !addedPathObject) {
                     console.error("Circuit Breaker!");
@@ -177,7 +181,11 @@ class ReduceDiff {
                         actIter++;
                     }
                 }
+            // FIX: this else is concoted. refactor this as well
             } else {
+                /*
+                    A circuit breaker.
+                */
                 console.error("Circuit Breaker!");
                 return [];
             }
@@ -185,7 +193,7 @@ class ReduceDiff {
         /*
             Finally whatever left in the pre-final result, add to to final result itself.
         */
-        [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, DONE, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray);
+        [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, DONE, "", tempReducedDiffArray, reducedDiffArray, null);
         return reducedDiffArray;
     }
 
