@@ -56,7 +56,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 		numresults = 0;
 		iterator = Optional.empty();
-		numread = 0;
+		numread = this.start; // consider these items to be already read
 
 		int toread = maxresults.map(mr -> Math.min(BATCHSIZE, mr)).orElse(BATCHSIZE);
 		
@@ -67,7 +67,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 			numresults = maxresults.map(mr -> Math.min(r.getNumFound(), mr)).orElse(r.getNumFound());
 			numFound = r.getNumFound();
 			iterator = Optional.ofNullable(r.iterator());
-			numread = r.size();			
+			numread += r.size();
 		});
 	}
 
