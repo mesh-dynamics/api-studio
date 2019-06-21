@@ -33,18 +33,21 @@ public class TemplateEntry {
      */
     // Adding appropriate annotations for json serialization/deserialization
     @JsonCreator
-    public TemplateEntry(@JsonProperty("path") String path, @JsonProperty("dt") CompareTemplate.DataType dt,
+    public TemplateEntry(@JsonProperty("path") String path,
+                         @JsonProperty("dt") CompareTemplate.DataType dt,
                          @JsonProperty("pt") CompareTemplate.PresenceType pt,
                          @JsonProperty("ct") CompareTemplate.ComparisonType ct,
+                         @JsonProperty("em") CompareTemplate.ExtractionMethod em,
                          @JsonProperty("customization") Optional<String> customization) {
         super();
         this.path = path;
         this.dt = dt;
         this.pt = pt;
         this.ct = ct;
+        this.em = em;
         this.customization = customization;
         this.pathptr = JsonPointer.valueOf(path);
-        if (ct == CompareTemplate.ComparisonType.CustomRegex) {
+        if (em == CompareTemplate.ExtractionMethod.Regex) {
             // default pattern is to match everything
             regex = Optional.ofNullable(Pattern.compile(customization.orElse(".*")));
         } else {
@@ -58,8 +61,8 @@ public class TemplateEntry {
      * @param pt
      * @param ct
      */
-    public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct) {
-        this(path, dt, pt, ct, Optional.empty());
+    public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct, CompareTemplate.ExtractionMethod em) {
+        this(path, dt, pt, ct, em, Optional.empty());
     }
 
     @JsonProperty("path")
@@ -70,6 +73,8 @@ public class TemplateEntry {
     CompareTemplate.PresenceType pt;
     @JsonProperty("ct")
     CompareTemplate.ComparisonType ct;
+    @JsonProperty("em")
+    CompareTemplate.ExtractionMethod em;
     @JsonProperty("customization")
     Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
     JsonPointer pathptr; // compiled form of path
@@ -113,8 +118,8 @@ public class TemplateEntry {
             return resolution;
         }
 
-        switch (ct) {
-            case CustomRegex:
+        switch (em) {
+            case Regex:
                 Pattern pattern = regex.orElseGet(() -> {
                     LOGGER.error("Internal logical error - compiled pattern missing for regex");
                     return Pattern.compile(customization.orElse(".*"));
@@ -140,6 +145,9 @@ public class TemplateEntry {
                         return Comparator.Resolution.OK_CustomMatch;
                     }).orElse(lhsmissing());
                 }).orElse(rhsmissing());
+        }
+
+        switch (ct) {
             case Equal:
             case EqualOptional:
                 return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
@@ -233,18 +241,24 @@ public class TemplateEntry {
             return resolution;
         }
 
-        switch (ct) {
-            case CustomFloor:
-            case CustomCeil:
-            case CustomRound:
+        switch (em) {
+            case Round:
+            case Ceil:
+            case Floor:
                 return rhs.map(rval -> {
                     return lhs.map(lval -> {
                         int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
-                        double lval1 = adjustDblVal(ct, lval, numdecimal);
-                        double rval1 = adjustDblVal(ct, rval, numdecimal);
+                        double lval1 = adjustDblVal(em, lval, numdecimal);
+                        double rval1 = adjustDblVal(em, rval, numdecimal);
                         return (lval1 == rval1) ? Comparator.Resolution.OK_CustomMatch : Comparator.Resolution.ERR_ValMismatch;
                     }).orElse(lhsmissing());
                 }).orElse(rhsmissing());
+            //default:
+            //    return ERR_ValTypeMismatch; // could be CustomRegex
+        }
+
+        switch (ct) {
+
             case Equal:
             case EqualOptional:
                 return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
@@ -259,14 +273,14 @@ public class TemplateEntry {
 
     }
 
-    private static double adjustDblVal(CompareTemplate.ComparisonType ct, double val, int numdecimal) {
+    private static double adjustDblVal(CompareTemplate.ExtractionMethod em, double val, int numdecimal) {
         double multiplier = Math.pow(10, numdecimal);
-        switch(ct) {
-            case CustomCeil:
+        switch(em) {
+            case Ceil:
                 return Math.ceil(val * multiplier)/multiplier;
-            case CustomFloor:
+            case Floor:
                 return Math.floor(val * multiplier)/multiplier;
-            case CustomRound:
+            case Round:
                 return Math.round(val * multiplier)/multiplier;
             default:
                 return val;

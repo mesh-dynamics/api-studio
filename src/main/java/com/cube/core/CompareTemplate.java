@@ -77,6 +77,13 @@ public class CompareTemplate {
 		Default // if not specified
 	}
 
+	public enum ExtractionMethod {
+        Regex, // for strings
+        Round, // for floats
+        Floor, // for floats
+        Ceil, // for floats
+        Default, // if not specified
+    }
 
     /**
 	 *
@@ -123,8 +130,8 @@ public class CompareTemplate {
 		getRules().forEach(rule -> {
 			if (rule.path.startsWith(prefix)) {
 				// strip the prefix from the path, this is needed other paths will not match while doing json comparison
-				LOGGER.debug("Found a rule for " + prefix +  "::  " + rule.path + " " + rule.dt + " " + rule.pt + " " + rule.ct);
-				TemplateEntry newrule = new TemplateEntry(rule.path.substring(prefix.length()), rule.dt, rule.pt, rule.ct, rule.customization);
+				LOGGER.debug("Found a rule for " + prefix +  "::  " + rule.path + " " + rule.dt + " " + rule.pt + " " + rule.ct + " " + rule.em);
+				TemplateEntry newrule = new TemplateEntry(rule.path.substring(prefix.length()), rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
 				ret.addRule(newrule);
 			}
 		});
@@ -198,10 +205,10 @@ public class CompareTemplate {
 		return Optional.ofNullable(rules.get(path));
 	}
 	
-	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default);
-	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal);
-	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional);
-	private static final TemplateEntry DEFAULT_RULE_IGNORE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Ignore);
+	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default, ExtractionMethod.Default);
+	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal, ExtractionMethod.Default);
+	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional, ExtractionMethod.Default);
+	private static final TemplateEntry DEFAULT_RULE_IGNORE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Ignore, ExtractionMethod.Default);
 	/**
 	 * @param rule
 	 */
