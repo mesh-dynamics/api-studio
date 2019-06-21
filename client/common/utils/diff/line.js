@@ -4,6 +4,14 @@ var React = require("react");
 var classnames_1 = require("classnames");
 var rightLineNumberPrefix = 'R';
 var leftLineNumberPrefix = 'L';
+// author raj.maddireddy@cubecorp.io
+var ReactBootstrap = require("react-bootstrap");
+var Tooltip = ReactBootstrap.Tooltip;
+
+var Actions = require("../../components/Actions/Actions.js").default;
+var Resolutions = require("../../components/Resolutions.js").default;
+
+
 var onLineNumberClickProxy = function (onLineNumberClick, id) {
     return function (e) { return onLineNumberClick(id, e); };
 };
@@ -48,13 +56,29 @@ exports.InlineLine = function (_a) {
             : React.createElement("pre", null, content)));
 };
 exports.DefaultLine = function (_a) {
-    var leftLineNumber = _a.leftLineNumber, rightLineNumber = _a.rightLineNumber, onLineNumberClick = _a.onLineNumberClick, rightContent = _a.rightContent, leftContent = _a.leftContent, added = _a.added, removed = _a.removed, renderContent = _a.renderContent, _b = _a.hightlightLines, hightlightLines = _b === void 0 ? [] : _b, styles = _a.styles, hideLineNumbers = _a.hideLineNumbers;
-    var _c, _d, _e, _f, _g, _h;
+    var leftLineNumber = _a.leftLineNumber, rightLineNumber = _a.rightLineNumber, onLineNumberClick = _a.onLineNumberClick, rightContent = _a.rightContent, leftContent = _a.leftContent, added = _a.added, removed = _a.removed, renderContent = _a.renderContent, _b = _a.hightlightLines, hightlightLines = _b === void 0 ? [] : _b, styles = _a.styles, hideLineNumbers = _a.hideLineNumbers,
+    // author raj.maddireddy@cubecorp.io 
+    jsonPath = _a.jsonPath, serverSideDiff = _a.serverSideDiff;
+    // author raj.maddireddy@cubecorp.io
+    var _c, _d, _e, _f, _g, _h, _i, _j;
     var hightlightLeftLine = leftLineNumber !== true
         && hightlightLines.includes(leftLineNumberPrefix + "-" + leftLineNumber);
     var hightlightRightLine = rightLineNumber !== true
         && hightlightLines.includes(rightLineNumberPrefix + "-" + rightLineNumber);
-    return React.createElement("tr", { className: styles.line },
+    // author raj.maddireddy@cubecorp.io
+    const tooltip = (
+        React.createElement(Tooltip, {id: "tooltip"}, React.createElement("strong", {glyph: "align-left"}, "Holy! "), "Its working.")
+    );
+    let actionsWrapperElementRef = React.createRef();
+    const showActions = function() {
+        let actionsWrapperElement = actionsWrapperElementRef.current;
+        if(actionsWrapperElement) actionsWrapperElement.style.visibility = "visible";
+    }
+    const hideActions = function() {
+        let actionsWrapperElement = actionsWrapperElementRef.current;
+        if(actionsWrapperElement) actionsWrapperElement.style.visibility = "hidden";
+    }
+    return React.createElement("tr", { className: styles.line, onMouseOver: showActions, onMouseOut: hideActions },
         !hideLineNumbers
             && React.createElement("td", { className: classnames_1.default(styles.gutter, styles.leftGutter, (_c = {},
                     _c[styles.diffRemoved] = removed,
@@ -74,6 +98,13 @@ exports.DefaultLine = function (_a) {
                 ? renderContent(leftContent)
                 : React.createElement("pre", {style: {backgroundColor: "transparent"}}, leftContent))
             || leftContent),
+        // author raj.maddireddy@cubecorp.io
+        React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_j = {},
+            _j[styles.hightlightedGutter] = hightlightRightLine,
+            _j)) },
+            (added || removed) && React.createElement(Resolutions, {className: classnames_1(''), added: added, removed: removed, jsonPath: jsonPath, serverSideDiff: serverSideDiff}, ""
+            )
+        ),
         !hideLineNumbers
             && React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_f = {},
                     _f[styles.diffAdded] = added,
@@ -93,10 +124,12 @@ exports.DefaultLine = function (_a) {
                 ? renderContent(rightContent)
                 : React.createElement("pre", {style: {backgroundColor: "transparent"}}, rightContent))
             || rightContent),
-        /*React.createElement("td", { className: classnames_1.default(styles.marker, (_g = {},
-                _g[styles.diffAdded] = added,
-                _g[styles.hightlightedLine] = hightlightRightLine,
-                _g)) }, added
-            && React.createElement("span", {className: classnames_1('tag', 'is-warning')}, "OK Optional")),*/
+        // author raj.maddireddy@cubecorp.io
+        React.createElement("td", { className: classnames_1.default(styles.actions, (_i = {},
+                _i[styles.diffAdded] = added,
+                _i[styles.hightlightedLine] = hightlightRightLine,
+                _i)) }, (leftContent || rightContent)
+            && React.createElement(Actions, {added: added, removed: removed, jsonPath: jsonPath, serverSideDiff: serverSideDiff, actionsWrapperElementRef: actionsWrapperElementRef}, "")
+        ),
     );
 };

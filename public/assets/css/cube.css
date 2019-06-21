@@ -1010,6 +1010,9 @@ footer {
 .tooltip {
     display: block !important
 }
+.tooltip-inner {
+    text-align: left;
+}
 .tiles {
     border-top: 1px solid #ccc;
     margin-top: 15px;
@@ -1584,21 +1587,14 @@ ul.msg_list li a .message {
     white-space: normal
 }
 .dropdown-menu {
-    border: medium none;
-    box-shadow: none;
     display: none;
     float: left;
-    font-size: 12px;
     left: 0;
-    list-style: none outside none;
-    padding: 0;
+    padding: 5px 0;
     position: absolute;
-    text-shadow: none;
     top: 100%;
     z-index: 9998;
     border: 1px solid #D9DEE4;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0
 }
 .dropdown-menu>li>a {
     color: #5A738E
@@ -2426,10 +2422,6 @@ a.btn-danger {
     color: #fff
 }
 
-.dropdown-menu {
-    top: 0;
-    left: 100%;
-}
 /*
 .btn-success {
     background: #26B99A;

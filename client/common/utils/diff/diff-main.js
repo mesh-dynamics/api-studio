@@ -38,7 +38,7 @@ var wordDiff = function (oldValue, newValue, hideType, styles, renderContent) {
                 _b[styles.wordAdded] = obj.added,
                 _b[styles.wordRemoved] = obj.removed,
                 // author raj.maddireddy@cubecorp.io
-                // \u200C (&zwnj;)
+                // \u200C (&zwnj;) used it to add an invisible character
                 // http://htmlhelp.org/reference/html40/entities/special.html
                 _b)), key: i }, obj.value.trim() ? obj.value : obj.value + "\u200C");
     });
@@ -57,7 +57,8 @@ var DiffViewer = /** @class */ (function (_super) {
                     if (!obj.added && !obj.removed) {
                         rightLineNumber = rightLineNumber + 1;
                         leftLineNumber = leftLineNumber + 1;
-                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick });
+                        // author raj.maddireddy@cubecorp.io
+                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath });
                     }
                     var leftContent;
                     var rightContent;
@@ -94,7 +95,8 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightLineNumber = rightLineNumber + 1;
                         rightContent = ch;
                     }
-                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick });
+                    // author raj.maddireddy@cubecorp.io
+                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath });
                 }));
             }); };
         };
