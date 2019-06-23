@@ -10,7 +10,7 @@ generate_menifest() {
 	fi
 	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
-		COMMON_DIR=common
+		COMMON_DIR=apps/common
 		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $NAMESPACE_HOST
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $NAMESPACE_HOST
 	elif [ "$OPERATION" = "record" ]; then
@@ -32,8 +32,8 @@ main () {
 	# To debug this script, run it with TRACE=1 in the enviornment
 	# -x option will trace each command that is run
 	set -o pipefail; [[ "$TRACE" ]] && set -x
-	if [ -d $1 ]; then #Check if the App directory exists
-		APP_DIR=$1
+	if [ -d "apps/$1" ]; then #Check if the App directory exists
+		APP_DIR="apps/$1"
 		shift
 	else
 		echo "App directory does not exist"
