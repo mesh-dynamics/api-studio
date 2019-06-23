@@ -8,11 +8,13 @@ generate_menifest() {
 		echo "Configration files does not exist"
 		exit 1
 	fi
+	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
-		source $APP_CONF
 		COMMON_DIR=common
-		./generate_yamls.py $COMMON_DIR $NAMESPACE $NAMESPACE_HOST
-		./generate_yamls.py $APP_DIR $NAMESPACE $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $NAMESPACE_HOST
+	elif [ "$OPERATION" = "record" ]; then
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID
 	fi
 }
 
@@ -21,6 +23,10 @@ init() {
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
 	kubectl apply -f $APP_DIR/kubernetes
+}
+
+record() {
+	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 }
 main () {
 	# To debug this script, run it with TRACE=1 in the enviornment
@@ -35,6 +41,7 @@ main () {
 	fi
 	case "$1" in
 		init) OPERATION="init"; shift; generate_menifest $1; shift; init "$@";;
+		record) OPERATION="record"; shift; generate_menifest $1; shift; record "$@";;
 	esac
 }
 
