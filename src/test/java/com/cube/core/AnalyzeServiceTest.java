@@ -95,7 +95,8 @@ public class AnalyzeServiceTest {
 
         for (int i = 0; i < paths.length; i++) {
             TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], CompareTemplate.PresenceType.Required,
-                    CompareTemplate.ComparisonType.Ignore);
+                    CompareTemplate.ComparisonType.Ignore, CompareTemplate.ExtractionMethod.Default
+            );
             templateEntryMap.put(paths[i], rule);
             template.addRule(rule);
         }

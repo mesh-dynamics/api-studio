@@ -20,7 +20,7 @@ public class TemplatedRRComparator {
 
     public static CompareTemplate EQUALITYTEMPLATE = new CompareTemplate();
     static TemplateEntry EQUALITYRULE = new TemplateEntry("/body", CompareTemplate.DataType.Str,
-        CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Equal);
+        CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default);
     protected final CompareTemplate template;
     protected final CompareTemplate bodytemplate; // to be used for the body field
     protected final CompareTemplate hdrFieldTemplate;

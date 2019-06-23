@@ -19,6 +19,7 @@ import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.core.CompareTemplate.ExtractionMethod;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
@@ -190,8 +191,9 @@ public class ResponseComparatorTest {
             DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
             PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
             ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+            ExtractionMethod extractionMethod = CompareTemplate.ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
             String customization = ruleObj.getString("customization");
-            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
             template.addRule(rule);
         }
 

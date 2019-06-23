@@ -245,16 +245,24 @@ public class TemplateEntry {
             case Round:
             case Ceil:
             case Floor:
-                return rhs.map(rval -> {
-                    return lhs.map(lval -> {
-                        int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
-                        double lval1 = adjustDblVal(em, lval, numdecimal);
-                        double rval1 = adjustDblVal(em, rval, numdecimal);
-                        return (lval1 == rval1) ? Comparator.Resolution.OK_CustomMatch : Comparator.Resolution.ERR_ValMismatch;
-                    }).orElse(lhsmissing());
-                }).orElse(rhsmissing());
-            //default:
-            //    return ERR_ValTypeMismatch; // could be CustomRegex
+                if (lhs.isEmpty()) return lhsmissing();
+                if (rhs.isEmpty()) return rhsmissing();
+
+                /*lhs = lhs.map(this::adjustDblVal);
+                rhs = rhs.map(this::adjustDblVal);
+                return rhs.map(rval -> lhs.map(lval -> {
+                    // TODO: separate extraction and comparison here
+                    int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
+                    lhs = Optional.of(adjustDblVal(em, lval, numdecimal));
+                    rhs = Optional.of(adjustDblVal(em, rval, numdecimal));
+                    //return (lval1 == rval1) ? Comparator.Resolution.OK_CustomMatch : Comparator.Resolution.ERR_ValMismatch;
+                }).orElse(lhsmissing())).orElse(rhsmissing());*/
+            case Regex:
+                // invalid extraction method for double
+                return ERR_NotExpected;
+            case Default:
+                // do nothing
+                break;
         }
 
         switch (ct) {
@@ -273,17 +281,18 @@ public class TemplateEntry {
 
     }
 
-    private static double adjustDblVal(CompareTemplate.ExtractionMethod em, double val, int numdecimal) {
+    private Optional<Double> adjustDblVal(double val) {
+        int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
         double multiplier = Math.pow(10, numdecimal);
         switch(em) {
             case Ceil:
-                return Math.ceil(val * multiplier)/multiplier;
+                return Optional.of(Math.ceil(val * multiplier)/multiplier);
             case Floor:
-                return Math.floor(val * multiplier)/multiplier;
+                return Optional.of(Math.floor(val * multiplier)/multiplier);
             case Round:
-                return Math.round(val * multiplier)/multiplier;
+                return Optional.of(Math.round(val * multiplier)/multiplier);
             default:
-                return val;
+                return Optional.of(val);
         }
     }
 

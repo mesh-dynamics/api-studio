@@ -70,10 +70,6 @@ public class CompareTemplate {
 		EqualOptional, // this is for cases where equality is desired, but not required.
 		// In retrieval scenario, objects satisfying equality should scored higher
 		Ignore,
-		CustomRegex, // for strings
-		CustomRound, // for floats
-		CustomFloor, // for floats
-		CustomCeil, // for floats
 		Default // if not specified
 	}
 

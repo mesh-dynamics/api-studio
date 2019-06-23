@@ -18,9 +18,12 @@ public class TemplateSerializationTest {
     public void testTemplateEntrySerialization(){
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new Jdk8Module());
-        TemplateEntry te = new TemplateEntry("/body" , CompareTemplate.DataType.Str ,
-                CompareTemplate.PresenceType.Required ,
-                CompareTemplate.ComparisonType.EqualOptional , Optional.empty());
+        TemplateEntry te = new TemplateEntry("/body",
+                CompareTemplate.DataType.Str,
+                CompareTemplate.PresenceType.Required,
+                CompareTemplate.ComparisonType.EqualOptional,
+                CompareTemplate.ExtractionMethod.Default,
+                Optional.empty());
         try {
             String json = mapper.writeValueAsString(te);
             System.out.println(json);
@@ -49,7 +52,7 @@ public class TemplateSerializationTest {
         Map<String, TemplateEntry> templateEntryMap = new HashMap<>();
 
         for (int i = 0; i < paths.length; i++) {
-            TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Ignore);
+            TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Ignore, CompareTemplate.ExtractionMethod.Default);
             templateEntryMap.put(paths[i] , rule);
             template.addRule(rule);
         }
