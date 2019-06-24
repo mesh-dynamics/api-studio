@@ -4,6 +4,7 @@ import { cubeService } from '../services'
 export const cubeActions = {
     getApps,
     setSelectedApp,
+    getInstances,
     getTestIds,
     setSelectedTestId,
     getReplayId,
@@ -40,6 +41,22 @@ function getApps () {
 
     function request() { return { type: cubeConstants.APPS_REQUEST }; }
     function success(appsList, date) { return { type: cubeConstants.APPS_SUCCESS, data: appsList, date: date }; }
+    function failure(message, date) { return { type: cubeConstants.APPS_FAILURE, err: message, date: date }; }
+}
+
+function getInstances () {
+    return async dispatch => {
+        dispatch(request());
+        try {
+            let iList = await cubeService.getInstanceList();
+            dispatch(success(iList, Date.now()));
+        } catch (error) {
+            dispatch(failure("Failed to getInstanceList", Date.now()));
+        }
+    };
+
+    function request() { return { type: cubeConstants.APPS_REQUEST }; }
+    function success(iList, date) { return { type: cubeConstants.INSTANCE_SUCCESS, data: iList, date: date }; }
     function failure(message, date) { return { type: cubeConstants.APPS_FAILURE, err: message, date: date }; }
 }
 
@@ -86,7 +103,7 @@ function getGraphData (app) {
             let gd = await cubeService.getGraphData(app);
             dispatch(success(gd, Date.now()));
         } catch (error) {
-            dispatch(failure("Failed to getTestIds", Date.now()));
+            dispatch(failure("Failed to getGraphData", Date.now()));
         }
     };
 

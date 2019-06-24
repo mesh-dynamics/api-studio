@@ -196,6 +196,8 @@ class ReplayAttribute extends Component {
             cube
         } = this.props;
         dispatch(cubeActions.getApps());
+        dispatch(cubeActions.getInstances());
+        dispatch(cubeActions.getGraphData(cube.selectedApp));
         //dispatch(cubeActions.getTestIds(cube.selectedApp));
         /*if (cube.selectedTestId == cubeConstants.CREATE_NEW) {
             this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
@@ -258,7 +260,7 @@ class ReplayAttribute extends Component {
         cube.selectedTestId = e.target.value;
         if (e) {
             dispatch(cubeActions.clear());
-            dispatch(cubeActions.getGraphData(cube.selectedApp));
+            //dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestId(e.target.value));
             dispatch(cubeActions.getReplayId(e.target.value, cube.selectedApp));
         }
