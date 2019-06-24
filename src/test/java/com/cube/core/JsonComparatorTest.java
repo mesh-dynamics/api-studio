@@ -97,10 +97,13 @@ class JsonComparatorTest  {
 			DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
 			PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
 			ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
-            ExtractionMethod extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
-			String customization = ruleObj.getString("customization");
-			TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
-			template.addRule(rule);
+            ExtractionMethod extractionMethod = ExtractionMethod.Default;
+            if (ruleObj.has("extractionMethod")) {
+                extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
+            }
+            String customization = ruleObj.getString("customization");
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
+            template.addRule(rule);
 		}
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);

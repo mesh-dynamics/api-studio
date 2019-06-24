@@ -118,8 +118,12 @@ public class TemplateEntry {
             return resolution;
         }
 
+        boolean isCustomMatch = false;
         switch (em) {
             case Regex:
+                // extract regex and compare
+                isCustomMatch = true;
+                // TODO: separate extraction and comparison
                 Pattern pattern = regex.orElseGet(() -> {
                     LOGGER.error("Internal logical error - compiled pattern missing for regex");
                     return Pattern.compile(customization.orElse(".*"));
@@ -150,7 +154,8 @@ public class TemplateEntry {
         switch (ct) {
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
+                return checkEqual(lhs, rhs,
+                    ct == CompareTemplate.ComparisonType.EqualOptional, isCustomMatch);
             case Ignore:
                 return OK_Ignore;
             case Default:
@@ -191,7 +196,8 @@ public class TemplateEntry {
         switch (ct) {
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
+                return checkEqual(lhs, rhs,
+                    ct == CompareTemplate.ComparisonType.EqualOptional, false);
             case Ignore:
                 return OK_Ignore;
             case Default:
@@ -212,10 +218,13 @@ public class TemplateEntry {
         checkMatchInt(Optional.ofNullable(lhs), Optional.ofNullable(rhs), match, needDiff);
     }
 
-    private <T> Comparator.Resolution checkEqual(Optional<T> lhs, Optional<T> rhs, boolean isEqualOptional) {
+    private <T> Comparator.Resolution checkEqual(Optional<T> lhs, Optional<T> rhs, boolean isEqualOptional, boolean isCustomMatch) {
         return rhs.map(rval -> {
             return lhs.map(lval -> {
                 if (rval.equals(lval)) {
+                    if (isCustomMatch) {
+                        return OK_CustomMatch;
+                    }
                     return OK;
                 } else {
                     return isEqualOptional ? OK_OptionalMismatch : ERR_ValMismatch;
@@ -241,35 +250,36 @@ public class TemplateEntry {
             return resolution;
         }
 
+        boolean isCustomMatch = false;
         switch (em) {
             case Round:
             case Ceil:
             case Floor:
-                if (lhs.isEmpty()) return lhsmissing();
-                if (rhs.isEmpty()) return rhsmissing();
-
-                /*lhs = lhs.map(this::adjustDblVal);
+                lhs = lhs.map(this::adjustDblVal);
                 rhs = rhs.map(this::adjustDblVal);
-                return rhs.map(rval -> lhs.map(lval -> {
-                    // TODO: separate extraction and comparison here
-                    int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
-                    lhs = Optional.of(adjustDblVal(em, lval, numdecimal));
-                    rhs = Optional.of(adjustDblVal(em, rval, numdecimal));
-                    //return (lval1 == rval1) ? Comparator.Resolution.OK_CustomMatch : Comparator.Resolution.ERR_ValMismatch;
-                }).orElse(lhsmissing())).orElse(rhsmissing());*/
+                isCustomMatch = true;
+                break;
             case Regex:
                 // invalid extraction method for double
-                return ERR_NotExpected;
+                return ERR_ValTypeMismatch;
             case Default:
                 // do nothing
                 break;
         }
 
-        switch (ct) {
+        if (lhs.isEmpty()) {
+            return lhsmissing();
+        }
+        if (rhs.isEmpty()) {
+            return rhsmissing();
+        }
 
+
+        switch (ct) {
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
+                return checkEqual(lhs, rhs,
+                    ct == CompareTemplate.ComparisonType.EqualOptional, isCustomMatch);
             case Ignore:
                 return OK_Ignore;
             case Default:
@@ -281,18 +291,18 @@ public class TemplateEntry {
 
     }
 
-    private Optional<Double> adjustDblVal(double val) {
+    private Double adjustDblVal(double val) {
         int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
         double multiplier = Math.pow(10, numdecimal);
         switch(em) {
             case Ceil:
-                return Optional.of(Math.ceil(val * multiplier)/multiplier);
+                return Math.ceil(val * multiplier)/multiplier;
             case Floor:
-                return Optional.of(Math.floor(val * multiplier)/multiplier);
+                return Math.floor(val * multiplier)/multiplier;
             case Round:
-                return Optional.of(Math.round(val * multiplier)/multiplier);
+                return Math.round(val * multiplier)/multiplier;
             default:
-                return Optional.of(val);
+                return val;
         }
     }
 
