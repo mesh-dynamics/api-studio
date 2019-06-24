@@ -121,48 +121,58 @@ public class TemplateEntry {
         boolean isCustomMatch = false;
         switch (em) {
             case Regex:
-                // extract regex and compare
                 isCustomMatch = true;
-                // TODO: separate extraction and comparison
-                Pattern pattern = regex.orElseGet(() -> {
-                    LOGGER.error("Internal logical error - compiled pattern missing for regex");
-                    return Pattern.compile(customization.orElse(".*"));
-                });
-                return rhs.map(rval -> {
-                    Matcher matcher = pattern.matcher(rval);
-                    if (!matcher.matches()) {
-                        return Comparator.Resolution.ERR_ValFormatMismatch;
-                    }
-                    return lhs.map(lval -> {
-                        Matcher lhsmatcher = pattern.matcher(lval);
-                        if (!lhsmatcher.matches()) {
-                            return Comparator.Resolution.OK_OtherValInvalid;
-                        }
-                        if (matcher.groupCount() != lhsmatcher.groupCount()) {
-                            return Comparator.Resolution.ERR_ValMismatch;
-                        }
-                        for (int i = 0; i < matcher.groupCount(); ++i) {
-                            if (!matcher.group(i).equals(lhsmatcher.group(i))) {
-                                return Comparator.Resolution.ERR_ValMismatch;
-                            }
-                        }
-                        return Comparator.Resolution.OK_CustomMatch;
-                    }).orElse(lhsmissing());
-                }).orElse(rhsmissing());
+                break;
+            case Default:
+                // regular string comparison
+                break;
+            case Round:
+            case Floor:
+            case Ceil:
+                // not valid for strings
+                return ERR_ValFormatMismatch;
         }
 
         switch (ct) {
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs,
-                    ct == CompareTemplate.ComparisonType.EqualOptional, isCustomMatch);
+                if (isCustomMatch) {
+                    // extract regex and compare
+                    Pattern pattern = regex.orElseGet(() -> {
+                        LOGGER.error("Internal logical error - compiled pattern missing for regex");
+                        return Pattern.compile(customization.orElse(".*"));
+                    });
+                    return rhs.map(rval -> {
+                        Matcher rhsmatcher = pattern.matcher(rval);
+                        if (!rhsmatcher.matches()) {
+                            return Comparator.Resolution.ERR_ValFormatMismatch;
+                        }
+                        return lhs.map(lval -> {
+                            Matcher lhsmatcher = pattern.matcher(lval);
+                            if (!lhsmatcher.matches()) {
+                                return Comparator.Resolution.OK_OtherValInvalid;
+                            }
+                            if (rhsmatcher.groupCount() != lhsmatcher.groupCount()) {
+                                return Comparator.Resolution.ERR_ValMismatch;
+                            }
+                            for (int i = 0; i < rhsmatcher.groupCount(); ++i) {
+                                if (!rhsmatcher.group(i).equals(lhsmatcher.group(i))) {
+                                    return Comparator.Resolution.ERR_ValMismatch;
+                                }
+                            }
+                            return Comparator.Resolution.OK_CustomMatch;
+                        }).orElse(lhsmissing());
+                    }).orElse(rhsmissing());
+                } else {
+                    return checkEqual(lhs, rhs,
+                        ct == CompareTemplate.ComparisonType.EqualOptional, isCustomMatch);
+                }
             case Ignore:
                 return OK_Ignore;
             case Default:
                 return OK;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRound, Floor, Ceil
-
         }
 
     }
