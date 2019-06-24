@@ -66,9 +66,15 @@ export function cube (state = initialState, action) {
                 ...state,
                 //appsListReqStatus: cubeConstants.REQ_SUCCESS,
                 //appsListReqErr: '',
-                instances: action.data
+                instances: action.data,
+                selectedInstance: action.data[0].name
             };
-        case cubeConstants.SET_SELECTED_APP: 
+        case cubeConstants.SET_SELECTED_INSTANCE:
+            return {
+                ...state,
+                selectedInstance: action.data
+            };
+        case cubeConstants.SET_SELECTED_APP:
             return {
                 ...state,
                 selectedApp: action.data

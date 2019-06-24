@@ -146,14 +146,14 @@ async function fetchCollectionList(app) {
     return collections;
 }
 
-async function getReplayId(collectionId, app) {
+async function getReplayId(collectionId, app, instance) {
     let response, json;
     let url = `${config.baseUrl}/rs/init/${user.username}/${app}/${collectionId}`;
     let replayId;
     const searchParams = new URLSearchParams();
     const ep = app == 'Cube' ? 'http://staging.cubecorp.io' : 'http://dogfooding.cubecorp.io';
     searchParams.set('endpoint', ep);
-    searchParams.set('instanceid', 'prod');
+    searchParams.set('instanceid', instance);
     if (app != 'Cube') {
         searchParams.set('paths', 'minfo/listmovies');
         searchParams.append('paths', 'minfo/returnmovie');

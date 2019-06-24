@@ -185,6 +185,7 @@ class ReplayAttribute extends Component {
         this.handleChangeForApps = this.handleChangeForApps.bind(this);
         this.handleChangeForTestIds = this.handleChangeForTestIds.bind(this);
         this.replay = this.replay.bind(this);
+        this.handleChangeForInstance = this.handleChangeForInstance.bind(this);
         this.getReplayStatus = this.getReplayStatus.bind(this);
         /*this.handleTestIdPrefixChange = this.handleTestIdPrefixChange.bind(this);
         this.handleTestIdPrefixSubmit = this.handleTestIdPrefixSubmit.bind(this);*/
@@ -225,11 +226,18 @@ class ReplayAttribute extends Component {
     }
 
     handleChangeForApps (e) {
-        const { user, match, history, dispatch, nctData } = this.props;
+        const { dispatch } = this.props;
         if (e && e.target.value) {
             dispatch(cubeActions.setSelectedApp(e.target.value));
             dispatch(cubeActions.getTestIds(e.target.value));
             dispatch(cubeActions.setSelectedTestId(''));
+        }
+    }
+
+    handleChangeForInstance(e) {
+        const { dispatch } = this.props;
+        if (e && e.target.value) {
+            dispatch(cubeActions.setSelectedInstance(e.target.value));
         }
     }
 
@@ -262,8 +270,33 @@ class ReplayAttribute extends Component {
             dispatch(cubeActions.clear());
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestId(e.target.value));
-            dispatch(cubeActions.getReplayId(e.target.value, cube.selectedApp));
+            dispatch(cubeActions.getReplayId(e.target.value, cube.selectedApp , (cube.selectedInstance ? cube.selectedInstance : 'PROD')));
         }
+    }
+
+    renderInstances(cube) {
+        if (!cube.instances) {
+            return ''
+        }
+        let options = [];
+        options = cube.instances.map(item => (<option key={item.id} value={item.name}>{item.name}</option>));
+        let jsxContent = '';
+        if (options.length) {
+            jsxContent = <div className="inline-block">
+                <select onChange={this.handleChangeForInstance} value={cube.selectedApp} placeholder={'Select...'}>
+                    <option value="">Select Instance</option>
+                    {options}
+                </select>
+            </div>
+        } else {
+            <select onChange={this.handleChangeForApps} value={cube.selectedApp} placeholder={'Select...'}>
+                <option value="">Select Instance</option>
+            </select>
+        }
+
+        return <div className="inline-block">
+            { jsxContent }
+        </div>
     }
 
     renderAppList (cube) {
@@ -372,9 +405,7 @@ class ReplayAttribute extends Component {
                                 </div>
                                 <div className="inline-block margin-left-15">
                                     <span className="label">Test Instance</span><br/>
-                                    <select name="" id="app-sel">
-                                        <option value="">Prod</option>
-                                    </select> &nbsp;&nbsp;
+                                    {this.renderInstances(cube)}&nbsp;&nbsp;
                                 </div>
 
                                 <span className="cube-btn" onClick={this.replay}>Test</span>&nbsp;&nbsp;

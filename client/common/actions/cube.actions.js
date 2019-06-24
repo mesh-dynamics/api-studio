@@ -7,6 +7,7 @@ export const cubeActions = {
     getInstances,
     getTestIds,
     setSelectedTestId,
+    setSelectedInstance,
     getReplayId,
     getGraphData,
     startReplay,
@@ -64,6 +65,10 @@ function setSelectedApp ( appLabel ) {
     return {type: cubeConstants.SET_SELECTED_APP, data: appLabel}
 }
 
+function setSelectedInstance ( instance ) {
+    return {type: cubeConstants.SET_SELECTED_INSTANCE, data: instance}
+}
+
 function getDiffData(replayId, recordReqId, replayReqId) {
     return async dispatch => {
         try {
@@ -112,7 +117,7 @@ function getGraphData (app) {
     function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
-function getReplayId(testIdLabel, app) {
+function getReplayId(testIdLabel, app, instance) {
     return async dispatch => {
         // dispatch(request());
         try {
