@@ -119,16 +119,14 @@ function getGraphData (app) {
 
 function getReplayId(testIdLabel, app, instance) {
     return async dispatch => {
-        // dispatch(request());
         try {
             let replayId = await cubeService.getReplayId(testIdLabel, app);
             dispatch(success(replayId, Date.now()));
         } catch (error) {
-            // dispatch(failure("Failed to getTestIds", Date.now()));
+            dispatch(failure("Failed to getReplayId", Date.now()));
         }
     };
 
-    function request() { return { type: cubeConstants.TESTIDS_REQUEST } }
     function success(replayId, date) { return { type: cubeConstants.REPLAY_ID_SUCCESS, data: replayId, date: date } }
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
@@ -148,13 +146,11 @@ function getTimelineData(collectionId, replayData) {
 
 function startReplay(collectionId, replayId, app) {
     return async dispatch => {
-        // dispatch(request());
         try {
             dispatch(success(Date.now()));
             let startReplay = await cubeService.startReplay(collectionId, replayId, app);
             dispatch(success(replayId, Date.now()));
         } catch (error) {
-            // dispatch(failure("Failed to getTestIds", Date.now()));
         }
     }
     function success(date) { return { type: cubeConstants.REPLAY_STARTED, date: date } }
@@ -162,12 +158,10 @@ function startReplay(collectionId, replayId, app) {
 
 function getReplayStatus(collectionId, replayId, app) {
     return async dispatch => {
-        // dispatch(request());
         try {
             let replayStatus = await cubeService.checkStatusForReplay(collectionId, replayId, app);
             dispatch(success(replayStatus, Date.now()));
         } catch (error) {
-            // dispatch(failure("Failed to getTestIds", Date.now()));
         }
     }
     function success(replayStatus, date) { return { type: cubeConstants.REPLAY_STATUS_FETCHED, data: replayStatus, date: date } }
@@ -175,12 +169,10 @@ function getReplayStatus(collectionId, replayId, app) {
 
 function getAnalysis(collectionId, replayId) {
     return async dispatch => {
-        // dispatch(request());
         try {
             let analysis = await cubeService.fetchAnalysis(collectionId, replayId);
             dispatch(success(analysis, Date.now()));
         } catch (error) {
-            // dispatch(failure("Failed to getTestIds", Date.now()));
         }
     }
     function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
@@ -188,12 +180,10 @@ function getAnalysis(collectionId, replayId) {
 
 function getReport(collectionId, replayId) {
     return async dispatch => {
-        // dispatch(request());
         try {
             let report = await cubeService.fetchReport(collectionId, replayId);
             dispatch(success(report, Date.now()));
         } catch (error) {
-            // dispatch(failure("Failed to getTestIds", Date.now()));
         }
     }
     function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }

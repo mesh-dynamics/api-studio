@@ -2,10 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import CytoscapeComponent from 'react-cytoscapejs';
 import Modal from "react-bootstrap/es/Modal";
-import Button from "react-bootstrap/es/Button";
-import {cubeConstants} from "../../constants";
-import popper from 'cytoscape-popper';
-import {Clearfix, Col, Row} from "react-bootstrap";
+import {Clearfix} from "react-bootstrap";
 
 class ServiceGraph extends Component {
     constructor(props) {
@@ -38,7 +35,6 @@ class ServiceGraph extends Component {
                     'width': '260px',
                     'height': '80px',
                     'font-size': '20px',
-                    //width: 'label',
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'background-color': '#c4c4c4',
@@ -59,7 +55,6 @@ class ServiceGraph extends Component {
                     'text-outline-color': '#555',
                     'text-outline-width': '0px',
                     'color': 'black',
-                    //'overlay-padding': '6px',
                     'z-index': '10'
                 }
             },
@@ -152,12 +147,7 @@ class ServiceGraph extends Component {
         const { cube } = this.props;
 
         if (Object.keys(this.cy).length) {
-            /*this.cy.destroy();
-            this.cy = {};*/
             this.renderServiceGraph(this.cy, cube);
-            // this.focusDivWithoutScroll(element)
-        } else {
-            //setTimeout(this.render, 1);
         }
 
         if(Object.keys(this.cy).length){
@@ -244,12 +234,8 @@ class ServiceGraph extends Component {
     }
 
     renderServiceGraph(cy, cube) {
-        /*if (cube.graphDataReqStatus != cubeConstants.REQ_SUCCESS) {
-            return '';
-        }*/
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
-        //const arr = [];
         const gd = this.getGD();
 
     
@@ -289,8 +275,6 @@ class ServiceGraph extends Component {
                 show: true
             });
             _this.handleShow();
-            /*console.log(node);
-            cy.$(node).addClass('selected-node');*/
         });
 
         // Create edges

@@ -187,8 +187,6 @@ class ReplayAttribute extends Component {
         this.replay = this.replay.bind(this);
         this.handleChangeForInstance = this.handleChangeForInstance.bind(this);
         this.getReplayStatus = this.getReplayStatus.bind(this);
-        /*this.handleTestIdPrefixChange = this.handleTestIdPrefixChange.bind(this);
-        this.handleTestIdPrefixSubmit = this.handleTestIdPrefixSubmit.bind(this);*/
     }
 
     componentDidMount() {
@@ -200,9 +198,6 @@ class ReplayAttribute extends Component {
         dispatch(cubeActions.getInstances());
         dispatch(cubeActions.getGraphData(cube.selectedApp));
         //dispatch(cubeActions.getTestIds(cube.selectedApp));
-        /*if (cube.selectedTestId == cubeConstants.CREATE_NEW) {
-            this.setState({testIdPrefix: cube.selectedApp.replace(' ', '-')})
-        }*/
     }
 
     componentWillReceiveProps(nextProps, prevState) {
@@ -333,7 +328,6 @@ class ReplayAttribute extends Component {
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
             options = cube.testIds.map(item => (<option key={item.collection} value={item.collection}>{item.collection}</option>));
         }
-        // options.unshift({label: cubeConstants.CREATE_NEW, value: cubeConstants.CREATE_NEW});
         let jsxContent = '';
         if (options.length) {
             let selectedTestIdObj = ''
