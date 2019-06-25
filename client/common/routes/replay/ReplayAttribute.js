@@ -278,13 +278,13 @@ class ReplayAttribute extends Component {
         let jsxContent = '';
         if (options.length) {
             jsxContent = <div className="inline-block">
-                <select onChange={this.handleChangeForInstance} value={cube.selectedApp} placeholder={'Select...'}>
+                <select onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
                     <option value="">Select Instance</option>
                     {options}
                 </select>
             </div>
         } else {
-            <select onChange={this.handleChangeForApps} value={cube.selectedApp} placeholder={'Select...'}>
+            <select value={cube.selectedInstance} placeholder={'Select...'}>
                 <option value="">Select Instance</option>
             </select>
         }
