@@ -12,8 +12,11 @@ const initialState = {
 
     appsListReqStatus: cubeConstants.REQ_NOT_DONE,
     appsListReqErr: '',
-    appsList: ['MovieInfo', 'Cube'],
-    selectedApp: 'MovieInfo',
+    appsList: [],
+    selectedApp: null,
+
+    instances: [],
+    selectedInstance: null,
 
     testIdsReqStatus: cubeConstants.REQ_NOT_DONE,
     testIdsReqErr: '',
@@ -45,7 +48,7 @@ export function cube (state = initialState, action) {
                 appsListReqStatus: cubeConstants.REQ_LOADING,
                 appsListReqErr: ''
             };
-        case cubeConstants.APPS_SUCCESS: 
+        case cubeConstants.APPS_SUCCESS:
             return {
                 ...state,
                 appsListReqStatus: cubeConstants.REQ_SUCCESS,
@@ -58,7 +61,18 @@ export function cube (state = initialState, action) {
                 appsListReqStatus: cubeConstants.REQ_FAILURE,
                 appsListReqErr: action.err
             };
-        case cubeConstants.SET_SELECTED_APP: 
+        case cubeConstants.INSTANCE_SUCCESS:
+            return {
+                ...state,
+                instances: action.data,
+                selectedInstance: action.data[0].name
+            };
+        case cubeConstants.SET_SELECTED_INSTANCE:
+            return {
+                ...state,
+                selectedInstance: action.data
+            };
+        case cubeConstants.SET_SELECTED_APP:
             return {
                 ...state,
                 selectedApp: action.data
@@ -146,7 +160,6 @@ export function cube (state = initialState, action) {
 
                 graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
                 graphDataReqErr: '',
-                graphData: null,
 
                 replayStatus: 'Not Initialized',
                 replayStatusObj: null,

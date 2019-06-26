@@ -5,6 +5,7 @@ let user = JSON.parse(localStorage.getItem('user'));
 
 export const cubeService = {
     fetchAppsList,
+    getInstanceList,
     getGraphData,
     fetchCollectionList,
     getReplayId,
@@ -19,7 +20,7 @@ export const cubeService = {
 async function fetchAppsList() {
     let response, json;
     let url = `${config.baseUrl}/api/app`;
-    let appsList = {};
+    let appsList;
     try {
         response = await fetch(url, {
             method: "get",
@@ -30,7 +31,7 @@ async function fetchAppsList() {
         });
         if (response.ok) {
             json = await response.json();
-            appsList = json.apps;
+            appsList = json;
         } else {
             console.log("Response not ok in fetchAppsList", response);
             throw new Error("Response not ok fetchAppsList");
@@ -43,132 +44,56 @@ async function fetchAppsList() {
 
 }
 
-async function getGraphData(app) {
-    if (app == 'Cube') {
-        return {
-            "edges": [
-                {
-                    "id": "ui_record",
-                    "source": 17,
-                    "target": 14
-                },
-                {
-                    "id": "ui_replay",
-                    "source": 17,
-                    "target": 15
-                }
-            ],
-            "nodes": [
-                {
-                    "data": {
-                        "id": 14,
-                        "text": "Record"
-                    },
-                    "style": {
-                        "text-wrap": "wrap"
-                    }
-                },
-                {
-                    "data": {
-                        "id": 15,
-                        "text": "Replay"
-                    },
-                    "style": {
-                        "text-wrap": "wrap"
-                    }
-                },
-                {
-                    "data": {
-                        "id": 16,
-                        "text": "Mock"
-                    },
-                    "style": {
-                        "text-wrap": "wrap"
-                    }
-                },
-                {
-                    "data": {
-                        "id": 17,
-                        "text": "UI"
-                    },
-                    "style": {
-                        "text-wrap": "wrap"
-                    }
-                }
-            ]
-        };
+async function getInstanceList() {
+    let response, json;
+    let url = `${config.baseUrl}/api/instance`;
+    let iList;
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            iList = json;
+        } else {
+            console.log("Response not ok in getInstanceList", response);
+            throw new Error("Response not ok getInstanceList");
+        }
+    } catch (e) {
+        console.log("getInstanceList has errors!", e);
+        throw e;
     }
-    return {
-        nodes: [
-            {
-                "data": {
-                    "id": "movieinfo",
-                    "text": "MovieInfo"
-                },
-                "style": {
-                    "text-wrap": "wrap",
-                }
-            },
-            {
-                "data": {
-                    "id": "restwrapjdbc",
-                    "text": "Rentals"
-                },
-                "style": {
-                    "text-wrap": "wrap",
-                }
-            },
-            {
-                "data": {
-                    "id": "details",
-                    "text": "Details"
-                },
-                "style": {
-                    "text-wrap": "wrap",
-                }
-            },
-            {
-                "data": {
-                    "id": "ratings",
-                    "text": "Ratings"
-                },
-                "style": {
-                    "text-wrap": "wrap",
-                }
-            },
-            {
-                "data": {
-                    "id": "reviews",
-                    "text": "Reviews"
-                },
-                "style": {
-                    "text-wrap": "wrap",
-                }
-            }
-        ],
-        edges: [
-            {
-                id: 's1_s2',
-                source: 'movieinfo',
-                target: 'restwrapjdbc'
-            },
-            {
-                id: 's1_s3',
-                source: 'movieinfo',
-                target: 'details'
-            },
-            {
-                id: 's1_s4',
-                source: 'movieinfo',
-                target: 'ratings'
-            },
-            {
-                id: 's1_s5',
-                source: 'movieinfo',
-                target: 'reviews'
-            }
-        ]
-    };
+    return iList;
+}
+
+async function getGraphData(app) {
+    let response, json;
+    let url = `${config.baseUrl}/api/service_graph`;
+    let graphData;
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            graphData = json;
+        } else {
+            console.log("Response not ok in getInstanceList", response);
+            throw new Error("Response not ok getInstanceList");
+        }
+    } catch (e) {
+        console.log("getInstanceList has errors!", e);
+        throw e;
+    }
+    return graphData;
 }
 
 async function getTestIds (options) {
@@ -221,14 +146,14 @@ async function fetchCollectionList(app) {
     return collections;
 }
 
-async function getReplayId(collectionId, app) {
+async function getReplayId(collectionId, app, instance) {
     let response, json;
     let url = `${config.baseUrl}/rs/init/${user.username}/${app}/${collectionId}`;
     let replayId;
     const searchParams = new URLSearchParams();
     const ep = app == 'Cube' ? 'http://staging.cubecorp.io' : 'http://dogfooding.cubecorp.io';
     searchParams.set('endpoint', ep);
-    searchParams.set('instanceid', 'prod');
+    searchParams.set('instanceid', instance);
     if (app != 'Cube') {
         searchParams.set('paths', 'minfo/listmovies');
         searchParams.append('paths', 'minfo/returnmovie');
