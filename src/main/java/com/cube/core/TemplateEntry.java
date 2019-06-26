@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonPointer;
 
 import static com.cube.core.Comparator.Resolution.*;
+import static com.cube.core.CompareTemplate.ComparisonType.Equal;
 import static com.cube.core.CompareTemplate.DataType.Default;
 
 public class TemplateEntry {
@@ -29,22 +30,26 @@ public class TemplateEntry {
      * @param dt
      * @param pt
      * @param ct
+     * @param em
      * @param customization
      */
     // Adding appropriate annotations for json serialization/deserialization
     @JsonCreator
-    public TemplateEntry(@JsonProperty("path") String path, @JsonProperty("dt") CompareTemplate.DataType dt,
+    public TemplateEntry(@JsonProperty("path") String path,
+                         @JsonProperty("dt") CompareTemplate.DataType dt,
                          @JsonProperty("pt") CompareTemplate.PresenceType pt,
                          @JsonProperty("ct") CompareTemplate.ComparisonType ct,
+                         @JsonProperty("em") CompareTemplate.ExtractionMethod em,
                          @JsonProperty("customization") Optional<String> customization) {
         super();
         this.path = path;
         this.dt = dt;
         this.pt = pt;
         this.ct = ct;
+        this.em = em;
         this.customization = customization;
         this.pathptr = JsonPointer.valueOf(path);
-        if (ct == CompareTemplate.ComparisonType.CustomRegex) {
+        if (em == CompareTemplate.ExtractionMethod.Regex) {
             // default pattern is to match everything
             regex = Optional.ofNullable(Pattern.compile(customization.orElse(".*")));
         } else {
@@ -57,10 +62,22 @@ public class TemplateEntry {
      * @param dt
      * @param pt
      * @param ct
+     * @param em
+     */
+    public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct, CompareTemplate.ExtractionMethod em) {
+        this(path, dt, pt, ct, em, Optional.empty());
+    }
+
+    /**
+     * @param path
+     * @param dt
+     * @param pt
+     * @param ct
      */
     public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct) {
-        this(path, dt, pt, ct, Optional.empty());
+        this(path, dt, pt, ct, CompareTemplate.ExtractionMethod.Default, Optional.empty());
     }
+
 
     @JsonProperty("path")
     String path;
@@ -70,6 +87,8 @@ public class TemplateEntry {
     CompareTemplate.PresenceType pt;
     @JsonProperty("ct")
     CompareTemplate.ComparisonType ct;
+    @JsonProperty("em")
+    CompareTemplate.ExtractionMethod em;
     @JsonProperty("customization")
     Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
     JsonPointer pathptr; // compiled form of path
@@ -113,43 +132,63 @@ public class TemplateEntry {
             return resolution;
         }
 
+        boolean isCustomMatch = false;
+        switch (em) {
+            case Regex:
+                isCustomMatch = true;
+                break;
+            case Default:
+                // regular string comparison
+                break;
+            case Round:
+            case Floor:
+            case Ceil:
+                // not valid for strings
+                return ERR_ValFormatMismatch;
+        }
+
         switch (ct) {
-            case CustomRegex:
-                Pattern pattern = regex.orElseGet(() -> {
-                    LOGGER.error("Internal logical error - compiled pattern missing for regex");
-                    return Pattern.compile(customization.orElse(".*"));
-                });
-                return rhs.map(rval -> {
-                    Matcher matcher = pattern.matcher(rval);
-                    if (!matcher.matches()) {
-                        return Comparator.Resolution.ERR_ValFormatMismatch;
-                    }
-                    return lhs.map(lval -> {
-                        Matcher lhsmatcher = pattern.matcher(lval);
-                        if (!lhsmatcher.matches()) {
-                            return Comparator.Resolution.OK_OtherValInvalid;
-                        }
-                        if (matcher.groupCount() != lhsmatcher.groupCount()) {
-                            return Comparator.Resolution.ERR_ValMismatch;
-                        }
-                        for (int i = 0; i < matcher.groupCount(); ++i) {
-                            if (!matcher.group(i).equals(lhsmatcher.group(i))) {
-                                return Comparator.Resolution.ERR_ValMismatch;
-                            }
-                        }
-                        return Comparator.Resolution.OK_CustomMatch;
-                    }).orElse(lhsmissing());
-                }).orElse(rhsmissing());
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
+                if (isCustomMatch) {
+                    // extract regex and compare
+                    Pattern pattern = regex.orElseGet(() -> {
+                        LOGGER.error("Internal logical error - compiled pattern missing for regex");
+                        return Pattern.compile(customization.orElse(".*"));
+                    });
+                    return rhs.map(rval -> {
+                        Matcher rhsmatcher = pattern.matcher(rval);
+                        if (!rhsmatcher.matches()) {
+                            return Comparator.Resolution.ERR_ValFormatMismatch;
+                        }
+                        return lhs.map(lval -> {
+                            Matcher lhsmatcher = pattern.matcher(lval);
+                            if (!lhsmatcher.matches()) {
+                                return Comparator.Resolution.OK_OtherValInvalid;
+                            }
+                            if (rhsmatcher.groupCount() != lhsmatcher.groupCount()) {
+                                return (ct == Equal) ? Comparator.Resolution.ERR_ValMismatch
+                                    : Comparator.Resolution.OK_OptionalMismatch;
+                            }
+                            for (int i = 0; i < rhsmatcher.groupCount(); ++i) {
+                                if (!rhsmatcher.group(i).equals(lhsmatcher.group(i))) {
+                                    return (ct == Equal) ? Comparator.Resolution.ERR_ValMismatch
+                                        : Comparator.Resolution.OK_OptionalMismatch;
+                                }
+                            }
+                            return Comparator.Resolution.OK_CustomMatch;
+                        }).orElse(lhsmissing());
+                    }).orElse(rhsmissing());
+                } else {
+                    return checkEqual(lhs, rhs,
+                        ct == CompareTemplate.ComparisonType.EqualOptional, isCustomMatch);
+                }
             case Ignore:
                 return OK_Ignore;
             case Default:
                 return OK;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRound, Floor, Ceil
-
         }
 
     }
@@ -183,7 +222,8 @@ public class TemplateEntry {
         switch (ct) {
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
+                return checkEqual(lhs, rhs,
+                    ct == CompareTemplate.ComparisonType.EqualOptional, false);
             case Ignore:
                 return OK_Ignore;
             case Default:
@@ -204,10 +244,13 @@ public class TemplateEntry {
         checkMatchInt(Optional.ofNullable(lhs), Optional.ofNullable(rhs), match, needDiff);
     }
 
-    private <T> Comparator.Resolution checkEqual(Optional<T> lhs, Optional<T> rhs, boolean isEqualOptional) {
+    private <T> Comparator.Resolution checkEqual(Optional<T> lhs, Optional<T> rhs, boolean isEqualOptional, boolean isCustomMatch) {
         return rhs.map(rval -> {
             return lhs.map(lval -> {
                 if (rval.equals(lval)) {
+                    if (isCustomMatch) {
+                        return OK_CustomMatch;
+                    }
                     return OK;
                 } else {
                     return isEqualOptional ? OK_OptionalMismatch : ERR_ValMismatch;
@@ -233,21 +276,36 @@ public class TemplateEntry {
             return resolution;
         }
 
+        boolean isCustomMatch = false;
+        switch (em) {
+            case Round:
+            case Ceil:
+            case Floor:
+                lhs = lhs.map(this::adjustDblVal);
+                rhs = rhs.map(this::adjustDblVal);
+                isCustomMatch = true;
+                break;
+            case Regex:
+                // invalid extraction method for double
+                return ERR_ValTypeMismatch;
+            case Default:
+                // do nothing
+                break;
+        }
+
+        if (lhs.isEmpty()) {
+            return lhsmissing();
+        }
+        if (rhs.isEmpty()) {
+            return rhsmissing();
+        }
+
+
         switch (ct) {
-            case CustomFloor:
-            case CustomCeil:
-            case CustomRound:
-                return rhs.map(rval -> {
-                    return lhs.map(lval -> {
-                        int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
-                        double lval1 = adjustDblVal(ct, lval, numdecimal);
-                        double rval1 = adjustDblVal(ct, rval, numdecimal);
-                        return (lval1 == rval1) ? Comparator.Resolution.OK_CustomMatch : Comparator.Resolution.ERR_ValMismatch;
-                    }).orElse(lhsmissing());
-                }).orElse(rhsmissing());
             case Equal:
             case EqualOptional:
-                return checkEqual(lhs, rhs, ct == CompareTemplate.ComparisonType.EqualOptional);
+                return checkEqual(lhs, rhs,
+                    ct == CompareTemplate.ComparisonType.EqualOptional, isCustomMatch);
             case Ignore:
                 return OK_Ignore;
             case Default:
@@ -259,14 +317,15 @@ public class TemplateEntry {
 
     }
 
-    private static double adjustDblVal(CompareTemplate.ComparisonType ct, double val, int numdecimal) {
+    private Double adjustDblVal(double val) {
+        int numdecimal = customization.flatMap(Utils::strToInt).orElse(0);
         double multiplier = Math.pow(10, numdecimal);
-        switch(ct) {
-            case CustomCeil:
+        switch(em) {
+            case Ceil:
                 return Math.ceil(val * multiplier)/multiplier;
-            case CustomFloor:
+            case Floor:
                 return Math.floor(val * multiplier)/multiplier;
-            case CustomRound:
+            case Round:
                 return Math.round(val * multiplier)/multiplier;
             default:
                 return val;

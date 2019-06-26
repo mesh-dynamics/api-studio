@@ -29,6 +29,7 @@ import com.cube.core.*;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.dao.*;
 
 /*

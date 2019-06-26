@@ -107,10 +107,10 @@
             "floor": 4.469
         },
         "rules": [
-            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "CustomRegex",    "customization": ".+\\@.+\\..+"},
-            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "CustomRound",    "customization": "2"},
-            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "CustomCeil",     "customization": "2"},
-            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "CustomFloor",    "customization": "2"}
+            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex" ,"customization": ".+\\@.+\\..+"},
+            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2"},
+            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2"},
+            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2"}
         ],
         "output": {
             "mt":           "FuzzyMatch",
@@ -138,10 +138,10 @@
             "floor": 4.459
         },
         "rules": [
-            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "CustomRegex",    "customization": ".+\\@.+\\..+"},
-            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "CustomRound",    "customization": "2"},
-            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "CustomCeil",     "customization": "2"},
-            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "CustomFloor",    "customization": "2"}
+            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex",  "customization": ".+\\@.+\\..+"},
+            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2"},
+            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2"},
+            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2"}
         ],
         "output": {
             "mt":           "NoMatch",

@@ -70,13 +70,16 @@ public class CompareTemplate {
 		EqualOptional, // this is for cases where equality is desired, but not required.
 		// In retrieval scenario, objects satisfying equality should scored higher
 		Ignore,
-		CustomRegex, // for strings
-		CustomRound, // for floats
-		CustomFloor, // for floats
-		CustomCeil, // for floats
 		Default // if not specified
 	}
 
+	public enum ExtractionMethod {
+        Regex, // for strings
+        Round, // for floats
+        Floor, // for floats
+        Ceil, // for floats
+        Default, // if not specified
+    }
 
     /**
 	 *
@@ -123,8 +126,8 @@ public class CompareTemplate {
 		getRules().forEach(rule -> {
 			if (rule.path.startsWith(prefix)) {
 				// strip the prefix from the path, this is needed other paths will not match while doing json comparison
-				LOGGER.debug("Found a rule for " + prefix +  "::  " + rule.path + " " + rule.dt + " " + rule.pt + " " + rule.ct);
-				TemplateEntry newrule = new TemplateEntry(rule.path.substring(prefix.length()), rule.dt, rule.pt, rule.ct, rule.customization);
+				LOGGER.debug("Found a rule for " + prefix +  "::  " + rule.path + " " + rule.dt + " " + rule.pt + " " + rule.ct + " " + rule.em);
+				TemplateEntry newrule = new TemplateEntry(rule.path.substring(prefix.length()), rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
 				ret.addRule(newrule);
 			}
 		});

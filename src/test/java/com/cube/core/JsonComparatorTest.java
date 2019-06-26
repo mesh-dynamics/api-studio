@@ -18,6 +18,7 @@ import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.ws.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -91,15 +92,19 @@ class JsonComparatorTest  {
 		CompareTemplate template = new CompareTemplate();
 
 		for (int i = 0; i < rules.length(); i++) {
-			JSONObject ruleObj = rules.getJSONObject(i);
-			String path = ruleObj.getString("path");
-			DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
-			PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
-			ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
-			String customization = ruleObj.getString("customization");
-			TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, Optional.of(customization));
-			template.addRule(rule);
-		}
+            JSONObject ruleObj = rules.getJSONObject(i);
+            String path = ruleObj.getString("path");
+            DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
+            PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
+            ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+            ExtractionMethod extractionMethod = ExtractionMethod.Default;
+            if (ruleObj.has("extractionMethod")) {
+                extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
+            }
+            String customization = ruleObj.getString("customization");
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
+            template.addRule(rule);
+        }
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 		Match m = comparator.compare(json1, json2);

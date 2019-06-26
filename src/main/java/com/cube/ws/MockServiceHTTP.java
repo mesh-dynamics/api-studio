@@ -41,6 +41,7 @@ import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.core.ReqMatchSpec;
 import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;

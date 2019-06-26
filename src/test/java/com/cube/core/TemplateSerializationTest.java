@@ -18,9 +18,12 @@ public class TemplateSerializationTest {
     public void testTemplateEntrySerialization(){
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new Jdk8Module());
-        TemplateEntry te = new TemplateEntry("/body" , CompareTemplate.DataType.Str ,
-                CompareTemplate.PresenceType.Required ,
-                CompareTemplate.ComparisonType.EqualOptional , Optional.empty());
+        TemplateEntry te = new TemplateEntry("/body",
+                CompareTemplate.DataType.Str,
+                CompareTemplate.PresenceType.Required,
+                CompareTemplate.ComparisonType.EqualOptional,
+                CompareTemplate.ExtractionMethod.Default,
+                Optional.empty());
         try {
             String json = mapper.writeValueAsString(te);
             System.out.println(json);
