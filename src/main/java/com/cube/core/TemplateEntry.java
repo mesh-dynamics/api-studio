@@ -167,19 +167,13 @@ public class TemplateEntry {
                                 return Comparator.Resolution.OK_OtherValInvalid;
                             }
                             if (rhsmatcher.groupCount() != lhsmatcher.groupCount()) {
-                                if (ct == Equal) {
-                                    return Comparator.Resolution.ERR_ValMismatch;
-                                } else {
-                                    return Comparator.Resolution.OK_OptionalMismatch;
-                                }
+                                return (ct == Equal) ? Comparator.Resolution.ERR_ValMismatch
+                                    : Comparator.Resolution.OK_OptionalMismatch;
                             }
                             for (int i = 0; i < rhsmatcher.groupCount(); ++i) {
                                 if (!rhsmatcher.group(i).equals(lhsmatcher.group(i))) {
-                                    if (ct == Equal) {
-                                        return Comparator.Resolution.ERR_ValMismatch;
-                                    } else {
-                                        return Comparator.Resolution.OK_OptionalMismatch;
-                                    }
+                                    return (ct == Equal) ? Comparator.Resolution.ERR_ValMismatch
+                                        : Comparator.Resolution.OK_OptionalMismatch;
                                 }
                             }
                             return Comparator.Resolution.OK_CustomMatch;
