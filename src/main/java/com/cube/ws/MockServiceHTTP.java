@@ -303,16 +303,16 @@ public class MockServiceHTTP {
 	private CompareTemplate reqTemplate = new CompareTemplate();
 
 	{
-        reqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		reqTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		reqTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-        reqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-        reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-        reqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		reqTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional, ExtractionMethod.Default));
-        reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-        reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional, ExtractionMethod.Default));
+        reqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+        reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspec = new TemplatedRequestComparator(reqTemplate, jsonmapper);
@@ -333,12 +333,12 @@ public class MockServiceHTTP {
 	private CompareTemplate defaultReqTemplate = new CompareTemplate();
 
 	{
-		defaultReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		defaultReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		defaultReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		defaultReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
-		defaultReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional, ExtractionMethod.Default));
-		defaultReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal, ExtractionMethod.Default));
+		defaultReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+		defaultReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonmapper);

@@ -530,15 +530,15 @@ public class CubeStore {
     static RequestComparator mspecForDrillDownQuery;
 
     {
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(HDRPATH + "/" + HDRPATHFIELD,
             CompareTemplate.DataType.Str,
-            CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default));
+            CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
 
         // comment below line if earlier ReqMatchSpec is to be used
         mspecForDrillDownQuery = new TemplatedRequestComparator(drilldownQueryReqTemplate, jsonmapper);

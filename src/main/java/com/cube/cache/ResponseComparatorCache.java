@@ -31,7 +31,7 @@ public class ResponseComparatorCache {
     public ResponseComparatorCache(TemplateCache cache , ObjectMapper jsonMapper) {
         this.templateCache = cache;
         TemplateEntry equalityRule = new TemplateEntry("/body", CompareTemplate.DataType.Str,
-                CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Equal, CompareTemplate.ExtractionMethod.Default);
+                CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Equal);
         CompareTemplate defaultTemplate = new CompareTemplate();
         defaultTemplate.addRule(equalityRule);
         defaultResponseComparator = new TemplatedResponseComparator(defaultTemplate , jsonMapper);

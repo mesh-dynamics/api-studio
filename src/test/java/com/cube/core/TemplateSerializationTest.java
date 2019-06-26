@@ -52,7 +52,7 @@ public class TemplateSerializationTest {
         Map<String, TemplateEntry> templateEntryMap = new HashMap<>();
 
         for (int i = 0; i < paths.length; i++) {
-            TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Ignore, CompareTemplate.ExtractionMethod.Default);
+            TemplateEntry rule = new TemplateEntry(paths[i], dataTypes[i], CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Ignore);
             templateEntryMap.put(paths[i] , rule);
             template.addRule(rule);
         }

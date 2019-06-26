@@ -201,10 +201,10 @@ public class CompareTemplate {
 		return Optional.ofNullable(rules.get(path));
 	}
 	
-	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default, ExtractionMethod.Default);
-	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal, ExtractionMethod.Default);
-	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional, ExtractionMethod.Default);
-	private static final TemplateEntry DEFAULT_RULE_IGNORE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Ignore, ExtractionMethod.Default);
+	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default);
+	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal);
+	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional);
+	private static final TemplateEntry DEFAULT_RULE_IGNORE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Ignore);
 	/**
 	 * @param rule
 	 */

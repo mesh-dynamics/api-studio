@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonPointer;
 
 import static com.cube.core.Comparator.Resolution.*;
+import static com.cube.core.CompareTemplate.ComparisonType.Equal;
 import static com.cube.core.CompareTemplate.DataType.Default;
 
 public class TemplateEntry {
@@ -29,6 +30,7 @@ public class TemplateEntry {
      * @param dt
      * @param pt
      * @param ct
+     * @param em
      * @param customization
      */
     // Adding appropriate annotations for json serialization/deserialization
@@ -60,10 +62,22 @@ public class TemplateEntry {
      * @param dt
      * @param pt
      * @param ct
+     * @param em
      */
     public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct, CompareTemplate.ExtractionMethod em) {
         this(path, dt, pt, ct, em, Optional.empty());
     }
+
+    /**
+     * @param path
+     * @param dt
+     * @param pt
+     * @param ct
+     */
+    public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct) {
+        this(path, dt, pt, ct, CompareTemplate.ExtractionMethod.Default, Optional.empty());
+    }
+
 
     @JsonProperty("path")
     String path;
@@ -153,11 +167,19 @@ public class TemplateEntry {
                                 return Comparator.Resolution.OK_OtherValInvalid;
                             }
                             if (rhsmatcher.groupCount() != lhsmatcher.groupCount()) {
-                                return Comparator.Resolution.ERR_ValMismatch;
+                                if (ct == Equal) {
+                                    return Comparator.Resolution.ERR_ValMismatch;
+                                } else {
+                                    return Comparator.Resolution.OK_OptionalMismatch;
+                                }
                             }
                             for (int i = 0; i < rhsmatcher.groupCount(); ++i) {
                                 if (!rhsmatcher.group(i).equals(lhsmatcher.group(i))) {
-                                    return Comparator.Resolution.ERR_ValMismatch;
+                                    if (ct == Equal) {
+                                        return Comparator.Resolution.ERR_ValMismatch;
+                                    } else {
+                                        return Comparator.Resolution.OK_OptionalMismatch;
+                                    }
                                 }
                             }
                             return Comparator.Resolution.OK_CustomMatch;

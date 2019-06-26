@@ -62,7 +62,7 @@ public class TestPrefixPathQuerySolr {
             // adding a single template entry to the comparator. The path field of the entry
             // contains the length of the template key path  (which is used to store this entire template)
             template.addRule(new TemplateEntry("/" + ++countWrapper.count, CompareTemplate.DataType.Str ,
-                    CompareTemplate.PresenceType.Optional , CompareTemplate.ComparisonType.Ignore , CompareTemplate.ExtractionMethod.Default));
+                    CompareTemplate.PresenceType.Optional , CompareTemplate.ComparisonType.Ignore));
             try {
                 String templateAsJson = objectMapper.writeValueAsString(template);
                 reqRespStore.saveCompareTemplate(templateKey , templateAsJson);

@@ -92,11 +92,11 @@ class JsonComparatorTest  {
 		CompareTemplate template = new CompareTemplate();
 
 		for (int i = 0; i < rules.length(); i++) {
-			JSONObject ruleObj = rules.getJSONObject(i);
-			String path = ruleObj.getString("path");
-			DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
-			PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
-			ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
+            JSONObject ruleObj = rules.getJSONObject(i);
+            String path = ruleObj.getString("path");
+            DataType dataType = DataType.valueOf(ruleObj.getString("dataType"));
+            PresenceType presenceType = PresenceType.valueOf(ruleObj.getString("presenceType"));
+            ComparisonType comparisonType = ComparisonType.valueOf(ruleObj.getString("comparisonType"));
             ExtractionMethod extractionMethod = ExtractionMethod.Default;
             if (ruleObj.has("extractionMethod")) {
                 extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
@@ -104,7 +104,7 @@ class JsonComparatorTest  {
             String customization = ruleObj.getString("customization");
             TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
             template.addRule(rule);
-		}
+        }
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
 		Match m = comparator.compare(json1, json2);
