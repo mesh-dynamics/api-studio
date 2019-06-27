@@ -14,6 +14,7 @@ const initialState = {
     appsListReqErr: '',
     appsList: [],
     selectedApp: null,
+    gateway: null,
 
     instances: [],
     selectedInstance: null,
@@ -77,6 +78,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 selectedApp: action.data
             };
+        case cubeConstants.SET_GATEWAY:
+            return {
+                ...state,
+                gateway: action.data
+            }
         case cubeConstants.TESTIDS_REQUEST: 
             return {
                 ...state,
@@ -160,6 +166,7 @@ export function cube (state = initialState, action) {
 
                 graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
                 graphDataReqErr: '',
+                gateway: null,
 
                 replayStatus: 'Not Initialized',
                 replayStatusObj: null,

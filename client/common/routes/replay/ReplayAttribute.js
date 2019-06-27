@@ -194,10 +194,12 @@ class ReplayAttribute extends Component {
             dispatch,
             cube
         } = this.props;
-        dispatch(cubeActions.getApps());
-        dispatch(cubeActions.getInstances());
-        dispatch(cubeActions.getGraphData(cube.selectedApp));
-        //dispatch(cubeActions.getTestIds(cube.selectedApp));
+        setTimeout(() => {
+            dispatch(cubeActions.getApps());
+            dispatch(cubeActions.getInstances());
+            dispatch(cubeActions.getGraphData(cube.selectedApp));
+            //dispatch(cubeActions.getTestIds(cube.selectedApp));
+        }, 0);
     }
 
     componentWillReceiveProps(nextProps, prevState) {
@@ -240,6 +242,8 @@ class ReplayAttribute extends Component {
         const {cube, dispatch} = this.props;
         if (!cube.selectedTestId) {
             alert('select collection to replay');
+        } else if (!cube.gateway) {
+            alert('select gateway point');
         } else {
             this.setState({show: true});
             dispatch(cubeActions.startReplay(cube.selectedTestId, cube.replayId.replayid, cube.selectedApp));

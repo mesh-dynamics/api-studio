@@ -6,6 +6,7 @@ export const cubeActions = {
     setSelectedApp,
     getInstances,
     getTestIds,
+    setGateway,
     setSelectedTestId,
     setSelectedInstance,
     getReplayId,
@@ -59,6 +60,10 @@ function getInstances () {
     function request() { return { type: cubeConstants.APPS_REQUEST }; }
     function success(iList, date) { return { type: cubeConstants.INSTANCE_SUCCESS, data: iList, date: date }; }
     function failure(message, date) { return { type: cubeConstants.APPS_FAILURE, err: message, date: date }; }
+}
+
+function setGateway ( gateway ) {
+    return {type: cubeConstants.SET_GATEWAY, data: gateway}
 }
 
 function setSelectedApp ( appLabel ) {
