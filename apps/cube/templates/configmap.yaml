@@ -4,7 +4,7 @@ metadata:
   name: cubews
   namespace: {{namespace}}
 data:
-  APP_DOGFOOD: "cube"
-  INSTANCE_DOGFOOD: "staging"
-  SERVICE_DOGFOOD: "cube"
-  CUSTOMER_DOGFOOD: "ravivj"
+  APP_DOGFOOD: "Cube"
+  INSTANCE_DOGFOOD: "prod"
+  SERVICE_DOGFOOD: "Cube"
+  CUSTOMER_DOGFOOD: "demo@cubecorp.io"
