@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import CytoscapeComponent from 'react-cytoscapejs';
 import Modal from "react-bootstrap/es/Modal";
 import {Clearfix} from "react-bootstrap";
+import {cubeActions} from "../../actions";
 
 class ServiceGraph extends Component {
     constructor(props) {
@@ -89,11 +90,13 @@ class ServiceGraph extends Component {
         if (this.state.replaySelected) {
             return;
         }
+        const {dispatch} = this.props;
         const {cube} = this.props;
         const gd = this.getGD();
         for (const node of gd.nodes) {
             if (node.data.id == this.state.selectedNode.id) {
                 node.data.isReplayPoint = true;
+                dispatch(cubeActions.setGateway(node.data));
                 break;
             }
         }
@@ -224,11 +227,15 @@ class ServiceGraph extends Component {
 
     getGD() {
         const { cube } = this.props;
-        const gdCrude = JSON.parse(JSON.stringify(cube.graphData));
+        const gdCrude = cube.graphData;
         for (const key in gdCrude) {
             if (gdCrude[key].app.name === cube.selectedApp) {
-                console.log(JSON.parse(gdCrude[key].serviceGraph));
-                return JSON.parse(gdCrude[key].serviceGraph);
+                if (gdCrude[key].graphObj) {
+                    return gdCrude[key].graphObj;
+                } else {
+                    gdCrude[key].graphObj = JSON.parse(gdCrude[key].serviceGraph);
+                    return gdCrude[key].graphObj;
+                }
             }
         }
     }
@@ -236,7 +243,7 @@ class ServiceGraph extends Component {
     renderServiceGraph(cy, cube) {
         // First remove everything
         cy.remove(cy.nodes()); cy.remove(cy.edges());
-        const gd = this.getGD();
+        const gd = JSON.parse(JSON.stringify(this.getGD()));
 
     
         // Create nodes
@@ -248,7 +255,7 @@ class ServiceGraph extends Component {
                 node.data.class = 'selected-node';
             }
 
-            if (node.data.isReplayPoint) {
+            if (cube.gateway && node.data.id === cube.gateway.id) {
                 node.classes = 'replay-node';
             } else if (node.data.isVirtualised) {
                 node.classes = 'virtual-node';

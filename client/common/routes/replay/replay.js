@@ -147,7 +147,7 @@ class replay extends Component {
             <div className="result-container">
                 <Tabs defaultActiveKey="result" id="uncontrolled-tab-example">
                     <Tab eventKey="result" title="Test Results: Detailed view">
-                        <Results app={cube.selectedApp} res={cube.analysis} resByPath={cube.report} timeline={cube.timelineData}/>
+                        <Results app={cube.gateway.text} res={cube.analysis} resByPath={cube.report} timeline={cube.timelineData}/>
                     </Tab>
                     <Tab eventKey="analysis" title="Results Review">
                         <Analysis res={cube.analysis} resByPath={cube.report}/>
