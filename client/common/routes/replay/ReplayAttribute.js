@@ -302,9 +302,10 @@ class ReplayAttribute extends Component {
         if (cube.appsListReqStatus != cubeConstants.REQ_SUCCESS || !cube.appsList) {
             return ''
         }
+        let user = JSON.parse(localStorage.getItem('user'));
         let options = [];
         options = cube.appsList.map(item => {
-            if (item.customer.username == 'demo@cubecorp.io') {
+            if (item.customer.username == user.username) {
                 return (<option key={item.id} value={item.name}>{item.name}</option>);
             }
             return null;
