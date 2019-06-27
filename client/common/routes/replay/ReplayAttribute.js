@@ -303,7 +303,12 @@ class ReplayAttribute extends Component {
             return ''
         }
         let options = [];
-        options = cube.appsList.map(item => (<option key={item.id} value={item.name}>{item.name}</option>));
+        options = cube.appsList.map(item => {
+            if (item.customer.username == 'demo@cubecorp.io') {
+                return (<option key={item.id} value={item.name}>{item.name}</option>);
+            }
+            return null;
+        });
         let jsxContent = '';
         if (options.length) {
             jsxContent = <div className="inline-block">

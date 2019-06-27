@@ -19,8 +19,6 @@ function login(username, password) {
             let user = await userService.login(username, password);
             console.log("user", user);
             dispatch(success(user));
-            //history.push('/home');
-            //window.location.reload();
         } catch (error) {
             dispatch(failure(error.toString()));
             dispatch(alertActions.error(error.toString()));
