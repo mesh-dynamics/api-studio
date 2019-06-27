@@ -125,7 +125,7 @@ function getGraphData (app) {
 function getReplayId(testIdLabel, app, instance) {
     return async dispatch => {
         try {
-            let replayId = await cubeService.getReplayId(testIdLabel, app);
+            let replayId = await cubeService.getReplayId(testIdLabel, app, instance);
             dispatch(success(replayId, Date.now()));
         } catch (error) {
             dispatch(failure("Failed to getReplayId", Date.now()));

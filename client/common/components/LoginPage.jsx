@@ -45,7 +45,7 @@ class LoginPage extends React.Component {
         return (
             <React.Fragment>
                 {
-                    loggedIn ? <Redirect to="/home" /> :
+                    loggedIn ? <Redirect to="/" /> :
                         (<div className="login-widget">
                             <h2>Login</h2>
                             <form name="form" onSubmit={this.handleSubmit}>
