@@ -25,7 +25,7 @@ init() {
 	kubectl apply -f $APP_DIR/kubernetes
 	#NOTE: When we add more apps, change the if condition to APP_DIR != CUBE,
 	#In case we add multiple version of cube app, we can go away with if condition
-	if [ "$APP_DIR" = *moviebook ]; then
+	if [[ "$APP_DIR" = *moviebook ]]; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
 }
@@ -58,7 +58,7 @@ stop_record() {
 
 replay_setup() {
 	kubectl apply -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
-	if ["$APP_DIR" = *moviebook ]; then
+	if [[ "$APP_DIR" = *moviebook ]]; then
 		echo "Which version of App you want to test?(v1/v2)"
 		read VERSION
 		if [ "$VERSION" = "v1" ] || [ "$VERSION" = "v2" ]; then
