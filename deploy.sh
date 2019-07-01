@@ -10,6 +10,7 @@ generate_menifest() {
 	fi
 	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
+		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
 		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $NAMESPACE_HOST
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $NAMESPACE_HOST
@@ -28,6 +29,11 @@ init() {
 	if [[ "$APP_DIR" = *moviebook ]]; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
+}
+
+register_matcher() {
+echo "Registering Templates"
+./update_templates.py $1 $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $NAMESPACE_HOST
 }
 
 record() {
@@ -159,6 +165,7 @@ main () {
 		stop_record) OPERATION="record"; shift; generate_menifest $1; shift; stop_record "$@";;
 		setup_replay) OPERATION="replay"; shift; generate_menifest $1; shift; replay_setup "$@";;
 		replay) OPERSTION="replay"; shift; generate_menifest $1; shift; replay "$@";;
+		register_matcher) generate_menifest $1; shift; register_matcher "$@";;
 		analyze) OPERATION="analyze"; shift; generate_menifest $1; shift; analyze "$@";;
 	esac
 }
