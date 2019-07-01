@@ -12,11 +12,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TABLE cube.customer (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT,
+  domain_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER set_timestamp_customer
+BEFORE UPDATE ON cube.customer
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
 CREATE TABLE cube.cubeuser (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   password TEXT NOT NULL,
+  customer_id BIGINT REFERENCES cube.customer(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -26,18 +41,17 @@ BEFORE UPDATE ON cube.cubeuser
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
-CREATE TYPE cube.instance_name AS ENUM ('Prod' , 'Dev' , 'Staging');
-
 CREATE TABLE cube.instance (
   id SERIAL PRIMARY KEY,
-  name cube.instance_name NOT NULL,
+  name TEXT NOT NULL,
+  customer_id BIGINT REFERENCES cube.customer(id) ON DELETE CASCADE,
   gateway_endpoint TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE cube.app (
   id BIGSERIAL PRIMARY KEY,
-  customer_id BIGINT REFERENCES cube.cubeuser(id) ON DELETE CASCADE,
+  customer_id BIGINT REFERENCES cube.customer(id) ON DELETE CASCADE,
   name VARCHAR(200) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -77,7 +91,9 @@ one single select query
 Also if we store in this format updates can be cumbersome*/
 CREATE TABLE cube.service_graph (
   app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
-  service_graph JSON NOT NULL
+  from_service_id  BIGINT REFERENCES cube.service(id),
+  to_service_id  BIGINT REFERENCES cube.service(id),
+  UNIQUE (app_id, from_node_id, to_node_id)
 );
 
 CREATE INDEX service_graph_index ON cube.service_graph(app_id);

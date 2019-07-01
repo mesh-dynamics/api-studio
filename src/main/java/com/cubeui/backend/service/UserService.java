@@ -1,5 +1,6 @@
 package com.cubeui.backend.service;
 
+import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.enums.Role;
@@ -31,10 +32,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CustomerService customerService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CustomerService customerService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.customerService = customerService;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -61,18 +64,21 @@ public class UserService {
         }
         final Set<String> finalRoles = roles;
         Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
+        Optional<Customer> customer = customerService.getById(userDTO.getCustomerId());
         user.ifPresent(u -> {
             Optional.ofNullable(userDTO.getName()).ifPresent(name -> u.setName(name));
             Optional.ofNullable(userDTO.getPassword()).ifPresent(password -> u.setPassword(this.passwordEncoder.encode(password)));
+            Optional.ofNullable(customer).ifPresent(customerOptional -> u.setCustomer(customerOptional.get()));
             u.setRoles(finalRoles);
             u.setActivated(isActivated);
             this.userRepository.save(u);
         });
-        if (user.isEmpty()){
+        if (user.isEmpty() && customer.isPresent()){
             user = Optional.of(this.userRepository.save(User.builder()
                     .name(userDTO.getName())
                     .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
+                    .customer(customer.get())
                     .roles(roles)
                     .activationKey(RandomUtil.generateActivationKey())
                     .activated(isActivated)

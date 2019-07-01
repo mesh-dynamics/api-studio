@@ -37,9 +37,14 @@ public class ServiceGraph {
     @JoinColumn(name = "app_id")
     App app;
 
-    @NotEmpty
-    @Type(type = "jsonb")
-    @Column(nullable = false, columnDefinition = "jsonb")
-    String serviceGraph;
+    @OneToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "from_service_id")
+    Service fromService;
+
+    @OneToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "to_service_id")
+    Service toService;
 
 }

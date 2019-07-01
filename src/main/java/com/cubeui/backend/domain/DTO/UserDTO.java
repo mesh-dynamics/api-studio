@@ -19,6 +19,8 @@ public class UserDTO {
 
     private String password;
 
+    private Long customerId;
+
     private List<String> roles = new ArrayList<>();
 
     private LocalDateTime createdAt;

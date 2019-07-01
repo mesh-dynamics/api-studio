@@ -3,6 +3,8 @@ package com.cubeui.backend.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,6 +41,11 @@ public class User implements UserDetails {
     @JsonIgnore
     @NotEmpty
     private String password;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    Customer customer;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Builder.Default

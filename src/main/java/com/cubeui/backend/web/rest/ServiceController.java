@@ -30,11 +30,6 @@ public class ServiceController {
         this.serviceRepository = serviceRepository;
     }
 
-    @GetMapping("")
-    public ResponseEntity all() {
-        return ok(this.serviceRepository.findAll());
-    }
-
     @PostMapping("")
     public ResponseEntity save(@RequestBody ServiceDTO serviceDTO, HttpServletRequest request) {
         if (serviceDTO.getId() != null) {

@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain.DTO;
 
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,16 +8,17 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class InstanceDTO {
+public class CustomerDTO {
 
     private Long id;
 
     private String name;
 
-    private Long customerId;
+    private String email;
 
-    private String gatewayEndpoint;
+    private String domainURL;
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
 }
