@@ -21,6 +21,8 @@ generate_menifest() {
 
 init() {
 	kubectl apply -f $COMMON_DIR/kubernetes/namespace.yaml
+	#Automatically inject Envoy container in application Pod if they are started in namespaces labeled with istio-injection=enabled
+	kubectl label namespace $NAMESPACE istio-injection=enabled
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
 	kubectl apply -f $APP_DIR/kubernetes
