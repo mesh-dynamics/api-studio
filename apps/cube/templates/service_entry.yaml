@@ -6,7 +6,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - 18.191.135.125
+  - ec2-18-191-135-125.us-east-2.compute.amazonaws.com
   ports:
   - number: 8983
     name: solr
