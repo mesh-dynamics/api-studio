@@ -82,4 +82,4 @@ Access the Jaeger dashboard by opening your browser to http://localhost:16686.
 minikube dashboard
 ```
 
-17. [Setup moviebook app](moviebook/README.md)
+17. [Setup moviebook/Cube app](docs/README.md)
