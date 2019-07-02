@@ -155,6 +155,9 @@ get_environment() {
 	fi
 }
 
+clean() {
+	kubectl delete namespace $NAMESPACE
+}
 main () {
 	# To debug this script, run it with TRACE=1 in the enviornment
 	# -x option will trace each command that is run
@@ -176,6 +179,7 @@ main () {
 		stop_replay) OPERATION="stopreplay"; shift; generate_menifest $1; shift; stop_replay "$@";;
 		register_matcher) generate_menifest $1; shift; register_matcher "$@";;
 		analyze) OPERATION="analyze"; shift; generate_menifest $1; shift; analyze "$@";;
+		clean) OPERATION="clean"; shift; generate_menifest $1; shift; clean "$@";;
 	esac
 }
 
