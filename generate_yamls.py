@@ -52,11 +52,11 @@ def recap_files(operation, base_dir, template_dir, namespace):
             out.write("---\n")
             out.write(output_from_template + "\n" * 2)
     out.close()
-    if base_dir == "app/moviebook" and operation == "replay":
-        outfile = base_dir + "kubernetes/mock-all-except-moviebook.yaml"
+    if base_dir == "apps/moviebook" and operation == "replay":
+        outfile = base_dir + "/kubernetes/mock-all-except-moviebook.yaml"
         template = env.get_template("mock-all-except-moviebook.j2")
         with open(outfile, "w") as out:
-            output_from_template = template.render(namepace=namespace, customer=cube_customer, cube_application=cube_application, cube_instance=cube_instanceid)
+            output_from_template = template.render(namespace=namespace, customer=cube_customer, cube_application=cube_application, cube_instance=cube_instanceid)
             out.write(output_from_template)
             out.close()
 
