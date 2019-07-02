@@ -180,6 +180,7 @@ main () {
 		register_matcher) generate_menifest $1; shift; register_matcher "$@";;
 		analyze) OPERATION="analyze"; shift; generate_menifest $1; shift; analyze "$@";;
 		clean) OPERATION="clean"; shift; generate_menifest $1; shift; clean "$@";;
+		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, analyze, clean)."
 	esac
 }
 
