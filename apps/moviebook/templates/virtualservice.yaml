@@ -20,7 +20,7 @@ spec:
         prefix: /api/v1/products
     route:
     - destination:
-        host: productpage
+        host: productpage.{{namespace}}.svc.cluster.local
         port:
           number: 9080
 
@@ -41,6 +41,6 @@ spec:
         prefix: /restsql
     route:
     - destination:
-        host: restwrapjdbc
+        host: restwrapjdbc.{{namespace}}.svc.cluster.local
         port:
           number: 8080
