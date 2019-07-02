@@ -46,7 +46,7 @@ public class TemplateEntry {
         this.dt = dt;
         this.pt = pt;
         this.ct = ct;
-        this.em = em;
+        this.em = (em != null) ? em : CompareTemplate.ExtractionMethod.Default;
         this.customization = customization;
         this.pathptr = JsonPointer.valueOf(path);
         if (em == CompareTemplate.ExtractionMethod.Regex) {
