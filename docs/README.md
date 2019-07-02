@@ -1,5 +1,3 @@
-# Moviebook App
-
 ## Steps to Deploy Moviebook/cube App
 
 The Deploy script take 3 parameters:  
