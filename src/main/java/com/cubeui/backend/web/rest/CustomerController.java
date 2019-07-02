@@ -60,7 +60,7 @@ public class CustomerController {
                             .path("/api/customers/{id}")
                             .buildAndExpand(saved.getId())
                             .toUri())
-                    .body("Customer '" + saved.getName() + "' updated");
+                    .body(saved);
         } else {
             throw new RecordNotFoundException("Customer with name '" + customerDTO.getName() + "' not found.");
         }

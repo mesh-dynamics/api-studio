@@ -200,6 +200,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         /* MovieInfo - ServiceGraph */
+        // MovieInfo - Reviews
         if(!serviceGraphRepository.existsById(18L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(18L);
@@ -208,7 +209,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(4L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-
+        // MovieInfo - Ratings
         if(!serviceGraphRepository.existsById(19L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(19L);
@@ -217,7 +218,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(4L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-
+        // MovieInfo - Details
         if(!serviceGraphRepository.existsById(20L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(20L);
@@ -226,7 +227,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(4L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-
+        // MovieInfo - RestWrapJDBC
         if(!serviceGraphRepository.existsById(21L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(21L);
@@ -237,6 +238,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         /* Cube - ServiceGraph */
+        // UI - Record
         if(!serviceGraphRepository.existsById(22L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(22L);
@@ -245,7 +247,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(4L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-
+        // UI - Replay
         if(!serviceGraphRepository.existsById(23L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(23L);

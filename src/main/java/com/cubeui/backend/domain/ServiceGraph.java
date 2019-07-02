@@ -32,17 +32,17 @@ public class ServiceGraph {
     Long id;
 
     //VNT: Many to One, not sure right now
-    @OneToOne
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "app_id")
     App app;
 
-    @OneToOne
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "from_service_id")
     Service fromService;
 
-    @OneToOne
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "to_service_id")
     Service toService;
