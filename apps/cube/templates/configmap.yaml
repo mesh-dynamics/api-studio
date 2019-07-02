@@ -5,6 +5,7 @@ metadata:
   namespace: {{namespace}}
 data:
   APP_DOGFOOD: "Cube"
-  INSTANCE_DOGFOOD: "prod"
+  INSTANCE_DOGFOOD: "test"
   SERVICE_DOGFOOD: "Cube"
   CUSTOMER_DOGFOOD: "demo@cubecorp.io"
+  CUBE_RECORD_SERVICE: "http://dogfooding2.cubecorp.io"

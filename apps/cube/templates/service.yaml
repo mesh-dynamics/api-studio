@@ -28,6 +28,7 @@ spec:
       labels:
         app: cubews-record
         version: v1
+        namespace: {{namespace}}
     spec:
       containers:
       - name: cubews
@@ -46,6 +47,16 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: INSTANCE_DOGFOOD
+          - name: cube_record_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: cube_mock_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
           - name: service_dogfood
             valueFrom:
               configMapKeyRef:
@@ -89,6 +100,7 @@ spec:
       labels:
         app: cubews-mock
         version: v1
+        namespace: {{namespace}}
     spec:
       containers:
       - name: cubews
@@ -107,6 +119,16 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: INSTANCE_DOGFOOD
+          - name: cube_record_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: cube_mock_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
           - name: service_dogfood
             valueFrom:
               configMapKeyRef:
@@ -150,6 +172,7 @@ spec:
       labels:
         app: cubews-replay
         version: v1
+        namespace: {{namespace}}
     spec:
       containers:
       - name: cubews
@@ -173,6 +196,16 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: SERVICE_DOGFOOD
+          - name: cube_record_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: cube_mock_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
           - name: customer_dogfood
             valueFrom:
               configMapKeyRef:
@@ -210,6 +243,7 @@ spec:
       labels:
         app: cubeui
         version: v1
+        namespace: {{namespace}}
     spec:
       containers:
       - name: cubeui
@@ -249,6 +283,7 @@ spec:
       labels:
         app: cubeui-backend
         version: v1
+        namespace: {{namespace}}
     spec:
       containers:
       - name: cubeui-backend
