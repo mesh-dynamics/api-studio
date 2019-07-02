@@ -22,10 +22,11 @@ generate_menifest() {
 init() {
 	kubectl apply -f $COMMON_DIR/kubernetes/namespace.yaml
 	#Automatically inject Envoy container in application Pod if they are started in namespaces labeled with istio-injection=enabled
-	kubectl label namespace $NAMESPACE istio-injection=enabled
+	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
 	kubectl apply -f $APP_DIR/kubernetes
+
 	#NOTE: When we add more apps, change the if condition to APP_DIR != CUBE,
 	#In case we add multiple version of cube app, we can go away with if condition
 	if [[ "$APP_DIR" = *moviebook ]]; then
@@ -55,6 +56,7 @@ stop_record() {
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$HOST" \
   -H 'cache-control: no-cache')
+	echo "recording complete"
 
 	curl -X POST \
 	http://$GATEWAY_URL/cs/stop/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME \
@@ -67,6 +69,7 @@ stop_record() {
 replay_setup() {
 	kubectl apply -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
 	if [[ "$APP_DIR" = *moviebook ]]; then
+		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-moviebook.yaml
 		echo "Which version of App you want to test?(v1/v2)"
 		read VERSION
 		if [ "$VERSION" = "v1" ] || [ "$VERSION" = "v2" ]; then
@@ -115,6 +118,9 @@ replay() {
 
 stop_replay() {
 	kubectl delete -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
+	if [[ "$APP_DIR" = *moviebook ]]; then
+		kubectl delete -f $APP_DIR/kubernetes/mock-all-except-moviebook.yaml
+	fi
 }
 analyze() {
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
@@ -166,7 +172,8 @@ main () {
 		record) OPERATION="record"; shift; generate_menifest $1; shift; record "$@";;
 		stop_record) OPERATION="record"; shift; generate_menifest $1; shift; stop_record "$@";;
 		setup_replay) OPERATION="replay"; shift; generate_menifest $1; shift; replay_setup "$@";;
-		replay) OPERSTION="replay"; shift; generate_menifest $1; shift; replay "$@";;
+		replay) OPERATION="replay"; shift; generate_menifest $1; shift; replay "$@";;
+		stop_replay) OPERATION="stopreplay"; shift; generate_menifest $1; shift; stop_replay "$@";;
 		register_matcher) generate_menifest $1; shift; register_matcher "$@";;
 		analyze) OPERATION="analyze"; shift; generate_menifest $1; shift; analyze "$@";;
 	esac
