@@ -34,11 +34,6 @@ public class TestConfigController {
         this.appRepository = appRepository;
     }
 
-    @GetMapping("")
-    public ResponseEntity all() {
-        return ok(this.testConfigRepository.findAll());
-    }
-
     @PostMapping("")
     public ResponseEntity save(@RequestBody TestConfigDTO testConfigDTO, HttpServletRequest request) {
         if (testConfigDTO.getId() != null) {

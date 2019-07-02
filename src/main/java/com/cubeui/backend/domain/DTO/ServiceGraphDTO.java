@@ -11,6 +11,8 @@ public class ServiceGraphDTO {
 
     private Long appId;
 
-    private String serviceGraph;
+    private Long fromServiceId;
+
+    private Long toServiceId;
 
 }

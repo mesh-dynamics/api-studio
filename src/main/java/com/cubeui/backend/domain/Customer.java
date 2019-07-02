@@ -5,36 +5,35 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="instances")
+@Table(name="customers")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Instance {
-
+public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
 
-    @Column(nullable = false)
+    @NotEmpty
     String name;
 
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    Customer customer;
+    @NotEmpty
+    String email;
 
-    @Column(nullable = false)
-    String gatewayEndpoint;
+    @Column(name = "domain_url")
+    String domainURL;
 
     @CreationTimestamp
     LocalDateTime createdAt;
 
+    @UpdateTimestamp
+    LocalDateTime updatedAt;
 }

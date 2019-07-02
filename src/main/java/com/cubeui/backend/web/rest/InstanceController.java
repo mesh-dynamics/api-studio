@@ -1,11 +1,15 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.InstanceDTO;
 import com.cubeui.backend.domain.Instance;
+import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.InstanceRepository;
+import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -21,14 +25,17 @@ import static org.springframework.http.ResponseEntity.*;
 public class InstanceController {
 
     private InstanceRepository instanceRepository;
+    private CustomerService customerService;
 
-    public InstanceController(InstanceRepository instanceRepository) {
+    public InstanceController(InstanceRepository instanceRepository, CustomerService customerService) {
         this.instanceRepository = instanceRepository;
+        this.customerService = customerService;
     }
 
     @GetMapping("")
-    public ResponseEntity all() {
-        return ok(this.instanceRepository.findAll());
+    public ResponseEntity all(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ok(this.instanceRepository.findByCustomerId(user.getCustomer().getId()));
     }
 
     @PostMapping("")
@@ -36,14 +43,23 @@ public class InstanceController {
         if (instanceDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + instanceDTO.getId() +"' already exists."));
         }
-        Instance saved = this.instanceRepository.save(Instance.builder().name(instanceDTO.getName()).gatewayEndpoint(instanceDTO.getGatewayEndpoint()).build());
-        return created(
-            ServletUriComponentsBuilder
-                .fromContextPath(request)
-                .path("/api/instance/{id}")
-                .buildAndExpand(saved.getId())
-                .toUri())
-            .body(saved);
+        Optional<Customer> customer = customerService.getById(instanceDTO.getCustomerId());
+        if(customer.isPresent()) {
+            Instance saved = this.instanceRepository.save(Instance.builder()
+                    .name(instanceDTO.getName())
+                    .customer(customer.get())
+                    .gatewayEndpoint(instanceDTO.getGatewayEndpoint())
+                    .build());
+            return created(
+                    ServletUriComponentsBuilder
+                            .fromContextPath(request)
+                            .path("/api/instance/{id}")
+                            .buildAndExpand(saved.getId())
+                            .toUri())
+                    .body(saved);
+        } else {
+            throw new RecordNotFoundException("Customer with ID '" + instanceDTO.getCustomerId() + "' not found.");
+        }
     }
 
     @PutMapping("")
@@ -52,6 +68,7 @@ public class InstanceController {
         if (existing.isPresent()) {
             existing.ifPresent(instance -> {
                 instance.setName(instanceDTO.getName());
+                instance.setCustomer(customerService.getById(instanceDTO.getCustomerId()).get());
                 instance.setGatewayEndpoint(instanceDTO.getGatewayEndpoint());
                 this.instanceRepository.save(instance);
             });

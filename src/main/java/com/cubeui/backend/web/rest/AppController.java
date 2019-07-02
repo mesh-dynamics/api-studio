@@ -1,17 +1,21 @@
 package com.cubeui.backend.web.rest;
 
-import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.*;
 import com.cubeui.backend.domain.DTO.AppDTO;
-import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.service.UserService;
+import com.cubeui.backend.repository.ServiceGraphRepository;
+import com.cubeui.backend.repository.ServiceRepository;
+import com.cubeui.backend.repository.TestConfigRepository;
+import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -23,16 +27,23 @@ import static org.springframework.http.ResponseEntity.*;
 public class AppController {
 
     private AppRepository appRepository;
-    private UserService userService;
+    private ServiceRepository serviceRepository;
+    private ServiceGraphRepository serviceGraphRepository;
+    private TestConfigRepository testConfigRepository;
+    private CustomerService customerService;
 
-    public AppController(AppRepository appRepository, UserService userService) {
+    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, CustomerService customerService) {
         this.appRepository = appRepository;
-        this.userService = userService;
+        this.serviceRepository = serviceRepository;
+        this.serviceGraphRepository = serviceGraphRepository;
+        this.testConfigRepository = testConfigRepository;
+        this.customerService = customerService;
     }
 
     @GetMapping("")
-    public ResponseEntity all() {
-        return ok(this.appRepository.findAll());
+    public ResponseEntity all(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ok(this.appRepository.findByCustomerId(user.getCustomer().getId()));
     }
 
     @PostMapping("")
@@ -40,12 +51,12 @@ public class AppController {
         if (appDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("App with ID '" + appDTO.getId() +"' already exists."));
         }
-        Optional<User> user = userService.getById(appDTO.getCustomerId());
-        if (user.isPresent()) {
+        Optional<Customer> customer = customerService.getById(appDTO.getCustomerId());
+        if (customer.isPresent()) {
             App saved = this.appRepository.save(
                     App.builder()
                             .name(appDTO.getName())
-                            .customer(user.get())
+                            .customer(customer.get())
                             .build());
             return created(
                     ServletUriComponentsBuilder
@@ -55,7 +66,7 @@ public class AppController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordNotFoundException("User with ID '" + appDTO.getCustomerId() + "' not found.");
+            throw new RecordNotFoundException("Customer with ID '" + appDTO.getCustomerId() + "' not found.");
         }
     }
 
@@ -67,7 +78,7 @@ public class AppController {
         Optional<App> existing = appRepository.findById(appDTO.getId());
         if (existing.isPresent()) {
             existing.ifPresent(app -> {
-                app.setCustomer(userService.getById(appDTO.getCustomerId()).get());
+                app.setCustomer(customerService.getById(appDTO.getCustomerId()).get());
                 app.setName(appDTO.getName());
             });
             this.appRepository.save(existing.get());
@@ -80,6 +91,36 @@ public class AppController {
                     .body(existing);
         } else {
             throw new RecordNotFoundException("App with ID '" + appDTO.getId() + "' not found.");
+        }
+    }
+
+    @GetMapping("/{id}/services")
+    public ResponseEntity getServices(@PathVariable("id") Long id) {
+        Optional<App> selectedApp = appRepository.findById(id);
+        if(selectedApp.isPresent()) {
+            return ok(this.serviceRepository.findByAppId(id));
+        } else {
+            throw new RecordNotFoundException("App with ID '" + id + "' not found.");
+        }
+    }
+
+    @GetMapping("/{id}/service-graphs")
+    public ResponseEntity getServiceGraphs(@PathVariable("id") Long id) {
+        Optional<App> selectedApp = appRepository.findById(id);
+        if(selectedApp.isPresent()) {
+            return ok(this.serviceGraphRepository.findByAppId(id));
+        } else {
+            throw new RecordNotFoundException("App with ID '" + id + "' not found.");
+        }
+    }
+
+    @GetMapping("/{id}/test-configs")
+    public ResponseEntity getTestConfigs(@PathVariable("id") Long id) {
+        Optional<App> selectedApp = appRepository.findById(id);
+        if(selectedApp.isPresent()) {
+            return ok(this.testConfigRepository.findByAppId(id));
+        } else {
+            throw new RecordNotFoundException("App with ID '" + id + "' not found.");
         }
     }
 

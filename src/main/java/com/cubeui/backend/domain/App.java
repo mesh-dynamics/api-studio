@@ -36,7 +36,7 @@ public class App {
     @ManyToOne
     @JoinColumn(name = "customer_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    User customer;
+    Customer customer;
 
     @CreationTimestamp
     LocalDateTime createdAt;
