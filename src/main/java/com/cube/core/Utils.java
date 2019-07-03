@@ -113,6 +113,14 @@ public class Utils {
         }
     }
 
+    public static Optional<Boolean> strToBool(String b) {
+        try {
+            return Optional.of(Boolean.valueOf(b));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
 	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
 		CompletableFuture<Void> allDoneFuture =
 				CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
