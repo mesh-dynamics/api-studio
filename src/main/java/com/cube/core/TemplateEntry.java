@@ -43,9 +43,9 @@ public class TemplateEntry {
                          @JsonProperty("customization") Optional<String> customization) {
         super();
         this.path = path;
-        this.dt = dt;
-        this.pt = pt;
-        this.ct = ct;
+        this.dt = (dt != null) ? dt : CompareTemplate.DataType.Default;
+        this.pt = (pt != null) ? pt : CompareTemplate.PresenceType.Default;
+        this.ct = (ct != null) ? ct : CompareTemplate.ComparisonType.Default;
         this.em = (em != null) ? em : CompareTemplate.ExtractionMethod.Default;
         this.customization = customization;
         this.pathptr = JsonPointer.valueOf(path);
