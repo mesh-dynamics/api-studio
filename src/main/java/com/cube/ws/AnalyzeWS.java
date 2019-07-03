@@ -26,7 +26,6 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.*;
 import com.cube.core.Comparator;
 import com.cube.dao.*;
-import com.cube.dao.Request;
 import com.cube.drivers.Analyzer;
 
 /**
@@ -365,9 +364,9 @@ public class AnalyzeWS {
             return res.stream().map(matchRes -> {
                 Optional<com.cube.dao.Request> request =
                     matchRes.recordreqid.flatMap(reqid -> Optional.ofNullable(requestMap.get(reqid)));
-                String diff = "";
+                Optional<String> diff = Optional.empty();
                 if(includeDiff.orElse(false)) {
-                      diff = matchRes.diff;
+                      diff = Optional.of(matchRes.diff);
                 }
                 return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
                     matchRes.respmt, matchRes.path,
@@ -453,7 +452,7 @@ public class AnalyzeWS {
                         String path,
                         MultivaluedMap<String, String> qparams,
                         MultivaluedMap<String, String> fparams,
-                        Optional<String> method, String diff) {
+                        Optional<String> method, Optional<String> diff) {
             this.recordreqid = recordreqid;
             this.replayreqid = replayreqid;
             this.reqmt = reqmt;
@@ -477,7 +476,7 @@ public class AnalyzeWS {
         @JsonDeserialize(as=MultivaluedHashMap.class)
         public final MultivaluedMap<String, String> fparams; // form params
         public final Optional<String> method;
-        public final String diff;
+        public final Optional<String> diff;
 
     }
 
