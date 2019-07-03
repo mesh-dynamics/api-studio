@@ -26,7 +26,6 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.*;
 import com.cube.core.Comparator;
 import com.cube.dao.*;
-import com.cube.dao.Request;
 import com.cube.drivers.Analyzer;
 
 /**
@@ -340,6 +339,7 @@ public class AnalyzeWS {
                 .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
         Optional<Comparator.MatchType> respmt = Optional.ofNullable(queryParams.getFirst("respmt"))
             .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+        Optional<Boolean> includeDiff = Optional.ofNullable(queryParams.getFirst("includediff")).flatMap(Utils::strToBool);
 
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
@@ -364,10 +364,15 @@ public class AnalyzeWS {
             return res.stream().map(matchRes -> {
                 Optional<com.cube.dao.Request> request =
                     matchRes.recordreqid.flatMap(reqid -> Optional.ofNullable(requestMap.get(reqid)));
+                Optional<String> diff = Optional.empty();
+                if(includeDiff.orElse(false)) {
+                      diff = Optional.of(matchRes.diff);
+                }
                 return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
                     matchRes.respmt, matchRes.path,
                     request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
-                    request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method));
+                    request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
+                    diff);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -439,9 +444,15 @@ public class AnalyzeWS {
      */
 	static class MatchRes {
 
-        public MatchRes(Optional<String> recordreqid, String replayreqid, Comparator.MatchType reqmt, int nummatch,
-                        Comparator.MatchType respmt, String path,
-                        MultivaluedMap<String, String> qparams, MultivaluedMap<String, String> fparams, Optional<String> method) {
+        public MatchRes(Optional<String> recordreqid,
+                        String replayreqid,
+                        Comparator.MatchType reqmt,
+                        int nummatch,
+                        Comparator.MatchType respmt,
+                        String path,
+                        MultivaluedMap<String, String> qparams,
+                        MultivaluedMap<String, String> fparams,
+                        Optional<String> method, Optional<String> diff) {
             this.recordreqid = recordreqid;
             this.replayreqid = replayreqid;
             this.reqmt = reqmt;
@@ -451,6 +462,7 @@ public class AnalyzeWS {
             this.qparams = qparams;
             this.fparams = fparams;
             this.method = method;
+            this.diff = diff;
         }
 
         public final Optional<String> recordreqid;
@@ -464,6 +476,7 @@ public class AnalyzeWS {
         @JsonDeserialize(as=MultivaluedHashMap.class)
         public final MultivaluedMap<String, String> fparams; // form params
         public final Optional<String> method;
+        public final Optional<String> diff;
 
     }
 
