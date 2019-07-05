@@ -364,15 +364,22 @@ public class AnalyzeWS {
             return res.stream().map(matchRes -> {
                 Optional<com.cube.dao.Request> request =
                     matchRes.recordreqid.flatMap(reqid -> Optional.ofNullable(requestMap.get(reqid)));
+
                 Optional<String> diff = Optional.empty();
+                Optional<com.cube.dao.Response> recordResponse = Optional.empty();
+                Optional<com.cube.dao.Response> replayResponse = Optional.empty();
+
                 if(includeDiff.orElse(false)) {
-                      diff = Optional.of(matchRes.diff);
+                    diff = Optional.of(matchRes.diff);
+                    recordResponse = matchRes.recordreqid.flatMap(rrstore::getResponse);
+                    replayResponse = rrstore.getResponse(matchRes.replayreqid);
                 }
+
                 return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
                     matchRes.respmt, matchRes.path,
                     request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
                     request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
-                    diff);
+                    diff, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -444,6 +451,7 @@ public class AnalyzeWS {
      */
 	static class MatchRes {
 
+
         public MatchRes(Optional<String> recordreqid,
                         String replayreqid,
                         Comparator.MatchType reqmt,
@@ -452,7 +460,9 @@ public class AnalyzeWS {
                         String path,
                         MultivaluedMap<String, String> qparams,
                         MultivaluedMap<String, String> fparams,
-                        Optional<String> method, Optional<String> diff) {
+                        Optional<String> method, Optional<String> diff,
+                        Optional<com.cube.dao.Response> recordResponse,
+                        Optional<com.cube.dao.Response> replayResponse) {
             this.recordreqid = recordreqid;
             this.replayreqid = replayreqid;
             this.reqmt = reqmt;
@@ -463,6 +473,8 @@ public class AnalyzeWS {
             this.fparams = fparams;
             this.method = method;
             this.diff = diff;
+            this.recordResponse = recordResponse;
+            this.replayResponse = replayResponse;
         }
 
         public final Optional<String> recordreqid;
@@ -477,6 +489,9 @@ public class AnalyzeWS {
         public final MultivaluedMap<String, String> fparams; // form params
         public final Optional<String> method;
         public final Optional<String> diff;
+        public final Optional<com.cube.dao.Response> recordResponse;
+        public final Optional<com.cube.dao.Response> replayResponse;
+
 
     }
 
