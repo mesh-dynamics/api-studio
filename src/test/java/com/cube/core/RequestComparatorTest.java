@@ -241,8 +241,10 @@ public class RequestComparatorTest {
                 CompareTemplate.DataType dataType = CompareTemplate.DataType.valueOf(ruleObj.getString("dataType"));
                 CompareTemplate.PresenceType presenceType = CompareTemplate.PresenceType.valueOf(ruleObj.getString("presenceType"));
                 CompareTemplate.ComparisonType comparisonType = CompareTemplate.ComparisonType.valueOf(ruleObj.getString("comparisonType"));
-                CompareTemplate.ExtractionMethod extractionMethod = CompareTemplate.ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
-                String customization = ruleObj.getString("customization");
+                CompareTemplate.ExtractionMethod extractionMethod = CompareTemplate.ExtractionMethod.Default;
+                if (ruleObj.has("extractionMethod")) {
+                    extractionMethod = CompareTemplate.ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
+                }                String customization = ruleObj.getString("customization");
                 TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
                 template.addRule(rule);
             }
