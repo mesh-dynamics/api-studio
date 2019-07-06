@@ -2,7 +2,7 @@
 
 #syntax to use this script ./deploy.sh appname operation Configration
 
-generate_menifest() {
+generate_manifest() {
 	APP_CONF=$APP_DIR/config/"$1".conf
 	if [ ! -f "$APP_CONF" ]; then #Check if config file exist
 		echo "Configration files does not exist"
@@ -171,15 +171,15 @@ main () {
 	fi
 	get_environment #check kubernetes context
 	case "$1" in
-		init) OPERATION="init"; shift; generate_menifest $1; shift; init "$@";;
-		record) OPERATION="record"; shift; generate_menifest $1; shift; record "$@";;
-		stop_record) OPERATION="record"; shift; generate_menifest $1; shift; stop_record "$@";;
-		setup_replay) OPERATION="replay"; shift; generate_menifest $1; shift; replay_setup "$@";;
-		replay) OPERATION="replay"; shift; generate_menifest $1; shift; replay "$@";;
-		stop_replay) OPERATION="stopreplay"; shift; generate_menifest $1; shift; stop_replay "$@";;
-		register_matcher) generate_menifest $1; shift; register_matcher "$@";;
-		analyze) OPERATION="analyze"; shift; generate_menifest $1; shift; analyze "$@";;
-		clean) OPERATION="clean"; shift; generate_menifest $1; shift; clean "$@";;
+		init) OPERATION="init"; shift; generate_manifest $1; shift; init "$@";;
+		record) OPERATION="record"; shift; generate_manifest $1; shift; record "$@";;
+		stop_record) OPERATION="record"; shift; generate_manifest $1; shift; stop_record "$@";;
+		setup_replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay_setup "$@";;
+		replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay "$@";;
+		stop_replay) OPERATION="stopreplay"; shift; generate_manifest $1; shift; stop_replay "$@";;
+		register_matcher) generate_manifest $1; shift; register_matcher "$@";;
+		analyze) OPERATION="analyze"; shift; generate_manifest $1; shift; analyze "$@";;
+		clean) OPERATION="clean"; shift; generate_manifest $1; shift; clean "$@";;
 		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, analyze, clean)."
 	esac
 }
