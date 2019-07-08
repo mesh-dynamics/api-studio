@@ -144,58 +144,61 @@ class ServiceGraph extends Component {
     }
 
     render() {
-        
         const $ = window.$;
         const element = $(this.refs.cyto);
         const { cube } = this.props;
 
-        if (Object.keys(this.cy).length) {
-            this.renderServiceGraph(this.cy, cube);
-        }
+        if(cube.graphData) {
+            if (Object.keys(this.cy).length) {
+                this.renderServiceGraph(this.cy, cube);
+            }
 
-        if(Object.keys(this.cy).length){
-            this.cy.panzoom({});
-            //const $ = window.$;
-            //const element = $(this.refs.cyto);
-            let cy = this.cy;
-            $(element).bind('keydown', function (event) {
-              switch (event.keyCode) {
-                //....your actions for the keys .....
-                case 40: //down
-                  cy.panBy({ x: 0, y: -50 });
-                  event.preventDefault();
-                  break;
-                case 34: //pg-down
-                  cy.panBy({ x: 0, y: -250 });
-                  event.preventDefault();
-                  break;
-                case 38: //up
-                  cy.panBy({ x: 0, y: 50 });
-                  event.preventDefault();
-                  break;
-                case 33: //pg-up
-                  cy.panBy({ x: 0, y: 250 });
-                  event.preventDefault();
-                  break;
-                case 39://right
-                  cy.panBy({ x: -50, y: 0 });
-                  event.preventDefault();
-                  break;
-                case 37://left
-                  cy.panBy({ x: 50, y: 0 });
-                  event.preventDefault();
-                  break;
-              }
-            });        
+            if(Object.keys(this.cy).length){
+                this.cy.panzoom({});
+                //const $ = window.$;
+                //const element = $(this.refs.cyto);
+                let cy = this.cy;
+                $(element).bind('keydown', function (event) {
+                    switch (event.keyCode) {
+                        //....your actions for the keys .....
+                        case 40: //down
+                            cy.panBy({ x: 0, y: -50 });
+                            event.preventDefault();
+                            break;
+                        case 34: //pg-down
+                            cy.panBy({ x: 0, y: -250 });
+                            event.preventDefault();
+                            break;
+                        case 38: //up
+                            cy.panBy({ x: 0, y: 50 });
+                            event.preventDefault();
+                            break;
+                        case 33: //pg-up
+                            cy.panBy({ x: 0, y: 250 });
+                            event.preventDefault();
+                            break;
+                        case 39://right
+                            cy.panBy({ x: -50, y: 0 });
+                            event.preventDefault();
+                            break;
+                        case 37://left
+                            cy.panBy({ x: 50, y: 0 });
+                            event.preventDefault();
+                            break;
+                    }
+                });
+            }
         }
 
         let graph = '';
-        if (cube.selectedTestId && cube.graphData) {
+        if (cube.selectedApp && cube.graphData) {
             graph = <div ref='cyto' tabIndex='1'>
                 <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.05' />
             </div>;
+        } else if(cube.selectedApp && !cube.graphData) {
+            graph = <div className="select-text">Graph Data does not exist for the Selected Application</div>
         } else {
-            graph = <div className="select-text">Please Select a Collection to Proceed</div>
+            graph = <div className="select-text">Please Select an Application to Proceed</div>
         }
  
         return(
@@ -232,6 +235,9 @@ class ServiceGraph extends Component {
     getGD() {
         const { cube } = this.props;
         const gdCrude = cube.graphData;
+        if (!gdCrude) {
+            return {nodes: [], edges: []};
+        }
         let nodes = [];
         let edges = [];
         for (const dp of gdCrude) {
