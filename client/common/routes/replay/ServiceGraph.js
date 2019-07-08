@@ -190,7 +190,7 @@ class ServiceGraph extends Component {
         }
 
         let graph = '';
-        if (cube.selectedTestId) {
+        if (cube.selectedTestId && cube.graphData) {
             graph = <div ref='cyto' tabIndex='1'>
                 <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.05' />
             </div>;
@@ -200,11 +200,6 @@ class ServiceGraph extends Component {
  
         return(
             <div>
-                {/*<br/>
-                <ConfigSample />
-                <br/>
-                <div></div>
-                <br/>*/}
                 <div className='col-sm-12'>
                     {graph}
                     <Clearfix />
@@ -225,19 +220,35 @@ class ServiceGraph extends Component {
         )
     }
 
+    findInNodes(nodeList, id) {
+        for (const node of nodeList) {
+            if (node.id == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     getGD() {
         const { cube } = this.props;
         const gdCrude = cube.graphData;
-        for (const key in gdCrude) {
-            if (gdCrude[key].app.name === cube.selectedApp) {
-                if (gdCrude[key].graphObj) {
-                    return gdCrude[key].graphObj;
-                } else {
-                    gdCrude[key].graphObj = JSON.parse(gdCrude[key].serviceGraph);
-                    return gdCrude[key].graphObj;
-                }
+        let nodes = [];
+        let edges = [];
+        for (const dp of gdCrude) {
+            if (!this.findInNodes(nodes, dp.fromService.id)) {
+                nodes.push({data: {id: dp.fromService.id, text: dp.fromService.name}, style: {"text-wrap": "wrap"}});
             }
+            if (!this.findInNodes(nodes, dp.toService.id)) {
+                nodes.push({data: {id: dp.toService.id, text: dp.toService.name}, style: {"text-wrap": "wrap"}});
+            }
+            edges.push({
+                id: dp.fromService.id + '_' + dp.toService.id,
+                source: dp.fromService.id,
+                target: dp.toService.id
+            });
         }
+
+        return {nodes: nodes, edges: edges};
     }
 
     renderServiceGraph(cy, cube) {

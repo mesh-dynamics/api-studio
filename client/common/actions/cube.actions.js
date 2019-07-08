@@ -11,6 +11,7 @@ export const cubeActions = {
     setSelectedInstance,
     getReplayId,
     getGraphData,
+    getGraphDataByAppId,
     startReplay,
     getReplayStatus,
     getAnalysis,
@@ -104,6 +105,22 @@ function getTestIds (app) {
 
 function setSelectedTestId ( testIdLabel ) {
     return {type: cubeConstants.SET_SELECTED_TESTID, data: testIdLabel};
+}
+
+function getGraphDataByAppId(appId) {
+    return async dispatch => {
+        dispatch(request());
+        try {
+            let gd = await cubeService.getGraphDataByAppId(appId);
+            dispatch(success(gd, Date.now()));
+        } catch (error) {
+            dispatch(failure("Failed to getGraphData", Date.now()));
+        }
+    };
+
+    function request() { return { type: cubeConstants.GRAPH_REQUEST } }
+    function success(gd, date) { return { type: cubeConstants.GRAPH_REQUEST_SUCCESS, data: gd, date: date } }
+    function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
 function getGraphData (app) {

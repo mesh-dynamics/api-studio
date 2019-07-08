@@ -7,6 +7,7 @@ export const cubeService = {
     fetchAppsList,
     getInstanceList,
     getGraphData,
+    getGraphDataByAppId,
     fetchCollectionList,
     getReplayId,
     startReplay,
@@ -68,6 +69,32 @@ async function getInstanceList() {
         throw e;
     }
     return iList;
+}
+
+async function getGraphDataByAppId(appId) {
+    let response, json;
+    let url = `${config.baseUrl}/api/app/${appId}/service-graphs`;
+    let graphData;
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            graphData = json;
+        } else {
+            console.log("Response not ok in getInstanceList", response);
+            throw new Error("Response not ok getInstanceList");
+        }
+    } catch (e) {
+        console.log("getInstanceList has errors!", e);
+        throw e;
+    }
+    return graphData;
 }
 
 async function getGraphData(app) {

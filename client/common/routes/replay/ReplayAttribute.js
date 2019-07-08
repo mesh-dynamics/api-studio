@@ -228,6 +228,10 @@ class ReplayAttribute extends Component {
             dispatch(cubeActions.setSelectedApp(e.target.value));
             dispatch(cubeActions.getTestIds(e.target.value));
             dispatch(cubeActions.setSelectedTestId(''));
+            setTimeout(() => {
+                const {cube} = this.props;
+                dispatch(cubeActions.getGraphDataByAppId(cube.selectedAppObj['id']));
+            }, 0);
         }
     }
 
@@ -305,10 +309,11 @@ class ReplayAttribute extends Component {
         let user = JSON.parse(localStorage.getItem('user'));
         let options = [];
         options = cube.appsList.map(item => {
-            if (item.customer.username == user.username) {
+            return (<option key={item.id} value={item.name}>{item.name}</option>);
+            /*if (item.customer.username == user.username) {
                 return (<option key={item.id} value={item.name}>{item.name}</option>);
             }
-            return null;
+            return null;*/
         });
         let jsxContent = '';
         if (options.length) {
