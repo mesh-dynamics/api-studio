@@ -14,6 +14,7 @@ const initialState = {
     appsListReqErr: '',
     appsList: [],
     selectedApp: null,
+    selectedAppObj: null,
     gateway: null,
 
     instances: [],
@@ -74,9 +75,21 @@ export function cube (state = initialState, action) {
                 selectedInstance: action.data
             };
         case cubeConstants.SET_SELECTED_APP:
+            let appObj = null;
+            if (state.appsList) {
+                for (const app of state.appsList) {
+                    if (app.name == action.data) {
+                        appObj = app;
+                        console.log(appObj);
+                        break;
+                    }
+                }
+            }
+
             return {
                 ...state,
-                selectedApp: action.data
+                selectedApp: action.data,
+                selectedAppObj: appObj
             };
         case cubeConstants.SET_GATEWAY:
             return {

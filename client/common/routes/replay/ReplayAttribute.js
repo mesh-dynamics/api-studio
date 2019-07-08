@@ -197,7 +197,7 @@ class ReplayAttribute extends Component {
         setTimeout(() => {
             dispatch(cubeActions.getApps());
             dispatch(cubeActions.getInstances());
-            dispatch(cubeActions.getGraphData(cube.selectedApp));
+            //dispatch(cubeActions.getGraphData(cube.selectedApp));
             //dispatch(cubeActions.getTestIds(cube.selectedApp));
         }, 0);
     }
