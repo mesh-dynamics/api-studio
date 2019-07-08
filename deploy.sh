@@ -26,12 +26,11 @@ init() {
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
 	kubectl apply -f $APP_DIR/kubernetes
-
-	#NOTE: When we add more apps, change the if condition to APP_DIR != CUBE,
-	#In case we add multiple version of cube app, we can go away with if condition
-	if [[ "$APP_DIR" = *moviebook ]]; then
+	#Check if route exists
+	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
+
 }
 
 register_matcher() {
@@ -68,8 +67,10 @@ stop_record() {
 
 replay_setup() {
 	kubectl apply -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
-	if [[ "$APP_DIR" = *moviebook ]]; then
-		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-moviebook.yaml
+	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
+		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
+	fi
+	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		echo "Which version of App you want to test?(v1/v2)"
 		read VERSION
 		if [ "$VERSION" = "v1" ] || [ "$VERSION" = "v2" ]; then
@@ -118,10 +119,11 @@ replay() {
 
 stop_replay() {
 	kubectl delete -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
-	if [[ "$APP_DIR" = *moviebook ]]; then
-		kubectl delete -f $APP_DIR/kubernetes/mock-all-except-moviebook.yaml
+	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
+		kubectl delete -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
 	fi
 }
+
 analyze() {
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
 	echo "Analyzing for replay ID:" $REPLAY_ID
@@ -163,7 +165,8 @@ main () {
 	# -x option will trace each command that is run
 	set -eo pipefail; [[ "$TRACE" ]] && set -x
 	if [ -d "apps/$1" ]; then #Check if the App directory exists
-		APP_DIR="apps/$1"
+		APP_NAME=$1
+		APP_DIR="apps/$APP_NAME"
 		shift
 	else
 		echo "App directory does not exist"
