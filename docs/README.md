@@ -17,28 +17,28 @@ Appname could be either `moviebook` or `cube`.
 ### 2) Operation
 Operation could be one of the following:  
 
-a) init  
+a) `init`  
 Generate yamls and deploy app.  
 
-b) record  
+b) `record`  
 Generate envoy filters for record and make API calls to start recording.
 
-c) stop_record  
+c) `stop_record`  
 Delete envoy filters and make API call to stop recording.
 
-d) setup_replay  
+d) `setup_replay`  
 Generate and deploy replay files.
 
-e) replay  
+e) `replay`  
 Make API calls to init and start replay.
 
-f) stop_replay  
+f) `stop_replay`  
 Delete replay envoy filters.
 
-g) analyze  
+g) `analyze`  
 Make API call to start analyze
 
-h) clean  
+h) `clean`  
 This will delete the namespace and all the resources in that namespace.
 
 ### 3) Configuration
@@ -50,27 +50,27 @@ Configuration decides where and how to deploy the App.
 
 1. Deploy moviebook App in staging environment  
 ```
-./deploy moviebook init staging
+./deploy.sh moviebook init staging
 ```
 
 2. Deploy Cube App in staging environment  
 ```
-./deploy cube init staging
+./deploy.sh cube init staging
 ```
 
 3. Deploy Cube App in  dogfooding environment  
 ```
-./deploy cube init dogfooding
+./deploy.sh cube init dogfooding
 ```
 
 4. Start recording Cube in staging environment  
 ```
-./deploy cube record staging
+./deploy.sh cube record staging
 ```
 
 5. Start recording moviebook in staging environment  
 ```
-./deploy moviebook record staging
+./deploy.sh moviebook record staging
 ```
 
 6. Make request to Moviebook app  
@@ -80,50 +80,50 @@ curl -X GET 'http://staging2.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUT
 
 7. Stop recording moviebook App  
 ```
-./deploy moviebook stop_record staging
+./deploy.sh moviebook stop_record staging
 ```
 
 8. Setup replay on moviebook App  
 ```
-./deploy moviebook setup_replay staging
+./deploy.sh moviebook setup_replay staging
 ```
 
 9. Replay Moviebook  
 ```
-./deploy moviebook replay staging
+./deploy.sh moviebook replay staging
 ```
 
 10. Stop replay on moviebook  
 ```
-./deploy moviebook stop_replay staging
+./deploy.sh moviebook stop_replay staging
 ```
 
 11. Run analyze on moviebook  
 ```
-./deploy moviebook analyze staging
+./deploy.sh moviebook analyze staging
 ```
 
 12. Stop recording cube on staging  
 ```
-./deploy cube stop_record staging
+./deploy.sh cube stop_record staging
 ```
 
 13. Setup replay on cube of staging environment  
 ```
-./deploy cube setup_replay staging
+./deploy.sh cube setup_replay staging
 ```
 
 14. Run replay on cube of staging environment  
 ```
-./deploy cube replay staging
+./deploy.sh cube replay staging
 ```
 
 15. Run analyze on cube of dogfooding environment  
 ```
-./deploy cube analyze dogfooding
+./deploy.sh cube analyze dogfooding
 ```
 
 16. Delete replay filter form cube on staging environment  
 ```
-./deploy cube stop_replay staging
+./deploy.sh cube stop_replay staging
 ```
