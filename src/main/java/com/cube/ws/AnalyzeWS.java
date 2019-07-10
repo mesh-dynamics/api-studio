@@ -372,7 +372,7 @@ public class AnalyzeWS {
                 if(includeDiff.orElse(false)) {
                     diff = Optional.of(matchRes.diff);
                     recordResponse = matchRes.recordreqid.flatMap(rrstore::getResponse);
-                    replayResponse = rrstore.getResponse(matchRes.replayreqid);
+                    replayResponse = matchRes.replayreqid.flatMap(rrstore::getResponse);
                 }
 
                 return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
@@ -453,7 +453,7 @@ public class AnalyzeWS {
 
 
         public MatchRes(Optional<String> recordreqid,
-                        String replayreqid,
+                        Optional<String> replayreqid,
                         Comparator.MatchType reqmt,
                         int nummatch,
                         Comparator.MatchType respmt,
@@ -478,7 +478,7 @@ public class AnalyzeWS {
         }
 
         public final Optional<String> recordreqid;
-        public final String replayreqid;
+        public final Optional<String> replayreqid;
         public final Comparator.MatchType reqmt;
         public final int nummatch;
         public final Comparator.MatchType respmt;

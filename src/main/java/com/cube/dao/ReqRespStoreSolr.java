@@ -1258,7 +1258,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     private static Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
         Optional<String> recordReqId = getStrField(doc , RECORDREQIDF);
-        String replayReqId = getStrField(doc, REPLAYREQIDF).orElse("");
+        Optional<String> replayReqId = getStrField(doc, REPLAYREQIDF);
         String replayId = getStrField(doc, REPLAYIDF).orElse("");
 
         Comparator.MatchType reqMatchType = getStrField(doc , REQMTF)

@@ -225,7 +225,7 @@ public class MockServiceHTTP {
 			// and the matched recording request
 			mockRequest.ifPresent(mRequest -> respv.reqid.ifPresent(recordReqId -> {
 				Analysis.ReqRespMatchResult matchResult =
-                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqid.get(),
+                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqid,
                         Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
                         "", customerid, app, service, path, mRequest.collection.get(),
                         Utils.getTraceId(respv.meta),
@@ -243,7 +243,7 @@ public class MockServiceHTTP {
 				// match result for now.
 				mockRequest.ifPresent(mRequest -> {
 					Analysis.ReqRespMatchResult matchResult =
-                        new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqid.get(),
+                        new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqid,
                             Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
                             customerid, app, service, path, mRequest.collection.get(), Optional.empty(),
                             Utils.getTraceId(mRequest.hdrs));
