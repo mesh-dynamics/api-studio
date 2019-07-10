@@ -1,6 +1,5 @@
 const config = {
-    //baseUrl: "/cube"
-    baseUrl: "http://staging.cubecorp.io"
+    baseUrl: "/cube"
 };
 
 export default config;

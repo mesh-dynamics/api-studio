@@ -80,7 +80,6 @@ export function cube (state = initialState, action) {
                 for (const app of state.appsList) {
                     if (app.name == action.data) {
                         appObj = app;
-                        console.log(appObj);
                         break;
                     }
                 }
