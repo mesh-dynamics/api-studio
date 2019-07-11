@@ -244,7 +244,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setId(22L);
             serviceGraph.setFromService(serviceRepository.findById(17L).get());
             serviceGraph.setToService(serviceRepository.findById(14L).get());
-            serviceGraph.setApp(appRepository.findById(4L).get());
+            serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
         // UI - Replay
@@ -253,7 +253,15 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setId(23L);
             serviceGraph.setFromService(serviceRepository.findById(17L).get());
             serviceGraph.setToService(serviceRepository.findById(15L).get());
-            serviceGraph.setApp(appRepository.findById(4L).get());
+            serviceGraph.setApp(appRepository.findById(5L).get());
+            this.serviceGraphRepository.save(serviceGraph);
+        }
+        // Mock
+        if(!serviceGraphRepository.existsById(24L)) {
+            ServiceGraph serviceGraph = new ServiceGraph();
+            serviceGraph.setId(24L);
+            serviceGraph.setFromService(serviceRepository.findById(17L).get());
+            serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
     }
