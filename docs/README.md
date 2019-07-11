@@ -113,9 +113,9 @@ curl -X GET 'http://staging2.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUT
 ./deploy.sh cube setup_replay staging
 ```
 
-14. Run replay on cube of dogfooding environment  
+14. Run replay on cube of staging environment  
 ```
-./deploy.sh cube replay dogfooding
+./deploy.sh cube replay staging
 ```
 
 15. Run analyze on cube of dogfooding environment  
