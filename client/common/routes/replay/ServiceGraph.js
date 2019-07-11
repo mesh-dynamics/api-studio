@@ -144,67 +144,65 @@ class ServiceGraph extends Component {
     }
 
     render() {
-        
         const $ = window.$;
         const element = $(this.refs.cyto);
         const { cube } = this.props;
 
-        if (Object.keys(this.cy).length) {
-            this.renderServiceGraph(this.cy, cube);
-        }
+        if(cube.graphData) {
+            if (Object.keys(this.cy).length) {
+                this.renderServiceGraph(this.cy, cube);
+            }
 
-        if(Object.keys(this.cy).length){
-            this.cy.panzoom({});
-            //const $ = window.$;
-            //const element = $(this.refs.cyto);
-            let cy = this.cy;
-            $(element).bind('keydown', function (event) {
-              switch (event.keyCode) {
-                //....your actions for the keys .....
-                case 40: //down
-                  cy.panBy({ x: 0, y: -50 });
-                  event.preventDefault();
-                  break;
-                case 34: //pg-down
-                  cy.panBy({ x: 0, y: -250 });
-                  event.preventDefault();
-                  break;
-                case 38: //up
-                  cy.panBy({ x: 0, y: 50 });
-                  event.preventDefault();
-                  break;
-                case 33: //pg-up
-                  cy.panBy({ x: 0, y: 250 });
-                  event.preventDefault();
-                  break;
-                case 39://right
-                  cy.panBy({ x: -50, y: 0 });
-                  event.preventDefault();
-                  break;
-                case 37://left
-                  cy.panBy({ x: 50, y: 0 });
-                  event.preventDefault();
-                  break;
-              }
-            });        
+            if(Object.keys(this.cy).length){
+                this.cy.panzoom({});
+                //const $ = window.$;
+                //const element = $(this.refs.cyto);
+                let cy = this.cy;
+                $(element).bind('keydown', function (event) {
+                    switch (event.keyCode) {
+                        //....your actions for the keys .....
+                        case 40: //down
+                            cy.panBy({ x: 0, y: -50 });
+                            event.preventDefault();
+                            break;
+                        case 34: //pg-down
+                            cy.panBy({ x: 0, y: -250 });
+                            event.preventDefault();
+                            break;
+                        case 38: //up
+                            cy.panBy({ x: 0, y: 50 });
+                            event.preventDefault();
+                            break;
+                        case 33: //pg-up
+                            cy.panBy({ x: 0, y: 250 });
+                            event.preventDefault();
+                            break;
+                        case 39://right
+                            cy.panBy({ x: -50, y: 0 });
+                            event.preventDefault();
+                            break;
+                        case 37://left
+                            cy.panBy({ x: 50, y: 0 });
+                            event.preventDefault();
+                            break;
+                    }
+                });
+            }
         }
 
         let graph = '';
-        if (cube.selectedTestId) {
+        if (cube.selectedApp && cube.graphData) {
             graph = <div ref='cyto' tabIndex='1'>
                 <CytoscapeComponent style={{ width: this.width, height: this.height }} stylesheet={this.style} cy={cy => this.cy = cy} wheelSensitivity='0.05' />
             </div>;
+        } else if(cube.selectedApp && !cube.graphData) {
+            graph = <div className="select-text">Graph Data does not exist for the Selected Application</div>
         } else {
-            graph = <div className="select-text">Please Select a Collection to Proceed</div>
+            graph = <div className="select-text">Please Select an Application to Proceed</div>
         }
  
         return(
             <div>
-                {/*<br/>
-                <ConfigSample />
-                <br/>
-                <div></div>
-                <br/>*/}
                 <div className='col-sm-12'>
                     {graph}
                     <Clearfix />
@@ -225,19 +223,38 @@ class ServiceGraph extends Component {
         )
     }
 
+    findInNodes(nodeList, id) {
+        for (const node of nodeList) {
+            if (node.id == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     getGD() {
         const { cube } = this.props;
         const gdCrude = cube.graphData;
-        for (const key in gdCrude) {
-            if (gdCrude[key].app.name === cube.selectedApp) {
-                if (gdCrude[key].graphObj) {
-                    return gdCrude[key].graphObj;
-                } else {
-                    gdCrude[key].graphObj = JSON.parse(gdCrude[key].serviceGraph);
-                    return gdCrude[key].graphObj;
-                }
-            }
+        if (!gdCrude) {
+            return {nodes: [], edges: []};
         }
+        let nodes = [];
+        let edges = [];
+        for (const dp of gdCrude) {
+            if (!this.findInNodes(nodes, dp.fromService.id)) {
+                nodes.push({data: {id: dp.fromService.id, text: dp.fromService.name}, style: {"text-wrap": "wrap"}});
+            }
+            if (!this.findInNodes(nodes, dp.toService.id)) {
+                nodes.push({data: {id: dp.toService.id, text: dp.toService.name}, style: {"text-wrap": "wrap"}});
+            }
+            edges.push({
+                id: dp.fromService.id + '_' + dp.toService.id,
+                source: dp.fromService.id,
+                target: dp.toService.id
+            });
+        }
+
+        return {nodes: nodes, edges: edges};
     }
 
     renderServiceGraph(cy, cube) {

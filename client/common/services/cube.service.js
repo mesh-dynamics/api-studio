@@ -7,6 +7,7 @@ export const cubeService = {
     fetchAppsList,
     getInstanceList,
     getGraphData,
+    getGraphDataByAppId,
     fetchCollectionList,
     getReplayId,
     startReplay,
@@ -33,11 +34,11 @@ async function fetchAppsList() {
             json = await response.json();
             appsList = json;
         } else {
-            console.log("Response not ok in fetchAppsList", response);
+            console.error("Response not ok in fetchAppsList", response);
             throw new Error("Response not ok fetchAppsList");
         }
     } catch (e) {
-        console.log("fetchAppsList has errors!", e);
+        console.error("fetchAppsList has errors!", e);
         throw e;
     }
     return appsList;
@@ -60,14 +61,40 @@ async function getInstanceList() {
             json = await response.json();
             iList = json;
         } else {
-            console.log("Response not ok in getInstanceList", response);
+            console.error("Response not ok in getInstanceList", response);
             throw new Error("Response not ok getInstanceList");
         }
     } catch (e) {
-        console.log("getInstanceList has errors!", e);
+        console.error("getInstanceList has errors!", e);
         throw e;
     }
     return iList;
+}
+
+async function getGraphDataByAppId(appId) {
+    let response, json;
+    let url = `${config.baseUrl}/api/app/${appId}/service-graphs`;
+    let graphData;
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            graphData = json;
+        } else {
+            console.error("Response not ok in getInstanceList", response);
+            throw new Error("Response not ok getInstanceList");
+        }
+    } catch (e) {
+        console.error("getInstanceList has errors!", e);
+        throw e;
+    }
+    return graphData;
 }
 
 async function getGraphData(app) {
@@ -86,11 +113,11 @@ async function getGraphData(app) {
             json = await response.json();
             graphData = json;
         } else {
-            console.log("Response not ok in getInstanceList", response);
+            console.error("Response not ok in getInstanceList", response);
             throw new Error("Response not ok getInstanceList");
         }
     } catch (e) {
-        console.log("getInstanceList has errors!", e);
+        console.error("getInstanceList has errors!", e);
         throw e;
     }
     return graphData;
@@ -136,11 +163,11 @@ async function fetchCollectionList(app) {
             json = await response.json();
             collections = json;
         } else {
-            console.log("Response not ok in fetchCollectionList", response);
+            console.error("Response not ok in fetchCollectionList", response);
             throw new Error("Response not ok fetchCollectionList");
         }
     } catch (e) {
-        console.log("fetchCollectionList has errors!", e);
+        console.error("fetchCollectionList has errors!", e);
         throw e;
     }
     return collections;
@@ -219,14 +246,14 @@ async function checkStatusForReplay(collectionId, replayId, app) {
             json = await response.json();
             status = json;
         } else {
-            console.log("Response not ok in checkStatusForReplay", response);
+            console.error("Response not ok in checkStatusForReplay", response);
             throw new Error("Response not ok checkStatusForReplay");
         }
     } catch (e) {
-        console.log("checkStatusForReplay has errors!", e);
+        console.error("checkStatusForReplay has errors!", e);
         throw e;
     }
-    console.log('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
+    console.error('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
     return status;
 }
 
@@ -252,7 +279,7 @@ async function fetchAnalysis(collectionId, replayId) {
             throw new Error("Response not ok fetchAnalysis");
         }
     } catch (e) {
-        console.log("fetchAnalysis has errors!", e);
+        console.error("fetchAnalysis has errors!", e);
         throw e;
     }
     return analysis;
@@ -273,11 +300,11 @@ async function fetchReport(collectionId, replayId) {
             json = await response.json();
             report = json;
         } else {
-            console.log("Response not ok in fetchReport", response);
+            console.error("Response not ok in fetchReport", response);
             throw new Error("Response not ok fetchReport");
         }
     } catch (e) {
-        console.log("fetchReport has errors!", e);
+        console.error("fetchReport has errors!", e);
         throw e;
     }
     return report;
@@ -298,11 +325,11 @@ async function fetchTimelineData(collectionId, replayData) {
             json = await response.json();
             timelineData = json;
         } else {
-            console.log("Response not ok in fetchTimeline", response);
+            console.error("Response not ok in fetchTimeline", response);
             throw new Error("Response not ok fetchTimeline");
         }
     } catch (e) {
-        console.log("fetchTimeline has errors!", e);
+        console.error("fetchTimeline has errors!", e);
         throw e;
     }
     return timelineData;
@@ -324,11 +351,11 @@ async function getDiffData(replayId, recordReqId, replayReqId) {
             json = await response.json();
             diffData = json;
         } else {
-            console.log("Response not ok in diffData", response);
+            console.error("Response not ok in diffData", response);
             throw new Error("Response not ok diffData");
         }
     } catch (e) {
-        console.log("diffData has errors!", e);
+        console.error("diffData has errors!", e);
         throw e;
     }
     return diffData;
