@@ -241,17 +241,20 @@ class ServiceGraph extends Component {
         let nodes = [];
         let edges = [];
         for (const dp of gdCrude) {
-            if (!this.findInNodes(nodes, dp.fromService.id)) {
+            if (dp.fromService && !this.findInNodes(nodes, dp.fromService.id)) {
                 nodes.push({data: {id: dp.fromService.id, text: dp.fromService.name}, style: {"text-wrap": "wrap"}});
             }
-            if (!this.findInNodes(nodes, dp.toService.id)) {
+            if (dp.toService && !this.findInNodes(nodes, dp.toService.id)) {
                 nodes.push({data: {id: dp.toService.id, text: dp.toService.name}, style: {"text-wrap": "wrap"}});
             }
-            edges.push({
-                id: dp.fromService.id + '_' + dp.toService.id,
-                source: dp.fromService.id,
-                target: dp.toService.id
-            });
+
+            if (dp.fromService && dp.toService) {
+                edges.push({
+                    id: dp.fromService.id + '_' + dp.toService.id,
+                    source: dp.fromService.id,
+                    target: dp.toService.id
+                });
+            }
         }
 
         return {nodes: nodes, edges: edges};
