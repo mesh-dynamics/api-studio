@@ -8,21 +8,23 @@ REPLAY_ID=$(curl -X POST \
 	-H 'cache-control: no-cache' \
 	-d 'endpoint=http://staging.cubecorp.io&instanceid=PROD' | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 
-echo "Init done"
 #Start replay
 curl -f -X POST \
   http://dogfooding.cubecorp.io/rs/start/demo@cubecorp.io/Cube/dogfood-14-june-1/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 
-echo "replay started"
 #Status Check
 while [ "$STATUS" != "Completed" ]; do
 	STATUS=$(curl -X GET http://dogfooding.cubecorp.io/rs/status/demo@cubecorp.io/Cube/dogfood-14-june-1/$REPLAY_ID | awk -F ',' '{print $9}' | cut -d '"' -f 4)
+	if [ "$STATUS" = "Error" ]; then
+		echo "Error getting status"
+		echo "Replay ID:" $REPLAY_ID
+		exit 1
+	fi
 	sleep 5
 done
 
-echo "done with while"
 #Run analyze
 ANALYZE=$(curl -X POST http://dogfooding.cubecorp.io/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache')
 REQNOTMATCHED=$(echo $ANALYZE | awk -F ',' '{print $8}' | cut -d '"' -f 4)
@@ -31,7 +33,7 @@ RESPNOTMATCHED=$(echo $ANALYZE | awk -F ',' '{print $11}' | cut -d '"' -f 4)
 #Display replay ID
 echo "Replay ID:" $REPLAY_ID
 #Exit with non-zero exit code if reqstnotmatched and respnotmatchted are have nono-zero value
-if [ "$REQNOTMATCHED" = "0" ] && [ "$RESPNOTMATCHED" = "0" ];then
+if [ "$REQNOTMATCHED" = "0" ] && [ "$RESPNOTMATCHED" = "0" ]; then
 	echo "test passed"
 	exit 0
 else
