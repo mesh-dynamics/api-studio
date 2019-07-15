@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
 #Init Replay
 REPLAY_ID=$(curl -X POST \
 	http://dogfooding.cubecorp.io/cube/rs/init/demo@cubecorp.io/Cube/dogfood-14-june-1 \
