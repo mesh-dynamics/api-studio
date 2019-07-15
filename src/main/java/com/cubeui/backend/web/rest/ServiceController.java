@@ -3,7 +3,9 @@ package com.cubeui.backend.web.rest;
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.ServiceDTO;
 import com.cubeui.backend.domain.Service;
+import com.cubeui.backend.domain.ServiceGroup;
 import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.ServiceGroupRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -24,10 +26,12 @@ public class ServiceController {
 
     private AppRepository appRepository;
     private ServiceRepository serviceRepository;
+    private ServiceGroupRepository serviceGroupRepository;
 
-    public ServiceController(AppRepository appRepository, ServiceRepository serviceRepository) {
+    public ServiceController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGroupRepository serviceGroupRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
+        this.serviceGroupRepository = serviceGroupRepository;
     }
 
     @PostMapping("")
@@ -37,10 +41,12 @@ public class ServiceController {
         }
 
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
-        if (app.isPresent()) {
+        Optional<ServiceGroup> serviceGroup = serviceGroupRepository.findById(serviceDTO.getServiceGroupId());
+        if (app.isPresent() && serviceGroup.isPresent()) {
             Service saved = this.serviceRepository.save(
                     Service.builder()
                             .app(app.get())
+                            .serviceGroup(serviceGroup.get())
                             .name(serviceDTO.getName())
                             .build());
             return created(
@@ -62,12 +68,17 @@ public class ServiceController {
         }
         Optional<Service> existing = serviceRepository.findById(serviceDTO.getId());
         Optional<App> app = appRepository.findById(serviceDTO.getAppId());
-        if (app.isEmpty()){
+        Optional<ServiceGroup> serviceGroup = serviceGroupRepository.findById(serviceDTO.getServiceGroupId());
+        if (app.isEmpty()) {
             throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+        }
+        if(serviceGroup.isEmpty()) {
+            throw new RecordNotFoundException("ServiceGroup with ID '" + serviceDTO.getServiceGroupId() + "' not found.");
         }
         if (existing.isPresent()) {
             existing.ifPresent(service -> {
                 service.setApp(app.get());
+                service.setServiceGroup(serviceGroup.get());
                 service.setName(serviceDTO.getName());
             });
             this.serviceRepository.save(existing.get());
@@ -75,7 +86,7 @@ public class ServiceController {
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
                             .path("/api/service/{id}")
-                            .buildAndExpand(app.get().getId())
+                            .buildAndExpand(existing.get().getId())
                             .toUri())
                     .body(existing);
         } else {

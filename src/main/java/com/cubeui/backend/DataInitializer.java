@@ -3,19 +3,20 @@ package com.cubeui.backend;
 import com.cubeui.backend.domain.*;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.InstanceRepository;
-import com.cubeui.backend.repository.ServiceGraphRepository;
-import com.cubeui.backend.repository.ServiceRepository;
+import com.cubeui.backend.repository.*;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.UserService;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
+@Setter
+@Getter
+@Data
 @Component
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
@@ -34,7 +35,11 @@ public class DataInitializer implements CommandLineRunner {
 
     private ServiceGraphRepository serviceGraphRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, MailService mailService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository) {
+    private ServiceGroupRepository serviceGroupRepository;
+
+    private PathRepository pathRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService, MailService mailService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository) {
         this.userService = userService;
         this.customerService = customerService;
         this.mailService = mailService;
@@ -43,6 +48,8 @@ public class DataInitializer implements CommandLineRunner {
         this.instanceRepository = instanceRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
+        this.serviceGroupRepository = serviceGroupRepository;
+        this.pathRepository = pathRepository;
     }
 
     @Override
@@ -51,6 +58,7 @@ public class DataInitializer implements CommandLineRunner {
 
         if(customerService.getByName("CubeCorp").isEmpty()) {
             CustomerDTO customerDTO = new CustomerDTO();
+            customerDTO.setId(1L);
             customerDTO.setName("CubeCorp");
             customerDTO.setEmail("admin@cubecorp.io");
             customerDTO.setDomainURL("cube.cubecorp.io");
@@ -263,6 +271,23 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setFromService(serviceRepository.findById(17L).get());
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
+        }
+
+        // ServiceGroup
+        if(!serviceGroupRepository.existsById(25L)) {
+            ServiceGroup serviceGroup = new ServiceGroup();
+            serviceGroup.setId(25L);
+            serviceGroup.setName("GLOBAL");
+            serviceGroup.setApp(appRepository.findById(5L).get());
+            serviceGroupRepository.save(serviceGroup);
+        }
+
+        if(!serviceGroupRepository.existsById(26L)) {
+            ServiceGroup serviceGroup = new ServiceGroup();
+            serviceGroup.setId(26L);
+            serviceGroup.setName("GLOBAL");
+            serviceGroup.setApp(appRepository.findById(4L).get());
+            serviceGroupRepository.save(serviceGroup);
         }
     }
 }
