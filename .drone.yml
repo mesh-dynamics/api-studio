@@ -109,6 +109,10 @@ steps:
     image: spotify/alpine
     commands:
     - ./test.sh
+    when:
+      event:
+        include:
+          pull_request
 
 trigger:
   branch:
