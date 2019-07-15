@@ -18,9 +18,7 @@ curl -f -X POST \
 while [ "$STATUS" != "Completed" ]; do
 	STATUS=$(curl -X GET http://dogfooding.cubecorp.io/rs/status/demo@cubecorp.io/Cube/dogfood-14-june-1/$REPLAY_ID | awk -F ',' '{print $9}' | cut -d '"' -f 4)
 	if [ "$STATUS" = "Error" ]; then
-		echo "Error getting status"
-		echo "Replay ID:" $REPLAY_ID
-		exit 1
+		break
 	fi
 	sleep 5
 done
