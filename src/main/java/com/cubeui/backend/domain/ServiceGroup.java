@@ -14,16 +14,16 @@ import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="services",
-        uniqueConstraints=@UniqueConstraint(columnNames={"name", "service_group_id", "app_id"}),
+@Table(name="service_groups",
+        uniqueConstraints=@UniqueConstraint(columnNames={"name", "app_id"}),
         indexes = {
-                @Index(columnList = "service_group_id, app_id", name = "service_index")
+                @Index(columnList = "app_id", name = "service_group_index")
         })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Service {
+public class ServiceGroup {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -37,11 +37,6 @@ public class Service {
     @JoinColumn(name = "app_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
     App app;
-
-    @ManyToOne
-    @JoinColumn(name = "service_group_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    ServiceGroup serviceGroup;
 
     @CreationTimestamp
     LocalDateTime createdAt;

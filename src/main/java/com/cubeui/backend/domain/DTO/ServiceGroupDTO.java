@@ -7,15 +7,13 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class ServiceDTO {
+public class ServiceGroupDTO {
 
     private Long id;
 
     private String name;
 
     private Long appId;
-
-    private Long serviceGroupId;
 
     private LocalDateTime createdAt;
 

@@ -70,16 +70,49 @@ CREATE TYPE cube.service_type AS ENUM ('gateway', 'intermediate', 'virtualized')
 CREATE TABLE cube.service (
   id BIGSERIAL PRIMARY KEY,
   app_id  BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
+  service_group_id References cube.service_group(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (service_group_id, app_id, name)
+);
+
+CREATE INDEX service_index ON cube.service(service_group_id, app_id);
+
+CREATE TRIGGER set_timestamp_service
+BEFORE UPDATE ON cube.service
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+CREATE TABLE cube.service_group (
+  id BIGSERIAL PRIMARY KEY,
+  app_id  BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
   name VARCHAR(200) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (app_id, name)
 );
 
-CREATE INDEX service_index ON cube.service(app_id);
+CREATE INDEX service_group_index ON cube.service(app_id);
 
-CREATE TRIGGER set_timestamp_service
-BEFORE UPDATE ON cube.service
+CREATE TRIGGER set_timestamp_service_group
+BEFORE UPDATE ON cube.service_group
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+CREATE TABLE cube.path (
+  id BIGSERIAL PRIMARY KEY,
+  service_id  BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
+  path text NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (service_id, path)
+);
+
+CREATE INDEX path_index ON cube.path(service_id);
+
+CREATE TRIGGER set_timestamp_path
+BEFORE UPDATE ON cube.path
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
@@ -96,7 +129,7 @@ CREATE TABLE cube.service_graph (
   UNIQUE (app_id, from_node_id, to_node_id)
 );
 
-CREATE INDEX service_graph_index ON cube.service_graph(app_id);
+CREATE INDEX service_graph_index ON cube.service_graph(app_id, from_service_id, to_service_id);
 
 CREATE TYPE cube.recording_status AS ENUM ('Running' , 'Completed' , 'Error');
 
