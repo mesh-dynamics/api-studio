@@ -15,11 +15,8 @@ curl -f -X POST \
   -H 'cache-control: no-cache'
 
 #Status Check
-while [ "$STATUS" != "Completed" ]; do
+while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ]; do
 	STATUS=$(curl -X GET http://dogfooding.cubecorp.io/rs/status/demo@cubecorp.io/Cube/dogfood-14-june-1/$REPLAY_ID | awk -F ',' '{print $9}' | cut -d '"' -f 4)
-	if [ "$STATUS" = "Error" ]; then
-		break
-	fi
 	sleep 5
 done
 
