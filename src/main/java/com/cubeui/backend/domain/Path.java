@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="paths",
-        uniqueConstraints=@UniqueConstraint(columnNames={"name", "service_id"}),
+        uniqueConstraints=@UniqueConstraint(columnNames={"path", "service_id"}),
         indexes = {
                 @Index(columnList = "service_id", name = "path_index")
         })
@@ -28,10 +28,6 @@ public class Path {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;
-
-    @NotEmpty
-    @Column(nullable = false, length = 200)
-    String name;
 
     @NotEmpty
     @Column(nullable = false, columnDefinition = "text")

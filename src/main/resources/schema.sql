@@ -103,11 +103,10 @@ EXECUTE PROCEDURE trigger_set_timestamp();
 CREATE TABLE cube.path (
   id BIGSERIAL PRIMARY KEY,
   service_id  BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
-  name VARCHAR(200) NOT NULL,
   path text NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (service_id, name)
+  UNIQUE (service_id, path)
 );
 
 CREATE INDEX path_index ON cube.path(service_id);

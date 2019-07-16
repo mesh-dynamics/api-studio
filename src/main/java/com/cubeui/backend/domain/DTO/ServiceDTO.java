@@ -13,9 +13,9 @@ public class ServiceDTO {
 
     private String name;
 
-    private long appId;
+    private Long appId;
 
-    private long serviceGroupId;
+    private Long serviceGroupId;
 
     private LocalDateTime createdAt;
 

@@ -13,7 +13,7 @@ public class ServiceGroupDTO {
 
     private String name;
 
-    private long appId;
+    private Long appId;
 
     private LocalDateTime createdAt;
 

@@ -16,6 +16,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -39,26 +40,31 @@ public class ServiceController {
         if (serviceDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Service with ID '" + serviceDTO.getId() +"' already exists."));
         }
-
-        Optional<App> app = appRepository.findById(serviceDTO.getAppId());
-        Optional<ServiceGroup> serviceGroup = serviceGroupRepository.findById(serviceDTO.getServiceGroupId());
-        if (app.isPresent() && serviceGroup.isPresent()) {
-            Service saved = this.serviceRepository.save(
-                    Service.builder()
-                            .app(app.get())
-                            .serviceGroup(serviceGroup.get())
-                            .name(serviceDTO.getName())
-                            .build());
-            return created(
-                    ServletUriComponentsBuilder
-                            .fromContextPath(request)
-                            .path("/api/service/{id}")
-                            .buildAndExpand(saved.getId())
-                            .toUri())
-                    .body(saved);
-        } else {
-            throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+        Optional<App> app = null;
+        if(serviceDTO.getAppId() != null) {
+            app = appRepository.findById(serviceDTO.getAppId());
+            if(app.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + serviceDTO.getAppId() + "' not found."));
         }
+        Optional<ServiceGroup> serviceGroup = null;
+        if(serviceDTO.getServiceGroupId() != null) {
+            serviceGroup = serviceGroupRepository.findById(serviceDTO.getServiceGroupId());
+            if(serviceGroup.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("ServiceGroup with ID '" + serviceDTO.getServiceGroupId() + "' not found."));
+        } else {
+            return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field ServiceGroup Id is empty."));
+        }
+        Service saved = this.serviceRepository.save(
+                Service.builder()
+                        .app(app.get())
+                        .serviceGroup(serviceGroup.get())
+                        .name(serviceDTO.getName())
+                        .build());
+        return created(
+                ServletUriComponentsBuilder
+                        .fromContextPath(request)
+                        .path(request.getServletPath() + "/{id}")
+                        .buildAndExpand(saved.getId())
+                        .toUri())
+                .body(saved);
     }
 
     @PutMapping("")
@@ -67,30 +73,32 @@ public class ServiceController {
             return status(FORBIDDEN).body(new ErrorResponse("Service id not provided"));
         }
         Optional<Service> existing = serviceRepository.findById(serviceDTO.getId());
-        Optional<App> app = appRepository.findById(serviceDTO.getAppId());
-        Optional<ServiceGroup> serviceGroup = serviceGroupRepository.findById(serviceDTO.getServiceGroupId());
-        if (app.isEmpty()) {
-            throw new RecordNotFoundException("App with ID '" + serviceDTO.getAppId() + "' not found.");
+        Optional<App> app = null;
+        if(serviceDTO.getAppId() != null) {
+            app = appRepository.findById(serviceDTO.getAppId());
+            if(app.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + serviceDTO.getAppId() + "' not found."));
         }
-        if(serviceGroup.isEmpty()) {
-            throw new RecordNotFoundException("ServiceGroup with ID '" + serviceDTO.getServiceGroupId() + "' not found.");
+        Optional<ServiceGroup> serviceGroup = null;
+        if(serviceDTO.getServiceGroupId() != null) {
+            serviceGroup = serviceGroupRepository.findById(serviceDTO.getServiceGroupId());
+            if(serviceGroup.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("ServiceGroup with ID '" + serviceDTO.getServiceGroupId() + "' not found."));
         }
         if (existing.isPresent()) {
-            existing.ifPresent(service -> {
-                service.setApp(app.get());
-                service.setServiceGroup(serviceGroup.get());
-                service.setName(serviceDTO.getName());
+            existing.get().setApp(app.get());
+            existing.get().setServiceGroup(serviceGroup.get());
+            Optional.ofNullable(serviceDTO.getName()).ifPresent(updatedName -> {
+                existing.get().setName(updatedName);
             });
             this.serviceRepository.save(existing.get());
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
-                            .path("/api/service/{id}")
+                            .path(request.getServletPath() + "/{id}")
                             .buildAndExpand(existing.get().getId())
                             .toUri())
                     .body(existing);
         } else {
-            throw new RecordNotFoundException("Service with ID '" + serviceDTO.getId() + "' not found.");
+            return status(BAD_REQUEST).body(new ErrorResponse("Service with ID '" + serviceDTO.getId() + "' not found."));
         }
     }
 

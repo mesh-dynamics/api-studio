@@ -11,11 +11,9 @@ public class PathDTO {
 
     private Long id;
 
-    private String name;
-
     private String path;
 
-    private long serviceId;
+    private Long serviceId;
 
     private LocalDateTime createdAt;
 
