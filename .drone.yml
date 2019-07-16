@@ -10,10 +10,6 @@ steps:
       repo: cubeiocorp/cubews
       target: prod
       tags: ${DRONE_COMMIT}
-    when:
-      event:
-        include:
-        - pull_request
 
   - name: deploy_cube_mock_staging
     image: quay.io/honestbee/drone-kubernetes
@@ -25,11 +21,35 @@ steps:
       repo: cubeiocorp/cubews
       container: cubews
       tag: ${DRONE_COMMIT}
-    when:
-      event:
-        include:
-        - pull_request
 
+  - name: deploy_cube_record_staging
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
+      namespace: staging
+      deployment: cubews-record-v1
+      repo: cubeiocorp/cubews
+      container: cubews
+      tag: ${DRONE_COMMIT}
+
+  - name: deploy_cube_replay_staging
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
+      namespace: staging
+      deployment: cubews-replay-v1
+      repo: cubeiocorp/cubews
+      container: cubews
+      tag: ${DRONE_COMMIT}
+
+  - name: test
+    image: spotify/alpine
+    commands:
+    - ./test.sh
+
+#Deploy in dogfooding once code is merged in master and has passed dogfooding test
   - name: deploy_cube_mock_dogfooding
     image: quay.io/honestbee/drone-kubernetes
     settings:
@@ -43,21 +63,6 @@ steps:
     when:
       event:
         exclude:
-        - pull_request
-
-  - name: deploy_cube_record_staging
-    image: quay.io/honestbee/drone-kubernetes
-    settings:
-      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
-      namespace: staging
-      deployment: cubews-record-v1
-      repo: cubeiocorp/cubews
-      container: cubews
-      tag: ${DRONE_COMMIT}
-    when:
-      event:
-        include:
         - pull_request
 
   - name: deploy_cube_record_dogfooding
@@ -75,22 +80,7 @@ steps:
         exclude:
         - pull_request
 
-  - name: deploy_cube_replay_staging
-    image: quay.io/honestbee/drone-kubernetes
-    settings:
-      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
-      namespace: staging
-      deployment: cubews-replay-v1
-      repo: cubeiocorp/cubews
-      container: cubews
-      tag: ${DRONE_COMMIT}
-    when:
-      event:
-        include:
-        - pull_request
-
-  - name: deploy_cube_replay
+  - name: deploy_cube_replay_dogfooding
     image: quay.io/honestbee/drone-kubernetes
     settings:
       kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
@@ -104,15 +94,6 @@ steps:
       event:
         exclude:
         - pull_request
-
-  - name: test
-    image: spotify/alpine
-    commands:
-    - ./test.sh
-    when:
-      event:
-        include:
-          pull_request
 
 trigger:
   branch:
