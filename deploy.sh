@@ -12,8 +12,8 @@ generate_manifest() {
 	if [ "$OPERATION" = "init" ]; then
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
-		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $NAMESPACE_HOST
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $HOST $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $HOST $NAMESPACE_HOST
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $MASTER_NAMESPACE
 	fi
@@ -180,7 +180,7 @@ main () {
 		setup_replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay_setup "$@";;
 		replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay "$@";;
 		stop_replay) OPERATION="stopreplay"; shift; generate_manifest $1; shift; stop_replay "$@";;
-		register_matcher) generate_manifest $1; shift; register_matcher "$@";;
+		register_matcher) OPERATION="none"; shift; generate_manifest $1; shift; register_matcher "$@";;
 		analyze) OPERATION="analyze"; shift; generate_manifest $1; shift; analyze "$@";;
 		clean) OPERATION="clean"; shift; generate_manifest $1; shift; clean "$@";;
 		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, analyze, clean)."

@@ -4,8 +4,8 @@ metadata:
   name: cubews
   namespace: {{namespace}}
 data:
-  APP_DOGFOOD: "Cube"
+  APP_DOGFOOD: "{{cube_application}}"
   INSTANCE_DOGFOOD: "test"
-  SERVICE_DOGFOOD: "Cube"
-  CUSTOMER_DOGFOOD: "CubeCorp"
-  CUBE_RECORD_SERVICE: "http://dogfooding2.cubecorp.io"
+  SERVICE_DOGFOOD: "{{cube_application}}"
+  CUSTOMER_DOGFOOD: "{{customer}}"
+  CUBE_RECORD_SERVICE: "{{record_host}}"
