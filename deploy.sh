@@ -45,7 +45,7 @@ record() {
 	curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H "Host:$HOST" \
+	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 }
 
@@ -53,14 +53,14 @@ stop_record() {
 	COLLECTION_NAME=$(curl -X GET \
   "http://$GATEWAY_URL/cs/currentcollection?customerid=$CUBE_CUSTOMER&app=$CUBE_APP&instanceid=$INSTANCEID" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H "Host:$HOST" \
+	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache')
 	echo "recording complete"
 
 	curl -X POST \
 	http://$GATEWAY_URL/cs/stop/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H "Host:$HOST" \
+	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 }
@@ -101,14 +101,14 @@ replay() {
 	http://$GATEWAY_URL/rs/init/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
-	-H "Host: $HOST" \
+	-H "Host: $CUBE_HOST" \
 	-d "$BODY" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 	#Make reply start call
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
-	-H "Host: $HOST"
+	-H "Host: $CUBE_HOST"
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
@@ -131,7 +131,7 @@ analyze() {
 	  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
 	  -H 'Content-Type: application/x-www-form-urlencoded' \
 	  -H 'cache-control: no-cache' \
-		-H "Host: $HOST"
+		-H "Host: $CUBE_HOST"
 }
 
 export_dev_env_variables() {
