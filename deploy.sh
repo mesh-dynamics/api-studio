@@ -12,8 +12,8 @@ generate_manifest() {
 	if [ "$OPERATION" = "init" ]; then
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $HOST $NAMESPACE_HOST
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $HOST $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $MASTER_NAMESPACE
 	fi
