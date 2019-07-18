@@ -8,10 +8,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 
 import org.json.*;
@@ -22,9 +19,11 @@ public class FindAndRentMovies {
 	WebTarget targetService; 
 	private static String token = "";
 	private static final boolean useAuthToken = false;
+	Map<String, String> headers;
 	
-	public FindAndRentMovies(WebTarget service) {
+	public FindAndRentMovies(WebTarget service, Map<String, String> headers) {
 		targetService = service;
+		this.headers = headers;
 	}
 	
 	// Generated using the following query against the sakila db: 
@@ -84,6 +83,7 @@ public class FindAndRentMovies {
 
 		  // play traffic for recording.
 		for (int i=0; i<nm; i++) {
+			System.out.println("Request Number: " + i);
 			String movie = movies[i];
 			  // list films
 			  Response response1 = callWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
@@ -175,6 +175,10 @@ public class FindAndRentMovies {
 	
 	private Response callWithRetries(Builder req, Entity<Object> body, boolean isGetRequest, int numRetries) {
 		int numAttempts = 0;
+		headers.forEach((k, v) -> {
+			req.header(k,v);
+		});
+		//System.out.println("Response: " + req.get().toString());
 		while (numAttempts < numRetries) {
 			try {
 				if (isGetRequest) {
