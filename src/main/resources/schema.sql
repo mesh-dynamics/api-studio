@@ -67,10 +67,19 @@ EXECUTE PROCEDURE trigger_set_timestamp();
 
 CREATE TYPE cube.service_type AS ENUM ('gateway', 'intermediate', 'virtualized');
 
+CREATE TABLE cube.service_group (
+  id BIGSERIAL PRIMARY KEY,
+  app_id  BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (app_id, name)
+);
+
 CREATE TABLE cube.service (
   id BIGSERIAL PRIMARY KEY,
   app_id  BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
-  service_group_id References cube.service_group(id) ON DELETE CASCADE,
+  service_group_id BIGINT REFERENCES cube.service_group(id) ON DELETE CASCADE,
   name VARCHAR(200) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -83,15 +92,6 @@ CREATE TRIGGER set_timestamp_service
 BEFORE UPDATE ON cube.service
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
-
-CREATE TABLE cube.service_group (
-  id BIGSERIAL PRIMARY KEY,
-  app_id  BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
-  name VARCHAR(200) NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (app_id, name)
-);
 
 CREATE INDEX service_group_index ON cube.service(app_id);
 
