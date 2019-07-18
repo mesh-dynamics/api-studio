@@ -35,7 +35,7 @@ init() {
 
 register_matcher() {
 echo "Registering Templates"
-./update_templates.py $1 $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $NAMESPACE_HOST
+./update_templates.py $1 $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $NAMESPACE_HOST $APP_DIR
 }
 
 record() {
