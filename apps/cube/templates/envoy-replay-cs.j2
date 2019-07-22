@@ -1,0 +1,123 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{service_name}}-lua
+  namespace: {{namespace}}
+spec:
+  workloadLabels:
+    app: {{service_name}}
+    namespace: {{namespace}}
+  filters:
+  - listenerMatch:
+      #portNumber: 8080
+      listenerType: SIDECAR_INBOUND #will match with the inbound listener for cubews:8080
+    insertPosition:
+      index: FIRST
+    filterName: envoy.lua
+    filterType: HTTP
+    filterConfig:
+      inlineCode: |
+                local random = math.random
+                math.randomseed(os.time())
+                function uuid()
+                      local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+                      return string.gsub(template, '[xy]', function (c)
+                    local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+                    return string.format('%x', v)
+                  end)
+                end
+                -- taken from https://gist.github.com/tylerneylon/59f4bcf316be525b30ab#file-json-lua-L66
+                local function escape_str(s)
+                  local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
+                  local out_char = {'\\', '"', '/',  'b',  'f',  'n',  'r',  't'}
+                  for i, c in ipairs(in_char) do
+                    s = s:gsub(c, '\\' .. out_char[i])
+                  end
+                  return s
+                end
+                function addToBuf(buf, tbl, delim, fieldname)
+                  buf[#buf+1] = delim .. string.format("%q", fieldname) .. ': ['
+                  local listdelim=''
+                  for key, value in pairs(tbl) do
+                    buf[#buf+1] = listdelim .. string.format("{ %q : %q }", key, value)
+                    listdelim = ', '
+                  end
+                  buf[#buf+1] = ']'
+                  delim = ', '
+                end
+                function logHdrBody(handle, meta)
+                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
+                  local p = '["\\]'
+                  local hdrs = handle:headers()
+                  local path = hdrs:get(":path") or "/"
+                  local buf = {'{'}
+                  buf[#buf+1] = string.format('"path":%q', path)
+                  local delim = ', '
+                  first = true
+                  addToBuf(buf, meta, delim, "meta")
+                  addToBuf(buf, hdrs, delim, "hdrs")
+                  local body = handle:body()
+                  local b = ''
+                  if body then
+                    local len = body:length()
+                    b = body:getBytes(0, len)
+                    -- b = "Hello World"
+                  end
+                  buf[#buf+1] = delim .. '"body":"' .. escape_str(b) .. '"'
+                  buf[#buf+1] = '}'
+                  data = table.concat(buf)
+                  -- handle:logErr(data)
+                  handle:logErr("Making http call to cube: " .. "/cs/rr" .. path)
+                  local hhdr, hbody = handle:httpCall(
+                  "outbound|8080||cubews-record.{{master_namespace}}.svc.cluster.local",
+                  {
+                    [":method"] = "POST",
+                    [":path"] = "/cs/rr" .. path,
+                    [":authority"] = "cube",
+                    ["Content-Type"] = "application/json"
+                  },
+                  data,
+                  5000)
+                end
+                function envoy_on_response(response_handle)
+                  local meta = {}
+                  meta["type"] = "response"
+                  meta["status"] = response_handle:headers():get(":status") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  -- meta["collection"] = "testc1"
+                  meta["rrtype"] = "Replay"
+                  meta["customerid"] = "{{customer}}"
+                  meta["app"] = "{{cube_application}}"
+                  meta["instanceid"] = "{{cube_instanceid}}"
+                  meta["service"] = "{{service_name}}"
+                  if (crequestid) then meta["c-request-id"] = crequestid end
+                  if (xrequestid) then meta["x-request-id"] = xrequestid end
+                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
+                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
+                  if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
+                  logHdrBody(response_handle, meta)
+                end
+                function envoy_on_request(request_handle)
+                  local service = "{{service_name}}"
+                  local meta = {}
+                  meta["type"] = "request"
+                  crequestid = service .. uuid()
+                  meta["c-request-id"] = crequestid
+                  request_handle:logErr("Request id: " .. crequestid)
+                  meta["method"] = request_handle:headers():get(":method") or ""
+                  meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  -- meta["collection"] = "testc1"
+                  meta["rrtype"] = "Replay"
+                  meta["customerid"] = "{{customer}}"
+                  meta["app"] = "{{cube_application}}"
+                  meta["instanceid"] = "{{cube_instanceid}}"
+                  meta["service"] = "{{service_name}}"
+                  xrequestid = request_handle:headers():get("x-request-id")
+                  xb3traceid = request_handle:headers():get("x-b3-traceid")
+                  xb3spanid = request_handle:headers():get("x-b3-spanid")
+                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  request_handle:headers():remove("baggage-intent")
+                  request_handle:headers():add("baggage-intent", "mock")
+                  request_handle:logInfo("Trace id : " .. xb3traceid)
+                  logHdrBody(request_handle, meta)
+                end

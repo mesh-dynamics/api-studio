@@ -1,0 +1,353 @@
+##################################################################################################
+# Cube Web Services - Record
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-record
+  namespace: {{namespace}}
+  labels:
+    app: cubews-record
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubews-record
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubews-record-v1
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubews-record
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+          - name: app_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: APP_DOGFOOD
+          - name: instance_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: INSTANCE_DOGFOOD
+          - name: cube_record_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: cube_mock_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: service_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SERVICE_DOGFOOD
+          - name: customer_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUSTOMER_DOGFOOD
+      imagePullSecrets:
+      - name: regcred
+
+##################################################################################################
+# Cube Web Services - Mock
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-mock
+  namespace: {{namespace}}
+  labels:
+    app: cubews-mock
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubews-mock
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubews-mock-v1
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubews-mock
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+          - name: app_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: APP_DOGFOOD
+          - name: instance_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: INSTANCE_DOGFOOD
+          - name: cube_record_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: cube_mock_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: service_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SERVICE_DOGFOOD
+          - name: customer_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUSTOMER_DOGFOOD
+      imagePullSecrets:
+      - name: regcred
+
+##################################################################################################
+# Cube Web Services - Replay
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubews-replay
+  namespace: {{namespace}}
+  labels:
+    app: cubews-replay
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubews-replay
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubews-replay-v1
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubews-replay
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: cubews
+        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+          - name: app_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: APP_DOGFOOD
+          - name: instance_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: INSTANCE_DOGFOOD
+          - name: service_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SERVICE_DOGFOOD
+          - name: cube_record_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: cube_mock_service
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUBE_RECORD_SERVICE
+          - name: customer_dogfood
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: CUSTOMER_DOGFOOD
+      imagePullSecrets:
+      - name: regcred
+##################################################################################################
+# Cube UI
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubeui
+  namespace: {{namespace}}
+  labels:
+    app: cubeui
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    app: cubeui
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubeui-v1
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubeui
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: cubeui
+        image: cubeiocorp/cubeui:v-0.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred
+#################################################################################################
+# CubeUI backend
+#################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubeui-backend
+  namespace: {{namespace}}
+  labels:
+    app: cubeui-backend
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: cubeui-backend
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cubeui-backend-v1
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cubeui-backend
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: cubeui-backend
+        image: cubeiocorp/cubeuibackend:aef7ddcf0775a2d9b56158f154b33ab199253f4a
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+# TODO: the following exernalname didn't work for a service that didn't go through port 80
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: aws-mysql-sakila
+# spec:
+#   type: ExternalName
+#   externalName: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
+
+##################################################################################################
+# Mysql data server in the mesh
+##################################################################################################
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: mysql-sakila
+#   labels:
+#     app: mysql-sakila
+# spec:
+#   ports:
+#   - port: 3306
+#     name: tcp
+#     protocol: TCP
+#   selector:
+#     app: mysql-sakila
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Deployment
+# metadata:
+#   name: mysql-sakila-v1
+# spec:
+#   replicas: 1
+#   template:
+#     metadata:
+#       labels:
+#         app: mysql-sakila
+#         version: v1
+#     spec:
+#       containers:
+#       - name: mysql-sakila
+#         image: cubeiocorp/mysql-sakila:v3
+#         imagePullPolicy: Always
+#         ports:
+#         - containerPort: 3306
+# ---
+##################################################################################################
+# External mysql server and endpoint
+##################################################################################################
+
+# kind: Endpoints
+# apiVersion: v1
+# metadata:
+#  name: aws-mysql-sakila
+# subsets:
+#  - addresses:
+#      - ip: 54.69.153.210 #sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
+#    ports:
+#      - port: 3306

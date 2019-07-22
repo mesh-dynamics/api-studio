@@ -5,3 +5,10 @@ mock-all-except-moviebook.yaml
 replayid.temp
 envoy_record_cs.yaml
 *.log
+.DS_Store
+apps/common/kubernetes/*
+apps/cube/kubernetes/*
+apps/moviebook/kubernetes/*
+!apps/moviebook/kubernetes/.gitkeep
+!apps/common/kubernetes/.gitkeep
+!apps/cube/kubernetes/.gitkeep

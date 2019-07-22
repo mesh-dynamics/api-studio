@@ -1,0 +1,62 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: aws-solr
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - ec2-18-191-135-125.us-east-2.compute.amazonaws.com
+  ports:
+  - number: 8983
+    name: solr
+    protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: cubeservicestaging
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - staging2.cubecorp.io
+  ports:
+  - number: 80
+    name: cubeservice
+    protocol: http
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: cubeservicedoogfooding
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - dogfooding2.cubecorp.io
+  ports:
+  - number: 80
+    name: cubeservice
+    protocol: http
+  resolution: DNS
+  location: MESH_EXTERNAL
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: aws-rds-cubedb
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com
+  ports:
+  - number: 5432
+    name: psql
+    protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL

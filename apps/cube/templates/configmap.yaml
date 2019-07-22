@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cubews
+  namespace: {{namespace}}
+data:
+  APP_DOGFOOD: "{{cube_application}}"
+  INSTANCE_DOGFOOD: "test"
+  SERVICE_DOGFOOD: "{{cube_application}}"
+  CUSTOMER_DOGFOOD: "{{customer}}"
+  CUBE_RECORD_SERVICE: "{{record_host}}"

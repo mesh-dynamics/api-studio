@@ -1,0 +1,79 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - uri:
+        prefix: /reviews
+    rewrite:
+      uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/reviews/reviews
+    route:
+    - destination:
+        host: cubews-mock
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ratings
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - ratings
+  http:
+  - match:
+    - uri:
+        prefix: /ratings
+    rewrite:
+        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/ratings/ratings
+    route:
+    - destination:
+        host: cubews-mock
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: details
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - details
+  http:
+  - match:
+    - uri:
+        prefix: /details
+    rewrite:
+        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/details/details
+    route:
+    - destination:
+        host: cubews-mock
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: restwrapjdbc
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - restwrapjdbc
+  http:
+  - match:
+    - uri:
+        prefix: /restsql
+    rewrite:
+        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/restwrapjdbc/restsql
+    route:
+    - destination:
+        host: cubews-mock
+        port:
+          number: 8080
