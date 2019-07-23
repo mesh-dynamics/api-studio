@@ -1,18 +1,17 @@
 package com.cube.cache;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.common.cache.*;
 
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
+import redis.clients.jedis.Jedis;
 
 import com.cube.core.CompareTemplate;
 import com.cube.core.Utils;
@@ -28,32 +27,17 @@ import com.cube.ws.Config;
 public class TemplateCache {
 
 
-    private LoadingCache<TemplateKey, CompareTemplate> templateCache;
+    //private LoadingCache<TemplateKey, CompareTemplate> templateCache;
     private Config config;
     private static final Logger LOGGER = LogManager.getLogger(TemplateCache.class);
-
+    private ReqRespStore reqRespStore;
     /**
      *
      * @param rrStore
      */
     public TemplateCache(ReqRespStore rrStore, Config config) {
         this.config = config;
-        templateCache = CacheBuilder.newBuilder().maximumSize(200).removalListener(
-                new RemovalListener<>() {
-                    @Override
-                    public void onRemoval(RemovalNotification<Object, Object> removalNotification) {
-                        LOGGER.info("Removed key ".concat(removalNotification.getKey().toString()));
-                    }
-                }).build(
-                new CacheLoader<>() {
-                    @Override
-                    public CompareTemplate load(TemplateKey key) throws Exception {
-                        return rrStore.getCompareTemplate(key).orElseThrow(() -> {
-                            return new Exception("Couldn't find template corresponding to " + key);
-                        });
-                    }
-                }
-        );
+        this.reqRespStore = rrStore;
     }
 
     private FnKey cacheFnKey;
@@ -76,8 +60,18 @@ public class TemplateCache {
         }
 
 
-        try {
-            CompareTemplate toReturn = templateCache.get(key);
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            CompareTemplate toReturn = null;
+            if (jedis.exists(key.toString())) {
+                String comparatorJson = jedis.get(key.toString());
+                LOGGER.info("Successfully retrieved from redis key :: " + key.toString());
+                toReturn = config.jsonmapper.readValue(comparatorJson, CompareTemplate.class);
+            } else {
+                toReturn = reqRespStore.getCompareTemplate(key).orElseThrow(() ->
+                    new IOException("Template not found in solr " + key.toString()));
+                jedis.set(key.toString() , config.jsonmapper.writeValueAsString(toReturn));
+                LOGGER.info("Successfully stored in redis key :: " + key.toString());
+            }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(cacheFnKey,  Utils.getCurrentTraceId(),
                     Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn, RetStatus.Success,
@@ -98,7 +92,13 @@ public class TemplateCache {
     }
 
     public void invalidateKey(TemplateKey key) {
-            templateCache.invalidate(key);
+            try (Jedis jedis = config.jedisPool.getResource()) {
+                // no need to remove the key if it doesn't exist
+                if (jedis.exists(key.toString())) {
+                    jedis.del(key.toString());
+                    LOGGER.info("Successfully removed from redis , key :: " + key.toString());
+                }
+            }
     }
 
 

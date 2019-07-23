@@ -108,7 +108,7 @@ public class ReplayDriver  {
         if (!rrstore.saveReplay(replay))
             return;
         // start recording stats for the current replay
-        replayResultCache.startReplay(replay.customerid, replay.app, replay.instanceid, replay.replayid);
+        //replayResultCache.startReplay(replay.customerid, replay.app, replay.instanceid, replay.replayid);
 
         // using seed generated from replayid so that same requests get picked in replay and analyze
         long seed = replay.replayid.hashCode();
@@ -200,7 +200,7 @@ public class ReplayDriver  {
 
         rrstore.saveReplay(replay);
         // stop recording stats for the current replay
-        replayResultCache.stopReplay(replay.customerid, replay.app , replay.instanceid, replay.replayid);
+        //replayResultCache.stopReplay(replay.customerid, replay.app , replay.instanceid, replay.replayid);
     }
 
     public boolean start() {

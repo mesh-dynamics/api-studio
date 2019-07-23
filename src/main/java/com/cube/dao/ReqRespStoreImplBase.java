@@ -4,11 +4,12 @@
 package com.cube.dao;
 
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.google.common.base.MoreObjects;
 
 import com.cube.core.RequestComparator;
 import com.cube.dao.Recording.RecordingStatus;
@@ -51,6 +52,11 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getRecordingCollection());		
 	}
 
+	@Override
+	public Optional<String> getCurrentReplayId(Optional<String> customerId, Optional<String> app, Optional<String> instanceId) {
+	    return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getReplayId());
+    }
+
 
 
 	/* (non-Javadoc)
@@ -67,9 +73,9 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		// in this case matching has to be exact. Null values should match empty strings
 		Optional<String> ncustomerid = customerid.or(() -> Optional.of("")); 
 		Optional<String> napp = app.or(() -> Optional.of("")); 
-		Optional<String> ninstanceid = instanceid.or(() -> Optional.of("")); 
-		
-		Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
+		Optional<String> ninstanceid = instanceid.or(() -> Optional.of(""));
+        Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey);
+		//Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
 		String customerAppInstance = "Cust :: " + customerid.orElse("") + " App :: " + app.orElse("") +
             "Instance :: " + instanceid.orElse("");
 
@@ -90,11 +96,12 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 								.map(replay -> RecordOrReplay.createFromReplay(replay));
 					});
 			//rr.ifPresent(rrv -> currentCollectionMap.put(ckey, rrv));
+            rr.ifPresent(rrv -> populateCache(ckey, rrv));
             rr.ifPresentOrElse
                 (rrVal ->
                 LOGGER.info("Retrieved Record/Replay from Solr for " + customerAppInstance + " :: " + rrVal.toString())
                     , () -> LOGGER.info("No Record/Replay retrieved from Cache/Solr for " + customerAppInstance));
-			return rr;
+            return rr;
 		});
 	}
 
@@ -105,10 +112,13 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	private void invalidateCurrentCollectionCache(String customerid, String app,
 			String instanceid) {
 		CollectionKey ckey = new CollectionKey(customerid, app, instanceid);
-
-		currentCollectionMap.remove(ckey);
+        removeCollectionKey(ckey);
+		//currentCollectionMap.remove(ckey);
 	}
 
+	abstract void removeCollectionKey(CollectionKey collectionKey);
+    abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key);
+    abstract void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 
 	/* (non-Javadoc)
@@ -133,7 +143,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 
 
-	static private class CollectionKey {
+	static protected class CollectionKey {
 		
 		/**
 		 * @param customerid
@@ -146,8 +156,12 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			this.app = app;
 			this.instanceid = instanceid;
 		}
-		
-	
+
+		@Override
+		public String toString() {
+            return MoreObjects.toStringHelper(this).add("customerId" ,  customerid).add("app" , app)
+                .add("instanceId" , instanceid).toString();
+        }
 
 		/* (non-Javadoc)
 		 * @see java.lang.Object#hashCode()
@@ -207,6 +221,5 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	}
 
 	// map from (cust, app, instance) -> collection. collection is empty if there is no current recording or replay
-	private ConcurrentHashMap<CollectionKey, RecordOrReplay> currentCollectionMap = new ConcurrentHashMap<>();
-
+	//private ConcurrentHashMap<CollectionKey, RecordOrReplay> currentCollectionMap = new ConcurrentHashMap<>();
 }

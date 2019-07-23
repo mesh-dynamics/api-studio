@@ -169,7 +169,7 @@ public class MockServiceHTTP {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
-		return replayResultCache.getCurrentReplayId(customerId, app, instanceId).map(replayId -> new Request(
+		return rrstore.getCurrentReplayId(Optional.of(customerId), Optional.of(app), Optional.of(instanceId)).map(replayId -> new Request(
 				path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
 				Optional.of(replayId) , Optional.of(RR.Replay), Optional.of(customerId) , Optional.of(app)
 		));
@@ -220,7 +220,8 @@ public class MockServiceHTTP {
 					builder.header(f, v);
 			}));
 		    // Increment match counter in cache
-			replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+            // TODO commenting out call to cache
+            //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
 			// store a req-resp analysis match result for the mock request (during replay)
 			// and the matched recording request
 			mockRequest.ifPresent(mRequest -> respv.reqid.ifPresent(recordReqId -> {
@@ -235,7 +236,8 @@ public class MockServiceHTTP {
 		    return builder.entity(respv.body).build();
 	    }).orElseGet(() -> {
 				// Increment not match counter in cache
-				replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+				// TODO commenting out call to cache
+                //replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
 				//TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
 				//a recorded request, here in the mock we have a replay request which did not match
 				//with any recorded request, but still to properly calculate no match counts for

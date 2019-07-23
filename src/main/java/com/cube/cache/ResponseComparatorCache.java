@@ -1,6 +1,5 @@
 package com.cube.cache;
 
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
@@ -11,8 +10,10 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import com.cube.core.*;
-import com.cube.exception.CacheException;
+import com.cube.core.CompareTemplate;
+import com.cube.core.ResponseComparator;
+import com.cube.core.TemplateEntry;
+import com.cube.core.TemplatedResponseComparator;
 
 /**
  * Returns ResponseComparator registered in database against the template key

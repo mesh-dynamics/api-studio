@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -288,6 +289,17 @@ public interface ReqRespStore {
 	Optional<String> getCurrentCollection(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid);
 
+    /**
+     *
+     * @param customerId
+     * @param app
+     * @param instanceId
+     * @return
+     */
+	Optional<String> getCurrentReplayId(Optional<String> customerId, Optional<String> app,
+                                        Optional<String> instanceId);
+
+
 	/**
 	 * @param customerid
 	 * @param app
@@ -341,7 +353,7 @@ public interface ReqRespStore {
 
 	class RecordOrReplay {
 
-
+        @JsonIgnore
 		public Optional<String> getCollection() {
 			// Note that replayid is the collection for replay requests/responses
 			// replay.collection refers to the original collection
@@ -350,15 +362,29 @@ public interface ReqRespStore {
 					.or(() -> recording.map(recording -> recording.collection));
 		}
 
+		@JsonIgnore
 		public Optional<String> getRecordingCollection() {
 			// return collection of recording corresponding to replay if non empty, else return recording collection
 			return replay.map(replay -> replay.collection)
 					.or(() -> recording.map(recording -> recording.collection));
 		}
 
+		@JsonIgnore
+        public Optional<String> getReplayId() {
+            return replay.map(replay -> replay.replayid);
+        }
+
+		@JsonIgnore
 		public boolean isRecording() {
 			return recording.isPresent();
 		}
+
+		// for json de-serialization
+		public RecordOrReplay() {
+		    super();
+		    replay = Optional.empty();
+		    recording = Optional.empty();
+        }
 
 		/**
 		 *
@@ -392,7 +418,9 @@ public interface ReqRespStore {
 		    return getCollection().or(() -> getRecordingCollection()).orElse("N/A");
         }
 
+        @JsonProperty("recording")
 		public final Optional<Recording> recording;
+		@JsonProperty("replay")
 		public final Optional<Replay> replay;
 	}
 

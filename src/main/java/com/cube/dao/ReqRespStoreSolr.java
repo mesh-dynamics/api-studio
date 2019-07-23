@@ -43,6 +43,7 @@ import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 
 import com.cube.agent.FnResponse;
+import redis.clients.jedis.Jedis;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
@@ -99,6 +100,93 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return SolrIterator.getStream(solr, query, nummatches, start).flatMap(doc -> docToRequest(doc).stream());
 
+    }
+
+    @Override
+    void removeCollectionKey(ReqRespStoreImplBase.CollectionKey collectionKey) {
+        if (config.intentResolver.isIntentToMock()) return;
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            Long result = jedis.del(collectionKey.toString());
+            LOGGER.info("Successfully removed from redis , key :: " + collectionKey.toString());
+        }
+    }
+
+    private FnKey recordReplayRetrieveKey;
+    private FnKey recordReplayStoreKey;
+
+    @Override
+    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key) {
+        Optional<RecordOrReplay> toReturn = Optional.empty();
+        if (recordReplayRetrieveKey == null) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            recordReplayRetrieveKey = new FnKey(config.customerId, config.app, config.instance,
+                config.serviceName, method);
+        }
+
+        if (config.intentResolver.isIntentToMock()) {
+            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key);
+            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+                LOGGER.info("Throwing exception as a result of mocking function");
+                UtilException.throwAsUnchecked((Throwable)ret.retVal);
+            }
+            return (Optional<RecordOrReplay>) ret.retVal;
+        }
+
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            String fromCache = jedis.get(key.toString());
+            if (fromCache != null) {
+                LOGGER.info("Successfully retrieved from redis, key :: " + key.toString());
+                toReturn = Optional.of(config.jsonmapper.readValue(fromCache, RecordOrReplay.class));
+            }
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(recordReplayRetrieveKey,  Utils.getCurrentTraceId(),
+                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn,
+                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), key);
+            }
+        } catch (Exception e) {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(recordReplayRetrieveKey, Utils.getCurrentTraceId(), Utils.getCurrentSpanId(),
+                    Utils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                    Optional.of(e.getClass().getName()), key);
+            }
+            LOGGER.error("Error while retrieving RecordOrReplay from cache :: " + e.getMessage());
+        }
+        return toReturn;
+    }
+
+    @Override
+    void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
+        if (recordReplayStoreKey == null) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            recordReplayStoreKey = new FnKey(config.customerId, config.app, config.instance,
+                config.serviceName, method);
+        }
+
+        if (config.intentResolver.isIntentToMock()) {
+            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  Utils.getCurrentTraceId(),
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), collectionKey , rr);
+            if (ret != null && ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+                LOGGER.info("Throwing exception as a result of mocking function");
+                UtilException.throwAsUnchecked((Throwable)ret.retVal);
+            }
+            // do nothing -- return type is void
+            return;
+        }
+
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            String toString = config.jsonmapper.writeValueAsString(rr);
+            LOGGER.info("Before storing in cache :: " + toString);
+            jedis.set(collectionKey.toString() , toString);
+            LOGGER.info("Successfully stored in redis, key :: " + collectionKey.toString());
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error while population RecordOrReplay in cache :: "  + e.getMessage());
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(recordReplayStoreKey, Utils.getCurrentTraceId(), Utils.getCurrentSpanId(),
+                    Utils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                    Optional.of(e.getClass().getName()), collectionKey , rr);
+            }
+        }
     }
 
     /* (non-Javadoc)

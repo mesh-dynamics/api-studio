@@ -187,7 +187,7 @@ public class ReplayWS {
             if (!rrstore.saveReplay(r)) {
                 return Response.serverError().build();
             }
-            replayResultCache.stopReplay(r.customerid, r.app, r.instanceid, replayid);
+            //replayResultCache.stopReplay(r.customerid, r.app, r.instanceid, replayid);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
         return resp;
@@ -222,7 +222,7 @@ public class ReplayWS {
             if (!rrstore.saveReplay(r)) {
                 return Response.serverError().build();
             }
-            replayResultCache.startReplay(r.customerid, r.app, r.instanceid, replayid);
+            //replayResultCache.startReplay(r.customerid, r.app, r.instanceid, replayid);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
         return resp;

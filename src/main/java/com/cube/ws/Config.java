@@ -29,6 +29,8 @@ import io.cube.agent.TraceIntentResolver;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
@@ -65,6 +67,8 @@ public class Config {
     public final ResponseComparatorCache responseComparatorCache;
 
     public final ReplayResultCache replayResultCache;
+
+    public final JedisPool jedisPool;
 
 	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
 
@@ -103,17 +107,12 @@ public class Config {
             requestComparatorCache = new RequestComparatorCache(templateCache , jsonmapper);
             responseComparatorCache = new ResponseComparatorCache(templateCache , jsonmapper);
             replayResultCache = new ReplayResultCache(rrstore, this);
-            Tracer tracer = Utils.init("tracer");
-            try {
-                GlobalTracer.register(tracer);
-            } catch (IllegalStateException e) {
-                LOGGER.error("Trying to register a tracer when one is already registered");
-            }
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
             LOGGER.error(msg);
             throw new Exception(msg);
         }
+
         Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
             .registerTypeAdapter(Pattern.class, new GsonPatternSerializer())
             .registerTypeAdapter(SolrDocumentList.class, new GsonSolrDocumentListSerializer())
@@ -121,6 +120,25 @@ public class Config {
             .create();
         recorder = new SimpleRecorder(gson);
         mocker = new SimpleMocker(gson);
+
+        Tracer tracer = Utils.init("tracer");
+        try {
+            GlobalTracer.register(tracer);
+        } catch (IllegalStateException e) {
+            LOGGER.error("Trying to register a tracer when one is already registered");
+        }
+
+        try {
+            String redisHost = fromEnvOrProperties("redis_host", "localhost");
+            int redisPort = Integer.valueOf(fromEnvOrProperties("redis_port"
+                , "6379"));
+            String redisPassword = fromEnvOrProperties("redis_password" , "2jyXkVo2LW");
+            jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
+        } catch (Exception e) {
+            LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
+            throw e;
+        }
+
 	}
 
     private String fromEnvOrProperties(String propertyName, String defaultValue) {

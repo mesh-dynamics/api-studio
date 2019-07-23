@@ -6,6 +6,8 @@ package com.cube.dao;
 import java.time.Instant;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author prasad
  *
@@ -39,12 +41,27 @@ public class Recording {
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
 	}
-	
+
+	// for json deserialization
+	public Recording() {
+	    super();
+	    this.customerid = "";
+	    this.app = "";
+	    this.instanceid = "";
+	    this.collection = "";
+    }
+
+	@JsonProperty("cust")
 	public final String customerid;
+    @JsonProperty("app")
 	public final String app;
+    @JsonProperty("instance")
 	public final String instanceid;
-	public final String collection; // unique within a (customerid, app)
-	public RecordingStatus status;
+    @JsonProperty("collec")
+    public final String collection; // unique within a (customerid, app)
+    @JsonProperty("status")
+    public RecordingStatus status;
+    @JsonProperty("timestmp")
 	public Optional<Instant> updateTimestamp;
 
 	public static Optional<Recording> startRecording(String customerid, String app, String instanceid, 

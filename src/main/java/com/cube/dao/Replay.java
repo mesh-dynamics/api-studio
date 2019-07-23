@@ -6,6 +6,7 @@
 package com.cube.dao;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.spotify.docker.client.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.cube.core.BatchingIterator;
 import com.cube.core.RRTransformer;
@@ -77,6 +79,23 @@ public class Replay {
 		this.intermediateServices = intermediateServices;
 	}
 
+	//for deserialization
+	public Replay() {
+	    super();
+	    endpoint = "" ;
+	    customerid = "";
+	    app = "";
+	    instanceid = "";
+	    collection = "";
+	    replayid = "";
+	    async = false;
+	    samplerate = Optional.empty();
+	    creationTimeStamp = "";
+	    reqids = Collections.emptyList();
+	    paths = Collections.emptyList();
+	    intermediateServices = Collections.emptyList();
+    }
+
 	/*
 	 * @param jsonStrRepOfXfms: multivalued map of {key : [{src, tgt}+]} in a string representation
 	 */
@@ -89,25 +108,41 @@ public class Replay {
 		}
 	}
 
-
+	@JsonProperty("endpt")
 	public final String endpoint;
+	@JsonProperty("cust")
 	public final String customerid;
+    @JsonProperty("app")
 	public final String app;
+    @JsonProperty("instance")
 	public final String instanceid;
+    @JsonProperty("collect")
 	public final String collection;
+    @JsonProperty("reqids")
 	public final List<String> reqids;
-	public final String replayid; // this needs to be globally unique
-	public final boolean async;
+    @JsonProperty("id")
+    public final String replayid; // this needs to be globally unique
+    @JsonProperty("async")
+    public final boolean async;
+    @JsonProperty("status")
 	public ReplayStatus status;
-	public final List<String> paths; // paths to be replayed
-	public final List<String> intermediateServices;
-	public int reqcnt; // total number of requests
-	public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
-	public int reqfailed; // requests failed, return code not 200
-	public Optional<RRTransformer> xfmer;
+    @JsonProperty("paths")
+    public final List<String> paths; // paths to be replayed
+    @JsonProperty("intermdtserv")
+    public final List<String> intermediateServices;
+    @JsonProperty("reqcnt")
+    public int reqcnt; // total number of requests
+    @JsonProperty("reqsnt")
+    public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
+    @JsonProperty("reqfl")
+    public int reqfailed; // requests failed, return code not 200
+	@JsonIgnore
+    public Optional<RRTransformer> xfmer;
+    @JsonProperty("smplrate")
 	public final Optional<Double> samplerate;
 
 	private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	@JsonProperty("timestmp")
 	public final String creationTimeStamp;
 
 	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
