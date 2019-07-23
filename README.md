@@ -1,4 +1,5 @@
 [![Build Status](http://drone.cubecorp.io/api/badges/cube-io-corp/cubeui/status.svg)](http://drone.cubecorp.io/cube-io-corp/cubeui)
+[![Cube Status](https://img.shields.io/badge/cubeIO-Optional-orange.svg)](http://dogfooding.cubecorp.io)
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
