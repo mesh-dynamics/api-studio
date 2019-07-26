@@ -47,6 +47,13 @@ spec:
       - name: details
         image: istio/examples-bookinfo-details-v1:1.8.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "100Mi"
+            cpu: "100m"
         ports:
         - containerPort: 9080
 ---
@@ -85,6 +92,13 @@ spec:
       - name: ratings
         image: istio/examples-bookinfo-ratings-v1:1.8.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "100Mi"
+            cpu: "100m"
         ports:
         - containerPort: 9080
 ---
@@ -123,6 +137,13 @@ spec:
       - name: reviews
         image: istio/examples-bookinfo-reviews-v1:1.8.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "130Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
         ports:
         - containerPort: 9080
 ---
@@ -144,6 +165,13 @@ spec:
       - name: reviews
         image: istio/examples-bookinfo-reviews-v2:1.8.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "130Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
         ports:
         - containerPort: 9080
 ---
@@ -165,6 +193,13 @@ spec:
       - name: reviews
         image: istio/examples-bookinfo-reviews-v3:1.8.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "130Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
         ports:
         - containerPort: 9080
 ---
@@ -203,6 +238,13 @@ spec:
       - name: productpage
         image: istio/examples-bookinfo-productpage-v1:1.8.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "70Mi"
+            cpu: "50m"
+          limits:
+            memory: "130Mi"
+            cpu: "100m"
         ports:
         - containerPort: 9080
 ---
@@ -242,6 +284,13 @@ spec:
       - name: movieinfo
         image: cubeiocorp/sample_apps-mirest:demo-1.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "190Mi"
+            cpu: "100m"
+          limits:
+            memory: "250Mi"
+            cpu: "150m"
         ports:
         - containerPort: 8080
         env:
@@ -295,6 +344,13 @@ spec:
       - name: movieinfo
         image: cubeiocorp/sample_apps-mirest:demo-1.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "190Mi"
+            cpu: "100m"
+          limits:
+            memory: "250Mi"
+            cpu: "150m"
         ports:
         - containerPort: 8080
         env:
@@ -379,5 +435,12 @@ spec:
       - name: restwrapjdbc
         image: cubeiocorp/restwrapjdbc:demo-1.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "190Mi"
+            cpu: "100m"
+          limits:
+            memory: "250Mi"
+            cpu: "250m"
         ports:
         - containerPort: 8080

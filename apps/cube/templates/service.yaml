@@ -32,8 +32,15 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
+        image: cubeiocorp/cubews:67a9cff25f734246e138ae51ce4572f38e943cf1
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "190Mi"
+            cpu: "100m"
+          limits:
+            memory: "250Mi"
+            cpu: "300m"
         ports:
         - containerPort: 8080
         env:
@@ -67,6 +74,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: CUSTOMER_DOGFOOD
+          - name: redis_host
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: REDIS_HOST
       imagePullSecrets:
       - name: regcred
 
@@ -104,8 +116,15 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
+        image: cubeiocorp/cubews:67a9cff25f734246e138ae51ce4572f38e943cf1
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "190Mi"
+            cpu: "100m"
+          limits:
+            memory: "250Mi"
+            cpu: "300m"
         ports:
         - containerPort: 8080
         env:
@@ -139,6 +158,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: CUSTOMER_DOGFOOD
+          - name: redis_host
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: REDIS_HOST
       imagePullSecrets:
       - name: regcred
 
@@ -176,8 +200,15 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:ed822005217922235d767ef2e48e5025daa63663
+        image: cubeiocorp/cubews:67a9cff25f734246e138ae51ce4572f38e943cf1
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "180Mi"
+            cpu: "100m"
+          limits:
+            memory: "250Mi"
+            cpu: "300m"
         ports:
         - containerPort: 8080
         env:
@@ -211,6 +242,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: CUSTOMER_DOGFOOD
+          - name: redis_host
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: REDIS_HOST
       imagePullSecrets:
       - name: regcred
 ##################################################################################################
@@ -247,8 +283,15 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:v-0.3
+        image: cubeiocorp/cubeui:400d9be4b0b27ae2b3198cbb04f6d26ca9a52deb
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "5m"
+          limits:
+            memory: "64Mi"
+            cpu: "10m"
         ports:
         - containerPort: 80
       imagePullSecrets:
@@ -287,12 +330,89 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:aef7ddcf0775a2d9b56158f154b33ab199253f4a
+        image: cubeiocorp/cubeuibackend:d9632585d6ec81bc4e4a3c2e3d57f261563c15fa
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "300Mi"
+            cpu: "50m"
+          limits:
+            memory: "350Mi"
+            cpu: "150m"
         ports:
         - containerPort: 8080
       imagePullSecrets:
       - name: regcred
+
+################################################
+# Redis
+################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{namespace}}
+spec:
+  ports:
+  - port: 6379
+    name: peer
+  clusterIP: None
+  selector:
+    app: redis
+
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: {{namespace}}
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  serviceName: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - command: [sh, -c, source /redis-config/init.sh ]
+        image: redis:5.0.5-alpine
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - mountPath: /redis-config
+          name: config
+        - mountPath: /redis-data
+          name: data
+        resources:
+          requests:
+            memory: "64Mi"
+          limits:
+            cpu: "0.1"
+            memory: "128Mi"
+      - command: [sh, -c, cp /redis-config/sentinel.conf /redis-sentinel-conf/sentinel.conf  && source /redis-config/sentinel.sh]
+        image: redis:5.0.5-alpine
+        name: sentinel
+        volumeMounts:
+        - mountPath: /redis-config
+          name: config
+        - mountPath: /redis-sentinel-conf
+          name: redis-sentinel
+      volumes:
+      - configMap:
+          defaultMode: 0666
+          name: redis-config
+        name: config
+      - emptyDir:
+        name: data
+      - emptyDir:
+        name: redis-sentinel
+
 # TODO: the following exernalname didn't work for a service that didn't go through port 80
 # apiVersion: v1
 # kind: Service
