@@ -132,7 +132,7 @@ public class Config {
             String redisHost = fromEnvOrProperties("redis_host", "localhost");
             int redisPort = Integer.valueOf(fromEnvOrProperties("redis_port"
                 , "6379"));
-            String redisPassword = fromEnvOrProperties("redis_password" , "2jyXkVo2LW");
+            String redisPassword = fromEnvOrProperties("redis_password" , null);
             jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
         } catch (Exception e) {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
