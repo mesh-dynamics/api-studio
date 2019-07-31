@@ -108,7 +108,7 @@ class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceFnKey, traceid, spanid, parentSpanid,
-                        resTimeStamp, productId, price);
+                        resTimeStamp, Optional.empty(), productId, price);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
             }
@@ -134,7 +134,7 @@ class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceFnKey2, traceid, spanid, parentSpanid,
-                        resTimeStamp, pp);
+                        resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
             }
@@ -161,7 +161,7 @@ class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceRuntimeExceptionFnKey, traceid, spanid, parentSpanid,
-                        resTimeStamp, pp);
+                        resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 if (ret.retStatus == RetStatus.Exception) {
                     UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -208,7 +208,7 @@ class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceTypedExceptionFnKey, traceid, spanid, parentSpanid,
-                        resTimeStamp, pp);
+                        resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 if (ret.retStatus == RetStatus.Exception) {
                     UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -247,7 +247,7 @@ class RecorderAndMockerTest {
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(getPromoNameFnKey, traceid, spanid,
                         parentSpanid,
-                        resTimeStamp);
+                        resTimeStamp, Optional.empty());
                 resTimeStamp = ret.timeStamp;
                 return (String) ret.retVal;
             }

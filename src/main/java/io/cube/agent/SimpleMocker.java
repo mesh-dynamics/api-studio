@@ -1,25 +1,22 @@
 package io.cube.agent;
 
-import static io.cube.agent.UtilException.rethrowFunction;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.regex.Pattern;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
+import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnReqResponse.RetStatus;
-import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.lang.reflect.Type;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Optional;
+
+import static io.cube.agent.UtilException.rethrowFunction;
 
 /*
  * Created by IntelliJ IDEA.
@@ -46,7 +43,7 @@ public class SimpleMocker implements Mocker {
 
     @Override
     public FnResponseObj mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
-                              Optional<Instant> prevRespTS, Object... args) {
+                              Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
 
         try {
             String[] argVals =
@@ -70,8 +67,8 @@ public class SimpleMocker implements Mocker {
             } else {
                 FnResponse response = ret.get();
                 LOGGER.info("Return value received while mocking :: " + response.retVal);
-                Object retOrExceptionVal = gson.fromJson(response.retVal, getRetOrExceptionClass(response,
-                        fnKey.function.getReturnType()));
+                Object retOrExceptionVal = gson.fromJson(response.retVal, retType.isPresent()?retType.get():getRetOrExceptionClass(response,
+                        fnKey.function.getGenericReturnType()));
                 return new FnResponseObj(retOrExceptionVal, response.timeStamp, response.retStatus, response.exceptionType);
             }
 
@@ -84,12 +81,11 @@ public class SimpleMocker implements Mocker {
         }
     }
 
-
-    private Class getRetOrExceptionClass(FnResponse response, Class returnType) throws Exception {
+    private Type getRetOrExceptionClass(FnResponse response, Type returnType) throws Exception {
         if (response.retStatus == RetStatus.Success) {
             return returnType;
         } else {
-            return response.exceptionType.map(rethrowFunction(Class::forName)).orElseThrow(()-> new Exception(
+            return response.exceptionType.map(rethrowFunction(Class::forName)).map(TypeToken::get).map(TypeToken::getType).orElseThrow(()-> new Exception(
                     "Exception class not specified"));
         }
     }
