@@ -28,7 +28,7 @@ public class TestCubeAgent {
 
 //            System.out.println(Instant.ofEpochSecond(1557489786L).toString());
             Object returnVal = mocker.mock(fnKey, Optional.of("trace_1") , Optional.empty() , Optional.empty() ,
-                    Optional.of(Instant.ofEpochSecond(1557489555)), new Object[] {"1" , "5"});
+                    Optional.of(Instant.ofEpochSecond(1557489555)), Optional.empty(), new Object[] {"1" , "5"});
             System.out.println(returnVal.toString());
         } catch (Exception e) {
             e.printStackTrace();
