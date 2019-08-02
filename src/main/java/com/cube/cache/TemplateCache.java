@@ -51,7 +51,7 @@ public class TemplateCache {
 
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(cacheFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);

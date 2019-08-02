@@ -125,7 +125,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), key);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -165,7 +165,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), collectionKey , rr);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
             if (ret != null && ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -848,7 +848,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), doc);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
             if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }

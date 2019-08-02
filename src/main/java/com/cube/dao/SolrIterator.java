@@ -198,7 +198,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
         }
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), query);
+                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
