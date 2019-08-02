@@ -19,7 +19,7 @@ COUNT=0
 while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "20" ]; do
 	STATUS=$(curl -X GET http://demo.dev.cubecorp.io/rs/status/CubeCorp/Cube/dogfood-14-june-1/$REPLAY_ID | awk -F ',' '{print $9}' | cut -d '"' -f 4)
 	sleep 5
-	COUNT==$((COUNT+1))
+	COUNT=$((COUNT+1))
 done
 
 #Run analyze
