@@ -35,13 +35,13 @@ public class ReplayResultCache {
     public class ReplayPathStatistic {
 
         @JsonIgnore
-        public String customer;
+        public transient String customer;
         @JsonIgnore
-        public String app;
+        public transient String app;
         @JsonIgnore
-        public String service;
+        public transient String service;
         @JsonIgnore
-        public String instanceId;
+        public transient String instanceId;
         @JsonProperty("path")
         public String path;
         @JsonProperty("totalReq")

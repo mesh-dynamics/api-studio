@@ -137,11 +137,11 @@ public class Replay {
     @JsonProperty("reqfl")
     public int reqfailed; // requests failed, return code not 200
 	@JsonIgnore
-    public Optional<RRTransformer> xfmer;
+    public transient Optional<RRTransformer> xfmer;
     @JsonProperty("smplrate")
 	public final Optional<Double> samplerate;
 
-	private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	private transient SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	@JsonProperty("timestmp")
 	public final String creationTimeStamp;
 

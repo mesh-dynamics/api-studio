@@ -1221,7 +1221,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         
         String type = Types.ReqRespMatchResult.toString();
         // the id field is to (recordreqid, replayreqid) which is unique
-        String id = type + '-' + res.recordreqid + '-' + res.replayreqid; 
+        String id = type + '-' + res.recordreqid.orElse("None") + '-' + res.replayreqid.orElse("None");
 
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);

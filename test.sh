@@ -3,21 +3,21 @@
 set -x
 #Init Replay
 REPLAY_ID=$(curl -X POST \
-	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/dogfood-14-june-1 \
+	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/df-2-aug-4 \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-d 'endpoint=http://staging.dev.cubecorp.io&instanceid=PROD' | awk -F ',' '{print $7}' | cut -d '"' -f 4)
 
 #Start replay
 curl -f -X POST \
-  http://demo.dev.cubecorp.io/rs/start/CubeCorp/Cube/dogfood-14-june-1/$REPLAY_ID \
+  http://demo.dev.cubecorp.io/rs/start/CubeCorp/Cube/df-2-aug-4/$REPLAY_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache'
 
 #Status Check
 COUNT=0
 while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "20" ]; do
-	STATUS=$(curl -X GET http://demo.dev.cubecorp.io/rs/status/CubeCorp/Cube/dogfood-14-june-1/$REPLAY_ID | awk -F ',' '{print $9}' | cut -d '"' -f 4)
+	STATUS=$(curl -X GET http://demo.dev.cubecorp.io/rs/status/CubeCorp/Cube/df-2-aug-4/$REPLAY_ID | awk -F ',' '{print $9}' | cut -d '"' -f 4)
 	sleep 5
 	COUNT=$((COUNT+1))
 done
