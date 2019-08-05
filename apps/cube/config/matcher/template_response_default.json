@@ -1,0 +1,202 @@
+[
+  {
+    "id" : "ResponseTemplate-cubews-record",
+    "path" : "cs/stop",
+    "service" : "cubews-record",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/timestmp",
+          "pt" : "Required",
+          "dt" : "Float",
+          "ct" : "Ignore"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-replay",
+    "path" : "rs/init",
+    "service" : "cubews-replay",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/replayid",
+          "pt" : "Required",
+          "dt" : "Str",
+          "ct" : "Ignore"
+        },
+        {
+          "path" : "/body/creationTimeStamp",
+          "pt" : "Required",
+          "dt" : "Str",
+          "ct" : "Ignore"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-mock-1",
+    "path" : "ms/CubeCorp/MovieInfo/test/ratings/ratings",
+    "service" : "cubews-mock",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-mock-2",
+    "path" : "ms/CubeCorp/MovieInfo/test/reviews/reviews",
+    "service" : "cubews-mock",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-analyze",
+    "path" : "as/analyze",
+    "service" : "cubews-replay",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/timestamp",
+          "pt" : "Required",
+          "dt" : "Float",
+          "ct" : "Ignore"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-mock-3",
+    "path" : "ms/CubeCorp/MovieInfo/test/restwrapjdbc/restsql/query",
+    "service" : "cubews-mock",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "RptArray",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-mock-4",
+    "path" : "ms/CubeCorp/MovieInfo/test/details/details",
+    "service" : "cubews-mock",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-record-rr",
+    "path" : "cs/rr",
+    "service" : "cubews-record",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Str",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-record-cc",
+    "path" : "cs/currentcollection",
+    "service" : "cubews-record",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Str",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-record-rq",
+    "path" : "cs/rr/restsql/query",
+    "service" : "cubews-record",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Str",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-replay-start",
+    "path" : "rs/start",
+    "service" : "cubews-replay",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Optional",
+          "dt" : "Str",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  }
+]
