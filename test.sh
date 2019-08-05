@@ -24,8 +24,8 @@ done
 
 #Run analyze
 ANALYZE=$(curl -X POST http://demo.dev.cubecorp.io/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache')
-REQNOTMATCHED=$(echo $ANALYZE | awk -F ',' '{print $8}' | cut -d '"' -f 4)
-RESPNOTMATCHED=$(echo $ANALYZE | awk -F ',' '{print $11}' | cut -d '"' -f 4)
+REQNOTMATCHED=$(echo $ANALYZE | awk -F ',' '{print $8}' | cut -d ':' -f 2)
+RESPNOTMATCHED=$(echo $ANALYZE | awk -F ',' '{print $11}' | cut -d ':' -f 2)
 
 #Display replay ID
 echo "Replay ID:" $REPLAY_ID
