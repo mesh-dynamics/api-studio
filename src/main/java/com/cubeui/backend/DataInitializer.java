@@ -39,7 +39,15 @@ public class DataInitializer implements CommandLineRunner {
 
     private PathRepository pathRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, MailService mailService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository) {
+    private TestConfigRepository testConfigRepository;
+
+    private TestIntermediateServiceRepository testIntermediateServiceRepository;
+
+    private TestVirtualizedServiceRepository testVirtualizedServiceRepository;
+
+    private TestPathRepository testPathRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService, MailService mailService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository) {
         this.userService = userService;
         this.customerService = customerService;
         this.mailService = mailService;
@@ -50,6 +58,10 @@ public class DataInitializer implements CommandLineRunner {
         this.serviceGraphRepository = serviceGraphRepository;
         this.serviceGroupRepository = serviceGroupRepository;
         this.pathRepository = pathRepository;
+        this.testConfigRepository = testConfigRepository;
+        this.testIntermediateServiceRepository = testIntermediateServiceRepository;
+        this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
+        this.testPathRepository = testPathRepository;
     }
 
     @Override
@@ -823,6 +835,154 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setToService(serviceRepository.findById(57L).get());
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
+        }
+        // Paths - MovieInfo - Auth
+        if(!pathRepository.existsById(84L)) {
+            Path path = new Path();
+            path.setId(84L);
+            path.setPath("/authenticate");
+            path.setService(serviceRepository.findById(19L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(85L)) {
+            Path path = new Path();
+            path.setId(85L);
+            path.setPath("/health");
+            path.setService(serviceRepository.findById(19L).get());
+            pathRepository.save(path);
+        }
+        // Paths - MovieInfo - List
+        if(!pathRepository.existsById(86L)) {
+            Path path = new Path();
+            path.setId(86L);
+            path.setPath("/listmovies");
+            path.setService(serviceRepository.findById(21L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(87L)) {
+            Path path = new Path();
+            path.setId(87L);
+            path.setPath("/liststores");
+            path.setService(serviceRepository.findById(21L).get());
+            pathRepository.save(path);
+        }
+        // Paths - MovieInfo - Actions
+        if(!pathRepository.existsById(86L)) {
+            Path path = new Path();
+            path.setId(86L);
+            path.setPath("/rentmovie");
+            path.setService(serviceRepository.findById(20L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(87L)) {
+            Path path = new Path();
+            path.setId(87L);
+            path.setPath("/returnmovie");
+            path.setService(serviceRepository.findById(20L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(88L)) {
+            Path path = new Path();
+            path.setId(88L);
+            path.setPath("/overduerental");
+            path.setService(serviceRepository.findById(20L).get());
+            pathRepository.save(path);
+        }
+        // Paths - MovieInfo - RestWrapJDBC
+        if(!pathRepository.existsById(89L)) {
+            Path path = new Path();
+            path.setId(89L);
+            path.setPath("/health");
+            path.setService(serviceRepository.findById(14L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(90L)) {
+            Path path = new Path();
+            path.setId(90L);
+            path.setPath("/initialize");
+            path.setService(serviceRepository.findById(14L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(91L)) {
+            Path path = new Path();
+            path.setId(91L);
+            path.setPath("/query");
+            path.setService(serviceRepository.findById(14L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(92L)) {
+            Path path = new Path();
+            path.setId(92L);
+            path.setPath("/update");
+            path.setService(serviceRepository.findById(14L).get());
+            pathRepository.save(path);
+        }
+        // Paths - MovieInfo - Reviews
+        if(!pathRepository.existsById(93L)) {
+            Path path = new Path();
+            path.setId(93L);
+            path.setPath("/health");
+            path.setService(serviceRepository.findById(11L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(94L)) {
+            Path path = new Path();
+            path.setId(94L);
+            path.setPath("/reviews/*");
+            path.setService(serviceRepository.findById(11L).get());
+            pathRepository.save(path);
+        }
+        // Paths - MovieInfo - Ratings
+        if(!pathRepository.existsById(95L)) {
+            Path path = new Path();
+            path.setId(95L);
+            path.setPath("/health");
+            path.setService(serviceRepository.findById(12L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(96L)) {
+            Path path = new Path();
+            path.setId(96L);
+            path.setPath("/ratings/*");
+            path.setService(serviceRepository.findById(12L).get());
+            pathRepository.save(path);
+        }
+        // Paths - MovieInfo - Details
+        if(!pathRepository.existsById(97L)) {
+            Path path = new Path();
+            path.setId(97L);
+            path.setPath("/health");
+            path.setService(serviceRepository.findById(13L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(98L)) {
+            Path path = new Path();
+            path.setId(98L);
+            path.setPath("/details/*");
+            path.setService(serviceRepository.findById(13L).get());
+            pathRepository.save(path);
+        }
+        // TestConfig - MovieInfo - List
+        if(!testConfigRepository.existsById(99L)) {
+            TestConfig testConfig = new TestConfig();
+            testConfig.setApp(appRepository.findById(4L).get());
+            testConfig.setTestConfigName("MovieInfo-List");
+            testConfig.setGatewayService(serviceRepository.findById(21L).get());
+            testConfigRepository.save(testConfig);
+        }
+        if(!testPathRepository.existsById(100L)) {
+            TestPath testPath = new TestPath();
+            testPath.setId(100L);
+            testPath.setPath(pathRepository.findById(86L).get());
+            testPath.setTestConfig(testConfigRepository.findById(99L).get());
+            testPathRepository.save(testPath);
+        }
+        if(!testPathRepository.existsById(101L)) {
+            TestPath testPath = new TestPath();
+            testPath.setId(101L);
+            testPath.setPath(pathRepository.findById(87L).get());
+            testPath.setTestConfig(testConfigRepository.findById(99L).get());
+            testPathRepository.save(testPath);
         }
     }
 }
