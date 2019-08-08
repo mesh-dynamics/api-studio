@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
+import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,13 +46,13 @@ public class TemplateCache {
     public CompareTemplate fetchCompareTemplate(TemplateKey key) throws CacheException {
         if (cacheFnKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            cacheFnKey = new FnKey(config.customerId, config.app, config.instance,
-                config.serviceName, method);
+            cacheFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(cacheFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(cacheFnKey,  CommonUtils.getCurrentTraceId(),
+                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -73,8 +74,8 @@ public class TemplateCache {
                 LOGGER.info("Successfully stored in redis key :: " + key.toString());
             }
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(cacheFnKey,  Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn, RetStatus.Success,
+                config.recorder.record(cacheFnKey,  CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn, RetStatus.Success,
                     Optional.empty(), key);
             }
             return toReturn;
@@ -82,9 +83,9 @@ public class TemplateCache {
             // wrapping all exceptions in CacheException class
             CacheException ce = new CacheException("Error while fetching template for :".concat(key.toString()) , e);
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(cacheFnKey, Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(),
-                    Utils.getParentSpanId(),
+                config.recorder.record(cacheFnKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(),
+                    CommonUtils.getParentSpanId(),
                     ce, RetStatus.Exception, Optional.of(ce.getClass().getName()), key);
             }
             throw ce;

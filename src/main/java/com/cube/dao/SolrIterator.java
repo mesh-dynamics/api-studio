@@ -12,6 +12,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.cube.agent.CommonConfig;
+import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -27,7 +29,6 @@ import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 
-import com.cube.core.Utils;
 import com.cube.ws.Config;
 
 /**
@@ -190,15 +191,15 @@ public class SolrIterator implements Iterator<SolrDocument> {
         if (queryFnKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("query", SolrParams.class);
-                queryFnKey = new FnKey(config.customerId, config.app, config.instance,
-                    config.serviceName, currentMethod);
+                queryFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, currentMethod);
             } catch (Exception e) {
                 LOGGER.error("Unable to find solr query method by reflection :: " + e.getMessage());
             }
         }
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(queryFnKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
+            FnResponseObj ret = config.mocker.mock(queryFnKey,  CommonUtils.getCurrentTraceId(),
+                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -216,16 +217,16 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(queryFnKey, Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), response, RetStatus.Success,
+                config.recorder.record(queryFnKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), response, RetStatus.Success,
                     Optional.empty(), query);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(queryFnKey, Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(),
-                    Utils.getParentSpanId(),
+                config.recorder.record(queryFnKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(),
+                    CommonUtils.getParentSpanId(),
                     e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
             }
             throw e;

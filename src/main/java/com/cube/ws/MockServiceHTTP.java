@@ -23,6 +23,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import com.cube.core.Utils;
+import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -46,7 +48,6 @@ import com.cube.core.ReqMatchSpec;
 import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
-import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.*;
@@ -229,8 +230,8 @@ public class MockServiceHTTP {
                     new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqid,
                         Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
                         "", customerid, app, service, path, mRequest.collection.get(),
-                        Utils.getTraceId(respv.meta),
-                        Utils.getTraceId(mRequest.hdrs));
+                        CommonUtils.getTraceId(respv.meta),
+                        CommonUtils.getTraceId(mRequest.hdrs));
 				rrstore.saveResult(matchResult);
 			}));
 		    return builder.entity(respv.body).build();
@@ -248,7 +249,7 @@ public class MockServiceHTTP {
                         new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqid,
                             Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
                             customerid, app, service, path, mRequest.collection.get(), Optional.empty(),
-                            Utils.getTraceId(mRequest.hdrs));
+                            CommonUtils.getTraceId(mRequest.hdrs));
 					rrstore.saveResult(matchResult);
 				});
 				return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();

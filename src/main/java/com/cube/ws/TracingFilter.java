@@ -11,6 +11,7 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
+import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,7 +30,7 @@ public class TracingFilter implements ContainerRequestFilter , ContainerResponse
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
         LOGGER.debug("Inside Method :: " + resourceInfo.getResourceMethod().getName() + " "
             + resourceInfo.getResourceClass().getName());
-        Scope scope = Utils.startServerSpan(containerRequestContext.getHeaders() ,
+        Scope scope = CommonUtils.startServerSpan(containerRequestContext.getHeaders() ,
             resourceInfo.getResourceClass().getSimpleName() + "-" + resourceInfo.getResourceMethod().getName());
         containerRequestContext.setProperty("scope" , scope);
     }

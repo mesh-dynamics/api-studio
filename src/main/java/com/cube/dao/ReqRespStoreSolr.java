@@ -18,6 +18,9 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.cube.core.Utils;
+import io.cube.agent.CommonConfig;
+import io.cube.agent.CommonUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +56,6 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
-import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
@@ -119,13 +121,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<RecordOrReplay> toReturn = Optional.empty();
         if (recordReplayRetrieveKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            recordReplayRetrieveKey = new FnKey(config.customerId, config.app, config.instance,
-                config.serviceName, method);
+            recordReplayRetrieveKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
+                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -140,14 +142,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 toReturn = Optional.of(config.jsonmapper.readValue(fromCache, RecordOrReplay.class));
             }
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayRetrieveKey,  Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), toReturn,
+                config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
                     io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), key);
             }
         } catch (Exception e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayRetrieveKey, Utils.getCurrentTraceId(), Utils.getCurrentSpanId(),
-                    Utils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                config.recorder.record(recordReplayRetrieveKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
+                    CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
                     Optional.of(e.getClass().getName()), key);
             }
             LOGGER.error("Error while retrieving RecordOrReplay from cache :: " + e.getMessage());
@@ -159,13 +161,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
         if (recordReplayStoreKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            recordReplayStoreKey = new FnKey(config.customerId, config.app, config.instance,
-                config.serviceName, method);
+            recordReplayStoreKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
+            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  CommonUtils.getCurrentTraceId(),
+                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
             if (ret != null && ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -182,8 +184,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         } catch (JsonProcessingException e) {
             LOGGER.error("Error while population RecordOrReplay in cache :: "  + e.getMessage());
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayStoreKey, Utils.getCurrentTraceId(), Utils.getCurrentSpanId(),
-                    Utils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                config.recorder.record(recordReplayStoreKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
+                    CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
                     Optional.of(e.getClass().getName()), collectionKey , rr);
             }
         }
@@ -218,7 +220,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
                                            String collectionId) {
-        List<String> traceIds = originalList.stream().map(request-> Utils.getCaseInsensitiveMatches(request.hdrs,
+        List<String> traceIds = originalList.stream().map(request-> CommonUtils.getCaseInsensitiveMatches(request.hdrs,
                 Config.DEFAULT_TRACE_FIELD)).flatMap(List::stream).collect(Collectors.toList());
         if (traceIds.isEmpty() || intermediateServices.isEmpty()) return originalList.stream() ;
         SolrQuery query = new SolrQuery("*:*");
@@ -405,7 +407,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private final SolrClient solr;
     private final Config config;
-    
 
     private static final String TYPEF = CPREFIX + "type_s";
 
@@ -839,16 +840,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (saveFuncKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("add", doc.getClass());
-                saveFuncKey = new FnKey(config.customerId, config.app,
-                    config.instance, config.serviceName, currentMethod);
+                saveFuncKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app,
+                    config.commonConfig.instance, config.commonConfig.serviceName, currentMethod);
             } catch (Exception e) {
                 LOGGER.error("Couldn't Initiate save function key :: " + e.getMessage());
             }
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(saveFuncKey , Utils.getCurrentTraceId(),
-                Utils.getCurrentSpanId(), Utils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
+            FnResponseObj ret = config.mocker.mock(saveFuncKey , CommonUtils.getCurrentTraceId(),
+                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
             if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -868,16 +869,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(saveFuncKey, Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(), Utils.getParentSpanId(), fromSolr,
+                config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
                     io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), doc);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(saveFuncKey, Utils.getCurrentTraceId(),
-                    Utils.getCurrentSpanId(),
-                    Utils.getParentSpanId(),
+                config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(),
+                    CommonUtils.getParentSpanId(),
                     e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
             }
             throw e;

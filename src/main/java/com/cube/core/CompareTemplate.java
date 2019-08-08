@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -168,8 +169,8 @@ public class CompareTemplate {
 						   Comparator.Match match, boolean needDiff) {
 
 		for (TemplateEntry rule: getRules()) {
-			List<String> lvals = Utils.getCaseInsensitiveMatches(lhsfmap , rule.path);
-			List<String> rvals = Utils.getCaseInsensitiveMatches(rhsfmap , rule.path);
+			List<String> lvals = CommonUtils.getCaseInsensitiveMatches(lhsfmap , rule.path);
+			List<String> rvals = CommonUtils.getCaseInsensitiveMatches(rhsfmap , rule.path);
 			if (rule.ct == ComparisonType.Equal || rule.ct == ComparisonType.EqualOptional) {
 				Comparator.Resolution resolution = OK;
 				Set<String> lset = new HashSet<>(lvals);

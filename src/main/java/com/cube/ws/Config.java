@@ -3,45 +3,39 @@
  */
 package com.cube.ws;
 
-import java.util.Properties;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Pattern;
-
-import javax.inject.Singleton;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-
+import com.cube.cache.ReplayResultCache;
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.TemplateCache;
+import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStoreSolr;
+import com.cube.serialize.GsonPatternSerializer;
+import com.cube.serialize.GsonSolrDocumentListSerializer;
+import com.cube.serialize.GsonSolrDocumentSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import io.cube.agent.CommonConfig;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
 import io.cube.agent.SimpleRecorder;
 import io.cube.agent.TraceIntentResolver;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-import com.cube.cache.ReplayResultCache;
-import com.cube.cache.RequestComparatorCache;
-import com.cube.cache.ResponseComparatorCache;
-import com.cube.cache.TemplateCache;
-import com.cube.core.Utils;
-import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStoreSolr;
-import com.cube.serialize.GsonPatternSerializer;
-import com.cube.serialize.GsonSolrDocumentListSerializer;
-import com.cube.serialize.GsonSolrDocumentSerializer;
+import javax.inject.Singleton;
+import java.util.Properties;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Pattern;
 
 /**
  * @author prasad
@@ -79,9 +73,8 @@ public class Config {
 
 	ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
 
-    public String customerId, app, instance, serviceName;
-
     public IntentResolver intentResolver = new TraceIntentResolver();
+    public CommonConfig commonConfig = new CommonConfig();
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -91,10 +84,6 @@ public class Config {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
             solrurl = properties.getProperty("solrurl");
-            customerId = fromEnvOrProperties("customer_dogfood" , "ravivj");
-            app = fromEnvOrProperties("app_dogfood" , "cubews");
-            instance = fromEnvOrProperties("instance_dogfood" , "dev");
-            serviceName = fromEnvOrProperties("service_dogfood" , "cube");
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
@@ -120,13 +109,6 @@ public class Config {
             .create();
         recorder = new SimpleRecorder(gson);
         mocker = new SimpleMocker(gson);
-
-        Tracer tracer = Utils.init("tracer");
-        try {
-            GlobalTracer.register(tracer);
-        } catch (IllegalStateException e) {
-            LOGGER.error("Trying to register a tracer when one is already registered");
-        }
 
         try {
             String redisHost = fromEnvOrProperties("redis_host", "localhost");

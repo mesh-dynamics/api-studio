@@ -8,6 +8,7 @@ package com.cube.dao;
 import java.util.List;
 import java.util.Optional;
 
+import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -239,8 +240,8 @@ public class Analysis {
 					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
 					rm.recordreq.getService().orElse(""), rm.recordreq.path,
 					replayid, jsonmapper,
-                    Utils.getTraceId(rm.recordreq.hdrs),
-                    rm.replayreq.flatMap(replayreq -> Utils.getTraceId(replayreq.hdrs))) ;
+                    CommonUtils.getTraceId(rm.recordreq.hdrs),
+                    rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
 		}
 
 		final public Optional<String> recordreqid;

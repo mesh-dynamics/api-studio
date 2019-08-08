@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.cube.core.*;
+import io.cube.agent.CommonUtils;
 
 public class RRBase {
 
@@ -144,7 +145,7 @@ public class RRBase {
 	}
 
     public String getMimeType() {
-		return Utils.getCaseInsensitiveMatches(hdrs , HttpHeaders.CONTENT_TYPE).stream()
+		return CommonUtils.getCaseInsensitiveMatches(hdrs , HttpHeaders.CONTENT_TYPE).stream()
             .findFirst().orElse(MediaType.TEXT_PLAIN);
     }
 
