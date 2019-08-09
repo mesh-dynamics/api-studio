@@ -17,8 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.util.Optional;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;
 import static org.springframework.http.ResponseEntity.noContent;
 
@@ -38,14 +37,29 @@ public class TestPathController {
 
     @GetMapping("/{id}")
     public ResponseEntity get(@PathVariable("id") Long id) {
-        return ok(this.testPathRepository.findById(id));
+        if(id == null) {
+            return status(BAD_REQUEST).body(new ErrorResponse("TestPath with ID '" + id +"' is not present."));
+        }
+        Optional<TestPath> existed = this.testPathRepository.findById(id);
+        if(existed.isPresent()) {
+            return ok(this.testPathRepository.findById(id));
+        } else {
+            return status(NOT_FOUND).body(new ErrorResponse("TestPath with ID '" + id + "' not found."));
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
+        if(id == null) {
+            return status(BAD_REQUEST).body(new ErrorResponse("TestPath with ID '" + id +"' is not present."));
+        }
         Optional<TestPath> existed = this.testPathRepository.findById(id);
-        this.testPathRepository.delete(existed.get());
-        return noContent().build();
+        if(existed.isPresent()) {
+            this.testPathRepository.delete(existed.get());
+            return noContent().build();
+        } else {
+            return status(NOT_FOUND).body(new ErrorResponse("TestPath with ID '" + id + "' not found."));
+        }
     }
 
     @PostMapping("")
@@ -113,7 +127,7 @@ public class TestPathController {
                             .toUri())
                     .body(existing);
         } else {
-            return status(BAD_REQUEST).body(new ErrorResponse("TestPath with ID '" + testPathDTO.getId() + "' not found."));
+            return status(NOT_FOUND).body(new ErrorResponse("TestPath with ID '" + testPathDTO.getId() + "' not found."));
         }
     }
 }
