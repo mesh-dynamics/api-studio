@@ -160,7 +160,6 @@ create TABLE cube.test_config (
   app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
   description TEXT,
   gateway_service_id BIGINT REFERENCES cube.service(id) ON DELETE CASCADE,
-  gateway_path_selection JSON NOT NULL,
   gateway_req_selection JSON,
   max_run_time_min INTEGER,
   email_id TEXT,
@@ -194,6 +193,15 @@ create TABLE cube.test_intermediate_service (
 );
 
 CREATE INDEX intermediate_service_index ON cube.test_intermediate_service(test_id);
+
+/*need to somehow make sure that the testConfig id and path id correspond to the same app*/
+create TABLE cube.test_path (
+  test_id BIGINT NOT NULL REFERENCES cube.test_config(id) ON DELETE CASCADE,
+  path_id BIGINT NOT NULL REFERENCES cube.path(id) ON DELETE CASCADE,
+  UNIQUE(test_id, path_id)
+);
+
+CREATE INDEX test_path_index ON cube.test_path(test_id);
 
 CREATE TYPE cube.template_type AS ENUM ('Request' , 'Response');
 

@@ -52,10 +52,6 @@ public class TestConfig {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    String gatewayPathSelection;
-
-    @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
     String gatewayReqSelection;
 
     @Column

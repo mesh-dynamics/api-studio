@@ -48,7 +48,6 @@ public class TestConfigController {
                             .app(app.get())
                             .gatewayService(service.get())
                             .description(testConfigDTO.getDescription())
-                            .gatewayPathSelection(testConfigDTO.getGatewayPathSelection())
                             .gatewayReqSelection(testConfigDTO.getGatewayReqSelection())
                             .maxRunTimeMin(testConfigDTO.getMaxRunTimeMin())
                             .emailId(testConfigDTO.getEmailId())
@@ -90,7 +89,6 @@ public class TestConfigController {
                 testConfig.setApp(app.get());
                 testConfig.setGatewayService(service.get());
                 testConfig.setDescription(testConfigDTO.getDescription());
-                testConfig.setGatewayPathSelection(testConfigDTO.getGatewayPathSelection());
                 testConfig.setGatewayReqSelection(testConfigDTO.getGatewayReqSelection());
                 testConfig.setEmailId(testConfigDTO.getEmailId());
                 testConfig.setSlackId(testConfigDTO.getSlackId());
