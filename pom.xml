@@ -158,6 +158,11 @@
             <artifactId>jaeger-client</artifactId>
             <version>${version.jaeger}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.6</version>
+        </dependency>
     </dependencies>
 
 </project>

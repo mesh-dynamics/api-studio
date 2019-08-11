@@ -1,7 +1,6 @@
 package io.cube.agent;
 
 import java.lang.reflect.Method;
-import java.util.Optional;
 
 /*
  * Created by IntelliJ IDEA.
@@ -18,7 +17,7 @@ public class FnKey {
         this.function = function;
 
         this.fnName = function.getName();
-        this.signature = Utils.getFunctionSignature(function);
+        this.signature = CommonUtils.getFunctionSignature(function);
 
         this.fnSigatureHash = signature.hashCode();
 

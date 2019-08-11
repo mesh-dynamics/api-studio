@@ -10,7 +10,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
@@ -20,8 +19,6 @@ import org.glassfish.jersey.client.ClientProperties;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Client to connect to cube service
@@ -37,7 +34,7 @@ public class CubeClient {
     private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
     public CubeClient(ObjectMapper jsonMapper) {
-        Config config = new Config();
+        CommonConfig config = new CommonConfig();
         ClientConfig clientConfig = new ClientConfig()
                 .property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
                 .property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
@@ -70,7 +67,7 @@ public class CubeClient {
     private Optional<String> getResponse(Invocation.Builder builder, FnReqResponse fnReqResponse) {
         try {
             String jsonEntity = jsonMapper.writeValueAsString(fnReqResponse);
-            Utils.addTraceHeaders(builder , "POST");
+            CommonUtils.addTraceHeaders(builder , "POST");
             return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
         } catch (JsonProcessingException e) {
             LOGGER.error("Error while serializing function req/resp object :: "
@@ -102,7 +99,7 @@ public class CubeClient {
         Invocation.Builder builder =
                 cubeRecordService.path("cs").path("start").path(customerid).path(app).path(instanceid).path(collection)
                         .request(MediaType.APPLICATION_FORM_URLENCODED);
-        Utils.addTraceHeaders(builder , "POST");
+        CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
 
@@ -110,7 +107,7 @@ public class CubeClient {
         Invocation.Builder builder =
                 cubeRecordService.path("cs").path("stop").path(customerid).path(app).path(collection)
                         .request(MediaType.APPLICATION_FORM_URLENCODED);
-        Utils.addTraceHeaders(builder , "POST");
+        CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
 
@@ -122,14 +119,14 @@ public class CubeClient {
         MultivaluedMap<String, String> params = new MultivaluedHashMap();
         params.add("instanceid", instanceid);
         params.add("endpoint", endpoint);
-        Utils.addTraceHeaders(builder , "POST");
+        CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(params)));
     }
 
     public Optional<String> forceStartReplay(String replayid) {
         Invocation.Builder builder =
                 cubeRecordService.path("rs").path("forcestart").path(replayid).request();
-        Utils.addTraceHeaders(builder , "POST");
+        CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
 
@@ -137,7 +134,7 @@ public class CubeClient {
     public Optional<String> forceCompleteReplay(String replayid) {
         Invocation.Builder builder =
                 cubeRecordService.path("rs").path("forcecomplete").path(replayid).request();
-        Utils.addTraceHeaders(builder , "POST");
+        CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
 }

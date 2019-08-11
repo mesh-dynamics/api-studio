@@ -3,6 +3,7 @@
  */
 package io.cube.agent;
 
+import java.sql.SQLException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -29,6 +30,11 @@ public final class UtilException {
 	@FunctionalInterface
 	public interface Function_WithExceptions<T, R, E extends Exception> {
 		R apply(T t) throws E, JsonProcessingException;
+	}
+
+	@FunctionalInterface
+	public interface Function_WithSQLExceptions<T, R, E extends Exception> {
+		R apply(T t) throws E, SQLException;
 	}
 
 	@FunctionalInterface
@@ -72,6 +78,22 @@ public final class UtilException {
 	 * .map(rethrowFunction(Class::forName))
 	 */
 	public static <T, R, E extends Exception> Function<T, R> rethrowFunction(Function_WithExceptions<T, R, E> function)
+			throws E {
+		return t -> {
+			try {
+				return function.apply(t);
+			} catch (Exception exception) {
+				throwAsUnchecked(exception);
+				return null;
+			}
+		};
+	}
+
+	/**
+	 * .map(rethrowFunction(name -> Class.forName(name))) or
+	 * .map(rethrowFunction(Class::forName))
+	 */
+	public static <T, R, E extends Exception> Function<T, R> rethrowFunctionWithSQLException(Function_WithSQLExceptions<T, R, E> function)
 			throws E {
 		return t -> {
 			try {
