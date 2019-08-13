@@ -21,7 +21,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - staging.dev.cubecorp.io
+  - {{staging_host}}
   ports:
   - number: 80
     name: cubeservice
@@ -37,7 +37,7 @@ metadata:
   namespace: {{namespace}}
 spec:
   hosts:
-  - demo.dev.cubecorp.io
+  - {{cube_host}}
   ports:
   - number: 80
     name: cubeservice

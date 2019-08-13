@@ -5,7 +5,7 @@ metadata:
   namespace: {{namespace}}
 data:
   APP_DOGFOOD: "{{cube_application}}"
-  INSTANCE_DOGFOOD: "test"
+  INSTANCE_DOGFOOD: "{{cube_instance}}"
   SERVICE_DOGFOOD: "{{cube_application}}"
   CUSTOMER_DOGFOOD: "{{customer}}"
   CUBE_RECORD_SERVICE: "{{record_host}}"

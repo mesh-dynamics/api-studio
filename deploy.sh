@@ -12,8 +12,8 @@ generate_manifest() {
 	if [ "$OPERATION" = "init" ]; then
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
-		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST
+		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $MASTER_NAMESPACE
 	fi
@@ -39,8 +39,12 @@ echo "Registering Templates"
 }
 
 record() {
-	echo "Enter collection name"
-	read COLLECTION_NAME
+	if [ -z "$1" ]; then
+		echo "Enter collection name"
+		read COLLECTION_NAME
+	else
+		COLLECTION_NAME=$1
+	fi
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 	curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME \
@@ -71,8 +75,12 @@ replay_setup() {
 		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
 	fi
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
-		echo "Which version of App you want to test?(v1/v2)"
-		read VERSION
+		if [ -z "$1" ]; then
+			echo "Which version of App you want to test?(v1/v2)"
+			read VERSION
+		else
+			VERSION=$1
+		fi
 		if [ "$VERSION" = "v1" ] || [ "$VERSION" = "v2" ]; then
 			kubectl apply -f $APP_DIR/kubernetes/route-$VERSION.yaml
 		else
@@ -83,8 +91,12 @@ replay_setup() {
 }
 
 replay() {
-	echo "Enter Collection name"
-	read COLLECTION_NAME
+	if [ -z "$1" ]; then
+		echo "Enter collection name to replay"
+		read COLLECTION_NAME
+	else
+		COLLECTION_NAME=$1
+	fi
 	if [ ! -z "$REPLAY_PATHS" ]; then
 		REPLAY_PATHS=$(echo $REPLAY_PATHS | tr "," "\n")
 		for path in $REPLAY_PATHS
@@ -102,7 +114,7 @@ replay() {
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-H "Host: $CUBE_HOST" \
-	-d "$BODY" | awk -F ',' '{print $7}' | cut -d '"' -f 4)
+	-d "$BODY" | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
 	#Make reply start call
 	curl -f -X POST \
   http://$GATEWAY_URL/rs/start/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \

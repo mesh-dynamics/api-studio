@@ -18,7 +18,7 @@ spec:
     filterConfig:
       inlineCode: |
                 local random = math.random
-                math.randomseed(os.time())
+                math.randomseed((os.time()+os.clock())*1000000)
                 function uuid()
                       local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
                       return string.gsub(template, '[xy]', function (c)
@@ -101,7 +101,11 @@ spec:
                   local service = "{{service_name}}"
                   local meta = {}
                   meta["type"] = "request"
-                  crequestid = service .. uuid()
+                  xrequestid = request_handle:headers():get("x-request-id")
+                  xb3traceid = request_handle:headers():get("x-b3-traceid")
+                  xb3spanid = request_handle:headers():get("x-b3-spanid")
+                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -112,9 +116,5 @@ spec:
                   meta["app"] = "{{cube_application}}"
                   meta["instanceid"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
-                  xrequestid = request_handle:headers():get("x-request-id")
-                  xb3traceid = request_handle:headers():get("x-b3-traceid")
-                  xb3spanid = request_handle:headers():get("x-b3-spanid")
-                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
                   logHdrBody(request_handle, meta)
                 end
