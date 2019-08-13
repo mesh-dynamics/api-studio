@@ -2,6 +2,7 @@ package com.cube.core;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -45,7 +46,7 @@ public class UploadTemplatesForSampleApp {
                 JSONObject template = elem.getJSONObject("template");
                 String templateAsString = template.toString();
                 reqRespStore.saveCompareTemplate(
-                        new TemplateKey(customerId , app , service , path , TemplateKey.Type.Response)
+                        new TemplateKey(Optional.empty(), customerId , app , service , path , TemplateKey.Type.Response)
                  , templateAsString);
             });
 

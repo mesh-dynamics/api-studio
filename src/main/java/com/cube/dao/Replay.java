@@ -41,24 +41,25 @@ public class Replay {
 		Completed,
 		Error
 	}
-	
-		
+
+
 	/**
-	 * @param endpoint
-	 * @param customerid
-	 * @param app
-	 * @param instanceid
-	 * @param collection
-	 * @param reqids
-	 * @param replayid
-	 * @param async
-	 * @param status
-	 * @param samplerate
-	 */
+     * @param endpoint
+     * @param customerid
+     * @param app
+     * @param instanceid
+     * @param collection
+     * @param reqids
+     * @param replayid
+     * @param async
+     * @param templateVersion
+     * @param status
+     * @param samplerate
+     */
 	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
-				  String replayid, boolean async, ReplayStatus status,
-				  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
-				  Optional<Double> samplerate, List<String> intermediateServices) {
+                  String replayid, boolean async, Optional<String> templateVersion, ReplayStatus status,
+                  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+                  Optional<Double> samplerate, List<String> intermediateServices) {
 		super();
 		this.endpoint = endpoint;
 		this.customerid = customerid;
@@ -68,7 +69,8 @@ public class Replay {
 		this.reqids = reqids;
 		this.replayid = replayid;
 		this.async = async;
-		this.status = status;
+        this.templateVersion = templateVersion;
+        this.status = status;
 		this.paths = paths;
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
@@ -94,6 +96,7 @@ public class Replay {
 	    reqids = Collections.emptyList();
 	    paths = Collections.emptyList();
 	    intermediateServices = Collections.emptyList();
+	    templateVersion = Optional.empty();
     }
 
 	/*
@@ -120,6 +123,8 @@ public class Replay {
 	public final String collection;
     @JsonProperty("reqids")
 	public final List<String> reqids;
+    @JsonProperty("templateVer")
+	public final Optional<String> templateVersion;
     @JsonProperty("id")
     public final String replayid; // this needs to be globally unique
     @JsonProperty("async")
@@ -148,12 +153,12 @@ public class Replay {
 	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
 	private static final Pattern replayidpattern = Pattern.compile(replayidpatternStr);
-	
+
 	/**
 	 * @param replayid
 	 * @return
 	 */
-	public static String getCollectionFromReplayId(String replayid) {		
+	public static String getCollectionFromReplayId(String replayid) {
 		Matcher m = replayidpattern.matcher(replayid);
 		if (m.find()) {
 			return m.group(1);
@@ -162,7 +167,7 @@ public class Replay {
 			return replayid;
 		}
 	}
-	
+
 	public static String getReplayIdFromCollection(String collection) {
 		return String.format("%s-%s", collection, UUID.randomUUID().toString());
 	}

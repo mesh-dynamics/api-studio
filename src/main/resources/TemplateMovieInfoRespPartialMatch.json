@@ -1,0 +1,470 @@
+{"registries" : [
+  {
+    "service":"movieinfo",
+    "path":"minfo/listmovies",
+    "type":"Request",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/path",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/qparmas",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/fparams",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/hdr/x-b3-traceid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        },
+        {
+          "path" : "/hdr/uber-trace-id",
+          "dt" : "Str",
+          "pt" : "Optional",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/customerid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/app",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/collection",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/meta/service",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/rrtype",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/reqid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        }
+      ]
+    }
+
+  },
+  {
+    "service":"movieinfo",
+    "path":"minfo/rentmovie",
+    "type":"Request",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/path",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/qparmas",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/fparams",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/hdr/x-b3-traceid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        },
+        {
+          "path" : "/hdr/uber-trace-id",
+          "dt" : "Str",
+          "pt" : "Optional",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/customerid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/app",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/collection",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/meta/service",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/rrtype",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/reqid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        }
+      ]
+    }
+
+  },
+  {
+    "service":"movieinfo",
+    "path":"minfo/returnmovie",
+    "type":"Request",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/path",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/qparmas",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/fparams",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/hdr/x-b3-traceid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        },
+        {
+          "path" : "/hdr/uber-trace-id",
+          "dt" : "Str",
+          "pt" : "Optional",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/customerid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/app",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/collection",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/meta/service",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/rrtype",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/reqid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        }
+      ]
+    }
+
+  },
+  {
+    "service":"movieinfo",
+    "path":"minfo/liststores",
+    "type":"Request",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/path",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/qparmas",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/fparams",
+          "dt": "Obj",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/hdr/x-b3-traceid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        },
+        {
+          "path" : "/hdr/uber-trace-id",
+          "dt" : "Str",
+          "pt" : "Optional",
+          "ct" : "EqualOptional"
+        },
+        {
+          "path": "/customerid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/app",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/collection",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/meta/service",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/rrtype",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "Equal"
+        },
+        {
+          "path": "/reqid",
+          "dt": "Str",
+          "pt": "Optional",
+          "ct": "EqualOptional"
+        }
+      ]
+    }
+
+  },
+  {
+    "path" : "productpage",
+    "service" : "productpage",
+    "type":"Response",
+    "template" : {
+      "prefixPath": "",
+      "rules": []
+    }
+  } ,
+
+  {
+    "path" : "minfo/returnmovie",
+    "service" : "movieinfo",
+    "type":"Response",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/return_updates",
+          "pt": "Required",
+          "dt": "Int",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/payment_updates",
+          "pt": "Required",
+          "dt": "Int",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/rental_id",
+          "pt": "Required",
+          "dt": "Int" ,
+          "ct" : "Equal"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "path" : "minfo/liststores",
+    "service" : "movieinfo",
+    "type":"Response",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/0/store_id",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct" : "Default"
+        },
+        {
+          "path": "/body/1/store_id",
+          "pt": "Optional",
+          "dt": "Int",
+          "ct": "Default"
+        }
+      ]
+    }
+
+  } ,
+  {
+    "path" : "minfo/rentmovie",
+    "service" : "movieinfo",
+    "type":"Response",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/inventory_id",
+          "pt": "Required",
+          "dt": "Int",
+          "ct": "Equal"
+        },
+        {
+          "path": "/body/rent",
+          "pt": "Required",
+          "dt": "Float",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/num_updates",
+          "pt": "Required",
+          "dt": "Int",
+          "ct" : "Equal"
+        }
+      ]
+    }
+  },
+  {
+    "path" : "minfo/listmovies",
+    "service" : "movieinfo",
+    "type":"Response",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path": "/body/0/actors_lastnames",
+          "pt": "Optional",
+          "dt": "RptArray",
+          "ct":"Equal"
+        },
+        {
+          "path": "/body/0/display_actors",
+          "pt": "Required",
+          "dt": "RptArray",
+          "ct": "EqualOptional"
+        },
+        {
+          "path": "/body/0/display_actors/*",
+          "pt":"Optional",
+          "dt":"Str",
+          "ct":"EqualOptional"
+        },
+        {
+          "path": "/body/0/film_id",
+          "pt": "Required",
+          "dt": "Int",
+          "ct": "Equal"
+        },
+        {
+          "path": "/body/0/title",
+          "pt": "Required",
+          "dt": "Str",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/actors_firstnames",
+          "pt": "Optional",
+          "dt": "RptArray",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/film_counts",
+          "pt": "Required",
+          "dt": "RptArray",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/film_counts/*",
+          "pt": "Required",
+          "dt": "Int",
+          "ct" : "Equal"
+        },
+        {
+          "path": "/body/0/bookinfo",
+          "pt": "Optional",
+          "dt": "RptArray"
+        },
+        {
+          "path" : "/body/0/timestamp",
+          "pt" : "Required",
+          "dt" : "Default",
+          "ct" : "EqualOptional",
+          "customization" : "[0-9]{14}"
+        }
+      ]
+    }
+  }
+]}

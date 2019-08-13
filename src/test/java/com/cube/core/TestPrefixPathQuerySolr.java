@@ -1,17 +1,16 @@
 package com.cube.core;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.util.ClientUtils;
-import org.apache.solr.common.StringUtils;
-import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +55,7 @@ public class TestPrefixPathQuerySolr {
             if (countWrapper.count != pathElements.size() - 1) {
                 keyPath = keyPath.concat("/*");
             }
-            TemplateKey templateKey = new TemplateKey("ravivj" , "cube"
+            TemplateKey templateKey = new TemplateKey(Optional.empty(), "ravivj" , "cube"
                     , "as" , keyPath , TemplateKey.Type.Request);
             CompareTemplate template = new CompareTemplate();
             // adding a single template entry to the comparator. The path field of the entry
@@ -89,7 +88,7 @@ public class TestPrefixPathQuerySolr {
             String fullPath,
             List<String> pathElements , ReqRespStore reqRespStore , SolrClient Solr) {
         TemplateKey searchKey =
-                new TemplateKey("ravivj" , "cube" , "as"
+                new TemplateKey(Optional.empty(), "ravivj" , "cube" , "as"
                         , fullPath , TemplateKey.Type.Request);
 
 

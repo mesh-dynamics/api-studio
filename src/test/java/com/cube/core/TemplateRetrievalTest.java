@@ -1,21 +1,16 @@
 package com.cube.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
+
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.ReqRespStore;
-import com.cube.exception.CacheException;
 import com.cube.ws.Config;
 
 /**
@@ -36,7 +31,7 @@ public class TemplateRetrievalTest {
             ReqRespStore rrStore = config.rrstore;
             TemplateCache templateCache = new TemplateCache(rrStore, config);
             CompareTemplate template = templateCache.fetchCompareTemplate(new TemplateKey
-                    ("ravivj" , "movieinfo" , "movieinfo" , "minfo/returnmovie"
+                    (Optional.empty(), "ravivj" , "movieinfo" , "movieinfo" , "minfo/returnmovie"
                             , TemplateKey.Type.Response));
 
             template.getRules().forEach(rule -> System.out.println(rule.path));
@@ -61,7 +56,7 @@ public class TemplateRetrievalTest {
             TemplateCache templateCache = new TemplateCache(rrStore ,config);
             ObjectMapper objectMapper = config.jsonmapper;
             RequestComparatorCache requestComparatorCache = new RequestComparatorCache(templateCache , objectMapper);
-            TemplateKey key = new TemplateKey("ravivj" , "movieinfo"
+            TemplateKey key = new TemplateKey(Optional.empty(), "ravivj" , "movieinfo"
                     , "productpage" , "productpage" , TemplateKey.Type.Request);
             RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
             assertSame(comparator.getCTapp().toString() , "Equal") ;

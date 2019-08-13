@@ -3,12 +3,6 @@
  */
 package com.cube.core;
 
-import com.cube.agent.FnReqResponse;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -20,6 +14,19 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+
+import com.cube.agent.FnReqResponse;
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.TemplateKey;
+import com.cube.golden.TemplateSet;
+
 
 /**
  * @author prasad
@@ -145,6 +152,63 @@ public class Utils {
         } catch (Exception e) {
             LOGGER.error("Error while preprocessing fn req resp object :: " + e.getMessage());
         }
+    }
+
+    static public TemplateSet templateRegistriesToTemplateSet(TemplateRegistries registries,
+                                                              String customerId, String appId,
+                                                              Optional<String> templateVersion) {
+        List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
+
+        List<CompareTemplateVersioned> compareTemplateVersionedList =
+            templateRegistries
+                .stream()
+                .map(registry -> new CompareTemplateVersioned(Optional.of(registry.getService()),
+            Optional.of(registry.getPath()), registry.getType(), registry.getTemplate()))
+                .collect(Collectors.toList());
+
+        // pass null for version if version is empty and timestamp so that new version number is created automatically
+        TemplateSet templateSet = new TemplateSet(templateVersion.orElse(null), customerId, appId, null,
+            compareTemplateVersionedList);
+
+        return templateSet;
+
+    }
+
+    static public void invalidateCacheFromTemplateSet(TemplateSet templateSet,
+                                                 RequestComparatorCache requestComparatorCache,
+                                                 ResponseComparatorCache responseComparatorCache)
+    {
+        templateSet.templates.stream().forEach(compareTemplateVersioned -> {
+            TemplateKey key =
+                new TemplateKey(Optional.of(templateSet.version), templateSet.customer, templateSet.app,
+                    compareTemplateVersioned.service,
+                    compareTemplateVersioned.prefixpath, compareTemplateVersioned.type);
+            requestComparatorCache.invalidateKey(key);
+            responseComparatorCache.invalidateKey(key);
+        });
+    }
+
+    static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?), appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
+
+    static public Optional<TemplateKey> templateKeyFromSerializedString(String serialized) {
+        Optional<TemplateKey> toReturn = Optional.empty();
+        Matcher m = templateKeyPattern.matcher(serialized);
+        TemplateKey templateKey = null;
+        if (m.matches()) {
+            String customerId = m.group(1);
+            String appId = m.group(2);
+            String service = m.group(3);
+            String path = m.group(4);
+            String version = m.group(5);
+            String type = m.group(6);
+            //System.out.println(customerId + " " + appId + " " + service + " " + path + " " + version + " " + type);
+            templateKey = new TemplateKey(Optional.of(version) , customerId, appId, service, path, ("Request".equalsIgnoreCase(type) ?
+                TemplateKey.Type.Request : TemplateKey.Type.Response));
+            toReturn = Optional.of(templateKey);
+        } else {
+            LOGGER.error("Unable to deserialize template key from string :: " + templateKey);
+        }
+        return toReturn;
     }
 
 

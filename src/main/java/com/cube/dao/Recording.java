@@ -15,24 +15,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Recording {
 
     //private static final Logger LOGGER = LogManager.getLogger(Recording.class);
-	
+
 	public enum RecordingStatus {
 		Running,
 		Completed,
 		Error
 	}
-	
-	
-	
+
+
+
 	/**
-	 * @param customerid
-	 * @param app
-	 * @param instanceid
-	 * @param collection
-	 * @param status
-	 */
+     * @param customerid
+     * @param app
+     * @param instanceid
+     * @param collection
+     * @param status
+     * @param templateVersion
+     */
 	Recording(String customerid, String app, String instanceid, String collection, RecordingStatus status
-        , Optional<Instant> updateTimestamp) {
+        , Optional<Instant> updateTimestamp, Optional<String> templateVersion) {
 		super();
 		this.customerid = customerid;
 		this.app = app;
@@ -40,7 +41,8 @@ public class Recording {
 		this.collection = collection;
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
-	}
+        this.templateVersion = templateVersion;
+    }
 
 	// for json deserialization
 	public Recording() {
@@ -49,6 +51,7 @@ public class Recording {
 	    this.app = "";
 	    this.instanceid = "";
 	    this.collection = "";
+	    this.templateVersion = Optional.empty();
     }
 
 	@JsonProperty("cust")
@@ -63,13 +66,16 @@ public class Recording {
     public RecordingStatus status;
     @JsonProperty("timestmp")
 	public Optional<Instant> updateTimestamp;
+    @JsonProperty("templateVer")
+	public final Optional<String> templateVersion;
 
-	public static Optional<Recording> startRecording(String customerid, String app, String instanceid, 
-			String collection, ReqRespStore rrstore) {
+	public static Optional<Recording> startRecording(String customerid, String app, String instanceid,
+                                                     String collection, Optional<String> templateSetId, ReqRespStore rrstore) {
 		Recording recording = new Recording(customerid, app, instanceid, collection, RecordingStatus.Running
-            , Optional.of(Instant.now()));
-		if (rrstore.saveRecording(recording))
-			return Optional.of(recording);
+            , Optional.of(Instant.now()), templateSetId);
+		if (rrstore.saveRecording(recording)) {
+                return Optional.of(recording);
+        }
 		return Optional.empty();
 	}
 

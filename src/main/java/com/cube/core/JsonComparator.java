@@ -111,6 +111,7 @@ public class JsonComparator implements Comparator {
 				numerrs++;
 			}
 
+			// remove duplicates
 			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
 			result.add(diff);
 		}
@@ -200,7 +201,7 @@ public class JsonComparator implements Comparator {
 
 	private void checkRptArrayTypes(JsonNode node, List<Diff> resdiffs, CompareTemplate.DataType dt, String parentPath) {
 		for (int i = 0; i < node.size(); i ++) {
-			if (getDataType(node.get(i)) != dt) {
+			if ((dt != DataType.Default) && (getDataType(node.get(i)) != dt)) {
 				Diff diff = new Diff(Diff.NOOP, parentPath + "/" + i, node.get(i), ERR_ValTypeMismatch);
 				resdiffs.add(diff);
 			}
@@ -228,26 +229,39 @@ public class JsonComparator implements Comparator {
 
 		return value.map(toVal -> {
 			if (toVal.isTextual()) {
+			    /* Don't do type check if ct is Ignore. So pass on to checkMatch
 				if (!fromValue.map(JsonNode::isTextual).orElse(true)) {
 					return ERR_ValTypeMismatch;
 				}
-				Optional<String> lhs = fromValue.map(JsonNode::asText);
+				*/
+				Optional<String> lhs = fromValue.flatMap(v -> {
+                    return v.isTextual() ? Optional.of(v.asText()) : Optional.empty();
+                });
 				Optional<String> rhs = value.map(JsonNode::asText);
 				return rule.checkMatchStr(lhs, rhs);
 			}
 			if (toVal.isInt()) {
+			    /* Don't do type check if ct is Ignore. So pass on to checkMatch
 				if (!fromValue.map(JsonNode::isInt).orElse(true)) {
 					return ERR_ValTypeMismatch;
 				}
-				Optional<Integer> lhs = fromValue.map(JsonNode::asInt);
+				*/
+                Optional<Integer> lhs = fromValue.flatMap(v -> {
+                    return v.isInt() ? Optional.of(v.asInt()) : Optional.empty();
+                });
 				Optional<Integer> rhs = value.map(JsonNode::asInt);
 				return rule.checkMatchInt(lhs, rhs);
 			}
 			if (toVal.isDouble() || toVal.isFloat() || toVal.isLong()) {
+			    /* Don't do type check if ct is Ignore. So pass on to checkMatch
 				if (!fromValue.map(fv -> fv.isDouble() || fv.isFloat() || fv.isLong()).orElse(true)) {
 					return ERR_ValTypeMismatch;
 				}
-				Optional<Double> lhs = fromValue.map(JsonNode::asDouble);
+				*/
+                Optional<Double> lhs = fromValue.flatMap(v -> {
+                    return v.isDouble() || v.isFloat() || v.isLong() ?
+                        Optional.of(v.asDouble()) : Optional.empty();
+                });
 				Optional<Double> rhs = value.map(JsonNode::asDouble);
 				return rule.checkMatchDbl(lhs, rhs);
 			}

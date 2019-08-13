@@ -268,6 +268,7 @@ public class CubeStore {
 	@Path("start/{customerid}/{app}/{instanceid}/{collection}")
 	@Consumes("application/x-www-form-urlencoded")
     public Response start(@Context UriInfo ui,
+                          MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerid") String customerid,
                           @PathParam("instanceid") String instanceid,
@@ -296,7 +297,12 @@ public class CubeStore {
         LOGGER.info(String.format("Starting recording for customer %s, app %s, instance %s, collection %s",
             customerid, app, instanceid, collection));
 
-        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, rrstore)
+        Optional<String> templateVersion = recording.isPresent() ?
+            recording.get().templateVersion : Optional.ofNullable(formParams.getFirst("templateSet"));
+
+
+        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateVersion,
+            rrstore)
             .map(newr -> {
                 String json;
                 try {
@@ -404,7 +410,7 @@ public class CubeStore {
     @Path("/warmupcache")
     public Response warmUpCache(@Context UriInfo uriInfo) {
         try {
-            TemplateKey key = new TemplateKey("ravivj", "movieinfo"
+            TemplateKey key = new TemplateKey(Optional.empty(), "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", TemplateKey.Type.Response);
             ResponseComparator comparator = this.config.responseComparatorCache.getResponseComparator(key);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());

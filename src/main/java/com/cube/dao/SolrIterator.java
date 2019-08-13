@@ -60,7 +60,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 		numread = this.start; // consider these items to be already read
 
 		int toread = maxresults.map(mr -> Math.min(BATCHSIZE, mr)).orElse(BATCHSIZE);
-		
+
 		query.setRows(toread);
 		query.setStart(this.start);
 		results = query();
@@ -79,7 +79,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	public boolean hasNext() {
 		return iterator.map(iter -> {
 			if (iter.hasNext()) {
-				return true; 
+				return true;
 			} else {
 				// try to read the next batch
 				if (numread >= numresults) {
@@ -91,12 +91,12 @@ public class SolrIterator implements Iterator<SolrDocument> {
 					query.setStart(numread);
 					results = query();
 					return results.map(res -> {
-						// Note - res.iterator can be null if there are no more result documents 
+						// Note - res.iterator can be null if there are no more result documents
 						iterator = Optional.ofNullable(res.iterator());
 						numread += res.size();
 						return iterator.map(it -> it.hasNext()).orElse(false);
-					}).orElse(false);					
-				} 
+					}).orElse(false);
+				}
 				return false;
 			}
 		}).orElse(false);
@@ -116,7 +116,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 	private Stream<SolrDocument> toStream() {
 		Iterable<SolrDocument> iterable = () -> this;
-		return StreamSupport.stream(iterable.spliterator(), false);		
+		return StreamSupport.stream(iterable.spliterator(), false);
 	}
 
 	final SolrClient solr;
@@ -130,7 +130,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	static final int BATCHSIZE = 20;
 	long numFound; // total number of results matching the query, i.e. the max number of results available if no
 	// maxresults is set
-	
+
 	static public Stream<SolrDocument> getStream(SolrClient solr, SolrQuery query, Optional<Integer> maxresults) {
 	    return getStream(solr, query, maxresults, Optional.empty());
 	}

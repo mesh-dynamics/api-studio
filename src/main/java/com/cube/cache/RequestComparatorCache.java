@@ -2,6 +2,7 @@ package com.cube.cache;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
@@ -19,7 +20,6 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
@@ -76,7 +76,8 @@ public class RequestComparatorCache {
     }
 
 
-    public RequestComparator getRequestComparator(TemplateKey key , boolean reqIdInDefault)  {
+    public RequestComparator getRequestComparator(TemplateKey key,
+                                                  boolean reqIdInDefault)  {
         try {
             return requestComparatorCache.get(key);
         } catch (ExecutionException e) {

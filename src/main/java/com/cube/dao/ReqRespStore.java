@@ -26,6 +26,10 @@ import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
+import com.cube.golden.GoldenSet;
+import com.cube.golden.RecordingUpdate;
+import com.cube.golden.TemplateSet;
+import com.cube.golden.TemplateUpdateOperationSet;
 
 /**
  * @author prasad
@@ -34,10 +38,9 @@ import com.cube.dao.Replay.ReplayStatus;
 public interface ReqRespStore {
 
 
-
     public class ReqResp {
-				
-		
+
+
 		/**
 		 * @param pathwparams
 		 * @param meta
@@ -52,9 +55,9 @@ public interface ReqRespStore {
 			this.hdrs = hdrs;
 			this.body = body;
 		}
-		
+
 		/**
-		 * 
+		 *
 		 */
 		private ReqResp() {
 			super();
@@ -72,7 +75,7 @@ public interface ReqRespStore {
         @JsonDeserialize(as=ArrayList.class)
 		public final List<Map.Entry<String, String>> hdrs;
 		public final String body;
-		
+
 	}
 
 	enum Types {
@@ -85,13 +88,18 @@ public interface ReqRespStore {
 		ResponseCompareTemplate,
 		RequestCompareTemplate,
 		ReplayStats,
-        FuncReqResp
-	}
+        FuncReqResp,
+        TemplateSet,
+        TemplateUpdateOperationSet,
+        GoldenSet,
+        RecordingOperationSetMeta,
+        RecordingOperationSet
+    }
 
 	boolean save(Request req);
-	
+
 	boolean save(Response resp);
-		
+
 	/**
 	 * @param queryrequest
 	 * @param mspec - the matching specification
@@ -112,7 +120,7 @@ public interface ReqRespStore {
 
     /**
 	 * @param reqid
-	 * @return the matching response on the reqid 
+	 * @return the matching response on the reqid
 	 */
 	Optional<Response> getResponse(String reqid);
 
@@ -135,13 +143,13 @@ public interface ReqRespStore {
 	 */
 	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
 
-	
+
 	/**
 	 * @param customerid
 	 * @param app
 	 * @param collection
 	 * @param reqids
-	 * @param paths 
+	 * @param paths
 	 * @param rrtype
 	 * @return
 	 */
@@ -150,7 +158,7 @@ public interface ReqRespStore {
 
 	/**
 	 * @param replay
-	 * @return 
+	 * @return
 	 */
 	boolean saveReplay(Replay replay);
 
@@ -168,7 +176,7 @@ public interface ReqRespStore {
 	 * @param templateAsJson
 	 * @return
 	 */
-	boolean saveCompareTemplate(TemplateKey key, String templateAsJson);
+	String saveCompareTemplate(TemplateKey key, String templateAsJson);
 
 	/**
 	 * Retrieve an analysis template from the database for
@@ -210,34 +218,34 @@ public interface ReqRespStore {
 				  .writeValueAsString(e);
 
 		System.out.println(String.format("Json string: %s", jr));
-		
-		TypeReference<Map.Entry<String, String>> tR 
+
+		TypeReference<Map.Entry<String, String>> tR
 		  = new TypeReference<Map.Entry<String, String>>() {};
 		Map.Entry<String, String> e2 = m1.readValue(jr, tR);
 		System.out.println("Object read back: " + e2.toString());
-		
-		
+
+
 		List<Map.Entry<String, String>> meta = new ArrayList<AbstractMap.Entry<String, String>>();
 		meta.add(new SimpleEntry<String, String>("m1", "m1v1"));
 		meta.add(new SimpleEntry<String, String>("m1", "m1v2"));
 		meta.add(new SimpleEntry<String, String>("m2", "m2v1"));
 		meta.add(new SimpleEntry<String, String>("m2", "m2v1"));
-		
+
 		List<Map.Entry<String, String>> hdrs = new ArrayList<AbstractMap.Entry<String, String>>();
 		hdrs.add(new SimpleEntry<String, String>("h1", "h1v1"));
 		hdrs.add(new SimpleEntry<String, String>("h1", "h1v2"));
 		hdrs.add(new SimpleEntry<String, String>("h2", "h2v1"));
 		hdrs.add(new SimpleEntry<String, String>("h2", "h2v1"));
-		
+
 		ReqResp rr = new ReqResp("/p1?a=av", meta, hdrs, "body 1");
-		
+
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonResult = mapper.writerWithDefaultPrettyPrinter()
 		  .writeValueAsString(rr);
 
 		System.out.println(String.format("Json string: %s", jsonResult));
-		
-		TypeReference<ReqResp> typeRef 
+
+		TypeReference<ReqResp> typeRef
 		  = new TypeReference<ReqResp>() {};
 		ReqResp rr2 = mapper.readValue(jsonResult, typeRef);
 		System.out.println("Object read back: " + rr2.toString());
@@ -247,7 +255,7 @@ public interface ReqRespStore {
 
 		System.out.println(String.format("Json string: %s", jsonResult2));
 
-		
+
 	}
 
 	/**
@@ -258,7 +266,7 @@ public interface ReqRespStore {
 
 	/**
 	 * @param res
-	 * @return 
+	 * @return
 	 */
 	boolean saveResult(ReqRespMatchResult res);
 
@@ -271,15 +279,15 @@ public interface ReqRespStore {
 	/**
 	 * @param customerid
 	 * @param app
-	 * @param instanceid 
+	 * @param instanceid
 	 * @param status
 	 * @return
 	 */
-	Stream<Recording> getRecording(Optional<String> customerid, Optional<String> app, 
+	Stream<Recording> getRecording(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid, Optional<RecordingStatus> status);
 
 
-	
+
 	/**
 	 * @param customerid
 	 * @param app
@@ -309,7 +317,7 @@ public interface ReqRespStore {
 	Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid);
 
-	
+
 	/**
 	 * @param recording
 	 * @return
@@ -324,13 +332,13 @@ public interface ReqRespStore {
 	 */
 	Optional<Recording> getRecordingByCollection(String customerid, String app,
 			String collection);
-	
-	
-	
+
+
+
 	/**
 	 * @param replayid
 	 * @param service
-	 * @return If service is empty, return aggregate results for all services. If 
+	 * @return If service is empty, return aggregate results for all services. If
 	 * service is non-empty, return results for all paths in the service if bypath is true
 	 * This also returns the rollups (service, path), (service) ()
 	 */
@@ -347,7 +355,7 @@ public interface ReqRespStore {
 			Optional<String> instanceid);
 
 	/**
-	 * 
+	 *
 	 */
 	boolean commit();
 
@@ -506,4 +514,49 @@ public interface ReqRespStore {
 	boolean storeFunctionReqResp(FnReqResponse funcReqResponse, String collection);
 
 	Optional<FnResponse> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection);
+
+    /**
+     * TODO instead of the source template set (maybe we want to specify source golden set id/version)
+     * Create a new template update operation set
+     * @param customer Customer
+     * @param app Application Name
+     * @param sourceTemplateSetVersion The version of the source template set (stand in for id) on which these
+     *                                 operations will be applied
+     * @return Id of the newly constructed template update operation set
+     */
+	String createTemplateUpdateOperationSet(String customer, String app, String sourceTemplateSetVersion) throws Exception;
+
+    /**
+     * Save an update template update operation set
+     * @param templateUpdateOperationSet Updated template update operation set
+     * @return success flag
+     */
+    boolean saveTemplateUpdateOperationSet(TemplateUpdateOperationSet templateUpdateOperationSet) throws Exception;
+
+    /**
+     * Fetch a template update operation set given id
+     * @param templateUpdateOperationSetId Template Update Operation Set Id
+     * @return The corresponding operation set object
+     */
+	Optional<TemplateUpdateOperationSet> getTemplateUpdateOperationSet(String templateUpdateOperationSetId);
+
+	//boolean updateCollection(Recording sourceRecording, List<ReqRespUpdateOperation> recordingUpdateSpec);
+
+    /**
+     * Save a template set
+     * @param templateSet Template Set
+     * @return success flag
+     */
+	String saveTemplateSet(TemplateSet templateSet) throws Exception;
+
+    Optional<TemplateSet> getTemplateSet(String templateSetId);
+
+    Optional<TemplateSet> getLatestTemplateSet(String customer, String app);
+
+    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
+
+    Optional<GoldenSet> getGoldenSet(String goldenSetId);
+
+    List<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId);
+
 }

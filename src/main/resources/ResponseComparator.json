@@ -82,7 +82,7 @@
                 { "op": "noop",     "path": "/body/id",     "value": 0,                                                 "resolution": "ERR_ValTypeMismatch" },
                 { "op": "replace",  "path": "/body/year",   "value": 1000,                  "fromValue": 1595,          "resolution": "ERR_ValMismatch"     },
                 { "op": "replace",  "path": "/body/type",   "value": "softcopy",            "fromValue": "paperback",   "resolution": "OK_OptionalMismatch" },
-                { "op": "replace",  "path": "/body/pages",  "value": 3.14,                  "fromValue": 200,           "resolution": "ERR_ValTypeMismatch" }
+                { "op": "replace",  "path": "/body/pages",  "value": 3.14,                  "fromValue": 200,           "resolution": "OK_OtherValInvalid" }
             ]
         }
     },

@@ -43,7 +43,6 @@ import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.core.ReqMatchSpec;
 import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
@@ -193,14 +192,22 @@ public class MockServiceHTTP {
 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-		Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(customerid), Optional.of(app), Optional.of(instanceid));
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(customerid),
+            Optional.of(app),
+            Optional.of(instanceid));
+
+
+		Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams, 
 	    		headers.getRequestHeaders(), service, collection, 
 	    		Optional.of(RRBase.RR.Record), 
 	    		Optional.of(customerid), 
 	    		Optional.of(app));
 
-	    TemplateKey key = new TemplateKey(customerid, app , service , path , TemplateKey.Type.Request);
+        Optional<String> templateVersion =
+            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> replay.templateVersion));
+
+	    TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)

@@ -32,29 +32,33 @@ public class Analysis {
 		Completed,
 		Error
 	}
-	
-		
+
+
 	/**
 	 * @param replayid
 	 */
-	public Analysis(String replayid, int reqcnt) {
+	public Analysis(String replayid, int reqcnt, Optional<String> templateVersion) {
 		this.replayid = replayid;
 		this.status = Status.Running;
 		this.reqcnt = reqcnt;
 		this.timestamp = System.currentTimeMillis();
+		this.templateVersion = templateVersion;
 	}
 
 
 
 	/**
 	 * This constructor is only for jackson json deserialization
-	 */
-	
-	private Analysis() {
+     * @param replayid
+     * @param reqcnt
+     */
+
+	private Analysis(String replayid, int reqcnt) {
 		super();
 		this.replayid = "";
 		// Assuming this value will be overwritten during json deserialization
 		this.timestamp = System.currentTimeMillis();
+		this.templateVersion = Optional.empty();
 	}
 
 
@@ -63,9 +67,9 @@ public class Analysis {
 	public int reqcnt=0; // total number of requests
 	public int reqmatched=0; // number of requests exactly matched
 	public int reqpartiallymatched=0; // number of requests partially matched
-	public int reqsinglematch=0; // matched with only one request in replay 
+	public int reqsinglematch=0; // matched with only one request in replay
 	public int reqmultiplematch=0; // matched multiple requests in the replay
-	public int reqnotmatched=0; // not matched 
+	public int reqnotmatched=0; // not matched
 	public int respmatched=0; // resp matched exactly
 	public int resppartiallymatched=0; // resp matched based on template
 	public int respnotmatched=0; // not matched
@@ -75,16 +79,18 @@ public class Analysis {
 	 * reqanalyzed = reqmatched + reqpartiallymatched  + reqnotmatched
 	 * reqanalyzed = reqsinglematch + reqmultiplematch + reqnotmatched
 	 * reqanalyzed - reqnotmatched = respmatched + resppartiallymatched + respnotmatched
-	 * 
+	 *
 	 */
 	public int reqanalyzed;
+    public final Optional<String> templateVersion;
 
 
-	public enum ReqMatchType {
+
+    public enum ReqMatchType {
 		ExactMatch,
 		PartialMatch,
 		NoMatch;
-		
+
 		public ReqMatchType And(ReqMatchType other) {
 			switch (this) {
 				case NoMatch: return NoMatch;
@@ -164,11 +170,11 @@ public class Analysis {
 		}
 	}
 
-	
-	public static class ReqRespMatchResult {
-		
-		
-		
+
+	public static class  ReqRespMatchResult {
+
+
+
 		/**
 		 * @param recordreqid
 		 * @param replayreqid
@@ -259,5 +265,5 @@ public class Analysis {
 		final public String path;
 		final public String replayid;
 	}
-	
+
 }

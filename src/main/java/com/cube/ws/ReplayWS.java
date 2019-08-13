@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
+import com.cube.dao.Recording;
 import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStore;
@@ -87,12 +88,23 @@ public class ReplayWS {
             return errResp.get();
         }
 
+        Optional<Recording> recording = rrstore.getRecordingByCollection(customerid, app, collection);
+        if (recording.isEmpty()) {
+            LOGGER.error(String.format("Cannot init Replay since collection %s does not exist", collection));
+            return Response.status(Status.NOT_FOUND).entity(String.format("Collection %s does not exist", collection)).build();
+        }
+
+        // override templateSet specified in recording if it is passed in the param
+        Optional<String> templateVersion =
+            Optional.ofNullable(formParams.getFirst("templateSet")).or(() -> recording.flatMap(r -> r.templateVersion));
+
+
         return endpoint
             .map(e -> {
                 return instanceid.map(inst -> {
                     // TODO: introduce response transforms as necessary
                     return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null, samplerate
-                        , intermediateServices)
+                        , intermediateServices, templateVersion)
                         .map(replay -> {
                             String json;
                             try {
