@@ -1448,12 +1448,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
                                     ReplayStatus status) {
-        return getReplay(customerid,app,instanceid,status,Optional.of(1),Optional.empty());
+        return getReplay(customerid,app,instanceid,List.of(status),Optional.of(1),Optional.empty());
     }
 
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
-            ReplayStatus status, Optional<Integer> numofResults, Optional<String> collection) {
+            List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -1461,7 +1461,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, customerid);
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceid);
-        addFilter(query, REPLAYSTATUSF, status.toString());
+        addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
         addFilter(query, COLLECTIONF , collection);
         // Heuristic: getting the latest replayid if there are multiple.
         // TODO: what happens if there are multiple replays running for the

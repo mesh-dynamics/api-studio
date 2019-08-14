@@ -198,7 +198,7 @@ public interface ReqRespStore {
      * @return
      */
 	Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
-                             ReplayStatus status, Optional<Integer> numOfResults, Optional<String> collection);
+                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
 
 	/**
      * @param customerid

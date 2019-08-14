@@ -336,7 +336,7 @@ public class AnalyzeWS {
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
             map(Integer::valueOf).or(() -> Optional.of(20));
         Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), Optional.of(instanceId),
-            Replay.ReplayStatus.Completed, numResults, collection);
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection);
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
             String creationTimeStamp = replay.creationTimeStamp;

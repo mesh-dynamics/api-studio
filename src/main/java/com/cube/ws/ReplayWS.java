@@ -6,6 +6,7 @@ package com.cube.ws;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -76,9 +77,11 @@ public class ReplayWS {
 
         // TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
         Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
-        String s = replays.map(r -> r.replayid).reduce("", (res, x) -> res + "; " + x);
-        if (!s.isEmpty()) {
-            return Response.status(Status.CONFLICT).entity(String.format("{\"Force complete these replay ids: %s\"}", s)).build();
+        var ref = new Object() {Integer count = 0;};
+        String s = replays.map(r -> {ref.count ++; return r.replayid;})
+            .collect(Collectors.joining("\" , \"" , "[\"" , "\"]"));
+        if (ref.count != 0) {
+            return Response.status(Status.FORBIDDEN).entity(String.format("{\"Force Complete\" : %s}", s)).build();
         }
 
         // check if recording or replay is ongoing for (customer, app, instanceid)
@@ -119,7 +122,7 @@ public class ReplayWS {
             }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
     }
 
-	
+
 	@POST
     @Path("transforms/{customerid}/{app}/{collection}/{replayid}")
     @Consumes("application/x-www-form-urlencoded")
@@ -176,8 +179,8 @@ public class ReplayWS {
 
         return resp;
     }
-	
-	
+
+
 	@POST
 	@Path("forcecomplete/{replayid}")
     public Response forceComplete(@Context UriInfo ui,
