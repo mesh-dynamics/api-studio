@@ -10,6 +10,12 @@ steps:
       password: 'S9qe2fJ8*vtk'
       repo: cubeiocorp/cubeuibackend
       tags: ${DRONE_COMMIT}
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "500Mi"
+      limits:
+        memory: "500Mi"
     when:
       event:
         exclude:
