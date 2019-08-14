@@ -49,6 +49,21 @@ steps:
         exclude:
         - pull_request
 
+  - name: deploy_demo
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
+      namespace: cube
+      deployment: cubeui-backend-v1
+      repo: cubeiocorp/cubeuibackend
+      container: cubeui-backend
+      tag: ${DRONE_COMMIT}
+    when:
+      event:
+        exclude:
+        - pull_request
+
 trigger:
   branch:
   - master
