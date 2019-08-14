@@ -57,6 +57,7 @@ public class LoginController {
             model.put("access_token", token);
             model.put("expires_in", jwtTokenProvider.getValidity());
             model.put("token_type", "Bearer");
+            model.put("customer_name", user.getCustomer().getName());
             return ok(model);
         } catch (AuthenticationException ex) {
             return status(UNAUTHORIZED)
