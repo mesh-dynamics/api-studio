@@ -43,16 +43,7 @@ public class CubeSavepoint implements Savepoint {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, gsFnKey, false, this.savepointInstanceId);
-        }
-
-        int toReturn = savepoint.getSavepointId();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, gsFnKey, true, this.savepointInstanceId);
-        }
-
-        return toReturn;
+        return (int) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> savepoint.getSavepointId(), this.savepointInstanceId);
     }
 
     @Override
@@ -63,17 +54,6 @@ public class CubeSavepoint implements Savepoint {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gsnFnKey, false,
-                    this.savepointInstanceId);
-        }
-
-        String toReturn = savepoint.getSavepointName();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config,
-                    gsnFnKey, true, this.savepointInstanceId);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, gsnFnKey, (fnArgs) -> savepoint.getSavepointName(), this.savepointInstanceId);
     }
 }

@@ -1,11 +1,7 @@
 package io.cube;
 
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
-import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponseObj;
 import org.apache.logging.log4j.LogManager;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
@@ -28,7 +24,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
-import java.util.Optional;
 
 public class CubeResultSet implements ResultSet {
 
@@ -37,12 +32,11 @@ public class CubeResultSet implements ResultSet {
     private final CubeStatement cubeStatement;
     private final Config config;
     private final int resultSetInstanceId;
-    private CubeDatabaseMetaData metaData;
-    private String query;
+    private final CubeDatabaseMetaData metaData;
+    private final String query;
     private int rowIndex;
     private int columnIndex; /* Needed for wasNull call */
 
-    private FnKey resultSetFnKey;
     private FnKey nxtFnKey;
     private FnKey wnFnKey;
     private FnKey gsFnKey;
@@ -55,8 +49,6 @@ public class CubeResultSet implements ResultSet {
     private FnKey gshFnKey;
     private FnKey gshcFnKey;
     private FnKey glclFnKey;
-    private FnKey gcFnkey;
-    private FnKey gbFnkey;
     private FnKey gbyFnKey;
     private FnKey ifFnKey;
     private FnKey ilFnKey;
@@ -90,43 +82,91 @@ public class CubeResultSet implements ResultSet {
     private FnKey fcFnKey;
     private FnKey prevFnKey;
     private FnKey icFnKey;
+    private FnKey gbysFnKey;
+    private FnKey gbyscFnKey;
+    private FnKey goFnKey;
+    private FnKey gocFnKey;
+    private FnKey gfdFnKey;
+    private FnKey gfsFnKey;
+    private FnKey gftFnKey;
+    private FnKey gfcoFnKey;
+    private FnKey ruFnKey;
+    private FnKey riFnKey;
+    private FnKey rdFnKey;
+    private FnKey gobFnKey;
+    private FnKey gobjFnKey;
+    private FnKey guFnKey;
+    private FnKey gurFnKey;
+    private FnKey ghFnKey;
+    private FnKey gnsFnKey;
+    private FnKey gnscFnKey;
+    private FnKey abFnKey;
+    private FnKey reFnKey;
 
-    public CubeResultSet(Config config, int resultSetInstanceId) {
-        this.resultSet = null;
-        this.cubeStatement = null;
-        this.rowIndex = -1;
-        this.columnIndex = -1;
-        this.config = config;
-        this.resultSetInstanceId = resultSetInstanceId;
+    public static class Builder {
+        private final Config config;
+
+        private ResultSet resultSet = null;
+        private CubeStatement cubeStatement = null;
+        private CubeDatabaseMetaData metaData = null;
+        private int resultSetInstanceId = System.identityHashCode(this);
+        private String query = null;
+        private int rowIndex = 0;
+        private int columnIndex = 0;
+
+        public Builder(Config config) {
+            this.config = config;
+        }
+
+        public Builder resultSet(ResultSet val) {
+            resultSet = val;
+            return this;
+        }
+
+        public Builder cubeStatement(CubeStatement val) {
+            cubeStatement = val;
+            return this;
+        }
+
+        public Builder metaData(CubeDatabaseMetaData val) {
+            metaData = val;
+            return this;
+        }
+
+        public Builder resultSetInstanceId(int val) {
+            resultSetInstanceId = val;
+            return this;
+        }
+
+        public Builder query(String val) {
+            query = val;
+            return this;
+        }
+
+        public Builder rowIndex(int val) {
+            rowIndex = val;
+            return this;
+        }
+
+        public Builder columnIndex(int val) {
+            columnIndex = val;
+            return this;
+        }
+
+        public CubeResultSet build() {
+            return new CubeResultSet(this);
+        }
     }
 
-    public CubeResultSet (ResultSet resultSet, CubeStatement cubeStatement, Config config) {
-        this.resultSet = resultSet;
-        this.cubeStatement = cubeStatement;
-        this.rowIndex = -1;
-        this.columnIndex = -1;
-        this.config = config;
-        this.resultSetInstanceId = System.identityHashCode(this);
-    }
-
-    public CubeResultSet (ResultSet resultSet, CubeDatabaseMetaData metaData, Config config) {
-        this.resultSet = resultSet;
-        this.cubeStatement = null;
-        this.metaData = metaData;
-        this.rowIndex = -1;
-        this.columnIndex = -1;
-        this.config = config;
-        this.resultSetInstanceId = System.identityHashCode(this);
-    }
-
-    public CubeResultSet (ResultSet resultSet, String query, CubeStatement cubeStatement, Config config) {
-        this.resultSet = resultSet;
-        this.query = query;
-        this.cubeStatement = cubeStatement;
-        this.rowIndex = -1;
-        this.columnIndex = -1;
-        this.config = config;
-        this.resultSetInstanceId = System.identityHashCode(this);
+    private CubeResultSet(Builder builder) {
+        config = builder.config;
+        resultSet = builder.resultSet;
+        cubeStatement = builder.cubeStatement;
+        metaData = builder.metaData;
+        resultSetInstanceId = builder.resultSetInstanceId;
+        query = builder.query;
+        rowIndex = builder.rowIndex;
+        columnIndex = builder.columnIndex;
     }
 
     public int getResultSetInstanceId() {
@@ -141,25 +181,17 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        boolean toReturn = false;
-        if (config.intentResolver.isIntentToMock()) {
-            toReturn = Utils.recordOrMockBoolean(toReturn, config, nxtFnKey, false, this.resultSetInstanceId, this.rowIndex);
-            this.rowIndex = toReturn ? this.rowIndex++ : -1;
-            return toReturn;
-        }
-
-        toReturn = resultSet.next();
-        this.rowIndex = toReturn ? this.rowIndex++ : -1;
-        if (config.intentResolver.isIntentToRecord()) {
-            Utils.recordOrMockBoolean(toReturn, config, nxtFnKey, true, this.resultSetInstanceId, this.rowIndex);
-        }
+        boolean toReturn = (boolean) Utils.recordOrMock(config, nxtFnKey, (fnArgs) -> resultSet.next(),
+                this.resultSetInstanceId, this.rowIndex);
+        this.rowIndex = toReturn ? this.rowIndex++ : 0;
+        this.columnIndex = 0;
 
         return toReturn;
     }
 
     @Override
     public void close() throws SQLException {
-        this.rowIndex = -1;
+        this.rowIndex = 0;
         if (!config.intentResolver.isIntentToMock()) {
             resultSet.close();
         }
@@ -173,16 +205,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, wnFnKey, false, this.resultSetInstanceId, this.rowIndex, this.columnIndex);
-        }
-
-        boolean toReturn = resultSet.wasNull();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, wnFnKey, true, this.resultSetInstanceId, this.rowIndex, this.columnIndex);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, wnFnKey, (fnArgs) -> resultSet.wasNull(),
+                this.resultSetInstanceId, this.rowIndex, this.columnIndex);
     }
 
     @Override
@@ -194,16 +218,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gsFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        String toReturn = resultSet.getString(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config, gsFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getString(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -215,16 +232,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, gbFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        boolean toReturn = resultSet.getBoolean(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, gbFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, gbFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getBoolean(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -236,16 +246,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return (byte) Utils.recordOrMockLong(-1, config, gbyFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        byte toReturn = resultSet.getByte(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (byte) Utils.recordOrMockLong(toReturn, config, gbyFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getByte(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -257,16 +260,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return (short) Utils.recordOrMockLong(-1, config, gshcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        short toReturn = resultSet.getShort(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (short) Utils.recordOrMockLong(toReturn, config, gshcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (short) Utils.recordOrMock(config, gshcFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getShort(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -278,16 +274,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, gicFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        int toReturn = resultSet.getInt(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, gicFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (int) Utils.recordOrMock(config, gicFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getInt(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -299,16 +288,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockLong(-1, config, glcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        long toReturn = resultSet.getLong(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockLong(toReturn, config, glcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (long) Utils.recordOrMock(config, glcFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getLong(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -320,26 +302,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gfFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnIndex);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (float) ret.retVal;
-        }
-
-        float toReturn = resultSet.getFloat(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gfFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (float) Utils.recordOrMock(config, gfFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getFloat(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -351,26 +316,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gdFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnIndex);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (double) ret.retVal;
-        }
-
-        double toReturn = resultSet.getDouble(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gdFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (Double) Utils.recordOrMock(config, gdFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getDouble(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -382,21 +330,24 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBigDecimal(BigDecimal.valueOf(-1), config, gbdcsFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex, scale);
-        }
-
-        BigDecimal toReturn = resultSet.getBigDecimal(columnIndex, scale);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBigDecimal(toReturn, config, gbdcsFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex, scale);
-        }
-
-        return toReturn;
+        return (BigDecimal) Utils.recordOrMock(config, gbdcsFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            int fnArg2 = (int)fnArgs[1];
+            return resultSet.getBigDecimal(fnArg1, fnArg2);}, columnIndex, scale, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        return new byte[0];
+        if (null == gbysFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbysFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = columnIndex;
+        return (byte[]) Utils.recordOrMock(config, gbysFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getBytes(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -408,16 +359,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockDate(null, config, gdciFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        Date toReturn = resultSet.getDate(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockDate(toReturn, config, gdciFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (Date) Utils.recordOrMock(config, gdciFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getDate(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -429,16 +373,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTime(null, config, gtiFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        Time toReturn = resultSet.getTime(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTime(toReturn, config, gtiFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (Time) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getTime(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -450,30 +387,26 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTimestamp(null, config, gtFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        Timestamp toReturn = resultSet.getTimestamp(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTimestamp(toReturn, config, gtFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        return (Timestamp) Utils.recordOrMock(config, gtFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getTimestamp(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -485,16 +418,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gscFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        String toReturn = resultSet.getString(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config, gscFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (String) Utils.recordOrMock(config, gscFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getString(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -505,16 +432,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, gbcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        boolean toReturn = resultSet.getBoolean(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, gbcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (boolean) Utils.recordOrMock(config, gbcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getBoolean(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -525,16 +446,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (byte) Utils.recordOrMockLong(-1, config, gbyFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        byte toReturn = resultSet.getByte(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (byte) Utils.recordOrMockLong(toReturn, config, gbyFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getByte(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -545,16 +460,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (short)Utils.recordOrMockLong(-1, config, gshFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        short toReturn = resultSet.getShort(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (short)Utils.recordOrMockLong(toReturn, config, gshFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (short) Utils.recordOrMock(config, gshFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getShort(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -565,16 +474,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, giFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        int toReturn = resultSet.getInt(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, giFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (int) Utils.recordOrMock(config, giFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getInt(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -585,16 +488,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockLong(-1, config, glclFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        long toReturn = resultSet.getLong(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockLong(toReturn, config, glclFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (long) Utils.recordOrMock(config, glclFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getLong(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -605,26 +502,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gfcFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnLabel);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (float) ret.retVal;
-        }
-
-        float toReturn = resultSet.getFloat(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gfcFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (float) Utils.recordOrMock(config, gfcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getFloat(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -635,26 +516,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gdcFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnLabel);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (double) ret.retVal;
-        }
-
-        double toReturn = resultSet.getDouble(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gdcFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (double) Utils.recordOrMock(config, gdcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getDouble(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -665,21 +530,25 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBigDecimal(BigDecimal.valueOf(-1), config, gbdclsFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel, scale);
-        }
-
-        BigDecimal toReturn = resultSet.getBigDecimal(columnLabel, scale);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBigDecimal(toReturn, config, gbdclsFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel, scale);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (BigDecimal) Utils.recordOrMock(config, gbdclsFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            int fnArg2 = (int)fnArgs[1];
+            return resultSet.getBigDecimal(fnArg1, fnArg2);}, columnLabel, scale, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return new byte[0];
+        if (null == gbyscFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbyscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = findColumn(columnLabel);
+        return (byte[]) Utils.recordOrMock(config, gbyscFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getBytes(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -690,16 +559,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockDate(null, config, gdclFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        Date toReturn = resultSet.getDate(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockDate(toReturn, config, gdclFnKey, true, this.resultSetInstanceId, this,rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (Date) Utils.recordOrMock(config, gdclFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getDate(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -710,16 +573,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTime(null, config, gticlFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        Time toReturn = resultSet.getTime(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTime(toReturn, config, gticlFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (Time) Utils.recordOrMock(config, gticlFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getTime(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -730,30 +587,27 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTimestamp(null, config, gtclFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        Timestamp toReturn = resultSet.getTimestamp(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTimestamp(toReturn, config, gtclFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (Timestamp) Utils.recordOrMock(config, gtclFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getTimestamp(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -765,26 +619,7 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gwFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(),
-                    this.resultSetInstanceId, this.rowIndex);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (SQLWarning) ret.retVal;
-        }
-
-        SQLWarning warnings = resultSet.getWarnings();
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gwFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), warnings, FnReqResponse.RetStatus.Success,
-                    Optional.empty(), this.resultSetInstanceId, this.rowIndex);
-        }
-
-        return warnings;
+        return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> resultSet.getWarnings(), this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -802,33 +637,41 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gcnFnKey, false,
-                    this.resultSetInstanceId);
-        }
-
-        String toReturn = resultSet.getCursorName();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config,
-                    gcnFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, gtclFnKey, (fnArgs) -> resultSet.getCursorName(), this.resultSetInstanceId);
     }
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return null;
+        if (null == goFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            goFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = columnIndex;
+        return Utils.recordOrMock(config, goFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getObject(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        return null;
+        if (null == gocFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gocFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = findColumn(columnLabel);
+        return Utils.recordOrMock(config, gocFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getObject(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -839,25 +682,20 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, fcFnKey, false, this.resultSetInstanceId, columnLabel);
-        }
-
-        int toReturn = resultSet.findColumn(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, fcFnKey, true, this.resultSetInstanceId, columnLabel);
-        }
-
-        return toReturn;
+        return (int)Utils.recordOrMock(config, fcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.findColumn(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -869,16 +707,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBigDecimal(BigDecimal.valueOf(-1), config, gbdFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        BigDecimal toReturn = resultSet.getBigDecimal(columnIndex);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBigDecimal(toReturn, config, gbdFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex);
-        }
-
-        return toReturn;
+        this.columnIndex = columnIndex;
+        return (BigDecimal) Utils.recordOrMock(config, gbdFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getBigDecimal(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -889,16 +721,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBigDecimal(BigDecimal.valueOf(-1), config, gbdcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        BigDecimal toReturn = resultSet.getBigDecimal(columnLabel);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBigDecimal(toReturn, config, gbdcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (BigDecimal) Utils.recordOrMock(config, gbdcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getBigDecimal(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -909,16 +735,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, ibfFnKey, false, this.resultSetInstanceId);
-        }
-
-        boolean toReturn = resultSet.isBeforeFirst();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, ibfFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, ibfFnKey, (fnArgs) -> resultSet.isBeforeFirst(),
+                this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -929,16 +747,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, ialFnKey, false, this.resultSetInstanceId);
-        }
-
-        boolean toReturn = resultSet.isAfterLast();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, ialFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, ialFnKey, (fnArgs) -> resultSet.isAfterLast(),
+                this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -949,16 +759,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, ifFnKey, false, this.resultSetInstanceId);
-        }
-
-        boolean toReturn = resultSet.isFirst();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, ifFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, ifFnKey, (fnArgs) -> resultSet.isFirst(),
+                this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -969,21 +771,13 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, ilFnKey, false, this.resultSetInstanceId);
-        }
-
-        boolean toReturn = resultSet.isLast();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, ilFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, ilFnKey, (fnArgs) -> resultSet.isLast(),
+                this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public void beforeFirst() throws SQLException {
-        this.rowIndex = -1;
+        this.rowIndex = 0;
         if (!config.intentResolver.isIntentToMock()) {
             resultSet.beforeFirst();
         }
@@ -991,7 +785,7 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public void afterLast() throws SQLException {
-        this.rowIndex = -1;
+        this.rowIndex = 0;
         if (!config.intentResolver.isIntentToMock()) {
             resultSet.afterLast();
         }
@@ -1005,18 +799,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        boolean toReturn;
-        if (config.intentResolver.isIntentToMock()) {
-            toReturn = Utils.recordOrMockBoolean(false, config, fFnKey, false, this.resultSetInstanceId);
-            this.rowIndex = toReturn ? 0 : -1;
-            return toReturn;
-        }
-
-        toReturn = resultSet.first();
-        this.rowIndex = toReturn ? 0 : -1;
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, fFnKey, true, this.resultSetInstanceId);
-        }
+        boolean toReturn = (boolean) Utils.recordOrMock(config, fFnKey, (fnArgs) -> resultSet.first(),
+                this.resultSetInstanceId);
+        this.rowIndex = toReturn ? 1 : 0;
 
         return toReturn;
     }
@@ -1029,19 +814,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        boolean toReturn;
-        if (config.intentResolver.isIntentToMock()) {
-            this.rowIndex = (int)Utils.recordOrMockLong(-1, config, lFnKey, false, this.resultSetInstanceId);
-            return this.rowIndex == -1 ? false : true;
-        }
-
-        toReturn = resultSet.last();
-        this.rowIndex = toReturn ? resultSet.getRow() : -1;
-        if (config.intentResolver.isIntentToRecord()) {
-            Utils.recordOrMockLong(this.rowIndex, config, lFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        this.rowIndex = (int) Utils.recordOrMock(config, lFnKey, (fnArgs) -> resultSet.last() ? resultSet.getRow() : 0,
+                this.resultSetInstanceId);
+        return this.rowIndex == 0 ? false : true;
     }
 
     @Override
@@ -1052,26 +827,40 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, grFnKey, false, this.resultSetInstanceId, this.rowIndex);
+        return (int) Utils.recordOrMock(config, grFnKey, (fnArgs) -> resultSet.getRow(),
+                this.resultSetInstanceId, this.rowIndex);
+    }
+
+    @Override
+    public boolean absolute(int row) throws SQLException {
+        if (null == abFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            abFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
         }
 
-        int toReturn = resultSet.getRow();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, grFnKey, true, this.resultSetInstanceId, this.rowIndex);
-        }
+        boolean toReturn = (boolean) Utils.recordOrMock(config, abFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.absolute(fnArg);}, row, this.resultSetInstanceId, this.rowIndex);
+        this.rowIndex = toReturn && row >= 0 ? row : getRow();
 
         return toReturn;
     }
 
     @Override
-    public boolean absolute(int row) throws SQLException {
-        return false;
-    }
-
-    @Override
     public boolean relative(int rows) throws SQLException {
-        return false;
+        if (null == reFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            reFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        boolean toReturn = (boolean) Utils.recordOrMock(config, reFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.relative(fnArg);}, rows, this.resultSetInstanceId, this.rowIndex);
+        this.rowIndex = toReturn && rows >= 0 ? rows : getRow();
+
+        return toReturn;
     }
 
     @Override
@@ -1082,30 +871,10 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        //Everytime previous() is called, columnIndex to be reset
-        this.columnIndex = 0;
-
-        boolean toReturn = false;
-        if (config.intentResolver.isIntentToMock()) {
-            toReturn = Utils.recordOrMockBoolean(toReturn, config, prevFnKey, false, this.resultSetInstanceId, this.rowIndex);
-            if (toReturn) {
-                this.rowIndex--;
-            } else {
-                this.rowIndex = -1;
-            }
-            return toReturn;
-        }
-
-        toReturn = resultSet.previous();
-        if (config.intentResolver.isIntentToRecord()) {
-            Utils.recordOrMockBoolean(toReturn, config, prevFnKey, true, this.resultSetInstanceId, this.rowIndex);
-        }
-
-        if (toReturn) {
-            this.rowIndex--;
-        } else {
-            this.rowIndex = -1;
-        }
+        boolean toReturn = (boolean) Utils.recordOrMock(config, prevFnKey, (fnArgs) -> resultSet.previous(),
+                this.resultSetInstanceId, this.rowIndex);
+        this.rowIndex = toReturn ? this.rowIndex-- : 0;
+        this.columnIndex = 0; //reset column index
 
         return toReturn;
     }
@@ -1119,7 +888,14 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public int getFetchDirection() throws SQLException {
-        return 0;
+        if (null == gfdFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gfdFnKey, (fnArgs) -> resultSet.getFetchDirection(),
+                this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1131,32 +907,74 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public int getFetchSize() throws SQLException {
-        return 0;
+        if (null == gfsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gfsFnKey, (fnArgs) -> resultSet.getFetchSize(),
+                this.resultSetInstanceId);
     }
 
     @Override
     public int getType() throws SQLException {
-        return 0;
+        if (null == gftFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gftFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gftFnKey, (fnArgs) -> resultSet.getType(),
+                this.resultSetInstanceId);
     }
 
     @Override
     public int getConcurrency() throws SQLException {
-        return 0;
+        if (null == gfcoFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfcoFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gfcoFnKey, (fnArgs) -> resultSet.getConcurrency(),
+                this.resultSetInstanceId);
     }
 
     @Override
     public boolean rowUpdated() throws SQLException {
-        return false;
+        if (null == ruFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            ruFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, ruFnKey, (fnArgs) -> resultSet.rowUpdated(),
+                this.resultSetInstanceId);
     }
 
     @Override
     public boolean rowInserted() throws SQLException {
-        return false;
+        if (null == riFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            riFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, riFnKey, (fnArgs) -> resultSet.rowUpdated(),
+                this.resultSetInstanceId);
     }
 
     @Override
     public boolean rowDeleted() throws SQLException {
-        return false;
+        if (null == rdFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            rdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, rdFnKey, (fnArgs) -> resultSet.rowUpdated(),
+                this.resultSetInstanceId);
     }
 
     @Override
@@ -1476,16 +1294,27 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Statement getStatement() throws SQLException {
-        return null;
+        return this.cubeStatement;
     }
 
     @Override
     public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
-        return null;
+        if (null == gobFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gobFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = columnIndex;
+        return Utils.recordOrMock(config, gobFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Map<String, Class<?>> fnArg2 = (Map)fnArgs[1];
+            return resultSet.getObject(fnArg1, fnArg2);}, columnIndex, map, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -1503,31 +1332,46 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Array getArray(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
-        return null;
+        if (null == gobjFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gobjFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = findColumn(columnLabel);
+        return Utils.recordOrMock(config, gobjFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Map<String, Class<?>> fnArg2 = (Map)fnArgs[1];
+            return resultSet.getObject(fnArg1, fnArg2);}, columnLabel, map, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Ref getRef(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Array getArray(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -1539,16 +1383,11 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockDate(null, config, gdcicFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex, cal);
-        }
-
-        Date toReturn = resultSet.getDate(columnIndex, cal);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockDate(toReturn, config, gdcicFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex, cal);
-        }
-
-        return toReturn;
+        this.columnIndex = columnIndex;
+        return (Date) Utils.recordOrMock(config, gdcicFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return resultSet.getDate(fnArg1, fnArg2);}, columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1559,16 +1398,11 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockDate(null, config, gdclcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel, cal);
-        }
-
-        Date toReturn = resultSet.getDate(columnLabel, cal);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockDate(toReturn, config, gdclcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel, cal);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (Date) Utils.recordOrMock(config, gdclcFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return resultSet.getDate(fnArg1, fnArg2);}, columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1579,16 +1413,11 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTime(null, config, gticFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex, cal);
-        }
-
-        Time toReturn = resultSet.getTime(columnIndex, cal);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTime(toReturn, config, gticFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex, cal);
-        }
-
-        return toReturn;
+        this.columnIndex = columnIndex;
+        return (Time) Utils.recordOrMock(config, gticFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return resultSet.getTime(fnArg1, fnArg2);}, columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1599,16 +1428,11 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTime(null, config, gticlcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel, cal);
-        }
-
-        Time toReturn = resultSet.getTime(columnLabel, cal);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTime(toReturn, config, gticlcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel, cal);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (Time) Utils.recordOrMock(config, gticlcFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return resultSet.getTime(fnArg1, fnArg2);}, columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1619,16 +1443,11 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTimestamp(null, config, gtcFnKey, false, this.resultSetInstanceId, this.rowIndex, columnIndex, cal);
-        }
-
-        Timestamp toReturn = resultSet.getTimestamp(columnIndex, cal);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTimestamp(toReturn, config, gtcFnKey, true, this.resultSetInstanceId, this.rowIndex, columnIndex, cal);
-        }
-
-        return toReturn;
+        this.columnIndex = columnIndex;
+        return (Timestamp) Utils.recordOrMock(config, gtcFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return resultSet.getTimestamp(fnArg1, fnArg2);}, columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1639,26 +1458,39 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockTimestamp(null, config, gtccFnKey, false, this.resultSetInstanceId, this.rowIndex, columnLabel, cal);
-        }
-
-        Timestamp toReturn = resultSet.getTimestamp(columnLabel, cal);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockTimestamp(toReturn, config, gtccFnKey, true, this.resultSetInstanceId, this.rowIndex, columnLabel, cal);
-        }
-
-        return toReturn;
+        this.columnIndex = findColumn(columnLabel);
+        return (Timestamp) Utils.recordOrMock(config, gtccFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return resultSet.getTimestamp(fnArg1, fnArg2);}, columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public URL getURL(int columnIndex) throws SQLException {
-        return null;
+        if (null == guFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            guFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = columnIndex;
+        return (URL) Utils.recordOrMock(config, guFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getURL(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public URL getURL(String columnLabel) throws SQLException {
-        return null;
+        if (null == gurFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gurFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = findColumn(columnLabel);
+        return (URL) Utils.recordOrMock(config, gurFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getURL(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1719,11 +1551,13 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public RowId getRowId(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -1743,7 +1577,13 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public int getHoldability() throws SQLException {
-        return 0;
+        if (null == ghFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            ghFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, ghFnKey, (fnArgs) -> resultSet.getHoldability(), this.resultSetInstanceId);
     }
 
     @Override
@@ -1754,16 +1594,7 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, icFnKey, false, this.resultSetInstanceId);
-        }
-
-        boolean toReturn = resultSet.isClosed();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, icFnKey, true, this.resultSetInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> resultSet.isClosed(), this.resultSetInstanceId);
     }
 
     @Override
@@ -1796,21 +1627,25 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public NClob getNClob(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -1830,21 +1665,41 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public String getNString(int columnIndex) throws SQLException {
-        return null;
+        if (null == gnsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gnsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = columnIndex;
+        return (String) Utils.recordOrMock(config, gnsFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return resultSet.getNString(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public String getNString(String columnLabel) throws SQLException {
-        return null;
+        if (null == gnscFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gnscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.columnIndex = findColumn(columnLabel);
+        return (String) Utils.recordOrMock(config, gnscFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return resultSet.getNString(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
+        //TODO
         return null;
     }
 
@@ -2046,21 +1901,25 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
+        //TODO
         return null;
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        //TODO
         return false;
     }
 }

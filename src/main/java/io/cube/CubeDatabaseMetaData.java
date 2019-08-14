@@ -5,6 +5,7 @@ import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponseObj;
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
@@ -1262,11 +1263,11 @@ public class CubeDatabaseMetaData implements DatabaseMetaData {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubeResultSet mockResultSet = new CubeResultSet(config, (int)ret.retVal);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).metaData(this).resultSetInstanceId((int)ret.retVal).build();
             return mockResultSet;
         }
 
-        CubeResultSet cubeResultSet = new CubeResultSet(metaData.getTypeInfo(), this, config);
+        CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(metaData.getTypeInfo()).metaData(this).build();
         if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(gtiFnKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeResultSet.getResultSetInstanceId(), FnReqResponse.RetStatus.Success,

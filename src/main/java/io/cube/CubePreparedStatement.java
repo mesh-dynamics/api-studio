@@ -5,6 +5,7 @@ import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponseObj;
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.InputStream;
@@ -86,11 +87,11 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubeResultSet mockResultSet = new CubeResultSet(config, this.statementInstanceId);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)ret.retVal).build();
             return mockResultSet;
         }
 
-        CubeResultSet cubeResultSet = new CubeResultSet(preparedStatement.executeQuery(), this, config);
+        CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(preparedStatement.executeQuery()).cubeStatement(this).build();
         if (config.intentResolver.isIntentToRecord()) {
             config.recorder.record(statementFnKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeResultSet.getResultSetInstanceId(), FnReqResponse.RetStatus.Success,
