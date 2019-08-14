@@ -701,7 +701,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-        // App - Solr
+        // App - Postgres
         if(!serviceGraphRepository.existsById(70L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(70L);
@@ -710,7 +710,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-        // Instance - Solr
+        // Instance - Postgres
         if(!serviceGraphRepository.existsById(71L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(71L);
@@ -719,7 +719,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-        // Service/Graph - Solr
+        // Service/Graph - Postgres
         if(!serviceGraphRepository.existsById(72L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(72L);
@@ -728,7 +728,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-        // TestConfig - Solr
+        // TestConfig - Postgres
         if(!serviceGraphRepository.existsById(73L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(73L);
@@ -737,7 +737,7 @@ public class DataInitializer implements CommandLineRunner {
             serviceGraph.setApp(appRepository.findById(5L).get());
             this.serviceGraphRepository.save(serviceGraph);
         }
-        // Customer - Solr
+        // Customer - Postgres
         if(!serviceGraphRepository.existsById(74L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
             serviceGraph.setId(74L);
@@ -965,6 +965,7 @@ public class DataInitializer implements CommandLineRunner {
         // TestConfig - MovieInfo - List
         if(!testConfigRepository.existsById(99L)) {
             TestConfig testConfig = new TestConfig();
+            testConfig.setId(99L);
             testConfig.setApp(appRepository.findById(4L).get());
             testConfig.setTestConfigName("MovieInfo-List");
             testConfig.setGatewayService(serviceRepository.findById(21L).get());
@@ -982,6 +983,271 @@ public class DataInitializer implements CommandLineRunner {
             testPath.setId(101L);
             testPath.setPath(pathRepository.findById(87L).get());
             testPath.setTestConfig(testConfigRepository.findById(99L).get());
+            testPathRepository.save(testPath);
+        }
+        // Paths - Cube - Record/SetDefault
+        if(!pathRepository.existsById(102L)) {
+            Path path = new Path();
+            path.setId(102L);
+            path.setPath("/cs/health");
+            path.setService(serviceRepository.findById(48L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(103L)) {
+            Path path = new Path();
+            path.setId(103L);
+            path.setPath("/cs/setdefault/*");
+            path.setService(serviceRepository.findById(48L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Record/HTTP
+        if(!pathRepository.existsById(104L)) {
+            Path path = new Path();
+            path.setId(104L);
+            path.setPath("/cs/req");
+            path.setService(serviceRepository.findById(49L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(105L)) {
+            Path path = new Path();
+            path.setId(105L);
+            path.setPath("/cs/res");
+            path.setService(serviceRepository.findById(49L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(106L)) {
+            Path path = new Path();
+            path.setId(106L);
+            path.setPath("/cs/rr/*");
+            path.setService(serviceRepository.findById(49L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Record/Java
+        if(!pathRepository.existsById(107L)) {
+            Path path = new Path();
+            path.setId(107L);
+            path.setPath("/cs/fr");
+            path.setService(serviceRepository.findById(50L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Record/Record
+        if(!pathRepository.existsById(108L)) {
+            Path path = new Path();
+            path.setId(108L);
+            path.setPath("/cs/start/*");
+            path.setService(serviceRepository.findById(51L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(109L)) {
+            Path path = new Path();
+            path.setId(109L);
+            path.setPath("/cs/status/*");
+            path.setService(serviceRepository.findById(51L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(110L)) {
+            Path path = new Path();
+            path.setId(110L);
+            path.setPath("/cs/stop/*");
+            path.setService(serviceRepository.findById(51L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Record/Collections
+        if(!pathRepository.existsById(111L)) {
+            Path path = new Path();
+            path.setId(111L);
+            path.setPath("/cs/recordings");
+            path.setService(serviceRepository.findById(52L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(112L)) {
+            Path path = new Path();
+            path.setId(112L);
+            path.setPath("/cs/currentcollection");
+            path.setService(serviceRepository.findById(52L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(113L)) {
+            Path path = new Path();
+            path.setId(113L);
+            path.setPath("/cs/requests");
+            path.setService(serviceRepository.findById(52L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Replay/SetDefault
+        if(!pathRepository.existsById(114L)) {
+            Path path = new Path();
+            path.setId(114L);
+            path.setPath("/rs/transforms/*");
+            path.setService(serviceRepository.findById(53L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(115L)) {
+            Path path = new Path();
+            path.setId(115L);
+            path.setPath("/rs/health");
+            path.setService(serviceRepository.findById(53L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Replay/Replay
+        if(!pathRepository.existsById(116L)) {
+            Path path = new Path();
+            path.setId(116L);
+            path.setPath("/rs/init/*");
+            path.setService(serviceRepository.findById(54L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(117L)) {
+            Path path = new Path();
+            path.setId(117L);
+            path.setPath("/rs/status/*");
+            path.setService(serviceRepository.findById(54L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(118L)) {
+            Path path = new Path();
+            path.setId(118L);
+            path.setPath("/rs/forcecomplete/*");
+            path.setService(serviceRepository.findById(54L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(119L)) {
+            Path path = new Path();
+            path.setId(119L);
+            path.setPath("/rs/forcestart/*");
+            path.setService(serviceRepository.findById(54L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(120L)) {
+            Path path = new Path();
+            path.setId(120L);
+            path.setPath("/rs/start/*");
+            path.setService(serviceRepository.findById(54L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Analyze/Setup
+        if(!pathRepository.existsById(121L)) {
+            Path path = new Path();
+            path.setId(121L);
+            path.setPath("/as/registerTemplateApp/*");
+            path.setService(serviceRepository.findById(55L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(122L)) {
+            Path path = new Path();
+            path.setId(122L);
+            path.setPath("/as/registerTemplate/*");
+            path.setService(serviceRepository.findById(55L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(123L)) {
+            Path path = new Path();
+            path.setId(123L);
+            path.setPath("/as/health");
+            path.setService(serviceRepository.findById(55L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Analyze/Retrieval
+        if(!pathRepository.existsById(124L)) {
+            Path path = new Path();
+            path.setId(124L);
+            path.setPath("/as/aggrresult/*");
+            path.setService(serviceRepository.findById(56L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(125L)) {
+            Path path = new Path();
+            path.setId(125L);
+            path.setPath("/as/replayRes/*");
+            path.setService(serviceRepository.findById(56L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(126L)) {
+            Path path = new Path();
+            path.setId(126L);
+            path.setPath("/as/analysisRes/*");
+            path.setService(serviceRepository.findById(56L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(127L)) {
+            Path path = new Path();
+            path.setId(127L);
+            path.setPath("/as/timelineres/*");
+            path.setService(serviceRepository.findById(56L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(128L)) {
+            Path path = new Path();
+            path.setId(128L);
+            path.setPath("/as/analysisResByPath/*");
+            path.setService(serviceRepository.findById(56L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(129L)) {
+            Path path = new Path();
+            path.setId(129L);
+            path.setPath("/as/analysisResByReq/*");
+            path.setService(serviceRepository.findById(56L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Analyze/Analysis
+        if(!pathRepository.existsById(130L)) {
+            Path path = new Path();
+            path.setId(130L);
+            path.setPath("/as/registerTemplateApp/*");
+            path.setService(serviceRepository.findById(57L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(131L)) {
+            Path path = new Path();
+            path.setId(131L);
+            path.setPath("/as/registerTemplate/*");
+            path.setService(serviceRepository.findById(57L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(132L)) {
+            Path path = new Path();
+            path.setId(132L);
+            path.setPath("/as/health");
+            path.setService(serviceRepository.findById(57L).get());
+            pathRepository.save(path);
+        }
+        // Paths - Cube - Mock
+        if(!pathRepository.existsById(133L)) {
+            Path path = new Path();
+            path.setId(133L);
+            path.setPath("/ms/health");
+            path.setService(serviceRepository.findById(36L).get());
+            pathRepository.save(path);
+        }
+        if(!pathRepository.existsById(134L)) {
+            Path path = new Path();
+            path.setId(134L);
+            path.setPath("/ms/*");
+            path.setService(serviceRepository.findById(36L).get());
+            pathRepository.save(path);
+        }
+        // TestConfig - Cube - Analyze/Retrieval
+        if(!testConfigRepository.existsById(135L)) {
+            TestConfig testConfig = new TestConfig();
+            testConfig.setId(135L);
+            testConfig.setApp(appRepository.findById(5L).get());
+            testConfig.setTestConfigName("Cube-Analyze/Retrieval");
+            testConfig.setGatewayService(serviceRepository.findById(56L).get());
+            testConfigRepository.save(testConfig);
+        }
+        if(!testPathRepository.existsById(136L)) {
+            TestPath testPath = new TestPath();
+            testPath.setId(136L);
+            testPath.setPath(pathRepository.findById(127L).get());
+            testPath.setTestConfig(testConfigRepository.findById(135L).get());
+            testPathRepository.save(testPath);
+        }
+        if(!testPathRepository.existsById(137L)) {
+            TestPath testPath = new TestPath();
+            testPath.setId(137L);
+            testPath.setPath(pathRepository.findById(128L).get());
+            testPath.setTestConfig(testConfigRepository.findById(135L).get());
             testPathRepository.save(testPath);
         }
     }
