@@ -44,7 +44,7 @@ EXECUTE PROCEDURE trigger_set_timestamp();
 CREATE TABLE cube.instance (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  customer_id BIGINT REFERENCES cube.customer(id) ON DELETE CASCADE,
+  app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
   gateway_endpoint TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

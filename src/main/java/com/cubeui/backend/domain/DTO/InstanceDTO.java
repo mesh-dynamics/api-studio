@@ -13,7 +13,7 @@ public class InstanceDTO {
 
     private String name;
 
-    private Long customerId;
+    private Long appId;
 
     private String gatewayEndpoint;
 

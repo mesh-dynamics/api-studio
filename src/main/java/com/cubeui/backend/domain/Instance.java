@@ -27,9 +27,9 @@ public class Instance {
     String name;
 
     @ManyToOne
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "app_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    Customer customer;
+    App app;
 
     @Column(nullable = false)
     String gatewayEndpoint;

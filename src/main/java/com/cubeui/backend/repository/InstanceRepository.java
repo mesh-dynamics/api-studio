@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @RepositoryRestResource(path = "instances", collectionResourceRel = "instances", itemResourceRel = "instance")
 public interface InstanceRepository extends JpaRepository<Instance, Long> {
-    Optional<List<Instance>> findByCustomerId(Long customerId);
+    Optional<List<Instance>> findByAppId(Long appId);
 }

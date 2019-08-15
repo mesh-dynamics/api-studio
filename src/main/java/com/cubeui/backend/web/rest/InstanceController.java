@@ -1,9 +1,11 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.InstanceDTO;
 import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
@@ -15,9 +17,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
@@ -25,17 +30,25 @@ import static org.springframework.http.ResponseEntity.*;
 public class InstanceController {
 
     private InstanceRepository instanceRepository;
-    private CustomerService customerService;
+    private AppRepository appRepository;
 
-    public InstanceController(InstanceRepository instanceRepository, CustomerService customerService) {
+    public InstanceController(InstanceRepository instanceRepository, AppRepository appRepository) {
         this.instanceRepository = instanceRepository;
-        this.customerService = customerService;
+        this.appRepository = appRepository;
     }
 
     @GetMapping("")
     public ResponseEntity all(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        return ok(this.instanceRepository.findByCustomerId(user.getCustomer().getId()));
+        Optional<List<App>> appList = appRepository.findByCustomerId(user.getCustomer().getId());
+        if(appList.isPresent()) {
+            List<Instance> instancesList = new ArrayList<Instance>();
+            for( App app : appList.get()) {
+                instancesList.addAll(this.instanceRepository.findByAppId(app.getId()).get());
+            }
+            return ok(Optional.ofNullable(instancesList));
+        }
+        return status(NOT_FOUND).body(new ErrorResponse("Instances for user name, '" + user.getName() + "' not found."));
     }
 
     @PostMapping("")
@@ -43,11 +56,11 @@ public class InstanceController {
         if (instanceDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + instanceDTO.getId() +"' already exists."));
         }
-        Optional<Customer> customer = customerService.getById(instanceDTO.getCustomerId());
-        if(customer.isPresent()) {
+        Optional<App> app = appRepository.findById(instanceDTO.getAppId());
+        if(app.isPresent()) {
             Instance saved = this.instanceRepository.save(Instance.builder()
                     .name(instanceDTO.getName())
-                    .customer(customer.get())
+                    .app(app.get())
                     .gatewayEndpoint(instanceDTO.getGatewayEndpoint())
                     .build());
             return created(
@@ -58,7 +71,7 @@ public class InstanceController {
                             .toUri())
                     .body(saved);
         } else {
-            throw new RecordNotFoundException("Customer with ID '" + instanceDTO.getCustomerId() + "' not found.");
+            throw new RecordNotFoundException("App with ID '" + instanceDTO.getAppId() + "' not found.");
         }
     }
 
@@ -68,7 +81,7 @@ public class InstanceController {
         if (existing.isPresent()) {
             existing.ifPresent(instance -> {
                 instance.setName(instanceDTO.getName());
-                instance.setCustomer(customerService.getById(instanceDTO.getCustomerId()).get());
+                instance.setApp(appRepository.findById(instanceDTO.getAppId()).get());
                 instance.setGatewayEndpoint(instanceDTO.getGatewayEndpoint());
                 this.instanceRepository.save(instance);
             });

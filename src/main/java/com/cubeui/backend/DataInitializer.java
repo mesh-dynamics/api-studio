@@ -122,26 +122,26 @@ public class DataInitializer implements CommandLineRunner {
             Instance instance = new Instance();
             instance.setId(6L);
             instance.setName("PROD");
-            instance.setGatewayEndpoint("demo.cubecorp.io");
-            instance.setCustomer(this.customerService.getById(1L).get());
+            instance.setGatewayEndpoint("http://demo.dev.cubecorp.io");
+            instance.setApp(this.appRepository.findById(4L).get());
             this.instanceRepository.save(instance);
         }
 
         if(!instanceRepository.existsById(7L)) {
             Instance instance = new Instance();
             instance.setId(7L);
-            instance.setName("STAGING");
-            instance.setGatewayEndpoint("staging.cubecorp.io");
-            instance.setCustomer(this.customerService.getById(1L).get());
+            instance.setName("PROD");
+            instance.setGatewayEndpoint("http://staging.dev.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
             this.instanceRepository.save(instance);
         }
 
         if(!instanceRepository.existsById(8L)) {
             Instance instance = new Instance();
             instance.setId(8L);
-            instance.setName("DOGFOODING");
-            instance.setGatewayEndpoint("dogfooding.cubecorp.io");
-            instance.setCustomer(this.customerService.getById(1L).get());
+            instance.setName("STAGING");
+            instance.setGatewayEndpoint("http://staging2.dev.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
             this.instanceRepository.save(instance);
         }
 
