@@ -255,17 +255,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static final String CPREFIX = "";
-    private static final String FSUFFIX = "_ss"; // set of strings in Solr
-    private static final String SINGLE_VALUED_SUFFIX = "_s";
-    private static final String SINGLE_VALUED_INT_SUFFIX = "_i";
+    private static final String STRINGSET_SUFFIX = "_ss"; // set of strings in Solr
+    private static final String STRING_SUFFIX = "_s";
+    private static final String INT_SUFFIX = "_i";
+    private static final String TEXT_SUFFIX = "_t";
+    private static final String DATE_SUFFIX = "_dt";
+    private static final String BOOLEAN_SUFFIX = "_b";
+    private static final String DOUBLE_SUFFIX = "_d";
+    private static final String NOTINDEXED_SUFFIX = "_ni";
     private static final String FUNC_PREFIX  = "func_";
-    private static final String FUNC_NAME = CPREFIX + FUNC_PREFIX + "name"  + SINGLE_VALUED_SUFFIX;
-    private static final String FUNC_SIG_HASH = CPREFIX + FUNC_PREFIX + "sighash" + SINGLE_VALUED_INT_SUFFIX;
+    private static final String FUNC_NAME = CPREFIX + FUNC_PREFIX + "name"  + STRING_SUFFIX;
+    private static final String FUNC_SIG_HASH = CPREFIX + FUNC_PREFIX + "sighash" + INT_SUFFIX;
     private static final String FUNC_ARG_HASH_PREFIX = CPREFIX + FUNC_PREFIX + "arghash_";
     private static final String FUNC_ARG_VAL_PREFIX = CPREFIX + FUNC_PREFIX + "argval_";
-    private static final String FUNC_RET_VAL = CPREFIX + FUNC_PREFIX + "retval" + SINGLE_VALUED_SUFFIX;
-    private static final String FUNC_RET_STATUSF = CPREFIX + FUNC_PREFIX + "funcstatus"  + SINGLE_VALUED_SUFFIX;
-    private static final String FUNC_EXCEPTION_TYPEF = CPREFIX + FUNC_PREFIX + "exceptiontype"  + SINGLE_VALUED_SUFFIX;
+    private static final String FUNC_RET_VAL = CPREFIX + FUNC_PREFIX + "retval" + NOTINDEXED_SUFFIX;
+    private static final String FUNC_RET_STATUSF = CPREFIX + FUNC_PREFIX + "funcstatus"  + STRING_SUFFIX;
+    private static final String FUNC_EXCEPTION_TYPEF = CPREFIX + FUNC_PREFIX + "exceptiontype"  + STRING_SUFFIX;
 
 
 
@@ -286,10 +291,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDocument.setField(FUNC_SIG_HASH, fnReqResponse.fnSignatureHash);
         var counter = new Object(){int x = 0;};
         Arrays.asList(fnReqResponse.argVals).forEach(argVal -> solrDocument.setField(FUNC_ARG_VAL_PREFIX
-            + ++counter.x + SINGLE_VALUED_SUFFIX , argVal));
+            + ++counter.x + TEXT_SUFFIX, argVal));
         counter.x = 0;
         Arrays.asList(fnReqResponse.argsHash).forEach(argHash -> solrDocument.setField(FUNC_ARG_HASH_PREFIX
-            + ++counter.x + SINGLE_VALUED_INT_SUFFIX, argHash));
+            + ++counter.x + INT_SUFFIX, argHash));
         solrDocument.setField(FUNC_RET_VAL, fnReqResponse.retOrExceptionVal);
         fnReqResponse.respTS.ifPresent(timestamp -> solrDocument.setField(TIMESTAMPF , timestamp.toString()));
         solrDocument.setField(FUNC_RET_STATUSF, fnReqResponse.retStatus.toString());
@@ -308,7 +313,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
             rs)).orElse(FnReqResponse.RetStatus.Success);
         Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
-        return getStrField(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
+        return getStrFieldMVFirst(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
             retStatus, exceptionType));
     }
 
@@ -328,7 +333,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
         Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
-            addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + SINGLE_VALUED_INT_SUFFIX , argHashVal));
+            addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + INT_SUFFIX, argHashVal));
         Optional<Integer> maxResults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToFnResponse);
     }
@@ -345,8 +350,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return templateUpdateOperationSetId;
     }
 
-    private static final String OPERATION = CPREFIX + "operation" + SINGLE_VALUED_SUFFIX;
-    private static final String TEMPLATE_KEY = CPREFIX + "template_key" + FSUFFIX;
+    private static final String OPERATION = CPREFIX + "operation" + STRING_SUFFIX;
+    private static final String TEMPLATE_KEY = CPREFIX + "template_key" + STRINGSET_SUFFIX;
 
     private SolrInputDocument templateUpdateOperationSetToSolrDoc(TemplateUpdateOperationSet operationSet) throws Exception {
         SolrInputDocument inputDoc = new SolrInputDocument();
@@ -517,11 +522,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return storeTemplateSetMetadata(templateSet, templateIds);
     }
 
-    private static final String TEMPLATE_ID = "template_id" + FSUFFIX;
-    private static final String TEMPLATE_VERSION = "version" + SINGLE_VALUED_SUFFIX;
-    private static final String TEMPLATE_SET = "template_set_id" + SINGLE_VALUED_SUFFIX;
-    private static final String ROOT_GOLDEN_SET = "root_golden_set_id" + SINGLE_VALUED_SUFFIX;
-    private static final String PARENT_GOLDEN_SET = "parent_golden_set_id" + SINGLE_VALUED_SUFFIX;
+    private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
+    private static final String TEMPLATE_VERSION = "version" + STRING_SUFFIX;
+    private static final String TEMPLATE_SET = "template_set_id" + STRING_SUFFIX;
+    private static final String ROOT_GOLDEN_SET = "root_golden_set_id" + STRING_SUFFIX;
+    private static final String PARENT_GOLDEN_SET = "parent_golden_set_id" + STRING_SUFFIX;
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) {
         SolrInputDocument solrDoc = new SolrInputDocument();
@@ -746,44 +751,45 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private final SolrClient solr;
     private final Config config;
 
-    private static final String TYPEF = CPREFIX + "type_s";
+    private static final String TYPEF = CPREFIX + "type" + STRING_SUFFIX;
 
     // field names in Solr
-    private static final String PATHF = CPREFIX + "path_s";
-    private static final String REQIDF = CPREFIX + "reqid_s";
-    private static final String METHODF = CPREFIX + "method_s";
-    private static final String BODYF = CPREFIX + "body_t";
-    private static final String COLLECTIONF = CPREFIX + "collection_s";
-    private static final String TIMESTAMPF = CPREFIX + "timestamp_dt";
-    private static final String RRTYPEF = CPREFIX + "rrtype_s";
-    private static final String CUSTOMERIDF = CPREFIX + "customerid_s";
-    private static final String APPF = CPREFIX + "app_s";
-    private static final String INSTANCEIDF = CPREFIX + "instanceid_s";
-    private static final String STATUSF = CPREFIX + "status_i";
-    private static final String CONTENTTYPEF = CPREFIX + "contenttype_s";
-    private static final String OPERATIONSETIDF = CPREFIX + "operationsetid_s";
-    private static final String OPERATIONLIST = CPREFIX + "operationlist_ss";
+    private static final String PATHF = CPREFIX + "path" + STRING_SUFFIX;
+    private static final String REQIDF = CPREFIX + "reqid" + STRING_SUFFIX;
+    private static final String METHODF = CPREFIX + "method" + STRING_SUFFIX;
+    private static final String BODYF = CPREFIX + "body" + NOTINDEXED_SUFFIX;
+    private static final String OLDBODYF = CPREFIX + "body" + TEXT_SUFFIX;
+    private static final String COLLECTIONF = CPREFIX + "collection" + STRING_SUFFIX;
+    private static final String TIMESTAMPF = CPREFIX + "timestamp" + DATE_SUFFIX;
+    private static final String RRTYPEF = CPREFIX + "rrtype" + STRING_SUFFIX;
+    private static final String CUSTOMERIDF = CPREFIX + "customerid" + STRING_SUFFIX;
+    private static final String APPF = CPREFIX + "app" + STRING_SUFFIX;
+    private static final String INSTANCEIDF = CPREFIX + "instanceid" + STRING_SUFFIX;
+    private static final String STATUSF = CPREFIX + "status" + INT_SUFFIX;
+    private static final String CONTENTTYPEF = CPREFIX + "contenttype" + STRING_SUFFIX;
+    private static final String OPERATIONSETIDF = CPREFIX + "operationsetid" + STRING_SUFFIX;
+    private static final String OPERATIONLIST = CPREFIX + "operationlist" + STRINGSET_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
         return String.format("%s_%s",fname, fkey);
     }
     private static String getSolrFieldName(String fname, String fkey) {
-        return String.format("%s%s%s", CPREFIX, getFieldName(fname, fkey), FSUFFIX);
+        return String.format("%s%s%s", CPREFIX, getFieldName(fname, fkey), STRINGSET_SUFFIX);
     }
 
 
     // ensure that this pattern is consistent with the prefix and suffixes used above
-    private static final String patternStr = "^" + CPREFIX + "([^_]+)_(.*)_ss$";
+    private static final String patternStr = "^" + CPREFIX + "([^_]+)_(.*)" + STRINGSET_SUFFIX + "$";
     private static final Pattern pattern = Pattern.compile(patternStr);
     private static final String QPARAMS = "qp";
     private static final String FPARAMS = "fp";
     private static final String META = "meta";
     private static final String HDR = "hdr";
-    private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + FSUFFIX;
-    private static final String HDRSPANF = HDR + "_"  + Config.DEFAULT_SPAN_FIELD + FSUFFIX;
-    private static final String HDRPARENTSPANF = HDR + "_"  + Config.DEFAULT_PARENT_SPAN_FIELD + FSUFFIX;
-    private static final String METASERVICEF = META + "_service" + FSUFFIX;
+    private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRSPANF = HDR + "_"  + Config.DEFAULT_SPAN_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRPARENTSPANF = HDR + "_"  + Config.DEFAULT_PARENT_SPAN_FIELD + STRINGSET_SUFFIX;
+    private static final String METASERVICEF = META + "_service" + STRINGSET_SUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
@@ -998,6 +1004,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }).orElse(new ArrayList<>());
     }
 
+    // get first value of a multi-valued field
+    private static Optional<String> getStrFieldMVFirst(SolrDocument doc, String fname) {
+        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+            if (v instanceof List<?>)
+                return ((List<String>) v).stream().findFirst();
+            return Optional.empty();
+        });
+    }
+
     private static Optional<Integer> getIntField(SolrDocument doc, String fname) {
         return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
             if (v instanceof Integer)
@@ -1046,7 +1061,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         Optional<String> method = getStrField(doc, METHODF);
-        Optional<String> body = getStrField(doc, BODYF);
+        Optional<String> body = getStrFieldMVFirst(doc, BODYF).or(() -> getStrField(doc, OLDBODYF)); // TODO - remove
+        // OLDBODYF
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
         Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
@@ -1126,6 +1142,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
+
     private static Optional<Response> docToResponse(SolrDocument doc) {
 
         Optional<String> type = getStrField(doc, TYPEF);
@@ -1133,7 +1150,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> reqid = getStrField(doc, REQIDF);
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
-        Optional<String> body = getStrField(doc, BODYF);
+        Optional<String> body = getStrFieldMVFirst(doc, BODYF).or(() -> getStrField(doc, OLDBODYF)); // TODO - remove
+        // OLDBODYF
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
         Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
@@ -1207,8 +1225,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             fromSolr = solr.add(doc);
             toReturn = true;
 
-        } catch (SolrServerException | IOException e) {
-            LOGGER.error("Error in saving response", e);
+        } catch (Exception e) {
+            LOGGER.error("Error in saving document to solr of type " +
+                Optional.ofNullable(doc.getFieldValue(TYPEF)).map(Object::toString).orElse("NA")
+                + ", id = " +
+                Optional.ofNullable(doc.getFieldValue(IDF)).map(Object::toString).orElse("NA"), e);
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         try {
@@ -1231,24 +1252,24 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr for Replay object
     private static final String IDF = "id";
-    private static final String ENDPOINTF = CPREFIX + "endpoint_s";
-    private static final String REQIDSF = CPREFIX + "reqid_ss";
-    private static final String REPLAYIDF = CPREFIX + "replayid_s";
-    private static final String ASYNCF = CPREFIX + "async_b";
-    private static final String REPLAYSTATUSF = CPREFIX + "status_s";
-    private static final String PATHSF = CPREFIX + "path_ss";
-    private static final String REQCNTF = CPREFIX + "reqcnt_i";
-    private static final String REQSENTF = CPREFIX + "reqsent_i";
-    private static final String REQFAILEDF = CPREFIX + "reqfailed_i";
-    private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp_s";
-    private static final String SAMPLERATEF = CPREFIX + "samplerate_d";
-    private static final String REPLAYPATHSTATF = CPREFIX + "pathstat_ss";
-    private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv_ss" ;
+    private static final String ENDPOINTF = CPREFIX + "endpoint" + STRING_SUFFIX;
+    private static final String REQIDSF = CPREFIX + "reqid" + STRINGSET_SUFFIX;
+    private static final String REPLAYIDF = CPREFIX + "replayid" + STRING_SUFFIX;
+    private static final String ASYNCF = CPREFIX + "async" + BOOLEAN_SUFFIX;
+    private static final String REPLAYSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
+    private static final String PATHSF = CPREFIX + "path" + STRINGSET_SUFFIX;
+    private static final String REQCNTF = CPREFIX + "reqcnt" + INT_SUFFIX;
+    private static final String REQSENTF = CPREFIX + "reqsent" + INT_SUFFIX;
+    private static final String REQFAILEDF = CPREFIX + "reqfailed" + INT_SUFFIX;
+    private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp" + STRING_SUFFIX;
+    private static final String SAMPLERATEF = CPREFIX + "samplerate" + DOUBLE_SUFFIX;
+    private static final String REPLAYPATHSTATF = CPREFIX + "pathstat" + STRINGSET_SUFFIX;
+    private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv" + STRINGSET_SUFFIX;
 
 
     // field names in Solr for compare template (stored as json)
-    private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate_s";
-    private static final String PARTIALMATCH = CPREFIX + "partialmatch_s";
+    private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate" + STRING_SUFFIX;
+    private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -1500,7 +1521,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return query;
     }
 
-    private static final String OBJJSONF = CPREFIX + "json_ni";
+    private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
 
 
     /* (non-Javadoc)
@@ -1538,16 +1559,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
-    private static final String RECORDREQIDF = CPREFIX + "recordreqid_s";
-    private static final String REPLAYREQIDF = CPREFIX + "replayreqid_s";
-    private static final String REQMTF = CPREFIX + "reqmt_s";
-    private static final String NUMMATCHF = CPREFIX + "nummatch_i";
-    private static final String RESPMTF = CPREFIX + "respmt_s"; // match type
-    private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata_s";
-    private static final String DIFFF = CPREFIX + "diff_ni";
-    private static final String SERVICEF = CPREFIX + "service_s";
-    private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid_s";
-    private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid_s";
+    private static final String RECORDREQIDF = CPREFIX + "recordreqid" + STRING_SUFFIX;
+    private static final String REPLAYREQIDF = CPREFIX + "replayreqid" + STRING_SUFFIX;
+    private static final String REQMTF = CPREFIX + "reqmt" + STRING_SUFFIX;
+    private static final String NUMMATCHF = CPREFIX + "nummatch" + INT_SUFFIX;
+    private static final String RESPMTF = CPREFIX + "respmt" + STRING_SUFFIX; // match type
+    private static final String RESPMATCHMETADATAF = CPREFIX + "respmatchmetadata" + STRING_SUFFIX;
+    private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
+    private static final String SERVICEF = CPREFIX + "service" + STRING_SUFFIX;
+    private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
+    private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid" + STRING_SUFFIX;
 
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveResult(com.cube.dao.Analysis.Result)
@@ -1750,7 +1771,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return analysis;
     }
 
-    private static final String RECORDINGSTATUSF = CPREFIX + "status_s";
+    private static final String RECORDINGSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
 
 
     private static Optional<Recording> docToRecording(SolrDocument doc) {
