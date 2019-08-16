@@ -15,7 +15,7 @@ call_deploy_script() {
 
 generate_traffic() {
 	for ((i=1;i<=$1;i++)); do
-		curl -X GET "http://$NAMESPACE_HOST.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
+		curl -X GET "http://$NAMESPACE_HOST/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
 	done
 }
 
@@ -32,13 +32,15 @@ main() {
 	call_deploy_script cube record $CUBE_ENVIRONMENT $COLLECTION_NAME
 	#sleep 45
 	call_deploy_script moviebook record $CUBE_ENVIRONMENT $MB_COLLECTION_NAME
-	sleep 45
+	sleep 60
 	generate_traffic $NO_OF_REQUEST
 	sleep 45
 	call_deploy_script moviebook stop_record $CUBE_ENVIRONMENT
+	sleep 45
 	call_deploy_script moviebook setup_replay $CUBE_ENVIRONMENT $VERSION
 	sleep 45
 	call_deploy_script moviebook replay $CUBE_ENVIRONMENT $MB_COLLECTION_NAME
+	sleep 60
 	call_deploy_script moviebook stop_replay $CUBE_ENVIRONMENT
 	call_deploy_script moviebook analyze $CUBE_ENVIRONMENT
 	sleep 45
