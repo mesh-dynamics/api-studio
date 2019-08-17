@@ -32,23 +32,34 @@ public interface Comparator {
 	 * @return
 	 */
 	Match compare(String lhs, String rhs);
-	
+
 	public enum MatchType {
 		Default,
 		ExactMatch,
 		FuzzyMatch,
 		NoMatch,
+        RecReqNoMatch,
+        ReplayReqNoMatch,
+        MockReqNoMatch,
 		Exception;
+
+		public boolean isNoMatch() {
+		    return this == NoMatch || this == RecReqNoMatch || this == ReplayReqNoMatch || this == MockReqNoMatch;
+        }
+
 
 		public MatchType And(MatchType other) {
 			switch (this) {
 				case NoMatch:
+                case RecReqNoMatch:
+                case ReplayReqNoMatch:
+                case MockReqNoMatch:
 				case Exception:
 					return this;
 				case ExactMatch:
 					return other;
 				default:
-					return (other == NoMatch || other == Exception) ? other : this;
+					return (other.isNoMatch() || other == Exception) ? other : this;
 			}
 		}
 
@@ -64,7 +75,8 @@ public interface Comparator {
 			switch (this) {
 				case ExactMatch: return (other != ExactMatch); // ExactMatch will not override Exact Match, but everything else
 				case FuzzyMatch: return !(other == ExactMatch || other == FuzzyMatch); // Partial Match will not override Partial Match
-				case NoMatch: return (other == Exception || other == Default); // NoMatch overrides Default and Exception
+                case NoMatch: case RecReqNoMatch: case ReplayReqNoMatch: case MockReqNoMatch:
+                    return (other == Exception || other == Default); // NoMatch overrides Default and Exception
 				case Exception: return (other == Default); // Exception only overrides default
 				case Default: return false; // the default is only the starting condition and worse than anything
 				default: return false;
@@ -77,7 +89,7 @@ public interface Comparator {
 		 */
 		public boolean isBetterOrEqual(MatchType other) {
 			switch (this) {
-				case NoMatch: return (other == NoMatch);
+                case NoMatch: case RecReqNoMatch: case ReplayReqNoMatch: case MockReqNoMatch: return (other.isNoMatch());
 				case ExactMatch: return true;
 				default: return (other != ExactMatch); // PartialMatch is better only if other is not ExactMatch
 			}
@@ -133,7 +145,7 @@ public interface Comparator {
 			this.matchmeta = matchmeta;
 			this.diffs = diffs;
 		}
-		
+
 		public MatchType mt;
 		final public String matchmeta;
 		final public List<Diff> diffs;

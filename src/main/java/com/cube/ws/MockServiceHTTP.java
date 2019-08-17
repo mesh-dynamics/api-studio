@@ -1,5 +1,6 @@
 package com.cube.ws;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +60,7 @@ import com.cube.dao.Request;
  */
 @Path("/ms")
 public class MockServiceHTTP {
-	
+
     private static final Logger LOGGER = LogManager.getLogger(MockServiceHTTP.class);
 
 	@Path("/health")
@@ -81,8 +82,8 @@ public class MockServiceHTTP {
         LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
         return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
     }
-	
-	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two. 
+
+	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two.
 	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
 	@POST
@@ -176,8 +177,25 @@ public class MockServiceHTTP {
 
 	}
 
+    /**
+     * Create a dummy response (just for the records) to save against the dummy mock request
+     * @param originalResponse
+     * @param mockReqId
+     * @param customerId
+     * @param app
+     * @param instanceId
+     * @return
+     */
+	private com.cube.dao.Response createMockResponse(com.cube.dao.Response originalResponse, Optional<String> mockReqId,
+                                                     String customerId, String app, String instanceId) {
+        return  new com.cube.dao.Response(mockReqId, originalResponse.status, originalResponse.meta,
+            originalResponse.hdrs, originalResponse.body, rrstore.getCurrentReplayId(Optional.of(customerId),
+            Optional.of(app), Optional.of(instanceId)) , Optional.of(Instant.now()), Optional.of(RR.Replay) ,
+            Optional.of(customerId), Optional.of(app));
+    }
+
 	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-			String customerid, String app, String instanceid, 
+			String customerid, String app, String instanceid,
 			String service, HttpHeaders headers) {
 
 		LOGGER.info(String.format("Mocking request for %s", path));
@@ -195,13 +213,11 @@ public class MockServiceHTTP {
         Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(customerid),
             Optional.of(app),
             Optional.of(instanceid));
-
-
 		Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
-	    Request r = new Request(path, Optional.empty(), queryParams, formParams, 
-	    		headers.getRequestHeaders(), service, collection, 
-	    		Optional.of(RRBase.RR.Record), 
-	    		Optional.of(customerid), 
+	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
+	    		headers.getRequestHeaders(), service, collection,
+	    		Optional.of(RRBase.RR.Record),
+	    		Optional.of(customerid),
 	    		Optional.of(app));
 
         Optional<String> templateVersion =
@@ -240,6 +256,9 @@ public class MockServiceHTTP {
                         CommonUtils.getTraceId(respv.meta),
                         CommonUtils.getTraceId(mRequest.hdrs));
 				rrstore.saveResult(matchResult);
+				com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mRequest.reqid,
+                    customerid, app, instanceid);
+				rrstore.save(mockResponseToStore);
 			}));
 		    return builder.entity(respv.body).build();
 	    }).orElseGet(() -> {
@@ -251,6 +270,7 @@ public class MockServiceHTTP {
 				//with any recorded request, but still to properly calculate no match counts for
 				// virtualized services in facet queries, we are creating this dummy req resp
 				// match result for now.
+                // TODO change it back to MockReqNoMatch
 				mockRequest.ifPresent(mRequest -> {
 					Analysis.ReqRespMatchResult matchResult =
                         new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqid,
@@ -261,10 +281,10 @@ public class MockServiceHTTP {
 				});
 				return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
 	    });
-	    
+
 	}
 
-	
+
 	private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
 		return rrstore.getRespForReq(queryrequest, mspecForDefault);
 	}
@@ -292,7 +312,7 @@ public class MockServiceHTTP {
 	private ReplayResultCache replayResultCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
 	private final Config config;
-	
+
 	// TODO - make trace field configurable
 	private static RequestComparator mspec = (ReqMatchSpec) ReqMatchSpec.builder()
 			.withMpath(ComparisonType.Equal)

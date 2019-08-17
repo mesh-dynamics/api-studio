@@ -2048,6 +2048,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                         case ExactMatch: mra.reqmatched = fr.val; break;
                         case FuzzyMatch: mra.reqpartiallymatched = fr.val; break;
                         case NoMatch: mra.reqnotmatched = fr.val; break;
+                        case RecReqNoMatch: mra.recReqNotMatched = fr.val; break;
+                        case MockReqNoMatch: mra.mockReqNotMatched = fr.val; break;
+                        case ReplayReqNoMatch: mra.replayReqNotMatched = fr.val; break;
                     }
 
                 });
