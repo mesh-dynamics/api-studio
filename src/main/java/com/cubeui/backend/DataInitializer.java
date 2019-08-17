@@ -131,7 +131,7 @@ public class DataInitializer implements CommandLineRunner {
             Instance instance = new Instance();
             instance.setId(7L);
             instance.setName("PROD");
-            instance.setGatewayEndpoint("http://staging.dev.cubecorp.io");
+            instance.setGatewayEndpoint("http://staging1.dev.cubecorp.io");
             instance.setApp(this.appRepository.findById(5L).get());
             this.instanceRepository.save(instance);
         }
