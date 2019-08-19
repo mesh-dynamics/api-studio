@@ -5,7 +5,6 @@ import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.repository.*;
 import com.cubeui.backend.service.CustomerService;
-import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.UserService;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +23,6 @@ public class DataInitializer implements CommandLineRunner {
     private UserService userService;
 
     private CustomerService customerService;
-
-    private MailService mailService;
 
     private AppRepository appRepository;
 
@@ -47,10 +44,13 @@ public class DataInitializer implements CommandLineRunner {
 
     private TestPathRepository testPathRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, MailService mailService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository) {
+    private CustomerRepository customerRepository;
+
+    private UserRepository userRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository) {
         this.userService = userService;
         this.customerService = customerService;
-        this.mailService = mailService;
 
         this.appRepository = appRepository;
         this.instanceRepository = instanceRepository;
@@ -62,13 +62,15 @@ public class DataInitializer implements CommandLineRunner {
         this.testIntermediateServiceRepository = testIntermediateServiceRepository;
         this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
         this.testPathRepository = testPathRepository;
+        this.customerRepository = customerRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
         log.debug("Initializing data...");
 
-        if(customerService.getByName("CubeCorp").isEmpty()) {
+        if(!customerRepository.existsById(1L)) {
             CustomerDTO customerDTO = new CustomerDTO();
             customerDTO.setId(1L);
             customerDTO.setName("CubeCorp");
@@ -77,8 +79,9 @@ public class DataInitializer implements CommandLineRunner {
             Customer customer = this.customerService.save(customerDTO);
         }
 
-        if (userService.getByUsername("demo@cubecorp.io").isEmpty()){
+        if (!userRepository.existsById(2L)){
             UserDTO userDTO = new UserDTO();
+            userDTO.setId(2L);
             userDTO.setName("Demo");
             userDTO.setEmail("demo@cubecorp.io");
             userDTO.setPassword("password123");
@@ -87,11 +90,11 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setActivated(true);
             User user = this.userService.save(userDTO, true);
             log.info("User with email '{}' created", user.getUsername());
-            mailService.sendActivationEmail(user);
         }
 
-        if (userService.getByUsername("admin").isEmpty()){
+        if (!userRepository.existsById(3L)){
             UserDTO userDTO = new UserDTO();
+            userDTO.setId(3L);
             userDTO.setName("Administrator");
             userDTO.setEmail("admin");
             userDTO.setPassword("admin");
