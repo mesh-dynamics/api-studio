@@ -114,6 +114,7 @@ public class TemplateEntry {
      * Assuming compare type is not ignore or default
      */
     Comparator.Resolution lhsmissing() {
+        if (pt == CompareTemplate.PresenceType.Default) return ERR_NewField;
         switch (ct) {
             case Ignore:
                 return OK_Ignore;

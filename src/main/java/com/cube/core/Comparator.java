@@ -109,6 +109,7 @@ public interface Comparator {
 		ERR_ValMismatch,
 		ERR_ValTypeMismatch,
 		ERR_ValFormatMismatch,
+        ERR_NewField,
 		ERR;
 		/**
 		 * @return
@@ -116,7 +117,7 @@ public interface Comparator {
 		public boolean isErr() {
 			return this == Resolution.ERR_NotExpected || this == ERR_Required ||
 					this == ERR_ValMismatch || this == ERR_ValTypeMismatch ||
-					this == ERR_ValFormatMismatch || this == ERR;
+					this == ERR_ValFormatMismatch || this == ERR || this == ERR_NewField;
 		}
 
 		public MatchType toMatchType() {
