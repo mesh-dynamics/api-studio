@@ -62,7 +62,7 @@ $ kubectl apply -f istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
 ```
 
 > NOTE: Since we are running Istio with Minikube, we need to make one change before going ahead – changing the Ingress Gateway service from type LoadBalancer to NodePort.  
-<b> IN CASE OF AWS, SKIP STEP 12. </b>
+<b> IN CASE OF AWS, SKIP STEP 13. </b>
 
 13. Open the file istio-1.0.6/install/kubernetes/istio-demo.yaml, search for LoadBalancer and replace it with NodePort.
 
