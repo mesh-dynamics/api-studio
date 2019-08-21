@@ -29,11 +29,6 @@ public final class UtilException {
 
 	@FunctionalInterface
 	public interface Function_WithExceptions<T, R, E extends Exception> {
-		R apply(T t) throws E, JsonProcessingException;
-	}
-
-	@FunctionalInterface
-	public interface Function_WithGenericExceptions<T, R, E extends Exception> {
 		R apply(T t) throws E;
 	}
 
@@ -78,22 +73,6 @@ public final class UtilException {
 	 * .map(rethrowFunction(Class::forName))
 	 */
 	public static <T, R, E extends Exception> Function<T, R> rethrowFunction(Function_WithExceptions<T, R, E> function)
-			throws E {
-		return t -> {
-			try {
-				return function.apply(t);
-			} catch (Exception exception) {
-				throwAsUnchecked(exception);
-				return null;
-			}
-		};
-	}
-
-	/**
-	 * .map(rethrowFunction(name -> Class.forName(name))) or
-	 * .map(rethrowFunction(Class::forName))
-	 */
-	public static <T, R, E extends Exception> Function<T, R> rethrowGenericFunction(Function_WithGenericExceptions<T, R, E> function)
 			throws E {
 		return t -> {
 			try {
