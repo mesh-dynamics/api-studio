@@ -33,8 +33,8 @@ public final class UtilException {
 	}
 
 	@FunctionalInterface
-	public interface Function_WithSQLExceptions<T, R, E extends Exception> {
-		R apply(T t) throws E, SQLException;
+	public interface Function_WithGenericExceptions<T, R, E extends Exception> {
+		R apply(T t) throws E;
 	}
 
 	@FunctionalInterface
@@ -93,7 +93,7 @@ public final class UtilException {
 	 * .map(rethrowFunction(name -> Class.forName(name))) or
 	 * .map(rethrowFunction(Class::forName))
 	 */
-	public static <T, R, E extends Exception> Function<T, R> rethrowFunctionWithSQLException(Function_WithSQLExceptions<T, R, E> function)
+	public static <T, R, E extends Exception> Function<T, R> rethrowGenericFunction(Function_WithGenericExceptions<T, R, E> function)
 			throws E {
 		return t -> {
 			try {
