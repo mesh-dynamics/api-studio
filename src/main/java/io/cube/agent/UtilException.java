@@ -3,6 +3,7 @@
  */
 package io.cube.agent;
 
+import java.sql.SQLException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,7 +29,7 @@ public final class UtilException {
 
 	@FunctionalInterface
 	public interface Function_WithExceptions<T, R, E extends Exception> {
-		R apply(T t) throws E, JsonProcessingException;
+		R apply(T t) throws E;
 	}
 
 	@FunctionalInterface
