@@ -44,7 +44,7 @@ steps:
       container: cubews
       tag: ${DRONE_COMMIT}
 
-  - name: test
+  - name: cube_test
     image: spotify/alpine
     commands:
     - ./test.sh
