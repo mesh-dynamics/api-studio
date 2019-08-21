@@ -286,11 +286,15 @@ public class JsonComparator implements Comparator {
 		});
 	}
 
+
 	/*
 	  Check if any rules exist at level deeper than root
 	 */
-	public boolean pathRulesExist() {
-		return template.getRules().stream().filter(r -> !(r.path.isBlank() || r.path.equals("/"))).findAny().isPresent();
+	public boolean shouldConsiderAsObj() {
+	    // first check if root is an object
+        return template.get("").map(rule -> rule.dt == DataType.Obj)
+            .orElse(template.getRules().stream().filter(r -> !(r.path.isBlank() || r.path.equals("/"))).findAny().isPresent());
+
 		//return !template.getRules().isEmpty();
 	}
 

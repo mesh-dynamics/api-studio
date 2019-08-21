@@ -209,7 +209,19 @@ public class Analyzer {
                 //question ? what happens when these optionals don't contain any value ...
                 // what gets returned
                 return recordedResponse.flatMap(recordedr -> replayresp.flatMap(replayr -> {
-                    Comparator.Match rm = comparator.compare(recordedr, replayr);
+                    Comparator.Match rm = Comparator.Match.NOMATCH;
+                    if (recordedr.status != replayr.status) {
+                        rm = Comparator.Match.STATUSNOMATCH;
+                    } else {
+                        if (recordedr.status == javax.ws.rs.core.Response.Status.OK.getStatusCode()) {
+                            rm = comparator.compare(recordedr, replayr);
+                        } else {
+                            // If the status of response was not OK, the body may not be a json, so it will lead to
+                            // exception when applying json template rules. To avoid this, consider body as simple
+                            // string whenever there is an error return status
+                            rm = responseComparatorCache.getDefaultResponseComparator().compare(recordedr, replayr);
+                        }
+                    }
                     return Optional.of(new Analysis.RespMatchWithReq(recordreq, Optional.of(replayreq) , rm ,
                             Optional.of(recordedr) , Optional.of(replayr)));
                 }));
