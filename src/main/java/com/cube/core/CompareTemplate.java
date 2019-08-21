@@ -57,7 +57,11 @@ public class CompareTemplate {
 		RptArray, // array having same structure for all its elements
 		NrptArray, // array with different types for each element
 		Obj, // object type
-		Default // not specified
+		Default; // not specified
+
+        boolean isObj() {
+            return this == RptArray || this == NrptArray || this == Obj;
+        }
 	}
 	
 	public enum PresenceType {

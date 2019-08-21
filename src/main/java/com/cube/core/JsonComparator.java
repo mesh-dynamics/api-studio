@@ -292,8 +292,8 @@ public class JsonComparator implements Comparator {
 	 */
 	public boolean shouldConsiderAsObj() {
 	    // first check if root is an object
-        return template.get("").map(rule -> rule.dt == DataType.Obj)
-            .orElse(template.getRules().stream().filter(r -> !(r.path.isBlank() || r.path.equals("/"))).findAny().isPresent());
+        boolean dtObj = template.get("").map(rule -> rule.dt.isObj()).orElse(false);
+        return dtObj || template.getRules().stream().filter(r -> !(r.path.isBlank() || r.path.equals("/"))).findAny().isPresent();
 
 		//return !template.getRules().isEmpty();
 	}
