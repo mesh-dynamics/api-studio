@@ -6,7 +6,7 @@ update_deployment() {
 	kubectl -n $NAMESPACE set image deployment/cubews-mock-v1 cubews=cubeiocorp/cubews:$TAG
 	kubectl -n $NAMESPACE set image deployment/cubews-record-v1 cubews=cubeiocorp/cubews:$TAG
 	kubectl -n $NAMESPACE set image deployment/cubews-replay-v1 cubews=cubeiocorp/cubews:$TAG
-	sleep 5
+	sleep 30
 }
 
 call_deploy_script() {
@@ -30,20 +30,21 @@ main() {
 	source apps/moviebook/config/"$CUBE_ENVIRONMENT".conf
 	update_deployment $TAG
 	call_deploy_script cube record $CUBE_ENVIRONMENT $COLLECTION_NAME
-	#sleep 45
+	sleep 240
 	call_deploy_script moviebook record $CUBE_ENVIRONMENT $MB_COLLECTION_NAME
-	sleep 60
+	sleep 240
 	generate_traffic $NO_OF_REQUEST
-	sleep 45
+	#exit 1
+	sleep 240
 	call_deploy_script moviebook stop_record $CUBE_ENVIRONMENT
-	sleep 45
+	sleep 120
 	call_deploy_script moviebook setup_replay $CUBE_ENVIRONMENT $VERSION
-	sleep 45
+	sleep 240
 	call_deploy_script moviebook replay $CUBE_ENVIRONMENT $MB_COLLECTION_NAME
-	sleep 60
-	call_deploy_script moviebook stop_replay $CUBE_ENVIRONMENT
+	sleep 240
+	#call_deploy_script moviebook stop_replay $CUBE_ENVIRONMENT
 	call_deploy_script moviebook analyze $CUBE_ENVIRONMENT
-	sleep 45
+	sleep 240
 	call_deploy_script cube stop_record $CUBE_ENVIRONMENT
 }
 
