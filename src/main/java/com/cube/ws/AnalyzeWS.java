@@ -4,6 +4,7 @@
 package com.cube.ws;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +43,6 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.drivers.Analyzer;
-import com.cube.golden.GoldenSet;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.transform.TemplateSetTransformer;
@@ -240,7 +240,7 @@ public class AnalyzeWS {
             if ("request".equalsIgnoreCase(type)) {
                 key = new TemplateKey(Optional.empty(), customerId, appId, serviceName, path, TemplateKey.Type.Request);
             } else if ("response".equalsIgnoreCase(type)) {
-                key = new TemplateKey(Optional.empty(), customerId, appId, serviceName, path,
+                key = new TemplateKey(Optional.of("DEFAULT"), customerId, appId, serviceName, path,
                     TemplateKey.Type.Response);
             } else {
                 return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
@@ -585,7 +585,7 @@ public class AnalyzeWS {
      * @param templateSetId Template set id
      * @return Appropriate response
      */
-    @GET
+/*    @GET
     @Path("createGoldenSet/{collection}/{templateSetId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response createGoldenSet(@PathParam("collection") String collection,
@@ -606,7 +606,7 @@ public class AnalyzeWS {
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchAllGoldenSetsWithRoot(@PathParam("rootGoldenSetId") String rootGoldenSetId) {
         try {
-            List<GoldenSet> goldenSetList = rrstore.getAllDerivedGoldenSets(rootGoldenSetId);
+            List<GoldenSet> goldenSetList = rrstore.getAllDerivedGoldenSets(rootGoldenSetId).collect(Collectors.toList());
             String asJson = jsonmapper.writeValueAsString(goldenSetList);
             return Response.ok().entity(asJson).build();
         } catch (Exception e) {
@@ -614,30 +614,30 @@ public class AnalyzeWS {
             return Response.serverError().entity("{\"Message\" :  \"Error while retrieving golden sets with given root\" , \"Error\" : \"" +
                 e.getMessage() + "\"}").build();
         }
-    }
+    }*/
 
 
     /**
-     * Update an existing golden set with the specified template update and collection
+     * Update an existing recording with the specified template update and collection
      * update operation set, and create a new golden set with the modified template set
      * and collection
-     * @param sourceGoldenSetId Source Golden Set (combination of collection and template set)
+     * @param recordingId Source Recording (combination of collection and template set)
      * @param collectionUpdateOpSetId The collection update operation set id
      * @param templateUpdOpSetId Template update operation set id
      * @return Appropriate response
      */
     @GET
-    @Path("updateGoldenSet/{sourceGoldenSetId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
+    @Path("updateGoldenSet/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateGoldenSet(@PathParam("sourceGoldenSetId") String sourceGoldenSetId,
+    public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
                                     @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
                                     @PathParam("templateUpdOpSetId") String templateUpdOpSetId) {
         try{
-            GoldenSet goldenSet = rrstore.getGoldenSet(sourceGoldenSetId).orElseThrow(() ->
-                new Exception("Unable to find golden set for specified id"));
-            Optional<String> sourceGoldenSetRoot = goldenSet.rootGoldenSet;
-            TemplateSet templateSet = rrstore.getTemplateSet(goldenSet.getTemplateSetId()).orElseThrow(() ->
+            Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
+                new Exception("Unable to find recording object for the given id"));
+            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerid, originalRec.app, originalRec
+                .templateVersion.orElse(Recording.DEFAULT_TEMPLATE_VER)).orElseThrow(() ->
                 new Exception("Unable to find template set mentioned in the specified golden set"));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
@@ -646,16 +646,21 @@ public class AnalyzeWS {
             TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
-            String newCollectionName = goldenSet.collectionId.concat("-").concat(String.valueOf(Objects.hash(replayId, collectionUpdateOpSetId)));
+            String newCollectionName = originalRec.collection.concat("-").concat(String.valueOf(Objects.hash(replayId, collectionUpdateOpSetId)));
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
-            String updatedGoldenSet = rrstore.createGoldenSet(newCollectionName, updatedTemplateSetId , Optional.of(sourceGoldenSetId)
-                , sourceGoldenSetRoot.or(() -> Optional.of(sourceGoldenSetId)));
-            return Response.ok().entity("{\"Message\" :  \"Successfully created new golden with specified golden set " +
-                "and set of operations\" , \"ID\" : \"" + updatedGoldenSet + "\"}").build();
+
+            Recording updatedRecording = new Recording(originalRec.customerid,
+                originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
+                Optional.of(Instant.now()), Optional.of(updatedTemplateSet.version), Optional.of(originalRec.getId()),
+                originalRec.rootRecordingId.or(() -> Optional.of(originalRec.getId())));
+
+            rrstore.saveRecording(updatedRecording);
+            return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
+                "and set of operations\" , \"ID\" : \"" + updatedRecording.getId() + "\"}").build();
         } catch (Exception e) {
             LOGGER.error("Error while updating golden set :: "  + e.getMessage());
-            return Response.serverError().entity("{\"Message\" :  \"Error while updating golden set\" , \"Error\" : \"" +
+            return Response.serverError().entity("{\"Message\" :  \"Error while updating recording\" , \"Error\" : \"" +
                 e.getMessage() + "\"}").build();
         }
     }

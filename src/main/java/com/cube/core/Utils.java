@@ -122,7 +122,7 @@ public class Utils {
     public static Pattern replayMetaIdPattern = Pattern.compile("\"id\":\\{\"name\":\"id\",\"value\":\"(.+?)\"},");
     public static Pattern replayIdPattern = Pattern.compile("\"replayid_s\":\\{\"name\":\"replayid_s\",\"value\":\"(.+?)\"},");
     public static Pattern timestampIdPattern = Pattern.compile(",\"creationtimestamp_s\":\\{\"name\":\"creationtimestamp_s\",\"value\":\"(.+?)\"}");
-
+    public static Pattern versionPattern = Pattern.compile(",\"version_s\":\\{\"name\":\"version_s\"}");
 
     public static String removePatternFromString(String val, Pattern pattern) {
 	    Matcher matcher = pattern.matcher(val);
@@ -145,6 +145,7 @@ public class Utils {
                     String newVal = removePatternFromString(fnReqResponse.argVals[0], replayMetaIdPattern);
                     newVal = removePatternFromString(newVal, replayIdPattern);
                     newVal = removePatternFromString(newVal, timestampIdPattern);
+                    newVal = removePatternFromString(newVal, versionPattern);
                     fnReqResponse.argVals[0] = newVal;
                     fnReqResponse.argsHash[0] = newVal.hashCode();
                 }

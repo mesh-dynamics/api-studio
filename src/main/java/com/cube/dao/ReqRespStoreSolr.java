@@ -8,8 +8,17 @@ import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -17,10 +26,6 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
-
-import com.cube.golden.ReqRespUpdateOperation;
-import com.cube.core.Utils;
-import io.cube.agent.CommonUtils;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,14 +45,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
-
-import com.cube.agent.FnResponse;
 import redis.clients.jedis.Jedis;
 
 import com.cube.agent.FnReqResponse;
+import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
@@ -56,14 +61,15 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
+import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
-import com.cube.golden.GoldenSet;
+import com.cube.golden.ReqRespUpdateOperation;
+import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.ws.Config;
 
 /**
@@ -556,10 +562,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
         } catch (Exception e) {
-            LOGGER.error("Error occured while fetching template set for id :: " + templateSetId + " :: " + e.getMessage());
+            LOGGER.error("Error occured while fetching template set for version :: " + templateSetId + " :: " + e.getMessage());
         }
         return Optional.empty();
     }
+
+    @Override
+    public Optional<TemplateSet> getTemplateSet(String customerid, String app, String version) {
+        try {
+            SolrQuery query = new SolrQuery("*:*");
+            addFilter(query, TYPEF, Types.TemplateSet.toString());
+            addFilter(query, CUSTOMERIDF, customerid);
+            addFilter(query, APPF, app);
+            addFilter(query, TEMPLATE_VERSION, version);
+            Optional<Integer> maxResults = Optional.of(1);
+
+            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
+        } catch (Exception e) {
+            LOGGER.error("Error occured while fetching template set for customer/app/verion :: " + customerid + "::"
+                + app + "::" +  version + "::"  + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
 
     public Optional<TemplateSet> getLatestTemplateSet(String customer, String app) {
         try {
@@ -576,7 +601,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return Optional.empty();
     }
 
-    @Override
+/*    @Override
     public String createGoldenSet(String collection, String templateSetId, Optional<String> parentGoldenSetIdOpt, Optional<String> rootGoldenSetIdOpt) {
         SolrInputDocument inputDoc = new SolrInputDocument();
         String id = Types.GoldenSet.toString().concat("-")
@@ -593,33 +618,66 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return id;
     }
 
-    private Optional<GoldenSet> solrDocToGoldenSet(SolrDocument doc) {
+    private GoldenSet solrDocToGoldenSet(SolrDocument doc) throws Exception {
         Optional<String> id = getStrField(doc, IDF);
-        Optional<String> collection = getStrField(doc, COLLECTIONF);
-        Optional<String> templateSet = getStrField(doc, TEMPLATE_SET);
+        Optional<String> collectionOpt = getStrField(doc, COLLECTIONF);
+        Optional<String> templateSetOpt = getStrField(doc, TEMPLATE_SET);
         Optional<Instant> creationTimestamp = getTSField(doc, TIMESTAMPF);
         Optional<String> parentGoldenSetId = getStrField(doc, PARENT_GOLDEN_SET);
         Optional<String> rootGoldenSetId = getStrField(doc, ROOT_GOLDEN_SET);
-        return collection.flatMap(collec -> templateSet.map(templateSetId -> new GoldenSet(collec, templateSetId,
-            rootGoldenSetId, parentGoldenSetId, creationTimestamp)));
+        Optional<String> customerOpt = getStrField(doc, CUSTOMERIDF);
+        Optional<String> appOpt = getStrField(doc, APPF);
+        Optional<String> instance = getStrField(doc, INSTANCEIDF);
+
+        String customer = customerOpt.orElseThrow(() -> new Exception("Customer field empty"));
+        String app = appOpt.orElseThrow(() -> new Exception("App field empty"));
+        String collection = collectionOpt.orElseThrow(() -> new Exception("Collection field empty"));
+        String templateSetVersion = templateSetOpt.orElseThrow(() -> new Exception("Template Set Version not specified"));
+        return new GoldenSet(customer, app, instance, collection, templateSetVersion,
+            rootGoldenSetId, parentGoldenSetId, creationTimestamp);
+
     }
 
     @Override
-    public Optional<GoldenSet> getGoldenSet(String goldenSetId) {
+    public Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception {
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, IDF, goldenSetId);
         addFilter(query, TYPEF, Types.GoldenSet.toString());
-        return SolrIterator.getStream(solr , query, Optional.of(1)).findFirst().flatMap(this::solrDocToGoldenSet);
+        return SolrIterator.getStream(solr , query, Optional.of(1)).findFirst().map(com.cube.core.UtilException
+                .rethrowFunction(this::solrDocToGoldenSet));
+    }
+
+    public Stream<GoldenSet> getGoldenSetStream(SolrQuery query) {
+        return SolrIterator.getStream(solr, query, Optional.of(20))
+            .flatMap(doc -> {
+                try {
+                    return Stream.of(solrDocToGoldenSet(doc));
+                } catch (Exception e) {
+                    LOGGER.error("Error while converting solr doc to golden set object :: " + e.getMessage());
+                    return Stream.empty();
+                }
+            });
+    }
+
+
+    @Override
+    public Stream<GoldenSet> getGoldenSetStream(Optional<String> customer,
+                                                Optional<String> app, Optional<String> instanceid) {
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, CUSTOMERIDF, customer);
+        addFilter(query, APPF, app);
+        addFilter(query, INSTANCEIDF, instanceid);
+        addFilter(query, TYPEF, Types.GoldenSet.toString());
+        return getGoldenSetStream(query);
     }
 
     @Override
-    public List<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId) {
+    public Stream<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId) {
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, TYPEF, Types.GoldenSet.toString());
         addFilter(query, ROOT_GOLDEN_SET, rootGoldentSetId);
-        return SolrIterator.getStream(solr, query, Optional.of(20)).
-            map(this::solrDocToGoldenSet).flatMap(Optional::stream).collect(Collectors.toList());
-    }
+        return getGoldenSetStream(query);
+    }*/
 
     private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc) {
         Optional<String> version = getStrField(doc, TEMPLATE_VERSION);
@@ -1298,7 +1356,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
-        replay.templateVersion.ifPresent(tv -> doc.setField(TEMPLATE_VERSION, tv));
+        replay.templateVersion.ifPresent(templateVer -> doc.setField(TEMPLATE_VERSION, templateVer));
 
         return doc;
     }
@@ -1354,7 +1412,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() &&
                 instanceid.isPresent() && collection.isPresent()
-                && replayid.isPresent() && async.isPresent() && status.isPresent()) {
+                && replayid.isPresent() && async.isPresent() && status.isPresent() /*&& templateVersion.isPresent()*/) {
             try {
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(),
 				        reqids, replayid.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
@@ -1772,7 +1830,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static final String RECORDINGSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
-
+    private static final String ROOT_RECORDING_ID = "root_recording_id" + STRING_SUFFIX;
+    private static final String PARENT_RECORDING_ID = "parent_recording_id" + STRING_SUFFIX;
 
     private static Optional<Recording> docToRecording(SolrDocument doc) {
 
@@ -1783,10 +1842,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
         Optional<Recording> recording = Optional.empty();
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSION);
+        Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_ID);
+        Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_ID);
         if (customerid.isPresent() && app.isPresent()
                 && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
             recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
-                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion));
+                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion, parentRecordingId, rootRecordingId));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerid %s, app id %s, instance id %s",
                     customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
@@ -1800,8 +1861,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         String type = Types.Recording.toString();
         // the id field is to (cust app, collection) which is unique
-        String id = type + '-' + recording.customerid + '-' + recording.app + '-' + recording.collection;
-
+        String id = recording.getId();
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
         doc.setField(CUSTOMERIDF, recording.customerid);
@@ -1809,8 +1869,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceid);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
+        recording.templateVersion.ifPresent(templateVer -> doc.setField(TEMPLATE_VERSION, templateVer));
+        recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_ID, parentRecId));
+        recording.rootRecordingId.ifPresent(rootRecId -> doc.setField(ROOT_RECORDING_ID, rootRecId));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
-        recording.templateVersion.ifPresent(templateVersion -> doc.setField(TEMPLATE_VERSION, templateVersion));
 
         return doc;
     }
@@ -1845,20 +1907,30 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
     }
 
+    @Override
+    public Optional<Recording> getRecording(String recordingId) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Recording.toString());
+        addFilter(query, IDF, recordingId);
+        return SolrIterator.getStream(solr, query, Optional.of(1)).findFirst().flatMap(doc -> docToRecording(doc));
+    }
+
 
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getRecordingByCollection(java.lang.String, java.lang.String, java.lang.String)
      * (cust, app, collection) is a unique key, so only record will satisfy at most
      */
     @Override
-    public Optional<Recording> getRecordingByCollection(String customerid, String app, String collection) {
+    public Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app,
+                                                        String collection, Optional<String> templateSetVersion) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, CUSTOMERIDF, customerid);
         addFilter(query, APPF, app);
         addFilter(query, COLLECTIONF, collection);
-
+        addFilter(query, TEMPLATE_VERSION, templateSetVersion);
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }

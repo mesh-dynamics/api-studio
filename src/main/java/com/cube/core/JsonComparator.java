@@ -42,7 +42,7 @@ public class JsonComparator implements Comparator {
 		this.template = template;
 		this.jsonMapper = jsonMapper;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.cube.core.Comparator#compare(java.lang.String, java.lang.String)
 	 */
@@ -69,24 +69,24 @@ public class JsonComparator implements Comparator {
                 + " " + UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
 		    return new Match(MatchType.Exception, e.getMessage(), result);
         }
-		
+
 		// first validate the rhs (new json)
 		validate(rhsroot, result);
 
 		// Now diff new (rhs) with the old (lhs)
-		EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION, 
+		EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,
 				DiffFlags.OMIT_MOVE_OPERATION,
 				DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE);
 		JsonNode patch = JsonDiff.asJson(lhsroot, rhsroot, flags);
 		Diff[] diffs;
-		
+
 		try {
 			diffs = jsonMapper.treeToValue(patch, Diff[].class);
 		} catch (JsonProcessingException e) {
 			LOGGER.error("Error in parsing diffs: " + patch.toString(), e);
 			return new Match(MatchType.Exception, e.getMessage(), result);
 		}
-		
+
 		int numerrs = result.size();
 		for (var diff : diffs) {
 			TemplateEntry rule = template.getRule(diff.path);
@@ -104,7 +104,7 @@ public class JsonComparator implements Comparator {
 					diff.resolution = Resolution.ERR_Required;
 				}
 				break;
-			default: 
+			default:
 				LOGGER.error("Unexpected op in diff, ignoring: " + diff.op);
 			}
 			if (diff.resolution.isErr()) {
@@ -115,7 +115,7 @@ public class JsonComparator implements Comparator {
 			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
 			result.add(diff);
 		}
-		
+
 		String matchmeta = "JsonDiff";
 		MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
 			(diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
@@ -146,7 +146,7 @@ public class JsonComparator implements Comparator {
 				if (rule.pt == PresenceType.Required) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, Resolution.ERR_Required);
 					resdiffs.add(diff);
-				}				
+				}
 			} else {
 				// validate data type
 				boolean valTypeMismatch = false;
@@ -190,11 +190,11 @@ public class JsonComparator implements Comparator {
 				if (valTypeMismatch) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, ERR_ValTypeMismatch);
 					resdiffs.add(diff);
-				}								
+				}
 				if (valFormatMismatch) {
 					Diff diff = new Diff(Diff.NOOP, rule.path, node, Resolution.ERR_ValFormatMismatch);
 					resdiffs.add(diff);
-				}								
+				}
 			}
 		});
 	}
@@ -216,7 +216,7 @@ public class JsonComparator implements Comparator {
 		if (node.isObject()) return DataType.Obj;
 		return DataType.Default;
 	}
-	
+
 	/**
 	 * @param rule
 	 * @param fromValue
@@ -280,10 +280,8 @@ public class JsonComparator implements Comparator {
 					return rule.lhsmissing();
 				}
 			}
-		}).orElseGet(() -> {
-			LOGGER.error("Internal error - this should never happen");
-			return ERR;
-		});
+			// this is the case when the rhs path is present, but the value is null
+		}).orElseGet(rule::rhsmissing);
 	}
 
 
@@ -300,7 +298,7 @@ public class JsonComparator implements Comparator {
 
 	private final CompareTemplate template;
 	private final ObjectMapper jsonMapper;
-	
+
 	public static void main(String[] args) throws Exception {
 		Config config = new Config();
 		ObjectMapper jsonmapper = config.jsonmapper;
@@ -311,7 +309,7 @@ public class JsonComparator implements Comparator {
 		elem.put("path", "/a");
 		JsonNode val = jsonmapper.getNodeFactory().numberNode(1);
 		elem.set("value", val);
-		
+
 		Diff diff = jsonmapper.treeToValue(elem, Diff.class);
 		System.out.println(diff.toString());
 		Diff[] diffarr = jsonmapper.treeToValue(root, Diff[].class);

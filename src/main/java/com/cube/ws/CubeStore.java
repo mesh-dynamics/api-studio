@@ -80,7 +80,7 @@ public class CubeStore {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store request").build();
         }
     }
-	
+
 	@POST
 	@Path("/resp")
     @Consumes({MediaType.APPLICATION_JSON})
@@ -92,7 +92,7 @@ public class CubeStore {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store response").build();
         }
     }
-	
+
 
 	@POST
 	@Path("/rr/{var:.*}")
@@ -261,9 +261,9 @@ public class CubeStore {
         }
         return Response.serverError().entity("Not able to store default response").build();
     }
-	
 
-	
+
+
 	@POST
 	@Path("start/{customerid}/{app}/{instanceid}/{collection}")
 	@Consumes("application/x-www-form-urlencoded")
@@ -272,8 +272,10 @@ public class CubeStore {
                           @PathParam("app") String app,
                           @PathParam("customerid") String customerid,
                           @PathParam("instanceid") String instanceid,
-                          @PathParam("collection") String collection) {
-        // check if recording or replay is ongoing for (customer, app, instanceid)
+                          @PathParam("collection") String collection
+                          /*@PathParam("templateSetVersion") String  templateSetVersion*/) {
+        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
+	    // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
             Optional.ofNullable(instanceid));
         if (errResp.isPresent()) {
@@ -281,7 +283,8 @@ public class CubeStore {
         }
 
         // check if recording collection name is unique for (customerid, app)
-        Optional<Recording> recording = rrstore.getRecordingByCollection(customerid, app, collection);
+        Optional<Recording> recording = rrstore
+            .getRecordingByCollectionAndTemplateVer(customerid, app, collection, Optional.of(templateSetVersion));
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
@@ -297,11 +300,9 @@ public class CubeStore {
         LOGGER.info(String.format("Starting recording for customer %s, app %s, instance %s, collection %s",
             customerid, app, instanceid, collection));
 
-        Optional<String> templateVersion = recording.isPresent() ?
-            recording.get().templateVersion : Optional.ofNullable(formParams.getFirst("templateSet"));
 
 
-        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateVersion,
+        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, Optional.of(templateSetVersion),
             rrstore)
             .map(newr -> {
                 String json;
@@ -323,9 +324,11 @@ public class CubeStore {
     public Response status(@Context UriInfo ui,
                            @PathParam("collection") String collection,
                            @PathParam("customerid") String customerid,
-                           @PathParam("app") String app) {
-        Optional<Recording> recording = rrstore.getRecordingByCollection(customerid,
-            app, collection);
+                           @PathParam("app") String app
+                           /*@PathParam("templateSetVersion") String templateSetVersion*/) {
+        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
+	    Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerid,
+            app, collection, Optional.of(templateSetVersion));
 
         Response resp = recording.map(r -> {
             String json;
@@ -364,7 +367,26 @@ public class CubeStore {
         }
     }
 
-	@GET
+    /*@GET
+    @Path("goldenSet/get")
+    public Response getGoldenSetList(@Context UriInfo ui) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
+        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+        List<GoldenSet> recordings = rrstore.getGoldenSetStream(customerid, app, instanceid).collect(Collectors.toList());
+        String json;
+        try {
+            json = jsonmapper.writeValueAsString(recordings);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Golden Set object to Json for customer %s, app %s, instance %s.",
+                customerid.orElse(""), app.orElse(""), instanceid.orElse("")), e);
+            return Response.serverError().build();
+        }
+    }*/
+
+    @GET
 	@Path("currentcollection")
     public Response currentcollection(@Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
@@ -375,15 +397,17 @@ public class CubeStore {
             .orElse("No current collection");
         return Response.ok(currentcollection).build();
     }
-	
+
 	@POST
 	@Path("stop/{customerid}/{app}/{collection}")
     public Response stop(@Context UriInfo ui,
                          @PathParam("collection") String collection,
                          @PathParam("customerid") String customerid,
-                         @PathParam("app") String app) {
-        Optional<Recording> recording = rrstore.getRecordingByCollection(customerid,
-            app, collection);
+                         @PathParam("app") String app
+                         /*@PathParam("templateSetVersion") String templateSetVersion*/) {
+        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
+        Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerid,
+            app, collection, Optional.empty());
         LOGGER.info(String.format("Stoppping recording for customer %s, app %s, collection %s",
             customerid, app, collection));
         Response resp = recording.map(r -> {
@@ -489,24 +513,24 @@ public class CubeStore {
 
 	/**
 	 * @param rr
-	 * 
+	 *
 	 * Set the collection field, if it is not already set
 	 */
 	private void setCollection(RRBase rr) {
-		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerid, 
+		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerid,
 				rr.app, rr.getInstance());
 	}
-	
-	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection, 
+
+	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
 			Optional<String> customerid, Optional<String> app, Optional<String> instanceid) {
 		return collection.or(() -> {
 			return rrstore.getCurrentCollection(customerid, app, instanceid);
 		});
 	}
-	
-	private boolean saveDefaultResponse(String customerid, String app,  
+
+	private boolean saveDefaultResponse(String customerid, String app,
 			String serviceid, String path, String method, String respbody, int status, Optional<String> contenttype) {
-		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status, 
+		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status,
 				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app), contenttype);
 		resp.setService(serviceid);
 		return saveDefaultResponse(path, method, resp);
@@ -515,7 +539,7 @@ public class CubeStore {
 	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
 		Request req = new Request(resp.getService(), path, method, Optional.of(RR.Manual), resp.customerid,
 				resp.app);
-		
+
 		// check if default response has been saved earlier
 		rrstore.getRequests(req, MockServiceHTTP.mspecForDefault, Optional.of(1))
 			.findFirst().ifPresentOrElse(oldreq -> {
