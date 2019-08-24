@@ -91,23 +91,27 @@ public class ReplayWS {
             return errResp.get();
         }
 
-        Optional<Recording> recording = rrstore.getRecordingByCollection(customerid, app, collection);
+        // TODO need to enforce tempalte version specification later
+        /*if (!formParams.containsKey("templateSetVer")) {
+            return Response.status(Status.BAD_REQUEST).entity("{\"Cause\" : \"Template Set Version Not Specified\"}").build();
+        }*/
+
+        Optional<String> templateSetVersion = Optional.ofNullable(formParams
+            .getFirst("templateSetVer"))/*.orElse(Recording.DEFAULT_TEMPLATE_VER)*/;
+
+
+        Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerid, app, collection, templateSetVersion);
         if (recording.isEmpty()) {
             LOGGER.error(String.format("Cannot init Replay since collection %s does not exist", collection));
             return Response.status(Status.NOT_FOUND).entity(String.format("Collection %s does not exist", collection)).build();
         }
-
-        // override templateSet specified in recording if it is passed in the param
-        Optional<String> templateVersion =
-            Optional.ofNullable(formParams.getFirst("templateSet")).or(() -> recording.flatMap(r -> r.templateVersion));
-
 
         return endpoint
             .map(e -> {
                 return instanceid.map(inst -> {
                     // TODO: introduce response transforms as necessary
                     return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null, samplerate
-                        , intermediateServices, templateVersion)
+                        , intermediateServices,templateSetVersion)
                         .map(replay -> {
                             String json;
                             try {

@@ -100,7 +100,7 @@ public class TemplateEntry {
     /*
      * Assuming compare type is not ignore or default
      */
-    private Comparator.Resolution rhsmissing() {
+    protected Comparator.Resolution rhsmissing() {
         switch (pt) {
             case Required:
                 return ERR_Required;

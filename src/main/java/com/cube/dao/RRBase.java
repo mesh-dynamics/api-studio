@@ -5,8 +5,6 @@ package com.cube.dao;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -129,8 +127,8 @@ public class RRBase {
 		template.getRule("/reqid").checkMatchStr(reqid, rhs.reqid, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
-		if (getMimeType().equalsIgnoreCase(APPLICATION_JSON) || ((bodyComparator instanceof JsonComparator)
-				&& ((JsonComparator) bodyComparator).pathRulesExist())) {
+		if ((getMimeType().equalsIgnoreCase(APPLICATION_JSON) || (bodyComparator instanceof JsonComparator))
+				&& ((JsonComparator) bodyComparator).shouldConsiderAsObj()) {
 			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODYPATH);
 		} else {
 			// treat as simple string

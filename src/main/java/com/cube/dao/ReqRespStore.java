@@ -4,8 +4,13 @@
 package com.cube.dao;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,10 +19,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-
-import com.cube.agent.FnResponse;
-
 import com.cube.agent.FnReqResponse;
+import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
@@ -26,8 +29,6 @@ import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
-import com.cube.golden.GoldenSet;
-import com.cube.golden.RecordingUpdate;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
@@ -37,6 +38,8 @@ import com.cube.golden.TemplateUpdateOperationSet;
  */
 public interface ReqRespStore {
 
+
+    Optional<TemplateSet> getTemplateSet(String customerid, String app, String version);
 
     public class ReqResp {
 
@@ -286,6 +289,7 @@ public interface ReqRespStore {
 	Stream<Recording> getRecording(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid, Optional<RecordingStatus> status);
 
+    Optional<Recording> getRecording(String recordingId);
 
 
 	/**
@@ -330,8 +334,8 @@ public interface ReqRespStore {
 	 * @param collection
 	 * @return
 	 */
-	Optional<Recording> getRecordingByCollection(String customerid, String app,
-			String collection);
+	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app,
+                                                               String collection, Optional<String> templateSetVersion);
 
 
 
@@ -549,14 +553,16 @@ public interface ReqRespStore {
      */
 	String saveTemplateSet(TemplateSet templateSet) throws Exception;
 
-    Optional<TemplateSet> getTemplateSet(String templateSetId);
+    Optional<TemplateSet> getTemplateSet(String templateSetVersion);
 
     Optional<TemplateSet> getLatestTemplateSet(String customer, String app);
 
-    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
+/*    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
 
-    Optional<GoldenSet> getGoldenSet(String goldenSetId);
+    Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception;
 
-    List<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId);
+    Stream<GoldenSet> getGoldenSetStream(Optional<String> customer, Optional<String> app, Optional<String> instanceid);
+
+    Stream<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId);*/
 
 }

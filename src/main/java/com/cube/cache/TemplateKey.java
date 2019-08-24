@@ -7,11 +7,12 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 
+import com.cube.dao.Recording;
+
 /**
  * Key against which the analysis template will be retrieved/cached
  */
 public class TemplateKey {
-    private static final String DEFAULT_VERSION = "DEFAULT";
 
     private String customerId;
     private String appId;
@@ -91,5 +92,5 @@ public class TemplateKey {
         return path;
     }
 
-    public String getVersion() { return version.orElse(DEFAULT_VERSION); }
+    public String getVersion() { return version.orElse(Recording.DEFAULT_TEMPLATE_VER); }
 }

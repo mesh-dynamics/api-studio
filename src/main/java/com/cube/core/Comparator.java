@@ -194,6 +194,8 @@ public interface Comparator {
 
 		public static Match NOMATCH = new Match(MatchType.NoMatch, "", Collections.emptyList());
 		public static Match DEFAULT = new Match(MatchType.Default, "", Collections.emptyList());
+        public static Match STATUSNOMATCH = new Match(MatchType.NoMatch, "Status not matching",
+            Collections.emptyList());
 
 
 		public String getDiffAsJsonStr(ObjectMapper jsonmapper) {
