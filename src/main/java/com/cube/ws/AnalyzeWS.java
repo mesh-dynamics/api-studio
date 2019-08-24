@@ -340,11 +340,22 @@ public class AnalyzeWS {
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
             String creationTimeStamp = replay.creationTimeStamp;
+            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerid, replay.app
+                ,  replay.collection , replay.templateVersion);
+            String recordingInfo = "";
+            if (recordingOpt.isEmpty()) {
+                LOGGER.error("Unable to find recording corresponding to given replay");
+            } else {
+                Recording recording = recordingOpt.get();
+                recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
+                    + "\" , \"collection\" : \"" + recording.collection
+                    + recording.templateVersion.map(templatever -> "\" , \"templateVer\" : \"" + templatever).orElse("");
+            }
             Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp
-                + "\" , \"results\" : ");
+                + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonmapper.writeValueAsString(res);
                 jsonBuilder.append(json);
