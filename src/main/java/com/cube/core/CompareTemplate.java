@@ -59,13 +59,13 @@ public class CompareTemplate {
 		Obj, // object type
 		Default // not specified
 	}
-	
+
 	public enum PresenceType {
 		Required,
 		Optional,
 		Default // if not specified
 	}
-	
+
 	public enum ComparisonType {
 		Equal,
 		EqualOptional, // this is for cases where equality is desired, but not required.
@@ -97,12 +97,26 @@ public class CompareTemplate {
 
 	/**
 	 * @param path
-	 * @return The rule corresponding to the path. Search from the path upwards, till a matching rule 
+	 * @return The rule corresponding to the path. Search from the path upwards, till a matching rule
 	 * is found. Never returns null. Will return default rule if nothing is found.
 	 */
 	public TemplateEntry getRule(String path) {
-		return get(path).orElse(getInheritedRule(path));
+		TemplateEntry toReturn = get(path).orElse(getInheritedRule(path));
+		// TODO maybe it's better to precompute these values
+		toReturn.isParentArray = isParentArray(path);
+		return toReturn;
 	}
+
+	public boolean isParentArray(String path) {
+	    Boolean toReturn = false;
+        int index = path.lastIndexOf('/');
+        if (index != -1) {
+            String subPath = path.substring(0, index);
+            toReturn = get(subPath).
+                map(entry -> entry.dt == DataType.RptArray || entry.dt == DataType.NrptArray).orElse(false);
+        }
+        return toReturn;
+    }
 
 	@JsonGetter("rules")
 	public Collection<TemplateEntry> getRules() {
@@ -201,7 +215,7 @@ public class CompareTemplate {
 	public Optional<TemplateEntry> get(String path) {
 		return Optional.ofNullable(rules.get(path));
 	}
-	
+
 	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default);
 	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal);
 	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional);

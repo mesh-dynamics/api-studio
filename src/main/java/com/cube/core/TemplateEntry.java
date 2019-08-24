@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonPointer;
 
@@ -93,6 +94,8 @@ public class TemplateEntry {
     Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
     JsonPointer pathptr; // compiled form of path
     Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex
+    @JsonIgnore
+    boolean isParentArray = false;
 
     /*
      * Assuming compare type is not ignore or default
@@ -114,7 +117,7 @@ public class TemplateEntry {
      * Assuming compare type is not ignore or default
      */
     Comparator.Resolution lhsmissing() {
-        if (pt == CompareTemplate.PresenceType.Default) return ERR_NewField;
+        if (pt == CompareTemplate.PresenceType.Default && !isParentArray) return ERR_NewField;
         switch (ct) {
             case Ignore:
                 return OK_Ignore;
