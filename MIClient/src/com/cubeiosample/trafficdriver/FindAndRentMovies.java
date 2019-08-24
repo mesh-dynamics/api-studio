@@ -77,7 +77,7 @@ public class FindAndRentMovies {
 			getToken();
 		}
 		warmMovieCache();
-		waitForListenerDeploy();
+		//waitForListenerDeploy();
 
 		int nm = numMovies.orElse(movies.length);
 
