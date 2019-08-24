@@ -34,7 +34,8 @@
             "b3":   { "a1": "a1v1",      "a2": 15 }
         },
         "rules": [
-            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" },
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Default", "comparisonType": "Default", "customization": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -78,7 +79,8 @@
             "b3":   { "a1": "a1v1",      "a2": 15 }
         },
         "rules": [
-            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" }
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" },
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Default", "comparisonType": "Default", "customization": "" }
         ],
         "output": {
             "mt":           "NoMatch",
