@@ -380,16 +380,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private Optional<TemplateUpdateOperationSet> solrDocToTemplateUpdateOperationSet(SolrDocument solrDocument) {
         Optional<String> id = getStrField(solrDocument , IDF);
         Optional<String> operationsAsString = getStrField(solrDocument, OPERATION);
-        return operationsAsString.flatMap(operations -> {
+        Map<TemplateKey, SingleTemplateUpdateOperation> updateMap  = (Map<TemplateKey, SingleTemplateUpdateOperation>)
+            operationsAsString.flatMap(operations -> {
             try {
-                Map<TemplateKey, SingleTemplateUpdateOperation> updateMap = config.jsonmapper.readValue(operations , typeReference);
+                return config.jsonmapper.readValue(operations , typeReference);
                 // note that id will always be present as the filter query is on the id field
-                return Optional.of(new TemplateUpdateOperationSet(id.get(), updateMap));
             } catch (Exception e) {
                 LOGGER.error("Unable to deserialize template set update operations :: " + e.getMessage());
                 return Optional.empty();
             }
-        });
+        }).orElse(Collections.EMPTY_MAP);
+        return Optional.of(new TemplateUpdateOperationSet(id.get(), updateMap));
     }
 
     @Override
