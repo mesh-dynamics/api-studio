@@ -389,7 +389,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 LOGGER.error("Unable to deserialize template set update operations :: " + e.getMessage());
                 return Optional.empty();
             }
-        }).orElse(Collections.EMPTY_MAP);
+        }).orElse(new HashMap<>());
         return Optional.of(new TemplateUpdateOperationSet(id.get(), updateMap));
     }
 
