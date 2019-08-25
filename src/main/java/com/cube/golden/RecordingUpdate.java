@@ -57,7 +57,7 @@ public class RecordingUpdate {
             updateRequest.path, updateRequest.operationSetId));
         Optional<RecordingOperationSetSP> storedOperationSet =
             rrStore.getRecordingOperationSetSP(updateRequest.operationSetId,
-                updateRequest.path, updateRequest.service);
+                updateRequest.service, updateRequest.path);
         return storedOperationSet
             // if present, update/insert the new operations
             .map(recordingOperationSet -> {

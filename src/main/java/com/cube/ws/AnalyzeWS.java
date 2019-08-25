@@ -761,7 +761,17 @@ public class AnalyzeWS {
 
         boolean b = recordingUpdate.updateRecordingOperationSet(request);
         if(b) {
-            return Response.ok().build();
+            String response = "Success";
+            String type = MediaType.TEXT_PLAIN;
+            try {
+                response = jsonmapper
+                    .writeValueAsString(Map.of("Message" , "Successfully updated Recording Update Operation Set"
+                        , "ID" , recordingOperationSetId));
+                type = MediaType.APPLICATION_JSON;
+            } catch (JsonProcessingException e) {
+                LOGGER.error("Error while constructing json response :: " + e.getMessage());
+            }
+            return Response.ok().entity(response).type(type).build();
         } else {
             LOGGER.error("error updating operation set");
             return Response.serverError().build();
