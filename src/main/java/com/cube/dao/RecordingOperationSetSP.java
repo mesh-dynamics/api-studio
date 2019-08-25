@@ -3,6 +3,7 @@ package com.cube.dao;
 import com.cube.golden.ReqRespUpdateOperation;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,6 +28,18 @@ public class RecordingOperationSetSP {
     // list of operations
     @JsonProperty("operationSet")
     public List<ReqRespUpdateOperation> operationsList;
+
+
+    // for jackson deserialization
+    public RecordingOperationSetSP() {
+        id = generateId();
+        operationSetId = "";
+        customer = "";
+        app = "";
+        service = "";
+        path = "";
+        operationsList = Collections.emptyList();
+    }
 
     // constructor that takes in id
     public RecordingOperationSetSP(String id, String operationSetId, String customer, String app,
