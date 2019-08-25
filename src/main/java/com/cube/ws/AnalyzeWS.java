@@ -762,7 +762,7 @@ public class AnalyzeWS {
         boolean b = recordingUpdate.updateRecordingOperationSet(request);
         if(b) {
             return Response.ok().entity("{\"Message\" :  \"Successfully updated Recording Update Operation Set\" , \"ID\" : \"" +
-                recordingOperationSetId + "\"}").build();
+                recordingOperationSetId + "\"}").type(MediaType.APPLICATION_JSON).build();
         } else {
             LOGGER.error("error updating operation set");
             return Response.serverError().build();
