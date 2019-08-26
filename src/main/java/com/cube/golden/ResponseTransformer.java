@@ -85,41 +85,44 @@ public class ResponseTransformer {
 
     private JsonNode processOperation(JsonNode recRoot, JsonNode repRoot,
                                       ReqRespUpdateOperation operation) {
-        String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
-        switch (operation.operationType) {
+        ReqRespUpdateOperation newop = new ReqRespUpdateOperation(operation.operationType,
+            StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH));
+        //String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
+        switch (newop.operationType) {
             // todo: check existence of value at path
             case ADD:
                 // get the value to be added from the replay body
-                operation.value = repRoot.at(jsonpath);
+                newop.value = repRoot.at(newop.jsonpath);
                 break;
             case REPLACE:
                 // there could be cases where the operation has been specified as 'replace', but all the response
                 // bodies in the api path might not have both values present.
                 // hence the following conditions may occur which would require changing the operation type/value
                 // left: record; right: replay
-                // if no value on left side, delete
-                // if no value on right side, add
+                // if no value on left side, add
+                // if no value on right side, delete
                 // if both values present, replace
-                JsonNode lval = recRoot.at(jsonpath);
-                JsonNode rval = repRoot.at(jsonpath);
+                JsonNode lval = recRoot.at(newop.jsonpath);
+                JsonNode rval = repRoot.at(newop.jsonpath);
                 JsonNode val = rval;
                 // ?? todo: what if both not present, no-op? error?
                 if (rval.isMissingNode()) { // (not the same as isNull)
-                    // change operation type to add
-                    operation.operationType = OperationType.ADD;
-                    val = lval;
-                } else if (lval.isMissingNode()) {
                     // change operation type to remove
-                    operation.operationType = OperationType.REMOVE;
+                    newop.operationType = OperationType.REMOVE;
                     val = null; // no need to specify value in remove
+                } else if (lval.isMissingNode()) {
+                    // change operation type to add
+                    newop.operationType = OperationType.ADD;
+                    val = lval;
                 }
-                operation.value = val;
+                newop.value = val;
                 break;
             case REMOVE:
+
                 // nothing to be done for 'remove'; perhaps validate the path?
                 break;
         }
-        return jsonMapper.valueToTree(operation);
+        return jsonMapper.valueToTree(newop);
     }
 
 //    private Object transform(String recBody, String repBody, ReqRespUpdateOperation operation) {
