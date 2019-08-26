@@ -3,10 +3,10 @@
 set -x
 #Init Replay
 REPLAY_ID=$(curl -X POST \
-	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/df-14-aug-12-3eda371b-26d3-4c52-bf6e-6efde912dd53 \
+	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/df-14-aug-12-0f38fd97-4bb3-472d-8bc8-3afd7bccf08d \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
-	-d 'endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=094df56b-6aa6-4a34-859a-ca102e8251b4'  | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
+	-d 'endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=c86d21a5-82fb-4a4d-bcc8-411177dc2a23'  | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
 
 #Start replay
 curl -f -X POST \
