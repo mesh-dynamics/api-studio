@@ -1,18 +1,20 @@
 package com.cube.golden;
 
-import com.cube.dao.RecordingOperationSetSP;
-import com.cube.dao.Response;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.flipkart.zjsonpatch.JsonPatch;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.*;
+import com.cube.dao.RRBase;
 
 public class ResponseTransformer {
 
@@ -83,11 +85,12 @@ public class ResponseTransformer {
 
     private JsonNode processOperation(JsonNode recRoot, JsonNode repRoot,
                                       ReqRespUpdateOperation operation) {
+        String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
         switch (operation.operationType) {
             // todo: check existence of value at path
             case ADD:
                 // get the value to be added from the replay body
-                operation.value = repRoot.at(operation.jsonpath);
+                operation.value = repRoot.at(jsonpath);
                 break;
             case REPLACE:
                 // there could be cases where the operation has been specified as 'replace', but all the response
@@ -97,8 +100,8 @@ public class ResponseTransformer {
                 // if no value on left side, delete
                 // if no value on right side, add
                 // if both values present, replace
-                JsonNode lval = recRoot.at(operation.jsonpath);
-                JsonNode rval = repRoot.at(operation.jsonpath);
+                JsonNode lval = recRoot.at(jsonpath);
+                JsonNode rval = repRoot.at(jsonpath);
                 JsonNode val = rval;
                 // ?? todo: what if both not present, no-op? error?
                 if (rval.isMissingNode()) { // (not the same as isNull)
