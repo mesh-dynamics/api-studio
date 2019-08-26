@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -749,7 +751,7 @@ public class AnalyzeWS {
             TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
-            String newCollectionName = originalRec.collection.concat("-").concat(String.valueOf(Objects.hash(replayId, collectionUpdateOpSetId)));
+            String newCollectionName = originalRec.collection.concat("-").concat(UUID.randomUUID().toString());
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
