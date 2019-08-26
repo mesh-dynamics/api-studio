@@ -1,5 +1,6 @@
 package com.cube.golden;
 
+import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,50 +27,27 @@ public class ResponseTransformer {
     * takes in Responses from the recording (golden) and replay and applies the operations given
     * returns the modified Response with the given collection id and a generated reqid
     */
-    public Response transformResponse(Optional<Response> recordResponse,
-                                      Optional<Response> replayResponse,
-                                      List<ReqRespUpdateOperation> operationList, String collectionName) {
-        Optional<Response> transformResponse =
-            recordResponse.flatMap(
-                recResponse -> replayResponse.flatMap(
-                    repResponse -> {
+    public Optional<String> transformResponse(String recordResponseBody,
+                                              String replayResponseBody,
+                                              List<ReqRespUpdateOperation> operationList) {
+        JsonNode patch =
+            preProcessUpdates(recordResponseBody, replayResponseBody, operationList);
 
-                        JsonNode patch =
-                            preProcessUpdates(recResponse.body, repResponse.body, operationList);
-
-                        JsonNode recRoot = null;
-                        try {
-                            recRoot = jsonMapper.readTree(recResponse.body);
-                        } catch (IOException e) {
-                            LOGGER.error("error reading JSON " + e.getMessage());
-                            return Optional.empty(); //
-                            // todo throw error
-                        }
-                        // todo separate out a method that takes a json and a patch to apply
-                        LOGGER.debug("applying patch");
-                        LOGGER.debug(recRoot.toString());
-                        LOGGER.debug(repResponse.body);
-                        LOGGER.debug(patch);
-                        JsonPatch.applyInPlace(patch, recRoot);
-                        LOGGER.debug(recRoot.toString());
-
-                        Optional<String> reqId = generateReqId(recResponse.reqid, collectionName);
-                        Instant timeStamp = Instant.now();
-
-                        Response transformedResponse = new Response(reqId, repResponse.status,
-                            repResponse.meta, repResponse.hdrs, recRoot.toString(), Optional.of(collectionName),
-                            Optional.of(timeStamp), repResponse.rrtype, repResponse.customerid, repResponse.app);
-
-                        return Optional.of(transformedResponse);
-                    }
-                )
-            );
-        return transformResponse.orElse(null); // todo
-    }
-
-    private Optional<String> generateReqId(Optional<String> recReqId, String collectionName) {
-        return recReqId.map(
-            reqid -> "gu-" + Objects.hash(reqid, collectionName));
+        JsonNode recRoot = null;
+        try {
+            recRoot = jsonMapper.readTree(recordResponseBody);
+        } catch (IOException e) {
+            LOGGER.error("error reading JSON " + e.getMessage());
+            return Optional.empty(); //
+            // todo throw error
+        }
+        // todo separate out a method that takes a json and a patch to apply
+        LOGGER.debug("applying patch");
+        LOGGER.debug(recordResponseBody);
+        LOGGER.debug(patch);
+        JsonPatch.applyInPlace(patch, recRoot);
+        LOGGER.debug(recRoot.toString());
+        return Optional.of(recRoot.toString());
     }
 
     // create a json patch to be applied using the patch library

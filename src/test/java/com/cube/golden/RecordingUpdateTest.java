@@ -95,7 +95,7 @@ class RecordingUpdateTest {
         RecordingOperationSetSP operationSet = new RecordingOperationSetSP(newCollectionName + "-id",
             newCollectionName + "-osid", customerid, app, service, path, updateOperationList);
 
-        Config config = null;
+       /* Config config = null;
         try {
             config = new Config();
         } catch (Exception e) {
@@ -106,7 +106,7 @@ class RecordingUpdateTest {
         RecordingUpdate recordingUpdate = new RecordingUpdate(rrStore, config.jsonmapper);
 
         Stream<Analysis.ReqRespMatchResult> reqRespMatchResultStream = recordingUpdate.getReqRespMatchResultStream(
-            replayId, operationSet);
+            replayId);
 
         reqRespMatchResultStream.forEach(res -> {
 
@@ -120,7 +120,7 @@ class RecordingUpdateTest {
                 replayResponse);
 
             System.out.println(transformedResponse);
-        });
+        });*/
     }
 
 }

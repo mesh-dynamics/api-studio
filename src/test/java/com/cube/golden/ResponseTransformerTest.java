@@ -50,10 +50,9 @@ class ResponseTransformerTest {
         );
 
         // transform the response by applying the update operations
-        Response transformedResponseToBeStored = responseTransformer.transformResponse(Optional.of(recordResponse),
-            Optional.of(replayResponse),
-            operationsList,
-            "new_golden_collection");
+        Optional<String> transformedResponseToBeStored = responseTransformer.transformResponse(recordResponse.body,
+            replayResponse.body,
+            operationsList);
         String bodyExpected = "[{\"display_actors\":[\"NATALIE HOPKINS\",\"GROUCHO SINATRA\",\"ED MANSFIELD\",\"JOE" +
             " " +
             "SWANK\"],\"film_id\":552,\"title\":\"MAJESTIC FLOATS\",\"actors_firstnames\":[\"JOE\",\"NATALIE\"," +
@@ -62,6 +61,6 @@ class ResponseTransformerTest {
             "\"reviewer\":\"Reviewer1\",\"text\":\"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"},{\"rating\":{\"color\":\"black\",\"stars\":4},\"reviewer\":\"Reviewer2\",\"text\":\"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"}],\"id\":\"552\"}}]";
 
         // compare output with expected
-        JSONAssert.assertEquals(bodyExpected, transformedResponseToBeStored.body, false);
+        JSONAssert.assertEquals(bodyExpected, transformedResponseToBeStored.get(), false);
     }
 }
