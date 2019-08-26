@@ -553,7 +553,7 @@ public interface ReqRespStore {
      */
 	String saveTemplateSet(TemplateSet templateSet) throws Exception;
 
-    Optional<TemplateSet> getTemplateSet(String templateSetVersion);
+    Optional<TemplateSet> getTemplateSet(String templateSetId);
 
     Optional<TemplateSet> getLatestTemplateSet(String customer, String app);
 

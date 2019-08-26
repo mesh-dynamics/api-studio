@@ -16,7 +16,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -24,9 +30,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.cube.dao.*;
-import com.cube.golden.RecordingUpdate;
-import com.cube.golden.ReqRespUpdateOperation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,13 +43,25 @@ import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
+import com.cube.dao.Analysis;
+import com.cube.dao.MatchResultAggregate;
+import com.cube.dao.RRBase;
+import com.cube.dao.Recording;
+import com.cube.dao.RecordingOperationSetSP;
+import com.cube.dao.Replay;
+import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStoreSolr;
+import com.cube.dao.Result;
 import com.cube.drivers.Analyzer;
-import com.cube.golden.TemplateSet;
+import com.cube.golden.RecordingUpdate;
+import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.golden.SingleTemplateUpdateOperation;
-import com.cube.golden.transform.TemplateSetTransformer;
+import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 
 /**
@@ -258,7 +273,84 @@ public class AnalyzeWS {
         }
     }
 
-	/**
+    /**
+     * Endpoint to get registered response template
+     * @param urlInfo UrlInfo object
+     * @param appId Application Id
+     * @param customerId Customer Id
+     * @param templateVersion Template version
+     * @param service The service id
+     * @return
+     */
+    @GET
+    @Path("getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}")
+    public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+                                     @PathParam("customerId") String customerId,
+                                     @PathParam("templateVersion") String templateVersion,
+                                     @PathParam("service") String service) {
+
+        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, TemplateKey.Type.Response);
+    }
+
+    /**
+     * Endpoint to get registered request template
+     * @param urlInfo UrlInfo object
+     * @param appId Application Id
+     * @param customerId Customer Id
+     * @param templateVersion Template version
+     * @param service The service id
+     * @return
+     */
+    @GET
+    @Path("getReqTemplate/{customerId}/{appId}/{templateVersion}/{service}")
+    public Response getReqTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+                                    @PathParam("customerId") String customerId,
+                                    @PathParam("templateVersion") String templateVersion,
+                                    @PathParam("service") String service) {
+
+        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, TemplateKey.Type.Request);
+    }
+
+
+    public Response getCompareTemplate(UriInfo urlInfo, String appId,
+                                       String customerId,
+                                       String templateVersion,
+                                       String service,
+                                       TemplateKey.Type ruleType) {
+
+        MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
+        Optional<String> apipath = Optional.ofNullable(queryParams.getFirst("apipath"));
+        Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst("jsonpath"));
+
+        if (apipath.isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+                .entity("{\"Error\": \"apipath is mssing\"}").build();
+        }
+        if (jsonpath.isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+                .entity("{\"Error\": \"jsonpath is mssing\"}").build();
+        }
+
+        TemplateKey tkey = new TemplateKey(Optional.of(templateVersion), customerId, appId, service, apipath.get(),
+            ruleType);
+
+        Optional<TemplateEntry> rule = rrstore.getCompareTemplate(tkey)
+            .map(template -> template.getRule(jsonpath.get()));
+
+        if (rule.isPresent()) {
+            try {
+                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+                    .entity(jsonmapper.writeValueAsString(rule.get())).build();
+            } catch (Exception e) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
+                    .entity("{\"Error\":\"Not able to convert rule to json\"}").build();
+            }
+        }
+        return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
+            .entity("{\"Error\":\"Assertion rule not found\"}").build();
+    }
+
+    /**
 	 * Given a stream of ReqRespMatchResult objects convert them to serialized json array
 	 * @param reqRespMatchResults
 	 * @return
