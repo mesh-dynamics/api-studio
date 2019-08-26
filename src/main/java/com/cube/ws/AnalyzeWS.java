@@ -750,7 +750,7 @@ public class AnalyzeWS {
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
             String newCollectionName = originalRec.collection.concat("-").concat(String.valueOf(Objects.hash(replayId, collectionUpdateOpSetId)));
-            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId);
+            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
             Recording updatedRecording = new Recording(originalRec.customerid,
@@ -843,6 +843,7 @@ public class AnalyzeWS {
     @Path("goldenUpdate/recordingOperationSet/update/")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRecordingOperationSet(RecordingOperationSetSP request) {
+        request.generateId();
         String recordingOperationSetId = request.operationSetId;
         String service = request.service;
         String path = request.path;
@@ -885,7 +886,7 @@ public class AnalyzeWS {
 
         LOGGER.debug(String.format("Received request to apply operation set %s to replay %s, with collection name %s",
             operationSetId, replayId, collectionName));
-        boolean b = recordingUpdate.applyRecordingOperationSet(replayId, collectionName, operationSetId);
+        boolean b =  true;//recordingUpdate.applyRecordingOperationSet(replayId, collectionName, operationSetId);
 
         if(b) {
             return Response.ok().build();

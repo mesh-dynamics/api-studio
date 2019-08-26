@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class RecordingOperationSetSP {
-    public final String id; // Solr id
+    public String id; // Solr id
 
     @JsonProperty("operationSetId")
     public final String operationSetId; // OperationSet id
@@ -32,7 +32,6 @@ public class RecordingOperationSetSP {
 
     // for jackson deserialization
     public RecordingOperationSetSP() {
-        id = generateId();
         operationSetId = "";
         customer = "";
         app = "";
@@ -56,12 +55,12 @@ public class RecordingOperationSetSP {
     // constructor that auto generates id
     public RecordingOperationSetSP(String operationSetId, String customer, String app, String service, String path,
                                    List<ReqRespUpdateOperation> operationsList) {
-        this.id = generateId();
         this.operationSetId = operationSetId;
         this.customer = customer;
         this.app = app;
         this.service = service;
         this.path = path;
+        generateId();
         this.operationsList = operationsList;
     }
 
@@ -70,8 +69,9 @@ public class RecordingOperationSetSP {
     }
 
     // unique id for (operationSetId, service, path)
-    private String generateId() {
-        return "RecordingOperationSetSP-" + Objects.hash(operationSetId, service, path);
+    public String generateId() {
+        this.id =  "RecordingOperationSetSP-" + Objects.hash(operationSetId, service, path);
+        return id;
     }
 }
 

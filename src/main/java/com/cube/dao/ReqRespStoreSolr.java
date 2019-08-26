@@ -345,6 +345,34 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
+    public boolean saveFnReqRespNewCollec(String customer, String app, String collection
+        , String newCollection) {
+        SolrQuery solrQuery = new SolrQuery("*:*");
+        addFilter(solrQuery, TYPEF , Types.FuncReqResp.toString());
+        addFilter(solrQuery, CUSTOMERIDF , customer);
+        addFilter(solrQuery, APPF , app);
+        addFilter(solrQuery, COLLECTIONF , collection);
+        SolrIterator.getStream(solr, solrQuery, Optional.empty()).forEach(doc -> {
+            SolrInputDocument inputDoc = new SolrInputDocument();
+            doc.entrySet().stream().forEach(v -> {
+                inputDoc.addField(v.getKey(), v.getValue());
+            });
+            inputDoc.setField(COLLECTIONF , newCollection);
+            inputDoc.removeField("_version_");
+            inputDoc.removeField("id");
+            try {
+                solr.add(inputDoc);
+            } catch (SolrServerException e) {
+                LOGGER.error("Error while saving fnreqresp object in new collection :: " + e.getMessage());
+            } catch (IOException e) {
+                LOGGER.error("Error while saving fnreqresp object in new collection :: " + e.getMessage());
+            }
+        });
+        softcommit();
+        return true;
+    }
+
+    @Override
     public String createTemplateUpdateOperationSet(String customer, String app, String sourceTemplateSetVersion) throws Exception {
         String templateUpdateOperationSetId = Types.TemplateUpdateOperationSet.toString().concat("-").concat(
             String.valueOf(Objects.hash(customer, app, sourceTemplateSetVersion)));

@@ -45,6 +45,7 @@ public class RecordingUpdate {
     public boolean updateRecordingOperationSet(RecordingOperationSetSP updateRequest){
         // fetch operation set meta from Solr to verify the recordingOperationSetId
         LOGGER.info("Fetching and verifying recordingOperationSetId");
+
         Optional<RecordingOperationSetMeta> recordingOperationSetMeta = rrStore.getRecordingOperationSetMeta(
             updateRequest.operationSetId);
         if(recordingOperationSetMeta.isEmpty()) {
@@ -107,7 +108,7 @@ public class RecordingUpdate {
     * apply the operations on a recording collection
      */
     public boolean applyRecordingOperationSet(String replayId, String newCollectionName,
-                                                String recordingOperationSetId) {
+                                                String recordingOperationSetId, Recording originalRec) {
 
 
         // use recordingOperationSetId to fetch the list of operations
@@ -161,6 +162,10 @@ public class RecordingUpdate {
             }
 
         });
+
+        rrStore.saveFnReqRespNewCollec(originalRec.customerid, originalRec.app,
+            originalRec.collection, newCollectionName);
+
 
         // get the operation sets using operation set id
         // for each operation set, perform the transformation and store the new collection

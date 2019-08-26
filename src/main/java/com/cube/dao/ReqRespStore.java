@@ -519,6 +519,8 @@ public interface ReqRespStore {
 
 	Optional<FnResponse> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection);
 
+	boolean saveFnReqRespNewCollec(String customer, String app, String collection, String newCollection);
+
     /**
      * TODO instead of the source template set (maybe we want to specify source golden set id/version)
      * Create a new template update operation set
