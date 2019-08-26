@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:67a9cff25f734246e138ae51ce4572f38e943cf1
+        image: cubeiocorp/cubews:a49097d0cab67061068c9c629eb95dd2195d2cf6
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -116,7 +116,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:67a9cff25f734246e138ae51ce4572f38e943cf1
+        image: cubeiocorp/cubews:a49097d0cab67061068c9c629eb95dd2195d2cf6
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -200,7 +200,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:67a9cff25f734246e138ae51ce4572f38e943cf1
+        image: cubeiocorp/cubews:a49097d0cab67061068c9c629eb95dd2195d2cf6
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -283,7 +283,7 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:400d9be4b0b27ae2b3198cbb04f6d26ca9a52deb
+        image: cubeiocorp/cubeui:88f3802ceab95e4c915feb6482e8f4e591ca66a2
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -330,7 +330,7 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:d9632585d6ec81bc4e4a3c2e3d57f261563c15fa
+        image: cubeiocorp/cubeuibackend:0ab452c3ae7baa4f9c255fae9f47c16073deba30
         imagePullPolicy: IfNotPresent
         resources:
           requests:
