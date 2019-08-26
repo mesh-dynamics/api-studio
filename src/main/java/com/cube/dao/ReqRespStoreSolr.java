@@ -1903,6 +1903,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceid);
         addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
+        addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
