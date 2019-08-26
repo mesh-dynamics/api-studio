@@ -163,7 +163,7 @@ public class CompareTemplate {
                 } else {
 					return Optional.empty();
 				}
-			}).orElse(getInheritedRule(subPath));
+			}).orElseGet(() -> getInheritedRule(subPath));
 		} else {
 			return DEFAULT_RULE;
 		}
