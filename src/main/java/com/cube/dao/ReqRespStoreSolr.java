@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -377,7 +378,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public String createTemplateUpdateOperationSet(String customer, String app, String sourceTemplateSetVersion) throws Exception {
         String templateUpdateOperationSetId = Types.TemplateUpdateOperationSet.toString().concat("-").concat(
-            String.valueOf(Objects.hash(customer, app, sourceTemplateSetVersion)));
+            UUID.randomUUID().toString());
         TemplateUpdateOperationSet templateSetUpdate = new TemplateUpdateOperationSet(templateUpdateOperationSetId,
             new HashMap<>());
         SolrInputDocument inputDoc = templateUpdateOperationSetToSolrDoc(templateSetUpdate);

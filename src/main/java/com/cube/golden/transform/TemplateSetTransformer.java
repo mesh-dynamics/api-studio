@@ -8,11 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cube.cache.TemplateKey;
+import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.TemplateEntry;
 import com.cube.golden.OperationType;
@@ -35,57 +38,80 @@ public class TemplateSetTransformer {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
         String newVersion = UUID.randomUUID().toString();
-        List<CompareTemplateVersioned> updatedCompareTemplates = new ArrayList<>();
-        sourceTemplates.forEach(template -> {
-                TemplateKey key = new TemplateKey(Optional.of(sourceTemplateSet.version),
-                    sourceTemplateSet.customer, sourceTemplateSet.app, template.service, template.requestPath, template.type);
+
+        Map<TemplateKey, CompareTemplateVersioned> sourceTemplateMap = sourceTemplates.stream()
+            .collect(Collectors.toMap(template -> new TemplateKey(Optional.of(sourceTemplateSet.version),
+            sourceTemplateSet.customer, sourceTemplateSet.app, template.service,
+            template.requestPath, template.type) , Function.identity()));
+
+        updates.forEach((key , update) -> {
+            if (sourceTemplateMap.containsKey(key)) {
                 // for each existing template (identified by a template key) ,
                 // check if any updates are specified in the update set ,
                 // create a new template with new rules , and add it to the set of new templates ,
                 // note that we are only performing updates here, for any new service / api
                 // path we won't be adding any new templates to the template set
                 // (that might be taken care of in forward testing)
+                CompareTemplateVersioned updated = updateTemplate(sourceTemplateMap.get(key) , update);
+                sourceTemplateMap.put(key, updated);
+            } else {
+                //construct a new CompareTemplateVersion
+                CompareTemplate template = new CompareTemplate();
+                template.setRules(update.getOperationList().stream().
+                    flatMap(op -> op.getNewRule().stream()).collect(Collectors.toList()));
+                CompareTemplateVersioned newTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
+                    , Optional.of(key.getPath()), key.getReqOrResp(), template);
+                sourceTemplateMap.put(key, newTemplate);
+            }
+        });
+
+        List<CompareTemplateVersioned> updatedCompareTemplates = new ArrayList<>(sourceTemplateMap.values());
+        /*sourceTemplates.forEach(template -> {
+                TemplateKey key = new TemplateKey(Optional.of(sourceTemplateSet.version),
+                    sourceTemplateSet.customer, sourceTemplateSet.app, template.service, template.requestPath, template.type);
+
                 updatedCompareTemplates.add(updateTemplate(template, Optional.ofNullable(updates.get(key))));
             }
-        );
+        );*/
         return new TemplateSet(newVersion, sourceTemplateSet.customer
             , sourceTemplateSet.app, Instant.now(), updatedCompareTemplates);
     }
 
+    /*public Optional<SingleTemplateUpdateOperation> getMatchingUpdateOperation(Map<TemplateKey, SingleTemplateUpdateOperation> updates,
+                                                                              )*/
+
     /**
      * Update a template given update operations
      * @param sourceTemplate The existing template
-     * @param updateOpt The update operations for the template
+     * @param update The update operations for the template
      * @return The updated template
      */
     private CompareTemplateVersioned updateTemplate(CompareTemplateVersioned sourceTemplate
-        , Optional<SingleTemplateUpdateOperation> updateOpt) {
-
-        return updateOpt.map(update -> {
-            Collection<TemplateEntryOperation> atomicUpdateOperations = update.getOperationList();
-            Collection<TemplateEntry> originalRules = sourceTemplate.getRules();
-            // this will the final set of rules for the new template
-            Map<String, TemplateEntry> pathVsEntry = new HashMap<>();
-            originalRules.forEach(templateEntry -> {
-                pathVsEntry.put(templateEntry.getPath(), templateEntry);
-            });
-            atomicUpdateOperations.forEach(updateOperation -> {
-                String path = updateOperation.getPath();
-                OperationType operationType = updateOperation.getType();
-                if (operationType.equals(OperationType.REMOVE)) {
-                    // remove the rule on a delete operation
-                    pathVsEntry.remove(path);
-                } else if (operationType.equals(OperationType.ADD) || operationType.equals(OperationType.REPLACE)) {
-                    if (updateOperation.getNewRule().isEmpty()) {
-                        LOGGER.error("New Rule Not Available for Add/Replace Operation for Path :: " + path);
-                    } else {
-                        // for add or replace ... for the given json path .. add the new rule
-                        // (in case of replace the entire rule will be replaced with the new rule)
-                        pathVsEntry.put(path, updateOperation.getNewRule().get());
-                    }
+        , SingleTemplateUpdateOperation update) {
+        Collection<TemplateEntryOperation> atomicUpdateOperations = update.getOperationList();
+        Collection<TemplateEntry> originalRules = sourceTemplate.getRules();
+        // this will the final set of rules for the new template
+        Map<String, TemplateEntry> pathVsEntry = new HashMap<>();
+        originalRules.forEach(templateEntry -> {
+            pathVsEntry.put(templateEntry.getPath(), templateEntry);
+        });
+        atomicUpdateOperations.forEach(updateOperation -> {
+            String path = updateOperation.getPath();
+            OperationType operationType = updateOperation.getType();
+            if (operationType.equals(OperationType.REMOVE)) {
+                // remove the rule on a delete operation
+                pathVsEntry.remove(path);
+            } else if (operationType.equals(OperationType.ADD) || operationType.equals(OperationType.REPLACE)) {
+                if (updateOperation.getNewRule().isEmpty()) {
+                    LOGGER.error("New Rule Not Available for Add/Replace Operation for Path :: " + path);
+                } else {
+                    // for add or replace ... for the given json path .. add the new rule
+                    // (in case of replace the entire rule will be replaced with the new rule)
+                    pathVsEntry.put(path, updateOperation.getNewRule().get());
                 }
-            });
-            return new CompareTemplateVersioned(sourceTemplate, pathVsEntry.values());
-        }).orElse(new CompareTemplateVersioned(sourceTemplate));
-    }
+            }
+        });
+        return new CompareTemplateVersioned(sourceTemplate, pathVsEntry.values());
+    } //).orElse(new CompareTemplateVersioned(sourceTemplate));
+
 }
