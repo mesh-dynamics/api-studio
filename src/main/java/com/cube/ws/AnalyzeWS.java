@@ -40,6 +40,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import redis.clients.jedis.Jedis;
+
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
@@ -589,6 +591,16 @@ public class AnalyzeWS {
         }
     }
 
+    @POST
+    @Path("redis/flushall")
+    public Response redisFlushAll() {
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            jedis.flushAll();
+            return Response.ok().build();
+        } catch (Exception e) {
+            return Response.serverError().entity("Exception occured while flushing :: " + e.getMessage()).build();
+        }
+    }
     /**
      * Initiate recording of template set update operations
      * @param uriInfo Context
@@ -906,6 +918,7 @@ public class AnalyzeWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonmapper = config.jsonmapper;
+		this.config = config;
 		this.requestComparatorCache = config.requestComparatorCache;
 		this.responseComparatorCache = config.responseComparatorCache;
 		this.recordingUpdate = new RecordingUpdate((ReqRespStoreSolr) rrstore, jsonmapper);
@@ -914,6 +927,7 @@ public class AnalyzeWS {
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonmapper;
+	Config config;
     private final RecordingUpdate recordingUpdate;
     // Template cache to retrieve analysis templates from solr
 	final RequestComparatorCache requestComparatorCache;
