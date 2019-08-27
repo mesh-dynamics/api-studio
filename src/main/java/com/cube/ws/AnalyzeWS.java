@@ -310,9 +310,10 @@ public class AnalyzeWS {
     }
 
     /**
-     * Return Time Line results for a given customer id , app , instance id combo
+     * Return Time Line results for a given customer id , app combo
      * Optional Parameters include restriction on <i>collection</i> id (later we should be able to specify
      * a range of collection ids or dates)
+     * Includes optional restriction on instance id
      * Return results segragated by path if <i>bypath</i> variable is set y in query params
      * We can also restrict the results to a particular gateway service (which is what should
      * be done ideally) using <i>service</i> query param
@@ -321,21 +322,21 @@ public class AnalyzeWS {
      * @param urlInfo
      * @param customer
      * @param app
-     * @param instanceId
      * @return
      */
     @GET
-	@Path("timelineres/{customer}/{app}/{instanceId}")
+    @Path("timelineres/{customer}/{app}")
     public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
-                                       @PathParam("app") String app, @PathParam("instanceId") String instanceId) {
+                                       @PathParam("app") String app) {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
+        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst("instanceId"));
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
             map(Integer::valueOf).or(() -> Optional.of(20));
-        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), Optional.empty(),
+        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
             List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection);
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
