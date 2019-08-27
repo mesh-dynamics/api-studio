@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.flipkart.zjsonpatch.JsonPatch;
 
 import com.cube.dao.RRBase;
@@ -37,19 +38,26 @@ public class ResponseTransformer {
 
         JsonNode recRoot = null;
         try {
-            recRoot = jsonMapper.readTree(recordResponseBody);
+            // if the recorded string is empty, creating an empty object so that the patch can be applied
+            // the only case for which this doesn't work is when both the lhs and rhs are empty
+            // in that case the lhs gets converted from an empty string to an empty object string "{}"
+            recRoot = Optional.ofNullable(jsonMapper.readTree(recordResponseBody)).orElse(jsonMapper.createObjectNode());
         } catch (IOException e) {
             LOGGER.error("error reading JSON " + e.getMessage());
             return Optional.empty(); //
             // todo throw error
         }
         // todo separate out a method that takes a json and a patch to apply
-        LOGGER.debug("applying patch");
-        LOGGER.debug(recordResponseBody);
+        LOGGER.debug("PRE APPLYING PATCH :: " + recordResponseBody);
         LOGGER.debug(patch);
-        JsonPatch.applyInPlace(patch, recRoot);
-        LOGGER.debug(recRoot.toString());
-        return Optional.of(recRoot.toString());
+        // apply in place doesn't work when the recorded root is an empty node
+        recRoot = JsonPatch.apply(patch, recRoot);
+        String transformedRespBody = recRoot.toString();
+        LOGGER.debug("POST APPLYING PATCH :: " + transformedRespBody);
+        //JsonPatch.applyInPlace(patch, recRoot, EnumSet.of(CompatibilityFlags.MISSING_VALUES_AS_NULLS));
+        return  Optional.of((transformedRespBody.equals("{}") && recordResponseBody.isEmpty()) ?
+            recordResponseBody : transformedRespBody);
+
     }
 
     // create a json patch to be applied using the patch library
@@ -63,14 +71,14 @@ public class ResponseTransformer {
         try {
             recRoot = jsonMapper.readTree(recBody);
         } catch (IOException e) {
-            e.printStackTrace(); // todo error handling
+            LOGGER.error("Error While Parsing Rec Body as Json :: " + e.getMessage());// todo error handling
         }
 
         JsonNode repRoot = null;
         try {
             repRoot = jsonMapper.readTree(repBody);
         } catch (IOException e) {
-            e.printStackTrace(); // todo error handling
+            LOGGER.error("Error While Parsing Replay Body as Json :: " + e.getMessage());// todo error handling
         }
 
         JsonNode finalRepRoot = repRoot;
@@ -102,8 +110,8 @@ public class ResponseTransformer {
                 // if no value on left side, add
                 // if no value on right side, delete
                 // if both values present, replace
-                JsonNode lval = recRoot.at(newop.jsonpath);
-                JsonNode rval = repRoot.at(newop.jsonpath);
+                JsonNode lval = (recRoot != null)? recRoot.at(newop.jsonpath) : MissingNode.getInstance();
+                JsonNode rval = (repRoot != null)? repRoot.at(newop.jsonpath) : MissingNode.getInstance();
                 JsonNode val = rval;
                 // ?? todo: what if both not present, no-op? error?
                 if (rval.isMissingNode()) { // (not the same as isNull)
@@ -113,7 +121,8 @@ public class ResponseTransformer {
                 } else if (lval.isMissingNode()) {
                     // change operation type to add
                     newop.operationType = OperationType.ADD;
-                    val = lval;
+                    // the value to apply is still right hand value, it's just the operation type would change
+                    //val = rval;
                 }
                 newop.value = val;
                 break;
