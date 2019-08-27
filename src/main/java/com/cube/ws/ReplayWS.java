@@ -192,6 +192,7 @@ public class ReplayWS {
         Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 
         Response resp = replay.map(r -> {
+            rrstore.invalidateCurrentCollectionCache(r.customerid, r.app, r.instanceid);
             if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
                 return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
             }

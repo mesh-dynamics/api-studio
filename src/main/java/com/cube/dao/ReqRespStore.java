@@ -559,6 +559,9 @@ public interface ReqRespStore {
 
     Optional<TemplateSet> getLatestTemplateSet(String customer, String app);
 
+    public void invalidateCurrentCollectionCache(String customerid, String app,
+                                                 String instanceid);
+
 /*    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
 
     Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception;

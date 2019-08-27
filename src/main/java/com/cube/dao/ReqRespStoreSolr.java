@@ -120,6 +120,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try (Jedis jedis = config.jedisPool.getResource()) {
             Long result = jedis.del(collectionKey.toString());
             LOGGER.info("Successfully removed from redis , key :: " + collectionKey.toString());
+        } catch (Exception e) {
+            LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
         }
     }
 

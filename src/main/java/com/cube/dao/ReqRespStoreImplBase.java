@@ -31,25 +31,25 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
     /* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentCollection(java.util.Optional, java.util.Optional, java.util.Optional)
-	 * For a (cust, app, instance), there is one current collection. Either a recording is going on or a replay or nothing. This 
+	 * For a (cust, app, instance), there is one current collection. Either a recording is going on or a replay or nothing. This
 	 * looks up the state and caches it for quick retrieval
 	 */
 	@Override
 	public Optional<String> getCurrentCollection(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid) {
-		
-		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getCollection());		
+
+		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getCollection());
 	}
 
-	
-	
+
+
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordingCollection(java.util.Optional, java.util.Optional, java.util.Optional)
 	 */
 	@Override
 	public Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid) {
-		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getRecordingCollection());		
+		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getRecordingCollection());
 	}
 
 	@Override
@@ -61,18 +61,18 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordOrReplay(java.util.Optional, java.util.Optional, java.util.Optional)
-	 * For a (cust, app, instance), there is one current recording or replay. Either a recording is going on or a replay or nothing. This 
+	 * For a (cust, app, instance), there is one current recording or replay. Either a recording is going on or a replay or nothing. This
 	 * looks up the state and caches it for quick retrieval
 	 */
 	@Override
 	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerid, Optional<String> app,
 			Optional<String> instanceid) {
-		
+
 		CollectionKey ckey = new CollectionKey(customerid.orElse(""), app.orElse(""), instanceid.orElse(""));
 
 		// in this case matching has to be exact. Null values should match empty strings
-		Optional<String> ncustomerid = customerid.or(() -> Optional.of("")); 
-		Optional<String> napp = app.or(() -> Optional.of("")); 
+		Optional<String> ncustomerid = customerid.or(() -> Optional.of(""));
+		Optional<String> napp = app.or(() -> Optional.of(""));
 		Optional<String> ninstanceid = instanceid.or(() -> Optional.of(""));
         Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey);
 		//Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
@@ -109,7 +109,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#invalidateCurrentCollectionCache()
 	 */
-	private void invalidateCurrentCollectionCache(String customerid, String app,
+	public void invalidateCurrentCollectionCache(String customerid, String app,
 			String instanceid) {
 		CollectionKey ckey = new CollectionKey(customerid, app, instanceid);
         removeCollectionKey(ckey);
@@ -144,7 +144,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 
 	static protected class CollectionKey {
-		
+
 		/**
 		 * @param customerid
 		 * @param app
@@ -175,7 +175,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			result = prime * result + ((instanceid == null) ? 0 : instanceid.hashCode());
 			return result;
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
@@ -215,7 +215,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			return true;
 		}
 
-		final String customerid; 
+		final String customerid;
 		final String app;
 		final String instanceid;
 	}
