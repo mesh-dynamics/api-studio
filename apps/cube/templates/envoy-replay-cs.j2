@@ -95,6 +95,7 @@ spec:
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
                   if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
                   if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
+                  response_handle:logInfo("In response filter: Trace id : " .. xb3traceid .. ", Rid: " .. crequestid)
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
