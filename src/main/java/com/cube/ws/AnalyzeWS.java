@@ -425,8 +425,7 @@ public class AnalyzeWS {
     public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
                                        @PathParam("app") String app) {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
-//        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst("instanceId"));
-        List<String> instanceId = queryParams.get("instanceId");
+        List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))

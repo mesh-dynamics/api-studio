@@ -918,7 +918,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
-        if(orValues==null || orValues.isEmpty()) return;
+        if(orValues.isEmpty()) return;
         String value = orValues.stream().map(SolrIterator::escapeQueryChars)
             .collect(Collectors.joining(" OR " , "(" , ")"));
         addFilter(query , fieldname, value, false);
@@ -1586,9 +1586,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
-
-        List<String> instanceidList = new ArrayList<String>();
-        if(instanceid.isPresent()) instanceidList.add(instanceid.get());
+        //Reference - https://stackoverflow.com/a/31688505/3918349
+        List<String> instanceidList = instanceid.stream().collect(Collectors.toList());
         return getReplay(customerid, app, instanceidList, status, numofResults, collection);
     }
 
