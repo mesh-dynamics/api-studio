@@ -918,6 +918,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
+        if(orValues==null || orValues.isEmpty()) return;
         String value = orValues.stream().map(SolrIterator::escapeQueryChars)
             .collect(Collectors.joining(" OR " , "(" , ")"));
         addFilter(query , fieldname, value, false);
@@ -1563,9 +1564,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
-            List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
-
+    public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
+                             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
@@ -1581,6 +1581,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         //Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
+    }
+
+    @Override
+    public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+            List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
+
+        List<String> instanceidList = new ArrayList<String>();
+        if(instanceid.isPresent()) instanceidList.add(instanceid.get());
+        return getReplay(customerid, app, instanceidList, status, numofResults, collection);
     }
 
     // Some useful functions
