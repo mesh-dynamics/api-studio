@@ -77,7 +77,12 @@ public class FindAndRentMovies {
 			getToken();
 		}
 		warmMovieCache();
-		waitForListenerDeploy();
+		/*
+		 commenting this since listeners will already be deployed by the script
+         also, need to use the traffic driver from the create collection script, without any
+         manual intervention
+        */
+		//waitForListenerDeploy();
 
 		int nm = numMovies.orElse(movies.length);
 
