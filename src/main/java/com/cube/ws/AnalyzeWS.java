@@ -409,7 +409,7 @@ public class AnalyzeWS {
      * Return Time Line results for a given customer id , app combo
      * Optional Parameters include restriction on <i>collection</i> id (later we should be able to specify
      * a range of collection ids or dates)
-     * Includes optional restriction on instance id
+     * Includes optional restriction on instance id which can be a list(multiple instanceId's allowed)
      * Return results segragated by path if <i>bypath</i> variable is set y in query params
      * We can also restrict the results to a particular gateway service (which is what should
      * be done ideally) using <i>service</i> query param
@@ -425,7 +425,7 @@ public class AnalyzeWS {
     public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
                                        @PathParam("app") String app) {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst("instanceId"));
+        List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))

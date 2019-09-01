@@ -200,6 +200,20 @@ public interface ReqRespStore {
      * @param numOfResults
      * @return
      */
+    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
+                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
+
+
+    /**
+     *
+     * @param customerid
+     * @param app
+     * @param instanceid
+     * @param status
+     * @param collection
+     * @param numOfResults
+     * @return
+     */
 	Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
                              List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
 
