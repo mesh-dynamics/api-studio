@@ -4,1316 +4,1135 @@ import io.cube.agent.FnKey;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
-import java.sql.ParameterMetaData;
 import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-public class CubeCallableStatement extends CubeStatement implements CallableStatement {
+public class CubeCallableStatement extends CubePreparedStatement implements CallableStatement {
 
     private final CallableStatement callableStatement;
-    private final String query;
-    private final CubeConnection cubeConnection;
-    private final int statementInstanceId;
     private final Config config;
-    private FnKey statementFnKey;
+    private int parameterIndex;
+    private String parameterName;
+    private FnKey wnFnKey;
+    private FnKey gsFnKey;
+    private FnKey gbFnKey;
+    private FnKey gbcFnKey;
+    private FnKey gscFnKey;
+    private FnKey giFnKey;
+    private FnKey gicFnKey;
+    private FnKey glcFnKey;
+    private FnKey gshFnKey;
+    private FnKey gshcFnKey;
+    private FnKey glclFnKey;
+    private FnKey gbyFnKey;
+    private FnKey gtFnKey;
+    private FnKey gtcFnKey;
+    private FnKey gtclFnKey;
+    private FnKey gtccFnKey;
+    private FnKey gfFnKey;
+    private FnKey gfcFnKey;
+    private FnKey gdFnKey;
+    private FnKey gdcFnKey;
+    private FnKey gbdFnKey;
+    private FnKey gbdcFnKey;
+    private FnKey gbdcsFnKey;
+    private FnKey gdclFnKey;
+    private FnKey gdciFnKey;
+    private FnKey gdcicFnKey;
+    private FnKey gdclcFnKey;
+    private FnKey gtiFnKey;
+    private FnKey gticFnKey;
+    private FnKey gticlFnKey;
+    private FnKey gticlcFnKey;
+    private FnKey gbysFnKey;
+    private FnKey gbyscFnKey;
+    private FnKey goFnKey;
+    private FnKey gocFnKey;
+    private FnKey guFnKey;
+    private FnKey gurFnKey;
+    private FnKey gnsFnKey;
+    private FnKey gnscFnKey;
 
-    public CubeCallableStatement (Config config, int statementInstanceId) {
-        super(config, statementInstanceId);
+    public CubeCallableStatement (CubeConnection cubeConnection, Config config, int statementInstanceId) {
+        super(cubeConnection, config, statementInstanceId);
         this.callableStatement = null;
-        this.query = null;
-        this.cubeConnection = null;
+        this.lastExecutedQuery = null;
         this.config = config;
-        this.statementInstanceId = statementInstanceId;
     }
 
     public CubeCallableStatement (CallableStatement callableStatement, String query, CubeConnection cubeConnection, Config config) {
-        super(callableStatement, cubeConnection, config);
+        super(callableStatement, query, cubeConnection, config);
         this.callableStatement = callableStatement;
-        this.query = query;
-        this.cubeConnection = cubeConnection;
+        this.lastExecutedQuery = query;
         this.config = config;
-        this.statementInstanceId = System.identityHashCode(this);
-    }
-
-    public int getStatementInstanceId() {
-        return statementInstanceId;
     }
 
     @Override
     public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException {
-        callableStatement.registerOutParameter(parameterIndex, sqlType);
+        if (!config.intentResolver.isIntentToMock()) {
+            callableStatement.registerOutParameter(parameterIndex, sqlType);
+        }
     }
 
     @Override
     public void registerOutParameter(int parameterIndex, int sqlType, int scale) throws SQLException {
-        callableStatement.registerOutParameter(parameterIndex, sqlType, scale);
+        if (!config.intentResolver.isIntentToMock()) {
+            callableStatement.registerOutParameter(parameterIndex, sqlType, scale);
+        }
     }
 
     @Override
     public boolean wasNull() throws SQLException {
-        return callableStatement.wasNull();
+        if (null == wnFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            wnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, wnFnKey, (fnArgs) -> callableStatement.wasNull(),
+                this.statementInstanceId, this.parameterIndex, this.parameterName);
     }
 
     @Override
     public String getString(int parameterIndex) throws SQLException {
-        return callableStatement.getString(parameterIndex);
+        if (null == gsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getString(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public boolean getBoolean(int parameterIndex) throws SQLException {
-        return callableStatement.getBoolean(parameterIndex);
+        if (null == gbFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (boolean) Utils.recordOrMock(config, gbFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getBoolean(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public byte getByte(int parameterIndex) throws SQLException {
-        return callableStatement.getByte(parameterIndex);
+        if (null == gbyFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbyFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getByte(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public short getShort(int parameterIndex) throws SQLException {
-        return callableStatement.getShort(parameterIndex);
+        if (null == gshcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gshcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (short) Utils.recordOrMock(config, gshcFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getShort(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public int getInt(int parameterIndex) throws SQLException {
-        return callableStatement.getInt(parameterIndex);
+        if (null == gicFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gicFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (int) Utils.recordOrMock(config, gicFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getInt(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public long getLong(int parameterIndex) throws SQLException {
-        return callableStatement.getLong(parameterIndex);
+        if (null == glcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            glcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (long) Utils.recordOrMock(config, glcFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getLong(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public float getFloat(int parameterIndex) throws SQLException {
-        return callableStatement.getFloat(parameterIndex);
+        if (null == gfFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (float) Utils.recordOrMock(config, gfFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getFloat(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public double getDouble(int parameterIndex) throws SQLException {
-        return callableStatement.getDouble(parameterIndex);
+        if (null == gdFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Double) Utils.recordOrMock(config, gdFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getDouble(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException {
-        return callableStatement.getBigDecimal(parameterIndex, scale);
+        if (null == gbdcsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbdcsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (BigDecimal) Utils.recordOrMock(config, gbdcsFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            int fnArg2 = (int)fnArgs[1];
+            return callableStatement.getBigDecimal(fnArg1, fnArg2);}, parameterIndex, scale, this.statementInstanceId);
     }
 
     @Override
     public byte[] getBytes(int parameterIndex) throws SQLException {
-        return callableStatement.getBytes(parameterIndex);
+        if (null == gbysFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbysFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (byte[]) Utils.recordOrMock(config, gbysFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getBytes(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public Date getDate(int parameterIndex) throws SQLException {
-        return callableStatement.getDate(parameterIndex);
+        if (null == gdciFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gdciFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Date) Utils.recordOrMock(config, gdciFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getDate(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public Time getTime(int parameterIndex) throws SQLException {
-        return callableStatement.getTime(parameterIndex);
+        if (null == gtiFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gtiFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Time) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getTime(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public Timestamp getTimestamp(int parameterIndex) throws SQLException {
-        return callableStatement.getTimestamp(parameterIndex);
+        if (null == gtFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gtFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Timestamp) Utils.recordOrMock(config, gtFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getTimestamp(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public Object getObject(int parameterIndex) throws SQLException {
-        return callableStatement.getObject(parameterIndex);
+        if (null == goFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            goFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return Utils.recordOrMock(config, goFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getObject(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
-        return callableStatement.getBigDecimal(parameterIndex);
+        if (null == gbdFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (BigDecimal) Utils.recordOrMock(config, gbdFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getBigDecimal(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public Object getObject(int parameterIndex, Map<String, Class<?>> map) throws SQLException {
-        return callableStatement.getObject(parameterIndex, map);
+        //TODO
+        return null;
     }
 
     @Override
     public Ref getRef(int parameterIndex) throws SQLException {
-        return callableStatement.getRef(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public Blob getBlob(int parameterIndex) throws SQLException {
-        return callableStatement.getBlob(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public Clob getClob(int parameterIndex) throws SQLException {
-        return callableStatement.getClob(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public Array getArray(int parameterIndex) throws SQLException {
-        return callableStatement.getArray(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
-        return callableStatement.getDate(parameterIndex, cal);
+        if (null == gdcicFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gdcicFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Date) Utils.recordOrMock(config, gdcicFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return callableStatement.getDate(fnArg1, fnArg2);}, parameterIndex, cal, this.statementInstanceId);
     }
 
     @Override
     public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
-        return callableStatement.getTime(parameterIndex, cal);
+        if (null == gticFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gticFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Time) Utils.recordOrMock(config, gticFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return callableStatement.getTime(fnArg1, fnArg2);}, parameterIndex, cal, this.statementInstanceId);
     }
 
     @Override
     public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
-        return callableStatement.getTimestamp(parameterIndex, cal);
+        if (null == gtcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gtcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (Timestamp) Utils.recordOrMock(config, gtcFnKey, (fnArgs) -> {
+            int fnArg1 = (int)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return callableStatement.getTimestamp(fnArg1, fnArg2);}, parameterIndex, cal, this.statementInstanceId);
     }
 
     @Override
     public void registerOutParameter(int parameterIndex, int sqlType, String typeName) throws SQLException {
-        callableStatement.registerOutParameter(parameterIndex, sqlType, typeName);
+        if (!config.intentResolver.isIntentToMock()) {
+            callableStatement.registerOutParameter(parameterIndex, sqlType, typeName);
+        }
     }
 
     @Override
     public void registerOutParameter(String parameterName, int sqlType) throws SQLException {
-        callableStatement.registerOutParameter(parameterName, sqlType);
+        if (!config.intentResolver.isIntentToMock()) {
+            callableStatement.registerOutParameter(parameterName, sqlType);
+        }
     }
 
     @Override
     public void registerOutParameter(String parameterName, int sqlType, int scale) throws SQLException {
-        callableStatement.registerOutParameter(parameterName, sqlType, scale);
+        if (!config.intentResolver.isIntentToMock()) {
+            callableStatement.registerOutParameter(parameterName, sqlType, scale);
+        }
     }
 
     @Override
     public void registerOutParameter(String parameterName, int sqlType, String typeName) throws SQLException {
-        callableStatement.registerOutParameter(parameterName, sqlType, typeName);
+        if (!config.intentResolver.isIntentToMock()) {
+            callableStatement.registerOutParameter(parameterName, sqlType, typeName);
+        }
     }
 
     @Override
     public URL getURL(int parameterIndex) throws SQLException {
-        return callableStatement.getURL(parameterIndex);
+        if (null == guFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            guFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (URL) Utils.recordOrMock(config, guFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getURL(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public void setURL(String parameterName, URL val) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setURL(parameterName, val);
         }
     }
 
     @Override
     public void setNull(String parameterName, int sqlType) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNull(parameterName, sqlType);
         }
     }
 
     @Override
     public void setBoolean(String parameterName, boolean x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBoolean(parameterName, x);
         }
     }
 
     @Override
     public void setByte(String parameterName, byte x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setByte(parameterName, x);
         }
     }
 
     @Override
     public void setShort(String parameterName, short x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setShort(parameterName, x);
         }
     }
 
     @Override
     public void setInt(String parameterName, int x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setInt(parameterName, x);
         }
     }
 
     @Override
     public void setLong(String parameterName, long x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setLong(parameterName, x);
         }
     }
 
     @Override
     public void setFloat(String parameterName, float x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setFloat(parameterName, x);
         }
     }
 
     @Override
     public void setDouble(String parameterName, double x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setDouble(parameterName, x);
         }
     }
 
     @Override
     public void setBigDecimal(String parameterName, BigDecimal x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBigDecimal(parameterName, x);
         }
     }
 
     @Override
     public void setString(String parameterName, String x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setString(parameterName, x);
         }
     }
 
     @Override
     public void setBytes(String parameterName, byte[] x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBytes(parameterName, x);
         }
     }
 
     @Override
     public void setDate(String parameterName, Date x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setDate(parameterName, x);
         }
     }
 
     @Override
     public void setTime(String parameterName, Time x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setTime(parameterName, x);
         }
     }
 
     @Override
     public void setTimestamp(String parameterName, Timestamp x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setTimestamp(parameterName, x);
         }
     }
 
     @Override
     public void setAsciiStream(String parameterName, InputStream x, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setAsciiStream(parameterName, x, length);
         }
     }
 
     @Override
     public void setBinaryStream(String parameterName, InputStream x, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBinaryStream(parameterName, x, length);
         }
     }
 
     @Override
     public void setObject(String parameterName, Object x, int targetSqlType, int scale) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setObject(parameterName, x, targetSqlType, scale);
         }
     }
 
     @Override
     public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setObject(parameterName, x, targetSqlType);
         }
     }
 
     @Override
     public void setObject(String parameterName, Object x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setObject(parameterName, x);
         }
     }
 
     @Override
     public void setCharacterStream(String parameterName, Reader reader, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setCharacterStream(parameterName, reader, length);
         }
     }
 
     @Override
     public void setDate(String parameterName, Date x, Calendar cal) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setDate(parameterName, x, cal);
         }
     }
 
     @Override
     public void setTime(String parameterName, Time x, Calendar cal) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setTime(parameterName, x, cal);
         }
     }
 
     @Override
     public void setTimestamp(String parameterName, Timestamp x, Calendar cal) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setTimestamp(parameterName, x, cal);
         }
     }
 
     @Override
     public void setNull(String parameterName, int sqlType, String typeName) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNull(parameterName, sqlType, typeName);
         }
     }
 
     @Override
     public String getString(String parameterName) throws SQLException {
-        return callableStatement.getString(parameterName);
+        if (null == gscFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (String) Utils.recordOrMock(config, gscFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getString(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public boolean getBoolean(String parameterName) throws SQLException {
-        return callableStatement.getBoolean(parameterName);
+        if (null == gbcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (boolean) Utils.recordOrMock(config, gbcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getBoolean(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public byte getByte(String parameterName) throws SQLException {
-        return callableStatement.getByte(parameterName);
+        if (null == gbyFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbyFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getByte(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public short getShort(String parameterName) throws SQLException {
-        return callableStatement.getShort(parameterName);
+        if (null == gshFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gshFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (short) Utils.recordOrMock(config, gshFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getShort(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public int getInt(String parameterName) throws SQLException {
-        return callableStatement.getInt(parameterName);
+        if (null == giFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            giFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (int) Utils.recordOrMock(config, giFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getInt(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public long getLong(String parameterName) throws SQLException {
-        return callableStatement.getLong(parameterName);
+        if (null == glclFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            glclFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (long) Utils.recordOrMock(config, glclFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getLong(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public float getFloat(String parameterName) throws SQLException {
-        return callableStatement.getFloat(parameterName);
+        if (null == gfcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (float) Utils.recordOrMock(config, gfcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getFloat(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public double getDouble(String parameterName) throws SQLException {
-        return callableStatement.getDouble(parameterName);
+        if (null == gdcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gdcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (double) Utils.recordOrMock(config, gdcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getDouble(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public byte[] getBytes(String parameterName) throws SQLException {
-        return callableStatement.getBytes(parameterName);
+        if (null == gbyscFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbyscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (byte[]) Utils.recordOrMock(config, gbyscFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getBytes(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public Date getDate(String parameterName) throws SQLException {
-        return callableStatement.getDate(parameterName);
+        if (null == gdclFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gdclFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (Date) Utils.recordOrMock(config, gdclFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getDate(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public Time getTime(String parameterName) throws SQLException {
-        return callableStatement.getTime(parameterName);
+        if (null == gticlFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gticlFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (Time) Utils.recordOrMock(config, gticlFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getTime(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public Timestamp getTimestamp(String parameterName) throws SQLException {
-        return callableStatement.getTimestamp(parameterName);
+        if (null == gtclFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gtclFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (Timestamp) Utils.recordOrMock(config, gtclFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getTimestamp(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public Object getObject(String parameterName) throws SQLException {
-        return callableStatement.getObject(parameterName);
+        if (null == gocFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gocFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return Utils.recordOrMock(config, gocFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getObject(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public BigDecimal getBigDecimal(String parameterName) throws SQLException {
-        return callableStatement.getBigDecimal(parameterName);
+        if (null == gbdcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbdcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (BigDecimal) Utils.recordOrMock(config, gbdcFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getBigDecimal(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public Object getObject(String parameterName, Map<String, Class<?>> map) throws SQLException {
-        return callableStatement.getObject(parameterName, map);
+        //TODO
+        return null;
     }
 
     @Override
     public Ref getRef(String parameterName) throws SQLException {
-        return callableStatement.getRef(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public Blob getBlob(String parameterName) throws SQLException {
-        return callableStatement.getBlob(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public Clob getClob(String parameterName) throws SQLException {
-        return callableStatement.getClob(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public Array getArray(String parameterName) throws SQLException {
-        return callableStatement.getArray(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public Date getDate(String parameterName, Calendar cal) throws SQLException {
-        return callableStatement.getDate(parameterName, cal);
+        if (null == gdclcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gdclcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (Date) Utils.recordOrMock(config, gdclcFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return callableStatement.getDate(fnArg1, fnArg2);}, parameterName, cal, this.statementInstanceId);
     }
 
     @Override
     public Time getTime(String parameterName, Calendar cal) throws SQLException {
-        return callableStatement.getTime(parameterName, cal);
+        if (null == gticlcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gticlcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (Time) Utils.recordOrMock(config, gticlcFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return callableStatement.getTime(fnArg1, fnArg2);}, parameterName, cal, this.statementInstanceId);
     }
 
     @Override
     public Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException {
-        return callableStatement.getTimestamp(parameterName, cal);
+        if (null == gtccFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gtccFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (Timestamp) Utils.recordOrMock(config, gtccFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            Calendar fnArg2 = (Calendar)fnArgs[1];
+            return callableStatement.getTimestamp(fnArg1, fnArg2);}, parameterName, cal, this.statementInstanceId);
     }
 
     @Override
     public URL getURL(String parameterName) throws SQLException {
-        return callableStatement.getURL(parameterName);
+        if (null == gurFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gurFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (URL) Utils.recordOrMock(config, gurFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getURL(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public RowId getRowId(int parameterIndex) throws SQLException {
-        return callableStatement.getRowId(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public RowId getRowId(String parameterName) throws SQLException {
-        return callableStatement.getRowId(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public void setRowId(String parameterName, RowId x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setRowId(parameterName, x);
         }
     }
 
     @Override
     public void setNString(String parameterName, String value) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNString(parameterName, value);
         }
     }
 
     @Override
     public void setNCharacterStream(String parameterName, Reader value, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNCharacterStream(parameterName, value, length);
         }
     }
 
     @Override
     public void setNClob(String parameterName, NClob value) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNClob(parameterName, value);
         }
     }
 
     @Override
     public void setClob(String parameterName, Reader reader, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setClob(parameterName, reader, length);
         }
     }
 
     @Override
     public void setBlob(String parameterName, InputStream inputStream, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBlob(parameterName, inputStream, length);
         }
     }
 
     @Override
     public void setNClob(String parameterName, Reader reader, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNClob(parameterName, reader, length);
         }
     }
 
     @Override
     public NClob getNClob(int parameterIndex) throws SQLException {
-        return callableStatement.getNClob(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public NClob getNClob(String parameterName) throws SQLException {
-        return callableStatement.getNClob(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public void setSQLXML(String parameterName, SQLXML xmlObject) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setSQLXML(parameterName, xmlObject);
         }
     }
 
     @Override
     public SQLXML getSQLXML(int parameterIndex) throws SQLException {
-        return callableStatement.getSQLXML(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public SQLXML getSQLXML(String parameterName) throws SQLException {
-        return callableStatement.getSQLXML(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public String getNString(int parameterIndex) throws SQLException {
-        return callableStatement.getNString(parameterIndex);
+        if (null == gnsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gnsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterIndex = parameterIndex;
+        return (String) Utils.recordOrMock(config, gnsFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return callableStatement.getNString(fnArg);}, parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public String getNString(String parameterName) throws SQLException {
-        return callableStatement.getNString(parameterName);
+        if (null == gnscFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gnscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.parameterName = parameterName;
+        return (String) Utils.recordOrMock(config, gnscFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return callableStatement.getNString(fnArg);}, parameterName, this.statementInstanceId);
     }
 
     @Override
     public Reader getNCharacterStream(int parameterIndex) throws SQLException {
-        return callableStatement.getNCharacterStream(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public Reader getNCharacterStream(String parameterName) throws SQLException {
-        return callableStatement.getNCharacterStream(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public Reader getCharacterStream(int parameterIndex) throws SQLException {
-        return callableStatement.getCharacterStream(parameterIndex);
+        //TODO
+        return null;
     }
 
     @Override
     public Reader getCharacterStream(String parameterName) throws SQLException {
-        return callableStatement.getCharacterStream(parameterName);
+        //TODO
+        return null;
     }
 
     @Override
     public void setBlob(String parameterName, Blob x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBlob(parameterName, x);
         }
     }
 
     @Override
     public void setClob(String parameterName, Clob x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setClob(parameterName, x);
         }
     }
 
     @Override
     public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setAsciiStream(parameterName, x, length);
         }
     }
 
     @Override
     public void setBinaryStream(String parameterName, InputStream x, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBinaryStream(parameterName, x, length);
         }
     }
 
     @Override
     public void setCharacterStream(String parameterName, Reader reader, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setCharacterStream(parameterName, reader, length);
         }
     }
 
     @Override
     public void setAsciiStream(String parameterName, InputStream x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setAsciiStream(parameterName, x);
         }
     }
 
     @Override
     public void setBinaryStream(String parameterName, InputStream x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBinaryStream(parameterName, x);
         }
     }
 
     @Override
     public void setCharacterStream(String parameterName, Reader reader) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setCharacterStream(parameterName, reader);
         }
     }
 
     @Override
     public void setNCharacterStream(String parameterName, Reader value) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNCharacterStream(parameterName, value);
         }
     }
 
     @Override
     public void setClob(String parameterName, Reader reader) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setClob(parameterName, reader);
         }
     }
 
     @Override
     public void setBlob(String parameterName, InputStream inputStream) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setBlob(parameterName, inputStream);
         }
     }
 
     @Override
     public void setNClob(String parameterName, Reader reader) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
+        if(!config.intentResolver.isIntentToMock()) {
             callableStatement.setNClob(parameterName, reader);
         }
     }
 
     @Override
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
-        return callableStatement.getObject(parameterIndex, type);
+        //TODO
+        return null;
     }
 
     @Override
     public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
-        return callableStatement.getObject(parameterName, type);
-    }
-
-    @Override
-    public ResultSet executeQuery() throws SQLException {
-        return callableStatement.executeQuery();
-    }
-
-    @Override
-    public int executeUpdate() throws SQLException {
-        return callableStatement.executeUpdate();
-    }
-
-    @Override
-    public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNull(parameterIndex, sqlType);
-        }
-    }
-
-    @Override
-    public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBoolean(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setByte(int parameterIndex, byte x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setByte(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setShort(int parameterIndex, short x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setShort(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setInt(int parameterIndex, int x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setInt(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setLong(int parameterIndex, long x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setLong(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setFloat(int parameterIndex, float x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setFloat(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setDouble(int parameterIndex, double x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setDouble(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBigDecimal(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setString(int parameterIndex, String x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setString(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBytes(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setDate(int parameterIndex, Date x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setDate(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setTime(int parameterIndex, Time x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setTime(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setTimestamp(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setAsciiStream(parameterIndex, x, length);
-        }
-    }
-
-    @Override
-    public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setUnicodeStream(parameterIndex, x, length);
-        }
-    }
-
-    @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBinaryStream(parameterIndex, x, length);
-        }
-    }
-
-    @Override
-    public void clearParameters() throws SQLException {
-        callableStatement.clearParameters();
-    }
-
-    @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setObject(parameterIndex, x, targetSqlType);
-        }
-    }
-
-    @Override
-    public void setObject(int parameterIndex, Object x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setObject(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public boolean execute() throws SQLException {
-        return callableStatement.execute();
-    }
-
-    @Override
-    public void addBatch() throws SQLException {
-        callableStatement.addBatch();
-    }
-
-    @Override
-    public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setCharacterStream(parameterIndex, reader, length);
-        }
-    }
-
-    @Override
-    public void setRef(int parameterIndex, Ref x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setRef(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setBlob(int parameterIndex, Blob x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBlob(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setClob(int parameterIndex, Clob x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setClob(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setArray(int parameterIndex, Array x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setArray(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
-        return callableStatement.getMetaData();
-    }
-
-    @Override
-    public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setDate(parameterIndex, x, cal);
-        }
-    }
-
-    @Override
-    public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setTime(parameterIndex, x, cal);
-        }
-    }
-
-    @Override
-    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setTimestamp(parameterIndex, x, cal);
-        }
-    }
-
-    @Override
-    public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNull(parameterIndex, sqlType, typeName);
-        }
-    }
-
-    @Override
-    public void setURL(int parameterIndex, URL x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setURL(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public ParameterMetaData getParameterMetaData() throws SQLException {
-        return callableStatement.getParameterMetaData();
-    }
-
-    @Override
-    public void setRowId(int parameterIndex, RowId x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setRowId(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setNString(int parameterIndex, String value) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNString(parameterIndex, value);
-        }
-    }
-
-    @Override
-    public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNCharacterStream(parameterIndex, value, length);
-        }
-    }
-
-    @Override
-    public void setNClob(int parameterIndex, NClob value) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNClob(parameterIndex, value);
-        }
-    }
-
-    @Override
-    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setClob(parameterIndex, reader, length);
-        }
-    }
-
-    @Override
-    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBlob(parameterIndex, inputStream, length);
-        }
-    }
-
-    @Override
-    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNClob(parameterIndex, reader, length);
-        }
-    }
-
-    @Override
-    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setSQLXML(parameterIndex, xmlObject);
-        }
-    }
-
-    @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setObject(parameterIndex, x, targetSqlType, scaleOrLength);
-        }
-    }
-
-    @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setAsciiStream(parameterIndex, x, length);
-        }
-    }
-
-    @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBinaryStream(parameterIndex, x, length);
-        }
-    }
-
-    @Override
-    public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setCharacterStream(parameterIndex, reader, length);
-        }
-    }
-
-    @Override
-    public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setAsciiStream(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBinaryStream(parameterIndex, x);
-        }
-    }
-
-    @Override
-    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setCharacterStream(parameterIndex, reader);
-        }
-    }
-
-    @Override
-    public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNCharacterStream(parameterIndex, value);
-        }
-    }
-
-    @Override
-    public void setClob(int parameterIndex, Reader reader) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setClob(parameterIndex, reader);
-        }
-    }
-
-    @Override
-    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setBlob(parameterIndex, inputStream);
-        }
-    }
-
-    @Override
-    public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setNClob(parameterIndex, reader);
-        }
-    }
-
-    @Override
-    public ResultSet executeQuery(String sql) throws SQLException {
-        return callableStatement.executeQuery(sql);
-    }
-
-    @Override
-    public int executeUpdate(String sql) throws SQLException {
-        return callableStatement.executeUpdate(sql);
-    }
-
-    @Override
-    public void close() throws SQLException {
-        callableStatement.close();
-    }
-
-    @Override
-    public int getMaxFieldSize() throws SQLException {
-        return callableStatement.getMaxFieldSize();
-    }
-
-    @Override
-    public void setMaxFieldSize(int max) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setMaxFieldSize(max);
-        }
-    }
-
-    @Override
-    public int getMaxRows() throws SQLException {
-        return callableStatement.getMaxRows();
-    }
-
-    @Override
-    public void setMaxRows(int max) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setMaxRows(max);
-        }
-    }
-
-    @Override
-    public void setEscapeProcessing(boolean enable) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setEscapeProcessing(enable);
-        }
-    }
-
-    @Override
-    public int getQueryTimeout() throws SQLException {
-        return callableStatement.getQueryTimeout();
-    }
-
-    @Override
-    public void setQueryTimeout(int seconds) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setQueryTimeout(seconds);
-        }
-    }
-
-    @Override
-    public void cancel() throws SQLException {
-        callableStatement.cancel();
-    }
-
-    @Override
-    public SQLWarning getWarnings() throws SQLException {
-        return callableStatement.getWarnings();
-    }
-
-    @Override
-    public void clearWarnings() throws SQLException {
-        callableStatement.clearWarnings();
-    }
-
-    @Override
-    public void setCursorName(String name) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setCursorName(name);
-        }
-    }
-
-    @Override
-    public boolean execute(String sql) throws SQLException {
-        return callableStatement.execute(sql);
-    }
-
-    @Override
-    public ResultSet getResultSet() throws SQLException {
-        return callableStatement.getResultSet();
-    }
-
-    @Override
-    public int getUpdateCount() throws SQLException {
-        return callableStatement.getUpdateCount();
-    }
-
-    @Override
-    public boolean getMoreResults() throws SQLException {
-        return callableStatement.getMoreResults();
-    }
-
-    @Override
-    public void setFetchDirection(int direction) throws SQLException {
-        callableStatement.setFetchDirection(direction);
-    }
-
-    @Override
-    public int getFetchDirection() throws SQLException {
-        return callableStatement.getFetchDirection();
-    }
-
-    @Override
-    public void setFetchSize(int rows) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setFetchSize(rows);
-        }
-    }
-
-    @Override
-    public int getFetchSize() throws SQLException {
-        return callableStatement.getFetchSize();
-    }
-
-    @Override
-    public int getResultSetConcurrency() throws SQLException {
-        return callableStatement.getResultSetConcurrency();
-    }
-
-    @Override
-    public int getResultSetType() throws SQLException {
-        return callableStatement.getResultSetType();
-    }
-
-    @Override
-    public void addBatch(String sql) throws SQLException {
-        callableStatement.addBatch(sql);
-    }
-
-    @Override
-    public void clearBatch() throws SQLException {
-        callableStatement.clearBatch();
-    }
-
-    @Override
-    public int[] executeBatch() throws SQLException {
-        return callableStatement.executeBatch();
-    }
-
-    @Override
-    public Connection getConnection() throws SQLException {
-        return callableStatement.getConnection();
-    }
-
-    @Override
-    public boolean getMoreResults(int current) throws SQLException {
-        return callableStatement.getMoreResults(current);
-    }
-
-    @Override
-    public ResultSet getGeneratedKeys() throws SQLException {
-        return callableStatement.getGeneratedKeys();
-    }
-
-    @Override
-    public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        return callableStatement.executeUpdate(sql, autoGeneratedKeys);
-    }
-
-    @Override
-    public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-        return callableStatement.executeUpdate(sql, columnIndexes);
-    }
-
-    @Override
-    public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-        return callableStatement.executeUpdate(sql, columnNames);
-    }
-
-    @Override
-    public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        return callableStatement.execute(sql, autoGeneratedKeys);
-    }
-
-    @Override
-    public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-        return callableStatement.execute(sql, columnIndexes);
-    }
-
-    @Override
-    public boolean execute(String sql, String[] columnNames) throws SQLException {
-        return callableStatement.execute(sql, columnNames);
-    }
-
-    @Override
-    public int getResultSetHoldability() throws SQLException {
-        return callableStatement.getResultSetHoldability();
-    }
-
-    @Override
-    public boolean isClosed() throws SQLException {
-        return callableStatement.isClosed();
-    }
-
-    @Override
-    public void setPoolable(boolean poolable) throws SQLException {
-        if(config.intentResolver.isIntentToRecord()) {
-            callableStatement.setPoolable(poolable);
-        }
-    }
-
-    @Override
-    public boolean isPoolable() throws SQLException {
-        return callableStatement.isPoolable();
-    }
-
-    @Override
-    public void closeOnCompletion() throws SQLException {
-        callableStatement.closeOnCompletion();
-    }
-
-    @Override
-    public boolean isCloseOnCompletion() throws SQLException {
-        return callableStatement.isCloseOnCompletion();
-    }
-
-    @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
-        return callableStatement.unwrap(iface);
-    }
-
-    @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return callableStatement.isWrapperFor(iface);
+        //TODO
+        return null;
     }
 }

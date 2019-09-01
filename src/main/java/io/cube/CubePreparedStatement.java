@@ -1,11 +1,7 @@
 package io.cube;
 
 import com.google.gson.reflect.TypeToken;
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
-import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponseObj;
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.InputStream;
@@ -17,7 +13,6 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
@@ -27,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -37,65 +31,44 @@ import java.util.Optional;
 public class CubePreparedStatement extends CubeStatement implements PreparedStatement {
 
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubePreparedStatement.class);
-    private static Type type = new TypeToken<Integer>() {}.getType();
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final PreparedStatement preparedStatement;
-    private final CubeConnection cubeConnection;
-    private final String query;
-    private final int statementInstanceId;
     private final Config config;
-    private FnKey statementFnKey;
-    private FnKey gmrFnKey;
-    private FnKey gqtFnKey;
+    private FnKey exqFnKey;
     private FnKey euFnKey;
-    private FnKey icFnKey;
+    private FnKey exFnKey;
 
-    public CubePreparedStatement (Config config, int statementInstanceId) {
-        super(config, statementInstanceId);
+    public CubePreparedStatement (CubeConnection cubeConnection, Config config, int statementInstanceId) {
+        super(cubeConnection, config, statementInstanceId);
         this.preparedStatement = null;
-        this.query = null;
-        this.cubeConnection = null;
+        this.lastExecutedQuery = null;
         this.config = config;
-        this.statementInstanceId = statementInstanceId;
     }
 
     public CubePreparedStatement (PreparedStatement preparedStatement, String query, CubeConnection cubeConnection, Config config) {
         super(preparedStatement, cubeConnection, config);
         this.preparedStatement = preparedStatement;
-        this.cubeConnection = cubeConnection;
-        this.query = query;
+        this.lastExecutedQuery = query;
         this.config = config;
-        this.statementInstanceId = System.identityHashCode(this);
-    }
-
-    public int getStatementInstanceId() {
-        return statementInstanceId;
     }
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        if (null == statementFnKey) {
+        if (null == exqFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            statementFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+            exqFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
                     config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(statementFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.of(type),
-                    statementInstanceId);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)ret.retVal).build();
+            Object retVal = Utils.mock(config, exqFnKey, Optional.of(integerType), this.statementInstanceId);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)retVal).build();
             return mockResultSet;
         }
 
         CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(preparedStatement.executeQuery()).cubeStatement(this).build();
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(statementFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeResultSet.getResultSetInstanceId(), FnReqResponse.RetStatus.Success,
-                    Optional.empty(), statementInstanceId);
+            Utils.record(cubeResultSet.getResultSetInstanceId(), config, exqFnKey, this.statementInstanceId);
         }
 
         return cubeResultSet;
@@ -109,16 +82,8 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, euFnKey, false, this.statementInstanceId);
-        }
-
-        int toReturn = preparedStatement.executeUpdate();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, euFnKey, true, this.statementInstanceId);
-        }
-
-        return toReturn;
+        return (int) Utils.recordOrMock(config, euFnKey, (fnArgs) -> preparedStatement.executeUpdate(),
+                this.statementInstanceId);
     }
 
     @Override
@@ -263,12 +228,21 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
 
     @Override
     public boolean execute() throws SQLException {
-        return preparedStatement.execute();
+        if (null == exFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, exFnKey, (fnArgs) -> preparedStatement.execute(),
+                this.statementInstanceId);
     }
 
     @Override
     public void addBatch() throws SQLException {
-        preparedStatement.addBatch();
+        if (!config.intentResolver.isIntentToMock()) {
+            preparedStatement.addBatch();
+        }
     }
 
     @Override
@@ -308,7 +282,8 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return preparedStatement.getMetaData();
+        //TODO
+        return null;
     }
 
     @Override
@@ -348,7 +323,8 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
-        return preparedStatement.getParameterMetaData();
+        //TODO
+        return null;
     }
 
     @Override
@@ -482,292 +458,5 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
         if(!config.intentResolver.isIntentToMock()) {
             preparedStatement.setNClob(parameterIndex, reader);
         }
-    }
-
-    @Override
-    public ResultSet executeQuery(String sql) throws SQLException {
-        return preparedStatement.executeQuery(sql);
-    }
-
-    @Override
-    public int executeUpdate(String sql) throws SQLException {
-        return preparedStatement.executeUpdate(sql);
-    }
-
-    @Override
-    public void close() throws SQLException {
-        if (!config.intentResolver.isIntentToMock()) {
-            preparedStatement.close();
-        }
-    }
-
-    @Override
-    public int getMaxFieldSize() throws SQLException {
-        return preparedStatement.getMaxFieldSize();
-    }
-
-    @Override
-    public void setMaxFieldSize(int max) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setMaxFieldSize(max);
-        }
-    }
-
-    @Override
-    public int getMaxRows() throws SQLException {
-        if (null == gmrFnKey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmrFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, gmrFnKey, false, this.statementInstanceId);
-        }
-
-        int toReturn = preparedStatement.getMaxRows();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, gmrFnKey, true, this.statementInstanceId);
-        }
-
-        return toReturn;
-    }
-
-    @Override
-    public void setMaxRows(int max) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setMaxRows(max);
-        }
-    }
-
-    @Override
-    public void setEscapeProcessing(boolean enable) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setEscapeProcessing(enable);
-        }
-    }
-
-    @Override
-    public int getQueryTimeout() throws SQLException {
-        if (null == gqtFnKey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            gqtFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, gqtFnKey, false, this.statementInstanceId);
-        }
-
-        int toReturn = preparedStatement.getQueryTimeout();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, gqtFnKey, true, this.statementInstanceId);
-        }
-
-        return toReturn;
-    }
-
-    @Override
-    public void setQueryTimeout(int seconds) throws SQLException {
-        if (!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setQueryTimeout(seconds);
-        }
-    }
-
-    @Override
-    public void cancel() throws SQLException {
-        if (!config.intentResolver.isIntentToMock()) {
-            preparedStatement.cancel();
-        }
-    }
-
-    @Override
-    public SQLWarning getWarnings() throws SQLException {
-        return preparedStatement.getWarnings();
-    }
-
-    @Override
-    public void clearWarnings() throws SQLException {
-        if (!config.intentResolver.isIntentToMock()) {
-            preparedStatement.clearWarnings();
-        }
-    }
-
-    @Override
-    public void setCursorName(String name) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setCursorName(name);
-        }
-    }
-
-    @Override
-    public boolean execute(String sql) throws SQLException {
-        return preparedStatement.execute(sql);
-    }
-
-    @Override
-    public ResultSet getResultSet() throws SQLException {
-        return preparedStatement.getResultSet();
-    }
-
-    @Override
-    public int getUpdateCount() throws SQLException {
-        return preparedStatement.getUpdateCount();
-    }
-
-    @Override
-    public boolean getMoreResults() throws SQLException {
-        return preparedStatement.getMoreResults();
-    }
-
-    @Override
-    public void setFetchDirection(int direction) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setFetchDirection(direction);
-        }
-    }
-
-    @Override
-    public int getFetchDirection() throws SQLException {
-        return preparedStatement.getFetchDirection();
-    }
-
-    @Override
-    public void setFetchSize(int rows) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setFetchSize(rows);
-        }
-    }
-
-    @Override
-    public int getFetchSize() throws SQLException {
-        return preparedStatement.getFetchSize();
-    }
-
-    @Override
-    public int getResultSetConcurrency() throws SQLException {
-        return preparedStatement.getResultSetConcurrency();
-    }
-
-    @Override
-    public int getResultSetType() throws SQLException {
-        return preparedStatement.getResultSetType();
-    }
-
-    @Override
-    public void addBatch(String sql) throws SQLException {
-        preparedStatement.addBatch(sql);
-    }
-
-    @Override
-    public void clearBatch() throws SQLException {
-        preparedStatement.clearBatch();
-    }
-
-    @Override
-    public int[] executeBatch() throws SQLException {
-        return preparedStatement.executeBatch();
-    }
-
-    @Override
-    public Connection getConnection() throws SQLException {
-        return preparedStatement.getConnection();
-    }
-
-    @Override
-    public boolean getMoreResults(int current) throws SQLException {
-        return preparedStatement.getMoreResults();
-    }
-
-    @Override
-    public ResultSet getGeneratedKeys() throws SQLException {
-        return preparedStatement.getGeneratedKeys();
-    }
-
-    @Override
-    public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        return preparedStatement.executeUpdate(sql, autoGeneratedKeys);
-    }
-
-    @Override
-    public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-        return preparedStatement.executeUpdate(sql, columnIndexes);
-    }
-
-    @Override
-    public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-        return preparedStatement.executeUpdate(sql, columnNames);
-    }
-
-    @Override
-    public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        return preparedStatement.execute(sql, autoGeneratedKeys);
-    }
-
-    @Override
-    public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-        return preparedStatement.execute(sql, columnIndexes);
-    }
-
-    @Override
-    public boolean execute(String sql, String[] columnNames) throws SQLException {
-        return preparedStatement.execute(sql, columnNames);
-    }
-
-    @Override
-    public int getResultSetHoldability() throws SQLException {
-        return preparedStatement.getResultSetHoldability();
-    }
-
-    @Override
-    public boolean isClosed() throws SQLException {
-        if (null == icFnKey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            icFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, icFnKey, false, this.statementInstanceId);
-        }
-
-        boolean toReturn = preparedStatement.isClosed();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, icFnKey, true, this.statementInstanceId);
-        }
-
-        return toReturn;
-    }
-
-    @Override
-    public void setPoolable(boolean poolable) throws SQLException {
-        if(!config.intentResolver.isIntentToMock()) {
-            preparedStatement.setPoolable(poolable);
-        }
-    }
-
-    @Override
-    public boolean isPoolable() throws SQLException {
-        return preparedStatement.isPoolable();
-    }
-
-    @Override
-    public void closeOnCompletion() throws SQLException {
-        preparedStatement.closeOnCompletion();
-    }
-
-    @Override
-    public boolean isCloseOnCompletion() throws SQLException {
-        return preparedStatement.isCloseOnCompletion();
-    }
-
-    @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
-        return preparedStatement.unwrap(iface);
-    }
-
-    @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return preparedStatement.isWrapperFor(iface);
     }
 }

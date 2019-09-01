@@ -112,7 +112,7 @@ public class CubeConnection implements Connection {
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
 
-            CubeStatement mockStatement = new CubeStatement(config, (int) ret.retVal);
+            CubeStatement mockStatement = new CubeStatement(this, config, (int) ret.retVal);
             return mockStatement;
         }
 
@@ -142,7 +142,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(config, (int)ret.retVal);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
 
             return mockStatement;
         }
@@ -173,7 +173,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubeCallableStatement mockStatement = new CubeCallableStatement(config, (int)ret.retVal);
+            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -448,7 +448,7 @@ public class CubeConnection implements Connection {
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
 
-            CubeStatement mockStatement = new CubeStatement(config, (int)ret.retVal);
+            CubeStatement mockStatement = new CubeStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -478,7 +478,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(config, (int)ret.retVal);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -508,7 +508,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubeCallableStatement mockStatement = new CubeCallableStatement(config, (int)ret.retVal);
+            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -654,7 +654,7 @@ public class CubeConnection implements Connection {
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
 
-            CubeStatement mockStatement = new CubeStatement(config, (int)ret.retVal);
+            CubeStatement mockStatement = new CubeStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -684,7 +684,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(config, (int)ret.retVal);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -714,7 +714,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubeCallableStatement mockStatement = new CubeCallableStatement(config, (int)ret.retVal);
+            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -744,7 +744,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(config, (int)ret.retVal);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -774,7 +774,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(config, (int)ret.retVal);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 
@@ -804,7 +804,7 @@ public class CubeConnection implements Connection {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable) ret.retVal);
             }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(config, (int)ret.retVal);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
             return mockStatement;
         }
 

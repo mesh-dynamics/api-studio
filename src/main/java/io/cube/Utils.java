@@ -8,7 +8,7 @@ import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -92,10 +92,10 @@ public class Utils {
                 FnReqResponse.RetStatus.Success, Optional.empty(), args);
     }
 
-    public static Object mock(Config config, FnKey fnKey, Object... args) {
+    public static Object mock(Config config, FnKey fnKey, Optional<Type> returnType, Object... args) {
         FnResponseObj ret = config.mocker.mock(fnKey, CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                Optional.empty(), args);
+                returnType, args);
         if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
             LOGGER.info("Throwing exception as a result of mocking function");
             UtilException.throwAsUnchecked((Throwable) ret.retVal);
@@ -104,15 +104,15 @@ public class Utils {
         return ret.retVal;
     }
 
-    public static Object recordOrMock(Config config, FnKey fnKey, UtilException.Function_WithSQLExceptions<Object[],Object, SQLException> function,
-                                      Object... args) throws SQLException{
+    public static Object recordOrMock(Config config, FnKey fnKey, UtilException.Function_WithGenericExceptions<Object[],Object, SQLException> function,
+                                      Object... args) throws SQLException {
         Object toReturn;
         if (config.intentResolver.isIntentToMock()) {
-            return mock(config, fnKey, args);
+            return mock(config, fnKey, Optional.empty(), args);
         }
 
         toReturn = function.apply(args);
-        if (true) {
+        if (config.intentResolver.isIntentToRecord()) {
             record(toReturn, config, fnKey, args);
         }
 

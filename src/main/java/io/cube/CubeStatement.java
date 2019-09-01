@@ -1,11 +1,7 @@
 package io.cube;
 
 import com.google.gson.reflect.TypeToken;
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
-import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponseObj;
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
@@ -20,19 +16,44 @@ import java.util.Optional;
 public class CubeStatement implements Statement {
 
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeStatement.class);
-    private static Type type = new TypeToken<Integer>() {}.getType();
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final Statement statement;
     private final CubeConnection cubeConnection;
-    private final int statementInstanceId;
     private final Config config;
-    private FnKey statementFnKey;
+    private int moreResultsCount = 0;
+    private FnKey exqFnKey;
     private FnKey exFnKey;
     private FnKey gwFnKey;
     private FnKey icFnKey;
+    private FnKey ipFnKey;
+    private FnKey exusagFnKey;
+    private FnKey exusciFnKey;
+    private FnKey exuscnFnKey;
+    private FnKey exsagFnKey;
+    private FnKey exsciFnKey;
+    private FnKey exscnFnKey;
+    private FnKey grshFnKey;
+    private FnKey icocFnKey;
+    private FnKey gmrFnKey;
+    private FnKey gucFnKey;
+    private FnKey gmrcFnKey;
+    private FnKey gfdFnKey;
+    private FnKey gfsFnKey;
+    private FnKey exbFnKey;
+    private FnKey grscFnKey;
+    private FnKey grstFnKey;
+    private FnKey gqtFnKey;
+    private FnKey gmaxfsFnKey;
+    private FnKey gmaxFnKey;
+    private FnKey exusFnKey;
+    private FnKey grsFnKey;
+    private FnKey ggkFnKey;
+    protected final int statementInstanceId;
+    protected String lastExecutedQuery = null;
 
-    public CubeStatement (Config config, int statementInstanceId) {
+    public CubeStatement (CubeConnection cubeConnection, Config config, int statementInstanceId) {
         this.statement = null;
-        this.cubeConnection = null;
+        this.cubeConnection = cubeConnection;
         this.config = config;
         this.statementInstanceId = statementInstanceId;
     }
@@ -50,30 +71,22 @@ public class CubeStatement implements Statement {
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        if (null == statementFnKey) {
-            Method method = new Object() {
-            }.getClass().getEnclosingMethod();
-            statementFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+        if (null == exqFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exqFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
                     config.commonConfig.serviceName, method);
         }
 
+        this.lastExecutedQuery = sql;
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(statementFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.of(type),
-                    this.statementInstanceId, sql);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)ret.retVal).build();
+            Object retVal = Utils.mock(config, exqFnKey, Optional.of(integerType), this.statementInstanceId, sql);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)retVal).build();
             return mockResultSet;
         }
 
         CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(statement.executeQuery(sql)).query(sql).cubeStatement(this).build();
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(statementFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeResultSet.getResultSetInstanceId(), FnReqResponse.RetStatus.Success,
-                    Optional.empty(), Optional.empty(), this.statementInstanceId, sql);
+            Utils.record(cubeResultSet.getResultSetInstanceId(), config, exqFnKey, this.statementInstanceId, sql);
         }
 
         return cubeResultSet;
@@ -81,7 +94,16 @@ public class CubeStatement implements Statement {
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return statement.executeUpdate(sql);
+        if (null == exusFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exusFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (int) Utils.recordOrMock(config, exusFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return statement.executeUpdate(fnArg);}, sql, this.statementInstanceId);
     }
 
     @Override
@@ -93,42 +115,70 @@ public class CubeStatement implements Statement {
 
     @Override
     public int getMaxFieldSize() throws SQLException {
-        return statement.getMaxFieldSize();
+        if (null == gmaxfsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gmaxfsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gmaxfsFnKey, (fnArgs) -> statement.getMaxFieldSize(),  this.statementInstanceId);
     }
 
     @Override
     public void setMaxFieldSize(int max) throws SQLException {
-        statement.setMaxFieldSize(max);
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setMaxFieldSize(max);
+        }
     }
 
     @Override
     public int getMaxRows() throws SQLException {
-        return statement.getMaxRows();
+        if (null == gmaxFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gmaxFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gmaxFnKey, (fnArgs) -> statement.getMaxRows(), this.statementInstanceId);
     }
 
     @Override
     public void setMaxRows(int max) throws SQLException {
-        statement.setMaxRows(max);
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setMaxRows(max);
+        }
     }
 
     @Override
     public void setEscapeProcessing(boolean enable) throws SQLException {
-        statement.setEscapeProcessing(enable);
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setEscapeProcessing(enable);
+        }
     }
 
     @Override
     public int getQueryTimeout() throws SQLException {
-        return statement.getQueryTimeout();
+        if (null == gqtFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gqtFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gqtFnKey, (fnArgs) -> statement.getQueryTimeout(),  this.statementInstanceId);
     }
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-        statement.setQueryTimeout(seconds);
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setQueryTimeout(seconds);
+        }
     }
 
     @Override
     public void cancel() throws SQLException {
-        statement.cancel();
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.cancel();
+        }
     }
 
     @Override
@@ -139,26 +189,7 @@ public class CubeStatement implements Statement {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gwFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(),
-                    this.statementInstanceId);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (SQLWarning) ret.retVal;
-        }
-
-        SQLWarning warnings = statement.getWarnings();
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gwFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), warnings, FnReqResponse.RetStatus.Success,
-                    Optional.empty(), this.statementInstanceId);
-        }
-
-        return warnings;
+        return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> statement.getWarnings(),  this.statementInstanceId);
     }
 
     @Override
@@ -170,7 +201,9 @@ public class CubeStatement implements Statement {
 
     @Override
     public void setCursorName(String name) throws SQLException {
-        statement.setCursorName(name);
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setCursorName(name);
+        }
     }
 
     @Override
@@ -181,126 +214,284 @@ public class CubeStatement implements Statement {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, exFnKey, false, this.statementInstanceId, sql);
+        this.lastExecutedQuery = sql;
+        return (boolean) Utils.recordOrMock(config, exFnKey, (fnArgs) -> {
+            String fnArg = (String)fnArgs[0];
+            return statement.execute(fnArg);}, sql, this.statementInstanceId);
+    }
+
+    @Override
+    public ResultSet getResultSet() throws SQLException {
+        if (null == grsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            grsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
         }
 
-        boolean toReturn = statement.execute(sql);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, exFnKey, true, this.statementInstanceId, sql);
+        if (config.intentResolver.isIntentToMock()) {
+            Object retVal = Utils.mock(config, grsFnKey, Optional.of(integerType), this.lastExecutedQuery, this.statementInstanceId);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)retVal).build();
+            return mockResultSet;
         }
+
+        CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(statement.getResultSet()).cubeStatement(this).build();
+        if (config.intentResolver.isIntentToRecord()) {
+            Utils.record(cubeResultSet.getResultSetInstanceId(), config, grsFnKey, this.lastExecutedQuery, this.statementInstanceId);
+        }
+
+        return cubeResultSet;
+    }
+
+    @Override
+    public int getUpdateCount() throws SQLException {
+        if (null == gucFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gucFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gucFnKey, (fnArgs) -> statement.getUpdateCount(), this.lastExecutedQuery, this.statementInstanceId);
+    }
+
+    @Override
+    public boolean getMoreResults() throws SQLException {
+        if (null == gmrFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gmrFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        boolean toReturn = (boolean) Utils.recordOrMock(config, gmrFnKey, (fnArgs) -> statement.getMoreResults(),
+                 this.statementInstanceId, this.moreResultsCount, this.lastExecutedQuery);
+        this.moreResultsCount = toReturn ? this.moreResultsCount+1 : 0;
+        return toReturn;
+    }
+
+    @Override
+    public void setFetchDirection(int direction) throws SQLException {
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setFetchDirection(direction);
+        }
+    }
+
+    @Override
+    public int getFetchDirection() throws SQLException {
+        if (null == gfdFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gfdFnKey, (fnArgs) -> statement.getFetchDirection(), this.statementInstanceId);
+    }
+
+    @Override
+    public void setFetchSize(int rows) throws SQLException {
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setFetchSize(rows);
+        }
+    }
+
+    @Override
+    public int getFetchSize() throws SQLException {
+        if (null == gfsFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gfsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, gfsFnKey, (fnArgs) -> statement.getFetchSize(), this.statementInstanceId);
+    }
+
+    @Override
+    public int getResultSetConcurrency() throws SQLException {
+        if (null == grscFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            grscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, grscFnKey, (fnArgs) -> statement.getResultSetConcurrency(), this.statementInstanceId);
+    }
+
+    @Override
+    public int getResultSetType() throws SQLException {
+        if (null == grstFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            grstFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, grstFnKey, (fnArgs) -> statement.getResultSetType(), this.statementInstanceId);
+    }
+
+    @Override
+    public void addBatch(String sql) throws SQLException {
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.addBatch(sql);
+        }
+    }
+
+    @Override
+    public void clearBatch() throws SQLException {
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.clearBatch();
+        }
+    }
+
+    @Override
+    public int[] executeBatch() throws SQLException {
+        if (null == exbFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exbFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int[]) Utils.recordOrMock(config, exbFnKey, (fnArgs) -> statement.executeBatch(), this.statementInstanceId);
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return this.cubeConnection;
+    }
+
+    @Override
+    public boolean getMoreResults(int current) throws SQLException {
+        if (null == gmrcFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gmrcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        boolean toReturn = (boolean) Utils.recordOrMock(config, gmrcFnKey, (fnArgs) -> {
+            int fnArg = (int)fnArgs[0];
+            return statement.getMoreResults(fnArg);}, current, this.statementInstanceId, this.moreResultsCount, this.lastExecutedQuery);
+        this.moreResultsCount = toReturn ? this.moreResultsCount+1 : 0;
 
         return toReturn;
     }
 
     @Override
-    public ResultSet getResultSet() throws SQLException {
-        return statement.getResultSet();
-    }
-
-    @Override
-    public int getUpdateCount() throws SQLException {
-        return statement.getUpdateCount();
-    }
-
-    @Override
-    public boolean getMoreResults() throws SQLException {
-        return statement.getMoreResults();
-    }
-
-    @Override
-    public void setFetchDirection(int direction) throws SQLException {
-        statement.setFetchDirection(direction);
-    }
-
-    @Override
-    public int getFetchDirection() throws SQLException {
-        return statement.getFetchDirection();
-    }
-
-    @Override
-    public void setFetchSize(int rows) throws SQLException {
-        statement.setFetchSize(rows);
-    }
-
-    @Override
-    public int getFetchSize() throws SQLException {
-        return statement.getFetchSize();
-    }
-
-    @Override
-    public int getResultSetConcurrency() throws SQLException {
-        return statement.getResultSetConcurrency();
-    }
-
-    @Override
-    public int getResultSetType() throws SQLException {
-        return statement.getResultSetType();
-    }
-
-    @Override
-    public void addBatch(String sql) throws SQLException {
-        statement.addBatch(sql);
-    }
-
-    @Override
-    public void clearBatch() throws SQLException {
-        statement.clearBatch();
-    }
-
-    @Override
-    public int[] executeBatch() throws SQLException {
-        return statement.executeBatch();
-    }
-
-    @Override
-    public Connection getConnection() throws SQLException {
-        return statement.getConnection();
-    }
-
-    @Override
-    public boolean getMoreResults(int current) throws SQLException {
-        return statement.getMoreResults(current);
-    }
-
-    @Override
     public ResultSet getGeneratedKeys() throws SQLException {
-        return statement.getGeneratedKeys();
+        if (null == ggkFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            ggkFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        if (config.intentResolver.isIntentToMock()) {
+            Object retVal = Utils.mock(config, ggkFnKey, Optional.of(integerType), this.statementInstanceId);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)retVal).build();
+            return mockResultSet;
+        }
+
+        CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(statement.getGeneratedKeys()).cubeStatement(this).build();
+        if (config.intentResolver.isIntentToRecord()) {
+            Utils.record(cubeResultSet.getResultSetInstanceId(), config, ggkFnKey, this.statementInstanceId);
+        }
+
+        return cubeResultSet;
     }
 
     @Override
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        return statement.executeUpdate(sql, autoGeneratedKeys);
+        if (null == exusagFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exusagFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (int) Utils.recordOrMock(config, exusagFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            int fnArg2 = (int)fnArgs[1];
+            return statement.executeUpdate(fnArg1, fnArg2);}, sql, autoGeneratedKeys, this.statementInstanceId);
     }
 
     @Override
     public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-        return statement.executeUpdate(sql, columnIndexes);
+        if (null == exusciFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exusciFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (int) Utils.recordOrMock(config, exusciFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            int[] fnArg2 = (int[])fnArgs[1];
+            return statement.executeUpdate(fnArg1, fnArg2);}, sql, columnIndexes, this.statementInstanceId);
     }
 
     @Override
     public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-        return statement.executeUpdate(sql, columnNames);
+        if (null == exuscnFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exuscnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (int) Utils.recordOrMock(config, exuscnFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            String[] fnArg2 = (String[])fnArgs[1];
+            return statement.executeUpdate(fnArg1, fnArg2);}, sql, columnNames, this.statementInstanceId);
     }
 
     @Override
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        return statement.execute(sql, autoGeneratedKeys);
+        if (null == exsagFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exsagFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (boolean) Utils.recordOrMock(config, exsagFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            int fnArg2 = (int)fnArgs[1];
+            return statement.execute(fnArg1, fnArg2);}, sql, autoGeneratedKeys, this.statementInstanceId);
     }
 
     @Override
     public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-        return statement.execute(sql, columnIndexes);
+        if (null == exsciFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exsciFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (boolean) Utils.recordOrMock(config, exsciFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            int[] fnArg2 = (int[])fnArgs[1];
+            return statement.execute(fnArg1, fnArg2);}, sql, columnIndexes, this.statementInstanceId);
     }
 
     @Override
     public boolean execute(String sql, String[] columnNames) throws SQLException {
-        return statement.execute(sql, columnNames);
+        if (null == exscnFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            exscnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        this.lastExecutedQuery = sql;
+        return (boolean) Utils.recordOrMock(config, exscnFnKey, (fnArgs) -> {
+            String fnArg1 = (String)fnArgs[0];
+            String[] fnArg2 = (String[])fnArgs[1];
+            return statement.execute(fnArg1, fnArg2);}, sql, columnNames, this.statementInstanceId);
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        return statement.getResultSetHoldability();
+        if (null == grshFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            grshFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (int) Utils.recordOrMock(config, grshFnKey, (fnArgs) -> statement.getResultSetHoldability(), this.statementInstanceId);
     }
 
     @Override
@@ -311,45 +502,54 @@ public class CubeStatement implements Statement {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, icFnKey, false, this.statementInstanceId);
-        }
-
-        boolean toReturn = statement.isClosed();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, icFnKey, true, this.statementInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> statement.isClosed(), this.statementInstanceId);
     }
 
     @Override
     public void setPoolable(boolean poolable) throws SQLException {
-        statement.setPoolable(poolable);
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.setPoolable(poolable);
+        }
     }
 
     @Override
     public boolean isPoolable() throws SQLException {
-        return statement.isPoolable();
+        if (null == ipFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            ipFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, ipFnKey, (fnArgs) -> statement.isPoolable(), this.statementInstanceId);
     }
 
     @Override
     public void closeOnCompletion() throws SQLException {
-        statement.closeOnCompletion();
+        if (!config.intentResolver.isIntentToMock()) {
+            statement.closeOnCompletion();
+        }
     }
 
     @Override
     public boolean isCloseOnCompletion() throws SQLException {
-        return statement.isCloseOnCompletion();
+        if (null == icocFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            icocFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (boolean) Utils.recordOrMock(config, icocFnKey, (fnArgs) -> statement.isCloseOnCompletion(), this.statementInstanceId);
     }
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return statement.unwrap(iface);
+        //TODO
+        return null;
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return statement.isWrapperFor(iface);
+        //TODO
+        return false;
     }
 }
