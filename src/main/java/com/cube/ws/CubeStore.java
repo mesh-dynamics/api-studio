@@ -3,9 +3,12 @@
  */
 package com.cube.ws;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -18,6 +21,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -27,8 +31,16 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.msgpack.core.MessageFormat;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
+import org.msgpack.value.ImmutableMapValue;
+import org.msgpack.value.ImmutableValue;
+import org.msgpack.value.ValueType;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.cube.dao.RRBase.*;
@@ -101,7 +113,14 @@ public class CubeStore {
                             @PathParam("var") String path,
                             ReqRespStore.ReqResp rr) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> error = storeSingleReqResp(rr, path, queryParams);
+        return error.map(e -> {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }).orElse(Response.ok().build());
 
+    }
+
+    private Optional<String> storeSingleReqResp(ReqRespStore.ReqResp rr, String path, MultivaluedMap<String, String> queryParams) {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
             hdrs.add(kv.getKey(), kv.getValue());
@@ -143,7 +162,7 @@ public class CubeStore {
             // Dropping if collection is empty, i.e. recording is not started
             LOGGER.info(String.format("Dropping store for type %s, reqid %s since collection is empty"
                 , type.orElse("<empty>"), rid.orElse("<empty>")));
-            return Response.ok().build();
+            return Optional.of("Collection is empty");
         } else {
             LOGGER.info(String.format("Performing store for type %s, for collection %s, reqid %s, path %s"
                 , type.orElse("<empty>"), collection.orElse("<empty>"), rid.orElse("<empty>"), path));
@@ -152,7 +171,7 @@ public class CubeStore {
 
         MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>();
 
-        Optional<String> err = type.map(t -> {
+        return  type.map(t -> {
             if (t.equals("request")) {
                 Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
                 return method.map(mval -> {
@@ -176,17 +195,65 @@ public class CubeStore {
                     com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
                     if (!rrstore.save(resp))
                         return Optional.of("Not able to store response");
-                    Optional<String> empty = Optional.empty();
-                    return empty;
+                    return Optional.<String>empty();
                 }).orElse(Optional.of("Expecting integer status"));
             } else
                 return Optional.of("Unknown type");
         }).orElse(Optional.of("Type not specified"));
 
-        return err.map(e -> {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }).orElse(Response.ok().build());
+    }
 
+
+    private void processRRJson(String rrJson) {
+        System.out.println(rrJson);
+        try {
+            // TODO  need to test this out properly,  need to extract query params and path from the json
+            ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
+            storeSingleReqResp(rr, "" , new MultivaluedHashMap<>());
+        } catch (Exception e) {
+            LOGGER.error("Error while processing json line :: " + e.getMessage());
+        }
+
+    }
+
+    @POST
+    @Path("/rrbatch")
+    //@Consumes("application/msgpack")
+    public Response storeRRBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
+                                 byte[] messageBytes) {
+
+        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
+
+        return contentType.map(
+            ct -> {
+                switch(ct) {
+                    case "application/x-ndjson":
+                        String jsonMultiline = new String(messageBytes);
+                        Arrays.stream(jsonMultiline.split("\n")).forEach(this::processRRJson);
+                        return Response.ok().build();
+                    case "application/x-msgpack":
+                        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
+                        try {
+                            while (unpacker.hasNext()) {
+                                ValueType nextType = unpacker.getNextFormat().getValueType();
+                                if (nextType.isMapType()) {
+                                    processRRJson(unpacker.unpackValue().toJson());
+                                } else {
+                                    LOGGER.error("Unidentified format type in message pack stream " + nextType.name());
+                                    unpacker.skipValue();
+                                }
+                            }
+                        } catch (IOException e) {
+                            LOGGER.error("Error while unpacking message pack byte stream " + e.getMessage());
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
+                        return Response.ok().build();
+                    default :
+                        return Response.serverError().entity("Content type not recognized :: " + ct).build();
+                }
+            }
+
+        ).orElse(Response.serverError().entity("Content type not specified").build());
     }
 
 	@POST
