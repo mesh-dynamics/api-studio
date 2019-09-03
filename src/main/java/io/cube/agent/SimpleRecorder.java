@@ -24,54 +24,20 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
  * Date: 2019-05-06
  * @author Prasad M D
  */
-public class SimpleRecorder implements Recorder {
-
-    private static final Logger LOGGER = LogManager.getLogger(SimpleRecorder.class);
-    private static final String cubeRecordServiceUrl = "";
+public class SimpleRecorder extends AbstractGsonSerializeRecorder {
 
     private CubeClient cubeClient;
-    private ObjectMapper jsonMapper;
-    private Gson gson;
 
     public SimpleRecorder(Gson gson) {
-        this.jsonMapper = new ObjectMapper();
-        jsonMapper.registerModule(new Jdk8Module());
-        jsonMapper.registerModule(new JavaTimeModule());
-        jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+        super(gson);
         this.cubeClient = new CubeClient(jsonMapper);
-        this.gson = gson;
     }
 
     @Override
-    public boolean record(FnKey fnKey, Optional<String> traceId,
-                          Optional<String> spanId,
-                          Optional<String> parentSpanId,
-                          Object responseOrException,
-                          FnReqResponse.RetStatus retStatus,
-                          Optional<String> exceptionType,
-                          Object... args) {
-        try {
-            String[] argVals =
-                    Arrays.stream(args).map(UtilException.rethrowFunction(gson::toJson)).toArray(String[]::new);
-            Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
-            //String respVal = jsonMapper.writeValueAsString(responseOrException);
-            String respVal = gson.toJson(responseOrException);
-            LOGGER.info("Trying to record function :: " + fnKey.function.getName());
-            Arrays.stream(argVals).forEach(arg -> LOGGER.info("Argument while storing :: " + arg));
-            LOGGER.info("Function return value serialized :: " + respVal);
-            FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId, fnKey.service,
-                    fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
-                    Optional.ofNullable(Instant.now()), argsHash,
-                    argVals, respVal, retStatus, exceptionType);
-
-            Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
-            //cubeResponse.ifPresent(responseStr -> System.out.println(responseStr));
-            return true;
-        } catch (Exception e) {
-            // encode can throw UnsupportedEncodingException
-            String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
-            LOGGER.error("Error in recording function, skipping:: " + fnKey.signature + " " + e.getMessage() + " " + stackTraceError);
-            return false;
-        }
+    public boolean record(FnReqResponse fnReqResponse) {
+        Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnReqResponse);
+        return true;
     }
+
+
 }
