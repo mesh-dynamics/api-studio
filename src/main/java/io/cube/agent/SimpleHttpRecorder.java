@@ -24,11 +24,11 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
  * Date: 2019-05-06
  * @author Prasad M D
  */
-public class SimpleRecorder extends AbstractGsonSerializeRecorder {
+public class SimpleHttpRecorder extends AbstractGsonSerializeRecorder {
 
     private CubeClient cubeClient;
 
-    public SimpleRecorder(Gson gson) {
+    public SimpleHttpRecorder(Gson gson) {
         super(gson);
         this.cubeClient = new CubeClient(jsonMapper);
     }

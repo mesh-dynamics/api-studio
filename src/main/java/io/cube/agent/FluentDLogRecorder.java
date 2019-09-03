@@ -4,9 +4,9 @@ import java.util.Optional;
 
 import com.google.gson.Gson;
 
-public class FluentDRecorder extends AbstractGsonSerializeRecorder {
+public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
-    public FluentDRecorder(Gson gson) {
+    public FluentDLogRecorder(Gson gson) {
         super(gson);
     }
 
