@@ -244,6 +244,7 @@ public class CubeStore {
                 switch(ct) {
                     case "application/x-ndjson":
                         String jsonMultiline = new String(messageBytes);
+                        // split on '\n' using the regex "\\\\n" because it's being interpreted as '\' and 'n' literals
                         Arrays.stream(jsonMultiline.split("\\\\n")).forEach(this::processRRJson);
                         return Response.ok().build();
                     case "application/x-msgpack":
