@@ -314,6 +314,11 @@
 		  <version>0.8.17</version>
 	  </dependency>
 
+	  <dependency>
+		  <groupId>org.apache.httpcomponents</groupId>
+		  <artifactId>httpclient</artifactId>
+		  <version>4.5.9</version>
+	  </dependency>
 
   </dependencies>
   <groupId>com.cube</groupId>

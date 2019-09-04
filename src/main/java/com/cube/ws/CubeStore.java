@@ -5,6 +5,8 @@ package com.cube.ws;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +31,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.httpclient.URI;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.msgpack.core.MessageFormat;
@@ -206,14 +211,24 @@ public class CubeStore {
 
     private void processRRJson(String rrJson) {
         System.out.println(rrJson);
+
         try {
             // TODO  need to test this out properly,  need to extract query params and path from the json
             ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
-            storeSingleReqResp(rr, "" , new MultivaluedHashMap<>());
+            String pathwparams = rr.pathwparams;
+            int i = pathwparams.lastIndexOf('?');
+            String pathParams = pathwparams.substring(i+1);
+
+            List<NameValuePair> queryParams = URLEncodedUtils.parse(pathParams,
+                StandardCharsets.UTF_8);
+            MultivaluedHashMap queryParamsMap = new MultivaluedHashMap();
+            queryParams.forEach(nameValuePair -> {
+                queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
+            });
+            storeSingleReqResp(rr, pathwparams, queryParamsMap);
         } catch (Exception e) {
             LOGGER.error("Error while processing json line :: " + e.getMessage());
         }
-
     }
 
     @POST
@@ -229,7 +244,7 @@ public class CubeStore {
                 switch(ct) {
                     case "application/x-ndjson":
                         String jsonMultiline = new String(messageBytes);
-                        Arrays.stream(jsonMultiline.split("\n")).forEach(this::processRRJson);
+                        Arrays.stream(jsonMultiline.split("\\\\n")).forEach(this::processRRJson);
                         return Response.ok().build();
                     case "application/x-msgpack":
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
