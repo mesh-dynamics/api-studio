@@ -209,26 +209,22 @@ public class CubeStore {
     }
 
 
-    private void processRRJson(String rrJson) {
+    private void processRRJson(String rrJson) throws Exception {
         System.out.println(rrJson);
+        // TODO  need to test this out properly,  need to extract query params and path from the json
+        ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
+        String pathwparams = rr.pathwparams;
+        int i = pathwparams.lastIndexOf('?');
+        String pathParams = pathwparams.substring(i+1);
 
-        try {
-            // TODO  need to test this out properly,  need to extract query params and path from the json
-            ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
-            String pathwparams = rr.pathwparams;
-            int i = pathwparams.lastIndexOf('?');
-            String pathParams = pathwparams.substring(i+1);
+        List<NameValuePair> queryParams = URLEncodedUtils.parse(pathParams,
+            StandardCharsets.UTF_8);
+        MultivaluedHashMap queryParamsMap = new MultivaluedHashMap();
+        queryParams.forEach(nameValuePair -> {
+            queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
+        });
+        storeSingleReqResp(rr, pathwparams, queryParamsMap);
 
-            List<NameValuePair> queryParams = URLEncodedUtils.parse(pathParams,
-                StandardCharsets.UTF_8);
-            MultivaluedHashMap queryParamsMap = new MultivaluedHashMap();
-            queryParams.forEach(nameValuePair -> {
-                queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
-            });
-            storeSingleReqResp(rr, pathwparams, queryParamsMap);
-        } catch (Exception e) {
-            LOGGER.error("Error while processing json line :: " + e.getMessage());
-        }
     }
 
     @POST
@@ -243,10 +239,16 @@ public class CubeStore {
             ct -> {
                 switch(ct) {
                     case "application/x-ndjson":
-                        String jsonMultiline = new String(messageBytes);
-                        // split on '\n' using the regex "\\\\n" because it's being interpreted as '\' and 'n' literals
-                        Arrays.stream(jsonMultiline.split("\\\\n")).forEach(this::processRRJson);
-                        return Response.ok().build();
+                        try {
+                            String jsonMultiline = new String(messageBytes);
+                            // split on '\n' using the regex "\\\\n" because it's being interpreted as '\' and 'n' literals
+                            Arrays.stream(jsonMultiline.split("\\\\n")).forEach(this::processRRJson);
+                            return Response.ok().build();
+                        } catch (Exception e) {
+                            LOGGER.error("Error while processing multiline json " + e.getMessage());
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
+
                     case "application/x-msgpack":
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
                         try {
@@ -259,7 +261,7 @@ public class CubeStore {
                                     unpacker.skipValue();
                                 }
                             }
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             LOGGER.error("Error while unpacking message pack byte stream " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
