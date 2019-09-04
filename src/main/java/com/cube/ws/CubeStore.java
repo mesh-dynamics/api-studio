@@ -204,16 +204,11 @@ public class CubeStore {
     }
 
 
-    private void processRRJson(String rrJson) {
+    private void processRRJson(String rrJson) throws Exception {
         System.out.println(rrJson);
-        try {
-            // TODO  need to test this out properly,  need to extract query params and path from the json
-            ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
-            storeSingleReqResp(rr, "" , new MultivaluedHashMap<>());
-        } catch (Exception e) {
-            LOGGER.error("Error while processing json line :: " + e.getMessage());
-        }
-
+        // TODO  need to test this out properly,  need to extract query params and path from the json
+        ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
+        storeSingleReqResp(rr, "", new MultivaluedHashMap<>());
     }
 
     @POST
@@ -228,9 +223,14 @@ public class CubeStore {
             ct -> {
                 switch(ct) {
                     case "application/x-ndjson":
-                        String jsonMultiline = new String(messageBytes);
-                        Arrays.stream(jsonMultiline.split("\n")).forEach(this::processRRJson);
-                        return Response.ok().build();
+                        try {
+                            String jsonMultiline = new String(messageBytes);
+                            Arrays.stream(jsonMultiline.split("\n")).forEach(UtilException.rethrowConsumer(this::processRRJson));
+                            return Response.ok().build();
+                        } catch (Exception e) {
+                            LOGGER.error("Error while processing multiline json " + e.getMessage());
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
                     case "application/x-msgpack":
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
                         try {
@@ -243,7 +243,7 @@ public class CubeStore {
                                     unpacker.skipValue();
                                 }
                             }
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             LOGGER.error("Error while unpacking message pack byte stream " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
