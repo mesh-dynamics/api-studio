@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -212,5 +213,17 @@ public class Utils {
         return toReturn;
     }
 
+    /**
+     * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
+     * @param baseUrl Base Url
+     * @param suffix Relative path to append to the base url
+     * @return Concatened Normalized Path (// are converted to /)
+     * @throws Exception Exception if Any
+     */
+    static public String appendUrlPath(String baseUrl, String suffix) throws Exception {
+        URIBuilder uriBuilder = new URIBuilder(baseUrl);
+        return uriBuilder.setPath(uriBuilder.getPath() + "/" + suffix)
+            .build().normalize().toString();
+    }
 
 }
