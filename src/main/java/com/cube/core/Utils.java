@@ -217,7 +217,7 @@ public class Utils {
      * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
      * @param baseUrl Base Url
      * @param suffix Relative path to append to the base url
-     * @return Concatened Normalized Path (// are converted to /)
+     * @return Concatenated Normalized Path (// are converted to /)
      * @throws Exception Exception if Any
      */
     static public String appendUrlPath(String baseUrl, String suffix) throws Exception {
