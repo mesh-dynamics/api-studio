@@ -39,7 +39,7 @@ public class CommonUtils {
     public static final String BAGGAGE_INTENT = "intent";
     public static final String INTENT_RECORD = "record";
     public static final String INTENT_MOCK = "mock";
-    private static final String NO_INTENT = "normal";
+    public static final String NO_INTENT = "normal";
 
     private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
 
