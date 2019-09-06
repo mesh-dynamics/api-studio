@@ -86,6 +86,15 @@ public class CommonUtils {
         return currentSpan;
     }
 
+
+    public static String getConfigIntent() {
+        return CommonConfig.intent;
+    }
+
+    public static String getCurrentIntent() {
+        return getCurrentIntentFromScope().orElse(getConfigIntent());
+    }
+
     public static Optional<String> getCurrentIntentFromScope() {
         Optional<String> currentIntent =  getCurrentSpan().flatMap(span -> Optional.
                 ofNullable(span.getBaggageItem(BAGGAGE_INTENT)));
