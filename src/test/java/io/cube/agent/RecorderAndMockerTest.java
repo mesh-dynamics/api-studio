@@ -54,7 +54,7 @@ class RecorderAndMockerTest {
 
     static Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
             .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
-    static Recorder recorder = new SimpleRecorder(gson);
+    static Recorder recorder = new SimpleHttpRecorder(gson);
     static Mocker mocker = new SimpleMocker(gson);
     static Map<String, Double> disc1 = new HashMap<String, Double>();
     static Map<String, Double> disc2 = new HashMap<String, Double>();
