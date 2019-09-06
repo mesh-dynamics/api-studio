@@ -67,6 +67,10 @@ public class ResponseComparatorCache {
         templateCache.invalidateKey(key);
     }
 
+    public void invalidateAll() {
+        responseComparatorCache.invalidateAll();
+    }
+
     public ResponseComparator getDefaultResponseComparator() {
         return defaultResponseComparator;
     }
