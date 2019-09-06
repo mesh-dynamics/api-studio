@@ -8,6 +8,7 @@ import static com.cube.core.Comparator.Resolution.*;
 import java.io.IOException;
 import java.util.*;
 
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
