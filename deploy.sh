@@ -38,7 +38,7 @@ echo "Registering Templates"
 ./update_templates.py $1 $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $NAMESPACE_HOST $APP_DIR
 }
 
-record() {
+start_record() {
 	if [ -z "$1" ]; then
 		echo "Enter collection name"
 		read COLLECTION_NAME
@@ -187,7 +187,7 @@ main () {
 	get_environment #check kubernetes context
 	case "$1" in
 		init) OPERATION="init"; shift; generate_manifest $1; shift; init "$@";;
-		record) OPERATION="record"; shift; generate_manifest $1; shift; record "$@";;
+		record) OPERATION="record"; shift; generate_manifest $1; shift; start_record "$@";;
 		stop_record) OPERATION="record"; shift; generate_manifest $1; shift; stop_record "$@";;
 		setup_replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay_setup "$@";;
 		replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay "$@";;
