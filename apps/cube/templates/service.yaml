@@ -74,6 +74,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: APP_DOGFOOD
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
           - name: instance_dogfood
             valueFrom:
               configMapKeyRef:
@@ -183,6 +188,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: APP_DOGFOOD
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
           - name: instance_dogfood
             valueFrom:
               configMapKeyRef:
@@ -302,6 +312,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: SERVICE_DOGFOOD
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
           - name: cube_record_service
             valueFrom:
               configMapKeyRef:

@@ -10,6 +10,7 @@ data:
   CUSTOMER_DOGFOOD: "{{customer}}"
   CUBE_RECORD_SERVICE: "{{record_host}}"
   REDIS_HOST: "redis"
+  SOLR_CORE: "{{solr_core}}"
 
 ---
 apiVersion: v1
