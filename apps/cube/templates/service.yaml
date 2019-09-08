@@ -417,6 +417,9 @@ spec:
       - name: cubeui-backend
         image: cubeiocorp/cubeuibackend:a0bdb72e12bfab9194b117027fcbd566466ce775
         imagePullPolicy: IfNotPresent
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "{{springboot_profile}}"
         resources:
           requests:
             memory: "640Mi"

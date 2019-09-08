@@ -26,13 +26,14 @@ def init_files(base_dir, template_dir, namespace, cube_application, cube_custome
     cube_host = sys.argv[8]
     staging_host=sys.argv[9]
     cube_instance=sys.argv[10]
+    springboot_profile=sys.argv[11]
     env = Environment(loader=FileSystemLoader(template_dir))
     for file in os.listdir(template_dir):
         if file.endswith(".yaml"):
             template = env.get_template(file)
             outfile = base_dir + "/kubernetes/" + file
             with open(outfile, "w") as out:
-                output_from_template = template.render(namespace=namespace, namespace_host=namespace_host, cube_application=cube_application, customer=cube_customer, record_host=host, cube_host=cube_host, staging_host=staging_host, cube_instance=cube_instance)
+                output_from_template = template.render(namespace=namespace, namespace_host=namespace_host, cube_application=cube_application, customer=cube_customer, record_host=host, cube_host=cube_host, staging_host=staging_host, cube_instance=cube_instance, springboot_profile=springboot_profile)
                 out.write(output_from_template)
                 out.close()
 
