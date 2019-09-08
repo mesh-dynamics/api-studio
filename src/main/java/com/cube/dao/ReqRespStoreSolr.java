@@ -1622,6 +1622,42 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
 
 
+
+    public boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate) {
+        SolrInputDocument doc = matchResultAggregateToSolrDoc(resultAggregate);
+        return saveDoc(doc);
+    }
+
+    /**
+     * @param resultAggregate
+     * @return
+     */
+    private SolrInputDocument matchResultAggregateToSolrDoc(MatchResultAggregate resultAggregate) {
+        final SolrInputDocument doc = new SolrInputDocument();
+
+        String resultAggregateJson="";
+        try {
+            resultAggregateJson = config.jsonmapper.writeValueAsString(resultAggregate);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting MatchResultAggregate object into string for replay id %s", resultAggregate.replayid), e);
+        }
+
+        String type = Types.MatchResultAggregate.toString();
+        // the id field is set using (replayid, service, path) which is unique
+        String id = type + '-' + resultAggregate.replayid + '-' + resultAggregate.service.orElse("None")
+            + '-' + resultAggregate.path.orElse("None");
+
+        doc.setField(TYPEF, type);
+        doc.setField(IDF, id);
+        doc.setField(APPF, resultAggregate.app);
+        doc.setField(REPLAYIDF, resultAggregate.replayid);
+        doc.setField(OBJJSONF, resultAggregateJson);
+
+        resultAggregate.service.ifPresent(service ->  doc.setField(SERVICEF, service));
+        resultAggregate.path.ifPresent(path ->  doc.setField(PATHF, path));
+        return doc;
+    }
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveAnalysis(com.cube.dao.Analysis)
      */

@@ -96,7 +96,8 @@ public interface ReqRespStore {
         TemplateUpdateOperationSet,
         GoldenSet,
         RecordingOperationSetMeta,
-        RecordingOperationSet
+        RecordingOperationSet,
+        MatchResultAggregate
     }
 
 	boolean save(Request req);
@@ -286,6 +287,14 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	boolean saveResult(ReqRespMatchResult res);
+
+
+    /**
+     * @param resultAggregate
+     * @return
+     */
+    boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate);
+
 
 	/**
 	 * @param replayid

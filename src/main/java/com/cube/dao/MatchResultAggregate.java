@@ -3,6 +3,8 @@
  */
 package com.cube.dao;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Optional;
 
 /**
@@ -10,26 +12,30 @@ import java.util.Optional;
  *
  */
 public class MatchResultAggregate {
-	
-		
+
+
 	/**
-	 * @param path 
-	 * @param service 
+	 * @param path
+	 * @param service
 	 * @param app
 	 * @param replayid
 	 */
 	public MatchResultAggregate(String app, String replayid, Optional<String> service, Optional<String> path) {
 		this.app = app;
 		this.replayid = replayid;
-		
+
 		this.service = service;
 		this.path = path;
 	}
 
+	@JsonIgnore
 	final public String app;
+    @JsonIgnore
 	final public String replayid;
 
+    @JsonIgnore
 	public Optional<String> service = Optional.empty();
+    @JsonIgnore
 	public Optional<String> path = Optional.empty();
 
 	public int reqmatched = 0; // number of requests exactly matched
