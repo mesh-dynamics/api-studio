@@ -16,11 +16,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.cube.agent.CommonConfig;
+import io.cube.agent.FluentDLogRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
-import io.cube.agent.SimpleRecorder;
 import io.cube.agent.TraceIntentResolver;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import org.apache.logging.log4j.LogManager;
@@ -107,7 +107,7 @@ public class Config {
             .registerTypeAdapter(SolrDocumentList.class, new GsonSolrDocumentListSerializer())
             .registerTypeAdapter(SolrDocument.class, new GsonSolrDocumentSerializer())
             .create();
-        recorder = new SimpleRecorder(gson);
+        recorder = new FluentDLogRecorder(gson);
         mocker = new SimpleMocker(gson);
 
         try {
