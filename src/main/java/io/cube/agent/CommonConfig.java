@@ -28,6 +28,7 @@ public class CommonConfig {
     public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
     public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
     public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+    public static String intent;
 
     public String customerId, app, instance, serviceName;
 
@@ -48,6 +49,7 @@ public class CommonConfig {
         app = fromEnvOrProperties("app_dogfood" , "cubews");
         instance = fromEnvOrProperties("instance_dogfood" , "dev");
         serviceName = fromEnvOrProperties("service_dogfood" , "cube");
+        intent = fromEnvOrProperties("intent" , CommonUtils.NO_INTENT);
 
         Tracer tracer = CommonUtils.init("tracer");
         try {

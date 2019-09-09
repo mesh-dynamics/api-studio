@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.ws.rs.client.Invocation;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -35,10 +36,10 @@ import java.util.stream.Collectors;
  */
 public class CommonUtils {
 
-    private static final String BAGGAGE_INTENT = "intent";
-    private static final String INTENT_RECORD = "record";
-    private static final String INTENT_MOCK = "mock";
-    private static final String NO_INTENT = "normal";
+    public static final String BAGGAGE_INTENT = "intent";
+    public static final String INTENT_RECORD = "record";
+    public static final String INTENT_MOCK = "mock";
+    public static final String NO_INTENT = "normal";
 
     private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
 
@@ -54,6 +55,14 @@ public class CommonUtils {
     public static void addTraceHeaders(Invocation.Builder requestBuilder, String requestType) {
         if (GlobalTracer.isRegistered()) {
             Tracer tracer = GlobalTracer.get();
+
+            //Added for the JDBC init case, but also to segregate
+            //any calls without a span to a default span.
+            if (tracer.activeSpan() == null) {
+                MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+                CommonUtils.startServerSpan(headers, "dummy-span");
+            }
+
             Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
             Tags.HTTP_METHOD.set(tracer.activeSpan(), requestType);
             //Tags.HTTP_URL.set(tracer.activeSpan(), requestBuilder.toString());
@@ -77,6 +86,15 @@ public class CommonUtils {
         return currentSpan;
     }
 
+
+    public static String getConfigIntent() {
+        return CommonConfig.intent;
+    }
+
+    public static String getCurrentIntent() {
+        return getCurrentIntentFromScope().orElse(getConfigIntent());
+    }
+
     public static Optional<String> getCurrentIntentFromScope() {
         Optional<String> currentIntent =  getCurrentSpan().flatMap(span -> Optional.
                 ofNullable(span.getBaggageItem(BAGGAGE_INTENT)));
@@ -85,11 +103,11 @@ public class CommonUtils {
     }
 
     public static boolean isIntentToRecord() {
-        return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_RECORD);
+        return getCurrentIntent().equalsIgnoreCase(INTENT_RECORD);
     }
 
     public static boolean isIntentToMock() {
-        return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_MOCK);
+        return getCurrentIntent().equalsIgnoreCase(INTENT_MOCK);
     }
 
     public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders, String operationName) {
