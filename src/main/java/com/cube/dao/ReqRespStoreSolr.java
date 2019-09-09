@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.cube.core.Utils;
+import io.cube.agent.CommonUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,7 +48,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
@@ -62,7 +63,6 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
-import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
@@ -318,13 +318,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(doc);
     }
 
-    private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
+    private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc, boolean multipleResults) {
         FnReqResponse.RetStatus retStatus =
             getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
             rs)).orElse(FnReqResponse.RetStatus.Success);
         Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
         return getStrFieldMVFirst(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
-            retStatus, exceptionType));
+            retStatus, exceptionType, multipleResults));
     }
 
     @Override
@@ -342,10 +342,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, FUNC_SIG_HASH, funcReqResponse.fnSignatureHash);
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
+        addSort(query, TIMESTAMPF, true);
         Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
             addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + INT_SUFFIX, argHashVal));
         Optional<Integer> maxResults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToFnResponse);
+        Result<SolrDocument> solrDocumentResult = SolrIterator.getResults(solr, query, maxResults, x-> Optional.of(x));
+        return solrDocumentResult.getObjects().findFirst().flatMap(doc -> solrDocToFnResponse(doc,solrDocumentResult.numFound>1));
     }
 
     @Override
@@ -552,7 +554,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public String saveTemplateSet(TemplateSet templateSet) throws Exception {
         List<String> templateIds = new ArrayList<>();
-        templateSet.templates.forEach(com.cube.core.UtilException.rethrowConsumer(template -> {
+        templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(Optional.of(templateSet.version), templateSet.customer,
                 templateSet.app,
                 template.service , template.requestPath, template.type);

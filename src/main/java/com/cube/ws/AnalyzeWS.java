@@ -598,8 +598,10 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("redis/flushall")
-    public Response redisFlushAll() {
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        requestComparatorCache.invalidateAll();
+        responseComparatorCache.invalidateAll();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();

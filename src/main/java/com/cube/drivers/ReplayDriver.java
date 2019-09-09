@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import io.cube.agent.UtilException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,7 +30,6 @@ import org.glassfish.jersey.uri.UriComponent;
 import org.json.JSONObject;
 
 import com.cube.cache.ReplayResultCache;
-import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;

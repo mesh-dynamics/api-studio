@@ -25,6 +25,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +42,6 @@ import com.cube.core.RequestComparator;
 import com.cube.core.ResponseComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
-import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.*;
