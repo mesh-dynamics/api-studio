@@ -84,6 +84,8 @@ public class SimpleMocker implements Mocker {
                     } else {
                         fnMap.remove(key); //remove if the key is present.
                     }
+                } else {
+                    fnMap.remove(key);
                 }
 
                 Object retOrExceptionVal = gson.fromJson(response.retVal, retType.isPresent()?retType.get():getRetOrExceptionClass(response,
