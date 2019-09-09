@@ -78,9 +78,14 @@ public class SimpleMocker implements Mocker {
                 LOGGER.info("Return value received while mocking :: " + response.retVal);
                 //If multiple Solr docs were returned, we need to maintain the last timestamp
                 //to be used in the next mock call.
-                if (response.retStatus == RetStatus.Success && response.multipleResults) {
-                    fnMap.put(key, response.timeStamp.get());
+                if (response.retStatus == RetStatus.Success) {
+                    if (response.multipleResults) {
+                        fnMap.put(key, response.timeStamp.get());
+                    } else {
+                        fnMap.remove(key); //remove if the key is present.
+                    }
                 }
+
                 Object retOrExceptionVal = gson.fromJson(response.retVal, retType.isPresent()?retType.get():getRetOrExceptionClass(response,
                         fnKey.function.getGenericReturnType()));
                 return new FnResponseObj(retOrExceptionVal, response.timeStamp, response.retStatus, response.exceptionType);

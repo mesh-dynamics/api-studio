@@ -103,11 +103,11 @@ public class CommonUtils {
     }
 
     public static boolean isIntentToRecord() {
-        return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_RECORD);
+        return getCurrentIntent().equalsIgnoreCase(INTENT_RECORD);
     }
 
     public static boolean isIntentToMock() {
-        return getCurrentIntentFromScope().orElse("").equalsIgnoreCase(INTENT_MOCK);
+        return getCurrentIntent().equalsIgnoreCase(INTENT_MOCK);
     }
 
     public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders, String operationName) {

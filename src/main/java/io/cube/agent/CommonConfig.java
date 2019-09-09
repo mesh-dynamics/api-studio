@@ -49,7 +49,7 @@ public class CommonConfig {
         app = fromEnvOrProperties("app_dogfood" , "cubews");
         instance = fromEnvOrProperties("instance_dogfood" , "dev");
         serviceName = fromEnvOrProperties("service_dogfood" , "cube");
-        intent = fromEnvOrProperties("intent" , "none");
+        intent = fromEnvOrProperties("intent" , "normal");
 
         Tracer tracer = CommonUtils.init("tracer");
         try {
