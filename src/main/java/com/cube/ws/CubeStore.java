@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -108,6 +109,7 @@ public class CubeStore {
     public Response storerr(@Context UriInfo ui,
                             @PathParam("var") String path,
                             ReqRespStore.ReqResp rr) {
+	    LOGGER.info("/cs/rr request received");
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         Optional<String> error = storeSingleReqResp(rr, path, queryParams);
         return error.map(e -> {
@@ -201,39 +203,40 @@ public class CubeStore {
 
 
     private void processRRJson(String rrJson) throws Exception {
-        System.out.println(rrJson);
-        // TODO  need to test this out properly,  need to extract query params and path from the json
         ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
-        String pathwparams = rr.pathwparams;
-        int i = pathwparams.lastIndexOf('?');
-        String pathParams = pathwparams.substring(i+1);
 
-        List<NameValuePair> queryParams = URLEncodedUtils.parse(pathParams,
-            StandardCharsets.UTF_8);
+        // extract path and query params
+        URIBuilder uriBuilder = new URIBuilder(rr.pathwparams);
+        String path = uriBuilder.getPath();
+        if(path.startsWith("/")){
+            path = path.substring(1);
+        }
+        List<NameValuePair> queryParams = uriBuilder.getQueryParams();
         MultivaluedHashMap queryParamsMap = new MultivaluedHashMap();
         queryParams.forEach(nameValuePair -> {
             queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
         });
-        storeSingleReqResp(rr, pathwparams, queryParamsMap);
 
+        storeSingleReqResp(rr, path, queryParamsMap);
     }
 
     @POST
     @Path("/rrbatch")
     //@Consumes("application/msgpack")
-    public Response storeRRBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
+    public Response storeRrBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
                                  byte[] messageBytes) {
 
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
-
+        LOGGER.info("Batch RR received. Content Type: " + contentType);
         return contentType.map(
             ct -> {
                 switch(ct) {
                     case "application/x-ndjson":
                         try {
                             String jsonMultiline = new String(messageBytes);
-                            // split on '\n' using the regex "\\\\n" because it's being interpreted as '\' and 'n' literals
-                            Arrays.stream(jsonMultiline.split("\\\\n")).forEach(UtilException.rethrowConsumer(this::processRRJson));
+                            String[] jsons = jsonMultiline.split("\n");
+                            LOGGER.info("JSON batch size: " + jsons.length);
+                            Arrays.stream(jsons).forEach(UtilException.rethrowConsumer(this::processRRJson));
                             return Response.ok().build();
                         } catch (Exception e) {
                             LOGGER.error("Error while processing multiline json " + e.getMessage());
