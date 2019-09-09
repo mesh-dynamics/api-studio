@@ -280,6 +280,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String FUNC_RET_VAL = CPREFIX + FUNC_PREFIX + "retval" + NOTINDEXED_SUFFIX;
     private static final String FUNC_RET_STATUSF = CPREFIX + FUNC_PREFIX + "funcstatus"  + STRING_SUFFIX;
     private static final String FUNC_EXCEPTION_TYPEF = CPREFIX + FUNC_PREFIX + "exceptiontype"  + STRING_SUFFIX;
+    private static final String DEFAULT_EMPTY_FIELD_VALUE = "null";
 
 
 
@@ -1625,7 +1626,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     public boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate) {
         SolrInputDocument doc = matchResultAggregateToSolrDoc(resultAggregate);
-        return saveDoc(doc);
+        return saveDoc(doc) && softcommit();
     }
 
     /**
@@ -1653,9 +1654,45 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, resultAggregate.replayid);
         doc.setField(OBJJSONF, resultAggregateJson);
 
-        resultAggregate.service.ifPresent(service ->  doc.setField(SERVICEF, service));
-        resultAggregate.path.ifPresent(path ->  doc.setField(PATHF, path));
+        // Set the fields if present else put the default value
+        doc.setField(SERVICEF, resultAggregate.service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+        doc.setField(PATHF, resultAggregate.path.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+
         return doc;
+    }
+
+
+    public Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
+                                                        boolean bypath) {
+
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, TYPEF, Types.MatchResultAggregate.toString());
+        addFilter(query, REPLAYIDF, replayid);
+//        addFilter(query, SERVICEF, service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+        service.ifPresent(servicev -> addFilter(query, SERVICEF, servicev));
+
+        if(!bypath)
+            addFilter(query, PATHF, DEFAULT_EMPTY_FIELD_VALUE);
+
+        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToMatchResultAggregate(doc).stream());
+    }
+
+    /**
+     * @param doc
+     * @return
+     */
+    private Optional<MatchResultAggregate> docToMatchResultAggregate(SolrDocument doc) {
+        Optional<String> json = getStrFieldMV(doc, OBJJSONF).stream().findFirst();
+        Optional<MatchResultAggregate> matchResultAggregate = json.flatMap(j -> {
+            try {
+                return Optional.ofNullable(config.jsonmapper.readValue(j, MatchResultAggregate.class));
+            } catch (IOException e) {
+                LOGGER.error(String.format("Not able to parse json into MatchResultAggregate object: %s", j), e);
+                return Optional.empty();
+            }
+        });
+        return matchResultAggregate;
     }
 
     /* (non-Javadoc)
@@ -2087,8 +2124,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getResultAggregate(java.lang.String, java.util.Optional)
      */
     @Override
-    public Collection<MatchResultAggregate> getResultAggregate(String replayid,
-            Optional<String> service, boolean facetpath) {
+    public Collection<MatchResultAggregate> computeResultAggregate(String replayid,
+                                                                   Optional<String> service, boolean facetpath) {
 
         Optional<Replay> replay = getReplay(replayid);
         Map<FacetResKey, MatchResultAggregate> resMap = new HashMap<>();

@@ -28,14 +28,18 @@ public class MatchResultAggregate {
 		this.path = path;
 	}
 
-	@JsonIgnore
+    /**
+     * This constructor is only for jackson json deserialization
+     */
+	public MatchResultAggregate() {
+	    this.app = "";
+	    this.replayid = "";
+    }
+
 	final public String app;
-    @JsonIgnore
 	final public String replayid;
 
-    @JsonIgnore
 	public Optional<String> service = Optional.empty();
-    @JsonIgnore
 	public Optional<String> path = Optional.empty();
 
 	public int reqmatched = 0; // number of requests exactly matched

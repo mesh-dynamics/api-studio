@@ -296,7 +296,20 @@ public interface ReqRespStore {
     boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate);
 
 
-	/**
+    /**
+     * @param replayid
+     * @param service
+     * @return If service is empty, return aggregate results for all services. If
+     * service is non-empty, return results for all paths in the service if bypath is true
+     * This also returns the rollups (service, path), (service) ()
+     * This method just gets the aggregates using Solr query which were pre-computed and
+     * stored. For computation of aggregated check computeResultAggregate
+     */
+    Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
+                                                            boolean bypath);
+
+
+    /**
 	 * @param replayid
 	 * @return
 	 */
@@ -369,8 +382,8 @@ public interface ReqRespStore {
 	 * service is non-empty, return results for all paths in the service if bypath is true
 	 * This also returns the rollups (service, path), (service) ()
 	 */
-	Collection<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
-			boolean bypath);
+	Collection<MatchResultAggregate> computeResultAggregate(String replayid, Optional<String> service,
+                                                            boolean bypath);
 
 	/**
 	 * @param customerid

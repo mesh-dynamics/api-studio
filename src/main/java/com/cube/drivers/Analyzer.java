@@ -334,7 +334,7 @@ public class Analyzer {
             Optional<String> service = Optional.empty();
             boolean bypath = true;
 
-            Collection<MatchResultAggregate> resultAggregates = rrstore.getResultAggregate(replayid, service, bypath);
+            Collection<MatchResultAggregate> resultAggregates = rrstore.computeResultAggregate(replayid, service, bypath);
             resultAggregates.forEach( resultAggregate -> {
                 rrstore.saveMatchResultAggregate(resultAggregate);
             } );
