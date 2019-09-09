@@ -24,9 +24,6 @@ cytoscape.use(klay);
 
 //cytoscape('layout', 'group-compound-layout', GroupCompoundLayout);
 
-const styleContainer = {
-    height: "500px"
-};
 /**
  * The purpose of this wrapper is very simple and minimal - to provide a long-lived <div> element that can be used
  * as the parent container for the cy graph (cy.container). Because cy does not provide the ability to re-parent an
@@ -86,7 +83,7 @@ export class CytoscapeReactWrapper extends React.Component {
                     cytoscapeReactWrapperRef={this.cytoscapeReactWrapperRef}
                 />
                 <div style={{position: "relative"}} ref={refInstance => this.setCytoscapeGraph(refInstance)}>
-                    <div id="cy" className="graph" style={styleContainer} /> 
+                    <div id="cy" className="graph" style={{height: 'calc(100vh - 150px)', padding: '45px'}} /> 
                     <CytoscapeToolbar cytoscapeReactWrapperRef={this.cytoscapeReactWrapperRef} />
                 </div>
             </div>
@@ -136,6 +133,17 @@ export class CytoscapeReactWrapper extends React.Component {
                     }
                 },
                 {
+                    selector: 'node[testConfig="gatewayService"]',
+                    style: {
+                        'background-color': '#FFA500',
+                        'line-color': '#FFA500',
+                        'target-arrow-color': '#FFA500',
+                        'source-arrow-color': '#FFA500',
+                        'color': "#fff",
+                        'border-color': '#FFA500'
+                    }
+                },
+                {
                     selector: 'node[tag="store"]',
                     style: {
                         'background-color': '#eee',
@@ -164,12 +172,12 @@ export class CytoscapeReactWrapper extends React.Component {
                 {
                     selector: ':selected',
                     style: {
-                        'background-color': '#00d1b2',
-                        'line-color': '#00d1b2',
-                        'target-arrow-color': '#00d1b2',
-                        'source-arrow-color': '#00d1b2',
+                        'background-color': '#FFA500',
+                        'line-color': '#FFA500',
+                        'target-arrow-color': '#FFA500',
+                        'source-arrow-color': '#FFA500',
                         'color': "#fff",
-                        'border-color': '#00d1b2'
+                        'border-color': '#FFA500'
                     }
                 },
 
@@ -189,7 +197,6 @@ export class CytoscapeReactWrapper extends React.Component {
                 
             }
         }, { wheelSensitivity: 0.1 });
-        console.log("cytoscape opts ", opts);
         this.cy = cytoscape(opts);
         //this.cy.resize();
         this.cy.fit();
@@ -219,15 +226,12 @@ export class CytoscapeReactWrapper extends React.Component {
             this.safeFit(this.cy);
         });
         this.cy.ready((evt) => {
-            console.log("ready event ", evt);
         });
         this.cy.on('destroy', (evt) => {
-            console.log("destroy event ", evt);
         });
     }
 
     setCytoscapeGraph(cytoscapeGraph) {
-        console.log(cytoscapeGraph);
         this.cytoscapeReactWrapperRef.current = cytoscapeGraph ? this : null;
     }
 
@@ -248,7 +252,6 @@ export class CytoscapeReactWrapper extends React.Component {
             return { summaryType: 'edge', summaryTarget: target };
         }
         else {
-            console.log(`${event.type} UNHANDLED`);
             return null;
         }
     }
@@ -275,32 +278,29 @@ export class CytoscapeReactWrapper extends React.Component {
     } */
 
     handleTap(event) {
-        console.log("handle tap event: ", event);
     }
 
     handleMouseIn = (event) => {
-        console.log("handle mouseIn event: ", event);
     }
 
     handleMouseOut = (event) => {
-        console.log("handle mouseOut event: ", event);
     }
 
     selectTarget = (target) => {
         if (!target) {
             target = this.cy;
         }
-        this.cy
+        /* `this.cy
             .$(':selected')
             .selectify()
             .unselect()
-            .unselectify();
-        if (target !== this.cy) {
+            .unselectify();` */
+        /* if (target !== this.cy) {
             target
                 .selectify()
                 .select()
                 .unselectify();
-        }
+        } */
     }
 
     destroy() {

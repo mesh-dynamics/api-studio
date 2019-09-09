@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { Row, Col, Clearfix, Button, Glyphicon, Tabs, Tab  } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import CytoscapeReactWrapper from '../../components/Cytoscape/CytoscapeReactWrapper';
 import "./ReplayAttribute.css";
@@ -48,7 +47,15 @@ class replay extends Component {
     }
 
     getGD(cube) {
-        const gdCrude = cube.graphData;
+        const gdCrude = cube.graphData,
+            testConfig = cube.testConfig;
+        let gatewayServices = [], mockServices = [];
+        if(testConfig && testConfig.gatewayService) {
+            gatewayServices.push(testConfig.gatewayService.name);
+        }
+        if(testConfig && testConfig.mocks) {
+            mockServices = testConfig.mocks;
+        }
         if (!gdCrude) {
             return null;
         }
@@ -59,6 +66,8 @@ class replay extends Component {
                 if (dp.fromService.serviceGroup.name != 'GLOBAL') {
                     let node = {data: {id: dp.fromService.serviceGroup.id, name: dp.fromService.serviceGroup.name}};
                     node.data.tag = "realService";
+                    if(gatewayServices.indexOf(node.data.name) > -1) node.data.testConfig = "gatewayService";
+                    if(mockServices.indexOf(node.data.name) > -1) node.data.testConfig = "mockService";
                     nodes.push(node);
                 } 
             }
@@ -70,6 +79,8 @@ class replay extends Component {
                 } else {
                     node.data.tag = "realService";
                 }
+                if(gatewayServices.indexOf(node.data.name) > -1) node.data.testConfig = "gatewayService";
+                if(mockServices.indexOf(node.data.name) > -1) node.data.testConfig = "mockService";
                 nodes.push(node);
             }
 
@@ -81,6 +92,8 @@ class replay extends Component {
                 } else {
                     node.data.tag = "realService";
                 }
+                if(gatewayServices.indexOf(node.data.name) > -1) node.data.testConfig = "gatewayService";
+                if(mockServices.indexOf(node.data.name) > -1) node.data.testConfig = "mockService";
                 nodes.push(node);
             }
 
