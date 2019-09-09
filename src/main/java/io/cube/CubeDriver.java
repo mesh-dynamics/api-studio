@@ -1,11 +1,7 @@
 package io.cube;
 
 import com.google.gson.reflect.TypeToken;
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
-import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponseObj;
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
@@ -25,7 +21,7 @@ public class CubeDriver implements Driver {
 
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeDriver.class);
     private static final Driver INSTANCE = new CubeDriver();
-    private static Type type = new TypeToken<Integer>() {}.getType();
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private static final Config config;
     private int driverInstanceId;
     private Driver driver;
@@ -82,17 +78,8 @@ public class CubeDriver implements Driver {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(connectFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type),
-                    realDriver.get().driverInstanceId, url, info);
-
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            CubeConnection mockConnection = new CubeConnection(config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, connectFnKey, Optional.of(integerType), url, info, realDriver.get().driverInstanceId);
+            CubeConnection mockConnection = new CubeConnection(config, (int) retVal);
             return mockConnection;
         }
 
@@ -103,11 +90,8 @@ public class CubeDriver implements Driver {
         }
 
         CubeConnection cubeConnection = new CubeConnection(conn, realDriver.get().driver, realUrl, config);
-
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(connectFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeConnection.getConnectionInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), realDriver.get().driverInstanceId, url, info);
+            Utils.record(cubeConnection.getConnectionInstanceId(), config, connectFnKey, url, info, realDriver.get().driverInstanceId);
         }
 
         return cubeConnection;
@@ -135,21 +119,15 @@ public class CubeDriver implements Driver {
         }
 
         Optional<Driver> realDriver;
-        int instanceId = -1;
+        int instanceId;
 
         if (url.startsWith(getURLPrefix())) {
 
             String realUrl = extractRealURL(url);
 
             if (config.intentResolver.isIntentToMock()) {
-                FnResponseObj ret = config.mocker.mock(driverFnKey, CommonUtils.getCurrentTraceId(),
-                        CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.of(type), url);
-                if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                    LOGGER.info("Throwing exception as a result of mocking function");
-                    UtilException.throwAsUnchecked((Throwable) ret.retVal);
-                }
-
-                return Optional.of(new CubeDriver(null, (int) ret.retVal));
+                Object retVal = Utils.mock(config, driverFnKey, Optional.of(integerType), url);
+                return Optional.of(new CubeDriver(null, (int) retVal));
             }
 
             try {
@@ -165,9 +143,7 @@ public class CubeDriver implements Driver {
                 instanceId = realDriver.map(System::identityHashCode).orElse(-1);
 
                 if (config.intentResolver.isIntentToRecord()) {
-                    config.recorder.record(driverFnKey, CommonUtils.getCurrentTraceId(),
-                            CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), instanceId, FnReqResponse.RetStatus.Success,
-                            Optional.empty(), url);
+                    Utils.record(instanceId, config, driverFnKey, url);
                 }
 
                 return Optional.of(new CubeDriver(realDriver.orElse(null), instanceId));
@@ -213,7 +189,7 @@ public class CubeDriver implements Driver {
     /**
      * Gets information about the possible properties for the real driver.
      *
-     * @param url  the URL of the database to which to connect
+        * @param url  the URL of the database to which to connect
      * @param info a proposed list of tag/value pairs that will be sent on connect
      *             open
      * @return an array of <code>DriverPropertyInfo</code> objects describing
@@ -229,32 +205,17 @@ public class CubeDriver implements Driver {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(propertyFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), url, info);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (DriverPropertyInfo[])ret.retVal;
-        }
-
-        Optional<CubeDriver> realDriver = getRealDriver(url);
-        DriverPropertyInfo[] propertyInfo;
-        if (realDriver.isEmpty()) {
-             propertyInfo = new DriverPropertyInfo[0];
-        } else {
-            propertyInfo = realDriver.get().driver.getPropertyInfo(url, info);
-        }
-
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(propertyFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), propertyInfo, FnReqResponse.RetStatus.Success,
-                    Optional.empty(), url, info);
-        }
-
-        return propertyInfo;
+        return (DriverPropertyInfo[]) Utils.recordOrMock(config, propertyFnKey, (fnArgs) -> {
+                String fnArg1 = (String)fnArgs[0];
+                Properties fnArg2 = (Properties)fnArgs[1];
+                Optional<CubeDriver> realDriver = getRealDriver(fnArg1);
+                DriverPropertyInfo[] propertyInfo;
+                if (realDriver.isEmpty()) {
+                    propertyInfo = new DriverPropertyInfo[0];
+                } else {
+                    propertyInfo = realDriver.get().driver.getPropertyInfo(fnArg1, fnArg2);
+                }
+            return propertyInfo;}, url, info);
     }
 
     /**

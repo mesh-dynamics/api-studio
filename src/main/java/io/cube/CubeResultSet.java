@@ -2,6 +2,7 @@ package io.cube;
 
 import io.cube.agent.FnKey;
 import org.apache.logging.log4j.LogManager;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
@@ -36,7 +37,7 @@ public class CubeResultSet implements ResultSet {
     private final String query;
     private int rowIndex;
     private int columnIndex; /* Needed for wasNull call */
-
+    private String columnLabel;
     private FnKey nxtFnKey;
     private FnKey wnFnKey;
     private FnKey gsFnKey;
@@ -113,6 +114,7 @@ public class CubeResultSet implements ResultSet {
         private String query = null;
         private int rowIndex = 0;
         private int columnIndex = 0;
+        private String columnLabel = "";
 
         public Builder(Config config) {
             this.config = config;
@@ -153,6 +155,11 @@ public class CubeResultSet implements ResultSet {
             return this;
         }
 
+        public Builder columnLabel(String val) {
+            columnLabel = val;
+            return this;
+        }
+
         public CubeResultSet build() {
             return new CubeResultSet(this);
         }
@@ -167,6 +174,7 @@ public class CubeResultSet implements ResultSet {
         query = builder.query;
         rowIndex = builder.rowIndex;
         columnIndex = builder.columnIndex;
+        columnLabel = builder.columnLabel;
     }
 
     public int getResultSetInstanceId() {
@@ -183,7 +191,7 @@ public class CubeResultSet implements ResultSet {
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, nxtFnKey, (fnArgs) -> resultSet.next(),
                 this.resultSetInstanceId, this.rowIndex);
-        this.rowIndex = toReturn ? this.rowIndex++ : 0;
+        this.rowIndex = toReturn ? this.rowIndex+1 : 0;
         this.columnIndex = 0;
 
         return toReturn;
@@ -206,7 +214,7 @@ public class CubeResultSet implements ResultSet {
         }
 
         return (boolean) Utils.recordOrMock(config, wnFnKey, (fnArgs) -> resultSet.wasNull(),
-                this.resultSetInstanceId, this.rowIndex, this.columnIndex);
+                this.resultSetInstanceId, this.rowIndex, this.columnIndex, this.columnLabel);
     }
 
     @Override
@@ -218,9 +226,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getString(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (String) Utils.recordOrMock(config, gsFnKey,
+                (fnArgs) -> resultSet.getString(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -232,9 +239,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (boolean) Utils.recordOrMock(config, gbFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getBoolean(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (boolean) Utils.recordOrMock(config, gbFnKey,
+                (fnArgs) -> resultSet.getBoolean(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -246,9 +252,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getByte(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (byte) Utils.recordOrMock(config, gbyFnKey,
+                (fnArgs) -> resultSet.getByte(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -260,9 +265,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (short) Utils.recordOrMock(config, gshcFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getShort(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (short) Utils.recordOrMock(config, gshcFnKey,
+                (fnArgs) -> resultSet.getShort(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -274,9 +278,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (int) Utils.recordOrMock(config, gicFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getInt(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (int) Utils.recordOrMock(config, gicFnKey,
+                (fnArgs) -> resultSet.getInt(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -288,9 +291,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (long) Utils.recordOrMock(config, glcFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getLong(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (long) Utils.recordOrMock(config, glcFnKey,
+                (fnArgs) -> resultSet.getLong(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -302,9 +304,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (float) Utils.recordOrMock(config, gfFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getFloat(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (float) Utils.recordOrMock(config, gfFnKey,
+                (fnArgs) -> resultSet.getFloat(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -316,9 +317,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Double) Utils.recordOrMock(config, gdFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getDouble(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (Double) Utils.recordOrMock(config, gdFnKey,
+                (fnArgs) -> resultSet.getDouble(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -330,10 +330,9 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (BigDecimal) Utils.recordOrMock(config, gbdcsFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            int fnArg2 = (int)fnArgs[1];
-            return resultSet.getBigDecimal(fnArg1, fnArg2);}, columnIndex, scale, this.resultSetInstanceId, this.rowIndex);
+        return (BigDecimal) Utils.recordOrMock(config, gbdcsFnKey,
+                (fnArgs) -> resultSet.getBigDecimal(columnIndex, scale),
+                columnIndex, scale, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -345,9 +344,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (byte[]) Utils.recordOrMock(config, gbysFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getBytes(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (byte[]) Utils.recordOrMock(config, gbysFnKey,
+                (fnArgs) -> resultSet.getBytes(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -359,9 +357,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Date) Utils.recordOrMock(config, gdciFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getDate(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (Date) Utils.recordOrMock(config, gdciFnKey,
+                (fnArgs) -> resultSet.getDate(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -373,9 +370,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Time) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getTime(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (Time) Utils.recordOrMock(config, gtiFnKey,
+                (fnArgs) -> resultSet.getTime(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -387,9 +383,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Timestamp) Utils.recordOrMock(config, gtFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getTimestamp(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (Timestamp) Utils.recordOrMock(config, gtFnKey,
+                (fnArgs) -> resultSet.getTimestamp(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -418,10 +413,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (String) Utils.recordOrMock(config, gscFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getString(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (String) Utils.recordOrMock(config, gscFnKey,
+                (fnArgs) -> resultSet.getString(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -432,10 +426,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (boolean) Utils.recordOrMock(config, gbcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getBoolean(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (boolean) Utils.recordOrMock(config, gbcFnKey,
+                (fnArgs) -> resultSet.getBoolean(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -446,10 +439,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getByte(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (byte) Utils.recordOrMock(config, gbyFnKey,
+                (fnArgs) -> resultSet.getByte(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -460,10 +452,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (short) Utils.recordOrMock(config, gshFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getShort(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (short) Utils.recordOrMock(config, gshFnKey,
+                (fnArgs) -> resultSet.getShort(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -474,10 +465,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (int) Utils.recordOrMock(config, giFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getInt(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (int) Utils.recordOrMock(config, giFnKey,
+                (fnArgs) -> resultSet.getInt(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -488,10 +478,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (long) Utils.recordOrMock(config, glclFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getLong(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (long) Utils.recordOrMock(config, glclFnKey,
+                (fnArgs) -> resultSet.getLong(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -502,10 +491,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (float) Utils.recordOrMock(config, gfcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getFloat(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (float) Utils.recordOrMock(config, gfcFnKey,
+                (fnArgs) -> resultSet.getFloat(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -516,10 +504,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (double) Utils.recordOrMock(config, gdcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getDouble(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (double) Utils.recordOrMock(config, gdcFnKey,
+                (fnArgs) -> resultSet.getDouble(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -530,11 +517,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (BigDecimal) Utils.recordOrMock(config, gbdclsFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            int fnArg2 = (int)fnArgs[1];
-            return resultSet.getBigDecimal(fnArg1, fnArg2);}, columnLabel, scale, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (BigDecimal) Utils.recordOrMock(config, gbdclsFnKey,
+                (fnArgs) -> resultSet.getBigDecimal(columnLabel, scale), columnLabel, scale, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -545,10 +530,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (byte[]) Utils.recordOrMock(config, gbyscFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getBytes(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (byte[]) Utils.recordOrMock(config, gbyscFnKey,
+                (fnArgs) -> resultSet.getBytes(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -559,10 +543,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (Date) Utils.recordOrMock(config, gdclFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getDate(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (Date) Utils.recordOrMock(config, gdclFnKey,
+                (fnArgs) -> resultSet.getDate(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -573,10 +556,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (Time) Utils.recordOrMock(config, gticlFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getTime(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (Time) Utils.recordOrMock(config, gticlFnKey,
+                (fnArgs) -> resultSet.getTime(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -587,10 +569,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (Timestamp) Utils.recordOrMock(config, gtclFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getTimestamp(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (Timestamp) Utils.recordOrMock(config, gtclFnKey,
+                (fnArgs) -> resultSet.getTimestamp(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -655,9 +636,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return Utils.recordOrMock(config, goFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getObject(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return Utils.recordOrMock(config, goFnKey,
+                (fnArgs) -> resultSet.getObject(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -668,10 +648,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return Utils.recordOrMock(config, gocFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getObject(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return Utils.recordOrMock(config, gocFnKey,
+                (fnArgs) -> resultSet.getObject(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -682,9 +661,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        return (int)Utils.recordOrMock(config, fcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.findColumn(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        return (int)Utils.recordOrMock(config, fcFnKey,
+                (fnArgs) -> resultSet.findColumn(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -708,9 +686,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (BigDecimal) Utils.recordOrMock(config, gbdFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getBigDecimal(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (BigDecimal) Utils.recordOrMock(config, gbdFnKey,
+                (fnArgs) -> resultSet.getBigDecimal(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -721,10 +698,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (BigDecimal) Utils.recordOrMock(config, gbdcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getBigDecimal(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (BigDecimal) Utils.recordOrMock(config, gbdcFnKey,
+                (fnArgs) -> resultSet.getBigDecimal(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -839,9 +815,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        boolean toReturn = (boolean) Utils.recordOrMock(config, abFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.absolute(fnArg);}, row, this.resultSetInstanceId, this.rowIndex);
+        boolean toReturn = (boolean) Utils.recordOrMock(config, abFnKey,
+                (fnArgs) -> resultSet.absolute(row), row, this.resultSetInstanceId, this.rowIndex);
         this.rowIndex = toReturn && row >= 0 ? row : getRow();
 
         return toReturn;
@@ -855,9 +830,8 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        boolean toReturn = (boolean) Utils.recordOrMock(config, reFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.relative(fnArg);}, rows, this.resultSetInstanceId, this.rowIndex);
+        boolean toReturn = (boolean) Utils.recordOrMock(config, reFnKey,
+                (fnArgs) -> resultSet.relative(rows), rows, this.resultSetInstanceId, this.rowIndex);
         this.rowIndex = toReturn && rows >= 0 ? rows : getRow();
 
         return toReturn;
@@ -961,7 +935,7 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        return (boolean) Utils.recordOrMock(config, riFnKey, (fnArgs) -> resultSet.rowUpdated(),
+        return (boolean) Utils.recordOrMock(config, riFnKey, (fnArgs) -> resultSet.rowInserted(),
                 this.resultSetInstanceId);
     }
 
@@ -973,7 +947,7 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        return (boolean) Utils.recordOrMock(config, rdFnKey, (fnArgs) -> resultSet.rowUpdated(),
+        return (boolean) Utils.recordOrMock(config, rdFnKey, (fnArgs) -> resultSet.rowDeleted(),
                 this.resultSetInstanceId);
     }
 
@@ -1299,17 +1273,8 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
-        if (null == gobFnKey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            gobFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        this.columnIndex = columnIndex;
-        return Utils.recordOrMock(config, gobFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Map<String, Class<?>> fnArg2 = (Map)fnArgs[1];
-            return resultSet.getObject(fnArg1, fnArg2);}, columnIndex, map, this.resultSetInstanceId, this.rowIndex);
+        //TODO
+        return null;
     }
 
     @Override
@@ -1338,17 +1303,8 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
-        if (null == gobjFnKey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            gobjFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        this.columnIndex = findColumn(columnLabel);
-        return Utils.recordOrMock(config, gobjFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Map<String, Class<?>> fnArg2 = (Map)fnArgs[1];
-            return resultSet.getObject(fnArg1, fnArg2);}, columnLabel, map, this.resultSetInstanceId, this.rowIndex);
+        //TODO
+        return null;
     }
 
     @Override
@@ -1384,10 +1340,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Date) Utils.recordOrMock(config, gdcicFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return resultSet.getDate(fnArg1, fnArg2);}, columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
+        return (Date) Utils.recordOrMock(config, gdcicFnKey,
+                (fnArgs) -> resultSet.getDate(columnIndex, cal), columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1398,11 +1352,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (Date) Utils.recordOrMock(config, gdclcFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return resultSet.getDate(fnArg1, fnArg2);}, columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (Date) Utils.recordOrMock(config, gdclcFnKey,
+                (fnArgs) -> resultSet.getDate(columnLabel, cal), columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1414,10 +1366,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Time) Utils.recordOrMock(config, gticFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return resultSet.getTime(fnArg1, fnArg2);}, columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
+        return (Time) Utils.recordOrMock(config, gticFnKey,
+                (fnArgs) -> resultSet.getTime(columnIndex, cal), columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1428,11 +1378,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (Time) Utils.recordOrMock(config, gticlcFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return resultSet.getTime(fnArg1, fnArg2);}, columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (Time) Utils.recordOrMock(config, gticlcFnKey,
+                (fnArgs) -> resultSet.getTime(columnLabel, cal), columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1444,10 +1392,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (Timestamp) Utils.recordOrMock(config, gtcFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return resultSet.getTimestamp(fnArg1, fnArg2);}, columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
+        return (Timestamp) Utils.recordOrMock(config, gtcFnKey,
+                (fnArgs) -> resultSet.getTimestamp(columnIndex, cal), columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1458,11 +1404,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (Timestamp) Utils.recordOrMock(config, gtccFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return resultSet.getTimestamp(fnArg1, fnArg2);}, columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (Timestamp) Utils.recordOrMock(config, gtccFnKey,
+                (fnArgs) -> resultSet.getTimestamp(columnLabel, cal), columnLabel, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1474,9 +1418,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (URL) Utils.recordOrMock(config, guFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getURL(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (URL) Utils.recordOrMock(config, guFnKey,
+                (fnArgs) -> resultSet.getURL(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1487,10 +1430,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (URL) Utils.recordOrMock(config, gurFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getURL(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (URL) Utils.recordOrMock(config, gurFnKey,
+                (fnArgs) -> resultSet.getURL(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1672,9 +1614,8 @@ public class CubeResultSet implements ResultSet {
         }
 
         this.columnIndex = columnIndex;
-        return (String) Utils.recordOrMock(config, gnsFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return resultSet.getNString(fnArg);}, columnIndex, this.resultSetInstanceId, this.rowIndex);
+        return (String) Utils.recordOrMock(config, gnsFnKey,
+                (fnArgs) -> resultSet.getNString(columnIndex), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1685,10 +1626,9 @@ public class CubeResultSet implements ResultSet {
                     config.commonConfig.serviceName, method);
         }
 
-        this.columnIndex = findColumn(columnLabel);
-        return (String) Utils.recordOrMock(config, gnscFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return resultSet.getNString(fnArg);}, columnLabel, this.resultSetInstanceId, this.rowIndex);
+        this.columnLabel = columnLabel;
+        return (String) Utils.recordOrMock(config, gnscFnKey,
+                (fnArgs) -> resultSet.getNString(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override

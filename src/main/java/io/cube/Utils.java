@@ -1,5 +1,6 @@
 package io.cube;
 
+import com.google.gson.reflect.TypeToken;
 import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse;
@@ -9,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Type;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -20,81 +22,19 @@ import java.util.Optional;
 public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
-
-    public static String recordOrMockString(String toReturn, Config config,
-                                            FnKey fnKey, boolean RECORD, Object... args) {
-        if (RECORD) {
-            config.recorder.record(fnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), args);
-
-        } else {
-            FnResponseObj ret = config.mocker.mock(fnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), args);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            toReturn = ret.retVal.toString();
-        }
-
-        return toReturn;
-    }
-
-    public static boolean recordOrMockBoolean(boolean toReturn, Config config,
-                                              FnKey fnKey, boolean RECORD, Object... args) {
-        if (RECORD) {
-            config.recorder.record(fnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), args);
-
-        } else {
-            FnResponseObj ret = config.mocker.mock(fnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), args);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            toReturn = (boolean)ret.retVal;
-        }
-        return toReturn;
-    }
-
-    //for recording/mocking all of byte,short,int and long types
-    public static long recordOrMockLong(long toReturn, Config config,
-                                       FnKey fnKey, boolean RECORD, Object... args) {
-        if (RECORD) {
-            config.recorder.record(fnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), args);
-
-        } else {
-            FnResponseObj ret = config.mocker.mock(fnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), args);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            toReturn = (long)ret.retVal;
-        }
-        return toReturn;
-    }
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
 
     public static void record(Object toReturn, Config config, FnKey fnKey, Object... args) {
-        config.recorder.record(fnKey, CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
+        config.recorder.record(fnKey, Optional.of(CommonUtils.getCurrentTraceId().orElse("#INIT_TRACEID#")),
+                Optional.of(CommonUtils.getCurrentSpanId().orElse("#INIT_SPANID#")),
+                Optional.of(CommonUtils.getParentSpanId().orElse("#INIT_PARENTSPANID#")), toReturn,
                 FnReqResponse.RetStatus.Success, Optional.empty(), args);
     }
 
     public static Object mock(Config config, FnKey fnKey, Optional<Type> returnType, Object... args) {
-        FnResponseObj ret = config.mocker.mock(fnKey, CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
+        FnResponseObj ret = config.mocker.mock(fnKey, Optional.of(CommonUtils.getCurrentTraceId().orElse("#INIT_TRACEID#")),
+                Optional.of(CommonUtils.getCurrentSpanId().orElse("#INIT_SPANID#")),
+                Optional.of(CommonUtils.getParentSpanId().orElse("#INIT_PARENTSPANID#")), Optional.empty(),
                 returnType, args);
         if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
             LOGGER.info("Throwing exception as a result of mocking function");
@@ -104,9 +44,32 @@ public class Utils {
         return ret.retVal;
     }
 
-    public static Object recordOrMock(Config config, FnKey fnKey, UtilException.Function_WithGenericExceptions<Object[],Object, SQLException> function,
+    public static Object recordOrMockResultSet(Config config, FnKey fnKey, CubeDatabaseMetaData metaData,
+                                               UtilException.Function_WithExceptions<Object[], Object, SQLException> function,
+                                               Object... args) throws SQLException {
+        Object toReturn;
+
+        if (config.intentResolver.isIntentToMock()) {
+            Object retVal = mock(config, fnKey, Optional.of(integerType), args);
+            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).metaData(metaData).resultSetInstanceId((int)retVal).build();
+            return mockResultSet;
+        }
+
+        toReturn = function.apply(args);
+        CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet((ResultSet) toReturn).
+                metaData(metaData).build();
+        if (config.intentResolver.isIntentToRecord()) {
+            record(cubeResultSet.getResultSetInstanceId(), config, fnKey, args);
+        }
+
+        return cubeResultSet;
+    }
+
+    public static Object recordOrMock(Config config, FnKey fnKey,
+                                      UtilException.Function_WithExceptions<Object[], Object, SQLException> function,
                                       Object... args) throws SQLException {
         Object toReturn;
+
         if (config.intentResolver.isIntentToMock()) {
             return mock(config, fnKey, Optional.empty(), args);
         }

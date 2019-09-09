@@ -21,9 +21,9 @@ public class CubeSavepoint implements Savepoint {
         return savepointInstanceId;
     }
 
-    public CubeSavepoint(Config config, int savepointInstanceId) {
+    public CubeSavepoint(CubeConnection cubeConnection, Config config, int savepointInstanceId) {
         this.savepoint = null;
-        this.cubeConnection = null;
+        this.cubeConnection = cubeConnection;
         this.config = config;
         this.savepointInstanceId = savepointInstanceId;
     }
@@ -43,7 +43,8 @@ public class CubeSavepoint implements Savepoint {
                     config.commonConfig.serviceName, method);
         }
 
-        return (int) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> savepoint.getSavepointId(), this.savepointInstanceId);
+        return (int) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> savepoint.getSavepointId(),
+                 this.savepointInstanceId);
     }
 
     @Override
@@ -54,6 +55,7 @@ public class CubeSavepoint implements Savepoint {
                     config.commonConfig.serviceName, method);
         }
 
-        return (String) Utils.recordOrMock(config, gsnFnKey, (fnArgs) -> savepoint.getSavepointName(), this.savepointInstanceId);
+        return (String) Utils.recordOrMock(config, gsnFnKey, (fnArgs) -> savepoint.getSavepointName(),
+                 this.savepointInstanceId);
     }
 }

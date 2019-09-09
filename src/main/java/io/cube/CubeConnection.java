@@ -1,11 +1,7 @@
 package io.cube;
 
 import com.google.gson.reflect.TypeToken;
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
-import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponseObj;
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
@@ -34,14 +30,14 @@ import java.util.concurrent.Executor;
 public class CubeConnection implements Connection {
 
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeConnection.class);
-    private static Type type = new TypeToken<Integer>() {}.getType();
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final Driver driver;
     private final Connection connection;
     private final String url;
     private final Config config;
     private final int connectionInstanceId;
     private FnKey csFnKey;
-    private FnKey psFnkey;
+    private FnKey psFnKey;
     private FnKey pcFnKey;
     private FnKey irFnKey;
     private FnKey gntFnKey;
@@ -66,11 +62,6 @@ public class CubeConnection implements Connection {
     private FnKey ssFnKey;
     private FnKey ssnFnKey;
     private FnKey gsFnKey;
-    private FnKey ccFnkey;
-    private FnKey cbFnkey;
-    private FnKey cncFnkey;
-    private FnKey caoFnkey;
-    private FnKey cstFnkey;
     private FnKey gciFnKey;
     private FnKey gcipFnkey;
 
@@ -87,11 +78,15 @@ public class CubeConnection implements Connection {
         this.driver = driver;
         this.url = url;
         this.config = config;
-        this.connectionInstanceId = System.identityHashCode(this);
+        this.connectionInstanceId = url.hashCode();
     }
 
     public int getConnectionInstanceId() {
         return connectionInstanceId;
+    }
+
+    public String getUrl() {
+        return url;
     }
 
     @Override
@@ -103,24 +98,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(csFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId);
-
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            CubeStatement mockStatement = new CubeStatement(this, config, (int) ret.retVal);
+            Object retVal = Utils.mock(config, csFnKey, Optional.of(integerType), this.connectionInstanceId);
+            CubeStatement mockStatement = new CubeStatement(this, config,  (int) retVal);
             return mockStatement;
         }
 
         CubeStatement cubeStatement = new CubeStatement(connection.createStatement(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(csFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId);
+            Utils.record(cubeStatement.getStatementInstanceId(), config, csFnKey, this.connectionInstanceId);
         }
 
         return cubeStatement;
@@ -128,30 +113,21 @@ public class CubeConnection implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        if (null == psFnkey) {
+        if (null == psFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+            psFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
                     config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(psFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
-
+            Object retVal = Utils.mock(config, psFnKey, Optional.of(integerType), sql, this.connectionInstanceId);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(psFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubePreparedStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql);
+            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psFnKey, sql, this.connectionInstanceId);
         }
 
         return cubePreparedStatement;
@@ -166,22 +142,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(pcFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, pcFnKey, Optional.of(integerType), sql, this.connectionInstanceId);
+            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubeCallableStatement cubeCallableStatement = new CubeCallableStatement(connection.prepareCall(sql), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(pcFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeCallableStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql);
+            Utils.record(cubeCallableStatement.getStatementInstanceId(), config, pcFnKey, sql, this.connectionInstanceId);
         }
 
         return cubeCallableStatement;
@@ -195,18 +163,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, nsFnKey,
-                    false, this.connectionInstanceId, sql);
-        }
-
-        String toReturn = connection.nativeSQL(sql);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config, nsFnKey,
-                    true, this.connectionInstanceId, sql);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, nsFnKey, (fnArgs) -> connection.nativeSQL(sql), sql, this.connectionInstanceId);
     }
 
     @Override
@@ -224,18 +181,8 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, gacFnKey,
-                    false, this.connectionInstanceId);
-        }
-
-        boolean toReturn = connection.getAutoCommit();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, gacFnKey,
-                    true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, gacFnKey, (fnArgs) -> connection.getAutoCommit(),
+                this.connectionInstanceId);
     }
 
     @Override
@@ -267,16 +214,8 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, icFnKey, false, this.connectionInstanceId);
-        }
-
-        boolean toReturn = connection.isClosed();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, icFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> connection.isClosed(),
+                this.connectionInstanceId);
     }
 
     @Override
@@ -288,26 +227,17 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gmdFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeDatabaseMetaData mockMetadata = new CubeDatabaseMetaData(config, (int)ret.retVal);
-
+            Object retVal = Utils.mock(config, gmdFnkey, Optional.of(integerType), this.connectionInstanceId);
+            CubeDatabaseMetaData mockMetadata = new CubeDatabaseMetaData(this, config, (int) retVal);
             return mockMetadata;
         }
 
         CubeDatabaseMetaData metaData = new CubeDatabaseMetaData(connection.getMetaData(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gmdFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), metaData.getMetadataInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId);
+            Utils.record(metaData.getMetadataInstanceId(), config, gmdFnkey, this.connectionInstanceId);
         }
 
-         return metaData;
+        return metaData;
     }
 
     @Override
@@ -325,16 +255,8 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, irFnKey, false, this.connectionInstanceId);
-        }
-
-        boolean toReturn = connection.isReadOnly();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, irFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, irFnKey, (fnArgs) -> connection.isReadOnly(),
+                this.connectionInstanceId);
     }
 
     @Override
@@ -352,18 +274,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gcFnKey, false,
-                    this.connectionInstanceId);
-        }
-
-        String toReturn = connection.getCatalog();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config,
-                    gcFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, gcFnKey, (fnArgs) -> connection.getCatalog(), this.connectionInstanceId);
     }
 
     @Override
@@ -381,16 +292,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, gtiFnKey, false, this.connectionInstanceId);
-        }
-
-        int toReturn = connection.getTransactionIsolation();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, gtiFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (int) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> connection.getTransactionIsolation(), this.connectionInstanceId);
     }
 
     @Override
@@ -401,26 +303,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(gwFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(),
-                    this.connectionInstanceId);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (SQLWarning) ret.retVal;
-        }
-
-        SQLWarning warnings = connection.getWarnings();
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(gwFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), warnings, FnReqResponse.RetStatus.Success,
-                    Optional.empty(), this.connectionInstanceId);
-        }
-
-        return warnings;
+        return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> connection.getWarnings(), this.connectionInstanceId);
     }
 
     @Override
@@ -439,24 +322,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(csrsFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, resultSetType, resultSetConcurrency);
-
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            CubeStatement mockStatement = new CubeStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, csrsFnKey, Optional.of(integerType), resultSetType, resultSetConcurrency, this.connectionInstanceId);
+            CubeStatement mockStatement = new CubeStatement(this, config,  (int) retVal);
             return mockStatement;
         }
 
         CubeStatement cubeStatement = new CubeStatement(connection.createStatement(resultSetType, resultSetConcurrency), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(csrsFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, resultSetType, resultSetConcurrency);
+            Utils.record(cubeStatement.getStatementInstanceId(), config, csrsFnKey, resultSetType, resultSetConcurrency, this.connectionInstanceId);
         }
 
         return cubeStatement;
@@ -471,22 +344,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(psrsFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, psrsFnkey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql,this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(psrsFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubePreparedStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency);
+            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psrsFnkey, sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
         }
 
         return cubePreparedStatement;
@@ -501,22 +366,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(pcrsFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, pcrsFnKey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
+            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubeCallableStatement cubeCallableStatement = new CubeCallableStatement(connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(pcrsFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeCallableStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency);
+            Utils.record(cubeCallableStatement.getStatementInstanceId(), config, pcrsFnKey, sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
         }
 
         return cubeCallableStatement;
@@ -524,7 +381,8 @@ public class CubeConnection implements Connection {
 
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
-        return connection.getTypeMap();
+        //TODO
+        return null;
     }
 
     @Override
@@ -549,16 +407,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, ghFnKey, false, this.connectionInstanceId);
-        }
-
-        int toReturn = connection.getHoldability();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, ghFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (int) Utils.recordOrMock(config, ghFnKey, (fnArgs) -> connection.getHoldability(), this.connectionInstanceId);
     }
 
     @Override
@@ -570,22 +419,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(ssFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeSavepoint mockSavepoint = new CubeSavepoint(config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, ssFnKey, Optional.of(integerType), this.connectionInstanceId);
+            CubeSavepoint mockSavepoint = new CubeSavepoint(this, config, (int) retVal);
             return mockSavepoint;
         }
 
         CubeSavepoint cubeSavepoint = new CubeSavepoint(connection.setSavepoint(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(ssFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeSavepoint.getSavepointInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId);
+            Utils.record(cubeSavepoint.getSavepointInstanceId(), config, ssFnKey, this.connectionInstanceId);
         }
 
         return cubeSavepoint;
@@ -600,23 +441,15 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(ssnFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, name);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeSavepoint mockSavepoint = new CubeSavepoint(config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, ssnFnKey, Optional.of(integerType), name, this.connectionInstanceId);
+            CubeSavepoint mockSavepoint = new CubeSavepoint(this, config, (int) retVal);
 
             return mockSavepoint;
         }
 
         CubeSavepoint cubeSavepoint = new CubeSavepoint(connection.setSavepoint(name), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(ssnFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeSavepoint.getSavepointInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, name);
+            Utils.record(cubeSavepoint.getSavepointInstanceId(), config, ssnFnKey, name, this.connectionInstanceId);
         }
 
         return cubeSavepoint;
@@ -645,24 +478,15 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(csrshFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, resultSetType, resultSetConcurrency,resultSetHoldability);
+            Object retVal = Utils.mock(config, csrshFnKey, Optional.of(integerType), resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
 
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            CubeStatement mockStatement = new CubeStatement(this, config, (int)ret.retVal);
+            CubeStatement mockStatement = new CubeStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubeStatement cubeStatement = new CubeStatement(connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(csrshFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, resultSetType, resultSetConcurrency, resultSetHoldability);
+            Utils.record(cubeStatement.getStatementInstanceId(), config, csrshFnKey, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
         }
 
         return cubeStatement;
@@ -677,22 +501,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(psrshFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency, resultSetHoldability);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, psrshFnkey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(psrshFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubePreparedStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psrshFnkey, sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
         }
 
         return cubePreparedStatement;
@@ -707,22 +523,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(pcrshFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency, resultSetHoldability);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, pcrshFnKey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
+            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubeCallableStatement cubeCallableStatement = new CubeCallableStatement(connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(pcrshFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubeCallableStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+            Utils.record(cubeCallableStatement.getStatementInstanceId(), config, pcrshFnKey, sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
         }
 
         return cubeCallableStatement;
@@ -737,22 +545,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(psaFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, autoGeneratedKeys);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, psaFnkey, Optional.of(integerType), sql, autoGeneratedKeys, this.connectionInstanceId);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, autoGeneratedKeys), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(psaFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubePreparedStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, autoGeneratedKeys);
+            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psaFnkey, sql, autoGeneratedKeys, this.connectionInstanceId);
         }
 
         return cubePreparedStatement;
@@ -767,22 +567,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(pscFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, columnIndexes);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, pscFnkey, Optional.of(integerType), sql, columnIndexes, this.connectionInstanceId);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, columnIndexes), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(pscFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubePreparedStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, columnIndexes);
+            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, pscFnkey, sql, columnIndexes, this.connectionInstanceId);
         }
 
         return cubePreparedStatement;
@@ -797,22 +589,14 @@ public class CubeConnection implements Connection {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(pscnFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.of(type), this.connectionInstanceId, sql, columnNames);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int)ret.retVal);
+            Object retVal = Utils.mock(config, pscnFnkey, Optional.of(integerType), sql, columnNames, this.connectionInstanceId);
+            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
         CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, columnNames), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(pscnFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), cubePreparedStatement.getStatementInstanceId(),
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, sql, columnNames);
+            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, pscnFnkey, sql, columnNames, this.connectionInstanceId);
         }
 
         return cubePreparedStatement;
@@ -838,7 +622,8 @@ public class CubeConnection implements Connection {
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
-        return connection.createSQLXML();
+        //TODO
+        return null;
     }
 
     @Override
@@ -849,16 +634,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockBoolean(false, config, ivFnKey, false, this.connectionInstanceId, timeout);
-        }
-
-        boolean toReturn = connection.isValid(timeout);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockBoolean(toReturn, config, ivFnKey, true, this.connectionInstanceId, timeout);
-        }
-
-        return toReturn;
+        return (boolean) Utils.recordOrMock(config, ivFnKey, (fnArgs) -> connection.isValid(timeout), timeout, this.connectionInstanceId);
     }
 
     @Override
@@ -883,82 +659,30 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gciFnKey, false, this.connectionInstanceId, name);
-        }
-
-        String toReturn = connection.getClientInfo(name);
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config, gciFnKey, true, this.connectionInstanceId, name);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, gciFnKey, (fnArgs) -> connection.getClientInfo(name), name, this.connectionInstanceId);
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
+        if (null == gcipFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gcipFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        return (Properties) Utils.recordOrMock(config, gcipFnkey, (fnArgs) -> connection.getClientInfo(), this.connectionInstanceId);
+    }
+
+    @Override
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
         //TODO
         return null;
     }
 
     @Override
-    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-        if (null == caoFnkey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            caoFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(caoFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), this.connectionInstanceId, typeName, elements);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (Array) ret.retVal;
-        }
-
-        Array toReturn = connection.createArrayOf(typeName, elements);
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(caoFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, typeName, elements);
-        }
-
-        return toReturn;
-    }
-
-    @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-        if (null == cstFnkey) {
-            Method method = new Object() {}.getClass().getEnclosingMethod();
-            cstFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
-        }
-
-        if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(cstFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(),
-                    Optional.empty(), this.connectionInstanceId, typeName, attributes);
-            if (ret.retStatus == FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
-                UtilException.throwAsUnchecked((Throwable) ret.retVal);
-            }
-
-            return (Struct) ret.retVal;
-        }
-
-        Struct toReturn = connection.createStruct(typeName, attributes);
-        if (config.intentResolver.isIntentToRecord()) {
-            config.recorder.record(cstFnkey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    FnReqResponse.RetStatus.Success, Optional.empty(), this.connectionInstanceId, typeName, attributes);
-        }
-
-        return toReturn;
+        //TODO
+        return null;
     }
 
     @Override
@@ -976,16 +700,7 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return Utils.recordOrMockString(null, config, gsFnKey, false, this.connectionInstanceId);
-        }
-
-        String toReturn = connection.getSchema();
-        if (config.intentResolver.isIntentToRecord()) {
-            return Utils.recordOrMockString(toReturn, config, gsFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> connection.getSchema(), this.connectionInstanceId);
     }
 
     @Override
@@ -1010,25 +725,18 @@ public class CubeConnection implements Connection {
                     config.commonConfig.serviceName, method);
         }
 
-        if (config.intentResolver.isIntentToMock()) {
-            return (int)Utils.recordOrMockLong(-1, config, gntFnKey, false, this.connectionInstanceId);
-        }
-
-        int toReturn = connection.getNetworkTimeout();
-        if (config.intentResolver.isIntentToRecord()) {
-            return (int)Utils.recordOrMockLong(toReturn, config, gntFnKey, true, this.connectionInstanceId);
-        }
-
-        return toReturn;
+        return (int) Utils.recordOrMock(config, gntFnKey, (fnArgs) -> connection.getNetworkTimeout(), this.connectionInstanceId);
     }
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return connection.unwrap(iface);
+        //TODO
+        return null;
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return connection.isWrapperFor(iface);
+        //TODO
+        return false;
     }
 }

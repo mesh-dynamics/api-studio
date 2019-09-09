@@ -63,10 +63,14 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     private FnKey gbyscFnKey;
     private FnKey goFnKey;
     private FnKey gocFnKey;
+    private FnKey gobFnKey;
+    private FnKey gobjFnKey;
     private FnKey guFnKey;
     private FnKey gurFnKey;
     private FnKey gnsFnKey;
     private FnKey gnscFnKey;
+
+
 
     public CubeCallableStatement (CubeConnection cubeConnection, Config config, int statementInstanceId) {
         super(cubeConnection, config, statementInstanceId);
@@ -117,9 +121,7 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getString(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> callableStatement.getString(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -131,9 +133,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (boolean) Utils.recordOrMock(config, gbFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getBoolean(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (boolean) Utils.recordOrMock(config, gbFnKey,
+                (fnArgs) -> callableStatement.getBoolean(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -145,9 +146,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getByte(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (byte) Utils.recordOrMock(config, gbyFnKey,
+                (fnArgs) -> callableStatement.getByte(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -159,9 +159,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (short) Utils.recordOrMock(config, gshcFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getShort(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (short) Utils.recordOrMock(config, gshcFnKey,
+                (fnArgs) -> callableStatement.getShort(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -173,9 +172,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (int) Utils.recordOrMock(config, gicFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getInt(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (int) Utils.recordOrMock(config, gicFnKey,
+                (fnArgs) -> callableStatement.getInt(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -187,9 +185,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (long) Utils.recordOrMock(config, glcFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getLong(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (long) Utils.recordOrMock(config, glcFnKey,
+                (fnArgs) -> callableStatement.getLong(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -201,9 +198,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (float) Utils.recordOrMock(config, gfFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getFloat(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (float) Utils.recordOrMock(config, gfFnKey,
+                (fnArgs) -> callableStatement.getFloat(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -215,9 +211,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Double) Utils.recordOrMock(config, gdFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getDouble(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (Double) Utils.recordOrMock(config, gdFnKey,
+                (fnArgs) -> callableStatement.getDouble(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -229,10 +224,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (BigDecimal) Utils.recordOrMock(config, gbdcsFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            int fnArg2 = (int)fnArgs[1];
-            return callableStatement.getBigDecimal(fnArg1, fnArg2);}, parameterIndex, scale, this.statementInstanceId);
+        return (BigDecimal) Utils.recordOrMock(config, gbdcsFnKey,
+                (fnArgs) -> callableStatement.getBigDecimal(parameterIndex, scale), parameterIndex, scale, this.statementInstanceId);
     }
 
     @Override
@@ -244,9 +237,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (byte[]) Utils.recordOrMock(config, gbysFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getBytes(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (byte[]) Utils.recordOrMock(config, gbysFnKey,
+                (fnArgs) -> callableStatement.getBytes(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -258,9 +250,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Date) Utils.recordOrMock(config, gdciFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getDate(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (Date) Utils.recordOrMock(config, gdciFnKey,
+                (fnArgs) -> callableStatement.getDate(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -272,9 +263,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Time) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getTime(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (Time) Utils.recordOrMock(config, gtiFnKey,
+                (fnArgs) -> callableStatement.getTime(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -286,9 +276,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Timestamp) Utils.recordOrMock(config, gtFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getTimestamp(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (Timestamp) Utils.recordOrMock(config, gtFnKey,
+                (fnArgs) -> callableStatement.getTimestamp(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -300,9 +289,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return Utils.recordOrMock(config, goFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getObject(fnArg);}, parameterIndex, this.statementInstanceId);
+        return Utils.recordOrMock(config, goFnKey,
+                (fnArgs) -> callableStatement.getObject(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -314,9 +302,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (BigDecimal) Utils.recordOrMock(config, gbdFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getBigDecimal(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (BigDecimal) Utils.recordOrMock(config, gbdFnKey,
+                (fnArgs) -> callableStatement.getBigDecimal(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -358,10 +345,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Date) Utils.recordOrMock(config, gdcicFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return callableStatement.getDate(fnArg1, fnArg2);}, parameterIndex, cal, this.statementInstanceId);
+        return (Date) Utils.recordOrMock(config, gdcicFnKey,
+                (fnArgs) -> callableStatement.getDate(parameterIndex, cal), parameterIndex, cal, this.statementInstanceId);
     }
 
     @Override
@@ -373,10 +358,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Time) Utils.recordOrMock(config, gticFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return callableStatement.getTime(fnArg1, fnArg2);}, parameterIndex, cal, this.statementInstanceId);
+        return (Time) Utils.recordOrMock(config, gticFnKey,
+                (fnArgs) -> callableStatement.getTime(parameterIndex, cal), parameterIndex, cal, this.statementInstanceId);
     }
 
     @Override
@@ -388,10 +371,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (Timestamp) Utils.recordOrMock(config, gtcFnKey, (fnArgs) -> {
-            int fnArg1 = (int)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return callableStatement.getTimestamp(fnArg1, fnArg2);}, parameterIndex, cal, this.statementInstanceId);
+        return (Timestamp) Utils.recordOrMock(config, gtcFnKey,
+                (fnArgs) -> callableStatement.getTimestamp(parameterIndex, cal), parameterIndex, cal, this.statementInstanceId);
     }
 
     @Override
@@ -431,9 +412,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (URL) Utils.recordOrMock(config, guFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getURL(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (URL) Utils.recordOrMock(config, guFnKey,
+                (fnArgs) -> callableStatement.getURL(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -620,9 +600,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (String) Utils.recordOrMock(config, gscFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getString(fnArg);}, parameterName, this.statementInstanceId);
+        return (String) Utils.recordOrMock(config, gscFnKey,
+                (fnArgs) -> callableStatement.getString(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -634,9 +613,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (boolean) Utils.recordOrMock(config, gbcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getBoolean(fnArg);}, parameterName, this.statementInstanceId);
+        return (boolean) Utils.recordOrMock(config, gbcFnKey,
+                (fnArgs) -> callableStatement.getBoolean(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -648,9 +626,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (byte) Utils.recordOrMock(config, gbyFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getByte(fnArg);}, parameterName, this.statementInstanceId);
+        return (byte) Utils.recordOrMock(config, gbyFnKey,
+                (fnArgs) -> callableStatement.getByte(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -662,9 +639,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (short) Utils.recordOrMock(config, gshFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getShort(fnArg);}, parameterName, this.statementInstanceId);
+        return (short) Utils.recordOrMock(config, gshFnKey,
+                (fnArgs) -> callableStatement.getShort(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -676,9 +652,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (int) Utils.recordOrMock(config, giFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getInt(fnArg);}, parameterName, this.statementInstanceId);
+        return (int) Utils.recordOrMock(config, giFnKey,
+                (fnArgs) -> callableStatement.getInt(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -690,9 +665,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (long) Utils.recordOrMock(config, glclFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getLong(fnArg);}, parameterName, this.statementInstanceId);
+        return (long) Utils.recordOrMock(config, glclFnKey,
+                (fnArgs) ->  callableStatement.getLong(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -704,9 +678,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (float) Utils.recordOrMock(config, gfcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getFloat(fnArg);}, parameterName, this.statementInstanceId);
+        return (float) Utils.recordOrMock(config, gfcFnKey,
+                (fnArgs) -> callableStatement.getFloat(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -718,9 +691,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (double) Utils.recordOrMock(config, gdcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getDouble(fnArg);}, parameterName, this.statementInstanceId);
+        return (double) Utils.recordOrMock(config, gdcFnKey,
+                (fnArgs) -> callableStatement.getDouble(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -732,9 +704,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (byte[]) Utils.recordOrMock(config, gbyscFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getBytes(fnArg);}, parameterName, this.statementInstanceId);
+        return (byte[]) Utils.recordOrMock(config, gbyscFnKey,
+                (fnArgs) -> callableStatement.getBytes(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -746,9 +717,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (Date) Utils.recordOrMock(config, gdclFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getDate(fnArg);}, parameterName, this.statementInstanceId);
+        return (Date) Utils.recordOrMock(config, gdclFnKey,
+                (fnArgs) -> callableStatement.getDate(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -760,9 +730,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (Time) Utils.recordOrMock(config, gticlFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getTime(fnArg);}, parameterName, this.statementInstanceId);
+        return (Time) Utils.recordOrMock(config, gticlFnKey,
+                (fnArgs) -> callableStatement.getTime(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -774,9 +743,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (Timestamp) Utils.recordOrMock(config, gtclFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getTimestamp(fnArg);}, parameterName, this.statementInstanceId);
+        return (Timestamp) Utils.recordOrMock(config, gtclFnKey,
+                (fnArgs) -> callableStatement.getTimestamp(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -788,9 +756,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return Utils.recordOrMock(config, gocFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getObject(fnArg);}, parameterName, this.statementInstanceId);
+        return Utils.recordOrMock(config, gocFnKey,
+                (fnArgs) -> callableStatement.getObject(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -802,9 +769,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (BigDecimal) Utils.recordOrMock(config, gbdcFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getBigDecimal(fnArg);}, parameterName, this.statementInstanceId);
+        return (BigDecimal) Utils.recordOrMock(config, gbdcFnKey,
+                (fnArgs) -> callableStatement.getBigDecimal(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -846,10 +812,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (Date) Utils.recordOrMock(config, gdclcFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return callableStatement.getDate(fnArg1, fnArg2);}, parameterName, cal, this.statementInstanceId);
+        return (Date) Utils.recordOrMock(config, gdclcFnKey,
+                (fnArgs) -> callableStatement.getDate(parameterName, cal), parameterName, cal, this.statementInstanceId);
     }
 
     @Override
@@ -861,10 +825,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (Time) Utils.recordOrMock(config, gticlcFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return callableStatement.getTime(fnArg1, fnArg2);}, parameterName, cal, this.statementInstanceId);
+        return (Time) Utils.recordOrMock(config, gticlcFnKey,
+                (fnArgs) -> callableStatement.getTime(parameterName, cal), parameterName, cal, this.statementInstanceId);
     }
 
     @Override
@@ -876,10 +838,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (Timestamp) Utils.recordOrMock(config, gtccFnKey, (fnArgs) -> {
-            String fnArg1 = (String)fnArgs[0];
-            Calendar fnArg2 = (Calendar)fnArgs[1];
-            return callableStatement.getTimestamp(fnArg1, fnArg2);}, parameterName, cal, this.statementInstanceId);
+        return (Timestamp) Utils.recordOrMock(config, gtccFnKey,
+                (fnArgs) -> callableStatement.getTimestamp(parameterName, cal), parameterName, cal, this.statementInstanceId);
     }
 
     @Override
@@ -891,9 +851,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (URL) Utils.recordOrMock(config, gurFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getURL(fnArg);}, parameterName, this.statementInstanceId);
+        return (URL) Utils.recordOrMock(config, gurFnKey,
+                (fnArgs) -> callableStatement.getURL(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
@@ -997,9 +956,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterIndex = parameterIndex;
-        return (String) Utils.recordOrMock(config, gnsFnKey, (fnArgs) -> {
-            int fnArg = (int)fnArgs[0];
-            return callableStatement.getNString(fnArg);}, parameterIndex, this.statementInstanceId);
+        return (String) Utils.recordOrMock(config, gnsFnKey,
+                (fnArgs) -> callableStatement.getNString(parameterIndex), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -1011,9 +969,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
         }
 
         this.parameterName = parameterName;
-        return (String) Utils.recordOrMock(config, gnscFnKey, (fnArgs) -> {
-            String fnArg = (String)fnArgs[0];
-            return callableStatement.getNString(fnArg);}, parameterName, this.statementInstanceId);
+        return (String) Utils.recordOrMock(config, gnscFnKey,
+                (fnArgs) -> callableStatement.getNString(parameterName), parameterName, this.statementInstanceId);
     }
 
     @Override
