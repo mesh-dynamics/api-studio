@@ -1,0 +1,205 @@
+.navigation-main {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.left-pane {
+    background: #545454;
+    position: relative;
+    width: 56px;
+    height: 100%;
+    display: inline-block;
+    text-align: center;
+    padding: 10px !important;
+    display: inline-block;
+}
+.q-links {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding-bottom: 20px;
+}
+.q-links-top {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 18px 0;
+}
+.link-q {
+    color: #CCC6B0;
+    margin-bottom: 10px;
+    font-size: 22px;
+}
+
+.link-q:hover {
+    color: #00B2FF;
+    cursor: pointer;
+}
+
+.top-navig {
+    background: #545454 !important;
+}
+
+.company-name {
+    position: absolute;
+    top: 5px;
+    left: 14px;
+    height: 36px;
+    display: inline-block;
+    color: #FFFFFF;
+}
+
+.company-name img {
+    height: 28px;
+    margin: 4px 0;
+    vertical-align: top;
+}
+
+.company-name div {
+    font-size: 24px;
+    font-family: 'Dosis', sans-serif;
+    color: #F3F4DA;
+    line-height: 36px;
+    font-weight: 200;
+    margin-left: 10px;
+}
+
+.nav-links .link{
+    margin-right: 15px;
+    font-size: 16px;
+    line-height: 50px;
+}
+
+.nav_menu {
+    margin-bottom: 0 !important;
+    background: #545454 !important;
+    border-bottom: none;
+}
+
+.app-select{
+    width: 250px;
+    height: 100%;
+    overflow-y: auto;
+    background: #D5D5D5;
+    display: inline-block;
+    visibility:visible;
+    transition:0.5s;
+    -webkit-transition:0.5s;
+}
+.info-wrapper {
+    width: 250px;
+    height: 100%;
+    overflow-y: auto;
+    background: #EAEAEA;
+    display: inline-block;
+    padding: 10px;
+}
+.label-n {
+    color: #333333;
+    font-weight: 300;
+    font-size: 10px;
+}
+.value-n {
+   font-weight: 500;
+}
+.application-name {n
+    font-weight: 600;
+    font-size: 16px;
+}
+.div-label {
+    font-weight: 400;
+    font-size: 16px;
+}
+.app-s-b {
+    position: relative;
+    height: 100%;
+    width: 15px;
+    background: #D5D5D5;
+    display: inline-block;
+    cursor: pointer;
+}
+.app-s-b .sh-cont {
+    padding: 5px 4px;
+    background: #545454;
+    color: #FFFFFF;
+    position: absolute;
+    top: 25px;
+}
+.disp-none {
+    visibility:hidden;
+    width:0px;
+    overflow:hidden;
+    transition:0.5s;
+    -webkit-transition:0.5s;
+}
+.applic {
+    margin-top: 20px;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 5px 15px;
+}
+.app-list {
+    width: 100%;
+    padding-left: 15px;
+    overflow-y: auto;
+}
+.app-wrapper{
+    background: #EAEAEA;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+.app-img {
+    padding: 10px;
+    height: 120px;
+}
+.app-name {
+    text-align: center;
+    padding: 10px 0;
+    font-weight: bold;
+    background: #CCCCCC;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+.app-wrapper:hover .app-name {
+    background: #FFBE00;
+}
+.app-name.selected {
+    background: #FFBE00;
+}
+
+.info-div{
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #999999;
+}
+.service-gph{
+    padding: 10px;
+    height: 120px;
+    width: 100%;
+    background: #FFFFFF;
+    margin-top: 10px;
+}
+.service-gph img, .app-img img {
+    width: 100%;
+    height: 100%;
+}
+
+.filter-tc{
+    padding: 8px;
+    background: #D5D5D5;
+}
+.vertical-middle {
+    vertical-align: middle;
+}
+.r-text {
+    font-size: 11px;
+    vertical-align: text-bottom;
+}
+.width-50 {
+    width: 45%;
+}

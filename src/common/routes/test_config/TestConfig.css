@@ -1,0 +1,41 @@
+.tc-grid {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-column-gap: 20px;
+    grid-row-gap: 20px;
+}
+
+.tc-grid .grid-content{
+    box-sizing: border-box;
+    cursor: pointer;
+    /*box-shadow: 5px 3px #EFEFEF;*/
+}
+
+.grid-content:hover .g-head {
+    background: #FFBE00;
+}
+
+.g-head {
+    padding: 10px 20px;
+    font-weight: bold;
+    background: #EAEAEA;
+    border-bottom: 1px solid #999999;
+    font-size: 1.2em;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.g-head.selected {
+    background: #FFBE00;
+}
+
+.g-body {
+    position: relative;
+    padding: 20px;
+    background: #EAEAEA;
+}
+
+.t-name {
+    font-weight: 300;
+}
