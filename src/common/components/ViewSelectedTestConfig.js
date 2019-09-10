@@ -117,14 +117,16 @@ class ViewSelectedTestConfig extends React.Component {
         if (e) {
             dispatch(cubeActions.clear());
             let version = null;
+            let golden = null;
             for (const collec of cube.testIds) {
                 if (collec.collec == e.target.value) {
+                    golden = collec.id
                     version = collec.templateVer;
                     break;
                 }
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version));
+            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
         }
     }
 
@@ -206,6 +208,10 @@ class ViewSelectedTestConfig extends React.Component {
                 <div className="margin-top-10">
                     <div className="label-n">TEST NAME</div>
                     <div className="value-n">{cube.testConfig ? cube.testConfig.testConfigName : ''}</div>
+                </div>
+                <div className={cube.golden ? "margin-top-10" : "hidden"}>
+                    <div className="label-n">GOLDEN</div>
+                    <div className="value-n">{cube.golden ? cube.golden : ''}</div>
                 </div>
                 <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
                     <div className="label-n">GATEWAY</div>

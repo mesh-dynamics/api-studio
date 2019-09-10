@@ -26,6 +26,7 @@ export const cubeActions = {
     showTCSetup,
     showTCInfo,
     clear,
+    clearGolden,
     setPathResultsParams,
     getCollectionUpdateOperationSet,
     updateRecordingOperationSet,
@@ -69,6 +70,10 @@ function getApps () {
 
 function pushToOperationSet(os) {
     return {type: cubeConstants.PUSH_TO_OS, data: os};
+}
+
+function clearGolden() {
+    return {type: cubeConstants.CLEAR_GOLDEN, data: null};
 }
 
 function pushToOperations(o) {
@@ -260,8 +265,8 @@ function getTestIds (app) {
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 
-function setSelectedTestIdAndVersion ( testIdLabel, version ) {
-    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version}};
+function setSelectedTestIdAndVersion ( testIdLabel, version, golden ) {
+    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version, golden: golden}};
 }
 
 function getGraphDataByAppId(appId) {

@@ -43,6 +43,7 @@ class Navigation extends Component{
             dispatch(cubeActions.setSelectedApp(e));
             setTimeout(() => {
                 const {cube} = this.props;
+                dispatch(cubeActions.clearGolden());
                 dispatch(cubeActions.getGraphDataByAppId(cube.selectedAppObj.id));
                 dispatch(cubeActions.getTimelineData(e));
                 dispatch(cubeActions.getTestConfigByAppId(cube.selectedAppObj.id));
@@ -112,7 +113,7 @@ class Navigation extends Component{
                     </div>
                     <div className="info-wrapper">
                         <div>
-                            <div className="label-n">Application</div>
+                            <div className="label-n">APPLICATION</div>
                             <div className="application-name">{cube.selectedApp ? cube.selectedApp : "N/A"}</div>
                         </div>
                         <div className={!cube.hideTestConfig && cube.testConfig ? "info-div" : "hidden"}>
@@ -122,6 +123,10 @@ class Navigation extends Component{
                             <div className="margin-top-10">
                                 <div className="label-n">TEST NAME</div>
                                 <div className="value-n">{cube.testConfig ? cube.testConfig.testConfigName : ''}</div>
+                            </div>
+                            <div className={cube.golden ? "margin-top-10" : "hidden"}>
+                                <div className="label-n">GOLDEN</div>
+                                <div className="value-n">{cube.golden ? cube.golden : ''}</div>
                             </div>
                             <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
                                 <div className="label-n">GATEWAY</div>

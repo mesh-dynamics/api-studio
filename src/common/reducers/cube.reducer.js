@@ -36,6 +36,7 @@ const initialState = {
     fcId: null,
     selectedTestId: null,
     collectionTemplateVersion: null,
+    golden: null,
 
     replayId: null,
 
@@ -195,7 +196,8 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 selectedTestId: action.data.collec,
-                collectionTemplateVersion: action.data.ver
+                collectionTemplateVersion: action.data.ver,
+                golden: action.data.golden
             };
         case cubeConstants.REPLAY_ID_SUCCESS:
             return {
@@ -302,6 +304,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 operations:[]
             };
+        case cubeConstants.CLEAR_GOLDEN:
+            return {
+                ...state,
+                golden: null
+            }
         default:
             return state
     }
