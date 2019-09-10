@@ -1647,8 +1647,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         String type = Types.MatchResultAggregate.toString();
         // the id field is set using (replayid, service, path) which is unique
-        String id = type + '-' + resultAggregate.replayid + '-' + resultAggregate.service.orElse("None")
-            + '-' + resultAggregate.path.orElse("None");
+        String id = type + "-" + Objects.hash(resultAggregate.replayid, resultAggregate.service.orElse(""), resultAggregate.path.orElse(""));
 
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
@@ -1674,8 +1673,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 //        addFilter(query, SERVICEF, service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
         service.ifPresent(servicev -> addFilter(query, SERVICEF, servicev));
 
-        if(!bypath)
+        if(!bypath) {
             addFilter(query, PATHF, DEFAULT_EMPTY_FIELD_VALUE);
+        }
 
         return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToMatchResultAggregate(doc).stream());
     }
@@ -1685,7 +1685,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @return
      */
     private Optional<MatchResultAggregate> docToMatchResultAggregate(SolrDocument doc) {
-        Optional<String> json = getStrFieldMV(doc, OBJJSONF).stream().findFirst();
+        Optional<String> json = getStrFieldMVFirst(doc, OBJJSONF);
         Optional<MatchResultAggregate> matchResultAggregate = json.flatMap(j -> {
             try {
                 return Optional.ofNullable(config.jsonmapper.readValue(j, MatchResultAggregate.class));

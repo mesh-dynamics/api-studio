@@ -301,9 +301,10 @@ public interface ReqRespStore {
      * @param service
      * @return If service is empty, return aggregate results for all services. If
      * service is non-empty, return results for all paths in the service if bypath is true
-     * This also returns the rollups (service, path), (service) ()
+     * This also returns the rollups (service, path), (service) () when service is empty.
+     * and rollups (service, path) [bypath: true], (service)[bypath: false] when service is non-empty.
      * This method just gets the aggregates using Solr query which were pre-computed and
-     * stored. For computation of aggregated check computeResultAggregate
+     * stored. For computation of aggregates check computeResultAggregate method.
      */
     Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
                                                             boolean bypath);
