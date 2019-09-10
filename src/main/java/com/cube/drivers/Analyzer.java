@@ -330,6 +330,16 @@ public class Analyzer {
             // update the stored analysis
             rrstore.saveAnalysis(analyzer.analysis);
 
+
+            // Compute the aggregations here itself for all levels.
+            Optional<String> service = Optional.empty();
+            boolean bypath = true;
+
+            Collection<MatchResultAggregate> resultAggregates = rrstore.computeResultAggregate(replayid, service, bypath);
+            resultAggregates.forEach( resultAggregate -> {
+                rrstore.saveMatchResultAggregate(resultAggregate);
+            } );
+
             return Optional.of(analyzer.analysis);
         });
     }
