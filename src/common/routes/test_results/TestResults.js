@@ -112,7 +112,7 @@ class TestResults extends Component {
                 for (let eachGroupKey in tempTableData) {
                     if (eachPath.startsWith(eachGroupKey)) {
                         tempTableData[eachGroupKey].subRows.push({
-                            serviceRowKey: eachPath,
+                            serviceRowKey: eachPath.replace(eachGroupKey, "/"),
                             ...tempData
                         });
                         break;
@@ -167,7 +167,14 @@ class TestResults extends Component {
                     if (row.value && row.value.indexOf("--") == 0) {
                         return (<strong></strong>);
                     }
-                    return row.value
+                    if (row.value && row.value.indexOf("--") > 0) {
+                        return (
+                            <div>{row.value}</div>
+                        )
+                    }
+                    return (
+                        <div style={{ paddingLeft: '18px'}}>{row.value}</div>
+                    )
                 }
             }]
         });
