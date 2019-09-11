@@ -141,7 +141,7 @@ class ReduceDiff {
                     If its a simple key/value pair, then add to the pre-final result.
                 */
                 if(tempExpJsonPath) removedPathObject = this._findPathInComputedDiff(tempExpJsonPath, this.computedDiff);
-                if(tempActJsonPath) addedPathObject = this._findPathInComputedDiff(tempActJsonPath, this.computedDiff);
+                if(!removedPathObject && tempActJsonPath) addedPathObject = this._findPathInComputedDiff(tempActJsonPath, this.computedDiff);
                 if(removedPathObject) {
                     if(tempExpJsonPath.indexOf(BEGIN_BRACKET) > -1) {
                         tempStack.push(tempExpJsonPath);
