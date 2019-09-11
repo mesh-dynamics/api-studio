@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
+import Tippy from '@tippy.js/react';
+import 'tippy.js/themes/light.css';
 import { connect } from "react-redux";
 import * as moment from 'moment';
 import { cubeActions } from "../../actions";
@@ -59,8 +61,8 @@ class TestResults extends Component {
                     rApp = eachReplayResult.app, rTableRowKey = "";
                 rTableRowKey = rService + "/" + rPath;
                 if (!tableDataPathMap[rTableRowKey]) tableDataPathMap[rTableRowKey] = [];
-                tableDataPathMap[rTableRowKey].push({ 
-                    ...eachReplayResult, 
+                tableDataPathMap[rTableRowKey].push({
+                    ...eachReplayResult,
                     timestamp: momentDateObject.valueOf(),
                     collection,
                     recordingId,
@@ -132,8 +134,8 @@ class TestResults extends Component {
                     if (rest.row && rest.row.serviceRowKey.indexOf("--") > 0) {
                         return (<div>
                             {isExpanded
-                                ? <span style={{position: "relative", bottom: "5px"}}><i className="fas fa-minus-circle" style={{"fontSize": "12px"}}></i></span>
-                                : <span style={{position: "relative", bottom: "5px"}}><i className="fas fa-plus-circle" style={{"fontSize": "12px"}}></i></span>}
+                                ? <span style={{ position: "relative", bottom: "5px" }}><i className="fas fa-minus-circle" style={{ "fontSize": "12px" }}></i></span>
+                                : <span style={{ position: "relative", bottom: "5px" }}><i className="fas fa-plus-circle" style={{ "fontSize": "12px" }}></i></span>}
                         </div>);
                     }
                     rest.expander = false;
@@ -185,7 +187,7 @@ class TestResults extends Component {
                         if (!data) return "";
                         for (let eachRow of data) {
                             let cellData = eachRow[cellId];
-                            if(!cellData) return (<strong>NA</strong>);
+                            if (!cellData) return (<strong>NA</strong>);
                             return (<strong
                                 style={{
                                     color: cellData.respnotmatched && cellData.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
@@ -225,15 +227,40 @@ class TestResults extends Component {
                                         borderRadius: '2px'
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            width: `${100}%`,
-                                            height: '100%',
-                                            backgroundColor: row.value.respnotmatched && row.value.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
-                                            borderRadius: '2px',
-                                            transition: 'all .2s ease-out'
-                                        }}
-                                    />
+                                    <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"mouseenter"} appendTo={"parent"} flipOnUpdate={true} maxWidth={450}
+                                        content={
+                                            <div style={{ overflowY: "auto", fontSize: "14px" }} className="grey">
+                                                <div style={{ color: "#333333", padding: "15px", textAlign: "left" }}>
+                                                    <div style={{ paddingBottom: '5px', borderBottom: '1px solid #333', marginBottom: '9px' }}>
+                                                        {row.value.app + " > " + row.value.service}
+                                                    </div>
+                                                    <div>
+                                                        <div className="row margin-bottom-10">
+                                                            <div className="col-md-6">Errors:</div>
+                                                            <div className="col-md-4 bold">{row.value.respnotmatched}</div>
+                                                            <div className="col-md-6">Low severity errors:</div>
+                                                            <div className="col-md-4 bold">{row.value.resppartiallymatched}</div>
+                                                            <div className="col-md-6">Incomplete requests:</div>
+                                                            <div className="col-md-4 bold">{row.value.reqnotmatched}</div>
+                                                            <div className="col-md-6">Mock errors:</div>
+                                                            <div className="col-md-4 bold">{row.value.mockReqNotMatched}</div>
+                                                            <div className="col-md-6">New errors:</div>
+                                                            <div className="col-md-4 bold">{row.value.respnotmatched}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }>
+                                        <div
+                                            style={{
+                                                width: `${100}%`,
+                                                height: '100%',
+                                                backgroundColor: row.value.respnotmatched && row.value.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
+                                                borderRadius: '2px',
+                                                transition: 'all .2s ease-out'
+                                            }}
+                                        />
+                                    </Tippy>
                                 </div >
                             )
                         }
@@ -246,20 +273,46 @@ class TestResults extends Component {
                                     borderRadius: '2px',
                                     cursor: "pointer"
                                 }}
-                                onClick={() => {
-                                    return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayid, row.value.recordingId, row.value.templateVer, 1)
-                                }
+                                onClick={
+                                    () => {
+                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayid, row.value.recordingId, row.value.templateVer, 1)
+                                    }
                                 }
                             >
-                                <div
-                                    style={{
-                                        width: `${100}%`,
-                                        height: '100%',
-                                        backgroundColor: row.value.respnotmatched && row.value.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
-                                        borderRadius: '2px',
-                                        transition: 'all .2s ease-out'
-                                    }}
-                                />
+                                <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"mouseenter"} appendTo={"parent"} flipOnUpdate={true} maxWidth={450}
+                                    content={
+                                        <div style={{ overflowY: "auto", fontSize: "14px" }} className="grey">
+                                            <div style={{ color: "#333333", padding: "15px", textAlign: "left" }}>
+                                                <div style={{ paddingBottom: '5px', borderBottom: '1px solid #333', marginBottom: '9px' }}>
+                                                    {row.value.app + " > " + row.value.service + " > " + row.value.path}
+                                                </div>
+                                                <div>
+                                                    <div className="row margin-bottom-10">
+                                                        <div className="col-md-6">Errors:</div>
+                                                        <div className="col-md-4 bold">{row.value.respnotmatched}</div>
+                                                        <div className="col-md-6">Low severity errors:</div>
+                                                        <div className="col-md-4 bold">{row.value.resppartiallymatched}</div>
+                                                        <div className="col-md-6">Incomplete requests:</div>
+                                                        <div className="col-md-4 bold">{row.value.reqnotmatched}</div>
+                                                        <div className="col-md-6">Mock errors:</div>
+                                                        <div className="col-md-4 bold">{row.value.mockReqNotMatched}</div>
+                                                        <div className="col-md-6">New errors:</div>
+                                                        <div className="col-md-4 bold">{row.value.respnotmatched}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }>
+                                    <div
+                                        style={{
+                                            width: `${100}%`,
+                                            height: '100%',
+                                            backgroundColor: row.value.respnotmatched && row.value.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
+                                            borderRadius: '2px',
+                                            transition: 'all .2s ease-out'
+                                        }}
+                                    />
+                                </Tippy>
                             </div>
                         )
                     }
