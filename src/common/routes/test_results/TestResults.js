@@ -127,9 +127,9 @@ class TestResults extends Component {
             Header: () => <strong>Expand</strong>,
             columns: [{
                 expander: true,
-                sortable: true,
                 Header: () => <strong></strong>,
                 width: 65,
+                sortable: false,
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.row && rest.row.serviceRowKey.indexOf("--") > 0) {
                         return (<div>
