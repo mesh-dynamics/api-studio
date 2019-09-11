@@ -7,6 +7,7 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
+import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
 import com.cube.serialize.GsonPatternSerializer;
@@ -83,7 +84,9 @@ public class Config {
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
-            solrurl = properties.getProperty("solrurl");
+            String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.191.135.125:8983/solr/");
+            String solrCore = fromEnvOrProperties("solr_core" , "cube");
+            solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();

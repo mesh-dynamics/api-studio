@@ -27,15 +27,18 @@ public class FnResponse {
     RetStatus retStatus;
     @JsonProperty("exceptionType")
     Optional<String> exceptionType;
+    @JsonProperty("multipleResults")
+    boolean multipleResults;
 
     // for jackson deserialization
     public FnResponse() {
     }
 
-    public FnResponse(String retVal, Optional<Instant> timeStamp, RetStatus retStatus, Optional<String> exceptionType) {
+    public FnResponse(String retVal, Optional<Instant> timeStamp, RetStatus retStatus, Optional<String> exceptionType, boolean multipleResults) {
         this.retVal = retVal;
         this.timeStamp = timeStamp;
         this.retStatus = retStatus;
         this.exceptionType = exceptionType;
+        this.multipleResults = multipleResults;
     }
 }

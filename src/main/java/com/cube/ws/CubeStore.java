@@ -31,6 +31,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.msgpack.core.MessagePack;
@@ -40,6 +41,7 @@ import org.msgpack.value.ValueType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.UtilException;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.PATHPATH;
 
@@ -50,7 +52,6 @@ import com.cube.core.RequestComparator;
 import com.cube.core.ResponseComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
-import com.cube.core.UtilException;
 import com.cube.core.Utils;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.*;

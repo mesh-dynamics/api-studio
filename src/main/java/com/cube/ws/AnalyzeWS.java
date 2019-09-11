@@ -10,9 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -143,7 +141,10 @@ public class AnalyzeWS {
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
 
-        Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
+        Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+        Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
+
+//        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
         String json;
         try {
             json = jsonmapper.writeValueAsString(res);
@@ -406,9 +407,10 @@ public class AnalyzeWS {
     }
 
     /**
-     * Return Time Line results for a given customer id , app , instance id combo
+     * Return Time Line results for a given customer id , app combo
      * Optional Parameters include restriction on <i>collection</i> id (later we should be able to specify
      * a range of collection ids or dates)
+     * Includes optional restriction on instance id which can be a list(multiple instanceId's allowed)
      * Return results segragated by path if <i>bypath</i> variable is set y in query params
      * We can also restrict the results to a particular gateway service (which is what should
      * be done ideally) using <i>service</i> query param
@@ -417,21 +419,21 @@ public class AnalyzeWS {
      * @param urlInfo
      * @param customer
      * @param app
-     * @param instanceId
      * @return
      */
     @GET
-	@Path("timelineres/{customer}/{app}/{instanceId}")
+    @Path("timelineres/{customer}/{app}")
     public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
-                                       @PathParam("app") String app, @PathParam("instanceId") String instanceId) {
+                                       @PathParam("app") String app) {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
+        List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
             map(Integer::valueOf).or(() -> Optional.of(20));
-        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), Optional.empty(),
+        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
             List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection);
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
@@ -447,7 +449,11 @@ public class AnalyzeWS {
                     + "\" , \"collection\" : \"" + recording.collection
                     + recording.templateVersion.map(templatever -> "\" , \"templateVer\" : \"" + templatever).orElse("");
             }
-            Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
+
+            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+            Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
+
+//            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp
@@ -592,8 +598,10 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("redis/flushall")
-    public Response redisFlushAll() {
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        requestComparatorCache.invalidateAll();
+        responseComparatorCache.invalidateAll();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();
