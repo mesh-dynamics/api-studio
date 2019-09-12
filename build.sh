@@ -2,5 +2,5 @@
 
 mvn package
 IMAGE_NAME="cubeiocorp/cubews"
-VERSION="batchrr-1.10"
+VERSION="batchrr-1.12"
 DOCKER_BUILDKIT=1 docker build --target dev --no-cache --tag $IMAGE_NAME:$VERSION .

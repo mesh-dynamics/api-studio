@@ -50,6 +50,7 @@ public class Config {
 	public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
     public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
     public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+    public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
 
 	final Properties properties;
 	final SolrClient solr;
@@ -119,6 +120,8 @@ public class Config {
                 , "6379"));
             String redisPassword = fromEnvOrProperties("redis_password" , null);
             jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
+            REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
+                , "15"));
         } catch (Exception e) {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
             throw e;
