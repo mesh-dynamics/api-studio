@@ -119,8 +119,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     void removeCollectionKey(ReqRespStoreImplBase.CollectionKey collectionKey) {
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
-            Long result = jedis.del(collectionKey.toString());
-            LOGGER.info("Successfully removed from redis , key :: " + collectionKey.toString());
+            //jedis.del(collectionKey.toString());
+            Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
+            LOGGER.info(
+                String.format("Expiring redis key \"%s\" in %d seconds", collectionKey.toString(),
+                    Config.REDIS_DELETE_TTL));
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
         }
