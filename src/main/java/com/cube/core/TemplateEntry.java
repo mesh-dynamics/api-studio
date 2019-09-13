@@ -107,7 +107,7 @@ public class TemplateEntry {
             case Optional:
                 return OK_Optional;
             case Default:
-                return OK;
+                return OK_DefaultPT;
         }
         return OK;
     }
@@ -117,12 +117,14 @@ public class TemplateEntry {
      * Assuming compare type is not ignore or default
      */
     Comparator.Resolution lhsmissing() {
-        if (pt == CompareTemplate.PresenceType.Default && !isParentArray) return ERR_NewField;
+        if ((pt == CompareTemplate.PresenceType.Default || pt == CompareTemplate.PresenceType.Required) && !isParentArray) {
+            return ERR_NewField;
+        }
         switch (ct) {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return OK_OtherValInvalid;
         }
@@ -190,7 +192,7 @@ public class TemplateEntry {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRound, Floor, Ceil
         }
@@ -231,7 +233,7 @@ public class TemplateEntry {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRound, Floor, Ceil, CustomReqex
 
@@ -313,7 +315,7 @@ public class TemplateEntry {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRegex
 

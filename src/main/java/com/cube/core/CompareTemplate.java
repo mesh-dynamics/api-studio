@@ -34,10 +34,10 @@ import com.cube.core.RequestComparator.PathCT;
  * Optional => If value missing in rhs -> OK_Optional
  *             If value missing in lhs -> OK_OtherValInvalid
  *
- * Default => If value missing in rhs -> OK
+ * Default => If value missing in rhs -> OK_DefaultPT
  *            If value missing in lhs, but present in rhs
  * 				if (comparison type is Ignore or Default)
- * 			    	-> OK_Ignore or OK
+ * 			    	-> OK_Ignore or OK_DefaultPT
  *              else
  * 			    	-> OK_OtherValInvalid
  */
@@ -168,15 +168,15 @@ public class CompareTemplate {
                         return starRule;
                     }
                 }
-				if (rule.ct == ComparisonType.Equal) {
-					return Optional.of(DEFAULT_RULE_EQUALITY);
-				} else if (rule.ct == ComparisonType.EqualOptional) {
-                    return Optional.of(DEFAULT_RULE_EQUAL_OPTIONAL);
-                } else if (rule.ct == ComparisonType.Ignore) {
-                    return Optional.of(DEFAULT_RULE_IGNORE);
+
+                // Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
+                // explicitly stated for a path. This will be ensured through validating template before registering.
+                if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
+                    return Optional.empty();
                 } else {
-					return Optional.empty();
-				}
+                    return Optional.of(new TemplateEntry("/", DataType.Default, rule.pt, rule.ct));
+                }
+
 			}).orElseGet(() -> getInheritedRule(subPath));
 		} else {
 			return DEFAULT_RULE;
@@ -221,9 +221,7 @@ public class CompareTemplate {
 	}
 
 	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default);
-	private static final TemplateEntry DEFAULT_RULE_EQUALITY = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Equal);
-	private static final TemplateEntry DEFAULT_RULE_EQUAL_OPTIONAL = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.EqualOptional);
-	private static final TemplateEntry DEFAULT_RULE_IGNORE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Ignore);
+
 	/**
 	 * @param rule
 	 */
