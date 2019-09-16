@@ -7,11 +7,16 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,6 +62,35 @@ public class JsonObj implements DataObj {
     @Override
     public String serialize() {
         return null;
+    }
+
+    @Override
+    public void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals) {
+        // Using json pointer to handle proper escaping in case keys have special characters
+        JsonPointer path = JsonPointer.compile("");
+        objRoot.ifPresent(root -> {
+            processNode(root, filter, vals, path);
+        });
+    }
+
+    private void processNode(JsonNode node, Function<String, Boolean> filter, Collection<String> vals, JsonPointer path) {
+        if (node.isValueNode()) {
+            if (filter.apply(path.toString())) {
+                vals.add(node.asText());
+            }
+        } else if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> child = fields.next();
+                processNode(child.getValue(), filter, vals, path.append(JsonPointer.compile("/" + child.getKey())));
+            }
+        } else if (node.isArray()) {
+            int idx = 0;
+            for (JsonNode child : node) {
+                processNode(child, filter, vals, path.append(JsonPointer.compile("/" + idx)));
+                idx++;
+            }
+        }
     }
 
     private static Optional<JsonNode> jsonStrToObj(String json, ObjectMapper jsonMapper) {

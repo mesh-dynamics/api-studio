@@ -6,6 +6,9 @@
 
 package com.cube.dao;
 
+import java.util.Collection;
+import java.util.function.Function;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-09-03
@@ -21,4 +24,6 @@ public interface DataObj {
     String getValAsString(String path);
 
     String serialize();
+
+    void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
 }

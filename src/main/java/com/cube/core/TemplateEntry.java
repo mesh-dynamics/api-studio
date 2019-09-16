@@ -340,5 +340,7 @@ public class TemplateEntry {
         return this.path;
     }
 
-
+    public CompareTemplate.ComparisonType getCompareType() {
+        return ct;
+    }
 }

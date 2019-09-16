@@ -41,6 +41,7 @@ public interface ReqRespStore {
 
     Optional<TemplateSet> getTemplateSet(String customerid, String app, String version);
 
+
     public class ReqResp {
 
 
@@ -82,6 +83,7 @@ public interface ReqRespStore {
 	}
 
 	enum Types {
+        Event,
 		Request,
 		Response,
 		ReplayMeta, // replay metadata
@@ -103,7 +105,9 @@ public interface ReqRespStore {
 
 	boolean save(Response resp);
 
-	/**
+    boolean save(Event event);
+
+    /**
 	 * @param queryrequest
 	 * @param mspec - the matching specification
 	 * @param nummatches - max number of matches
@@ -405,6 +409,12 @@ public interface ReqRespStore {
 			return recording.isPresent();
 		}
 
+		@JsonIgnore
+        public Optional<String> getTemplateVersion() {
+            return replay.flatMap(replay1 -> replay1.templateVersion)
+                .or(() -> recording.flatMap(recording1 -> recording1.templateVersion));
+        }
+
 		// for json de-serialization
 		public RecordOrReplay() {
 		    super();
@@ -425,7 +435,7 @@ public interface ReqRespStore {
 			this(Optional.of(recording), Optional.empty());
 		}
 
-		public RecordOrReplay(Replay replay) {
+		private RecordOrReplay(Replay replay) {
 			this(Optional.empty(), Optional.of(replay));
 		}
 

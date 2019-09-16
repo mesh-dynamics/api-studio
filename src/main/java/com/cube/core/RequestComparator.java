@@ -54,6 +54,8 @@ public interface RequestComparator {
 
     List<PathCT> getCTFparams();
 
+    CompareTemplate getCompareTemplate();
+
     static class PathCT {
         public final String path;
         public final ComparisonType ct;

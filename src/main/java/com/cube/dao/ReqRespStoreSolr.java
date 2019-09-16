@@ -101,6 +101,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(doc);
     }
 
+    @Override
+    public boolean save(Event event) {
+
+        SolrInputDocument doc = eventToSolrDoc(event);
+        return saveDoc(doc);
+    }
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getRequest()
      * qr - query request
@@ -272,6 +279,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String BOOLEAN_SUFFIX = "_b";
     private static final String DOUBLE_SUFFIX = "_d";
     private static final String NOTINDEXED_SUFFIX = "_ni";
+    private static final String BIN_SUFFIX = "_bin"; // for binary data
     private static final String FUNC_PREFIX  = "func_";
     private static final String FUNC_NAME = CPREFIX + FUNC_PREFIX + "name"  + STRING_SUFFIX;
     private static final String FUNC_SIG_HASH = CPREFIX + FUNC_PREFIX + "sighash" + INT_SUFFIX;
@@ -859,6 +867,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CONTENTTYPEF = CPREFIX + "contenttype" + STRING_SUFFIX;
     private static final String OPERATIONSETIDF = CPREFIX + "operationsetid" + STRING_SUFFIX;
     private static final String OPERATIONLIST = CPREFIX + "operationlist" + STRINGSET_SUFFIX;
+    private static final String TRACEIDF = CPREFIX + "traceid" + STRING_SUFFIX;
+    private static final String PAYLOADBINF = CPREFIX + "payloadBin" + BIN_SUFFIX;
+    private static final String PAYLOADSTRF = CPREFIX + "payloadStr" + NOTINDEXED_SUFFIX;
+    private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
+    private static final String EVENTTYPEF = CPREFIX + "eventType" + STRING_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1068,6 +1081,48 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
+    private static SolrInputDocument eventToSolrDoc(Event event) {
+        final SolrInputDocument doc = new SolrInputDocument();
+
+        doc.setField(TYPEF, Types.Event.toString());
+        doc.setField(CUSTOMERIDF, event.customerid);
+        doc.setField(APPF, event.app);
+        doc.setField(SERVICEF, event.service);
+        doc.setField(INSTANCEIDF, event.instanceid);
+        doc.setField(COLLECTIONF, event.getCollection());
+        doc.setField(TRACEIDF, event.traceid);
+        doc.setField(TIMESTAMPF, event.timestamp.toString());
+        doc.setField(REQIDF, event.reqid);
+        doc.setField(PATHF, event.apiPath);
+        doc.setField(EVENTTYPEF, event.type.toString());
+        doc.setField(PAYLOADBINF, event.rawPayloadBinary);
+        doc.setField(PAYLOADSTRF, event.rawPayloadString);
+        doc.setField(PAYLOADKEYF, event.payloadKey);
+
+        return doc;
+    }
+
+    private Optional<Event> docToEvent(SolrDocument doc) {
+
+        Optional<String> docid = getStrField(doc, IDF);
+        Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+        Optional<String> app = getStrField(doc, APPF);
+        Optional<String> service = getStrField(doc, SERVICEF);
+        Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+        Optional<String> collection = getStrField(doc, COLLECTIONF);
+        Optional<String> traceid = getStrField(doc, TRACEIDF);
+        Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
+        Optional<String> reqid = getStrField(doc, REQIDF);
+        Optional<String> path = getStrField(doc, PATHF);
+        Optional<String> type = getStrField(doc, TYPEF);
+        Optional<byte[]> payloadBin = getBinField(doc, PAYLOADBINF);
+        Optional<String> payloadStr = getStrField(doc, PAYLOADSTRF);
+        Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
+
+        return Event.createEvent(docid.orElse("NA"), customerid, app, service, instanceid, collection,
+            traceid, timestamp, reqid, path, type, payloadBin, payloadStr, payloadKey, config);
+    }
+
     private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, Object val) {
         if (val instanceof List) {
             @SuppressWarnings("unchecked")
@@ -1141,6 +1196,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
     }
 
+    // get binary field
+    private static Optional<byte[]> getBinField(SolrDocument doc, String fname) {
+        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+            if (v instanceof byte[])
+                return Optional.of((byte[]) v);
+            return Optional.empty();
+        });
+    }
 
     private static Optional<Request> docToRequest(SolrDocument doc) {
 

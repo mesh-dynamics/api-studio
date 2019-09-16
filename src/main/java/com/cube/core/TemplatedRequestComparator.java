@@ -124,6 +124,11 @@ public class TemplatedRequestComparator extends TemplatedRRComparator implements
         return ctfparamFields;
     }
 
+    @Override
+    public CompareTemplate getCompareTemplate() {
+        return template;
+    }
+
     protected final CompareTemplate qparamFieldTemplate;
     protected final CompareTemplate fparamFieldtemplate;
 

@@ -105,7 +105,7 @@ public class CompareTemplate {
 	 * is found. Never returns null. Will return default rule if nothing is found.
 	 */
 	public TemplateEntry getRule(String path) {
-		TemplateEntry toReturn = get(path).orElse(getInheritedRule(path));
+		TemplateEntry toReturn = get(path).orElseGet(() -> getInheritedRule(path));
 		// TODO maybe it's better to precompute these values
 		toReturn.isParentArray = isParentArray(path);
 		return toReturn;

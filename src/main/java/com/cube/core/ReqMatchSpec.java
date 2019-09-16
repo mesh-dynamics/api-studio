@@ -175,6 +175,12 @@ public class ReqMatchSpec extends RRMatchSpec implements RequestComparator {
         return ctfparamFields;
     }
 
+    @Override
+    public CompareTemplate getCompareTemplate() {
+        //  TODO: Not implemented. This class itself can be removed later
+        return null;
+    }
+
     /**
      * @param mt
      * @param thisfmap
