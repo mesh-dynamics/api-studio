@@ -37,7 +37,7 @@ import com.cube.core.RequestComparator.PathCT;
  * Default => If value missing in rhs -> OK_DefaultPT
  *            If value missing in lhs, but present in rhs
  * 				if (comparison type is Ignore or Default)
- * 			    	-> OK_Ignore or OK_DefaultPT
+ * 			    	-> OK_Ignore or OK_DefaultCT
  *              else
  * 			    	-> OK_OtherValInvalid
  */
@@ -172,6 +172,7 @@ public class CompareTemplate {
                 // Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
                 // explicitly stated for a path. This will be ensured through validating template before registering.
                 if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
+                    LOGGER.error("Internal logical error - ComparisonType/PresenceType is explicitly set to Default");
                     return Optional.empty();
                 } else {
                     return Optional.of(new TemplateEntry("/", DataType.Default, rule.pt, rule.ct));
