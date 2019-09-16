@@ -23,6 +23,13 @@
 			<id>local-repo</id>
 			<url>${project.basedir}/WebContent/WEB-INF/lib/agent-1.0-SNAPSHOT.jar</url>
 		</repository>
+    <repository>
+  <id>psmith</id>
+  <url>http://people.apache.org/~psmith/logging.apache.org/repo</url>
+  <releases>
+    <enabled>false</enabled>
+  </releases>
+</repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -43,7 +50,18 @@
 			<version>${version.jaxb}</version>
 			<type>pom</type>
 		</dependency>
-
+    <dependency>
+  <groupId>org.apache.logging</groupId>
+  <artifactId>apache-jul-log4j-bridge</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <scope>test</scope>
+  <exclusions>
+    <exclusion>
+      <groupId>log4j</groupId>
+      <artifactId>apache-log4j-component</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
 	</dependencies>
   </dependencyManagement>
   <build>

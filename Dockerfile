@@ -15,6 +15,11 @@ RUN mvn package
 FROM tomcat:9-jre11 AS prod
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
 COPY --from=build target/cubews-V1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+RUN mkdir -p /usr/local/tomcat/newrelic/logs
+RUN useradd tomcat
+RUN chown -R tomcat /usr/local/tomcat/newrelic/logs
+ADD ./newrelic/newrelic.jar /usr/local/tomcat/newrelic/newrelic.jar
+ADD ./newrelic/newrelic.yml /usr/local/tomcat/newrelic/newrelic.yml
 # adding line below to speedup tomcat startup
 # see https://github.com/theotherp/nzbhydra2/issues/42
 # reduced time from 360 s to 6s!
@@ -26,3 +31,8 @@ FROM tomcat:9-jre11 AS dev
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
 RUN perl -0777 -i -pe 's/securerandom.source=file:\/dev\/random/securerandom.source=file:\/dev\/urandom/' /etc/java-11-openjdk/security/java.security
 ADD target/cubews-V1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+RUN mkdir -p /usr/local/tomcat/newrelic/logs
+RUN useradd tomcat
+RUN chown -R tomcat /usr/local/tomcat/newrelic/logs
+ADD ./newrelic/newrelic.jar /usr/local/tomcat/newrelic/newrelic.jar
+ADD ./newrelic/newrelic.yml /usr/local/tomcat/newrelic/newrelic.yml
