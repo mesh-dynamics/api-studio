@@ -10,9 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -143,7 +141,10 @@ public class AnalyzeWS {
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
 
-        Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
+        Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+        Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
+
+//        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
         String json;
         try {
             json = jsonmapper.writeValueAsString(res);
@@ -448,7 +449,11 @@ public class AnalyzeWS {
                     + "\" , \"collection\" : \"" + recording.collection
                     + recording.templateVersion.map(templatever -> "\" , \"templateVer\" : \"" + templatever).orElse("");
             }
-            Collection<MatchResultAggregate> res = rrstore.getResultAggregate(replayid, service, bypath);
+
+            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+            Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
+
+//            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp
@@ -593,8 +598,10 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("redis/flushall")
-    public Response redisFlushAll() {
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        requestComparatorCache.invalidateAll();
+        responseComparatorCache.invalidateAll();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();

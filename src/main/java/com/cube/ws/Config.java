@@ -7,6 +7,7 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
+import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
 import com.cube.serialize.GsonPatternSerializer;
@@ -16,11 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.cube.agent.CommonConfig;
+import io.cube.agent.FluentDLogRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
-import io.cube.agent.SimpleRecorder;
 import io.cube.agent.TraceIntentResolver;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import org.apache.logging.log4j.LogManager;
@@ -49,6 +50,7 @@ public class Config {
 	public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
     public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
     public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+    public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
 
 	final Properties properties;
 	final SolrClient solr;
@@ -83,7 +85,9 @@ public class Config {
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
-            solrurl = properties.getProperty("solrurl");
+            String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.191.135.125:8983/solr/");
+            String solrCore = fromEnvOrProperties("solr_core" , "cube");
+            solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
             eta.printStackTrace();
@@ -107,7 +111,7 @@ public class Config {
             .registerTypeAdapter(SolrDocumentList.class, new GsonSolrDocumentListSerializer())
             .registerTypeAdapter(SolrDocument.class, new GsonSolrDocumentSerializer())
             .create();
-        recorder = new SimpleRecorder(gson);
+        recorder = new FluentDLogRecorder(gson);
         mocker = new SimpleMocker(gson);
 
         try {
@@ -116,6 +120,8 @@ public class Config {
                 , "6379"));
             String redisPassword = fromEnvOrProperties("redis_password" , null);
             jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
+            REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
+                , "15"));
         } catch (Exception e) {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
             throw e;

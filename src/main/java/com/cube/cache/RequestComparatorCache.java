@@ -99,4 +99,8 @@ public class RequestComparatorCache {
         templateCache.invalidateKey(key);
     }
 
+    public void invalidateAll() {
+        requestComparatorCache.invalidateAll();
+    }
+
 }

@@ -3,6 +3,8 @@
  */
 package com.cube.dao;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Optional;
 
 /**
@@ -10,21 +12,29 @@ import java.util.Optional;
  *
  */
 public class MatchResultAggregate {
-	
-		
+
+
 	/**
-	 * @param path 
-	 * @param service 
+	 * @param path
+	 * @param service
 	 * @param app
 	 * @param replayid
 	 */
 	public MatchResultAggregate(String app, String replayid, Optional<String> service, Optional<String> path) {
 		this.app = app;
 		this.replayid = replayid;
-		
+
 		this.service = service;
 		this.path = path;
 	}
+
+    /**
+     * This constructor is only for jackson json deserialization
+     */
+	public MatchResultAggregate() {
+	    this.app = "";
+	    this.replayid = "";
+    }
 
 	final public String app;
 	final public String replayid;

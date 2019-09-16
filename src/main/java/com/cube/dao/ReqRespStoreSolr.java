@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.cube.core.Utils;
+import io.cube.agent.CommonUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,7 +48,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
@@ -62,7 +63,6 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
-import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
@@ -126,8 +126,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     void removeCollectionKey(ReqRespStoreImplBase.CollectionKey collectionKey) {
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
-            Long result = jedis.del(collectionKey.toString());
-            LOGGER.info("Successfully removed from redis , key :: " + collectionKey.toString());
+            //jedis.del(collectionKey.toString());
+            Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
+            LOGGER.info(
+                String.format("Expiring redis key \"%s\" in %d seconds", collectionKey.toString(),
+                    Config.REDIS_DELETE_TTL));
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
         }
@@ -288,6 +291,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String FUNC_RET_VAL = CPREFIX + FUNC_PREFIX + "retval" + NOTINDEXED_SUFFIX;
     private static final String FUNC_RET_STATUSF = CPREFIX + FUNC_PREFIX + "funcstatus"  + STRING_SUFFIX;
     private static final String FUNC_EXCEPTION_TYPEF = CPREFIX + FUNC_PREFIX + "exceptiontype"  + STRING_SUFFIX;
+    private static final String DEFAULT_EMPTY_FIELD_VALUE = "null";
 
 
 
@@ -325,13 +329,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(doc);
     }
 
-    private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc) {
+    private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc, boolean multipleResults) {
         FnReqResponse.RetStatus retStatus =
             getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
             rs)).orElse(FnReqResponse.RetStatus.Success);
         Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
         return getStrFieldMVFirst(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
-            retStatus, exceptionType));
+            retStatus, exceptionType, multipleResults));
     }
 
     @Override
@@ -349,10 +353,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, FUNC_SIG_HASH, funcReqResponse.fnSignatureHash);
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
+        addSort(query, TIMESTAMPF, true);
         Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
             addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + INT_SUFFIX, argHashVal));
         Optional<Integer> maxResults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToFnResponse);
+        Result<SolrDocument> solrDocumentResult = SolrIterator.getResults(solr, query, maxResults, x-> Optional.of(x));
+        return solrDocumentResult.getObjects().findFirst().flatMap(doc -> solrDocToFnResponse(doc,solrDocumentResult.numFound>1));
     }
 
     @Override
@@ -559,7 +565,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public String saveTemplateSet(TemplateSet templateSet) throws Exception {
         List<String> templateIds = new ArrayList<>();
-        templateSet.templates.forEach(com.cube.core.UtilException.rethrowConsumer(template -> {
+        templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(Optional.of(templateSet.version), templateSet.customer,
                 templateSet.app,
                 template.service , template.requestPath, template.type);
@@ -1685,6 +1691,78 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
 
 
+
+    public boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate) {
+        SolrInputDocument doc = matchResultAggregateToSolrDoc(resultAggregate);
+        return saveDoc(doc) && softcommit();
+    }
+
+    /**
+     * @param resultAggregate
+     * @return
+     */
+    private SolrInputDocument matchResultAggregateToSolrDoc(MatchResultAggregate resultAggregate) {
+        final SolrInputDocument doc = new SolrInputDocument();
+
+        String resultAggregateJson="";
+        try {
+            resultAggregateJson = config.jsonmapper.writeValueAsString(resultAggregate);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting MatchResultAggregate object into string for replay id %s", resultAggregate.replayid), e);
+        }
+
+        String type = Types.MatchResultAggregate.toString();
+        // the id field is set using (replayid, service, path) which is unique
+        String id = type + "-" + Objects.hash(resultAggregate.replayid, resultAggregate.service.orElse(""), resultAggregate.path.orElse(""));
+
+        doc.setField(TYPEF, type);
+        doc.setField(IDF, id);
+        doc.setField(APPF, resultAggregate.app);
+        doc.setField(REPLAYIDF, resultAggregate.replayid);
+        doc.setField(OBJJSONF, resultAggregateJson);
+
+        // Set the fields if present else put the default value
+        doc.setField(SERVICEF, resultAggregate.service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+        doc.setField(PATHF, resultAggregate.path.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+
+        return doc;
+    }
+
+
+    public Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
+                                                        boolean bypath) {
+
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, TYPEF, Types.MatchResultAggregate.toString());
+        addFilter(query, REPLAYIDF, replayid);
+//        addFilter(query, SERVICEF, service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+        service.ifPresent(servicev -> addFilter(query, SERVICEF, servicev));
+
+        if(!bypath) {
+            addFilter(query, PATHF, DEFAULT_EMPTY_FIELD_VALUE);
+        }
+
+        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToMatchResultAggregate(doc).stream());
+    }
+
+    /**
+     * @param doc
+     * @return
+     */
+    private Optional<MatchResultAggregate> docToMatchResultAggregate(SolrDocument doc) {
+        Optional<String> json = getStrFieldMVFirst(doc, OBJJSONF);
+        Optional<MatchResultAggregate> matchResultAggregate = json.flatMap(j -> {
+            try {
+                return Optional.ofNullable(config.jsonmapper.readValue(j, MatchResultAggregate.class));
+            } catch (IOException e) {
+                LOGGER.error(String.format("Not able to parse json into MatchResultAggregate object: %s", j), e);
+                return Optional.empty();
+            }
+        });
+        return matchResultAggregate;
+    }
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveAnalysis(com.cube.dao.Analysis)
      */
@@ -2114,8 +2192,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getResultAggregate(java.lang.String, java.util.Optional)
      */
     @Override
-    public Collection<MatchResultAggregate> getResultAggregate(String replayid,
-            Optional<String> service, boolean facetpath) {
+    public Collection<MatchResultAggregate> computeResultAggregate(String replayid,
+                                                                   Optional<String> service, boolean facetpath) {
 
         Optional<Replay> replay = getReplay(replayid);
         Map<FacetResKey, MatchResultAggregate> resMap = new HashMap<>();
