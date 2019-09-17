@@ -12,6 +12,11 @@
     <Console name="FLOW">
       <PatternLayout pattern="%C{1}.%M %m %ex%n"/><!-- class and line number -->
     </Console>
+    <Console name="ConsoleJSONAppender" target="SYSTEM_OUT">
+      <JsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
+                  propertiesAsList="false" compact="true" properties="false"  includeStackTrace="true">
+      </JsonLayout>
+    </Console>
     <File name="File" fileName="${filename}">
       <PatternLayout pattern="%d %p %C{1.} [%t] %m%n" />
     </File>
@@ -19,7 +24,8 @@
  
   <Loggers> 
     <Root level="info">
-      <AppenderRef ref="STDOUT"/>
+      <!-- <AppenderRef ref="STDOUT"/> -->
+      <AppenderRef ref="ConsoleJSONAppender"/>
       <AppenderRef ref="File"/>
     </Root>
   </Loggers>
