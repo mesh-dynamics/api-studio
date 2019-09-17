@@ -139,7 +139,7 @@ public class MockServiceHTTP {
             if (fnReqResponse.argVals != null) {
                 Arrays.stream(fnReqResponse.argVals).forEach(argVal ->
                     LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
-                        "trace_id" , traceIdString , "arg_val_" + counter.x++ , argVal))));
+                        "trace_id" , traceIdString , "arg_hash" , fnReqResponse.argsHash[counter.x] , "arg_val_" + counter.x++ , argVal))));
             }
             Utils.preProcess(fnReqResponse);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),

@@ -14,7 +14,7 @@
     </Console>
     <Console name="ConsoleJSONAppender" target="SYSTEM_OUT">
       <JsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
-                  propertiesAsList="false" compact="true" properties="false"  includeStackTrace="true">
+                  propertiesAsList="false" compact="false" properties="false"  includeStackTrace="true">
       </JsonLayout>
     </Console>
     <File name="File" fileName="${filename}">
