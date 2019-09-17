@@ -132,13 +132,14 @@ public class MockServiceHTTP {
                              String fnReqResponseAsString) {
         try {
             FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
+            String traceIdString = fnReqResponse.traceId.orElse("N/A");
             LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
-                "trace_id" , fnReqResponse.traceId)));
+                "trace_id" , traceIdString)));
             var counter = new Object() {int x = 0;};
             if (fnReqResponse.argVals != null) {
                 Arrays.stream(fnReqResponse.argVals).forEach(argVal ->
                     LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
-                        "trace_id" , fnReqResponse.traceId , "arg_val_" + counter.x++ , argVal))));
+                        "trace_id" , traceIdString , "arg_val_" + counter.x++ , argVal))));
             }
             Utils.preProcess(fnReqResponse);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
@@ -146,13 +147,13 @@ public class MockServiceHTTP {
             return collection.map(collec ->
                 rrstore.getFunctionReturnValue(fnReqResponse, collec).map(retValue -> {
                         LOGGER.info(new ObjectMessage(Map.of("state" , "After Mock" , "func_name" , fnReqResponse.name ,
-                            "trace_id" , fnReqResponse.traceId , "ret_val" , retValue.retVal)));
+                            "trace_id" , traceIdString , "ret_val" , retValue.retVal)));
                         try {
                             String retValueAsString = jsonmapper.writeValueAsString(retValue);
                             return Response.ok().type(MediaType.APPLICATION_JSON).entity(retValueAsString).build();
                         } catch (JsonProcessingException e) {
                             LOGGER.error(new ObjectMessage(Map.of("func_name", fnReqResponse.name,
-                                "trace_id", fnReqResponse.traceId)) , e);
+                                "trace_id", traceIdString)) , e);
                             return Response.serverError().type(MediaType.APPLICATION_JSON).
                                 entity((new JSONObject(Map.of("reason" , "Unable to parse func response "
                                     + e.getMessage()))).toString()).build();
@@ -161,13 +162,13 @@ public class MockServiceHTTP {
                 ).orElseGet(() -> {
                         String reason = "Unable to find matching request";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , fnReqResponse.traceId , "reason" , reason)));
+                            , traceIdString , "reason" , reason)));
                         return Response.serverError().type(MediaType.APPLICATION_JSON).
                         entity((new JSONObject(Map.of("reason" , reason))).toString()).build();}))
                 .orElseGet(() -> {
                         String reason = "Unable to locate collection for given customer, app, instance combo";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , fnReqResponse.traceId , "reason" , reason)));
+                            , traceIdString , "reason" , reason)));
                         return Response.serverError().type(MediaType.APPLICATION_JSON).
                             entity((new JSONObject(Map.of("reason" , reason))).toString()).build();});
         } catch (Exception e) {
