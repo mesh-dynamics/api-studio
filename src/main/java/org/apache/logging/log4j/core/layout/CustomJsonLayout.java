@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -81,6 +83,8 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
             footerSerializer, includeNullDelimiter, additionalFields);
     }*/
 
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+
     public static class Builder<B extends Builder<B>> extends AbstractJacksonLayout.Builder<B>
         implements org.apache.logging.log4j.core.util.Builder<CustomJsonLayout> {
 
@@ -151,7 +155,7 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
                                          boolean locationInfo, boolean properties, boolean compact) {
         final SimpleFilterProvider filters = new SimpleFilterProvider();
         SimpleBeanPropertyFilter simpleBeanPropertyFilter = SimpleBeanPropertyFilter.serializeAllExcept(Set
-            .of("loggerFqcn" , "endOfBatch" , "contextMap" , "threadId" , "threadPriority" , "source" , "nanoTime"));
+            .of("loggerFqcn" , "endOfBatch" , "contextMap" , "threadId" , "threadPriority" , "source" , "nanoTime" , "instant"));
         filters.addFilter(Log4jLogEvent.class.getName(), simpleBeanPropertyFilter);
         return new JacksonFactory.JSON(encodeThreadContextAsList, includeStacktrace, stacktraceAsString , objectMessageAsJsonObject).newWriter(
             locationInfo, properties, compact).with(filters);
@@ -259,7 +263,7 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
     protected Object wrapLogEvent(LogEvent event) {
         Object result = super.wrapLogEvent(event);
         return new LogEventWithExtras(result, Map.of("traceId",
-            CommonUtils.getCurrentTraceId().orElse("N/A")));
+            CommonUtils.getCurrentTraceId().orElse("N/A") , "timestamp" , simpleDateFormat.format(new Date())));
 
     }
 
