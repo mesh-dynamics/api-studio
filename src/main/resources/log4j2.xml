@@ -13,9 +13,9 @@
       <PatternLayout pattern="%C{1}.%M %m %ex%n"/><!-- class and line number -->
     </Console>
     <Console name="ConsoleJSONAppender" target="SYSTEM_OUT">
-      <JsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
+      <CustomJsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
                   propertiesAsList="false" compact="false" properties="false"  includeStackTrace="true">
-      </JsonLayout>
+      </CustomJsonLayout>
     </Console>
     <File name="File" fileName="${filename}">
       <PatternLayout pattern="%d %p %C{1.} [%t] %m%n" />
@@ -25,6 +25,7 @@
   <Loggers> 
     <Root level="info">
       <!-- <AppenderRef ref="STDOUT"/> -->
+      <!-- Useful docs https://logging.apache.org/log4j/2.x/manual/customconfig.html-->
       <AppenderRef ref="ConsoleJSONAppender"/>
       <AppenderRef ref="File"/>
     </Root>
