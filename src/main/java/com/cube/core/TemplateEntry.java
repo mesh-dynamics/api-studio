@@ -132,6 +132,8 @@ public class TemplateEntry {
     }
 
 
+    // This function is designed on the premise that it checks matches over the actual found diffs and then return the resolution.
+    // If the resolution is taken first and then the diffs are added then this may generate spurious diffs for example - In current case of Response/Request match.
     Comparator.Resolution checkMatchStr(Optional<String> lhs, Optional<String> rhs) {
         Comparator.Resolution resolution = checkTypeAndPresence(CompareTemplate.DataType.Str, rhs);
         if (resolution.isErr()) {
