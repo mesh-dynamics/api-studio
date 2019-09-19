@@ -144,6 +144,17 @@ export class CytoscapeReactWrapper extends React.Component {
                     }
                 },
                 {
+                    selector: 'node[testConfig="mockService"]',
+                    style: {
+                        'background-color': '#FFA500',
+                        'line-color': '#FFA500',
+                        'target-arrow-color': '#FFA500',
+                        'source-arrow-color': '#FFA500',
+                        'color': "#fff",
+                        'border-color': '#FFA500'
+                    }
+                },
+                {
                     selector: 'node[tag="store"]',
                     style: {
                         'background-color': '#eee',
@@ -186,7 +197,19 @@ export class CytoscapeReactWrapper extends React.Component {
                     style: {
                         'width': 2
                     }
-                }
+                },
+                {
+                    selector: 'edge[testConfig="testDirection"]',
+                    style: {
+                        'background-color': '#FFA500',
+                        'line-color': '#FFA500',
+                        'target-arrow-color': '#FFA500',
+                        'source-arrow-color': '#FFA500',
+                        'color': "#fff",
+                        'border-color': '#FFA500',
+                        'width': 2
+                    }
+                },
             ],
             layout: {
                 name: 'cose-bilkent',

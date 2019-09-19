@@ -50,8 +50,8 @@ class replay extends Component {
         const gdCrude = cube.graphData,
             testConfig = cube.testConfig;
         let gatewayServices = [], mockServices = [];
-        if(testConfig && testConfig.gatewayService) {
-            gatewayServices.push(testConfig.gatewayService.name);
+        if(testConfig && testConfig.gatewayServiceName) {
+            gatewayServices.push(testConfig.gatewayServiceName);
         }
         if(testConfig && testConfig.mocks) {
             mockServices = testConfig.mocks;
@@ -102,7 +102,8 @@ class replay extends Component {
                     id: dp.fromService.id + '_' + dp.toService.id,
                     name: '',
                     source: dp.fromService.id,
-                    target: dp.toService.id
+                    target: dp.toService.id,
+                    testConfig: (gatewayServices.indexOf(dp.fromService.name) > -1 && mockServices.indexOf(dp.toService.name) > -1) ? "testDirection": ""
                 }});
             }
         }

@@ -44,21 +44,21 @@ class TestConfig extends Component {
                             <span className="t-name">
                                 GATEWAY:&nbsp;
                             </span>
-                            <strong>{item.gatewayService ? item.gatewayService.name : ""}</strong>
+                            <strong>{item.gatewayServiceName ? item.gatewayServiceName : ""}</strong>
+                        </div>
+
+                        <div className="margin-bottom-10">
+                            <span className="t-name">
+                                Paths:&nbsp;
+                            </span>
+                            <strong>{item.paths && item.paths.length > 0 ? item.paths.join(', ') : ""}</strong>
                         </div>
 
                         <div className="margin-bottom-10">
                             <span className="t-name">
                                 CRITERIA:&nbsp;
                             </span>
-                            <strong>{item.criteria ? item.criteria : ""}</strong>
-                        </div>
-
-                        <div className="margin-bottom-10">
-                            <span className="t-name">
-                                CRITERIA:&nbsp;
-                            </span>
-                            <strong>{item.criteria ? item.criteria : ""}</strong>
+                            <strong>{""}</strong>
                         </div>
 
                         <div className="margin-bottom-10">

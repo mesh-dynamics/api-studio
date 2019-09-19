@@ -20,7 +20,7 @@ class ViewTestConfig extends Component {
         return (
             <React.Fragment>
                 {
-                    cube.testConfig && cube.selectedApp != cube.testConfig.app.name ? <Redirect to="/test_config" /> :
+                    cube.testConfig && cube.selectedApp != cube.testConfig.appName ? <Redirect to="/test_config" /> :
                         (<div>
                             <Replay />
                         </div>)
