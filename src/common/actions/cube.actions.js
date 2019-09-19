@@ -207,8 +207,8 @@ function getTestConfigByAppId(appId) {
         try {
             let gd = await cubeService.getTestConfigByAppId(appId);
             for (const gtc of gd) {
-                gtc.criteria = "All Paths"
-                gtc.mocks = gtc.app.name == "Cube" ? ["Solr"] : ["Details", "Reviews", "RestWrapJDBC"];
+                gtc.paths = gtc.testPaths;
+                gtc.mocks = gtc.testMockServices;
             }
             dispatch(success(gd, Date.now()));
             dispatch(cubeActions.setTestConfig(gd[0]));
