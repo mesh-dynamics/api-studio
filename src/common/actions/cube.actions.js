@@ -324,7 +324,7 @@ function getReplayId(testIdLabel, app, instance, gatewayEndPoint, ctv) {
     function failure(fc, date) { return { type: cubeConstants.NEED_FORCE_COMPLETE, data: fc, date: date } }
 }
 
-function getTimelineData(app = 'MovieInfo', instanceid = 'prod') {
+function getTimelineData(app = 'Cube', instanceid = 'prod') {
     return async dispatch => {
         try {
             let timeline = await cubeService.fetchTimelineData(app, instanceid);
