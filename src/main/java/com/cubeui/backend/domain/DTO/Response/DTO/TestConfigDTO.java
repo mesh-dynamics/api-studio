@@ -18,6 +18,8 @@ public class TestConfigDTO {
 
     private Long appId;
 
+    private String appName;
+
     private Long gatewayServiceId;
 
     private String gatewayServiceName;

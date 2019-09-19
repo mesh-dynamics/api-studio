@@ -14,6 +14,7 @@ public interface TestConfigMapper {
 
     @Mappings({
             @Mapping(source = "app.id", target = "appId"),
+            @Mapping(source = "app.name", target = "appName"),
             @Mapping(source = "gatewayService.id", target = "gatewayServiceId"),
             @Mapping(source = "gatewayService.name", target = "gatewayServiceName")
     })
