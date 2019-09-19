@@ -42,12 +42,15 @@ class PathResults extends Component {
             history.push("/");
         } else {
             dispatch(cubeActions.getCollectionUpdateOperationSet(cube.selectedApp));
+            dispatch(cubeActions.setGolden(cube.pathResultsParams.recordingId));
             dispatch(cubeActions.getNewTemplateVerInfo(cube.selectedApp, cube.pathResultsParams.currentTemplateVer));
             this.fetchReplayList();
         }
     }
 
     componentWillUnmount() {
+        let { dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
         this.setState({ showNewGolden: false });
     }
 

@@ -6,6 +6,7 @@ import DiffResults from "./diff_results";
 import TestConfig from "./test_config";
 import SetupTestConfig from "./setup_test_config";
 import ViewTestConfig from "./view_test_config";
+import ReviewGolden from "./review_golden";
 
 
 class PageContent extends Component {
@@ -34,6 +35,7 @@ class PageContent extends Component {
         { TestResults }
         { PathResults }
         { DiffResults }
+        { ReviewGolden }
         { replay }
         { TestConfig }
         { SetupTestConfig }

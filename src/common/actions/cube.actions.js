@@ -7,6 +7,7 @@ export const cubeActions = {
     getInstances,
     getTestIds,
     setGateway,
+    setGolden,
     getTestConfigByAppId,
     setTestConfig,
     setSelectedTestIdAndVersion,
@@ -237,6 +238,10 @@ function setPathResultsParams ( pathResultsParams ) {
     return {type: cubeConstants.SET_PATH_RESULTS_PARAMS, data: pathResultsParams}
 }
 
+function setGolden ( golden ) {
+    return {type: cubeConstants.SET_GOLDEN, data: golden}
+}
+
 function getDiffData(replayId, recordReqId, replayReqId) {
     return async dispatch => {
         try {
@@ -265,8 +270,8 @@ function getTestIds (app) {
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 
-function setSelectedTestIdAndVersion ( testIdLabel, version, golden ) {
-    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version, golden: golden}};
+function setSelectedTestIdAndVersion ( testIdLabel, version ) {
+    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version}};
 }
 
 function getGraphDataByAppId(appId) {

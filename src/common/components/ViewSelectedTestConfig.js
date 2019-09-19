@@ -126,7 +126,7 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
+            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version));
         }
     }
 

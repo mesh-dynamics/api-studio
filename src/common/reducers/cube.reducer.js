@@ -196,8 +196,7 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 selectedTestId: action.data.collec,
-                collectionTemplateVersion: action.data.ver,
-                golden: action.data.golden
+                collectionTemplateVersion: action.data.ver
             };
         case cubeConstants.REPLAY_ID_SUCCESS:
             return {
@@ -304,11 +303,16 @@ export function cube (state = initialState, action) {
                 ...state,
                 operations:[]
             };
+        case cubeConstants.SET_GOLDEN:
+            return {
+                ...state,
+                golden: action.data
+            };
         case cubeConstants.CLEAR_GOLDEN:
             return {
                 ...state,
                 golden: null
-            }
+            };
         default:
             return state
     }
