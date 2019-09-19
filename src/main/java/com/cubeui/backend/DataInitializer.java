@@ -1323,5 +1323,13 @@ public class DataInitializer implements CommandLineRunner {
             testVirtualizedService.setTestConfig(testConfigRepository.findById(99L).get());
             testVirtualizedServiceRepository.save(testVirtualizedService);
         }
+        // Solr
+        if(!testVirtualizedServiceRepository.existsById(146L)) {
+            TestVirtualizedService testVirtualizedService = new TestVirtualizedService();
+            testVirtualizedService.setId(146L);
+            testVirtualizedService.setService(serviceRepository.findById(38L).get());
+            testVirtualizedService.setTestConfig(testConfigRepository.findById(135L).get());
+            testVirtualizedServiceRepository.save(testVirtualizedService);
+        }
     }
 }
