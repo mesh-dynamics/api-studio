@@ -1253,5 +1253,75 @@ public class DataInitializer implements CommandLineRunner {
             testPath.setTestConfig(testConfigRepository.findById(135L).get());
             testPathRepository.save(testPath);
         }
+
+        if(!instanceRepository.existsById(138L)) {
+            Instance instance = new Instance();
+            instance.setId(138L);
+            instance.setName("DEMO-AS");
+            instance.setGatewayEndpoint("http://demo-as.dev.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceRepository.existsById(139L)) {
+            Instance instance = new Instance();
+            instance.setId(139L);
+            instance.setName("DEMO-PD");
+            instance.setGatewayEndpoint("http://demo-pd.dev.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceRepository.existsById(140L)) {
+            Instance instance = new Instance();
+            instance.setId(140L);
+            instance.setName("DEMO-SM");
+            instance.setGatewayEndpoint("http://demo-sm.dev.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceRepository.existsById(141L)) {
+            Instance instance = new Instance();
+            instance.setId(141L);
+            instance.setName("DEMO.PROD");
+            instance.setGatewayEndpoint("http://demo.prod.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceRepository.existsById(142L)) {
+            Instance instance = new Instance();
+            instance.setId(142L);
+            instance.setName("DEMO.PROD.V2");
+            instance.setGatewayEndpoint("http://demo.prod.v2.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+        // MovieInfo App
+        // RestWrapJDBC
+        if(!testVirtualizedServiceRepository.existsById(143L)) {
+            TestVirtualizedService testVirtualizedService = new TestVirtualizedService();
+            testVirtualizedService.setId(143L);
+            testVirtualizedService.setService(serviceRepository.findById(14L).get());
+            testVirtualizedService.setTestConfig(testConfigRepository.findById(99L).get());
+            testVirtualizedServiceRepository.save(testVirtualizedService);
+        }
+        // Reviews
+        if(!testVirtualizedServiceRepository.existsById(144L)) {
+            TestVirtualizedService testVirtualizedService = new TestVirtualizedService();
+            testVirtualizedService.setId(144L);
+            testVirtualizedService.setService(serviceRepository.findById(11L).get());
+            testVirtualizedService.setTestConfig(testConfigRepository.findById(99L).get());
+            testVirtualizedServiceRepository.save(testVirtualizedService);
+        }
+        // Details
+        if(!testVirtualizedServiceRepository.existsById(145L)) {
+            TestVirtualizedService testVirtualizedService = new TestVirtualizedService();
+            testVirtualizedService.setId(145L);
+            testVirtualizedService.setService(serviceRepository.findById(13L).get());
+            testVirtualizedService.setTestConfig(testConfigRepository.findById(99L).get());
+            testVirtualizedServiceRepository.save(testVirtualizedService);
+        }
     }
 }
