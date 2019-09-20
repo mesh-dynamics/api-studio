@@ -3,12 +3,7 @@
  */
 package com.cube.core;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -107,6 +102,16 @@ public class Utils {
 						collect(Collectors.<T>toList())
 		);
 	}
+
+	public static ValidateCompareTemplate validateTemplateSet(TemplateSet templateSet) {
+        for (CompareTemplateVersioned template: templateSet.templates) {
+            ValidateCompareTemplate validateCompareTemplate = template.validate();
+            if(!validateCompareTemplate.isValid()) {
+                return validateCompareTemplate;
+            }
+        }
+        return new ValidateCompareTemplate(true, Optional.of(""));
+    }
 
 
     public static IntNode intToJson(Integer val) {
