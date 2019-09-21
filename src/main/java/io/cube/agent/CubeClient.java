@@ -137,4 +137,17 @@ public class CubeClient {
         CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
+
+    public void storeEvent(Optional<Event> event) {
+        Invocation.Builder builder = cubeRecordService.path("cs").path("event").request(MediaType.TEXT_PLAIN);
+        try {
+            String jsonEntity = jsonMapper.writeValueAsString(event.orElse(null));
+            LOGGER.debug("Event sent to Cube Server : " + jsonEntity);
+            CommonUtils.addTraceHeaders(builder , "POST");
+            Optional<String> response = getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error while serializing function req/resp object :: "
+                    + e.getMessage());
+        }
+    }
 }

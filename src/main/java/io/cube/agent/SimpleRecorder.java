@@ -2,9 +2,12 @@ package io.cube.agent;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,6 +20,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 /*
@@ -51,21 +56,9 @@ public class SimpleRecorder implements Recorder {
                           Optional<String> exceptionType,
                           Object... args) {
         try {
-            String[] argVals =
-                    Arrays.stream(args).map(UtilException.rethrowFunction(gson::toJson)).toArray(String[]::new);
-            Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
-            //String respVal = jsonMapper.writeValueAsString(responseOrException);
-            String respVal = gson.toJson(responseOrException);
-            LOGGER.info("Trying to record function :: " + fnKey.function.getName());
-            Arrays.stream(argVals).forEach(arg -> LOGGER.info("Argument while storing :: " + arg));
-            LOGGER.info("Function return value serialized :: " + respVal);
-            FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId, fnKey.service,
-                    fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
-                    Optional.ofNullable(Instant.now()), argsHash,
-                    argVals, respVal, retStatus, exceptionType);
-
-            Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
-            //cubeResponse.ifPresent(responseStr -> System.out.println(responseStr));
+            JsonObject payload = createPayload(responseOrException, args);
+            Optional<Event> event = createEvent(fnKey, traceId, payload);
+            cubeClient.storeEvent(event);
             return true;
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException
@@ -73,5 +66,25 @@ public class SimpleRecorder implements Recorder {
             LOGGER.error("Error in recording function, skipping:: " + fnKey.signature + " " + e.getMessage() + " " + stackTraceError);
             return false;
         }
+    }
+
+    private JsonObject createPayload(Object responseOrException, Object... args) {
+        JsonObject payloadObj = new JsonObject();
+        payloadObj.add("args", createArgsJsonArray(args));
+        payloadObj.addProperty("response", gson.toJson(responseOrException));
+        LOGGER.info("Function Payload : " + payloadObj.toString());
+        return payloadObj;
+    }
+
+    private Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId, JsonObject payload) {
+        return Event.createEvent("NA", Optional.of(fnKey.customerId), Optional.of(fnKey.app),
+                        Optional.of(fnKey.service), Optional.of(fnKey.instanceId), Optional.of(fnKey.service), traceId, Optional.of(Instant.now()),
+                        Optional.of("NA"), Optional.of(fnKey.signature), Optional.of("JavaRequest"), Optional.empty(), Optional.of(payload.toString()));
+    }
+
+    private JsonArray createArgsJsonArray(Object... argVals) {
+        JsonArray argsArray = new JsonArray();
+        Arrays.stream(argVals).forEach(arg -> argsArray.add(gson.toJson(arg)));
+        return argsArray;
     }
 }
