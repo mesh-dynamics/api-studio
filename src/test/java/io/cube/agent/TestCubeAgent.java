@@ -4,8 +4,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import org.ietf.jgss.GSSContext;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -17,7 +15,7 @@ public class TestCubeAgent {
     public static void main(String[] args) {
         Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
                 .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
-        SimpleRecorder recorder = new SimpleRecorder(gson);
+        SimpleHttpRecorder recorder = new SimpleHttpRecorder(gson);
         SimpleMocker mocker = new SimpleMocker(gson);
         try {
             Class classzz = CubeClient.class;

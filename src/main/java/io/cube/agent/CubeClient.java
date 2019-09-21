@@ -1,6 +1,11 @@
 package io.cube.agent;
 
-import java.util.Optional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -11,14 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
 
 /**
  * Client to connect to cube service
@@ -138,16 +136,17 @@ public class CubeClient {
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
 
-    public void storeEvent(Optional<Event> event) {
+    public Optional<String> storeEvent(Optional<Event> event) {
         Invocation.Builder builder = cubeRecordService.path("cs").path("event").request(MediaType.TEXT_PLAIN);
         try {
             String jsonEntity = jsonMapper.writeValueAsString(event.orElse(null));
             LOGGER.debug("Event sent to Cube Server : " + jsonEntity);
             CommonUtils.addTraceHeaders(builder , "POST");
-            Optional<String> response = getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
+            return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
         } catch (JsonProcessingException e) {
             LOGGER.error("Error while serializing function req/resp object :: "
                     + e.getMessage());
         }
+        return Optional.empty();
     }
 }

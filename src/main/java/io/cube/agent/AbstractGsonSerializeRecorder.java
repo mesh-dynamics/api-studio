@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -17,35 +16,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
-import net.dongliu.gson.GsonJava8TypeAdapterFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
+public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
+    protected final Logger LOGGER = LogManager.getLogger(this.getClass());
 
-/*
- * Created by IntelliJ IDEA.
- * Date: 2019-05-06
- * @author Prasad M D
- */
-public class SimpleRecorder implements Recorder {
-
-    private static final Logger LOGGER = LogManager.getLogger(SimpleRecorder.class);
-    private static final String cubeRecordServiceUrl = "";
-
-    private CubeClient cubeClient;
-    private ObjectMapper jsonMapper;
+    protected ObjectMapper jsonMapper;
     private Gson gson;
 
-    public SimpleRecorder(Gson gson) {
+    public AbstractGsonSerializeRecorder(Gson gson) {
+        // TODO pass this from above too
         this.jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new Jdk8Module());
         jsonMapper.registerModule(new JavaTimeModule());
         jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        this.cubeClient = new CubeClient(jsonMapper);
         this.gson = gson;
     }
+
+    public abstract boolean record(Optional<Event> event);
 
     @Override
     public boolean record(FnKey fnKey, Optional<String> traceId,
@@ -58,15 +46,16 @@ public class SimpleRecorder implements Recorder {
         try {
             JsonObject payload = createPayload(responseOrException, args);
             Optional<Event> event = createEvent(fnKey, traceId, payload);
-            cubeClient.storeEvent(event);
-            return true;
+            return record(event);
+
         } catch (Exception e) {
             // encode can throw UnsupportedEncodingException
-            String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
+            String stackTraceError = UtilException.extractFirstStackTraceLocation(e.getStackTrace());
             LOGGER.error("Error in recording function, skipping:: " + fnKey.signature + " " + e.getMessage() + " " + stackTraceError);
             return false;
         }
     }
+
 
     private JsonObject createPayload(Object responseOrException, Object... args) {
         JsonObject payloadObj = new JsonObject();
