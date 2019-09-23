@@ -6,6 +6,7 @@ package com.cube.ws;
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,6 +59,7 @@ import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Request;
+import com.cube.dao.Result;
 
 /**
  * @author prasad
@@ -301,7 +303,7 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/event")
+    @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(@Context UriInfo ui,
                             Event event) {
@@ -355,7 +357,7 @@ public class CubeStore {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.type, event.getCollection(), event.reqid, event.apiPath));
+                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
             return Response.ok().build();
         });
 
@@ -673,6 +675,49 @@ public class CubeStore {
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Request list to Json for customer %s, app %s, " +
+                    "collection %s.",
+                customerid.orElse(""), app.orElse(""), collection.orElse("")), e);
+            return Response.serverError().build();
+        }
+    }
+
+
+    /**
+     *
+     * @param ui
+     * @return matching events based on constraints
+     */
+    @GET
+    @Path("getEvents")
+    public Response getEvents(@Context UriInfo ui) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
+        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
+        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
+        Optional<String> traceid = Optional.ofNullable(queryParams.getFirst("traceid"));
+        List<String> reqids = Optional.ofNullable(queryParams.get("reqids")).orElse(Collections.emptyList());
+        List<String> paths = Optional.ofNullable(queryParams.get("paths")).orElse(Collections.emptyList());
+        Optional<Event.EventType> eventType =
+            Optional.ofNullable(queryParams.getFirst("eventType")).flatMap(t -> Utils.valueOf(Event.EventType.class,
+                t));
+        Optional<Integer> payloadKey = Optional.ofNullable(queryParams.getFirst("payloadKey")).flatMap(Utils::strToInt);
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        // paging
+        Optional<Integer> nummatches =
+            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
+        // for paging
+
+        Result<Event> events =
+            rrstore.getEvents(customerid, app, service, collection, traceid, reqids, paths, eventType, payloadKey,
+                nummatches, start);
+
+        String json;
+        try {
+            json = jsonmapper.writeValueAsString(events);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Event list to Json for customer %s, app %s, " +
                     "collection %s.",
                 customerid.orElse(""), app.orElse(""), collection.orElse("")), e);
             return Response.serverError().build();

@@ -300,7 +300,9 @@ public class MockServiceHTTP {
 	}
 
 
-	private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
+
+
+    private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
 		return rrstore.getRespForReq(queryrequest, mspecForDefault);
 	}
 
