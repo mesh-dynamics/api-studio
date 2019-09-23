@@ -107,7 +107,7 @@ public class TemplateEntry {
             case Optional:
                 return OK_Optional;
             case Default:
-                return OK;
+                return OK_DefaultPT;
         }
         return OK;
     }
@@ -117,12 +117,14 @@ public class TemplateEntry {
      * Assuming compare type is not ignore or default
      */
     Comparator.Resolution lhsmissing() {
-        if (pt == CompareTemplate.PresenceType.Default && !isParentArray) return ERR_NewField;
+        if ((pt == CompareTemplate.PresenceType.Default || pt == CompareTemplate.PresenceType.Required) && !isParentArray) {
+            return ERR_NewField;
+        }
         switch (ct) {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return OK_OtherValInvalid;
         }
@@ -130,6 +132,8 @@ public class TemplateEntry {
     }
 
 
+    // This function is designed on the premise that it checks matches over the actual found diffs and then return the resolution.
+    // If the resolution is taken first and then the diffs are added then this may generate spurious diffs for example - In current case of Response/Request match.
     Comparator.Resolution checkMatchStr(Optional<String> lhs, Optional<String> rhs) {
         Comparator.Resolution resolution = checkTypeAndPresence(CompareTemplate.DataType.Str, rhs);
         if (resolution.isErr()) {
@@ -190,7 +194,7 @@ public class TemplateEntry {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRound, Floor, Ceil
         }
@@ -231,7 +235,7 @@ public class TemplateEntry {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRound, Floor, Ceil, CustomReqex
 
@@ -313,7 +317,7 @@ public class TemplateEntry {
             case Ignore:
                 return OK_Ignore;
             case Default:
-                return OK;
+                return OK_DefaultCT;
             default:
                 return ERR_ValTypeMismatch; // could be CustomRegex
 
