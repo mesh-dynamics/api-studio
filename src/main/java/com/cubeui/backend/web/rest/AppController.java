@@ -2,10 +2,9 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.*;
 import com.cubeui.backend.domain.DTO.AppDTO;
-import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.ServiceGraphRepository;
-import com.cubeui.backend.repository.ServiceRepository;
-import com.cubeui.backend.repository.TestConfigRepository;
+import com.cubeui.backend.domain.DTO.Response.DTO.TestConfigDTO;
+import com.cubeui.backend.domain.DTO.Response.Mapper.TestConfigMapper;
+import com.cubeui.backend.repository.*;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,13 +30,19 @@ public class AppController {
     private ServiceRepository serviceRepository;
     private ServiceGraphRepository serviceGraphRepository;
     private TestConfigRepository testConfigRepository;
+    private TestIntermediateServiceRepository testIntermediateServiceRepository;
+    private TestVirtualizedServiceRepository testVirtualizedServiceRepository;
+    private TestPathRepository testPathRepository;
     private CustomerService customerService;
 
-    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, CustomerService customerService) {
+    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
         this.testConfigRepository = testConfigRepository;
+        this.testIntermediateServiceRepository = testIntermediateServiceRepository;
+        this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
+        this.testPathRepository = testPathRepository;
         this.customerService = customerService;
     }
 
@@ -118,7 +124,37 @@ public class AppController {
     public ResponseEntity getTestConfigs(@PathVariable("id") Long id) {
         Optional<App> selectedApp = appRepository.findById(id);
         if(selectedApp.isPresent()) {
-            return ok(this.testConfigRepository.findByAppId(id));
+            List<TestConfigDTO> testConfigDTOs = new ArrayList<TestConfigDTO>();
+            Optional<List<TestConfig>> testConfigs = this.testConfigRepository.findByAppId(id);
+            for(TestConfig testConfig : testConfigs.get()) {
+                Optional<List<TestIntermediateService>> testIntermediateServices = this.testIntermediateServiceRepository.findByTestConfigId(testConfig.getId());
+                Optional<List<TestVirtualizedService>> testVirtualizedServices = this.testVirtualizedServiceRepository.findByTestConfigId(testConfig.getId());
+                Optional<List<TestPath>> testPaths = this.testPathRepository.findByTestConfigId(testConfig.getId());
+                TestConfigDTO testConfigDTO = TestConfigMapper.INSTANCE.testConfigToTestConfigDTO(testConfig);
+                List<String> testIntermediateServiceNames = new ArrayList<String>();
+                List<String> testVirtualizedServiceNames = new ArrayList<String>();
+                List<String> testPathURLS = new ArrayList<String>();
+                if(testIntermediateServices.isPresent()) {
+                    for(TestIntermediateService testIntermediateService : testIntermediateServices.get()) {
+                        testIntermediateServiceNames.add(testIntermediateService.getService().getName());
+                    }
+                }
+                if(testVirtualizedServices.isPresent()) {
+                    for(TestVirtualizedService testVirtualizedService : testVirtualizedServices.get()) {
+                        testVirtualizedServiceNames.add(testVirtualizedService.getService().getName());
+                    }
+                }
+                if(testPaths.isPresent()) {
+                    for(TestPath testPath : testPaths.get()) {
+                        testPathURLS.add(testPath.getPath().getPath());
+                    }
+                }
+                testConfigDTO.setTestIntermediateServices(testIntermediateServiceNames);
+                testConfigDTO.setTestMockServices(testVirtualizedServiceNames);
+                testConfigDTO.setTestPaths(testPathURLS);
+                testConfigDTOs.add(testConfigDTO);
+            }
+            return ok(Optional.of(testConfigDTOs));
         } else {
             throw new RecordNotFoundException("App with ID '" + id + "' not found.");
         }
