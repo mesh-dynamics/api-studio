@@ -15,7 +15,7 @@ steps:
         cpu: 0.1
         memory: "500Mi"
       limits:
-        memory: "640Mi"
+        memory: "1024Mi"
     when:
       event:
         exclude:
