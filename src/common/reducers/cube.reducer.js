@@ -37,6 +37,7 @@ const initialState = {
     selectedTestId: null,
     collectionTemplateVersion: null,
     golden: null,
+    goldenTimeStamp: null,
 
     replayId: null,
 
@@ -306,12 +307,14 @@ export function cube (state = initialState, action) {
         case cubeConstants.SET_GOLDEN:
             return {
                 ...state,
-                golden: action.data
+                golden: action.data.golden,
+                goldenTimeStamp: action.data.timeStamp,
             };
         case cubeConstants.CLEAR_GOLDEN:
             return {
                 ...state,
-                golden: null
+                golden: null,
+                goldenTimeStamp: null
             };
         default:
             return state

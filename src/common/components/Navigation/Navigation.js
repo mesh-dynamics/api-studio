@@ -128,6 +128,10 @@ class Navigation extends Component{
                                 <div className="label-n">GOLDEN</div>
                                 <div className="value-n">{cube.golden ? cube.golden : ''}</div>
                             </div>
+                            <div className={cube.goldenTimeStamp ? "margin-top-10" : "hidden"}>
+                                <div className="label-n">Run Time</div>
+                                <div className="value-n">{cube.goldenTimeStamp ? cube.goldenTimeStamp : ''}</div>
+                            </div>
                             <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
                                 <div className="label-n">GATEWAY</div>
                                 <div className="value-n">{cube.testConfig && cube.testConfig.gatewayService ? cube.testConfig.gatewayService.name : ''}</div>

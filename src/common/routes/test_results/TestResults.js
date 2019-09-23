@@ -14,7 +14,7 @@ class TestResults extends Component {
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
 
-    setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, cellData) {
+    setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
         if (!cellData) return;
         const { dispatch, history } = this.props;
         dispatch(cubeActions.setPathResultsParams({
@@ -22,6 +22,7 @@ class TestResults extends Component {
             service: service,
             replayId: replayId,
             recordingId: recordingId,
+            timeStamp: dateTime,
             currentTemplateVer: currentTemplateVer
         }));
         setTimeout(() => {
@@ -49,6 +50,7 @@ class TestResults extends Component {
                 dateString = "";
             if (momentDateObject) dateString = localMomentDateObejct.format('l');
             let collection = testResult.collection,
+                dateTime = localMomentDateObejct.format('lll'),
                 recordingId = testResult.recordingid,
                 templateVer = testResult.templateVer;
             if (allRunsTimestamps.indexOf(momentDateObject.valueOf()) < 0) allRunsTimestamps.push(momentDateObject.valueOf());
@@ -65,6 +67,7 @@ class TestResults extends Component {
                     ...eachReplayResult,
                     timestamp: momentDateObject.valueOf(),
                     collection,
+                    dateTime,
                     recordingId,
                     templateVer
                 });
@@ -282,7 +285,7 @@ class TestResults extends Component {
                                 }}
                                 onClick={
                                     () => {
-                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayid, row.value.recordingId, row.value.templateVer, 1)
+                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayid, row.value.recordingId, row.value.templateVer, row.value.dateTime, 1)
                                     }
                                 }
                             >
