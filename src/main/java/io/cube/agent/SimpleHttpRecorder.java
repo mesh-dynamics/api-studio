@@ -39,5 +39,11 @@ public class SimpleHttpRecorder extends AbstractGsonSerializeRecorder {
         return true;
     }
 
+    @Override
+    public boolean record(Event event) {
+        Optional<String> cubeResponse = cubeClient.storeEvent(event);
+        return true;
+    }
+
 
 }

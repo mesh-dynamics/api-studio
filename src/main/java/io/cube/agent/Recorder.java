@@ -32,4 +32,12 @@ public interface Recorder {
                    Optional<String> exceptionType,
                    Object... args);
 
+    boolean recordOld(FnKey fnKey,
+                   Optional<String> traceId,
+                   Optional<String> spanId,
+                   Optional<String> parentSpanId,
+                   Object responseOrException,
+                   FnReqResponse.RetStatus retStatus,
+                   Optional<String> exceptionType,
+                   Object... args);
 }

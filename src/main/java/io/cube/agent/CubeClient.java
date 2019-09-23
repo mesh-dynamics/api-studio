@@ -1,6 +1,12 @@
 package io.cube.agent;
 
-import java.util.Optional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -11,14 +17,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Client to connect to cube service
@@ -136,5 +136,19 @@ public class CubeClient {
                 cubeRecordService.path("rs").path("forcecomplete").path(replayid).request();
         CommonUtils.addTraceHeaders(builder , "POST");
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
+    }
+
+    public Optional<String> storeEvent(Event event) {
+        Invocation.Builder builder = cubeRecordService.path("cs").path("event").request(MediaType.TEXT_PLAIN);
+        try {
+            String jsonEntity = jsonMapper.writeValueAsString(event);
+            LOGGER.debug(new ObjectMessage(Map.of("event", jsonEntity)));
+            CommonUtils.addTraceHeaders(builder , "POST");
+            return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(new ObjectMessage(Map.of("operation",
+                    "Store Event", "response" , "Json Exception")) , e);
+        }
+        return Optional.empty();
     }
 }

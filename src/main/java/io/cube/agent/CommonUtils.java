@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,11 @@ public class CommonUtils {
     public static final String NO_INTENT = "normal";
 
     private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
+
+    public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
+        return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
+                .findAny();
+    }
 
     static String getFunctionSignature(Method function) {
         String fnName = function.getName();
