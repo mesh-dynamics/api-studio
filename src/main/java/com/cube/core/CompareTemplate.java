@@ -216,6 +216,24 @@ public class CompareTemplate {
 		}
 	}
 
+    /**
+     *
+     * @return ValidTemplate
+     */
+	public ValidateCompareTemplate validate() {
+	    boolean isValid = true;
+	    String message = "";
+	    Optional<TemplateEntry> invalidRuleOptional = getRules().stream().filter(rule -> (rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default)).findFirst();
+	    if(invalidRuleOptional.isPresent()) {
+	        TemplateEntry invalidRule = invalidRuleOptional.get();
+            isValid = false;
+            message = "Invalid rule for path " + invalidRule.path + " :";
+            message += invalidRule.ct == ComparisonType.Default ? " ComparisonType set to Default." : "";
+            message += invalidRule.pt == PresenceType.Default ? " PresenceType set to Default." : "";
+        }
+        ValidateCompareTemplate validateCompareTemplate = new ValidateCompareTemplate(isValid, Optional.of(message));
+        return validateCompareTemplate;
+    }
 
 	public Optional<TemplateEntry> get(String path) {
 		return Optional.ofNullable(rules.get(path));

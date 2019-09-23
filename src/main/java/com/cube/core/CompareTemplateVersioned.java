@@ -1,7 +1,6 @@
 package com.cube.core;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,4 +41,12 @@ public class CompareTemplateVersioned extends CompareTemplate {
         setRules(newRules);
     }
 
+    @Override
+    public ValidateCompareTemplate validate() {
+        ValidateCompareTemplate validateCompareTemplate = super.validate();
+        if(!validateCompareTemplate.isValid()) {
+            return new ValidateCompareTemplate (validateCompareTemplate.isValid, Optional.of("For requestPath: " + requestPath + " and Type: " + type.toString() +  " - " + validateCompareTemplate.getMessage() ));
+        }
+        return validateCompareTemplate;
+    }
 }
