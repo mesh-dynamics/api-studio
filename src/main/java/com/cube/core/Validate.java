@@ -3,8 +3,18 @@ package com.cube.core;
 import java.util.Optional;
 
 public class Validate {
-    protected boolean isValid;
-    protected Optional<String> message;
+    protected final boolean isValid;
+    protected final Optional<String> message;
+
+    public Validate() {
+        this.isValid = false;
+        this.message = Optional.empty();
+    }
+
+    public Validate(boolean isValid, Optional<String> message) {
+        this.isValid = isValid;
+        this.message = message;
+    }
 
     public boolean isValid() {
         return isValid;
@@ -14,16 +24,8 @@ public class Validate {
         return message.orElse("");
     }
 
-    public void setMessage(Optional<String> message) {
-        this.message = message;
-    }
-
     public boolean getStatus() {
         return isValid;
-    }
-
-    public void setValid(boolean valid) {
-        this.isValid = valid;
     }
 
 }

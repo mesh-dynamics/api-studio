@@ -221,17 +221,18 @@ public class CompareTemplate {
      * @return ValidTemplate
      */
 	public ValidateCompareTemplate validate() {
-	    ValidateCompareTemplate validateCompareTemplate = new ValidateCompareTemplate(true, Optional.of(""));
+	    boolean isValid = true;
+	    String message = "";
 	    Optional<TemplateEntry> invalidRuleOptional = getRules().stream().filter(rule -> (rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default)).findFirst();
 	    if(invalidRuleOptional.isPresent()) {
 	        TemplateEntry invalidRule = invalidRuleOptional.get();
-            validateCompareTemplate.setValid(false);
-            String message = "Invalid rule for path " + invalidRule.path + " :";
+            isValid = false;
+            message = "Invalid rule for path " + invalidRule.path + " :";
             message += invalidRule.ct == ComparisonType.Default ? " ComparisonType set to Default." : "";
             message += invalidRule.pt == PresenceType.Default ? " PresenceType set to Default." : "";
-            validateCompareTemplate.setMessage(Optional.of(message));
         }
-	    return validateCompareTemplate;
+        ValidateCompareTemplate validateCompareTemplate = new ValidateCompareTemplate(isValid, Optional.of(message));
+        return validateCompareTemplate;
     }
 
 	public Optional<TemplateEntry> get(String path) {

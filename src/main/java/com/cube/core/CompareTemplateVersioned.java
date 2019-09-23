@@ -45,7 +45,7 @@ public class CompareTemplateVersioned extends CompareTemplate {
     public ValidateCompareTemplate validate() {
         ValidateCompareTemplate validateCompareTemplate = super.validate();
         if(!validateCompareTemplate.isValid()) {
-            validateCompareTemplate.setMessage(Optional.of("For requestPath " + requestPath + " - " + validateCompareTemplate.getMessage() ));
+            return new ValidateCompareTemplate (validateCompareTemplate.isValid, Optional.of("For requestPath: " + requestPath + " and Type: " + type.toString() +  " - " + validateCompareTemplate.getMessage() ));
         }
         return validateCompareTemplate;
     }

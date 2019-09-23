@@ -109,14 +109,11 @@ public class Utils {
 	}
 
 	public static ValidateCompareTemplate validateTemplateSet(TemplateSet templateSet) {
-        for (CompareTemplateVersioned template: templateSet.templates) {
-            ValidateCompareTemplate validateCompareTemplate = template.validate();
-            if(!validateCompareTemplate.isValid()) {
-                return validateCompareTemplate;
-            }
-        }
-        return new ValidateCompareTemplate(true, Optional.of(""));
-    }
+        return templateSet.templates.stream().map(CompareTemplateVersioned::validate)
+            .filter(v -> !v.isValid())
+            .findFirst()
+            .orElseGet(() -> new ValidateCompareTemplate(true, Optional.of("")));
+	}
 
 
     public static IntNode intToJson(Integer val) {
