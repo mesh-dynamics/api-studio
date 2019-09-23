@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 
@@ -16,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -136,16 +138,16 @@ public class CubeClient {
         return getResponse(builder.buildPost(Entity.form(new MultivaluedHashMap<>())));
     }
 
-    public Optional<String> storeEvent(Optional<Event> event) {
+    public Optional<String> storeEvent(Event event) {
         Invocation.Builder builder = cubeRecordService.path("cs").path("event").request(MediaType.TEXT_PLAIN);
         try {
-            String jsonEntity = jsonMapper.writeValueAsString(event.orElse(null));
-            LOGGER.debug("Event sent to Cube Server : " + jsonEntity);
+            String jsonEntity = jsonMapper.writeValueAsString(event);
+            LOGGER.debug(new ObjectMessage(Map.of("event", jsonEntity)));
             CommonUtils.addTraceHeaders(builder , "POST");
             return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
         } catch (JsonProcessingException e) {
-            LOGGER.error("Error while serializing function req/resp object :: "
-                    + e.getMessage());
+            LOGGER.error(new ObjectMessage(Map.of("operation",
+                    "Store Event", "response" , "Json Exception")) , e);
         }
         return Optional.empty();
     }

@@ -34,7 +34,13 @@ public class SimpleHttpRecorder extends AbstractGsonSerializeRecorder {
     }
 
     @Override
-    public boolean record(Optional<Event> event) {
+    public boolean record(FnReqResponse fnReqResponse) {
+        Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnReqResponse);
+        return true;
+    }
+
+    @Override
+    public boolean record(Event event) {
         Optional<String> cubeResponse = cubeClient.storeEvent(event);
         return true;
     }
