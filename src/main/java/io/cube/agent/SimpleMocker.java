@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnReqResponse.RetStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -51,8 +52,11 @@ public class SimpleMocker implements Mocker {
             String[] argVals =
                     Arrays.stream(args).map(rethrowFunction(gson::toJson)).toArray(String[]::new);
             Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode).toArray(Integer[]::new);
-            LOGGER.info("Trying to mock function :: " + fnKey.function.getName());
-            Arrays.stream(argVals).forEach(arg -> LOGGER.info("Argument while mocking  :: " + arg));
+            String traceIdString = traceId.orElse("N/A");
+            LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock" , "func_name" , fnKey.fnName , "trace_id" , traceIdString)));
+            var counter = new Object(){int x = 0;};
+            Arrays.stream(argVals).forEach(arg -> LOGGER.info(new ObjectMessage(Map.of("func_name" , fnKey.fnName
+                    , "trace_id" , traceIdString  , "arg_hash" , argsHash[counter.x] , "arg_val_" + counter.x ++ , arg))));
 
             //This key is to identify cases where multiple Solr docs are matched
             Integer key = traceId.orElse("").concat(spanId.orElse(""))
@@ -71,11 +75,13 @@ public class SimpleMocker implements Mocker {
             // need to check is before trying to convert return value, otherwise null return value also leads to
             // empty optional
             if (ret.isEmpty()) {
-                LOGGER.error("Error in mocking function, no matching response received, returning null");
+                LOGGER.error(new ObjectMessage(Map.of("reason" , "No Matching Response Received"
+                        , "trace_id" , traceIdString , "func_name" , fnKey.fnName)));
                 return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
             } else {
                 FnResponse response = ret.get();
-                LOGGER.info("Return value received while mocking :: " + response.retVal);
+                LOGGER.info(new ObjectMessage(Map.of("state" , "After Mock" , "func_name" , fnKey.fnName , "trace_id" , traceIdString,
+                         "return_val" , response.retVal)));
                 //If multiple Solr docs were returned, we need to maintain the last timestamp
                 //to be used in the next mock call.
                 if (response.retStatus == RetStatus.Success) {
@@ -96,8 +102,7 @@ public class SimpleMocker implements Mocker {
         } catch (Throwable e) {
             // encode can throw UnsupportedEncodingException
             String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
-            LOGGER.error("Error in mocking function, returning " + null + " :: " + fnKey.signature + " "
-                    + e.getMessage() + " " + stackTraceError);
+            LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName , "trace_id" , traceId)) , e);
             return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
         }
     }
