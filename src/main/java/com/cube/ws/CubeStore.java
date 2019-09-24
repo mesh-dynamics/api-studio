@@ -707,10 +707,12 @@ public class CubeStore {
         Optional<Integer> nummatches =
             Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
         // for paging
+        Optional<Boolean> asc =
+            Optional.ofNullable(queryParams.getFirst("asc")).flatMap(Utils::strToBool);
 
         Result<Event> events =
             rrstore.getEvents(customerid, app, service, collection, traceid, reqids, paths, eventType, payloadKey,
-                nummatches, start);
+                nummatches, start, asc);
 
         String json;
         try {

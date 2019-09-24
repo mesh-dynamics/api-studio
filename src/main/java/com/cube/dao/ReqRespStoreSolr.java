@@ -245,7 +245,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getEvents(Optional<String> customerid, Optional<String> app, Optional<String> service, Optional<String> collection,
                                    Optional<String> traceid, List<String> reqids, List<String> paths, Optional<Event.EventType> type,
                                    Optional<Integer> payloadKey, Optional<Integer> maxResults,
-                                   Optional<Integer> start) {
+                                   Optional<Integer> start, Optional<Boolean> asc) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Event.toString());
@@ -258,6 +258,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, PATHF, paths);
         addFilter(query, EVENTTYPEF, type.map(t -> t.toString()));
         addFilterInt(query, PAYLOADKEYF, payloadKey);
+        addSort(query, TIMESTAMPF, asc);
 
         return SolrIterator.getResults(solr, query, maxResults, this::docToEvent, start);
     }
@@ -1001,6 +1002,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static void addSort(SolrQuery query, String fieldname, boolean ascending) {
     	query.addSort(fieldname, ascending ? ORDER.asc : ORDER.desc);
+    }
+
+    private static void addSort(SolrQuery query, String fieldname, Optional<Boolean> ascendingOpt) {
+        ascendingOpt.ifPresent(ascending -> query.addSort(fieldname, ascending ? ORDER.asc : ORDER.desc));
+
     }
 
 

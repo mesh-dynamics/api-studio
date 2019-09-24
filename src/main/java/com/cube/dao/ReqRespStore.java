@@ -168,7 +168,7 @@ public interface ReqRespStore {
 	Result<Event> getEvents(Optional<String> customerid, Optional<String> app, Optional<String> service,
                             Optional<String> collection, Optional<String> traceid, List<String> reqids,
                             List<String> paths, Optional<Event.EventType> type, Optional<Integer> payloadKey,
-                            Optional<Integer> maxResults, Optional<Integer> start);
+                            Optional<Integer> maxResults, Optional<Integer> start, Optional<Boolean> asc);
 
 	/**
 	 * @param replay
