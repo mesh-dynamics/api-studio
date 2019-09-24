@@ -38,7 +38,7 @@ public class Event {
 
 
     private Event(String customerid, String app, String service, String instanceid, String collection, String traceid,
-                  Instant timestamp, String reqid, String apiPath, EventType type, byte[] rawPayloadBinary,
+                  Instant timestamp, String reqid, String apiPath, EventType eventType, byte[] rawPayloadBinary,
                   String rawPayloadString, DataObj payload, int payloadKey) {
         this.customerid = customerid;
         this.app = app;
@@ -49,7 +49,7 @@ public class Event {
         this.timestamp = timestamp;
         this.reqid = reqid;
         this.apiPath = apiPath;
-        this.type = type;
+        this.eventType = eventType;
         this.rawPayloadBinary = rawPayloadBinary;
         this.rawPayloadString = rawPayloadString;
         this.payload = payload;
@@ -69,7 +69,7 @@ public class Event {
         this.timestamp = null;
         this.reqid = null;
         this.apiPath = null;
-        this.type = null;
+        this.eventType = null;
         this.rawPayloadBinary = null;
         this.rawPayloadString = null;
         this.payload = null;
@@ -82,14 +82,14 @@ public class Event {
                                               Optional<String> service,
                                               Optional<String> instanceid, Optional<String> collection, Optional<String> traceid,
                                               Optional<Instant> timestamp, Optional<String> reqid,
-                                              Optional<String> apiPath, Optional<String> type,
+                                              Optional<String> apiPath, Optional<String> eventTypeOpt,
                                               Optional<byte[]> rawPayloadBin, Optional<String> rawPayloadStr,
                                               Optional<Integer> payloadKey, Config config) {
 
         if (customerid.isPresent() && app.isPresent() && service.isPresent() && instanceid.isPresent() && collection.isPresent() &&
-        traceid.isPresent() && timestamp.isPresent() && reqid.isPresent() && apiPath.isPresent() && type.isPresent()  &&
+        traceid.isPresent() && timestamp.isPresent() && reqid.isPresent() && apiPath.isPresent() && eventTypeOpt.isPresent()  &&
         payloadKey.isPresent() && (rawPayloadBin.isPresent() ^ rawPayloadStr.isPresent())) {
-            return Utils.valueOf(EventType.class, type.get()).map(eventType -> {
+            return Utils.valueOf(EventType.class, eventTypeOpt.get()).map(eventType -> {
                 byte [] payloadBin = rawPayloadBin.orElse(null);
                 String payloadStr = rawPayloadStr.orElse(null);
                 DataObj payload = DataObjFactory.build(eventType, payloadBin, payloadStr, config);
@@ -113,7 +113,7 @@ public class Event {
     public boolean validate() {
 
         if ((customerid == null) || (app == null) || (service == null) || (instanceid == null) || (collection == null)
-            || (traceid == null) || (timestamp == null) || (reqid == null) || (apiPath == null) || (type == null)
+            || (traceid == null) || (timestamp == null) || (reqid == null) || (apiPath == null) || (eventType == null)
             || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
             return false;
         }
@@ -124,7 +124,7 @@ public class Event {
                                                         Optional<CompareTemplate> templateOpt) {
         this.collection = collection;
 
-        payload = DataObjFactory.build(type, rawPayloadBinary, rawPayloadString, config);
+        payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
         payloadKey = templateOpt.map(template -> {
             List<String> keyVals = new ArrayList<>();
             payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
@@ -134,8 +134,8 @@ public class Event {
 
     @JsonIgnore
     public boolean isRequestType() {
-        return type == EventType.HTTPRequest || type == EventType.JavaRequest
-            || type == EventType.ThriftRequest || type == EventType.ProtoBufRequest;
+        return eventType == EventType.HTTPRequest || eventType == EventType.JavaRequest
+            || eventType == EventType.ThriftRequest || eventType == EventType.ProtoBufRequest;
     }
 
     public enum EventType {
@@ -163,7 +163,7 @@ public class Event {
     public final Instant timestamp;
     public final String reqid; // for responses, this is the reqid of the corresponding request
     public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
-    public final EventType type;
+    public final EventType eventType;
 
     // Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
     // as base64. For debugging its easier if the string is readable.
