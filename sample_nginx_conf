@@ -1,0 +1,56 @@
+worker_processes  1;
+worker_rlimit_nofile 1024;
+
+error_log  logs/error.log debug;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+
+http {
+
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" "$args" "$request_headers" "$request_body" "$response_headers" $status "$err" "$response_body"';
+    #log_format  test  '$remote_addr - $remote_user [$time_local] "$request" $status "$err" "$test_response_body"';
+
+    access_log  logs/access.log  main;
+
+    map $status $cond {
+      500       1;
+      401       1;
+      403       1;
+      404       1;
+      default   1;
+    }
+
+    capture_response_body                   off;
+    capture_response_body_buffer_size       1m;
+    capture_header_buffer_size		    10k;
+    capture_response_body_if                $cond 1;
+    capture_response_body_if_latency_more   0s;
+
+    map $response_body $err {
+      ~\"error\":\"(?<e>.+)\" $e;
+      default "";
+    }
+
+    server {
+
+	capture_response_body on;
+        listen       80;
+        server_name  localhost;
+
+        access_log  logs/host.access.log  main;
+
+        location / {
+	     #capture_response_body on;
+             proxy_pass http://localhost:8080/cubews_war_exploded/;
+	}
+
+    }
+}
