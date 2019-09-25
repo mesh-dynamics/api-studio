@@ -12,6 +12,7 @@ data:
   REDIS_HOST: "redis"
   JAVAOPTS: "-javaagent:/usr/local/tomcat/newrelic/newrelic.jar"
   NEW_RELIC_LOG: "STDOUT"
+  SOLR_CORE: "{{solr_core}}"
 
 ---
 apiVersion: v1

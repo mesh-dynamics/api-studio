@@ -37,15 +37,15 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:a49097d0cab67061068c9c629eb95dd2195d2cf6
+        image: cubeiocorp/cubews:dc94361755000f6ba6b503b963a28a2da7c32849
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: "190Mi"
-            cpu: "100m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
-            memory: "250Mi"
-            cpu: "300m"
+            memory: "1024Mi"
+            cpu: "1000m"
         ports:
         - containerPort: 8080
         livenessProbe:
@@ -91,6 +91,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: APP_DOGFOOD
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
           - name: instance_dogfood
             valueFrom:
               configMapKeyRef:
@@ -163,15 +168,15 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:a49097d0cab67061068c9c629eb95dd2195d2cf6
+        image: cubeiocorp/cubews:dc94361755000f6ba6b503b963a28a2da7c32849
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: "190Mi"
-            cpu: "100m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
-            memory: "250Mi"
-            cpu: "300m"
+            memory: "1024Mi"
+            cpu: "1000m"
         ports:
         - containerPort: 8080
         livenessProbe:
@@ -217,6 +222,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: APP_DOGFOOD
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
           - name: instance_dogfood
             valueFrom:
               configMapKeyRef:
@@ -289,15 +299,15 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:a49097d0cab67061068c9c629eb95dd2195d2cf6
+        image: cubeiocorp/cubews:dc94361755000f6ba6b503b963a28a2da7c32849
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: "180Mi"
-            cpu: "100m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
-            memory: "250Mi"
-            cpu: "300m"
+            memory: "1024Mi"
+            cpu: "1000m"
         ports:
         - containerPort: 8080
         livenessProbe:
@@ -353,6 +363,11 @@ spec:
               configMapKeyRef:
                 name: cubews
                 key: SERVICE_DOGFOOD
+          - name: solr_core
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_CORE
           - name: cube_record_service
             valueFrom:
               configMapKeyRef:
@@ -414,15 +429,15 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:88f3802ceab95e4c915feb6482e8f4e591ca66a2
+        image: cubeiocorp/cubeui:32178595bce57bff8617ea33beaf6f3b5c6e5b3c
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: "32Mi"
-            cpu: "5m"
+            memory: "128Mi"
+            cpu: "200m"
           limits:
-            memory: "64Mi"
-            cpu: "10m"
+            memory: "256Mi"
+            cpu: "200m"
         ports:
         - containerPort: 80
       imagePullSecrets:
@@ -466,8 +481,11 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:0ab452c3ae7baa4f9c255fae9f47c16073deba30
+        image: cubeiocorp/cubeuibackend:a0bdb72e12bfab9194b117027fcbd566466ce775
         imagePullPolicy: IfNotPresent
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "{{springboot_profile}}"
         resources:
           requests:
             memory: "640Mi"
