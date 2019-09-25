@@ -69,6 +69,23 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: NEW_RELIC_LICENSE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: newrelic
+                key: license_key
+          - name: NEW_RELIC_APP_NAME
+            value: cubews-record
+          - name: JAVA_OPTS
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: JAVA_OPTS
+          - name: NEW_RELIC_LOG
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                value: NEW_RELIC_LOG
           - name: app_dogfood
             valueFrom:
               configMapKeyRef:
@@ -183,6 +200,23 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: NEW_RELIC_LICENSE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: newrelic
+                key: license_key
+          - name: NEW_RELIC_APP_NAME
+            value: cubews-mock
+          - name: JAVA_OPTS
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: JAVA_OPTS
+          - name: NEW_RELIC_LOG
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                value: NEW_RELIC_LOG
           - name: app_dogfood
             valueFrom:
               configMapKeyRef:
@@ -297,6 +331,23 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: NEW_RELIC_LICENSE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: newrelic
+                key: license_key
+          - name: NEW_RELIC_APP_NAME
+            value: cubews-replay
+          - name: JAVA_OPTS
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: JAVA_OPTS
+          - name: NEW_RELIC_LOG
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                value: NEW_RELIC_LOG
           - name: app_dogfood
             valueFrom:
               configMapKeyRef:
