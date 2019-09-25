@@ -1,5 +1,5 @@
 # nginx-record-module
-Nginx Module to capture http traffic to a log file (headers and body for both request and response). This module has been derived from [Capture Response Body Module] (http ://github.com/ZigzagAK/ngx_http_response_body_module)
+Nginx Module to capture http traffic to a log file (headers and body for both request and response). This module has been derived from [Capture Response Body Module](http ://github.com/ZigzagAK/ngx_http_response_body_module)
 
 ## Compile the module in a static fashion
 
