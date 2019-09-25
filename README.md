@@ -8,6 +8,7 @@ Nginx Module to capture http traffic to a log file (headers and body for both re
 ```
 ./configure --add-module=./module_dir
 ```
+- To configure with debug mode in any situation use *--with-debug* flag
 - Make and install
 ```
 make install
