@@ -4,6 +4,7 @@ worker_processes  1;
 worker_rlimit_nofile 1024;
 
 #To change the maximum level logged
+#this is required in addition to the with-debug flag
 #error_log  logs/error.log info;
 error_log  logs/error.log debug;
 
