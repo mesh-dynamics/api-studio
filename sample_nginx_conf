@@ -18,6 +18,8 @@ http {
     default_type  application/octet-stream;
 
     log_format  main escape=json '{ "remote_addr" : "$remote_addr" , "remote_user" : "$remote_user" , "timestamp" : "$time_local" , "server_protocol" : "$server_protocol" ,  "request_str" : "$request_uri" , "method" : "$request_method"  ,  "request_args"  : "$args" , "request_hdrs" : "$request_headers" , "request_body"  : "$request_body" , "content_lenght" : "$sent_http_content_length" , "content_type" : "$sent_http_content_type" ,  "response_hdrs" : "$response_headers" , "status" :  "$status" , "error" : "$err" , "response_body" : "$response_body" }';
+    # sample log
+    # { "remote_addr" : "127.0.0.1" , "remote_user" : "" , "timestamp" : "25/Sep/2019:13:39:47 +0530" , "server_protocol" : "HTTP/1.1" ,  "request_str" : "/cs/health" , "method" : "GET"  ,  "request_args"  : "" , "request_hdrs" : "{\"User-Agent\":\"PostmanRuntime/7.15.2\",\"Accept\":\"*/*\",\"Cache-Control\":\"no-cache\",\"Postman-Token\":\"1eda7c1e-6a8e-44d9-81a6-d3d0e7374dc4\",\"Host\":\"localhost\",\"Accept-Encoding\":\"gzip, deflate\",\"Connection\":\"keep-alive\"}" , "request_body"  : "" , "content_lenght" : "46" , "content_type" : "application/json" ,  "response_hdrs" : "{}" , "status" :  "200" , "error" : "" , "response_body" : "{\"Cube store service status\": \"CS is healthy\"}" }
     #log_format  test  '$remote_addr - $remote_user [$time_local] "$request" $status "$err" "$test_response_body"';
 
     access_log  logs/access.log  main;
