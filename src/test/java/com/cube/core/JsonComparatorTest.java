@@ -114,8 +114,8 @@ class JsonComparatorTest  {
 
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
-	 * @throws JsonProcessingException 
-	 * @throws JSONException 
+	 * @throws JsonProcessingException
+	 * @throws JSONException
 	 */
 	@Test
 	@DisplayName("Default comparison test")
@@ -126,8 +126,8 @@ class JsonComparatorTest  {
 
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
-	 * @throws JsonProcessingException 
-	 * @throws JSONException 
+	 * @throws JsonProcessingException
+	 * @throws JSONException
 	 */
 	@Test
 	@DisplayName("Strict equality comparison test - Negative")
@@ -138,8 +138,8 @@ class JsonComparatorTest  {
 
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
-	 * @throws JsonProcessingException 
-	 * @throws JSONException 
+	 * @throws JsonProcessingException
+	 * @throws JSONException
 	 */
 	@Test
 	@DisplayName("Strict equality comparison test - Positive")
@@ -159,6 +159,13 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("equalOptionalComparison");
 		compareTest(testData);
 	}
+
+    @Test
+    @DisplayName("Equality optional comparison test 2")
+    final void equalOptionalComparisonTest2() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("equalOptionalComparison2");
+        compareTest(testData);
+    }
 
 	/**
 	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ import com.cube.core.Utils;
 import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -130,32 +132,45 @@ public class MockServiceHTTP {
                              String fnReqResponseAsString) {
         try {
             FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
-            LOGGER.info("TRYING TO MOCK FUNC :: " + fnReqResponse.name);
+            String traceIdString = fnReqResponse.traceId.orElse("N/A");
+            LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
+                "trace_id" , traceIdString)));
+            var counter = new Object() {int x = 0;};
             if (fnReqResponse.argVals != null) {
-                Arrays.asList(fnReqResponse.argVals).stream()
-                    .forEach(argVal -> LOGGER.info("ARG VAL :: " + argVal));
+                Arrays.stream(fnReqResponse.argVals).forEach(argVal ->
+                    LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
+                        "trace_id" , traceIdString , "arg_hash" , fnReqResponse.argsHash[counter.x] , "arg_val_" + counter.x++ , argVal))));
             }
             Utils.preProcess(fnReqResponse);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
             return collection.map(collec ->
                 rrstore.getFunctionReturnValue(fnReqResponse, collec).map(retValue -> {
-                        LOGGER.info("FOUND RETURN VALUE :: " + retValue.retVal);
+                        LOGGER.info(new ObjectMessage(Map.of("state" , "After Mock" , "func_name" , fnReqResponse.name ,
+                            "trace_id" , traceIdString , "ret_val" , retValue.retVal)));
                         try {
                             String retValueAsString = jsonmapper.writeValueAsString(retValue);
                             return Response.ok().type(MediaType.APPLICATION_JSON).entity(retValueAsString).build();
                         } catch (JsonProcessingException e) {
+                            LOGGER.error(new ObjectMessage(Map.of("func_name", fnReqResponse.name,
+                                "trace_id", traceIdString)) , e);
                             return Response.serverError().type(MediaType.APPLICATION_JSON).
-                                entity("{\"reason\" : \"Unable to parse function response object " + e.getMessage()
-                                    + " \"}").build();
+                                entity((new JSONObject(Map.of("reason" , "Unable to parse func response "
+                                    + e.getMessage()))).toString()).build();
                         }
                     }
-                ).
-                    orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
-                        entity("{\"reason\" : \"Unable to find matching function request\"}").build()))
-                .orElse(Response.serverError().type(MediaType.APPLICATION_JSON).
-                    entity("{\"reason\" : \"Unable to locate collection for given customer, app, instance combo\"}")
-                    .build());
+                ).orElseGet(() -> {
+                        String reason = "Unable to find matching request";
+                        LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
+                            , traceIdString , "reason" , reason)));
+                        return Response.serverError().type(MediaType.APPLICATION_JSON).
+                        entity((new JSONObject(Map.of("reason" , reason))).toString()).build();}))
+                .orElseGet(() -> {
+                        String reason = "Unable to locate collection for given customer, app, instance combo";
+                        LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
+                            , traceIdString , "reason" , reason)));
+                        return Response.serverError().type(MediaType.APPLICATION_JSON).
+                            entity((new JSONObject(Map.of("reason" , reason))).toString()).build();});
         } catch (Exception e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).
                 entity("{\"reason\" : \"Unable to parse function request object " + e.getMessage()
@@ -285,7 +300,9 @@ public class MockServiceHTTP {
 	}
 
 
-	private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
+
+
+    private Optional<com.cube.dao.Response> getDefaultResponse(Request queryrequest) {
 		return rrstore.getRespForReq(queryrequest, mspecForDefault);
 	}
 

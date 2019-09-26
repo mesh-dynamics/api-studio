@@ -12,7 +12,8 @@
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/path",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+            { "path": "/path",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/timestamp",     "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": "ExactMatch"
     },

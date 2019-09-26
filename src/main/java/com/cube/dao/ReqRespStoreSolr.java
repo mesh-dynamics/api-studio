@@ -261,9 +261,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             this::docToEvent, Optional.of(Optional.ofNullable(eventQuery.getOffset()).orElse(20)));
     }
 
-    private void addFilterInt(SolrQuery query, String payloadkeyf, Optional<Integer> payloadKey) {
-    }
-
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
                                            String collectionId) {
         List<String> traceIds = originalList.stream().map(request-> CommonUtils.getCaseInsensitiveMatches(request.hdrs,
@@ -959,6 +956,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, fieldname, String.valueOf(fval));
     }
 
+    private static void addFilterInt(SolrQuery query, String fieldname, Optional<Integer> fvalOpt) {
+        fvalOpt.ifPresent(fval -> {
+            addFilter(query, fieldname, fval);
+        });
+    }
+
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
         if(orValues.isEmpty()) return;
         String value = orValues.stream().map(SolrIterator::escapeQueryChars)
@@ -997,6 +1000,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static void addSort(SolrQuery query, String fieldname, boolean ascending) {
     	query.addSort(fieldname, ascending ? ORDER.asc : ORDER.desc);
+    }
+
+    private static void addSort(SolrQuery query, String fieldname, Optional<Boolean> ascendingOpt) {
+        ascendingOpt.ifPresent(ascending -> query.addSort(fieldname, ascending ? ORDER.asc : ORDER.desc));
+
     }
 
 
@@ -1123,7 +1131,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TIMESTAMPF, event.timestamp.toString());
         doc.setField(REQIDF, event.reqid);
         doc.setField(PATHF, event.apiPath);
-        doc.setField(EVENTTYPEF, event.type.toString());
+        doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(PAYLOADBINF, event.rawPayloadBinary);
         doc.setField(PAYLOADSTRF, event.rawPayloadString);
         doc.setField(PAYLOADKEYF, event.payloadKey);
@@ -1143,13 +1151,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
         Optional<String> reqid = getStrField(doc, REQIDF);
         Optional<String> path = getStrField(doc, PATHF);
-        Optional<String> type = getStrField(doc, TYPEF);
+        Optional<String> eventType = getStrField(doc, EVENTTYPEF);
         Optional<byte[]> payloadBin = getBinField(doc, PAYLOADBINF);
-        Optional<String> payloadStr = getStrField(doc, PAYLOADSTRF);
+        Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
 
         return Event.createEvent(docid.orElse("NA"), customerid, app, service, instanceid, collection,
-            traceid, timestamp, reqid, path, type, payloadBin, payloadStr, payloadKey, config);
+            traceid, timestamp, reqid, path, eventType, payloadBin, payloadStr, payloadKey, config);
     }
 
     private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, Object val) {
@@ -1233,6 +1241,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             return Optional.empty();
         });
     }
+
+    // get first value of a multi-valued field
+    private static Optional<byte[]> getBinFieldMVFirst(SolrDocument doc, String fname) {
+        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
+            if (v instanceof List<?>)
+                return ((List<byte[]>) v).stream().findFirst();
+            return Optional.empty();
+        });
+    }
+
 
     private static Optional<Request> docToRequest(SolrDocument doc) {
 

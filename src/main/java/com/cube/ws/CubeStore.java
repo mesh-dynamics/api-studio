@@ -6,6 +6,7 @@ package com.cube.ws;
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,6 +62,7 @@ import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Request;
+import com.cube.dao.Result;
 
 /**
  * @author prasad
@@ -304,7 +306,7 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/event")
+    @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(@Context UriInfo ui,
                             Event event) {
@@ -358,7 +360,7 @@ public class CubeStore {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.type, event.getCollection(), event.reqid, event.apiPath));
+                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
             return Response.ok().build();
         });
 

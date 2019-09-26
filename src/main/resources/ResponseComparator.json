@@ -9,8 +9,8 @@
             { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
-
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/timestamp",     "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": {
             "mt":           "ExactMatch",
@@ -23,7 +23,15 @@
         "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
-            { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
+            { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/timestamp",     "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": {
             "mt":           "ExactMatch",
@@ -39,11 +47,19 @@
             { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
         ],
         "output": {
-            "mt":           "NoMatch",
-            "matchmeta":    "",
-            "diffs": [
-                { "op": "replace",  "path": "/hdr/content-type",    "value": "[application/jsonK]", "fromValue": "[application/json]",  "resolution":"ERR_ValMismatch"}
-            ]
+            "mt":"NoMatch",
+            "matchmeta":"",
+            "diffs":[
+                {"op":"replace",    "path":"/",                 "value":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/hdr/content-type", "value":"[application/jsonK]","fromValue":"[application/json]","resolution":"ERR_ValMismatch"},
+                {"op":"replace",    "path":"/",                 "value":"{\"MIRest status\": \"MovieInfo is healthy\"}","fromValue":"{\"MIRest status\": \"MovieInfo is healthy\"}","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",                 "value":"test7","fromValue":"test7","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",                 "value":"Optional[2019-03-28T12:48:54Z]","fromValue":"Optional[2019-03-28T12:48:54Z]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",                 "value":"Optional[Record]","fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",                 "value":"prasad","fromValue":"prasad","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",                 "value":"movieinfo","fromValue":"movieinfo","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",                 "value":200,"fromValue":200,"resolution":"OK_DefaultCT"}
+            ],
         }
     },
 
@@ -58,9 +74,17 @@
             { "path": "/body/pages",        "dataType": "Float","presenceType": "Required", "comparisonType": "Equal",          "customization": "" }
         ],
         "output": {
-            "mt":           "ExactMatch",
-            "matchmeta":    "",
-            "diffs": []
+            "mt": "FuzzyMatch",
+            "matchmeta": "",
+            "diffs": [
+                {"op": "replace", "path": "/", "value": "72471111-e096-4494-942e-5fa942c07e90", "fromValue": "72471111-e096-4494-942e-5fa942c07e90", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/", "value": "testc1", "fromValue": "testc1", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/", "value": "Optional[2019-01-04T09:09:00Z]", "fromValue": "Optional[2019-01-04T09:09:00Z]", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/", "value": "Optional[Record]", "fromValue": "Optional[Record]", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/", "value": "cube", "fromValue": "cube", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/", "value": "bookinfo", "fromValue": "bookinfo", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/", "value": 200, "fromValue": 200, "resolution": "OK_DefaultCT"}
+            ]
         }
     },
 
@@ -75,15 +99,22 @@
             { "path": "/body/pages",        "dataType": "Float","presenceType": "Required", "comparisonType": "Equal",          "customization": "" }
         ],
         "output": {
-            "mt":           "NoMatch",
-            "matchmeta":    "",
-            "diffs": [
-                { "op": "noop",     "path": "/body/author", "value": "William Shakespeare",                             "resolution": "ERR_ValTypeMismatch" },
-                { "op": "noop",     "path": "/body/id",     "value": 0,                                                 "resolution": "ERR_ValTypeMismatch" },
-                { "op": "replace",  "path": "/body/year",   "value": 1000,                  "fromValue": 1595,          "resolution": "ERR_ValMismatch"     },
-                { "op": "replace",  "path": "/body/type",   "value": "softcopy",            "fromValue": "paperback",   "resolution": "OK_OptionalMismatch" },
-                { "op": "replace",  "path": "/body/pages",  "value": 3.14,                  "fromValue": 200,           "resolution": "OK_OtherValInvalid" }
-            ]
+            "mt":"NoMatch",
+            "matchmeta":"",
+            "diffs":[
+                {"op":"replace",    "path":"/",             "value":"72471111-e096-4494-942e-5fa942c07e90",     "fromValue":"72471111-e096-4494-942e-5fa942c07e90", "resolution":"OK_DefaultCT"},
+                {"op":"noop",       "path":"/body/author",  "value":"William Shakespeare",          "resolution":"ERR_ValTypeMismatch"},
+                {"op":"noop",       "path":"/body/id",      "value":0,          "resolution":"ERR_ValTypeMismatch"},
+                {"op":"replace",    "path":"/body/year",    "value":1000,       "fromValue":1595,"resolution":"ERR_ValMismatch"},
+                {"op":"replace",    "path":"/body/type",    "value":"softcopy",     "fromValue":"paperback","resolution":"OK_OptionalMismatch"},
+                {"op":"replace",    "path":"/body/pages",   "value":3.14,       "fromValue":200,"resolution":"ERR_NewField"},
+                {"op":"replace",    "path":"/",             "value":"testc1",       "fromValue":"testc1","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",             "value":"Optional[2019-01-04T09:09:00Z]",       "fromValue":"Optional[2019-01-04T09:09:00Z]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",             "value":"Optional[Record]",     "fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",             "value":"cube",         "fromValue":"cube","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",             "value":"bookinfo",     "fromValue":"bookinfo","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/",             "value":200,            "fromValue":200,"resolution":"OK_DefaultCT"}
+            ],
         }
     },
 
@@ -97,20 +128,27 @@
             { "path": "/body/year",           "dataType": "Int",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" }
         ],
         "output": {
-            "mt":           "FuzzyMatch",
-            "matchmeta":    "",
-            "diffs": [
-                { "op": "remove",   "path": "/body/MIRest status",  "value": "MovieInfo is healthy",    "resolution": "OK_Optional"         },
-                { "op": "add",      "path": "/body/id",             "value": 0,                         "resolution": "OK_OtherValInvalid"  },
-                { "op": "add",      "path": "/body/author",         "value": "William Shakespeare",     "resolution": "OK_Ignore"           },
-                { "op": "add",      "path": "/body/year",           "value": 1595,                      "resolution": "OK_Ignore"           },
-                { "op": "add",      "path": "/body/type",           "value": "paperback",               "resolution": "OK"                  },
-                { "op": "add",      "path": "/body/pages",          "value": 200,                       "resolution": "OK"                  },
-                { "op": "add",      "path": "/body/publisher",      "value": "PublisherA",              "resolution": "OK"                  },
-                { "op": "add",      "path": "/body/language",       "value": "English",                 "resolution": "OK"                  },
-                { "op": "add",      "path": "/body/ISBN-10",        "value": "1234567890",              "resolution": "OK"                  },
-                { "op": "add",      "path": "/body/ISBN-13",        "value": "123-1234567890",          "resolution": "OK"                  }
-            ]
+            "mt":"NoMatch",
+            "matchmeta":"",
+            "diffs":[
+                {"op":"replace",    "path":"/","value":"72471111-e096-4494-942e-5fa942c07e90","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
+                {"op":"remove",     "path":"/body/MIRest status","value":"MovieInfo is healthy","resolution":"OK_Optional"},
+                {"op":"add",        "path":"/body/id","value":0,"resolution":"ERR_NewField"},
+                {"op":"add",        "path":"/body/author","value":"William Shakespeare","resolution":"OK_Ignore"},
+                {"op":"add",        "path":"/body/year","value":1595,"resolution":"OK_Ignore"},
+                {"op":"add",        "path":"/body/type","value":"paperback","resolution":"OK_DefaultCT"},
+                {"op":"add",        "path":"/body/pages","value":200,"resolution":"OK_DefaultCT"},
+                {"op":"add",        "path":"/body/publisher","value":"PublisherA","resolution":"OK_DefaultCT"},
+                {"op":"add",        "path":"/body/language","value":"English","resolution":"OK_DefaultCT"},
+                {"op":"add",        "path":"/body/ISBN-10","value":"1234567890","resolution":"OK_DefaultCT"},
+                {"op":"add",        "path":"/body/ISBN-13","value":"123-1234567890","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/","value":"testc1","fromValue":"test7","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/","value":"Optional[2019-01-04T09:09:00Z]","fromValue":"Optional[2019-03-28T12:48:54Z]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/","value":"Optional[Record]","fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/","value":"cube","fromValue":"prasad","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/","value":"bookinfo","fromValue":"movieinfo","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/","value":200,"fromValue":200,"resolution":"OK_DefaultCT"}
+            ],
         }
     },
 

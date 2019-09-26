@@ -100,7 +100,7 @@ public class JsonComparator implements Comparator {
 				if (rule.pt == PresenceType.Optional) {
 					diff.resolution = Resolution.OK_Optional;
 				} else if (rule.pt == PresenceType.Default) {
-					diff.resolution = Resolution.OK;
+					diff.resolution = Resolution.OK_DefaultPT;
 				} else {
 					diff.resolution = Resolution.ERR_Required;
 				}
