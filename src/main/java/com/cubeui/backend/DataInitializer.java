@@ -48,7 +48,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private UserRepository userRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository) {
+    private InstanceUserRepository instanceUserRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository, InstanceUserRepository instanceUserRepository) {
         this.userService = userService;
         this.customerService = customerService;
 
@@ -64,6 +66,7 @@ public class DataInitializer implements CommandLineRunner {
         this.testPathRepository = testPathRepository;
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
+        this.instanceUserRepository = instanceUserRepository;
     }
 
     @Override
@@ -1330,6 +1333,117 @@ public class DataInitializer implements CommandLineRunner {
             testVirtualizedService.setService(serviceRepository.findById(38L).get());
             testVirtualizedService.setTestConfig(testConfigRepository.findById(135L).get());
             testVirtualizedServiceRepository.save(testVirtualizedService);
+        }
+
+        if (!userRepository.existsById(147L)){
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(147L);
+            userDTO.setName("Demo");
+            userDTO.setEmail("flipkart@cubecorp.io");
+            userDTO.setPassword("password123");
+            userDTO.setCustomerId(1L);
+            userDTO.setRoles(Arrays.asList("ROLE_USER"));
+            userDTO.setActivated(true);
+            User user = this.userService.save(userDTO, true);
+            log.info("User with email '{}' created", user.getUsername());
+        }
+
+        if(!instanceUserRepository.existsById(148L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(148L);
+            instanceUser.setInstance(instanceRepository.findById(6L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(149L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(149L);
+            instanceUser.setInstance(instanceRepository.findById(7L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(150L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(150L);
+            instanceUser.setInstance(instanceRepository.findById(8L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(151L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(151L);
+            instanceUser.setInstance(instanceRepository.findById(138L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(152L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(152L);
+            instanceUser.setInstance(instanceRepository.findById(139L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(153L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(153L);
+            instanceUser.setInstance(instanceRepository.findById(140L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(154L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(154L);
+            instanceUser.setInstance(instanceRepository.findById(141L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(155L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(155L);
+            instanceUser.setInstance(instanceRepository.findById(142L).get());
+            instanceUser.setUser(userRepository.findById(2L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceRepository.existsById(156L)) {
+            Instance instance = new Instance();
+            instance.setId(156L);
+            instance.setName("FLIPKART");
+            instance.setGatewayEndpoint("http://flipkart.prod.v2.cubecorp.io");
+            instance.setApp(this.appRepository.findById(4L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceRepository.existsById(157L)) {
+            Instance instance = new Instance();
+            instance.setId(157L);
+            instance.setName("FLIPKART");
+            instance.setGatewayEndpoint("http://flipkart.prod.v2.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceUserRepository.existsById(158L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(158L);
+            instanceUser.setInstance(instanceRepository.findById(156L).get());
+            instanceUser.setUser(userRepository.findById(147L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(159L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(159L);
+            instanceUser.setInstance(instanceRepository.findById(157L).get());
+            instanceUser.setUser(userRepository.findById(147L).get());
+            instanceUserRepository.save(instanceUser);
         }
     }
 }

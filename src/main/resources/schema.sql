@@ -49,6 +49,14 @@ CREATE TABLE cube.instance (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+create TABLE cube.instance_user (
+  user_id BIGINT NOT NULL REFERENCES cube.cubeuser(id) ON DELETE CASCADE,
+  instance_id BIGINT NOT NULL REFERENCES cube.instance(id) ON DELETE CASCADE,
+  UNIQUE(user_id, instance_id)
+);
+
+CREATE INDEX instance_user_index ON cube.instance_user(user_id);
+
 CREATE TABLE cube.app (
   id BIGSERIAL PRIMARY KEY,
   customer_id BIGINT REFERENCES cube.customer(id) ON DELETE CASCADE,

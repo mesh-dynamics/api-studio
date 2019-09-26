@@ -34,8 +34,10 @@ public class AppController {
     private TestVirtualizedServiceRepository testVirtualizedServiceRepository;
     private TestPathRepository testPathRepository;
     private CustomerService customerService;
+    private InstanceRepository instanceRepository;
+    private InstanceUserRepository instanceUserRepository;
 
-    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService) {
+    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService, InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -44,6 +46,8 @@ public class AppController {
         this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
         this.testPathRepository = testPathRepository;
         this.customerService = customerService;
+        this.instanceRepository = instanceRepository;
+        this.instanceUserRepository = instanceUserRepository;
     }
 
     @GetMapping("")
@@ -158,6 +162,23 @@ public class AppController {
         } else {
             throw new RecordNotFoundException("App with ID '" + id + "' not found.");
         }
+    }
+
+    @GetMapping("/{id}/instances")
+    public ResponseEntity getInstances(@PathVariable("id") Long id, Authentication authentication) {
+        Optional<App> selectedApp = appRepository.findById(id);
+        if(selectedApp.isEmpty()) throw new RecordNotFoundException("App with ID '" + id + "' not found.");
+        User user = (User) authentication.getPrincipal();
+        List<Instance> instancesList = new ArrayList<Instance>();
+        Optional<List<InstanceUser>> instanceUserList = instanceUserRepository.findByUserId(user.getId());
+        if(instanceUserList.isEmpty()) return ok(Optional.ofNullable(instancesList));
+        List<Instance> instances = this.instanceRepository.findByAppId(id).get();
+        instances.forEach(instance -> {
+            instanceUserList.get().forEach(instanceUser -> {
+                if(instance.getId().equals(instanceUser.getInstance().getId())) instancesList.add(instance);
+            });
+        });
+        return ok(Optional.ofNullable(instancesList));
     }
 
     @GetMapping("/{id}")

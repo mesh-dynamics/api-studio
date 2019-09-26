@@ -1,12 +1,10 @@
 package com.cubeui.backend.web.rest;
 
-import com.cubeui.backend.domain.App;
-import com.cubeui.backend.domain.Customer;
+import com.cubeui.backend.domain.*;
 import com.cubeui.backend.domain.DTO.InstanceDTO;
-import com.cubeui.backend.domain.Instance;
-import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.InstanceRepository;
+import com.cubeui.backend.repository.InstanceUserRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -31,20 +29,28 @@ public class InstanceController {
 
     private InstanceRepository instanceRepository;
     private AppRepository appRepository;
+    private InstanceUserRepository instanceUserRepository;
 
-    public InstanceController(InstanceRepository instanceRepository, AppRepository appRepository) {
+    public InstanceController(InstanceRepository instanceRepository, AppRepository appRepository, InstanceUserRepository instanceUserRepository) {
         this.instanceRepository = instanceRepository;
         this.appRepository = appRepository;
+        this.instanceUserRepository = instanceUserRepository;
     }
 
     @GetMapping("")
     public ResponseEntity all(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         Optional<List<App>> appList = appRepository.findByCustomerId(user.getCustomer().getId());
-        if(appList.isPresent()) {
+        Optional<List<InstanceUser>> instanceUserList = instanceUserRepository.findByUserId(user.getId());
+        if(appList.isPresent() && instanceUserList.isPresent()) {
             List<Instance> instancesList = new ArrayList<Instance>();
             for( App app : appList.get()) {
-                instancesList.addAll(this.instanceRepository.findByAppId(app.getId()).get());
+                List<Instance> instances = this.instanceRepository.findByAppId(app.getId()).get();
+                instances.forEach(instance -> {
+                    instanceUserList.get().forEach(instanceUser -> {
+                        if(instanceUser.getInstance().getId().equals(instance.getId())) instancesList.add(instance);
+                    });
+                });
             }
             return ok(Optional.ofNullable(instancesList));
         }
