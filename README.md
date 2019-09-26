@@ -37,3 +37,8 @@ Also add the module specific directives in the config file (as specified in *sam
 load_module modules/ngx_http_response_body_module.so;
 ```
 - Restart your nginx server
+
+## Resources to understand nginx module development
+
+- [Official Guide](https://nginx.org/en/docs/dev/development_guide.html)
+- [Emiller's Guide](http://www.evanmiller.org/nginx-modules-guide.html#filters-header)

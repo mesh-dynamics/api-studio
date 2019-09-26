@@ -612,7 +612,7 @@ static ngx_int_t allocate_buffer_if_already_not(ngx_buf_t *b, size_t buffer_size
         if (b->start == NULL)
             return NGX_ERROR;
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "MESH : Allocated memory of size %d for header" , buffer_size);
+                       "CUBE : Allocated memory of size %d for header" , buffer_size);
         b->end = b->start + buffer_size;
         b->pos = b->last = b->start;
     }
@@ -674,12 +674,12 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
 
         case NGX_DECLINED:
             ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "MESH :: Setting context declined because capture body false");
+                   "CUBE :: Setting context declined because capture body false");
             return ngx_http_next_header_filter(r);
 
         case NGX_ERROR:
             ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
-                "MESH :: ngx_http_response_body_filter_header: no memory");
+                "CUBE :: ngx_http_response_body_filter_header: no memory");
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
 
         default:
@@ -694,23 +694,23 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
       switch(allocate_buffer_if_already_not(&ctx->req_header_buffer, ctx->blcf->header_buffer_size,r)) {
           case NGX_ERROR:
             ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
-                "MESH :: Unable to allocate memory for req header buffer");
+                "CUBE :: Unable to allocate memory for req header buffer");
             return ngx_http_next_header_filter(r);
           default:
             copy_headers_to_buffer(&ctx->req_header_buffer, &r->headers_in.headers.part);
             ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "MESH :: Successfully captured request header in context variable");
+                       "CUBE :: Successfully captured request header in context variable");
       }
 
       switch(allocate_buffer_if_already_not(&ctx->resp_header_buffer, ctx->blcf->header_buffer_size,r)) {
           case NGX_ERROR:
             ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
-                "MESH :: unable to allocate memory for req header buffer");
+                "CUBE :: unable to allocate memory for req header buffer");
             return ngx_http_next_header_filter(r);
           default:
             copy_headers_to_buffer(&ctx->resp_header_buffer, &r->headers_out.headers.part);
             ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "MESH :: Successfully captured response headers in context variable");
+                       "CUBE :: Successfully captured response headers in context variable");
       }
 
     }
@@ -797,7 +797,7 @@ ngx_http_response_body_filter_body(ngx_http_request_t *r, ngx_chain_t *in)
         if (b->start == NULL)
             return NGX_ERROR;
        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "MESH : Allocated buffer of size %d for response body" , conf->buffer_size);
+                       "CUBE : Allocated buffer of size %d for response body" , conf->buffer_size);
         b->end = b->start + conf->buffer_size;
         b->pos = b->last = b->start;
     }
@@ -824,6 +824,6 @@ ngx_http_response_body_filter_body(ngx_http_request_t *r, ngx_chain_t *in)
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-               "MESH : Successfully captured response body in context variable");
+               "CUBE : Successfully captured response body in context variable");
     return ngx_http_next_body_filter(r, in);
 }
