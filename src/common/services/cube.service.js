@@ -510,7 +510,7 @@ async function fetchReport(collectionId, replayId) {
 async function fetchTimelineData(app, instanceid) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?bypath=y&instanceId=prod`;/*?collectionId=${collectionId}*/
+    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?bypath=y`;/*?collectionId=${collectionId}*/
     let timelineData = {};
     try {
         response = await fetch(url, {
