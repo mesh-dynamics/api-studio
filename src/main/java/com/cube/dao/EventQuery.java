@@ -7,7 +7,6 @@
 package com.cube.dao;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.logging.log4j.LogManager;
@@ -19,14 +18,11 @@ import java.util.List;
 
 /*
  * Created by IntelliJ IDEA.
- * Date: 2019-09-03
+ * Date: 2019-09-23
  */
 
 /**
- * Event represents a generic event that is recorded. It can be a request or response captured from various protocols
- * such as REST over HTTP, Java function calls, GRPC, Thrift etc.
- * The common metadata for all such events in captured in the event fields. The payload represents the actual data
- * that can be encoded in different formats such as Json, ProtoBuf, Thrift etc depending on the event type
+ * EventQuery is POJO to query generic events with matching criteria
  */
 @JsonDeserialize(builder = EventQuery.Builder.class)
 public class EventQuery {
@@ -47,7 +43,6 @@ public class EventQuery {
     private final EventType eventType;
     private final List<String> reqids;
     private final List<String> paths;
-    @JsonIgnore
     private final int payloadKey;
     private final int offset;
     private final int limit;
