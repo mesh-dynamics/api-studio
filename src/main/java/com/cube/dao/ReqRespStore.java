@@ -164,6 +164,8 @@ public interface ReqRespStore {
 	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
 			, List<String> paths, RRBase.RR rrtype);
 
+    Result<Event> getEvents(EventQuery eventQuery);
+
 	/**
 	 * @param replay
 	 * @return

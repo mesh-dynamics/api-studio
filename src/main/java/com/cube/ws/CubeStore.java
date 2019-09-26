@@ -27,6 +27,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.cube.dao.EventQuery;
+import com.cube.dao.Result;
+import okhttp3.RequestBody;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -675,6 +678,33 @@ public class CubeStore {
             LOGGER.error(String.format("Error in converting Request list to Json for customer %s, app %s, " +
                     "collection %s.",
                 customerid.orElse(""), app.orElse(""), collection.orElse("")), e);
+            return Response.serverError().build();
+        }
+    }
+
+
+    /**
+     *
+     * @param ui
+     * @return matching events based on constraints
+     */
+    @POST
+    @Path("getEvents")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response getEvents(@Context UriInfo ui, EventQuery eventQuery)
+    {
+        Result<Event> events = rrstore.getEvents(eventQuery);
+
+        String json;
+        try {
+            json = jsonmapper.writeValueAsString(events);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Event list to Json for customer %s, app %s, " +
+                    "collection %s.",
+                Optional.ofNullable(eventQuery.getCustomerId()).orElse(""),
+                Optional.ofNullable(eventQuery.getApp()).orElse(""),
+                Optional.ofNullable(eventQuery.getCollection()).orElse("")), e);
             return Response.serverError().build();
         }
     }

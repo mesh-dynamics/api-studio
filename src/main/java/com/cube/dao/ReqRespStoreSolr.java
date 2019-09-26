@@ -241,6 +241,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     }
 
+    @Override
+    public Result<Event> getEvents(EventQuery eventQuery) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, CUSTOMERIDF, Optional.ofNullable(eventQuery.getCustomerId()));
+        addFilter(query, APPF, Optional.ofNullable(eventQuery.getApp()));
+        addFilter(query, SERVICEF, Optional.ofNullable(eventQuery.getService()));
+        addFilter(query, COLLECTIONF, Optional.ofNullable(eventQuery.getCollection()));
+        addFilter(query, TRACEIDF, Optional.ofNullable(eventQuery.getTraceId()));
+        addFilter(query, REQIDF, Optional.ofNullable(eventQuery.getReqids()).orElse(Collections.emptyList()));
+        addFilter(query, PATHF, Optional.ofNullable(eventQuery.getPaths()).orElse(Collections.emptyList()));
+        addFilter(query, EVENTTYPEF, Optional.ofNullable(eventQuery.getEventType()).map(type -> type.toString()));
+        addFilterInt(query, PAYLOADKEYF, Optional.ofNullable(eventQuery.getPayloadKey()));
+        addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
+
+        return SolrIterator.getResults(solr, query, Optional.ofNullable(eventQuery.getLimit()),
+            this::docToEvent, Optional.of(Optional.ofNullable(eventQuery.getOffset()).orElse(20)));
+    }
+
+    private void addFilterInt(SolrQuery query, String payloadkeyf, Optional<Integer> payloadKey) {
+    }
+
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
                                            String collectionId) {
         List<String> traceIds = originalList.stream().map(request-> CommonUtils.getCaseInsensitiveMatches(request.hdrs,
