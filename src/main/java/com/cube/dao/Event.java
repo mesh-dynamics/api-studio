@@ -37,17 +37,17 @@ public class Event {
     private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
 
-    private Event(String customerid, String app, String service, String instanceid, String collection, String traceid,
-                  Instant timestamp, String reqid, String apiPath, EventType eventType, byte[] rawPayloadBinary,
+    private Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
+                  Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
                   String rawPayloadString, DataObj payload, int payloadKey) {
-        this.customerid = customerid;
+        this.customerId = customerId;
         this.app = app;
         this.service = service;
-        this.instanceid = instanceid;
+        this.instanceId = instanceId;
         this.collection = collection;
-        this.traceid = traceid;
+        this.traceId = traceId;
         this.timestamp = timestamp;
-        this.reqid = reqid;
+        this.reqId = reqId;
         this.apiPath = apiPath;
         this.eventType = eventType;
         this.rawPayloadBinary = rawPayloadBinary;
@@ -60,14 +60,14 @@ public class Event {
      * For jackson
      */
     private Event() {
-        this.customerid = null;
+        this.customerId = null;
         this.app = null;
         this.service = null;
-        this.instanceid = null;
+        this.instanceId = null;
         this.collection = null;
-        this.traceid = null;
+        this.traceId = null;
         this.timestamp = null;
-        this.reqid = null;
+        this.reqId = null;
         this.apiPath = null;
         this.eventType = null;
         this.rawPayloadBinary = null;
@@ -78,27 +78,27 @@ public class Event {
     }
 
 
-    public static Optional<Event> createEvent(String docid, Optional<String> customerid, Optional<String> app,
+    public static Optional<Event> createEvent(String docId, Optional<String> customerId, Optional<String> app,
                                               Optional<String> service,
-                                              Optional<String> instanceid, Optional<String> collection, Optional<String> traceid,
-                                              Optional<Instant> timestamp, Optional<String> reqid,
+                                              Optional<String> instanceId, Optional<String> collection, Optional<String> traceId,
+                                              Optional<Instant> timestamp, Optional<String> reqId,
                                               Optional<String> apiPath, Optional<String> eventTypeOpt,
                                               Optional<byte[]> rawPayloadBin, Optional<String> rawPayloadStr,
                                               Optional<Integer> payloadKey, Config config) {
 
-        if (customerid.isPresent() && app.isPresent() && service.isPresent() && instanceid.isPresent() && collection.isPresent() &&
-        traceid.isPresent() && timestamp.isPresent() && reqid.isPresent() && apiPath.isPresent() && eventTypeOpt.isPresent()  &&
+        if (customerId.isPresent() && app.isPresent() && service.isPresent() && instanceId.isPresent() && collection.isPresent() &&
+        traceId.isPresent() && timestamp.isPresent() && reqId.isPresent() && apiPath.isPresent() && eventTypeOpt.isPresent()  &&
         payloadKey.isPresent() && (rawPayloadBin.isPresent() ^ rawPayloadStr.isPresent())) {
             return Utils.valueOf(EventType.class, eventTypeOpt.get()).map(eventType -> {
                 byte [] payloadBin = rawPayloadBin.orElse(null);
                 String payloadStr = rawPayloadStr.orElse(null);
                 DataObj payload = DataObjFactory.build(eventType, payloadBin, payloadStr, config);
 
-                return new Event(customerid.get(), app.get(), service.get(), instanceid.get(),
-                    collection.get(), traceid.get(), timestamp.get(), reqid.get(), apiPath.get(), eventType,
+                return new Event(customerId.get(), app.get(), service.get(), instanceId.get(),
+                    collection.get(), traceId.get(), timestamp.get(), reqId.get(), apiPath.get(), eventType,
                     payloadBin, payloadStr, payload, payloadKey.get());
             }).or(() -> {
-                LOGGER.error("Type field has invalid value in Event object with doc id: " + docid);
+                LOGGER.error("Type field has invalid value in Event object with doc id: " + docId);
                 return Optional.empty();
             });
         }
@@ -112,8 +112,8 @@ public class Event {
 
     public boolean validate() {
 
-        if ((customerid == null) || (app == null) || (service == null) || (instanceid == null) || (collection == null)
-            || (traceid == null) || (timestamp == null) || (reqid == null) || (apiPath == null) || (eventType == null)
+        if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (collection == null)
+            || (traceId == null) || (timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
             || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
             return false;
         }
@@ -149,19 +149,19 @@ public class Event {
         ProtoBufResponse
     }
 
-    public final String customerid;
+    public final String customerId;
     public final String app;
     public final String service;
-    public final String instanceid;
+    public final String instanceId;
     private String collection;
-    public final String traceid;
+    public final String traceId;
 
     public void setCollection(String collection) {
         this.collection = collection;
     }
 
     public final Instant timestamp;
-    public final String reqid; // for responses, this is the reqid of the corresponding request
+    public final String reqId; // for responses, this is the reqid of the corresponding request
     public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
     public final EventType eventType;
 

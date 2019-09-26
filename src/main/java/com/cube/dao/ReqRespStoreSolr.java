@@ -1122,14 +1122,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final SolrInputDocument doc = new SolrInputDocument();
 
         doc.setField(TYPEF, Types.Event.toString());
-        doc.setField(CUSTOMERIDF, event.customerid);
+        doc.setField(CUSTOMERIDF, event.customerId);
         doc.setField(APPF, event.app);
         doc.setField(SERVICEF, event.service);
-        doc.setField(INSTANCEIDF, event.instanceid);
+        doc.setField(INSTANCEIDF, event.instanceId);
         doc.setField(COLLECTIONF, event.getCollection());
-        doc.setField(TRACEIDF, event.traceid);
+        doc.setField(TRACEIDF, event.traceId);
         doc.setField(TIMESTAMPF, event.timestamp.toString());
-        doc.setField(REQIDF, event.reqid);
+        doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(PAYLOADBINF, event.rawPayloadBinary);

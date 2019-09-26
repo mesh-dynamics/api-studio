@@ -319,8 +319,8 @@ public class CubeStore {
 
         if (event != null && event.validate()) {
             Optional<RecordOrReplay> recordOrReplay =
-                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerid),
-                    Optional.of(event.app), Optional.of(event.instanceid));
+                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
+                    Optional.of(event.app), Optional.of(event.instanceId));
             collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
@@ -330,7 +330,7 @@ public class CubeStore {
                     // if request type, need to extract keys from request and index it, so that it can be
                     // used while mocking
                     TemplateKey tkey =
-                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerid,
+                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
                             event.app, event.service, event.apiPath, TemplateKey.Type.Request);
 
                     compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
@@ -360,7 +360,7 @@ public class CubeStore {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+                , event.eventType, event.getCollection(), event.reqId, event.apiPath));
             return Response.ok().build();
         });
 
