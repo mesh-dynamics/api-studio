@@ -48,7 +48,10 @@ class DiffResults extends Component {
             if (item.recordResponse) {
                 if (item.recordResponse.body) {
                     try {
-                        if(item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) recordedData = JSON.parse(item.recordResponse.body);
+                        if(item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
+                            recordedData = JSON.parse(item.recordResponse.body);
+                        }
+                        else recordedData = item.recordResponse.body;
                     } catch (e) {
                         recordedData = JSON.parse('"' + cleanEscapedString(_.escape(item.recordResponse.body)) + '"')
                     }
@@ -62,7 +65,10 @@ class DiffResults extends Component {
             if (item.replayResponse) {
                 if (item.replayResponse.body) {
                     try {
-                        if(item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) replayedData = JSON.parse(item.replayResponse.body);
+                        if(item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
+                            replayedData = JSON.parse(item.replayResponse.body);
+                        }
+                        else replayedData = item.replayResponse.body;
                     } catch (e) {
                         replayedData = JSON.parse('"' + cleanEscapedString(_.escape(item.replayResponse.body)) + '"')
                     }
