@@ -335,8 +335,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         StringBuilder argsQuery = new StringBuilder();
         argsQuery.append("*:*");
         var counter = new Object(){int x =0;};
-        funcReqResponse.traceId.ifPresent(trace ->
-            argsQuery.append(" OR ").append("(").append(HDRTRACEF).append(":").append(trace).append(")^2"));
+        //funcReqResponse.traceId.ifPresent(trace ->
+          //  argsQuery.append(" OR ").append("(").append(HDRTRACEF).append(":").append(trace).append(")^2"));
         funcReqResponse.respTS.ifPresent(timestamp -> argsQuery.
             append(" OR ").append(TIMESTAMPF).append(":{").append(timestamp.toString()).append(" TO *]"));
         SolrQuery query = new SolrQuery(argsQuery.toString());
@@ -346,6 +346,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
         addSort(query, TIMESTAMPF, true);
+        funcReqResponse.traceId.ifPresent(trace -> addFilter(query, HDRTRACEF, trace));
         Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
             addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + INT_SUFFIX, argHashVal));
         Optional<Integer> maxResults = Optional.of(1);
