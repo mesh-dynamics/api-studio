@@ -13,7 +13,7 @@ const Root = ( { store } ) => (
         <Router history={history}>
             <div>
                 <Switch>
-                    <Route path="/login" component={LoginPage} />
+                    <Route path="/sign_in" component={LoginPage} />
                     <PrivateRoute path="/*" component={App} />
 
                     <Route path="/*" component={App} />

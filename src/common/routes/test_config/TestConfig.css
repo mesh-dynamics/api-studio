@@ -1,7 +1,7 @@
 .tc-grid {
     margin-top: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     grid-column-gap: 20px;
     grid-row-gap: 20px;
 }
@@ -17,7 +17,7 @@
 }
 
 .g-head {
-    padding: 10px 20px;
+    padding: 10px;
     font-weight: bold;
     background: #EAEAEA;
     border-bottom: 1px solid #999999;
@@ -32,7 +32,7 @@
 
 .g-body {
     position: relative;
-    padding: 20px;
+    padding: 10px;
     background: #EAEAEA;
 }
 

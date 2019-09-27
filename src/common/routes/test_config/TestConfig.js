@@ -54,11 +54,11 @@ class TestConfig extends Component {
                             <strong>{item.paths && item.paths.length > 0 ? item.paths.join(', ') : ""}</strong>
                         </div>
 
-                        <div className="margin-bottom-10">
+                        <div className={item.criteria ? "margin-bottom-10" : "hidden"}>
                             <span className="t-name">
                                 CRITERIA:&nbsp;
                             </span>
-                            <strong>{""}</strong>
+                            <strong>{item.criteria}</strong>
                         </div>
 
                         <div className="margin-bottom-10">

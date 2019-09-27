@@ -4591,6 +4591,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .font-12 {
     font-size: 12px !important;
 }
+.font-15 {
+    font-size: 15px !important;
+}
 .back-grey {
     display: inline-block;
     padding: 5px;

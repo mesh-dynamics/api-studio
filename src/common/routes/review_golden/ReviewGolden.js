@@ -3,6 +3,9 @@ import {connect} from "react-redux";
 
 class ReviewGolden extends Component {
     render() {
+        const {cube} = this.props;
+        let goldenUpdates = cube.newOperationSet;
+        let assertionUpdates = cube.operationSet;
         return (<div className="content-wrapper">Review Golden Updates</div>)
     }
 }

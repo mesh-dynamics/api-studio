@@ -63,7 +63,7 @@ class GoldenPopover extends React.Component {
                 op: serverSideDiff.op.toUpperCase(),
                 path: serverSideDiff.path,
                 value: serverSideDiff.value
-            }
+            };
             this.hideGR();
             dispatch(cubeActions.pushToOperationSet(operation));
         } else {

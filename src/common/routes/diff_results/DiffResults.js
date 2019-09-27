@@ -7,6 +7,7 @@ import 'tippy.js/themes/light.css';
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
+import {Link} from "react-router-dom";
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -213,8 +214,11 @@ class DiffResults extends Component {
         return (
             <div>
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <span className="link" onClick={showHide}><Glyphicon glyph="chevron-left" /> BACK TO PATH RESULTS</span>
-                    <span className="link pull-right" onClick={updateGolden}><Glyphicon glyph="lightbulb" /><i className="fas fa-wrench"></i>&nbsp;UPDATE OPERATIONS</span>
+                    <span className="link" onClick={showHide}><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO PATH RESULTS</span>
+                    <span className="link pull-right" onClick={updateGolden}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-check-square font-15"></i>&nbsp;UPDATE OPERATIONS</span>
+                    <Link to="/review_golden_updates" className="hidden">
+                        <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
+                    </Link>
                 </div>
                 <FormGroup>
                     <FormControl
