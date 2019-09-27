@@ -2,11 +2,22 @@
 
 set -x
 #Init Replay
+
+REPLAY_PATHS=cs/start/*,cs/stop/*,cs/rrbatch/*,cs/currentcollection,rs/init/*,rs/start/*,ms/CubeCorp/*
+REPLAY_PATHS=$(echo $REPLAY_PATHS | tr "," "\n")
+for path in $REPLAY_PATHS
+do
+  TEMP_PATH="$TEMP_PATH""paths=$path&"
+done
+REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
+BODY="$REPLAY_PATHS&endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=DEFAULT"
+
 REPLAY_ID=$(curl -X POST \
 	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/fluentd-test-df-49 \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
-	-d 'endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=DEFAULT'  | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
+	-d BODY \
+| sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
 
 #Start replay
 curl -f -X POST \
