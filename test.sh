@@ -16,7 +16,7 @@ REPLAY_ID=$(curl -X POST \
 	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/fluentd-test-df-49 \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
-	-d BODY \
+	-d $BODY \
 | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
 
 #Start replay
@@ -28,8 +28,7 @@ curl -f -X POST \
 #Status Check
 COUNT=0
 while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "20" ]; do
-	STATUS=$(curl -X GET http://demo.dev.cubecorp.io/rs/status/CubeCorp/Cube/fluentd-test-df-49/$REPLAY_ID | sed 's/^
-	.*"status":"\([^"]*\)".*/\1/')
+	STATUS=$(curl -X GET http://demo.dev.cubecorp.io/rs/status/CubeCorp/Cube/fluentd-test-df-49/$REPLAY_ID | sed 's/^.*"status":"\([^"]*\)".*/\1/')
 	sleep 5
 	COUNT=$((COUNT+1))
 done
