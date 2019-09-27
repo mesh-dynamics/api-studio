@@ -65,7 +65,7 @@ def recap_files(operation, base_dir, template_dir, namespace, cube_application, 
             outfile = base_dir + "/kubernetes/mock-all-except-" + app[1] + ".yaml"
             template = env.get_template("mock-all-except-" + app[1] + ".j2")
             with open(outfile, "w") as out:
-                output_from_template = template.render(namespace=namespace, customer=cube_customer, cube_application=cube_application, cube_instance=cube_instanceid)
+                output_from_template = template.render(namespace=namespace, customer=cube_customer, cube_application=cube_application, cube_instance=cube_instanceid, master_namespace=master_namespace)
                 out.write(output_from_template)
                 out.close()
 
