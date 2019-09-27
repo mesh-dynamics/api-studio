@@ -6,7 +6,8 @@ REPLAY_ID=$(curl -X POST \
 	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/fluentd-test-df-49 \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
-	-d 'endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=c86d21a5-82fb-4a4d-bcc8-411177dc2a23'  | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
+	-d 'endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=DEFAULT'  | sed 's/^.*"replayid":"\
+	([^"]*\)".*/\1/')
 
 #Start replay
 curl -f -X POST \
