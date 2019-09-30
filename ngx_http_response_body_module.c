@@ -70,7 +70,6 @@ static ngx_int_t ngx_http_response_body_filter_body(ngx_http_request_t *r,
 
 static ngx_int_t ngx_http_response_body_init(ngx_conf_t *cf);
 
-
 static char *
 ngx_conf_set_flag(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 
@@ -658,6 +657,36 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
 
 }
 
+static size_t estimate_copy_size(ngx_list_part_t* part) {
+    ngx_list_part_t* part_copy = part;
+    size_t header_size = 0;
+    ngx_uint_t count = 0;
+    ngx_table_elt_t   *header_elts;
+    ngx_uint_t        i;
+
+    header_size += ngx_strlen("{}");
+    header_elts = part->elts;
+
+    for (i =0; /* void */;i++) {
+      if (i >= part_copy->nelts) {
+        if (part_copy->next == NULL) {
+          if (count > 0)
+            header_size--;
+          break;
+        }
+        part_copy = part_copy->next;
+        header_elts = part_copy->elts;
+        i = 0;
+      }
+      count ++;
+      header_size += header_elts[i].key.len + header_elts[i].value.len
+        + 4*ngx_strlen("\"") + ngx_strlen(",") + ngx_strlen(":");
+    }
+
+    return header_size;
+}
+
+
 static ngx_int_t
 ngx_http_response_body_filter_header(ngx_http_request_t *r)
 {
@@ -666,6 +695,7 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
     ngx_http_complex_value_t      *cv;
     ngx_str_t                      value;
     ngx_keyval_t                  *kv;
+    size_t                    header_size;
     // this call if successful , will set the context properly
     // and further response body capture will happen
     switch (ngx_http_response_body_set_ctx(r)) {
@@ -697,9 +727,15 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
                 "CUBE :: Unable to allocate memory for req header buffer");
             return ngx_http_next_header_filter(r);
           default:
-            copy_headers_to_buffer(&ctx->req_header_buffer, &r->headers_in.headers.part);
-            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "CUBE :: Successfully captured request header in context variable");
+            header_size = estimate_copy_size(&r->headers_in.headers.part);
+            if (header_size <= ctx->blcf->header_buffer_size) {
+              copy_headers_to_buffer(&ctx->req_header_buffer, &r->headers_in.headers.part);
+              ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "CUBE :: Successfully captured request header in context variable");
+            } else {
+              ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "CUBE :: Buffer size not enough to hold request headers :: %i" , header_size );
+            }
       }
 
       switch(allocate_buffer_if_already_not(&ctx->resp_header_buffer, ctx->blcf->header_buffer_size,r)) {
@@ -708,9 +744,16 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
                 "CUBE :: unable to allocate memory for req header buffer");
             return ngx_http_next_header_filter(r);
           default:
-            copy_headers_to_buffer(&ctx->resp_header_buffer, &r->headers_out.headers.part);
-            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "CUBE :: Successfully captured response headers in context variable");
+            header_size = estimate_copy_size(&r->headers_out.headers.part);
+            if (header_size <= ctx->blcf->header_buffer_size) {
+              copy_headers_to_buffer(&ctx->resp_header_buffer, &r->headers_out.headers.part);
+              ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "CUBE :: Successfully captured response headers in context variable");
+            } else {
+              ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "CUBE :: Buffer size not enough to hold response headers :: %i" , header_size);
+            }
+
       }
 
     }
