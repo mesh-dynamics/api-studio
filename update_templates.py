@@ -1,53 +1,61 @@
 #!/usr/bin/env python3
 import subprocess
 import sys
+import time
 subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'requests'])
 
 import json
 import requests
 import os
 
-host_header = sys.argv[5]
-app_dir = sys.argv[6]
-request_filename_prefix = app_dir + "/config/matcher/template_request_"
-response_filename_prefix = app_dir + "/config/matcher/template_response_"
+host_header = sys.argv[6]
+app_dir = sys.argv[7]
+templateset_filename_prefix = app_dir + "/config/matcher/template_"
 json_file_suffix = ".json"
-headers =  {'Content-type': 'application/json', 'Host': host_header}
+headers = {'Content-type': 'application/json', 'Host': host_header}
 
 
 def main():
-    version = sys.argv[1]
+    template_scenario = sys.argv[1]
     gateway = sys.argv[2]
     customer = sys.argv[3]
     app = sys.argv[4]
-    print (version + " " + gateway + " "  + customer + " " + app)
-    request_filename = request_filename_prefix + version +  json_file_suffix
-    response_filename = response_filename_prefix + version + json_file_suffix
-    #templates = json.load(request_filename)
+    template_version_temp_file = sys.argv[5]
+
+    print(template_scenario + " " + gateway + " " + customer + " " + app)
+    templateset_filename = templateset_filename_prefix + template_scenario + json_file_suffix
     # defining the api-endpoint
-    request_api_endpoint =  "http://" + gateway + "/as/registerTemplate/request/" + customer + "/" + app
-    response_api_endpoint = "http://" + gateway + "/as/registerTemplate/response/" + customer + "/" + app
-    register_templates_from_file(request_filename , "request" , request_api_endpoint, customer, app)
-    register_templates_from_file(response_filename , "response" , response_api_endpoint, customer, app)
+    save_template_endpoint = "http://" + gateway + "/as/saveTemplateSet/" + customer + "/" + app
+    template_version = register_templates_from_file(templateset_filename, save_template_endpoint, customer, app)
+    if template_version == None:
+        print("Cannot write template version to file")
+    else:
+        with open(template_version_temp_file, "w") as f:
+            f.write(template_version)
+        print("Written template version: " + template_version + " to file " + template_version_temp_file)
 
 
-def register_templates_from_file(filename , reqOrResponse, api_endpoint , customer , app):
-    with open(filename ,encoding='utf-8', errors='ignore') as json_data:
-        template_as_dict = json.load(json_data , strict=False)
-        for entry in template_as_dict:
-            servicename = entry["service"]
-            path = entry["path"]
-            try :
-                template = entry["template"]
-                template_api_endpoint = api_endpoint + "/" + servicename + "/" + path
-                print("Registered " + reqOrResponse +" template json for " + customer + \
-                 " :: " +  app + " :: " + " :: " + servicename + " :: " + path)
-                print(template_api_endpoint)
-                r = requests.post(url=template_api_endpoint , json=template , headers=headers)
-                print("Got Reponse :: " + r.text)
-            except Exception as e:
-                print("Exception occured for " +  servicename + " :: " + path)
-                print(e)
+def register_templates_from_file(templateset_filename, api_endpoint, customer, app):
+    try:
+        with open(templateset_filename, encoding='utf-8', errors='ignore') as json_data:
+            template_as_dict = json.load(json_data, strict=False)
+            # Override previous invalid timestamp
+            template_as_dict["timestamp"] = time.time()
+            r = requests.post(url=api_endpoint, json=template_as_dict, headers=headers)
+            print("Registered template json for " + customer + \
+                  " :: " + app)
+            print(api_endpoint)
+            print("Got Response :: " + r.text)
+            response_json = r.json()
+            template_version = response_json["templateSetVersion"]
+            return template_version
+
+    except json.JSONDecodeError as e:
+        print("Cannot serialize templateSet: " + templateset_filename + " JSON to object ")
+        print(e)
+    except Exception as e:
+        print("Exception occurred for Customer " + customer + " App :: " + app)
+        print(e)
 
 
 if __name__ == "__main__":

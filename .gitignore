@@ -3,6 +3,7 @@ moviebook-envoy-replay-cs.yaml
 services.yaml
 mock-all-except-moviebook.yaml
 replayid.temp
+template_version.temp
 envoy_record_cs.yaml
 *.log
 .DS_Store
@@ -12,3 +13,7 @@ apps/moviebook/kubernetes/*
 !apps/moviebook/kubernetes/.gitkeep
 !apps/common/kubernetes/.gitkeep
 !apps/cube/kubernetes/.gitkeep
+.idea
+apps/moviebook/config/matcher/template_req_no_match_registries.json
+apps/moviebook/config/matcher/template_resp_no_match_registries.json
+apps/moviebook/config/matcher/template_resp_partial_match_registries.json

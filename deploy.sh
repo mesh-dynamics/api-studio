@@ -35,7 +35,13 @@ init() {
 
 register_matcher() {
 echo "Registering Templates"
-./update_templates.py $1 $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $NAMESPACE_HOST $APP_DIR
+if [ -z "$1" ]; then
+		echo "Enter template_scenario"
+		read TEMPLATE_SCENARIO
+	else
+		TEMPLATE_SCENARIO=$1
+	fi
+./update_templates.py $TEMPLATE_SCENARIO $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $TEMPLATE_VERSION_TEMP_FILE $NAMESPACE_HOST $APP_DIR
 }
 
 start_record() {
@@ -45,9 +51,25 @@ start_record() {
 	else
 		COLLECTION_NAME=$1
 	fi
+
+	if [ -e "$TEMPLATE_VERSION_TEMP_FILE" ]; then
+		echo "Picking up template_version from file $TEMPLATE_VERSION_TEMP_FILE. Okay ? y/n"
+		read USER_INP_TEMPLATE_VERSION
+	else
+		USER_INP_TEMPLATE_VERSION="n"
+	fi
+
+	if [ $USER_INP_TEMPLATE_VERSION = "y" ]; then
+    local TEMPLATE_VERSION=$(cat "$TEMPLATE_VERSION_TEMP_FILE")
+ 		echo $TEMPLATE_VERSION
+	else
+		echo "Enter Template version"
+		read TEMPLATE_VERSION
+	fi
+
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 	curl -X POST \
-  http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME \
+  http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
@@ -184,6 +206,7 @@ main () {
 		echo "App directory does not exist"
 		exit 1 #Exist with nonzero exit code
 	fi
+	TEMPLATE_VERSION_TEMP_FILE=$APP_DIR/kubernetes/template_version.temp
 	get_environment #check kubernetes context
 	case "$1" in
 		init) OPERATION="init"; shift; generate_manifest $1; shift; init "$@";;
