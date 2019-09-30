@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /*
  * Created by IntelliJ IDEA.
@@ -43,7 +44,7 @@ public class EventQuery {
     private final Optional<String> parentSpanId;
     private final Optional<Instant> timestamp;
 
-    private final Optional<List<String>> reqids;
+    private final Optional<List<String>> reqIds;
     private final Optional<List<String>> paths;
     private final Optional<Integer> payloadKey;
     private final Optional<Integer> offset;
@@ -159,7 +160,7 @@ public class EventQuery {
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
         timestamp = Optional.ofNullable(builder.timestamp);
-        reqids = Optional.ofNullable(builder.reqIds);
+        reqIds = Optional.ofNullable(builder.reqIds);
         paths = Optional.ofNullable(builder.paths);
         payloadKey = Optional.ofNullable(builder.payloadKey);
         offset = Optional.ofNullable(builder.offset);
@@ -196,7 +197,7 @@ public class EventQuery {
     }
 
     public Optional<List<String>> getReqids() {
-        return reqids;
+        return reqIds;
     }
 
     public Optional<List<String>> getPaths() {
