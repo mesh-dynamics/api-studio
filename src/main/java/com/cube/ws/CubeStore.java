@@ -28,6 +28,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.cube.dao.EventQuery;
+import com.cube.dao.Result;
+import okhttp3.RequestBody;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -316,8 +319,8 @@ public class CubeStore {
 
         if (event != null && event.validate()) {
             Optional<RecordOrReplay> recordOrReplay =
-                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerid),
-                    Optional.of(event.app), Optional.of(event.instanceid));
+                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
+                    Optional.of(event.app), Optional.of(event.instanceId));
             collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
@@ -327,7 +330,7 @@ public class CubeStore {
                     // if request type, need to extract keys from request and index it, so that it can be
                     // used while mocking
                     TemplateKey tkey =
-                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerid,
+                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
                             event.app, event.service, event.apiPath, TemplateKey.Type.Request);
 
                     compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
@@ -357,7 +360,7 @@ public class CubeStore {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+                , event.eventType, event.getCollection(), event.reqId, event.apiPath));
             return Response.ok().build();
         });
 
@@ -687,32 +690,12 @@ public class CubeStore {
      * @param ui
      * @return matching events based on constraints
      */
-    @GET
+    @POST
     @Path("getEvents")
-    public Response getEvents(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
-        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
-        Optional<String> traceid = Optional.ofNullable(queryParams.getFirst("traceid"));
-        List<String> reqids = Optional.ofNullable(queryParams.get("reqids")).orElse(Collections.emptyList());
-        List<String> paths = Optional.ofNullable(queryParams.get("paths")).orElse(Collections.emptyList());
-        Optional<Event.EventType> eventType =
-            Optional.ofNullable(queryParams.getFirst("eventType")).flatMap(t -> Utils.valueOf(Event.EventType.class,
-                t));
-        Optional<Integer> payloadKey = Optional.ofNullable(queryParams.getFirst("payloadKey")).flatMap(Utils::strToInt);
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
-        // paging
-        Optional<Integer> nummatches =
-            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
-        // for paging
-        Optional<Boolean> asc =
-            Optional.ofNullable(queryParams.getFirst("asc")).flatMap(Utils::strToBool);
-
-        Result<Event> events =
-            rrstore.getEvents(customerid, app, service, collection, traceid, reqids, paths, eventType, payloadKey,
-                nummatches, start, asc);
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response getEvents(@Context UriInfo ui, EventQuery eventQuery)
+    {
+        Result<Event> events = rrstore.getEvents(eventQuery);
 
         String json;
         try {
@@ -721,7 +704,7 @@ public class CubeStore {
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Event list to Json for customer %s, app %s, " +
                     "collection %s.",
-                customerid.orElse(""), app.orElse(""), collection.orElse("")), e);
+                eventQuery.getCustomerId(), eventQuery.getApp(), eventQuery.getCollection().orElse(""), e));
             return Response.serverError().build();
         }
     }
