@@ -665,7 +665,7 @@ static size_t estimate_copy_size(ngx_list_part_t* part) {
     ngx_uint_t        i;
 
     header_size += ngx_strlen("{}");
-    header_elts = part->elts;
+    header_elts = part_copy->elts;
 
     for (i =0; /* void */;i++) {
       if (i >= part_copy->nelts) {
