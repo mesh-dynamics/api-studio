@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /*
  * Created by IntelliJ IDEA.
@@ -31,28 +32,29 @@ public class EventQuery {
 
     private final String customerId;
     private final String app;
-    private final String service;
-    private final String instanceId;
-    private final String collection;
-
-    private final String traceId;
-    private final String spanId;
-    private final String parentSpanId;
-
-    private final Instant timestamp;
     private final EventType eventType;
-    private final List<String> reqids;
-    private final List<String> paths;
-    private final int payloadKey;
-    private final int offset;
-    private final int limit;
-    private final boolean sortOrderAsc;
+
+    private final Optional<String> service;
+    private final Optional<String> instanceId;
+    private final Optional<String> collection;
+
+    private final Optional<String> traceId;
+    private final Optional<String> spanId;
+    private final Optional<String> parentSpanId;
+    private final Optional<Instant> timestamp;
+
+    private final Optional<List<String>> reqids;
+    private final Optional<List<String>> paths;
+    private final Optional<Integer> payloadKey;
+    private final Optional<Integer> offset;
+    private final Optional<Integer> limit;
+    private final Optional<Boolean> sortOrderAsc;
 
     public static class Builder {
+        private final String customerId;
+        private final String app;
         private final EventType eventType;
 
-        private String customerId = null;
-        private String app = null;
         private String service = null;
         private String instanceId = null;
         private String collection = null;
@@ -68,18 +70,12 @@ public class EventQuery {
         private boolean sortOrderAsc = false;
 
         @JsonCreator
-        public Builder(@JsonProperty("eventType") EventType eventType) {
+        public Builder(@JsonProperty("customerId") String customerId,
+                       @JsonProperty("app") String app,
+                       @JsonProperty("eventType") EventType eventType) {
+            this.customerId = customerId;
+            this.app = app;
             this.eventType = eventType;
-        }
-
-        public Builder withCustomerId(String val) {
-            customerId = val;
-            return this;
-        }
-
-        public Builder withApp(String val) {
-            app = val;
-            return this;
         }
 
         public Builder withService(String val) {
@@ -153,22 +149,22 @@ public class EventQuery {
     }
 
     private EventQuery(Builder builder) {
-        eventType = builder.eventType;
         customerId = builder.customerId;
         app = builder.app;
-        service = builder.service;
-        instanceId = builder.instanceId;
-        collection = builder.collection;
-        traceId = builder.traceId;
-        spanId = builder.spanId;
-        parentSpanId = builder.parentSpanId;
-        timestamp = builder.timestamp;
-        reqids = builder.reqIds;
-        paths = builder.paths;
-        payloadKey = builder.payloadKey;
-        offset = builder.offset;
-        limit = builder.limit;
-        sortOrderAsc = builder.sortOrderAsc;
+        eventType = builder.eventType;
+        service = Optional.ofNullable(builder.service);
+        instanceId = Optional.ofNullable(builder.instanceId);
+        collection = Optional.ofNullable(builder.collection);
+        traceId = Optional.ofNullable(builder.traceId);
+        spanId = Optional.ofNullable(builder.spanId);
+        parentSpanId = Optional.ofNullable(builder.parentSpanId);
+        timestamp = Optional.ofNullable(builder.timestamp);
+        reqids = Optional.ofNullable(builder.reqIds);
+        paths = Optional.ofNullable(builder.paths);
+        payloadKey = Optional.ofNullable(builder.payloadKey);
+        offset = Optional.ofNullable(builder.offset);
+        limit = Optional.ofNullable(builder.limit);
+        sortOrderAsc = Optional.ofNullable(builder.sortOrderAsc);
     }
 
     public String getCustomerId() {
@@ -179,47 +175,47 @@ public class EventQuery {
         return app;
     }
 
-    public String getCollection() {
-        return collection;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public String getInstanceId() {
-        return instanceId;
-    }
-
-    public String getTraceId() {
-        return traceId;
-    }
-
     public EventType getEventType() {
         return eventType;
     }
 
-    public List<String> getReqids() {
+    public Optional<String> getCollection() {
+        return collection;
+    }
+
+    public Optional<String> getService() {
+        return service;
+    }
+
+    public Optional<String> getInstanceId() {
+        return instanceId;
+    }
+
+    public Optional<String> getTraceId() {
+        return traceId;
+    }
+
+    public Optional<List<String>> getReqids() {
         return reqids;
     }
 
-    public List<String> getPaths() {
+    public Optional<List<String>> getPaths() {
         return paths;
     }
 
-    public int getPayloadKey() {
+    public Optional<Integer> getPayloadKey() {
         return payloadKey;
     }
 
-    public int getOffset() {
+    public Optional<Integer> getOffset() {
         return offset;
     }
 
-    public int getLimit() {
+    public Optional<Integer> getLimit() {
         return limit;
     }
 
-    public boolean isSortOrderAsc() {
+    public Optional<Boolean> isSortOrderAsc() {
         return sortOrderAsc;
     }
 

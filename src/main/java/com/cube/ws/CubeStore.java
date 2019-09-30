@@ -704,9 +704,7 @@ public class CubeStore {
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Event list to Json for customer %s, app %s, " +
                     "collection %s.",
-                Optional.ofNullable(eventQuery.getCustomerId()).orElse(""),
-                Optional.ofNullable(eventQuery.getApp()).orElse(""),
-                Optional.ofNullable(eventQuery.getCollection()).orElse("")), e);
+                eventQuery.getCustomerId(), eventQuery.getApp(), eventQuery.getCollection().orElse(""), e));
             return Response.serverError().build();
         }
     }
