@@ -658,24 +658,23 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
 }
 
 static size_t estimate_copy_size(ngx_list_part_t* part) {
-    ngx_list_part_t* part_copy = part;
     size_t header_size = 0;
     ngx_uint_t count = 0;
     ngx_table_elt_t   *header_elts;
     ngx_uint_t        i;
 
     header_size += ngx_strlen("{}");
-    header_elts = part_copy->elts;
+    header_elts = part->elts;
 
     for (i =0; /* void */;i++) {
-      if (i >= part_copy->nelts) {
-        if (part_copy->next == NULL) {
+      if (i >= part->nelts) {
+        if (part->next == NULL) {
           if (count > 0)
             header_size--;
           break;
         }
-        part_copy = part_copy->next;
-        header_elts = part_copy->elts;
+        part = part->next;
+        header_elts = part->elts;
         i = 0;
       }
       count ++;
