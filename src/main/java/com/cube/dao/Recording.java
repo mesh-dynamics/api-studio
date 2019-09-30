@@ -24,6 +24,7 @@ public class Recording {
 	}
 
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
+	public static final String FLAG_FOR_ROOT_RECORDING = "ROOT";
 
 	/**
      * @param customerid
@@ -31,10 +32,10 @@ public class Recording {
      * @param instanceid
      * @param collection
      * @param status
-     * @param templateVersionOpt
+     * @param templateVersion
      */
 	public Recording(String customerid, String app, String instanceid, String collection, RecordingStatus status
-        , Optional<Instant> updateTimestamp, Optional<String> templateVersionOpt, Optional<String> parentRecordingId
+        , Optional<Instant> updateTimestamp, String templateVersion, Optional<String> parentRecordingId
         , Optional<String> rootRecordingId) {
 		super();
 		this.customerid = customerid;
@@ -43,11 +44,17 @@ public class Recording {
 		this.collection = collection;
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
-        this.templateVersion = templateVersionOpt.or(() -> Optional.of(Recording.DEFAULT_TEMPLATE_VER));/*.orElse(DEFAULT_TEMPLATE_VER)*/;
+		this.templateVersion = templateVersion;
+//        this.templateVersion = templateVersionOpt.or(() -> Optional.of(Recording.DEFAULT_TEMPLATE_VER));/*.orElse(DEFAULT_TEMPLATE_VER)*/;
         this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-").concat(String.valueOf(Objects.hash(customerid, app,
             collection, templateVersion)));
         this.parentRecordingId = parentRecordingId;
-        this.rootRecordingId = rootRecordingId;
+        this.rootRecordingId = rootRecordingId.map(rri -> {
+            if(rri.equals(FLAG_FOR_ROOT_RECORDING)) {
+                return this.id;
+            }
+            return rri;
+        });
     }
 
 	// for json deserialization
@@ -58,7 +65,7 @@ public class Recording {
 	    this.app = "";
 	    this.instanceid = "";
 	    this.collection = "";
-	    this.templateVersion = Optional.empty();
+	    this.templateVersion = "";
 	    this.parentRecordingId = Optional.empty();
 	    this.rootRecordingId = Optional.empty();
     }
@@ -78,7 +85,7 @@ public class Recording {
     @JsonProperty("timestmp")
 	public Optional<Instant> updateTimestamp;
     @JsonProperty("templateVer")
-	public final Optional<String> templateVersion;
+	public final String templateVersion;
     @JsonProperty("rootRcrdngId")
     public final Optional<String> rootRecordingId;
     @JsonProperty("prntRcrdngId")
@@ -90,9 +97,9 @@ public class Recording {
 
 
 	public static Optional<Recording> startRecording(String customerid, String app, String instanceid,
-                                                     String collection, Optional<String> templateSetId, ReqRespStore rrstore) {
+                                                     String collection, String templateSetId, ReqRespStore rrstore, Optional<String> rootRecordingId) {
 		Recording recording = new Recording(customerid, app, instanceid, collection, RecordingStatus.Running
-            , Optional.of(Instant.now()), templateSetId, Optional.empty(), Optional.empty());
+            , Optional.of(Instant.now()), templateSetId, Optional.empty(), rootRecordingId);
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);
         }

@@ -390,16 +390,16 @@ public class CubeStore {
 
 
 	@POST
-	@Path("start/{customerid}/{app}/{instanceid}/{collection}")
+	@Path("start/{customerid}/{app}/{instanceid}/{collection}/{templateSetVersion}")
 	@Consumes("application/x-www-form-urlencoded")
     public Response start(@Context UriInfo ui,
                           MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerid") String customerid,
                           @PathParam("instanceid") String instanceid,
-                          @PathParam("collection") String collection
-                          /*@PathParam("templateSetVersion") String  templateSetVersion*/) {
-        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
+                          @PathParam("collection") String collection,
+                          @PathParam("templateSetVersion") String templateSetVersion) {
+//        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
 	    // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
             Optional.ofNullable(instanceid));
@@ -427,8 +427,8 @@ public class CubeStore {
 
 
 
-        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, Optional.of(templateSetVersion),
-            rrstore)
+        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateSetVersion,
+            rrstore, Optional.of(Recording.FLAG_FOR_ROOT_RECORDING))
             .map(newr -> {
                 String json;
                 try {
