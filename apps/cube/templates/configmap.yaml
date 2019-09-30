@@ -10,7 +10,7 @@ data:
   CUSTOMER_DOGFOOD: "{{customer}}"
   CUBE_RECORD_SERVICE: "{{record_host}}"
   REDIS_HOST: "redis"
-  JAVAOPTS: "-javaagent:/usr/local/tomcat/newrelic/newrelic.jar"
+  JAVA_OPTS: "-javaagent:/usr/local/tomcat/newrelic/newrelic.jar"
   NEW_RELIC_LOG: "STDOUT"
   SOLR_CORE: "{{solr_core}}"
 
