@@ -37,12 +37,12 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:dc94361755000f6ba6b503b963a28a2da7c32849
+        image: cubeiocorp/cubews:b8186151c71c0e83cf51ac1191caf45f5992fed2
         imagePullPolicy: IfNotPresent
         resources:
           requests:
             memory: "512Mi"
-            cpu: "500m"
+            cpu: "100m"
           limits:
             memory: "1024Mi"
             cpu: "1000m"
@@ -85,7 +85,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: cubews
-                value: NEW_RELIC_LOG
+                key: NEW_RELIC_LOG
           - name: app_dogfood
             valueFrom:
               configMapKeyRef:
@@ -168,12 +168,12 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:dc94361755000f6ba6b503b963a28a2da7c32849
+        image: cubeiocorp/cubews:b8186151c71c0e83cf51ac1191caf45f5992fed2
         imagePullPolicy: IfNotPresent
         resources:
           requests:
             memory: "512Mi"
-            cpu: "500m"
+            cpu: "100m"
           limits:
             memory: "1024Mi"
             cpu: "1000m"
@@ -216,7 +216,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: cubews
-                value: NEW_RELIC_LOG
+                key: NEW_RELIC_LOG
           - name: app_dogfood
             valueFrom:
               configMapKeyRef:
@@ -299,12 +299,12 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:dc94361755000f6ba6b503b963a28a2da7c32849
+        image: cubeiocorp/cubews:b8186151c71c0e83cf51ac1191caf45f5992fed2
         imagePullPolicy: IfNotPresent
         resources:
           requests:
             memory: "512Mi"
-            cpu: "500m"
+            cpu: "100m"
           limits:
             memory: "1024Mi"
             cpu: "1000m"
@@ -347,7 +347,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: cubews
-                value: NEW_RELIC_LOG
+                key: NEW_RELIC_LOG
           - name: app_dogfood
             valueFrom:
               configMapKeyRef:
@@ -481,7 +481,7 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:a0bdb72e12bfab9194b117027fcbd566466ce775
+        image: cubeiocorp/cubeuibackend:b5a1691dca5a9283b35f6a4d03afb45f18306940
         imagePullPolicy: IfNotPresent
         env:
         - name: SPRING_PROFILES_ACTIVE
@@ -489,12 +489,32 @@ spec:
         resources:
           requests:
             memory: "640Mi"
-            cpu: "500m"
+            cpu: "250m"
           limits:
             memory: "800Mi"
             cpu: "1000m"
         ports:
         - containerPort: 8080
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
       imagePullSecrets:
       - name: regcred
 
