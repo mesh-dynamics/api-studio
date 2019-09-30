@@ -806,7 +806,7 @@ public class AnalyzeWS {
 
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
-            String newCollectionName = originalRec.collection.concat("-").concat(UUID.randomUUID().toString());
+            String newCollectionName = UUID.randomUUID().toString();
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
