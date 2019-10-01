@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import Diff from "../../components/Diff";
-import { FormGroup, FormControl, Glyphicon } from 'react-bootstrap';
+import { Checkbox, FormGroup, FormControl, Glyphicon } from 'react-bootstrap';
 import _ from 'lodash';
 import Tippy from '@tippy.js/react';
 import 'tippy.js/themes/light.css';
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -29,10 +29,13 @@ class DiffResults extends Component {
         super(props, context);
 
         this.handleChange = this.handleChange.bind(this);
+        this.toggleMessageContents = this.toggleMessageContents.bind(this);
 
         this.state = {
             filterPath: '',
-            computedDiffReplayList: []
+            computedDiffReplayList: [],
+            showResponseMessageHeader: false,
+            showResponseMessageBody: true
         };
 
         this.inputElementRef = React.createRef();
@@ -44,11 +47,12 @@ class DiffResults extends Component {
         }
         let { completeReplayList } = this.props;
         let computedDiffReplayList = completeReplayList.map((item, index) => {
-            let recordedData, replayedData;
+            let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders;
             if (item.recordResponse) {
+                recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 if (item.recordResponse.body) {
                     try {
-                        if(item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
+                        if (item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
                             recordedData = JSON.parse(item.recordResponse.body);
                         }
                         else recordedData = item.recordResponse.body;
@@ -60,12 +64,14 @@ class DiffResults extends Component {
                     recordedData = JSON.parse('""');
                 }
             } else {
+                recordedResponseHeaders = null;
                 recordedData = null;
             }
             if (item.replayResponse) {
+                replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 if (item.replayResponse.body) {
                     try {
-                        if(item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
+                        if (item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
                             replayedData = JSON.parse(item.replayResponse.body);
                         }
                         else replayedData = item.replayResponse.body;
@@ -77,6 +83,7 @@ class DiffResults extends Component {
                     replayedData = JSON.parse('""');
                 }
             } else {
+                replayedResponseHeaders = null;
                 replayedData = null;
             }
             let diff;
@@ -102,11 +109,13 @@ class DiffResults extends Component {
             }
             return {
                 ...item,
-                recordedData: recordedData,
-                replayedData: replayedData,
-                actJSON: actJSON,
-                expJSON: expJSON,
-                reductedDiffArray: reductedDiffArray
+                recordedResponseHeaders,
+                replayedResponseHeaders,
+                recordedData,
+                replayedData,
+                actJSON,
+                expJSON,
+                reductedDiffArray
             }
         });
         this.setState({ "computedDiffReplayList": computedDiffReplayList });
@@ -115,6 +124,12 @@ class DiffResults extends Component {
     handleChange(e) {
         this.setState({ filterPath: e.target.value });
     }
+
+    toggleMessageContents(e) {
+        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeader: e.target.checked });
+        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked });
+    }
+
     render() {
         let { completeReplayList, showHide, updateGolden } = this.props;
         let computedDiffReplayList = this.state.computedDiffReplayList;
@@ -195,10 +210,29 @@ class DiffResults extends Component {
                     </div>
                     {item.path}
                 </div>
-                {item.recordedData == null && (<div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Recorded Data</div>)}
-                {item.replayedData == null && (<div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Replayed Data</div>)}
+                {item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
+                    <div style={{ display: this.state.showResponseMessageHeader ? "" : "none" }}>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedResponseHeaders, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedResponseHeaders, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={null}
+                                onLineNumberClick={(lineId, e) => { console.log({ lineId, e }); }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {item.recordedData == null && (
+                    <div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Recorded Data</div>
+                )}
+                {item.replayedData == null && (
+                    <div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Replayed Data</div>
+                )}
                 {item.recordedData != null && item.replayedData != null && (
-                    <div>
+                    <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
                         <div className="diff-wrapper">
                             < ReactDiffViewer
                                 styles={newStyles}
@@ -219,25 +253,35 @@ class DiffResults extends Component {
 
         return (
             <div>
-                <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <span className="link" onClick={showHide}><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO PATH RESULTS</span>
-                    <span className="link pull-right" onClick={updateGolden}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-check-square font-15"></i>&nbsp;UPDATE OPERATIONS</span>
-                    <Link to="/review_golden_updates" className="hidden">
-                        <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
-                    </Link>
+                <div style={{}}>
+                    <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
+                        <span className="link" onClick={showHide}><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO PATH RESULTS</span>
+                        <span className="link pull-right" onClick={updateGolden}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-check-square font-15"></i>&nbsp;UPDATE OPERATIONS</span>
+                        <Link to="/review_golden_updates" className="hidden">
+                            <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
+                        </Link>
+                    </div>
+                    <FormGroup>
+                        <Checkbox inline disabled>Request Headers</Checkbox>
+                        <Checkbox inline disabled>Request Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeader}>Response Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
+                    </FormGroup>
+                    <FormGroup>
+                        <FormControl
+                            ref={this.inputElementRef}
+                            type="text"
+                            value={this.state.filterPath}
+                            placeholder="Enter text"
+                            onChange={this.handleChange}
+                            id="filterPathInputId"
+                            inputRef={ref => { this.input = ref; }}
+                        />
+                    </FormGroup>
                 </div>
-                <FormGroup>
-                    <FormControl
-                        ref={this.inputElementRef}
-                        type="text"
-                        value={this.state.filterPath}
-                        placeholder="Enter text"
-                        onChange={this.handleChange}
-                        id="filterPathInputId"
-                        inputRef={ref => { this.input = ref; }}
-                    />
-                </FormGroup>
-                {jsxContent}
+                <div>
+                    {jsxContent}
+                </div>
             </div>
 
         );
