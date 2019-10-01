@@ -726,6 +726,10 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
                 "CUBE :: Unable to allocate memory for req header buffer");
             return ngx_http_next_header_filter(r);
           default:
+            // CUBE : currently the estimate_copy_size function is external to
+            // copy_headers_to_buffer function, although at a later stage it might
+            // be added to the copy function itself, to avoid the second traversal,
+            // in that case the if condition can be removed
             header_size = estimate_copy_size(&r->headers_in.headers.part);
             if (header_size <= ctx->blcf->header_buffer_size) {
               copy_headers_to_buffer(&ctx->req_header_buffer, &r->headers_in.headers.part);
