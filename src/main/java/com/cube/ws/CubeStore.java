@@ -4,6 +4,7 @@
 package com.cube.ws;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -302,17 +303,119 @@ public class CubeStore {
         }
     }
 
+
+    @POST
+    @Path("/storeEventBatch")
+    public Response storeEventBatch(@Context UriInfo ui, @Context HttpHeaders headers
+                               byte[] messageBytes) {
+        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
+        LOGGER.info("Batch Events received. Content Type: " + contentType);
+        return contentType.map(
+            ct -> {
+                switch(ct) {
+                    case "application/x-ndjson":
+                        try {
+                            String jsonMultiline = new String(messageBytes);
+                            String[] jsons = jsonMultiline.split("\n");
+                            LOGGER.info("JSON batch size: " + jsons.length);
+                            Arrays.stream(jsons).forEach(UtilException.rethrowConsumer(this::processEventJson));
+                            return Response.ok().build();
+                        } catch (Exception e) {
+                            LOGGER.error("Error while processing multiline json " + e.getMessage());
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
+
+                    case "application/x-msgpack":
+                        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
+                        try {
+                            while (unpacker.hasNext()) {
+                                ValueType nextType = unpacker.getNextFormat().getValueType();
+                                if (nextType.isMapType()) {
+                                    processEventJson(unpacker.unpackValue().toJson());
+                                } else {
+                                    LOGGER.error("Unidentified format type in message pack stream " + nextType.name());
+                                    unpacker.skipValue();
+                                }
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("Error while unpacking message pack byte stream " + e.getMessage());
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
+                        return Response.ok().build();
+                    default :
+                        return Response.serverError().entity("Content type not recognized :: " + ct).build();
+                }
+            }
+        ).orElse(Response.serverError().entity("Content type not specified").build());
+
+    }
+
     @POST
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(@Context UriInfo ui,
                             Event event) {
 
-
+        processEventJson();
+	    /*
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
         Optional<String> err = Optional.empty();
         Optional<String> collection = Optional.empty();
+
+        if (event != null && event.validate()) {
+            Optional<RecordOrReplay> recordOrReplay =
+                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerid),
+                    Optional.of(event.app), Optional.of(event.instanceid));
+            collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+
+            // check collection, validate, fetch template for request, set key and store. If error at any point stop
+            if (collection.isPresent()) {
+                Optional<CompareTemplate> compareTemplate = Optional.empty();
+                if (event.isRequestType()) {
+                    // if request type, need to extract keys from request and index it, so that it can be
+                    // used while mocking
+                    TemplateKey tkey =
+                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerid,
+                            event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+
+                    compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
+                }
+                event.parseAndSetKeyAndCollection(config, collection.get(), compareTemplate);
+                boolean saveResult = rrstore.save(event);
+                if (!saveResult) {
+                    err = Optional.of("Not able to store event");
+                }
+            } else {
+                err = Optional.of("Collection is missing");
+            }
+
+        } else {
+            err = Optional.of("Invalid event - either event is null, or some required field missing, or both binary " +
+                "and string payloads set");
+        }
+
+        return err.map(e -> {
+            LOGGER.error(String.format("Dropping store for event. Error: %s", e));
+            try {
+                LOGGER.error(String.format("Event: %s", event == null ? "NULL" :
+                    config.jsonmapper.writeValueAsString(event)));
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(String.format("Event: %s", event == null ? "NULL" : event.toString()));
+            }
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }).orElseGet(() -> {
+            LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
+                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+            return Response.ok().build();
+        });
+*/
+    }
+
+    private void processEventJson(String eventJson) throws IOException {
+        Optional<String> err = Optional.empty();
+        Optional<String> collection = Optional.empty();
+        Event event = jsonmapper.readValue(eventJson, Event.class);
 
         if (event != null && event.validate()) {
             Optional<RecordOrReplay> recordOrReplay =
