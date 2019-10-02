@@ -114,6 +114,7 @@ public class MovieRentalRest {
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "listmovies")) {
 
 		  LOGGER.debug("list movies headers: " + httpHeaders.toString());
+		  LOGGER.info("Got baggage item :: " + scope.span().getBaggageItem("state"));
 		  String listParams = filmname + ";" + keyword + ";" + actor;
 		  scope.span().setTag("listmovies", listParams);
 			films = lmc.getMovieList(filmname);
@@ -138,10 +139,11 @@ public class MovieRentalRest {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response findStoreswithFilm(@QueryParam("filmId") Integer filmId,
 	                                   @Context HttpHeaders httpHeaders) {
-		// NOTE: currently, our database is returning empty results for the foll. query. Hence, not using the zipcode.
+		// - query. Hence, not using the zipcode.
 		// select * from inventory, store, address where inventory.store_id = store.store_id and store.address_id = address.address_id and (postal_code is not null and length(postal_code) > 3)
 		JSONArray stores = null;
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "liststores")) {
+			LOGGER.info("Got baggage item :: " + scope.span().getBaggageItem("state"));
       		scope.span().setTag("liststores", filmId.toString());
 			stores = mv.findAvailableStores(filmId);
 		} catch (Exception e) {
@@ -172,6 +174,7 @@ public class MovieRentalRest {
 //	    @HeaderParam("x-ot-span-context") String xotspan) {
 	  try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "rentmovie")) {
       scope.span().setTag("rentmovie", rentalInfoStr);
+        LOGGER.info("Got baggage item :: " + scope.span().getBaggageItem("state"));
 	    JSONObject rentalInfo = new JSONObject(rentalInfoStr);
 	    int filmId = rentalInfo.getInt("filmId");
 	    int storeId = rentalInfo.getInt("storeId");
@@ -209,6 +212,7 @@ public class MovieRentalRest {
  
     JSONObject result = null;
     try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "returnmovie")) {
+    	LOGGER.info("Got baggage item :: " + scope.span().getBaggageItem("state"));
       scope.span().setTag("returnmovie", returnInfoStr);
       LOGGER.debug("ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", " + rent);
       result = mv.returnMovie(inventoryId, userId, staffId, rent);

@@ -41,7 +41,7 @@ public class ListMoviesCache {
 
 
   
-  JSONArray getMovieList(String filmName) throws ExecutionException {
+  public JSONArray getMovieList(String filmName) throws ExecutionException {
     final JSONArray movieList = movieIdsCache.get(filmName);
     return movieList; 
   }
