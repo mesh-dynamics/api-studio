@@ -317,23 +317,14 @@ public class CubeStore {
                             LOGGER.info("JSON batch size: " + jsons.length);
                             int numSuccess = Arrays.stream(jsons)
                                 .mapToInt(j -> {
-                                    Optional<String> err = processEventJson(j);
-                                    if(err.isPresent()) {
-                                        LOGGER.error(String.format("Dropping store for event. Error: %s", e));
-                                        return 0;
-                                    } else {
-                                        LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                                            , event.eventType, event.getCollection(), event.reqid, event.apiPath));
-                                        return false;
-                                    }
-                                    return err.isPresent() ? 0 : 1;
+                                    return processEventJson(j);
                                 })
                                 .sum();
-                            JSONObject jsonResp = new JSONObject(Map.of(
+                            String jsonResp = new JSONObject(Map.of(
                                 "total", jsons.length,
                                 "success", numSuccess
-                            ));
-                            return Response.ok(jsonResp).build();
+                            )).toString();
+                            return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                         } catch (Exception e) {
                             LOGGER.error("Error while processing multiline json " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
@@ -347,11 +338,8 @@ public class CubeStore {
                                 total++;
                                 ValueType nextType = unpacker.getNextFormat().getValueType();
                                 if (nextType.isMapType()) {
-                                    Optional<String> err = processEventJson(unpacker.unpackValue().toJson());
-                                    err.ifPresent(e -> {
-                                        LOGGER.error(String.format("Dropping store for event. Error: %s", e));
-                                    });
-                                    numSuccess += err.isPresent() ? 0 : 1;
+                                    int s = processEventJson(unpacker.unpackValue().toJson());
+                                    numSuccess += s;
                                 } else {
                                     LOGGER.error("Unidentified format type in message pack stream " + nextType.name());
                                     unpacker.skipValue();
@@ -361,11 +349,11 @@ public class CubeStore {
                             LOGGER.error("Error while unpacking message pack byte stream " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
-                        JSONObject jsonResp = new JSONObject(Map.of(
+                        String jsonResp = new JSONObject(Map.of(
                             "total", total,
                             "success", numSuccess
-                        ));
-                        return Response.ok(jsonResp).build();
+                        )).toString();
+                        return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                     default :
                         return Response.serverError().entity("Content type not recognized :: " + ct).build();
                 }
@@ -381,6 +369,7 @@ public class CubeStore {
                             Event event) {
 
         Optional<String> err = processEvent(event);
+
         return err.map(e -> {
             LOGGER.error(String.format("Dropping store for event. Error: %s", e));
             try {
@@ -450,17 +439,29 @@ public class CubeStore {
 */
     }
 
-    private Optional<String> processEventJson(String eventJson) {
+    // converts event from json to Event, stores it,
+    // returns 1 on success, else 0 in case of failure or exception
+    private int processEventJson(String eventJson) {
         Event event = null;
         try {
             event = jsonmapper.readValue(eventJson, Event.class);
         } catch (IOException e) {
             LOGGER.error("Error parsing Event JSON: " + e.getMessage());
-            return Optional.of("Error parsing Event JSON");
+            return 0;
         }
-        return processEvent(event);
+        Optional<String> err = processEvent(event);
+        if(err.isPresent()) {
+            LOGGER.error(String.format("Dropping store for event. Error: %s", err.get()));
+            return 0;
+        } else {
+            LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
+                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+            return 1;
+        }
 	}
 
+	// process and store Event
+    // return error string (Optional<String>)
     private Optional<String> processEvent(Event event) {
         Optional<String> err = Optional.empty();
         Optional<String> collection;
