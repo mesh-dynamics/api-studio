@@ -6,11 +6,7 @@ package com.cube.ws;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -34,6 +30,7 @@ import org.apache.http.client.utils.URIBuilder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
@@ -306,32 +303,55 @@ public class CubeStore {
 
     @POST
     @Path("/storeEventBatch")
-    public Response storeEventBatch(@Context UriInfo ui, @Context HttpHeaders headers
+    public Response storeEventBatch(@Context UriInfo ui, @Context HttpHeaders headers,
                                byte[] messageBytes) {
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
         LOGGER.info("Batch Events received. Content Type: " + contentType);
         return contentType.map(
             ct -> {
                 switch(ct) {
-                    case "application/x-ndjson":
+                    case "application/x-ndjson": // todo: move to constants
                         try {
                             String jsonMultiline = new String(messageBytes);
                             String[] jsons = jsonMultiline.split("\n");
                             LOGGER.info("JSON batch size: " + jsons.length);
-                            Arrays.stream(jsons).forEach(UtilException.rethrowConsumer(this::processEventJson));
-                            return Response.ok().build();
+                            int numSuccess = Arrays.stream(jsons)
+                                .mapToInt(j -> {
+                                    Optional<String> err = processEventJson(j);
+                                    if(err.isPresent()) {
+                                        LOGGER.error(String.format("Dropping store for event. Error: %s", e));
+                                        return 0;
+                                    } else {
+                                        LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
+                                            , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+                                        return false;
+                                    }
+                                    return err.isPresent() ? 0 : 1;
+                                })
+                                .sum();
+                            JSONObject jsonResp = new JSONObject(Map.of(
+                                "total", jsons.length,
+                                "success", numSuccess
+                            ));
+                            return Response.ok(jsonResp).build();
                         } catch (Exception e) {
                             LOGGER.error("Error while processing multiline json " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
 
-                    case "application/x-msgpack":
+                    case "application/x-msgpack": // todo: move to constants
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
+                        int total = 0, numSuccess = 0;
                         try {
                             while (unpacker.hasNext()) {
+                                total++;
                                 ValueType nextType = unpacker.getNextFormat().getValueType();
                                 if (nextType.isMapType()) {
-                                    processEventJson(unpacker.unpackValue().toJson());
+                                    Optional<String> err = processEventJson(unpacker.unpackValue().toJson());
+                                    err.ifPresent(e -> {
+                                        LOGGER.error(String.format("Dropping store for event. Error: %s", e));
+                                    });
+                                    numSuccess += err.isPresent() ? 0 : 1;
                                 } else {
                                     LOGGER.error("Unidentified format type in message pack stream " + nextType.name());
                                     unpacker.skipValue();
@@ -341,7 +361,11 @@ public class CubeStore {
                             LOGGER.error("Error while unpacking message pack byte stream " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
-                        return Response.ok().build();
+                        JSONObject jsonResp = new JSONObject(Map.of(
+                            "total", total,
+                            "success", numSuccess
+                        ));
+                        return Response.ok(jsonResp).build();
                     default :
                         return Response.serverError().entity("Content type not recognized :: " + ct).build();
                 }
@@ -356,7 +380,21 @@ public class CubeStore {
     public Response storeEvent(@Context UriInfo ui,
                             Event event) {
 
-        processEventJson();
+        Optional<String> err = processEvent(event);
+        return err.map(e -> {
+            LOGGER.error(String.format("Dropping store for event. Error: %s", e));
+            try {
+                LOGGER.error(String.format("Event: %s", event == null ? "NULL" :
+                    config.jsonmapper.writeValueAsString(event)));
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(String.format("Event: %s", event == null ? "NULL" : event.toString()));
+            }
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }).orElseGet(() -> {
+            LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
+                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+            return Response.ok().build();
+        });
 	    /*
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
@@ -412,16 +450,25 @@ public class CubeStore {
 */
     }
 
-    private void processEventJson(String eventJson) throws IOException {
-        Optional<String> err = Optional.empty();
-        Optional<String> collection = Optional.empty();
-        Event event = jsonmapper.readValue(eventJson, Event.class);
+    private Optional<String> processEventJson(String eventJson) {
+        Event event = null;
+        try {
+            event = jsonmapper.readValue(eventJson, Event.class);
+        } catch (IOException e) {
+            LOGGER.error("Error parsing Event JSON: " + e.getMessage());
+            return Optional.of("Error parsing Event JSON");
+        }
+        return processEvent(event);
+	}
 
+    private Optional<String> processEvent(Event event) {
+        Optional<String> err = Optional.empty();
+        Optional<String> collection;
         if (event != null && event.validate()) {
             Optional<RecordOrReplay> recordOrReplay =
                 rrstore.getCurrentRecordOrReplay( Optional.of(event.customerid),
                     Optional.of(event.app), Optional.of(event.instanceid));
-            collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+            collection = Optional.of(event.getCollection()); // todo recordOrReplay.flatMap (RecordOrReplay::getCollection);
 
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
@@ -449,21 +496,7 @@ public class CubeStore {
                 "and string payloads set");
         }
 
-        return err.map(e -> {
-            LOGGER.error(String.format("Dropping store for event. Error: %s", e));
-            try {
-                LOGGER.error(String.format("Event: %s", event == null ? "NULL" :
-                    config.jsonmapper.writeValueAsString(event)));
-            } catch (JsonProcessingException ex) {
-                LOGGER.error(String.format("Event: %s", event == null ? "NULL" : event.toString()));
-            }
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }).orElseGet(() -> {
-            LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
-            return Response.ok().build();
-        });
-
+        return err;
     }
 
     @POST
