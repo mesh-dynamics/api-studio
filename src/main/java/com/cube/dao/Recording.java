@@ -24,7 +24,6 @@ public class Recording {
 	}
 
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
-	public static final String FLAG_FOR_ROOT_RECORDING = "ROOT";
 
 	/**
      * @param customerid
@@ -49,12 +48,7 @@ public class Recording {
         this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-").concat(String.valueOf(Objects.hash(customerid, app,
             collection, templateVersion)));
         this.parentRecordingId = parentRecordingId;
-        this.rootRecordingId = rootRecordingId.map(rri -> {
-            if(rri.equals(FLAG_FOR_ROOT_RECORDING)) {
-                return this.id;
-            }
-            return rri;
-        });
+        this.rootRecordingId = rootRecordingId.or(() -> Optional.of(this.id));
     }
 
 	// for json deserialization
