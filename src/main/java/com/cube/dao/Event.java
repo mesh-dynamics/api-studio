@@ -94,9 +94,7 @@ public class Event {
         EventBuilder eventBuilder = new EventBuilder(request.customerid.orElse("NA"), request.app.orElse("NA"),
             request.getService().orElse("NA"), request.getInstance().orElse("NA"), request.collection.orElse("NA"),
             request.getTraceId().orElse("NA"), request.rrtype.orElse(Record), request.timestamp.orElse(Instant.now()),
-            request.reqid.orElse(
-                "NA"),
-            request.path, EventType.HTTPRequest);
+            request.reqid.orElse("NA"), request.path, EventType.HTTPRequest);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
         event.parseAndSetKey(config, comparator.getCompareTemplate());

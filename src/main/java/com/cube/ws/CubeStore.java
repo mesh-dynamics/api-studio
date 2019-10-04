@@ -25,8 +25,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import com.cube.dao.EventQuery;
-import com.cube.dao.Result;
+import com.cube.dao.*;
 import okhttp3.RequestBody;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -52,14 +51,9 @@ import com.cube.core.ResponseComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.core.Utils;
-import com.cube.dao.Event;
-import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.*;
-import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
-import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
-import com.cube.dao.Request;
 import com.cube.dao.Result;
 
 /**
@@ -153,6 +147,7 @@ public class CubeStore {
         Optional<RR> rrtype = Optional.ofNullable(meta.getFirst("rrtype")).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
         Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
         Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
+        Optional<String> service = Optional.ofNullable(meta.getFirst("service"));
         Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
@@ -177,8 +172,32 @@ public class CubeStore {
                 Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
                 return method.map(mval -> {
                     Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp, rrtype, customerid, app);
-                    if (!rrstore.save(req))
-                        return Optional.of("Not able to store request");
+
+                    // create Event object from Request
+                    // fetch the template version, create template key and get a request comparator
+                    Optional<String> templateVersion = rrstore.getCurrentRecordOrReplay(customerid, app, instanceid)
+                        .flatMap(RecordOrReplay::getTemplateVersion);
+                    TemplateKey tkey =
+                        new TemplateKey(templateVersion, customerid.get(),
+                            app.get(), service.get(), path, TemplateKey.Type.Request);
+
+                    RequestComparator requestComparator =
+                        config.requestComparatorCache.getRequestComparator(tkey, false);
+
+                    Event requestEvent = null;
+                    try {
+                        requestEvent = Event.fromRequest(req, requestComparator, config);
+                    } catch (JsonProcessingException e) {
+                        LOGGER.error("error in processing JSON: " + e);
+                        return Optional.of("error in processing JSON");
+                    } catch (EventBuilder.InvalidEventException e) {
+                        LOGGER.error("error converting Request to Event: " + e);
+                        return Optional.of("error converting Request to Event");
+                    }
+
+                    if (!rrstore.save(requestEvent))
+                        return Optional.of("Not able to store request event");
+
                     Optional<String> empty = Optional.empty();
                     return empty;
                 }).orElse(Optional.of("Method field missing"));
@@ -220,7 +239,10 @@ public class CubeStore {
             queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
         });
 
-        storeSingleReqResp(rr, path, queryParamsMap);
+        Optional<String> err = storeSingleReqResp(rr, path, queryParamsMap);
+        err.ifPresent(e -> {
+           LOGGER.error("error processing and storing JSON: " + e);
+        });
     }
 
     @POST
@@ -384,7 +406,7 @@ public class CubeStore {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+                , event.eventType, event.getCollection(), event.reqId, event.apiPath));
             return Response.ok().build();
         });
 	    /*
@@ -459,7 +481,7 @@ public class CubeStore {
             return 0;
         } else {
             LOGGER.info(String.format("Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqid, event.apiPath));
+                , event.eventType, event.getCollection(), event.reqId, event.apiPath));
             return 1;
         }
 	}
@@ -471,9 +493,10 @@ public class CubeStore {
         Optional<String> collection;
         if (event != null && event.validate()) {
             Optional<RecordOrReplay> recordOrReplay =
-                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerid),
-                    Optional.of(event.app), Optional.of(event.instanceid));
-            collection = Optional.of(event.getCollection()); // todo recordOrReplay.flatMap (RecordOrReplay::getCollection);
+                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
+                    Optional.of(event.app), Optional.of(event.instanceId));
+            collection = Optional.ofNullable(event.getCollection()); // todo recordOrReplay.flatMap
+            // (RecordOrReplay::getCollection);
 
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
@@ -482,12 +505,12 @@ public class CubeStore {
                     // if request type, need to extract keys from request and index it, so that it can be
                     // used while mocking
                     TemplateKey tkey =
-                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerid,
+                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
                             event.app, event.service, event.apiPath, TemplateKey.Type.Request);
 
                     compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
                 }
-                event.parseAndSetKeyAndCollection(config, collection.get(), compareTemplate);
+                event.parseAndSetKeyAndCollection(config, collection.get(), compareTemplate.get());
                 boolean saveResult = rrstore.save(event);
                 if (!saveResult) {
                     err = Optional.of("Not able to store event");
