@@ -251,6 +251,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, SERVICEF, eventQuery.getService());
         addFilter(query, COLLECTIONF, eventQuery.getCollection());
         addFilter(query, TRACEIDF, eventQuery.getTraceId());
+        addFilter(query, RRTYPEF, eventQuery.getRRType().map(Object::toString));
         addFilter(query, REQIDF, eventQuery.getReqids().orElse(Collections.emptyList()));
         addFilter(query, PATHF, eventQuery.getPaths().orElse(Collections.emptyList()));
         addFilter(query, EVENTTYPEF, Optional.ofNullable(eventQuery.getEventType()).map(type -> type.toString()));
@@ -258,7 +259,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
-            this::docToEvent, Optional.of(eventQuery.getOffset().orElse(20)));
+            this::docToEvent, eventQuery.getOffset());
     }
 
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,

@@ -151,6 +151,7 @@ public class Event {
         parsePayLoad(config);
         List<String> keyVals = new ArrayList<>();
         payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
+        LOGGER.info("Generating event key from vals: " + keyVals.toString());
         payloadKey = Objects.hash(keyVals);
     }
 

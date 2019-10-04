@@ -443,8 +443,10 @@ public class MockServiceHTTP {
         request.collection.ifPresent(builder::withCollection);
         request.getService().ifPresent(builder::withService);
         request.getTraceId().ifPresent(builder::withTraceId);
+
         return builder.withPaths(List.of(request.path))
             .withPayloadKey(payloadKey)
+            .withRRType(RR.Record)
             .withSortOrderAsc(true)
             .withLimit(limit)
             .build();
