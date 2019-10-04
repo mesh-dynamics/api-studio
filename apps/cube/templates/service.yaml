@@ -75,7 +75,7 @@ spec:
                 name: newrelic
                 key: license_key
           - name: NEW_RELIC_APP_NAME
-            value: cubews-record
+            value: cubews-record-{{namespace}}
           - name: JAVA_OPTS
             valueFrom:
               configMapKeyRef:
@@ -206,7 +206,7 @@ spec:
                 name: newrelic
                 key: license_key
           - name: NEW_RELIC_APP_NAME
-            value: cubews-mock
+            value: cubews-mock-{{namespace}}
           - name: JAVA_OPTS
             valueFrom:
               configMapKeyRef:
@@ -337,7 +337,7 @@ spec:
                 name: newrelic
                 key: license_key
           - name: NEW_RELIC_APP_NAME
-            value: cubews-replay
+            value: cubews-replay-{{namespace}}
           - name: JAVA_OPTS
             valueFrom:
               configMapKeyRef:
