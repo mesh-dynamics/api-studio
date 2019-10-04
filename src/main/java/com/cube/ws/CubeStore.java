@@ -213,7 +213,17 @@ public class CubeStore {
                 });
                 return s.map(sval -> {
                     com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
-                    if (!rrstore.save(resp))
+                    Event responseEvent;
+                    try {
+                        responseEvent = Event.fromResponse(resp, config);
+                    } catch (JsonProcessingException e) {
+                        LOGGER.error("error in processing JSON: " + e);
+                        return Optional.of("error in processing JSON");
+                    } catch (EventBuilder.InvalidEventException e) {
+                        LOGGER.error("error converting Response to Event: " + e);
+                        return Optional.of("error converting Response to Event");
+                    }
+                    if (!rrstore.save(responseEvent))
                         return Optional.of("Not able to store response");
                     return Optional.<String>empty();
                 }).orElse(Optional.of("Expecting integer status"));
