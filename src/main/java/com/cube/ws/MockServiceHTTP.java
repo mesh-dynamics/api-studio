@@ -230,7 +230,7 @@ public class MockServiceHTTP {
             Optional.of(customerId), Optional.of(app));
     }
 
-	private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
+	private Response getRespOld(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
 			String customerid, String app, String instanceid,
 			String service, HttpHeaders headers) {
 
@@ -320,7 +320,7 @@ public class MockServiceHTTP {
 
 	}
 
-    private Response getRespFromEvent(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
+    private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
                              String customerid, String app, String instanceid,
                              String service, HttpHeaders headers) {
 

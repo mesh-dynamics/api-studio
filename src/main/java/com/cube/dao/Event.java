@@ -104,6 +104,27 @@ public class Event {
         return event;
     }
 
+    public static Event fromResponse(Response response, Config config)
+        throws JsonProcessingException, EventBuilder.InvalidEventException {
+
+        HTTPResponsePayload payload = new HTTPResponsePayload(response.hdrs, response.status, response.body);
+        String payloadStr;
+        payloadStr = config.jsonmapper.writeValueAsString(payload);
+
+        EventBuilder eventBuilder = new EventBuilder(response.customerid.orElse("NA"), response.app.orElse("NA"),
+            response.getService().orElse("NA"), response.getInstance().orElse("NA"), response.collection.orElse("NA"),
+            response.getTraceId().orElse("NA"), response.rrtype.orElse(Record), response.timestamp.orElse(Instant.now()),
+            response.reqid.orElse(
+                "NA"),
+            "NA", EventType.HTTPResponse);
+        eventBuilder.setRawPayloadString(payloadStr);
+        Event event = eventBuilder.createEvent();
+        event.parsePayLoad(config);
+
+        return event;
+    }
+
+
     public String getCollection() {
         return collection;
     }
