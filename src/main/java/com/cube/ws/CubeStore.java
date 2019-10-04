@@ -325,7 +325,7 @@ public class CubeStore {
 
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
-                Optional<CompareTemplate> compareTemplate = Optional.empty();
+                event.setCollection(collection.get());
                 if (event.isRequestType()) {
                     // if request type, need to extract keys from request and index it, so that it can be
                     // used while mocking
@@ -333,9 +333,10 @@ public class CubeStore {
                         new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
                             event.app, event.service, event.apiPath, TemplateKey.Type.Request);
 
-                    compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
+                    CompareTemplate compareTemplate =
+                        config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
+                    event.parseAndSetKey(config, compareTemplate);
                 }
-                event.parseAndSetKeyAndCollection(config, collection.get(), compareTemplate);
                 boolean saveResult = rrstore.save(event);
                 if (!saveResult) {
                     err = Optional.of("Not able to store event");

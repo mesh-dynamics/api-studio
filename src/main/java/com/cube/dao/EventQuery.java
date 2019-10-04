@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.cube.core.RequestComparator;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-09-23
@@ -147,6 +149,7 @@ public class EventQuery {
         public EventQuery build() {
             return new EventQuery(this);
         }
+
     }
 
     private EventQuery(Builder builder) {

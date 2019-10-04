@@ -7,6 +7,7 @@ import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -15,8 +16,16 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class Response extends RRBase {
-	/**
+
+    private static final Logger LOGGER = LogManager.getLogger(Response.class);
+
+    /**
 	 * @param reqid
 	 * @param status
 	 * @param hdrs
@@ -67,4 +76,24 @@ public class Response extends RRBase {
 		template.getRule("/status").checkMatchInt(status, rhs.status, match, true);
 		return match;
 	}
+
+
+	public static Optional<Response> fromEvent(Event event, ObjectMapper jsonmapper) {
+	    if (event.eventType != Event.EventType.HTTPResponse) {
+	        LOGGER.error(String.format("Not able to convert event to response. Event %s not of right type: ",
+                event.reqId, event.eventType.toString()));
+	        return Optional.empty();
+        }
+        try {
+            HTTPResponsePayload responsePayload = jsonmapper.readValue(event.rawPayloadString, HTTPResponsePayload.class);
+            return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, emptyMap(),
+                responsePayload.hdrs,
+                responsePayload.body, Optional.of(event.getCollection()), Optional.of(event.timestamp),
+                Optional.of(event.rrType), Optional.of(event.customerId), Optional.of(event.app)));
+        } catch (IOException e) {
+            LOGGER.error(String.format("Not able to convert event with reqid: %s and type %s to response. ",
+                event.reqId, event.eventType.toString()));
+            return Optional.empty();
+        }
+    }
 }
