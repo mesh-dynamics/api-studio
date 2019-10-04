@@ -6,19 +6,22 @@
 
 package com.cube.dao;
 
+import static com.cube.dao.RRBase.RR.*;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.cube.core.CompareTemplate;
-import com.cube.core.Utils;
+import com.cube.core.RequestComparator;
+import com.cube.dao.RRBase.RR;
 import com.cube.ws.Config;
 
 /*
@@ -37,17 +40,18 @@ public class Event {
     private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
 
-    private Event(String customerid, String app, String service, String instanceid, String collection, String traceid,
-                  Instant timestamp, String reqid, String apiPath, EventType eventType, byte[] rawPayloadBinary,
-                  String rawPayloadString, DataObj payload, int payloadKey) {
-        this.customerid = customerid;
+    public Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
+                 RR rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
+                 String rawPayloadString, DataObj payload, int payloadKey) {
+        this.customerId = customerId;
         this.app = app;
         this.service = service;
-        this.instanceid = instanceid;
+        this.instanceId = instanceId;
         this.collection = collection;
-        this.traceid = traceid;
+        this.traceId = traceId;
+        this.rrType = rrType;
         this.timestamp = timestamp;
-        this.reqid = reqid;
+        this.reqId = reqId;
         this.apiPath = apiPath;
         this.eventType = eventType;
         this.rawPayloadBinary = rawPayloadBinary;
@@ -60,14 +64,15 @@ public class Event {
      * For jackson
      */
     private Event() {
-        this.customerid = null;
+        this.customerId = null;
         this.app = null;
         this.service = null;
-        this.instanceid = null;
+        this.instanceId = null;
         this.collection = null;
-        this.traceid = null;
+        this.traceId = null;
+        this.rrType = Record;
         this.timestamp = null;
-        this.reqid = null;
+        this.reqId = null;
         this.apiPath = null;
         this.eventType = null;
         this.rawPayloadBinary = null;
@@ -78,32 +83,25 @@ public class Event {
     }
 
 
-    public static Optional<Event> createEvent(String docid, Optional<String> customerid, Optional<String> app,
-                                              Optional<String> service,
-                                              Optional<String> instanceid, Optional<String> collection, Optional<String> traceid,
-                                              Optional<Instant> timestamp, Optional<String> reqid,
-                                              Optional<String> apiPath, Optional<String> eventTypeOpt,
-                                              Optional<byte[]> rawPayloadBin, Optional<String> rawPayloadStr,
-                                              Optional<Integer> payloadKey, Config config) {
+    public static Event fromRequest(Request request, RequestComparator comparator, Config config)
+        throws JsonProcessingException, EventBuilder.InvalidEventException {
 
-        if (customerid.isPresent() && app.isPresent() && service.isPresent() && instanceid.isPresent() && collection.isPresent() &&
-        traceid.isPresent() && timestamp.isPresent() && reqid.isPresent() && apiPath.isPresent() && eventTypeOpt.isPresent()  &&
-        payloadKey.isPresent() && (rawPayloadBin.isPresent() ^ rawPayloadStr.isPresent())) {
-            return Utils.valueOf(EventType.class, eventTypeOpt.get()).map(eventType -> {
-                byte [] payloadBin = rawPayloadBin.orElse(null);
-                String payloadStr = rawPayloadStr.orElse(null);
-                DataObj payload = DataObjFactory.build(eventType, payloadBin, payloadStr, config);
+        HTTPRequestPayload payload = new HTTPRequestPayload(request.hdrs, request.qparams, request.fparams,
+            request.method, request.body);
+        String payloadStr;
+        payloadStr = config.jsonmapper.writeValueAsString(payload);
 
-                return new Event(customerid.get(), app.get(), service.get(), instanceid.get(),
-                    collection.get(), traceid.get(), timestamp.get(), reqid.get(), apiPath.get(), eventType,
-                    payloadBin, payloadStr, payload, payloadKey.get());
-            }).or(() -> {
-                LOGGER.error("Type field has invalid value in Event object with doc id: " + docid);
-                return Optional.empty();
-            });
-        }
-        LOGGER.error(String.format("Required field is missing in Event constructor. Cannot create event"));
-        return Optional.empty();
+        EventBuilder eventBuilder = new EventBuilder(request.customerid.orElse("NA"), request.app.orElse("NA"),
+            request.getService().orElse("NA"), request.getInstance().orElse("NA"), request.collection.orElse("NA"),
+            request.getTraceId().orElse("NA"), request.rrtype.orElse(Record), request.timestamp.orElse(Instant.now()),
+            request.reqid.orElse(
+                "NA"),
+            request.path, EventType.HTTPRequest);
+        eventBuilder.setRawPayloadString(payloadStr);
+        Event event = eventBuilder.createEvent();
+        event.parseAndSetKey(config, comparator.getCompareTemplate());
+
+        return event;
     }
 
     public String getCollection() {
@@ -112,8 +110,9 @@ public class Event {
 
     public boolean validate() {
 
-        if ((customerid == null) || (app == null) || (service == null) || (instanceid == null) || (collection == null)
-            || (traceid == null) || (timestamp == null) || (reqid == null) || (apiPath == null) || (eventType == null)
+        if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (collection == null)
+            || (traceId == null) || (rrType == null) ||
+            (timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
             || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
             return false;
         }
@@ -121,15 +120,21 @@ public class Event {
     }
 
     public void parseAndSetKeyAndCollection(Config config, String collection,
-                                                        Optional<CompareTemplate> templateOpt) {
+                                                        CompareTemplate template) {
         this.collection = collection;
+        parseAndSetKey(config, template);
+    }
 
+    public void parseAndSetKey(Config config, CompareTemplate template) {
+
+        parsePayLoad(config);
+        List<String> keyVals = new ArrayList<>();
+        payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
+        payloadKey = Objects.hash(keyVals);
+    }
+
+    public void parsePayLoad(Config config) {
         payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
-        payloadKey = templateOpt.map(template -> {
-            List<String> keyVals = new ArrayList<>();
-            payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
-            return Objects.hash(keyVals);
-        }).orElse(0);
     }
 
     @JsonIgnore
@@ -149,19 +154,21 @@ public class Event {
         ProtoBufResponse
     }
 
-    public final String customerid;
+    public final String customerId;
     public final String app;
     public final String service;
-    public final String instanceid;
+    public final String instanceId;
     private String collection;
-    public final String traceid;
+    public final String traceId;
+    public final RR rrType;
+
 
     public void setCollection(String collection) {
         this.collection = collection;
     }
 
     public final Instant timestamp;
-    public final String reqid; // for responses, this is the reqid of the corresponding request
+    public final String reqId; // for responses, this is the reqid of the corresponding request
     public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
     public final EventType eventType;
 
@@ -174,6 +181,6 @@ public class Event {
     DataObj payload;
 
     @JsonIgnore
-    int payloadKey;
+    public int payloadKey;
 
 }

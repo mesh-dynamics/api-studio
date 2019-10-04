@@ -242,25 +242,23 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<Event> getEvents(Optional<String> customerid, Optional<String> app, Optional<String> service, Optional<String> collection,
-                                   Optional<String> traceid, List<String> reqids, List<String> paths, Optional<Event.EventType> type,
-                                   Optional<Integer> payloadKey, Optional<Integer> maxResults,
-                                   Optional<Integer> start, Optional<Boolean> asc) {
+    public Result<Event> getEvents(EventQuery eventQuery) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Event.toString());
-        addFilter(query, CUSTOMERIDF, customerid);
-        addFilter(query, APPF, app);
-        addFilter(query, SERVICEF, service);
-        addFilter(query, COLLECTIONF, collection);
-        addFilter(query, TRACEIDF, traceid);
-        addFilter(query, REQIDF, reqids);
-        addFilter(query, PATHF, paths);
-        addFilter(query, EVENTTYPEF, type.map(t -> t.toString()));
-        addFilterInt(query, PAYLOADKEYF, payloadKey);
-        addSort(query, TIMESTAMPF, asc);
+        addFilter(query, CUSTOMERIDF, eventQuery.getCustomerId());
+        addFilter(query, APPF, eventQuery.getApp());
+        addFilter(query, SERVICEF, eventQuery.getService());
+        addFilter(query, COLLECTIONF, eventQuery.getCollection());
+        addFilter(query, TRACEIDF, eventQuery.getTraceId());
+        addFilter(query, REQIDF, eventQuery.getReqids().orElse(Collections.emptyList()));
+        addFilter(query, PATHF, eventQuery.getPaths().orElse(Collections.emptyList()));
+        addFilter(query, EVENTTYPEF, Optional.ofNullable(eventQuery.getEventType()).map(type -> type.toString()));
+        addFilterInt(query, PAYLOADKEYF, eventQuery.getPayloadKey());
+        addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
 
-        return SolrIterator.getResults(solr, query, maxResults, this::docToEvent, start);
+        return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
+            this::docToEvent, Optional.of(eventQuery.getOffset().orElse(20)));
     }
 
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
@@ -1124,14 +1122,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final SolrInputDocument doc = new SolrInputDocument();
 
         doc.setField(TYPEF, Types.Event.toString());
-        doc.setField(CUSTOMERIDF, event.customerid);
+        doc.setField(CUSTOMERIDF, event.customerId);
         doc.setField(APPF, event.app);
         doc.setField(SERVICEF, event.service);
-        doc.setField(INSTANCEIDF, event.instanceid);
+        doc.setField(INSTANCEIDF, event.instanceId);
         doc.setField(COLLECTIONF, event.getCollection());
-        doc.setField(TRACEIDF, event.traceid);
+        doc.setField(TRACEIDF, event.traceId);
+        doc.setField(RRTYPEF, event.rrType.toString());
         doc.setField(TIMESTAMPF, event.timestamp.toString());
-        doc.setField(REQIDF, event.reqid);
+        doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(PAYLOADBINF, event.rawPayloadBinary);
@@ -1150,6 +1149,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> traceid = getStrField(doc, TRACEIDF);
+        Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
         Optional<String> reqid = getStrField(doc, REQIDF);
         Optional<String> path = getStrField(doc, PATHF);
@@ -1158,8 +1158,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
 
-        return Event.createEvent(docid.orElse("NA"), customerid, app, service, instanceid, collection,
-            traceid, timestamp, reqid, path, eventType, payloadBin, payloadStr, payloadKey, config);
+        Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
+
+        EventBuilder eventBuilder = new EventBuilder(customerid.orElse(null), app.orElse(null), service.orElse(null),
+            instanceid.orElse(null), collection.orElse(null), traceid.orElse(null),
+            rrtype.orElse(null), timestamp.orElse(null),
+            reqid.orElse(null), path.orElse(null), eType);
+        eventBuilder.setRawPayloadString(payloadStr.orElse(null));
+        eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));
+        eventBuilder.setPayloadKey(payloadKey.orElse(0));
+
+        Optional<Event> event = eventBuilder.createEventOpt();
+        event.ifPresent(e -> e.parsePayLoad(config));
+
+        return event;
     }
 
     private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, Object val) {

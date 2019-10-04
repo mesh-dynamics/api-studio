@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import javax.ws.rs.core.MediaType;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,6 +22,9 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.cube.agent.UtilException;
 
 /*
  * Created by IntelliJ IDEA.
@@ -28,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JsonObj implements DataObj {
 
     private static final Logger LOGGER = LogManager.getLogger(JsonObj.class);
-
 
     JsonObj(String json, ObjectMapper jsonMapper) {
         this(jsonStrToObj(json, jsonMapper), jsonMapper);
@@ -55,8 +59,8 @@ public class JsonObj implements DataObj {
     }
 
     @Override
-    public String getValAsString(String path) {
-        return getNode(path).flatMap(this::nodeToString).orElse("");
+    public Optional<String> getValAsString(String path) {
+        return getNode(path).flatMap(this::nodeToString);
     }
 
     @Override
@@ -71,6 +75,40 @@ public class JsonObj implements DataObj {
         objRoot.ifPresent(root -> {
             processNode(root, filter, vals, path);
         });
+    }
+
+    /**
+     * Unwrap the string at path into a json object. The type for interpreting the string is given by mimetype
+     * @param path
+     * @param mimetype
+     */
+    public boolean unwrapAsJson(String path, String mimetype) {
+        return objRoot.map(root -> unwrapAsJson(root, path, mimetype)).orElse(false);
+    }
+
+    private boolean unwrapAsJson(JsonNode root, String path, String mimetype) {
+        JsonPointer pathPtr = JsonPointer.compile(path);
+        JsonNode valParent = root.at(pathPtr.head());
+        if (valParent != null &&  valParent.isObject()) {
+            ObjectNode valParentObj = (ObjectNode) valParent;
+            String fieldName = pathPtr.last().toString();
+            JsonNode val = valParentObj.get(fieldName);
+            if (val != null && val.isTextual()) {
+                // parse it as per mime type
+                // currently handling only json type
+                if (mimetype == MediaType.APPLICATION_JSON) {
+                    try {
+                        JsonNode parsedVal = jsonMapper.readTree(val.asText());
+                        valParentObj.set(fieldName, parsedVal);
+                        return true;
+                    } catch (IOException e) {
+                        LOGGER.error(String.format("Exception in parsing json string at path: %s, val: %s",
+                            path, val.asText()), e.getMessage(), UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void processNode(JsonNode node, Function<String, Boolean> filter, Collection<String> vals, JsonPointer path) {

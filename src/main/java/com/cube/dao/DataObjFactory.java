@@ -8,6 +8,8 @@ package com.cube.dao;
 
 import java.nio.charset.StandardCharsets;
 
+import javax.ws.rs.core.MediaType;
+
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +28,10 @@ public class DataObjFactory {
         switch (type) {
             case HTTPRequest:
             case HTTPResponse:
+                JsonObj obj = new JsonObj(payloadStr, config.jsonmapper);
+                String mimeType = obj.getValAsString("/hdr/content-type").orElse(MediaType.TEXT_PLAIN);
+                obj.unwrapAsJson("/body", mimeType);
+                return obj;
             case JavaRequest:
             case JavaResponse:
                 return new JsonObj(payloadStr, config.jsonmapper);

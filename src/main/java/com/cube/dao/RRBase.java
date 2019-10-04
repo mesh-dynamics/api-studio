@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.cube.core.*;
+import com.cube.ws.Config;
+
 import io.cube.agent.CommonUtils;
 
 public class RRBase {
@@ -29,7 +31,8 @@ public class RRBase {
 	public static final String CUSTOMERIDPATH = "/customerid";
 	public static final String APPPATH = "/app";
 
-	public static enum RR {
+
+    public static enum RR {
 		Record,
 		Replay,
 		Manual  // manually created e.g. default requests and responses
@@ -96,7 +99,13 @@ public class RRBase {
 		setMetaField(SERVICEFIELD, serviceid);
 	}
 
-	/**
+	@JsonIgnore
+    public Optional<String> getTraceId() {
+	    return getHdrField(Config.DEFAULT_TRACE_FIELD);
+    }
+
+
+    /**
 	 * @return
 	 */
 	@JsonIgnore
@@ -116,6 +125,15 @@ public class RRBase {
 	public void setMetaField(String fieldname, String value) {
 		meta.putSingle(fieldname, value);
 	}
+
+
+    /**
+     * @return
+     */
+    @JsonIgnore
+    private Optional<String> getHdrField(String fieldname) {
+        return Optional.ofNullable(hdrs.getFirst(fieldname));
+    }
 
 	protected Comparator.Match compare(RRBase rhs,
 									   CompareTemplate template,

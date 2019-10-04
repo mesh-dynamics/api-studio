@@ -27,6 +27,8 @@ import javax.ws.rs.core.UriInfo;
 
 import com.cube.core.Utils;
 import io.cube.agent.CommonUtils;
+import io.cube.agent.UtilException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -51,6 +53,9 @@ import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.dao.Analysis;
+import com.cube.dao.Event;
+import com.cube.dao.EventBuilder;
+import com.cube.dao.EventQuery;
 import com.cube.dao.RRBase;
 import com.cube.dao.RRBase.*;
 import com.cube.dao.ReqRespStore;
@@ -192,6 +197,22 @@ public class MockServiceHTTP {
 
 	}
 
+
+    private Request createRequestMockNew(String path, MultivaluedMap<String, String> formParams,
+                                                String customerId, String app, String instanceId, String service,
+                                                HttpHeaders headers, MultivaluedMap<String,String> queryParams,
+                                                String replayId) {
+        // At the time of mock, our lua filters don't get deployed, hence no request id is generated
+        // we can generate a new request id here in the mock service
+        Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
+        return new Request(
+            path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
+            Optional.of(replayId) , Optional.of(RR.Replay), Optional.of(customerId) , Optional.of(app));
+
+    }
+
+
+
     /**
      * Create a dummy response (just for the records) to save against the dummy mock request
      * @param originalResponse
@@ -299,6 +320,153 @@ public class MockServiceHTTP {
 
 	}
 
+    private Response getRespFromEvent(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
+                             String customerid, String app, String instanceid,
+                             String service, HttpHeaders headers) {
+
+        LOGGER.info(String.format("Mocking request for %s", path));
+
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+
+        // pathParams are not used in our case, since we are matching full path
+        // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(customerid),
+            Optional.of(app),
+            Optional.of(instanceid));
+        Optional<String> collectionOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
+        Optional<String> replayIdOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
+
+        if (collectionOpt.isEmpty() || replayIdOpt.isEmpty()) {
+            LOGGER.error("Cannot mock request since replay/collection is empty");
+            return notFound();
+        }
+
+        String collection = collectionOpt.get();
+        String replayId = replayIdOpt.get();
+
+        Request request = new Request(path, Optional.empty(), queryParams, formParams,
+            headers.getRequestHeaders(), service, collectionOpt,
+            Optional.of(RR.Record),
+            Optional.of(customerid),
+            Optional.of(app));
+
+        Optional<String> templateVersion =
+            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> replay.templateVersion));
+
+        TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
+        RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
+
+
+        // first store the original request as a part of the replay
+        Request mockRequest = createRequestMockNew(path, formParams, customerid, app, instanceid,
+        service, headers, queryParams, replayId);
+        Event mockRequestEvent;
+        try {
+            mockRequestEvent = Event.fromRequest(mockRequest, comparator, config);
+            rrstore.save(mockRequestEvent);
+        } catch (Exception e) {
+            LOGGER.error("Exception in creating mock request: %s",
+                this.toString(), e.getMessage(),
+                UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+            return notFound();
+        }
+
+        EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1);
+        Optional<com.cube.dao.Response> resp =  rrstore.getEvents(reqQuery).getObjects().findFirst()
+            .map(event -> event.reqId)
+            .flatMap(matchingReqId -> {
+                EventQuery respQuery = getResponseEventQuery(request, matchingReqId, 1);
+                return rrstore.getEvents(respQuery).getObjects().findFirst();
+            })
+            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonmapper))
+            .or(() -> {
+                request.rrtype = Optional.of(RR.Manual);
+                LOGGER.info("Using default response");
+                return getDefaultResponse(request);
+            });
+
+
+        return resp.map(respv -> {
+            ResponseBuilder builder = Response.status(respv.status);
+            respv.hdrs.forEach((f, vl) -> vl.forEach((v) -> {
+                // System.out.println(String.format("k=%s, v=%s", f, v));
+                // looks like setting some headers causes a problem, so skip them
+                // TODO: check if this is a comprehensive list
+                if (!f.equals("transfer-encoding"))
+                    builder.header(f, v);
+            }));
+            // Increment match counter in cache
+            // TODO commenting out call to cache
+            //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+            // store a req-resp analysis match result for the mock request (during replay)
+            // and the matched recording request
+            respv.reqid.ifPresent(recordReqId -> {
+                Analysis.ReqRespMatchResult matchResult =
+                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mockRequest.reqid,
+                        Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
+                        "", customerid, app, service, path, mockRequest.collection.get(),
+                        CommonUtils.getTraceId(respv.meta),
+                        CommonUtils.getTraceId(mockRequest.hdrs));
+                rrstore.saveResult(matchResult);
+                com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mockRequest.reqid,
+                    customerid, app, instanceid);
+                rrstore.save(mockResponseToStore);
+            });
+            return builder.entity(respv.body).build();
+        }).orElseGet(() -> {
+            // Increment not match counter in cache
+            // TODO commenting out call to cache
+            //replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+            //TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
+            //a recorded request, here in the mock we have a replay request which did not match
+            //with any recorded request, but still to properly calculate no match counts for
+            // virtualized services in facet queries, we are creating this dummy req resp
+            // match result for now.
+            // TODO change it back to MockReqNoMatch
+
+            Analysis.ReqRespMatchResult matchResult =
+                new Analysis.ReqRespMatchResult(Optional.empty(), mockRequest.reqid,
+                    Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
+                    customerid, app, service, path, mockRequest.collection.get(), Optional.empty(),
+                    CommonUtils.getTraceId(mockRequest.hdrs));
+            rrstore.saveResult(matchResult);
+            return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
+        });
+
+    }
+
+    public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit) {
+        // eventually we will clean up code and make customerid and app non-optional in Request
+        String customerId = request.customerid.orElse("NA");
+        String app = request.app.orElse("NA");
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPRequest);
+        request.collection.ifPresent(builder::withCollection);
+        request.getService().ifPresent(builder::withService);
+        request.getTraceId().ifPresent(builder::withTraceId);
+        return builder.withPaths(List.of(request.path))
+            .withPayloadKey(payloadKey)
+            .withSortOrderAsc(true)
+            .withLimit(limit)
+            .build();
+    }
+
+    public static EventQuery getResponseEventQuery(Request request, String reqId, int limit) {
+        // eventually we will clean up code and make customerid and app non-optional in Request
+        String customerId = request.customerid.orElse("NA");
+        String app = request.app.orElse("NA");
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPResponse);
+        request.collection.ifPresent(builder::withCollection);
+        request.getService().ifPresent(builder::withService);
+        request.getTraceId().ifPresent(builder::withTraceId);
+        return builder.withReqIds(List.of(reqId))
+            .withLimit(limit)
+            .build();
+    }
+
+
+    private Response notFound() {
+	    return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
+    }
 
 
 
