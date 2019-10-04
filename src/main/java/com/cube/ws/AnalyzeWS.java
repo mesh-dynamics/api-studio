@@ -813,7 +813,7 @@ public class AnalyzeWS {
             Recording updatedRecording = new Recording(originalRec.customerid,
                 originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
-                originalRec.rootRecordingId.or(() -> Optional.of(originalRec.getId())));
+                Optional.of(originalRec.rootRecordingId));
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +

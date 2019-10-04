@@ -427,8 +427,7 @@ public class CubeStore {
 
 
 
-        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateSetVersion,
-            rrstore, Optional.empty())
+        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateSetVersion, rrstore)
             .map(newr -> {
                 String json;
                 try {

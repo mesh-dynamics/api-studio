@@ -1966,8 +1966,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (customerid.isPresent() && app.isPresent()
                 && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
 
+
             // Currently setting the template version empty if not found so that it can be compatible with current collections
-            // In future that can be removed since template version is being made as mandatory field like app, customer, etc.
+            // TODO In future that can be removed since template version is being made as mandatory field like app, customer, etc.
             recording = Optional.of(new Recording(customerid.get(), app.get(), instanceid.get(), collection.get(),
                 status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.orElse(Recording.DEFAULT_TEMPLATE_VER), parentRecordingId, rootRecordingId));
         } else {
@@ -1992,8 +1993,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
         doc.setField(TEMPLATE_VERSION, recording.templateVersion);
+        doc.setField(ROOT_RECORDING_ID, recording.rootRecordingId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_ID, parentRecId));
-        recording.rootRecordingId.ifPresent(rootRecId -> doc.setField(ROOT_RECORDING_ID, rootRecId));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
 
         return doc;
