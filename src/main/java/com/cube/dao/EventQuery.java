@@ -39,7 +39,7 @@ public class EventQuery {
     private final Optional<String> collection;
 
     private final Optional<String> traceId;
-    private final Optional<RRBase.RR> rrType;
+    private final Optional<Event.RecordReplayType> rrType;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
     private final Optional<Instant> timestamp;
@@ -60,7 +60,7 @@ public class EventQuery {
         private String instanceId = null;
         private String collection = null;
         private String traceId = null;
-        private RRBase.RR rrType = null;
+        private Event.RecordReplayType rrType = null;
         private String spanId = null;
         private String parentSpanId = null;
         private Instant timestamp = null;
@@ -100,7 +100,7 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withRRType(RRBase.RR val) {
+        public Builder withRRType(Event.RecordReplayType val) {
             rrType = val;
             return this;
         }
@@ -204,7 +204,7 @@ public class EventQuery {
         return traceId;
     }
 
-    public Optional<RRBase.RR> getRRType() { return rrType; }
+    public Optional<Event.RecordReplayType> getRRType() { return rrType; }
 
     public Optional<List<String>> getReqids() {
         return reqIds;

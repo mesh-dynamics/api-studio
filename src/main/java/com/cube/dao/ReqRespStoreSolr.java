@@ -64,7 +64,6 @@ import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.RequestComparator;
 import com.cube.core.RequestComparator.PathCT;
 import com.cube.dao.Analysis.ReqRespMatchResult;
-import com.cube.dao.RRBase.RR;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -219,7 +218,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Result<Request> getRequests(String customerid, String app, String collection,
-                                       List<String> reqids, List<String> paths, RRBase.RR rrtype) {
+                                       List<String> reqids, List<String> paths, Event.RecordReplayType rrtype) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Request.toString());
@@ -1150,7 +1149,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> traceid = getStrField(doc, TRACEIDF);
-        Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
+        Optional<Event.RecordReplayType> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
         Optional<String> reqid = getStrField(doc, REQIDF);
         Optional<String> path = getStrField(doc, PATHF);
@@ -1170,6 +1169,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         eventBuilder.setPayloadKey(payloadKey.orElse(0));
 
         Optional<Event> event = eventBuilder.createEventOpt();
+
+        // TODO: revisit if parsing is needed here or should be done on demand by the consumer
         event.ifPresent(e -> e.parsePayLoad(config));
 
         return event;
@@ -1281,7 +1282,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // OLDBODYF
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
+        Optional<Event.RecordReplayType> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
         Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
 
@@ -1370,7 +1371,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // OLDBODYF
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<RR> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
+        Optional<Event.RecordReplayType> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
         Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
 

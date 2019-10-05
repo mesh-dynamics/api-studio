@@ -177,7 +177,7 @@ public class Replay {
 	 */
 	@JsonIgnore
 	public Result<Request> getRequests(ReqRespStore rrstore) {
-		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, RRBase.RR.Record);
+		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, Event.RecordReplayType.Record);
 		return res;
 	}
 

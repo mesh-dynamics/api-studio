@@ -3,18 +3,23 @@
  */
 package com.cube.dao;
 
+import static com.cube.dao.Event.RecordReplayType.Record;
+
 import java.time.Instant;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
+import com.cube.core.RequestComparator;
+import com.cube.ws.Config;
 
 public class Request extends RRBase {
 	public static final String QPARAMPATH = "/qparams";
@@ -40,7 +45,7 @@ public class Request extends RRBase {
 			String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp, 
-			Optional<RR> rrtype, 
+			Optional<Event.RecordReplayType> rrtype,
 			Optional<String> customerid,
 			Optional<String> app) {
 		super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
@@ -63,7 +68,7 @@ public class Request extends RRBase {
 			MultivaluedMap<String, String> hdrs, 
 			String service, 
 			Optional<String> collection, 
-			Optional<RR> rrtype, 
+			Optional<Event.RecordReplayType> rrtype,
 			Optional<String> customerid,
 			Optional<String> app) {
 		this(path, id, qparams, fparams, emptyMap(), 
@@ -74,7 +79,7 @@ public class Request extends RRBase {
 	public Request(Optional<String> serviceid, 
 			String path,
 			String method,
-			Optional<RR> rrtype,
+			Optional<Event.RecordReplayType> rrtype,
 			Optional<String> customerid,
 			Optional<String> app) {
 		this(path, Optional.empty(), emptyMap(), emptyMap(), emptyMap(), 
@@ -125,4 +130,27 @@ public class Request extends RRBase {
 
 		return match.mt;
 	}
+
+    public static Event toEvent(Request request, RequestComparator comparator, Config config)
+        throws JsonProcessingException, EventBuilder.InvalidEventException {
+
+        HTTPRequestPayload payload = new HTTPRequestPayload(request.hdrs, request.qparams, request.fparams,
+            request.method, request.body);
+        String payloadStr;
+        payloadStr = config.jsonmapper.writeValueAsString(payload);
+
+        EventBuilder eventBuilder = new EventBuilder(request.customerid.orElse("NA"), request.app.orElse("NA"),
+            request.getService().orElse("NA"), request.getInstance().orElse("NA"), request.collection.orElse("NA"),
+            request.getTraceId().orElse("NA"), request.rrtype.orElse(Record), request.timestamp.orElse(Instant.now()),
+            request.reqid.orElse(
+                "NA"),
+            request.path, Event.EventType.HTTPRequest);
+        eventBuilder.setRawPayloadString(payloadStr);
+        Event event = eventBuilder.createEvent();
+        event.parseAndSetKey(config, comparator.getCompareTemplate());
+
+        return event;
+    }
+
+
 }

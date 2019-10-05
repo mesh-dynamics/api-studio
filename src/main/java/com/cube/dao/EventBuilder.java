@@ -18,24 +18,24 @@ public class EventBuilder {
 
     private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
-    private String customerId;
-    private String app;
-    private String service;
-    private String instanceId;
-    private String collection;
-    private String traceId;
-    private RRBase.RR rrType;
-    private Instant timestamp;
-    private String reqId;
-    private String apiPath;
-    private Event.EventType eventType;
+    private final String customerId;
+    private final String app;
+    private final String service;
+    private final String instanceId;
+    private final String collection;
+    private final String traceId;
+    private final Event.RecordReplayType rrType;
+    private final Instant timestamp;
+    private final String reqId;
+    private final String apiPath;
+    private final Event.EventType eventType;
     private byte[] rawPayloadBinary;
     private String rawPayloadString;
     private DataObj payload;
     private int payloadKey = 0;
 
     public EventBuilder(String customerId, String app, String service, String instanceId, String collection, String traceId,
-                        RRBase.RR rrType, Instant timestamp, String reqId, String apiPath, Event.EventType eventType) {
+                        Event.RecordReplayType rrType, Instant timestamp, String reqId, String apiPath, Event.EventType eventType) {
         this.customerId = customerId;
         this.app = app;
         this.service = service;

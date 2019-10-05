@@ -162,7 +162,7 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
-			, List<String> paths, RRBase.RR rrtype);
+			, List<String> paths, Event.RecordReplayType rrtype);
 
     Result<Event> getEvents(EventQuery eventQuery);
 
