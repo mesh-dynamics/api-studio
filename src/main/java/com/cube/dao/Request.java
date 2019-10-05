@@ -21,6 +21,8 @@ public class Request extends RRBase {
 	public static final String FPARAMPATH = "/fparams";
 	public static final String PATHPATH = "/path";
 	public static final String METHODPATH = "/method";
+	public static final String ARGSPATH = "/args";
+	public static final String FNRESPONSEPATH = "/response";
 
 
 	/**

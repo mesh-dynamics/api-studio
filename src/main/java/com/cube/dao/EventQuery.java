@@ -206,7 +206,7 @@ public class EventQuery {
 
     public Optional<RRBase.RR> getRRType() { return rrType; }
 
-    public Optional<List<String>> getReqids() {
+    public Optional<List<String>> getReqIds() {
         return reqIds;
     }
 
