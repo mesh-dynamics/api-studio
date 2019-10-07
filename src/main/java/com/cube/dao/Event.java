@@ -6,22 +6,21 @@
 
 package com.cube.dao;
 
-import static com.cube.dao.RRBase.RR.*;
+import static com.cube.dao.Event.RecordReplayType.Record;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.cube.core.RequestComparator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
-import com.cube.dao.RRBase.RR;
 import com.cube.ws.Config;
 
 /*
@@ -41,7 +40,7 @@ public class Event {
 
 
     public Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
-                 RR rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
+                 RecordReplayType rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
                  String rawPayloadString, DataObj payload, int payloadKey) {
         this.customerId = customerId;
         this.app = app;
@@ -149,11 +148,15 @@ public class Event {
         parsePayLoad(config);
         List<String> keyVals = new ArrayList<>();
         payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
+        LOGGER.info("Generating event key from vals: " + keyVals.toString());
         payloadKey = Objects.hash(keyVals);
     }
 
     public void parsePayLoad(Config config) {
-        payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
+        // parse if not already parsed
+        if (payload == null) {
+            payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
+        }
     }
 
     @JsonIgnore
@@ -179,7 +182,7 @@ public class Event {
     public final String instanceId;
     private String collection;
     public final String traceId;
-    public final RR rrType;
+    public final RecordReplayType rrType;
 
 
     public void setCollection(String collection) {
@@ -202,4 +205,10 @@ public class Event {
     @JsonIgnore
     public int payloadKey;
 
+    /* when did the event get created - record, replay or manually added */
+    public enum RecordReplayType {
+		Record,
+		Replay,
+		Manual  // manually created e.g. default requests and responses
+	}
 }

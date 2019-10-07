@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,6 +24,8 @@ import com.cube.ws.Config;
  */
 public class DataObjFactory {
 
+    private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);
+
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr, Config config) {
 
@@ -29,7 +33,12 @@ public class DataObjFactory {
             case HTTPRequest:
             case HTTPResponse:
                 JsonObj obj = new JsonObj(payloadStr, config.jsonmapper);
-                String mimeType = obj.getValAsString("/hdr/content-type").orElse(MediaType.TEXT_PLAIN);
+                String mimeType = MediaType.TEXT_PLAIN;
+                try {
+                    mimeType = obj.getValAsString("/hdr/content-type");
+                } catch (DataObj.PathNotFoundException e) {
+                    LOGGER.error("Content-type not found, using default of TEXT_PLAIN for payload: " + payloadStr);
+                }
                 obj.unwrapAsJson("/body", mimeType);
                 return obj;
             case JavaRequest:

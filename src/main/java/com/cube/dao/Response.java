@@ -3,9 +3,12 @@
  */
 package com.cube.dao;
 
+import static com.cube.dao.Event.RecordReplayType.Record;
+
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
+import com.cube.ws.Config;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -19,6 +22,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Response extends RRBase {
@@ -36,7 +40,7 @@ public class Response extends RRBase {
 			MultivaluedMap<String, String> hdrs, String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp, 
-			Optional<RR> rrtype, 
+			Optional<Event.RecordReplayType> rrtype,
 			Optional<String> customerid,
 			Optional<String> app) {
 		super(reqid, meta, hdrs, body, collection, timestamp, rrtype, customerid, app);
@@ -96,4 +100,25 @@ public class Response extends RRBase {
             return Optional.empty();
         }
     }
+
+    public Event toEvent(Config config)
+        throws JsonProcessingException, EventBuilder.InvalidEventException {
+
+        HTTPResponsePayload payload = new HTTPResponsePayload(hdrs, status, body);
+        String payloadStr;
+        payloadStr = config.jsonmapper.writeValueAsString(payload);
+
+        EventBuilder eventBuilder = new EventBuilder(customerid.orElse("NA"), app.orElse("NA"),
+            getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
+            getTraceId().orElse("NA"), rrtype.orElse(Record), timestamp.orElse(Instant.now()),
+            reqid.orElse("NA"), "NA", Event.EventType.HTTPResponse);
+        eventBuilder.setRawPayloadString(payloadStr);
+        Event event = eventBuilder.createEvent();
+        event.parsePayLoad(config);
+
+        return event;
+    }
+
+
+
 }

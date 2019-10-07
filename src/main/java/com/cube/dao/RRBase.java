@@ -32,13 +32,7 @@ public class RRBase {
 	public static final String APPPATH = "/app";
 
 
-    public static enum RR {
-		Record,
-		Replay,
-		Manual  // manually created e.g. default requests and responses
-	}
-
-	/**
+    /**
 	 * @param reqid
 	 * @param meta
 	 * @param hdrs
@@ -55,7 +49,7 @@ public class RRBase {
 			String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp,
-			Optional<RR> rrtype,
+			Optional<Event.RecordReplayType> rrtype,
 			Optional<String> customerid,
 			Optional<String> app) {
 		super();
@@ -174,7 +168,7 @@ public class RRBase {
 	public final String body;
 	public Optional<String> collection;
 	public final Optional<Instant> timestamp;
-	public Optional<RR> rrtype; // this can be "record" or "replay"
+	public Optional<Event.RecordReplayType> rrtype; // this can be "record" or "replay"
 	public final Optional<String> customerid;
 	public final Optional<String> app;
 

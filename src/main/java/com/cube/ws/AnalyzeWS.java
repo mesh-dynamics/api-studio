@@ -49,8 +49,8 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
+import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.RRBase;
 import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Replay;
@@ -512,7 +512,7 @@ public class AnalyzeWS {
             if (!reqids.isEmpty()) {
                 // empty reqid list would lead to returning of all requests, so check for it
                 Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerid, replay.app, replay.collection,
-                    reqids, Collections.emptyList(), RRBase.RR.Record);
+                    reqids, Collections.emptyList(), Event.RecordReplayType.Record);
                 requestResult.getObjects().forEach(req -> req.reqid.ifPresent(reqidv -> requestMap.put(reqidv, req)));
             }
 

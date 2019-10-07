@@ -59,8 +59,9 @@ public class JsonObj implements DataObj {
     }
 
     @Override
-    public Optional<String> getValAsString(String path) {
-        return getNode(path).flatMap(this::nodeToString);
+    public String getValAsString(String path) throws PathNotFoundException {
+        Optional<String> val = getNode(path).flatMap(this::nodeToString);
+        return val.orElseThrow(() -> new PathNotFoundException());
     }
 
     @Override
