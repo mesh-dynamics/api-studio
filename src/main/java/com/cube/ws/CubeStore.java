@@ -6,7 +6,6 @@ package com.cube.ws;
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,7 +29,7 @@ import javax.ws.rs.core.UriInfo;
 
 import com.cube.dao.EventQuery;
 import com.cube.dao.Result;
-import okhttp3.RequestBody;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -56,13 +55,11 @@ import com.cube.core.TemplatedRequestComparator;
 import com.cube.core.Utils;
 import com.cube.dao.Event;
 import com.cube.dao.RRBase;
-import com.cube.dao.RRBase.*;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Request;
-import com.cube.dao.Result;
 
 /**
  * @author prasad
@@ -152,7 +149,7 @@ public class CubeStore {
             }
             return t;
         });
-        Optional<RR> rrtype = Optional.ofNullable(meta.getFirst("rrtype")).flatMap(rrt -> Utils.valueOf(RR.class, rrt));
+        Optional<Event.RecordReplayType> rrtype = Optional.ofNullable(meta.getFirst("rrtype")).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
         Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
         Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
         Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
@@ -325,7 +322,7 @@ public class CubeStore {
 
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
-                Optional<CompareTemplate> compareTemplate = Optional.empty();
+                event.setCollection(collection.get());
                 if (event.isRequestType()) {
                     // if request type, need to extract keys from request and index it, so that it can be
                     // used while mocking
@@ -333,9 +330,10 @@ public class CubeStore {
                         new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
                             event.app, event.service, event.apiPath, TemplateKey.Type.Request);
 
-                    compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
+                    CompareTemplate compareTemplate =
+                        config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
+                    event.parseAndSetKey(config, compareTemplate);
                 }
-                event.parseAndSetKeyAndCollection(config, collection.get(), compareTemplate);
                 boolean saveResult = rrstore.save(event);
                 if (!saveResult) {
                     err = Optional.of("Not able to store event");
@@ -666,7 +664,7 @@ public class CubeStore {
         pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
 
         Request queryRequest = new Request(path, Optional.empty(), qparams, fparams, hdrs, service, collection,
-            Optional.of(RR.Record), customerid, app);
+            Optional.of(Event.RecordReplayType.Record), customerid, app);
 
         List<Request> requests =
             rrstore.getRequests(queryRequest, mspecForDrillDownQuery, nummatches, start)
@@ -752,7 +750,7 @@ public class CubeStore {
 	}
 
 	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
-		Request req = new Request(resp.getService(), path, method, Optional.of(RR.Manual), resp.customerid,
+		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RecordReplayType.Manual), resp.customerid,
 				resp.app);
 
 		// check if default response has been saved earlier

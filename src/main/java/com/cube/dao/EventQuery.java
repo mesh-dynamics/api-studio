@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /*
  * Created by IntelliJ IDEA.
@@ -40,6 +39,7 @@ public class EventQuery {
     private final Optional<String> collection;
 
     private final Optional<String> traceId;
+    private final Optional<Event.RecordReplayType> rrType;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
     private final Optional<Instant> timestamp;
@@ -60,15 +60,16 @@ public class EventQuery {
         private String instanceId = null;
         private String collection = null;
         private String traceId = null;
+        private Event.RecordReplayType rrType = null;
         private String spanId = null;
         private String parentSpanId = null;
         private Instant timestamp = null;
         private List<String> reqIds = Collections.emptyList();
         private List<String> paths = Collections.emptyList();
-        private int payloadKey = 0;
-        private int offset = 0;
-        private int limit = 0;
-        private boolean sortOrderAsc = false;
+        private Integer payloadKey = null;
+        private Integer offset = null;
+        private Integer limit = null;
+        private Boolean sortOrderAsc = null;
 
         @JsonCreator
         public Builder(@JsonProperty("customerId") String customerId,
@@ -96,6 +97,11 @@ public class EventQuery {
 
         public Builder withTraceId(String val) {
             traceId = val;
+            return this;
+        }
+
+        public Builder withRRType(Event.RecordReplayType val) {
+            rrType = val;
             return this;
         }
 
@@ -147,6 +153,7 @@ public class EventQuery {
         public EventQuery build() {
             return new EventQuery(this);
         }
+
     }
 
     private EventQuery(Builder builder) {
@@ -157,6 +164,7 @@ public class EventQuery {
         instanceId = Optional.ofNullable(builder.instanceId);
         collection = Optional.ofNullable(builder.collection);
         traceId = Optional.ofNullable(builder.traceId);
+        rrType = Optional.ofNullable(builder.rrType);
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
         timestamp = Optional.ofNullable(builder.timestamp);
@@ -195,6 +203,8 @@ public class EventQuery {
     public Optional<String> getTraceId() {
         return traceId;
     }
+
+    public Optional<Event.RecordReplayType> getRRType() { return rrType; }
 
     public Optional<List<String>> getReqids() {
         return reqIds;

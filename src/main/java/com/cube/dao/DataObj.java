@@ -7,6 +7,7 @@
 package com.cube.dao;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Function;
 
 /*
@@ -21,9 +22,15 @@ public interface DataObj {
 
     DataObj getVal(String path);
 
-    String getValAsString(String path);
+    //Optional<String> getValAsString(String path);
+
+    String getValAsString(String path) throws PathNotFoundException;
 
     String serialize();
 
     void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
+
+    class PathNotFoundException extends Exception{
+
+    }
 }
