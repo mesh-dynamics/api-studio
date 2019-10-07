@@ -117,8 +117,29 @@ public class Request extends RRBase {
 		return new MultivaluedHashMap<String, String>();
 	}
 
+    public Event toEvent(RequestComparator comparator, Config config)
+        throws JsonProcessingException, EventBuilder.InvalidEventException {
 
-	public MatchType compare(Request rhs, CompareTemplate template, CompareTemplate metaFieldtemplate, CompareTemplate hdrFieldTemplate,
+        HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, qparams, fparams,
+            method, body);
+        String payloadStr;
+        payloadStr = config.jsonmapper.writeValueAsString(payload);
+
+        EventBuilder eventBuilder = new EventBuilder(customerid.orElse("NA"), app.orElse("NA"),
+            getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
+            getTraceId().orElse("NA"), rrtype.orElse(Record), timestamp.orElse(Instant.now()),
+            reqid.orElse(
+                "NA"),
+            path, Event.EventType.HTTPRequest);
+        eventBuilder.setRawPayloadString(payloadStr);
+        Event event = eventBuilder.createEvent();
+        event.parseAndSetKey(config, comparator.getCompareTemplate());
+
+        return event;
+    }
+
+
+    public MatchType compare(Request rhs, CompareTemplate template, CompareTemplate metaFieldtemplate, CompareTemplate hdrFieldTemplate,
 							 Comparator bodyComparator, CompareTemplate qparamFieldTemplate, CompareTemplate fparamFieldTemplate) {
 
 		// diff not needed, so pass false
@@ -130,27 +151,6 @@ public class Request extends RRBase {
 
 		return match.mt;
 	}
-
-    public static Event toEvent(Request request, RequestComparator comparator, Config config)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
-
-        HTTPRequestPayload payload = new HTTPRequestPayload(request.hdrs, request.qparams, request.fparams,
-            request.method, request.body);
-        String payloadStr;
-        payloadStr = config.jsonmapper.writeValueAsString(payload);
-
-        EventBuilder eventBuilder = new EventBuilder(request.customerid.orElse("NA"), request.app.orElse("NA"),
-            request.getService().orElse("NA"), request.getInstance().orElse("NA"), request.collection.orElse("NA"),
-            request.getTraceId().orElse("NA"), request.rrtype.orElse(Record), request.timestamp.orElse(Instant.now()),
-            request.reqid.orElse(
-                "NA"),
-            request.path, Event.EventType.HTTPRequest);
-        eventBuilder.setRawPayloadString(payloadStr);
-        Event event = eventBuilder.createEvent();
-        event.parseAndSetKey(config, comparator.getCompareTemplate());
-
-        return event;
-    }
 
 
 }

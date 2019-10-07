@@ -333,12 +333,11 @@ public class MockServiceHTTP {
         Optional<String> collectionOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
         Optional<String> replayIdOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
 
-        if (collectionOpt.isEmpty() || replayIdOpt.isEmpty()) {
+        if (replayIdOpt.isEmpty()) {
             LOGGER.error("Cannot mock request since replay/collection is empty");
             return notFound();
         }
 
-        String collection = collectionOpt.get();
         String replayId = replayIdOpt.get();
 
         Request request = new Request(path, Optional.empty(), queryParams, formParams,
@@ -359,12 +358,11 @@ public class MockServiceHTTP {
         service, headers, queryParams, replayId);
         Event mockRequestEvent;
         try {
-            mockRequestEvent = Request.toEvent(mockRequest, comparator, config);
+            mockRequestEvent = mockRequest.toEvent(comparator, config);
             rrstore.save(mockRequestEvent);
         } catch (Exception e) {
-            LOGGER.error("Exception in creating mock request: %s",
-                this.toString(), e.getMessage(),
-                UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+            LOGGER.error("Exception in creating mock request, message: {}, location: {}",
+                e.getMessage(), UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
             return notFound();
         }
 
