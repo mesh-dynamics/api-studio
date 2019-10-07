@@ -90,7 +90,7 @@ public class Analyzer {
                 // collection to set to replayid, since collection in replays are set to replayids
                 Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
                         r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
-                        Optional.of(RRBase.RR.Replay), r.customerid, r.app);
+                        Optional.of(Event.RecordReplayType.Replay), r.customerid, r.app);
 
                 List<Request> matches = new ArrayList<>();
 

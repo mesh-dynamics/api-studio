@@ -60,10 +60,7 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.dao.Analysis;
 import com.cube.dao.Event;
-import com.cube.dao.EventBuilder;
 import com.cube.dao.EventQuery;
-import com.cube.dao.RRBase;
-import com.cube.dao.RRBase.*;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 
@@ -291,7 +288,7 @@ public class MockServiceHTTP {
 		Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
 		return rrstore.getCurrentReplayId(Optional.of(customerId), Optional.of(app), Optional.of(instanceId)).map(replayId -> new Request(
 				path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
-				Optional.of(replayId) , Optional.of(RR.Replay), Optional.of(customerId) , Optional.of(app)
+				Optional.of(replayId) , Optional.of(Event.RecordReplayType.Replay), Optional.of(customerId) , Optional.of(app)
 		));
 
 	}
@@ -306,7 +303,7 @@ public class MockServiceHTTP {
         Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
         return new Request(
             path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
-            Optional.of(replayId) , Optional.of(RR.Replay), Optional.of(customerId) , Optional.of(app));
+            Optional.of(replayId) , Optional.of(Event.RecordReplayType.Replay), Optional.of(customerId) , Optional.of(app));
 
     }
 
@@ -325,7 +322,7 @@ public class MockServiceHTTP {
                                                      String customerId, String app, String instanceId) {
         return  new com.cube.dao.Response(mockReqId, originalResponse.status, originalResponse.meta,
             originalResponse.hdrs, originalResponse.body, rrstore.getCurrentReplayId(Optional.of(customerId),
-            Optional.of(app), Optional.of(instanceId)) , Optional.of(Instant.now()), Optional.of(RR.Replay) ,
+            Optional.of(app), Optional.of(instanceId)) , Optional.of(Instant.now()), Optional.of(Event.RecordReplayType.Replay) ,
             Optional.of(customerId), Optional.of(app));
     }
 
@@ -349,7 +346,7 @@ public class MockServiceHTTP {
         Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
 	    		headers.getRequestHeaders(), service, collection,
-	    		Optional.of(RRBase.RR.Record),
+	    		Optional.of(Event.RecordReplayType.Record),
 	    		Optional.of(customerid),
 	    		Optional.of(app));
 
@@ -361,7 +358,7 @@ public class MockServiceHTTP {
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
 				.or(() -> {
-					r.rrtype = Optional.of(RR.Manual);
+					r.rrtype = Optional.of(Event.RecordReplayType.Manual);
 					LOGGER.info("Using default response");
 					return getDefaultResponse(r);
 				});
@@ -443,7 +440,7 @@ public class MockServiceHTTP {
 
         Request request = new Request(path, Optional.empty(), queryParams, formParams,
             headers.getRequestHeaders(), service, collectionOpt,
-            Optional.of(RR.Record),
+            Optional.of(Event.RecordReplayType.Record),
             Optional.of(customerid),
             Optional.of(app));
 
@@ -459,7 +456,7 @@ public class MockServiceHTTP {
         service, headers, queryParams, replayId);
         Event mockRequestEvent;
         try {
-            mockRequestEvent = Event.fromRequest(mockRequest, comparator, config);
+            mockRequestEvent = Request.toEvent(mockRequest, comparator, config);
             rrstore.save(mockRequestEvent);
         } catch (Exception e) {
             LOGGER.error("Exception in creating mock request: %s",
@@ -477,7 +474,7 @@ public class MockServiceHTTP {
             })
             .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonmapper))
             .or(() -> {
-                request.rrtype = Optional.of(RR.Manual);
+                request.rrtype = Optional.of(Event.RecordReplayType.Manual);
                 LOGGER.info("Using default response");
                 return getDefaultResponse(request);
             });
@@ -543,7 +540,7 @@ public class MockServiceHTTP {
 
         return builder.withPaths(List.of(request.path))
             .withPayloadKey(payloadKey)
-            .withRRType(RR.Record)
+            .withRRType(Event.RecordReplayType.Record)
             .withSortOrderAsc(true)
             .withLimit(limit)
             .build();

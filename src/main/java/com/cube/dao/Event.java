@@ -6,7 +6,7 @@
 
 package com.cube.dao;
 
-import static com.cube.dao.RRBase.RR.*;
+import static com.cube.dao.Event.RecordReplayType.Record;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -17,11 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
-import com.cube.dao.RRBase.RR;
 import com.cube.ws.Config;
 
 /*
@@ -41,7 +38,7 @@ public class Event {
 
 
     public Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
-                 RR rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
+                 RecordReplayType rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
                  String rawPayloadString, DataObj payload, int payloadKey) {
         this.customerId = customerId;
         this.app = app;
@@ -82,47 +79,6 @@ public class Event {
 
     }
 
-
-    public static Event fromRequest(Request request, RequestComparator comparator, Config config)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
-
-        HTTPRequestPayload payload = new HTTPRequestPayload(request.hdrs, request.qparams, request.fparams,
-            request.method, request.body);
-        String payloadStr;
-        payloadStr = config.jsonmapper.writeValueAsString(payload);
-
-        EventBuilder eventBuilder = new EventBuilder(request.customerid.orElse("NA"), request.app.orElse("NA"),
-            request.getService().orElse("NA"), request.getInstance().orElse("NA"), request.collection.orElse("NA"),
-            request.getTraceId().orElse("NA"), request.rrtype.orElse(Record), request.timestamp.orElse(Instant.now()),
-            request.reqid.orElse(
-                "NA"),
-            request.path, EventType.HTTPRequest);
-        eventBuilder.setRawPayloadString(payloadStr);
-        Event event = eventBuilder.createEvent();
-        event.parseAndSetKey(config, comparator.getCompareTemplate());
-
-        return event;
-    }
-
-    public static Event fromResponse(Response response, Config config)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
-
-        HTTPResponsePayload payload = new HTTPResponsePayload(response.hdrs, response.status, response.body);
-        String payloadStr;
-        payloadStr = config.jsonmapper.writeValueAsString(payload);
-
-        EventBuilder eventBuilder = new EventBuilder(response.customerid.orElse("NA"), response.app.orElse("NA"),
-            response.getService().orElse("NA"), response.getInstance().orElse("NA"), response.collection.orElse("NA"),
-            response.getTraceId().orElse("NA"), response.rrtype.orElse(Record), response.timestamp.orElse(Instant.now()),
-            response.reqid.orElse(
-                "NA"),
-            "NA", EventType.HTTPResponse);
-        eventBuilder.setRawPayloadString(payloadStr);
-        Event event = eventBuilder.createEvent();
-        event.parsePayLoad(config);
-
-        return event;
-    }
 
 
     public String getCollection() {
@@ -182,7 +138,7 @@ public class Event {
     public final String instanceId;
     private String collection;
     public final String traceId;
-    public final RR rrType;
+    public final RecordReplayType rrType;
 
 
     public void setCollection(String collection) {
@@ -205,4 +161,10 @@ public class Event {
     @JsonIgnore
     public int payloadKey;
 
+    /* when did the event get created - record, replay or manually added */
+    public enum RecordReplayType {
+		Record,
+		Replay,
+		Manual  // manually created e.g. default requests and responses
+	}
 }
