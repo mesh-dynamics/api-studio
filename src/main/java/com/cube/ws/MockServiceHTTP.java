@@ -1,6 +1,5 @@
 package com.cube.ws;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,10 +27,11 @@ import javax.ws.rs.core.UriInfo;
 
 import com.cube.agent.FnResponse;
 import com.cube.core.Utils;
+import com.cube.dao.DataObj;
+import com.cube.dao.DataObjFactory;
 import com.cube.dao.Event;
 import com.cube.dao.EventQuery;
 import com.cube.dao.Result;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.cube.agent.CommonUtils;
 import io.cube.agent.UtilException;
 
@@ -59,8 +59,6 @@ import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.dao.Analysis;
-import com.cube.dao.Event;
-import com.cube.dao.EventQuery;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 
@@ -138,8 +136,8 @@ public class MockServiceHTTP {
             Optional.of(app), Optional.of(instanceId));
     }
 
-    private boolean setPayloadKeyAndCollection(Event event) {
-	    if (event!= null) {
+    private boolean setFunctionPayloadKeyAndCollection(Event event) {
+	    if (event!= null && event.eventType.equals(Event.EventType.JavaRequest)) {
             Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
             Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
@@ -174,22 +172,17 @@ public class MockServiceHTTP {
     }
 
     private CompareTemplate getFunctionCompareTemplate(Event event, Optional<ReqRespStore.RecordOrReplay> recordOrReplay) {
-        CompareTemplate compareTemplate = null;
-        if (event.eventType.equals(Event.EventType.JavaRequest)) {
-            TemplateKey tkey =
-                new TemplateKey(recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getTemplateVersion), event.customerId,
-                    event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-
-            compareTemplate = config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
-        }
-        return compareTemplate;
+        TemplateKey tkey =
+            new TemplateKey(recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getTemplateVersion), event.customerId,
+                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+        return config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
     }
 
     @POST
     @Path("/mockFunction")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response mockFunction(Event event) {
-        if (setPayloadKeyAndCollection(event)) {
+        if (setFunctionPayloadKeyAndCollection(event)) {
             EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
             Result<Event> matchingEvent =  rrstore.getEvents(eventQuery);
 
@@ -197,24 +190,15 @@ public class MockServiceHTTP {
                 LOGGER.debug(new ObjectMessage(Map.of("state" , "After Mock" , "func_signature" , event.apiPath ,
                     "trace_id" , event.traceId , "ret_val" , retValue.rawPayloadString)));
                 try {
-                    final ObjectNode node = jsonmapper.readValue(retValue.rawPayloadString, ObjectNode.class);
-                    if (node.has("response")) {
-                        FnResponse fnResponse = new FnResponse(node.get("response").asText(), Optional.of(retValue.timestamp),
-                            FnReqResponse.RetStatus.Success, Optional.empty(), matchingEvent.numFound>1);
+                    FnResponse fnResponse = new FnResponse(DataObjFactory.build(event.eventType,
+                        null, retValue.rawPayloadString, config).getValAsString("/response"), Optional.of(retValue.timestamp),
+                        FnReqResponse.RetStatus.Success, Optional.empty(), matchingEvent.numFound>1);
 
-                        return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse).build();
-                    } else {
-                        return errorResponse("No response found");
-                    }
-
-                } catch (JsonProcessingException e) {
+                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse).build();
+                } catch (DataObj.PathNotFoundException e) {
                     LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath,
                         "trace_id", event.traceId)) , e);
-                    return errorResponse("Unable to parse func response " + e.getMessage());
-                } catch (IOException e) {
-                    LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath,
-                        "trace_id", event.traceId)) , e);
-                    return errorResponse("Unable to parse response json " + e.getMessage());
+                    return errorResponse("Unable to find response path in json " + e.getMessage());
                 }
             }).orElseGet(() -> {
                 String errorReason = "Unable to find matching request";
