@@ -186,12 +186,11 @@ public class MockServiceHTTP {
             EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
             Result<Event> matchingEvent =  rrstore.getEvents(eventQuery);
 
-            return matchingEvent.getObjects().findFirst().map(retValue -> {
-                LOGGER.debug(new ObjectMessage(Map.of("state" , "After Mock" , "func_signature" , event.apiPath ,
-                    "trace_id" , event.traceId , "ret_val" , retValue.rawPayloadString)));
+            return matchingEvent.getObjects().findFirst().map(retEvent -> {
+                LOGGER.debug(new ObjectMessage(Map.of("state" , "After Mock" , "func_signature" , retEvent.apiPath ,
+                    "trace_id" , retEvent.traceId , "ret_val" , retEvent.rawPayloadString)));
                 try {
-                    FnResponse fnResponse = new FnResponse(DataObjFactory.build(event.eventType,
-                        null, retValue.rawPayloadString, config).getValAsString("/response"), Optional.of(retValue.timestamp),
+                    FnResponse fnResponse = new FnResponse(retEvent.parsePayLoad(config).getValAsString("/response"), Optional.of(retEvent.timestamp),
                         FnReqResponse.RetStatus.Success, Optional.empty(), matchingEvent.numFound>1);
 
                     return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse).build();
