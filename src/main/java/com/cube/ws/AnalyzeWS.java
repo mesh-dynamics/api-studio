@@ -217,6 +217,7 @@ public class AnalyzeWS {
             */
             Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);
             TemplateSet templateSet = Utils.templateRegistriesToTemplateSet(registries, customerId, appId, templateVersion);
+            //String templateSetJSON = jsonmapper.writeValueAsString(templateSet);
 
             ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(templateSet);
             if(!validTemplate.isValid()) {
@@ -461,7 +462,7 @@ public class AnalyzeWS {
                 Recording recording = recordingOpt.get();
                 recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
                     + "\" , \"collection\" : \"" + recording.collection
-                    + recording.templateVersion.map(templatever -> "\" , \"templateVer\" : \"" + templatever).orElse("");
+                    + "\" , \"templateVer\" : \"" + recording.templateVersion;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
@@ -607,11 +608,14 @@ public class AnalyzeWS {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
             String templateSetId = rrstore.saveTemplateSet(templateSet);
-            return Response.ok("{\"Message\" :  \"Successfully saved template set\" , \"ID\" : \"" +
-                templateSetId + "\"}").build();
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved template set",
+                "ID", templateSetId,
+                "templateSetVersion", templateSet.version))).toString()).build();
         } catch (Exception e) {
-            return Response.serverError().entity("{\"Message\" :  \"Unable to save template set\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
+            return Response.serverError().entity((new JSONObject(Map.of(
+                "Message", "Unable to save template set",
+                "Error", e.getMessage()))).toString()).build();
         }
     }
 
@@ -786,7 +790,7 @@ public class AnalyzeWS {
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerid, originalRec.app, originalRec
-                .templateVersion.orElse(Recording.DEFAULT_TEMPLATE_VER)).orElseThrow(() ->
+                .templateVersion).orElseThrow(() ->
                 new Exception("Unable to find template set mentioned in the specified golden set"));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
@@ -802,14 +806,14 @@ public class AnalyzeWS {
 
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
-            String newCollectionName = originalRec.collection.concat("-").concat(UUID.randomUUID().toString());
+            String newCollectionName = UUID.randomUUID().toString();
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
             Recording updatedRecording = new Recording(originalRec.customerid,
                 originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
-                Optional.of(Instant.now()), Optional.of(updatedTemplateSet.version), Optional.of(originalRec.getId()),
-                originalRec.rootRecordingId.or(() -> Optional.of(originalRec.getId())));
+                Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
+                Optional.of(originalRec.rootRecordingId));
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
