@@ -1,5 +1,8 @@
 package io.cube.agent;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
@@ -15,17 +18,20 @@ import io.opentracing.util.GlobalTracer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -62,11 +68,12 @@ public class CommonUtils {
         if (GlobalTracer.isRegistered()) {
             Tracer tracer = GlobalTracer.get();
 
+            Scope scope = null;
             //Added for the JDBC init case, but also to segregate
             //any calls without a span to a default span.
             if (tracer.activeSpan() == null) {
                 MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
-                CommonUtils.startServerSpan(headers, "dummy-span");
+                scope = CommonUtils.startServerSpan(headers, "dummy-span");
             }
 
             Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
@@ -80,6 +87,9 @@ public class CommonUtils {
                         Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
                 activeSpan.setBaggageItem(BAGGAGE_INTENT , currentIntent);
             }
+
+            scope.close();
+
         }
     }
 
@@ -209,6 +219,30 @@ public class CommonUtils {
 
     public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
         return findFirstCaseInsensitiveMatch(mMap, CommonConfig.DEFAULT_TRACE_FIELD);
+    }
+
+    public static JsonObject createPayload(Object responseOrException, Gson gson, Object... args) {
+        JsonObject payloadObj = new JsonObject();
+        payloadObj.add("args", createArgsJsonArray(gson, args));
+        payloadObj.addProperty("response", gson.toJson(responseOrException));
+        LOGGER.info(new ObjectMessage(Map.of("function_payload", payloadObj.toString())));
+        return payloadObj;
+    }
+
+    public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId, Event.RecordReplayType rrType, Instant timestamp, JsonObject payload) {
+
+        EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
+                fnKey.service, fnKey.instanceId, "NA",
+                traceId.orElse(null), rrType, timestamp, "NA",
+                fnKey.signature, Event.EventType.JavaRequest);
+        eventBuilder.setRawPayloadString(payload.toString());
+        return eventBuilder.createEventOpt();
+    }
+
+    public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
+        JsonArray argsArray = new JsonArray();
+        Arrays.stream(argVals).forEach(arg -> argsArray.add(gson.toJson(arg)));
+        return argsArray;
     }
 
 }

@@ -76,6 +76,18 @@ public class CubeClient {
         return Optional.empty();
     }
 
+    private Optional<String> getResponse(Invocation.Builder builder, Event event) {
+        try {
+            String jsonEntity = jsonMapper.writeValueAsString(event);
+            CommonUtils.addTraceHeaders(builder, "POST");
+            return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error while serializing function req/resp object :: "
+                    + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
 
     public Optional<String> storeFunctionReqResp(FnReqResponse fnReqResponse) {
         Invocation.Builder builder = cubeRecordService.path("cs").path("fr").request(MediaType.TEXT_PLAIN);
@@ -85,6 +97,19 @@ public class CubeClient {
     public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
         Invocation.Builder builder = cubeMockService.path("ms").path("fr").request(MediaType.TEXT_PLAIN);
         return getResponse(builder, fnReqResponse).flatMap(response -> {
+            try {
+                LOGGER.debug("GOT RESPONSE :: " + response);
+                return Optional.of(jsonMapper.readValue(response, FnResponse.class));
+            } catch (Exception e) {
+                LOGGER.error("Error while parsing json response from mock server :: " + e.getMessage());
+                return Optional.empty();
+            }
+        });
+    }
+
+    public Optional<FnResponse> getMockResponse(Event event) {
+        Invocation.Builder builder = cubeMockService.path("ms").path("mockFunction").request(MediaType.TEXT_PLAIN);
+        return getResponse(builder, event).flatMap(response -> {
             try {
                 LOGGER.debug("GOT RESPONSE :: " + response);
                 return Optional.of(jsonMapper.readValue(response, FnResponse.class));
@@ -139,7 +164,7 @@ public class CubeClient {
     }
 
     public Optional<String> storeEvent(Event event) {
-        Invocation.Builder builder = cubeRecordService.path("cs").path("event").request(MediaType.TEXT_PLAIN);
+        Invocation.Builder builder = cubeRecordService.path("cs").path("storeEvent").request(MediaType.TEXT_PLAIN);
         try {
             String jsonEntity = jsonMapper.writeValueAsString(event);
             LOGGER.debug(new ObjectMessage(Map.of("event", jsonEntity)));

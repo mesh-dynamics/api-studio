@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnReqResponse.RetStatus;
 import org.apache.logging.log4j.LogManager;
@@ -19,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static io.cube.agent.CommonUtils.createEvent;
+import static io.cube.agent.CommonUtils.createPayload;
 import static io.cube.agent.UtilException.rethrowFunction;
 
 /*
@@ -45,7 +48,7 @@ public class SimpleMocker implements Mocker {
 
 
     @Override
-    public FnResponseObj mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
+    public FnResponseObj mockOld(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
                               Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
 
         try {
@@ -105,6 +108,52 @@ public class SimpleMocker implements Mocker {
             LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName , "trace_id" , traceId)) , e);
             return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
         }
+    }
+
+    @Override
+    public FnResponseObj mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId, Optional<String> parentSpanId,
+                              Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
+        //This key is to identify cases where multiple Solr docs are matched
+        Integer key = traceId.orElse("").concat(spanId.orElse(""))
+                .concat(parentSpanId.orElse(""))
+                .concat(fnKey.signature).hashCode();
+
+        JsonObject payload = createPayload(null, gson, args);
+        Optional<Event> event = createEvent(fnKey, traceId, Event.RecordReplayType.Replay, prevRespTS.orElse(fnMap.get(key)), payload);
+
+        return event.map(eve -> {
+            Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);
+
+            return fnResponse.map(resp -> {
+                //If multiple Solr docs were returned, we need to maintain the last timestamp
+                //to be used in the next mock call.
+                if (resp.retStatus == RetStatus.Success && resp.multipleResults) {
+                    fnMap.put(key, resp.timeStamp.get());
+                } else {
+                    fnMap.remove(key);
+                }
+
+                Object retOrExceptionVal = null;
+                try {
+                     retOrExceptionVal = gson.fromJson(resp.retVal, retType.isPresent()?retType.get():getRetOrExceptionClass(resp,
+                            fnKey.function.getGenericReturnType()));
+                } catch (Exception e) {
+                    String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
+                    LOGGER.error(new ObjectMessage(Map.of("func_signature", eve.apiPath , "trace_id" , eve.traceId)) , e);
+                    return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
+                }
+
+                return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus, resp.exceptionType);
+            }).orElseGet(() -> {
+                LOGGER.error(new ObjectMessage(Map.of("reason" , "No Matching Response Received"
+                        , "trace_id" , eve.traceId , "func_signature" , eve.apiPath)));
+                return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
+            });
+        }).orElseGet(() -> {
+            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to form a event"
+                    , "trace_id" , traceId, "func_signature" , fnKey.signature)));
+            return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
+        });
     }
 
     private Type getRetOrExceptionClass(FnResponse response, Type returnType) throws Exception {
