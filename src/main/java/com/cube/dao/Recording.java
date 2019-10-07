@@ -24,7 +24,6 @@ public class Recording {
 	}
 
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
-	public static final String FLAG_FOR_ROOT_RECORDING = "ROOT";
 
 	/**
      * @param customerid
@@ -49,12 +48,7 @@ public class Recording {
         this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-").concat(String.valueOf(Objects.hash(customerid, app,
             collection, templateVersion)));
         this.parentRecordingId = parentRecordingId;
-        this.rootRecordingId = rootRecordingId.map(rri -> {
-            if(rri.equals(FLAG_FOR_ROOT_RECORDING)) {
-                return this.id;
-            }
-            return rri;
-        });
+        this.rootRecordingId = rootRecordingId.orElse(this.id);
     }
 
 	// for json deserialization
@@ -67,7 +61,7 @@ public class Recording {
 	    this.collection = "";
 	    this.templateVersion = "";
 	    this.parentRecordingId = Optional.empty();
-	    this.rootRecordingId = Optional.empty();
+	    this.rootRecordingId = "";
     }
 
     @JsonProperty("id")
@@ -87,7 +81,7 @@ public class Recording {
     @JsonProperty("templateVer")
 	public final String templateVersion;
     @JsonProperty("rootRcrdngId")
-    public final Optional<String> rootRecordingId;
+    public final String rootRecordingId;
     @JsonProperty("prntRcrdngId")
     public final Optional<String> parentRecordingId;
 
@@ -97,9 +91,9 @@ public class Recording {
 
 
 	public static Optional<Recording> startRecording(String customerid, String app, String instanceid,
-                                                     String collection, String templateSetId, ReqRespStore rrstore, Optional<String> rootRecordingId) {
+                                                     String collection, String templateSetId, ReqRespStore rrstore) {
 		Recording recording = new Recording(customerid, app, instanceid, collection, RecordingStatus.Running
-            , Optional.of(Instant.now()), templateSetId, Optional.empty(), rootRecordingId);
+            , Optional.of(Instant.now()), templateSetId, Optional.empty(), Optional.empty());
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);
         }
