@@ -184,7 +184,7 @@ public class CubeStore {
 
                     Event requestEvent = null;
                     try {
-                        requestEvent = Event.fromRequest(req, requestComparator, config);
+                        requestEvent = req.toEvent(requestComparator, config);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
@@ -213,7 +213,7 @@ public class CubeStore {
                     com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
                     Event responseEvent;
                     try {
-                        responseEvent = Event.fromResponse(resp, config);
+                        responseEvent = resp.toEvent(config);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
