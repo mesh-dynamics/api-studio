@@ -112,7 +112,10 @@ public class Event {
     }
 
     public void parsePayLoad(Config config) {
-        payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
+        // parse if not already parsed
+        if (payload == null) {
+            payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
+        }
     }
 
     @JsonIgnore
