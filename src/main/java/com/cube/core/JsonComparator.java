@@ -38,7 +38,7 @@ public class JsonComparator implements Comparator {
 	 * @param template
 	 * @param jsonMapper
 	 */
-	JsonComparator(CompareTemplate template, ObjectMapper jsonMapper) {
+	public JsonComparator(CompareTemplate template, ObjectMapper jsonMapper) {
 		super();
 		this.template = template;
 		this.jsonMapper = jsonMapper;
@@ -296,6 +296,11 @@ public class JsonComparator implements Comparator {
 
 		//return !template.getRules().isEmpty();
 	}
+
+
+	public CompareTemplate getCompareTemplate() {
+	    return template;
+    }
 
 	private final CompareTemplate template;
 	private final ObjectMapper jsonMapper;

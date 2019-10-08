@@ -206,7 +206,7 @@ public class EventQuery {
 
     public Optional<Event.RecordReplayType> getRRType() { return rrType; }
 
-    public Optional<List<String>> getReqids() {
+    public Optional<List<String>> getReqIds() {
         return reqIds;
     }
 

@@ -26,6 +26,8 @@ public class Request extends RRBase {
 	public static final String FPARAMPATH = "/fparams";
 	public static final String PATHPATH = "/path";
 	public static final String METHODPATH = "/method";
+	public static final String ARGSPATH = "/args";
+	public static final String FNRESPONSEPATH = "/response";
 
 
 	/**
@@ -138,7 +140,6 @@ public class Request extends RRBase {
         return event;
     }
 
-
     public MatchType compare(Request rhs, CompareTemplate template, CompareTemplate metaFieldtemplate, CompareTemplate hdrFieldTemplate,
 							 Comparator bodyComparator, CompareTemplate qparamFieldTemplate, CompareTemplate fparamFieldTemplate) {
 
@@ -151,6 +152,5 @@ public class Request extends RRBase {
 
 		return match.mt;
 	}
-
 
 }

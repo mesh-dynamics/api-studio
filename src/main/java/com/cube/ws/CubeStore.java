@@ -326,13 +326,7 @@ public class CubeStore {
                 if (event.isRequestType()) {
                     // if request type, need to extract keys from request and index it, so that it can be
                     // used while mocking
-                    TemplateKey tkey =
-                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
-                            event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-
-                    CompareTemplate compareTemplate =
-                        config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
-                    event.parseAndSetKey(config, compareTemplate);
+                    event.parseAndSetKey(config, getCompareTemplate(event, recordOrReplay));
                 }
                 boolean saveResult = rrstore.save(event);
                 if (!saveResult) {
@@ -362,6 +356,21 @@ public class CubeStore {
             return Response.ok().build();
         });
 
+    }
+
+    private CompareTemplate getCompareTemplate(Event event, Optional<RecordOrReplay> recordOrReplay) {
+        TemplateKey tkey =
+            new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
+                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+
+        CompareTemplate compareTemplate;
+        if (event.eventType.equals(Event.EventType.JavaRequest)) {
+            compareTemplate = config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
+        } else{
+            compareTemplate =
+                config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
+        }
+        return compareTemplate;
     }
 
     @POST
@@ -685,13 +694,13 @@ public class CubeStore {
 
     /**
      *
-     * @param ui
+     * @param eventQuery
      * @return matching events based on constraints
      */
     @POST
     @Path("getEvents")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response getEvents(@Context UriInfo ui, EventQuery eventQuery)
+    public Response getEvents(EventQuery eventQuery)
     {
         Result<Event> events = rrstore.getEvents(eventQuery);
 
