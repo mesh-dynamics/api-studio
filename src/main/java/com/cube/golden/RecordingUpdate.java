@@ -1,11 +1,13 @@
 package com.cube.golden;
 
 
+import com.cube.core.Comparator;
 import com.cube.dao.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.swing.text.html.Option;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -158,7 +160,7 @@ public class RecordingUpdate {
                 // todo raise error?
             }
             } catch (Exception e) {
-                LOGGER.error("Error occured while transforming response :: " + e.getMessage());
+                LOGGER.error("Error occured while transforming response :: " + e.getMessage(), e);
             }
 
         });
@@ -176,6 +178,60 @@ public class RecordingUpdate {
             );*/
 
         return true; // todo: false?
+    }
+
+    public boolean createSanitizedCollection(String replayId, String newCollectionName, Recording originalRec) {
+
+        Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
+
+       Set<String> inCompletetraceIds = new HashSet<>();
+
+        results.filter( res -> {
+            if (res.reqmt.equals(Comparator.MatchType.NoMatch) || res.respmt.equals(Comparator.MatchType.NoMatch) ) {
+                res.recordTraceId.ifPresentOrElse( inCompletetraceIds::add , () -> res.replayTraceId.ifPresent( inCompletetraceIds::add ) );
+                LOGGER.info(String.format("Filtering out the ReqRespMatchResult as req/response mismatch found " +
+                    "with record trace id: %s & replay trace id: %s, record req id: %s, replay req id: %s",
+                    res.recordreqid, res.replayTraceId, res.recordreqid, res.replayreqid));
+                return false;
+            } else if (inCompletetraceIds.contains(res.recordTraceId) || inCompletetraceIds.contains(res.replayTraceId)) {
+                LOGGER.info(String.format("Filtering out the ReqRespMatchResult as it found to be part of traceid " +
+                    "that has req/resp Mismatch type as NoMatch with record trace id: %s & response trace id: %s " +
+                    "and record reqid: %s, replay reqid: %s", res.recordTraceId, res.replayTraceId, res.recordreqid, res.replayreqid));
+                return false;
+            } else {
+                return true;
+            }
+        }).forEach(res -> {
+           try {
+               Request recordRequest = res.recordreqid.flatMap(rrStore::getRequest)
+                   .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordreqid.get()));
+               Response recordResponse = res.recordreqid.flatMap(rrStore::getResponse)
+                   .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordreqid.get()));
+
+               Optional<String> newReqId = generateReqId(recordResponse.reqid, newCollectionName);
+               Instant timeStamp = Instant.now();
+
+               Response transformedResponse = new Response(newReqId, recordResponse.status,
+                   recordResponse.meta, recordResponse.hdrs, recordResponse.body, Optional.of(newCollectionName),
+                   Optional.of(timeStamp), recordResponse.rrtype, recordResponse.customerid, recordResponse.app);
+
+               LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
+               recordRequest.reqid = transformedResponse.reqid;
+               recordRequest.collection = Optional.of(newCollectionName);
+
+               LOGGER.debug("saving request/response with reqid: " + newReqId);
+               boolean saved = rrStore.save(recordRequest) && rrStore.save(transformedResponse);
+
+               if(!saved) {
+                   LOGGER.debug("request/response not saved");
+                   // todo raise error?
+               }
+           } catch (Exception e) {
+               LOGGER.error("Error occurred while sanitizing :: " + e.getMessage(), e);
+           }
+        });
+
+        return true;
     }
 
     // fetch the request/response from the replay, apply the transformation operations and store to Solr
@@ -231,5 +287,4 @@ public class RecordingUpdate {
         return recReqId.map(
             reqid -> "gu-" + Objects.hash(reqid, collectionName));
     }
-
 }
