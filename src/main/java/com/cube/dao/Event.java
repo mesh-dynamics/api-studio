@@ -109,11 +109,13 @@ public class Event {
         payloadKey = Objects.hash(keyVals);
     }
 
-    public void parsePayLoad(Config config) {
+    public DataObj parsePayLoad(Config config) {
         // parse if not already parsed
         if (payload == null) {
             payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
         }
+
+        return payload;
     }
 
     @JsonIgnore

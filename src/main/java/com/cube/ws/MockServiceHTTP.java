@@ -25,7 +25,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import com.cube.agent.FnResponse;
 import com.cube.core.Utils;
+import com.cube.dao.DataObj;
+import com.cube.dao.DataObjFactory;
+import com.cube.dao.Event;
+import com.cube.dao.EventQuery;
+import com.cube.dao.Result;
 import io.cube.agent.CommonUtils;
 import io.cube.agent.UtilException;
 
@@ -53,8 +59,6 @@ import com.cube.core.RequestComparator;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.dao.Analysis;
-import com.cube.dao.Event;
-import com.cube.dao.EventQuery;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 
@@ -127,7 +131,88 @@ public class MockServiceHTTP {
         return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
     }
 
-	@POST
+    private Optional<ReqRespStore.RecordOrReplay> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
+        return rrstore.getCurrentRecordOrReplay(Optional.of(customerId),
+            Optional.of(app), Optional.of(instanceId));
+    }
+
+    private boolean setFunctionPayloadKeyAndCollection(Event event) {
+	    if (event!= null && event.eventType.equals(Event.EventType.JavaRequest)) {
+            Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
+            Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
+            // check collection, validate, fetch template for request, set key and store. If error at any point stop
+            if (collection.isPresent()) {
+                event.setCollection(collection.get());
+                event.parseAndSetKey(config, getFunctionCompareTemplate(event, recordOrReplay));
+                return true;
+            } else {
+                LOGGER.error(new ObjectMessage(Map.of("reason", "Collection not found" , "customerId",
+                    event.customerId, "app", event.app, "instanceId", event.instanceId, "trace_id" , event.traceId)));
+                return false;
+            }
+        } else {
+            LOGGER.error(new ObjectMessage(Map.of("reason", "Invalid event - either event is null, or some required field missing, or both binary " +
+                "and string payloads set")));
+            return false;
+        }
+    }
+
+    private Response errorResponse(String errorReason) {
+        return Response.serverError().type(MediaType.APPLICATION_JSON).
+            entity((new JSONObject(Map.of("reason", errorReason))).toString()).build();
+    }
+
+    private EventQuery buildFunctionEventQuery(Event event, int offset, int limit, boolean isSortOrderAsc) {
+        return new EventQuery.Builder(event.customerId, event.app, EventQuery.EventType.JavaRequest)
+            .withService(event.service).withInstanceId(event.instanceId)
+            .withPaths(List.of(event.apiPath)).withTraceId(event.traceId).withTimestamp(event.timestamp)
+            .withCollection(event.getCollection()).withPayloadKey(event.payloadKey)
+            .withOffset(offset).withLimit(limit).withSortOrderAsc(isSortOrderAsc)
+            .build();
+    }
+
+    private CompareTemplate getFunctionCompareTemplate(Event event, Optional<ReqRespStore.RecordOrReplay> recordOrReplay) {
+        TemplateKey tkey =
+            new TemplateKey(recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getTemplateVersion), event.customerId,
+                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+        return config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
+    }
+
+    @POST
+    @Path("/mockFunction")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mockFunction(Event event) {
+        if (setFunctionPayloadKeyAndCollection(event)) {
+            EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
+            Result<Event> matchingEvent =  rrstore.getEvents(eventQuery);
+
+            return matchingEvent.getObjects().findFirst().map(retEvent -> {
+                LOGGER.debug(new ObjectMessage(Map.of("state" , "After Mock" , "func_signature" , retEvent.apiPath ,
+                    "trace_id" , retEvent.traceId , "ret_val" , retEvent.rawPayloadString)));
+                try {
+                    FnResponse fnResponse = new FnResponse(retEvent.parsePayLoad(config).getValAsString("/response"), Optional.of(retEvent.timestamp),
+                        FnReqResponse.RetStatus.Success, Optional.empty(), matchingEvent.numFound>1);
+
+                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse).build();
+                } catch (DataObj.PathNotFoundException e) {
+                    LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath,
+                        "trace_id", event.traceId)) , e);
+                    return errorResponse("Unable to find response path in json " + e.getMessage());
+                }
+            }).orElseGet(() -> {
+                String errorReason = "Unable to find matching request";
+                LOGGER.error(new ObjectMessage(Map.of("func_signature" , event.apiPath , "trace_id"
+                , event.traceId , "reason" , errorReason)));
+                return errorResponse(errorReason);});
+        } else {
+            String errorReason = "Invalid event or no record/replay found.";
+            LOGGER.error(new ObjectMessage(Map.of("func_signature" , event.apiPath , "trace_id"
+                , event.traceId , "reason" , errorReason)));
+            return errorResponse(errorReason);
+        }
+    }
+
+    @POST
     @Path("/fr")
     @Consumes(MediaType.TEXT_PLAIN)
     public Response funcJson(@Context UriInfo uInfo,
@@ -156,23 +241,20 @@ public class MockServiceHTTP {
                         } catch (JsonProcessingException e) {
                             LOGGER.error(new ObjectMessage(Map.of("func_name", fnReqResponse.name,
                                 "trace_id", traceIdString)) , e);
-                            return Response.serverError().type(MediaType.APPLICATION_JSON).
-                                entity((new JSONObject(Map.of("reason" , "Unable to parse func response "
-                                    + e.getMessage()))).toString()).build();
+                            String errorReason = "Unable to parse func response ";
+                            return errorResponse(errorReason + e.getMessage());
                         }
                     }
                 ).orElseGet(() -> {
-                        String reason = "Unable to find matching request";
+                        String errorReason = "Unable to find matching request";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , traceIdString , "reason" , reason)));
-                        return Response.serverError().type(MediaType.APPLICATION_JSON).
-                        entity((new JSONObject(Map.of("reason" , reason))).toString()).build();}))
+                            , traceIdString , "reason" , errorReason)));
+                        return errorResponse(errorReason);}))
                 .orElseGet(() -> {
-                        String reason = "Unable to locate collection for given customer, app, instance combo";
+                        String errorReason = "Unable to locate collection for given customer, app, instance combo";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , traceIdString , "reason" , reason)));
-                        return Response.serverError().type(MediaType.APPLICATION_JSON).
-                            entity((new JSONObject(Map.of("reason" , reason))).toString()).build();});
+                            , traceIdString , "reason" , errorReason)));
+                        return errorResponse(errorReason);});
         } catch (Exception e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).
                 entity("{\"reason\" : \"Unable to parse function request object " + e.getMessage()
@@ -243,10 +325,8 @@ public class MockServiceHTTP {
 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(customerid),
-            Optional.of(app),
-            Optional.of(instanceid));
-		Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(customerid, app, instanceid);
+        Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
 	    		headers.getRequestHeaders(), service, collection,
 	    		Optional.of(Event.RecordReplayType.Record),

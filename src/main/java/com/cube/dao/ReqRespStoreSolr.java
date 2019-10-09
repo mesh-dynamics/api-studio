@@ -251,7 +251,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF, eventQuery.getCollection());
         addFilter(query, TRACEIDF, eventQuery.getTraceId());
         addFilter(query, RRTYPEF, eventQuery.getRRType().map(Object::toString));
-        addFilter(query, REQIDF, eventQuery.getReqids().orElse(Collections.emptyList()));
+        addFilter(query, REQIDF, eventQuery.getReqIds().orElse(Collections.emptyList()));
         addFilter(query, PATHF, eventQuery.getPaths().orElse(Collections.emptyList()));
         addFilter(query, EVENTTYPEF, Optional.ofNullable(eventQuery.getEventType()).map(type -> type.toString()));
         addFilterInt(query, PAYLOADKEYF, eventQuery.getPayloadKey());
