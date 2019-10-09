@@ -88,7 +88,9 @@ public class CommonUtils {
                 activeSpan.setBaggageItem(BAGGAGE_INTENT , currentIntent);
             }
 
-            scope.close();
+            if (scope != null) {
+                scope.close();
+            }
 
         }
     }
