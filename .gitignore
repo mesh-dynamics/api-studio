@@ -14,6 +14,3 @@ apps/moviebook/kubernetes/*
 !apps/common/kubernetes/.gitkeep
 !apps/cube/kubernetes/.gitkeep
 .idea
-apps/moviebook/config/matcher/template_req_no_match_registries.json
-apps/moviebook/config/matcher/template_resp_no_match_registries.json
-apps/moviebook/config/matcher/template_resp_partial_match_registries.json
