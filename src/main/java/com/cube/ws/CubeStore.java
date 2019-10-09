@@ -526,7 +526,6 @@ public class CubeStore {
     @Path("stop/{recordingid}")
     public Response stop(@Context UriInfo ui,
                          @PathParam("recordingid") String recordingid) {
-        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
         Optional<Recording> recording = rrstore.getRecording(recordingid);
         LOGGER.info(String.format("Stoppping recording for recordingid %s", recordingid));
         Response resp = recording.map(r -> {
