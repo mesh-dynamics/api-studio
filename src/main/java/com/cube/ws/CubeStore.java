@@ -175,6 +175,11 @@ public class CubeStore {
                     // fetch the template version, create template key and get a request comparator
                     Optional<String> templateVersion = rrstore.getCurrentRecordOrReplay(customerid, app, instanceid)
                         .flatMap(RecordOrReplay::getTemplateVersion);
+                    if(!(customerid.isPresent() && app.isPresent() && service.isPresent())) {
+                        LOGGER.error("customer id, app or service not present");
+                        return Optional.of("customer id, app or service not present");
+                    }
+
                     TemplateKey tkey =
                         new TemplateKey(templateVersion, customerid.get(),
                             app.get(), service.get(), path, TemplateKey.Type.Request);
@@ -184,6 +189,7 @@ public class CubeStore {
 
                     Event requestEvent = null;
                     try {
+                        // todo: consider creating the Event object directly instead of creating a Request
                         requestEvent = req.toEvent(requestComparator, config);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
@@ -213,6 +219,7 @@ public class CubeStore {
                     com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
                     Event responseEvent;
                     try {
+                        // todo: consider creating the Event object directly instead of creating a Response
                         responseEvent = resp.toEvent(config);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
@@ -491,42 +498,41 @@ public class CubeStore {
 	// process and store Event
     // return error string (Optional<String>)
     private Optional<String> processEvent(Event event) {
-        Optional<String> err = Optional.empty();
-        Optional<String> collection;
-        if (event != null && event.validate()) {
-            Optional<RecordOrReplay> recordOrReplay =
-                rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
-                    Optional.of(event.app), Optional.of(event.instanceId));
-            collection = Optional.ofNullable(event.getCollection()); // todo recordOrReplay.flatMap
-            // (RecordOrReplay::getCollection);
-
-            // check collection, validate, fetch template for request, set key and store. If error at any point stop
-            if (collection.isPresent()) {
-                Optional<CompareTemplate> compareTemplate = Optional.empty();
-                if (event.isRequestType()) {
-                    // if request type, need to extract keys from request and index it, so that it can be
-                    // used while mocking
-                    TemplateKey tkey =
-                        new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
-                            event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-
-                    compareTemplate = Optional.of(config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate());
-                }
-                event.parseAndSetKeyAndCollection(config, collection.get(), compareTemplate.get());
-                boolean saveResult = rrstore.save(event);
-                if (!saveResult) {
-                    err = Optional.of("Not able to store event");
-                }
-            } else {
-                err = Optional.of("Collection is missing");
-            }
-
-        } else {
-            err = Optional.of("Invalid event - either event is null, or some required field missing, or both binary " +
-                "and string payloads set");
+        if (event == null) {
+            LOGGER.error("event is null");
+            return Optional.of("event is null");
         }
 
-        return err;
+        Optional<String> collection;
+
+        event.setCollection("NA"); // so that validate doesn't fail
+
+        if (!event.validate()) {
+            return Optional.of("Invalid event - some required field missing, or both binary and string payloads set");
+        }
+
+        Optional<RecordOrReplay> recordOrReplay =
+            rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
+                Optional.of(event.app), Optional.of(event.instanceId));
+        collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+
+        // check collection, validate, fetch template for request, set key and store. If error at any point stop
+        if (collection.isEmpty()) {
+            return Optional.of("Collection is missing");
+        }
+        event.setCollection(collection.get());
+        if (event.isRequestType()) {
+            // if request type, need to extract keys from request and index it, so that it can be
+            // used while mocking
+            event.parseAndSetKey(config, getCompareTemplate(event, recordOrReplay));
+        }
+
+        boolean saveResult = rrstore.save(event);
+        if (!saveResult) {
+            return Optional.of("Not able to store event");
+        }
+
+        return Optional.empty();
     }
 
     private CompareTemplate getCompareTemplate(Event event, Optional<RecordOrReplay> recordOrReplay) {
