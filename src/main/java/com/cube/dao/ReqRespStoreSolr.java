@@ -218,7 +218,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Result<Request> getRequests(String customerid, String app, String collection,
-                                       List<String> reqids, List<String> paths, Event.RecordReplayType rrtype) {
+                                       List<String> reqids, List<String> paths, Event.RunType runType) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Request.toString());
@@ -234,7 +234,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, PATHF, pathfilter, false);
 
 
-        query.addFilterQuery(String.format("%s:%s", RRTYPEF, rrtype.toString()));
+        query.addFilterQuery(String.format("%s:%s", RRTYPEF, runType.toString()));
 
         return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
 
@@ -885,7 +885,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String OLDBODYF = CPREFIX + "body" + TEXT_SUFFIX;
     private static final String COLLECTIONF = CPREFIX + "collection" + STRING_SUFFIX;
     private static final String TIMESTAMPF = CPREFIX + "timestamp" + DATE_SUFFIX;
-    private static final String RRTYPEF = CPREFIX + "rrtype" + STRING_SUFFIX;
+    private static final String RRTYPEF = CPREFIX + "runType" + STRING_SUFFIX;
     private static final String CUSTOMERIDF = CPREFIX + "customerid" + STRING_SUFFIX;
     private static final String APPF = CPREFIX + "app" + STRING_SUFFIX;
     private static final String INSTANCEIDF = CPREFIX + "instanceid" + STRING_SUFFIX;
@@ -1097,8 +1097,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFieldsToDoc(doc, HDR, rr.hdrs);
         rr.collection.ifPresent(c -> doc.setField(COLLECTIONF, c));
         rr.timestamp.ifPresent(t -> doc.setField(TIMESTAMPF, t.toString()));
-        rr.rrtype.ifPresent(c -> doc.setField(RRTYPEF, c.toString()));
-        rr.customerid.ifPresent(c -> doc.setField(CUSTOMERIDF, c));
+        rr.runType.ifPresent(c -> doc.setField(RRTYPEF, c.toString()));
+        rr.customerId.ifPresent(c -> doc.setField(CUSTOMERIDF, c));
         rr.app.ifPresent(c -> doc.setField(APPF, c));
 
     }
@@ -1128,7 +1128,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, event.instanceId);
         doc.setField(COLLECTIONF, event.getCollection());
         doc.setField(TRACEIDF, event.traceId);
-        doc.setField(RRTYPEF, event.rrType.toString());
+        doc.setField(RRTYPEF, event.runType.toString());
         doc.setField(TIMESTAMPF, event.timestamp.toString());
         doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
@@ -1142,16 +1142,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private Optional<Event> docToEvent(SolrDocument doc) {
 
-        Optional<String> docid = getStrField(doc, IDF);
-        Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+        Optional<String> docId = getStrField(doc, IDF);
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> service = getStrField(doc, SERVICEF);
-        Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> traceid = getStrField(doc, TRACEIDF);
-        Optional<Event.RecordReplayType> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
+        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<String> reqid = getStrField(doc, REQIDF);
+        Optional<String> reqId = getStrField(doc, REQIDF);
         Optional<String> path = getStrField(doc, PATHF);
         Optional<String> eventType = getStrField(doc, EVENTTYPEF);
         Optional<byte[]> payloadBin = getBinField(doc, PAYLOADBINF);
@@ -1160,10 +1160,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
 
-        EventBuilder eventBuilder = new EventBuilder(customerid.orElse(null), app.orElse(null), service.orElse(null),
-            instanceid.orElse(null), collection.orElse(null), traceid.orElse(null),
-            rrtype.orElse(null), timestamp.orElse(null),
-            reqid.orElse(null), path.orElse(null), eType);
+        EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
+            instanceId.orElse(null), collection.orElse(null), traceid.orElse(null),
+            runType.orElse(null), timestamp.orElse(null),
+            reqId.orElse(null), path.orElse(null), eType);
         eventBuilder.setRawPayloadString(payloadStr.orElse(null));
         eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));
         eventBuilder.setPayloadKey(payloadKey.orElse(0));
@@ -1282,8 +1282,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // OLDBODYF
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<Event.RecordReplayType> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
-        Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
 
         for (Entry<String, Object> kv : doc) {
@@ -1314,7 +1314,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final String b = body.orElse("");
         return type.map(t -> {
             if (t.equals(Types.Request.toString())) {
-                return new Request(p, reqid, qparams, fparams, meta, hdrs, m, b, collection, timestamp, rrtype, customerid, app);
+                return new Request(p, reqid, qparams, fparams, meta, hdrs, m, b, collection, timestamp, runType, customerId, app);
             } else {
                 return null;
             }
@@ -1364,15 +1364,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Optional<String> type = getStrField(doc, TYPEF);
         Optional<Integer> status = getIntField(doc, STATUSF);
-        Optional<String> reqid = getStrField(doc, REQIDF);
+        Optional<String> reqId = getStrField(doc, REQIDF);
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         Optional<String> body = getStrFieldMVFirst(doc, BODYF).or(() -> getStrField(doc, OLDBODYF)); // TODO - remove
         // OLDBODYF
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<Event.RecordReplayType> rrtype = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
-        Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
 
 
@@ -1396,7 +1396,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final String b = body.orElse("");
         return type.flatMap(t -> {
             if (t.equals(Types.Response.toString())) {
-                return status.map(sv -> new Response(reqid, sv, meta, hdrs, b, collection, timestamp,rrtype, customerid, app));
+                return status.map(sv -> new Response(reqId, sv, meta, hdrs, b, collection, timestamp, runType, customerId, app));
             } else {
                 return Optional.empty();
             }
@@ -1495,17 +1495,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final SolrInputDocument doc = new SolrInputDocument();
 
         String type = Types.ReplayMeta.toString();
-        String id = type + '-' + replay.replayid;
+        String id = type + '-' + replay.replayId;
         // the id field is set to replay id so that the document can be updated based on id
         doc.setField(IDF, id);
         doc.setField(APPF, replay.app);
         doc.setField(ASYNCF, replay.async);
         doc.setField(COLLECTIONF, replay.collection);
-        doc.setField(CUSTOMERIDF, replay.customerid);
-        doc.setField(INSTANCEIDF, replay.instanceid);
+        doc.setField(CUSTOMERIDF, replay.customerId);
+        doc.setField(INSTANCEIDF, replay.instanceId);
         doc.setField(ENDPOINTF, replay.endpoint);
-        doc.setField(REPLAYIDF, replay.replayid);
-        replay.reqids.forEach(reqid -> doc.addField(REQIDSF, reqid));
+        doc.setField(REPLAYIDF, replay.replayId);
+        replay.reqIds.forEach(reqId -> doc.addField(REQIDSF, reqId));
         doc.setField(REPLAYSTATUSF, replay.status.toString());
         doc.setField(TYPEF, type);
         replay.paths.forEach(path -> doc.addField(PATHSF, path));
@@ -1514,7 +1514,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQFAILEDF, replay.reqfailed);
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
-        replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
+        replay.sampleRate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
         replay.templateVersion.ifPresent(templateVer -> doc.setField(TEMPLATE_VERSION, templateVer));
 
         return doc;
@@ -1551,37 +1551,37 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static Optional<Replay> docToReplay(SolrDocument doc, ReqRespStore rrstore) {
 
         Optional<String> app = getStrField(doc, APPF);
-        Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<Boolean> async = getBoolField(doc, ASYNCF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
-        Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> endpoint = getStrField(doc, ENDPOINTF);
-        Optional<String> replayid = getStrField(doc, REPLAYIDF);
-        List<String> reqids = getStrFieldMV(doc, REQIDSF);
+        Optional<String> replayId = getStrField(doc, REPLAYIDF);
+        List<String> reqIds = getStrFieldMV(doc, REQIDSF);
         Optional<ReplayStatus> status = getStrField(doc, REPLAYSTATUSF).flatMap(s -> Utils.valueOf(ReplayStatus.class, s));
         List<String> paths = getStrFieldMV(doc, PATHSF);
         int reqcnt = getIntField(doc, REQCNTF).orElse(0);
         int reqsent = getIntField(doc, REQSENTF).orElse(0);
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
         Optional<String> creationTimestamp = getStrField(doc, CREATIONTIMESTAMPF);
-        Optional<Double> samplerate = getDblField(doc, SAMPLERATEF);
+        Optional<Double> sampleRate = getDblField(doc, SAMPLERATEF);
         List<String> intermediateService = getStrFieldMV(doc , INTERMEDIATESERVF);
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSION);
 
         Optional<Replay> replay = Optional.empty();
-        if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() &&
-                instanceid.isPresent() && collection.isPresent()
-                && replayid.isPresent() && async.isPresent() && status.isPresent() /*&& templateVersion.isPresent()*/) {
+        if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
+                instanceId.isPresent() && collection.isPresent()
+                && replayId.isPresent() && async.isPresent() && status.isPresent() /*&& templateVersion.isPresent()*/) {
             try {
-				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(),
-				        reqids, replayid.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
+				replay = Optional.of(new Replay(endpoint.get(), customerId.get(), app.get(), instanceId.get(), collection.get(),
+				        reqIds, replayId.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get(),
-                        samplerate , intermediateService));
+                        sampleRate , intermediateService));
 			} catch (ParseException e) {
-				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
+				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayId.orElse("")));
 			}
         } else {
-            LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
+            LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayId.orElse("")));
         }
 
         return replay;
@@ -1729,8 +1729,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addMatch(spec.getCTbody(), query, qstr, BODYF, qr.body);
         addMatch(spec.getCTcollection(), query, qstr, COLLECTIONF, qr.collection);
         addMatch(spec.getCTtimestamp(), query, qstr, TIMESTAMPF, qr.timestamp.toString());
-        addMatch(spec.getCTrrtype(), query, qstr, RRTYPEF, qr.rrtype.map(Enum::toString));
-        addMatch(spec.getCTcustomerid(), query, qstr, CUSTOMERIDF, qr.customerid);
+        addMatch(spec.getCTrrtype(), query, qstr, RRTYPEF, qr.runType.map(Enum::toString));
+        addMatch(spec.getCTcustomerid(), query, qstr, CUSTOMERIDF, qr.customerId);
         addMatch(spec.getCTapp(), query, qstr, APPF, qr.app);
         //addMatch(spec.getCTcontenttype, query, qstr, CONTENTTYPEF, qr.hdrs.getHeaderString(HttpHeaders.CONTENT_TYPE));
 
@@ -2259,7 +2259,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             final SolrQuery query = new SolrQuery("*:*");
             query.addField("*");
             addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
-            addFilter(query, REPLAYIDF, replayv.replayid);
+            addFilter(query, REPLAYIDF, replayv.replayId);
             service.ifPresent(servicev -> addFilter(query, SERVICEF, servicev));
 
             // First generate the solr facet query with appropriate nested facets
@@ -2331,7 +2331,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                         // combine facet results into MatchResultAggregate objects by using FacetResKey
                         FacetResKey frkey = fr.toFacetResKey();
                         Optional.ofNullable(resMap.get(frkey)).ifPresentOrElse(mra -> updateMatchResult(mra, fr), () -> {
-                            MatchResultAggregate mra = new MatchResultAggregate(replayv.app, replayv.replayid, frkey.service, frkey.path);
+                            MatchResultAggregate mra = new MatchResultAggregate(replayv.app, replayv.replayId, frkey.service, frkey.path);
                             updateMatchResult(mra, fr);
                             resMap.put(frkey, mra);
                         });

@@ -159,7 +159,7 @@ public class ResponseComparatorTest {
         body.put("type", "softcopy");
         body.put("pages", 3.14);
         Response response2 = new Response(response1.reqid, response1.status, response1.meta, response1.hdrs,
-            body.toString(), response1.collection, response1.timestamp, response1.rrtype, response1.customerid, response1.app);
+            body.toString(), response1.collection, response1.timestamp, response1.runType, response1.customerId, response1.app);
         compareTest(testData, response1, response2);
     }
 

@@ -149,7 +149,7 @@ public class CubeStore {
             }
             return t;
         });
-        Optional<Event.RecordReplayType> rrtype = Optional.ofNullable(meta.getFirst("rrtype")).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
+        Optional<Event.RunType> runType = Optional.ofNullable(meta.getFirst("runType")).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
         Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
         Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
         Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
@@ -175,7 +175,7 @@ public class CubeStore {
             if (t.equals("request")) {
                 Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
                 return method.map(mval -> {
-                    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp, rrtype, customerid, app);
+                    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp, runType, customerid, app);
                     if (!rrstore.save(req))
                         return Optional.of("Not able to store request");
                     Optional<String> empty = Optional.empty();
@@ -192,7 +192,7 @@ public class CubeStore {
                     }
                 });
                 return s.map(sval -> {
-                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
+                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, runType, customerid, app);
                     if (!rrstore.save(resp))
                         return Optional.of("Not able to store response");
                     return Optional.<String>empty();
@@ -673,7 +673,7 @@ public class CubeStore {
         pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
 
         Request queryRequest = new Request(path, Optional.empty(), qparams, fparams, hdrs, service, collection,
-            Optional.of(Event.RecordReplayType.Record), customerid, app);
+            Optional.of(Event.RunType.Record), customerid, app);
 
         List<Request> requests =
             rrstore.getRequests(queryRequest, mspecForDrillDownQuery, nummatches, start)
@@ -739,7 +739,7 @@ public class CubeStore {
 	 * Set the collection field, if it is not already set
 	 */
 	private void setCollection(RRBase rr) {
-		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerid,
+		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerId,
 				rr.app, rr.getInstance());
 	}
 
@@ -759,7 +759,7 @@ public class CubeStore {
 	}
 
 	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
-		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RecordReplayType.Manual), resp.customerid,
+		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RunType.Manual), resp.customerId,
 				resp.app);
 
 		// check if default response has been saved earlier
@@ -783,7 +783,7 @@ public class CubeStore {
 
     {
         drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));

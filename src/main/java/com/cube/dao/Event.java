@@ -6,7 +6,7 @@
 
 package com.cube.dao;
 
-import static com.cube.dao.Event.RecordReplayType.Record;
+import static com.cube.dao.Event.RunType.Record;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class Event {
 
 
     public Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
-                 RecordReplayType rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
+                 RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
                  String rawPayloadString, DataObj payload, int payloadKey) {
         this.customerId = customerId;
         this.app = app;
@@ -46,7 +46,7 @@ public class Event {
         this.instanceId = instanceId;
         this.collection = collection;
         this.traceId = traceId;
-        this.rrType = rrType;
+        this.runType = runType;
         this.timestamp = timestamp;
         this.reqId = reqId;
         this.apiPath = apiPath;
@@ -67,7 +67,7 @@ public class Event {
         this.instanceId = null;
         this.collection = null;
         this.traceId = null;
-        this.rrType = Record;
+        this.runType = Record;
         this.timestamp = null;
         this.reqId = null;
         this.apiPath = null;
@@ -88,7 +88,7 @@ public class Event {
     public boolean validate() {
 
         if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (collection == null)
-            || (traceId == null) || (rrType == null) ||
+            || (traceId == null) || (runType == null) ||
             (timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
             || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
             return false;
@@ -143,7 +143,7 @@ public class Event {
     public final String instanceId;
     private String collection;
     public final String traceId;
-    public final RecordReplayType rrType;
+    public final RunType runType;
 
 
     public void setCollection(String collection) {
@@ -167,7 +167,7 @@ public class Event {
     public int payloadKey;
 
     /* when did the event get created - record, replay or manually added */
-    public enum RecordReplayType {
+    public enum RunType {
 		Record,
 		Replay,
 		Manual  // manually created e.g. default requests and responses

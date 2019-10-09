@@ -126,7 +126,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 */
 	@Override
 	public boolean saveReplay(Replay replay) {
-		invalidateCurrentCollectionCache(replay.customerid, replay.app, replay.instanceid);
+		invalidateCurrentCollectionCache(replay.customerId, replay.app, replay.instanceId);
 		return true;
 	}
 

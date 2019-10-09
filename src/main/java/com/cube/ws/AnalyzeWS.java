@@ -436,9 +436,9 @@ public class AnalyzeWS {
         Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
             List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection);
         String finalJson = replays.map(replay -> {
-            String replayid = replay.replayid;
+            String replayid = replay.replayId;
             String creationTimeStamp = replay.creationTimeStamp;
-            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerid, replay.app
+            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app
                 ,  replay.collection , replay.templateVersion);
             String recordingInfo = "";
             if (recordingOpt.isEmpty()) {
@@ -511,8 +511,8 @@ public class AnalyzeWS {
             Map<String, com.cube.dao.Request> requestMap = new HashMap<>();
             if (!reqids.isEmpty()) {
                 // empty reqid list would lead to returning of all requests, so check for it
-                Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerid, replay.app, replay.collection,
-                    reqids, Collections.emptyList(), Event.RecordReplayType.Record);
+                Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
+                    reqids, Collections.emptyList(), Event.RunType.Record);
                 requestResult.getObjects().forEach(req -> req.reqid.ifPresent(reqidv -> requestMap.put(reqidv, req)));
             }
 

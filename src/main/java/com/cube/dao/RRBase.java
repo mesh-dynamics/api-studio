@@ -27,7 +27,7 @@ public class RRBase {
 	public static final String REQIDPATH = "/reqid";
 	public static final String COLLECTIONPATH = "/collection";
 	public static final String TIMESTAMPPATH = "/timestamp";
-	public static final String RRTYPEPATH = "/rrtype";
+	public static final String RUNTYPEPATH = "/runType";
 	public static final String CUSTOMERIDPATH = "/customerid";
 	public static final String APPPATH = "/app";
 
@@ -39,8 +39,8 @@ public class RRBase {
 	 * @param body
 	 * @param collection
 	 * @param timestamp
-	 * @param rrtype
-	 * @param customerid
+	 * @param runType
+	 * @param customerId
 	 * @param app
 	 */
 	public RRBase(Optional<String> reqid,
@@ -49,8 +49,8 @@ public class RRBase {
 			String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp,
-			Optional<Event.RecordReplayType> rrtype,
-			Optional<String> customerid,
+			Optional<Event.RunType> runType,
+			Optional<String> customerId,
 			Optional<String> app) {
 		super();
 		this.reqid = reqid;
@@ -59,8 +59,8 @@ public class RRBase {
 		this.body = body;
 		this.collection = collection;
 		this.timestamp = timestamp;
-		this.rrtype = rrtype;
-		this.customerid = customerid;
+		this.runType = runType;
+		this.customerId = customerId;
 		this.app = app;
 	}
 
@@ -76,8 +76,8 @@ public class RRBase {
 		this.body = "";
 		this.collection = Optional.empty();
 		this.timestamp = Optional.empty();
-		this.rrtype = Optional.empty();
-		this.customerid = Optional.empty();
+		this.runType = Optional.empty();
+		this.customerId = Optional.empty();
 		this.app = Optional.empty();
 	}
 
@@ -148,8 +148,8 @@ public class RRBase {
 		}
 		template.getRule("/collection").checkMatchStr(collection, rhs.collection, match, needDiff);
 		template.getRule("/timestamp").checkMatchStr(timestamp.toString(), rhs.timestamp.toString(), match, needDiff);
-		template.getRule("/rrtype").checkMatchStr(rrtype.toString(), rhs.rrtype.toString(), match, needDiff);
-		template.getRule("/customerid").checkMatchStr(customerid, rhs.customerid, match, needDiff);
+		template.getRule("/runType").checkMatchStr(runType.toString(), rhs.runType.toString(), match, needDiff);
+		template.getRule("/customerId").checkMatchStr(customerId, rhs.customerId, match, needDiff);
 		template.getRule("/app").checkMatchStr(app, rhs.app, match, needDiff);
 		return match;
 	}
@@ -168,8 +168,8 @@ public class RRBase {
 	public final String body;
 	public Optional<String> collection;
 	public final Optional<Instant> timestamp;
-	public Optional<Event.RecordReplayType> rrtype; // this can be "record" or "replay"
-	public final Optional<String> customerid;
+	public Optional<Event.RunType> runType; // this can be "record" or "replay"
+	public final Optional<String> customerId;
 	public final Optional<String> app;
 
 	public static final String SERVICEFIELD = "service";

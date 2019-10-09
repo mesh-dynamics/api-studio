@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,29 +46,29 @@ public class Replay {
 
 	/**
      * @param endpoint
-     * @param customerid
+     * @param customerId
      * @param app
-     * @param instanceid
+     * @param instanceId
      * @param collection
-     * @param reqids
-     * @param replayid
+     * @param reqIds
+     * @param replayId
      * @param async
      * @param templateVersion
      * @param status
-     * @param samplerate
+     * @param sampleRate
      */
-	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
-                  String replayid, boolean async, Optional<String> templateVersion, ReplayStatus status,
+	public Replay(String endpoint, String customerId, String app, String instanceId, String collection, List<String> reqIds,
+                  String replayId, boolean async, Optional<String> templateVersion, ReplayStatus status,
                   List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
-                  Optional<Double> samplerate, List<String> intermediateServices) {
+                  Optional<Double> sampleRate, List<String> intermediateServices) {
 		super();
 		this.endpoint = endpoint;
-		this.customerid = customerid;
+		this.customerId = customerId;
 		this.app = app;
-		this.instanceid = instanceid;
+		this.instanceId = instanceId;
 		this.collection = collection;
-		this.reqids = reqids;
-		this.replayid = replayid;
+		this.reqIds = reqIds;
+		this.replayId = replayId;
 		this.async = async;
         this.templateVersion = templateVersion;
         this.status = status;
@@ -77,7 +78,7 @@ public class Replay {
 		this.reqfailed = reqfailed;
 		this.creationTimeStamp = creationTimestamp == null ? format.format(new Date()) : creationTimestamp;
 		this.xfmer = Optional.ofNullable(null);
-		this.samplerate = samplerate;
+		this.sampleRate = sampleRate;
 		this.intermediateServices = intermediateServices;
 	}
 
@@ -85,15 +86,15 @@ public class Replay {
 	public Replay() {
 	    super();
 	    endpoint = "" ;
-	    customerid = "";
+	    customerId = "";
 	    app = "";
-	    instanceid = "";
+	    instanceId = "";
 	    collection = "";
-	    replayid = "";
+	    replayId = "";
 	    async = false;
-	    samplerate = Optional.empty();
+	    sampleRate = Optional.empty();
 	    creationTimeStamp = "";
-	    reqids = Collections.emptyList();
+	    reqIds = Collections.emptyList();
 	    paths = Collections.emptyList();
 	    intermediateServices = Collections.emptyList();
 	    templateVersion = Optional.empty();
@@ -114,19 +115,19 @@ public class Replay {
 	@JsonProperty("endpt")
 	public final String endpoint;
 	@JsonProperty("cust")
-	public final String customerid;
+	public final String customerId;
     @JsonProperty("app")
 	public final String app;
     @JsonProperty("instance")
-	public final String instanceid;
+	public final String instanceId;
     @JsonProperty("collect")
 	public final String collection;
-    @JsonProperty("reqids")
-	public final List<String> reqids;
+    @JsonProperty("reqIds")
+	public final List<String> reqIds;
     @JsonProperty("templateVer")
 	public final Optional<String> templateVersion;
     @JsonProperty("id")
-    public final String replayid; // this needs to be globally unique
+    public final String replayId; // this needs to be globally unique
     @JsonProperty("async")
     public final boolean async;
     @JsonProperty("status")
@@ -144,27 +145,27 @@ public class Replay {
 	@JsonIgnore
     public transient Optional<RRTransformer> xfmer;
     @JsonProperty("smplrate")
-	public final Optional<Double> samplerate;
+	public final Optional<Double> sampleRate;
 
 	private transient SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	@JsonProperty("timestmp")
 	public final String creationTimeStamp;
 
-	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
-	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
-	private static final Pattern replayidpattern = Pattern.compile(replayidpatternStr);
+	static final String uuidPatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
+	static final String replayIdPatternStr = "^(.*)-" + uuidPatternStr + "$";
+	private static final Pattern replayIdPattern = Pattern.compile(replayIdPatternStr);
 
 	/**
-	 * @param replayid
+	 * @param replayId
 	 * @return
 	 */
-	public static String getCollectionFromReplayId(String replayid) {
-		Matcher m = replayidpattern.matcher(replayid);
+	public static String getCollectionFromReplayId(String replayId) {
+		Matcher m = replayIdPattern.matcher(replayId);
 		if (m.find()) {
 			return m.group(1);
 		} else {
-			LOGGER.error(String.format("Not able to extract collection from replay id %s", replayid));
-			return replayid;
+			LOGGER.error(String.format("Not able to extract collection from replay id %s", replayId));
+			return replayId;
 		}
 	}
 
@@ -172,12 +173,30 @@ public class Replay {
 		return String.format("%s-%s", collection, UUID.randomUUID().toString());
 	}
 
-	/**
+	public Pair<Stream<List<Request>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore) {
+        Result<Request> requests = mapEventToRequestResult(getEventResult(rrstore));
+        return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
+    }
+
+    private Result<Request> mapEventToRequestResult(Result<Event> events) {
+        return new Result<>(events.getObjects()
+                .map(event -> Request.fromEvent(event, new ObjectMapper()))
+                .filter(Optional::isPresent)
+                .map(Optional::get), events.numResults, events.numFound);
+    }
+
+    private Result<Event> getEventResult(ReqRespStore rrstore) {
+        EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPResponse)
+            .withRRType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
+        return rrstore.getEvents(eventQuery);
+    }
+
+    /**
 	 * @return
 	 */
 	@JsonIgnore
 	public Result<Request> getRequests(ReqRespStore rrstore) {
-		Result<Request> res = rrstore.getRequests(customerid, app, collection, reqids, paths, Event.RecordReplayType.Record);
+		Result<Request> res = rrstore.getRequests(customerId, app, collection, reqIds, paths, Event.RunType.Record);
 		return res;
 	}
 

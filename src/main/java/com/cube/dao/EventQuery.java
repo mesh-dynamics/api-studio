@@ -39,7 +39,7 @@ public class EventQuery {
     private final Optional<String> collection;
 
     private final Optional<String> traceId;
-    private final Optional<Event.RecordReplayType> rrType;
+    private final Optional<Event.RunType> runType;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
     private final Optional<Instant> timestamp;
@@ -60,7 +60,7 @@ public class EventQuery {
         private String instanceId = null;
         private String collection = null;
         private String traceId = null;
-        private Event.RecordReplayType rrType = null;
+        private Event.RunType runType = null;
         private String spanId = null;
         private String parentSpanId = null;
         private Instant timestamp = null;
@@ -100,8 +100,8 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withRRType(Event.RecordReplayType val) {
-            rrType = val;
+        public Builder withRRType(Event.RunType val) {
+            runType = val;
             return this;
         }
 
@@ -164,7 +164,7 @@ public class EventQuery {
         instanceId = Optional.ofNullable(builder.instanceId);
         collection = Optional.ofNullable(builder.collection);
         traceId = Optional.ofNullable(builder.traceId);
-        rrType = Optional.ofNullable(builder.rrType);
+        runType = Optional.ofNullable(builder.runType);
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
         timestamp = Optional.ofNullable(builder.timestamp);
@@ -204,7 +204,7 @@ public class EventQuery {
         return traceId;
     }
 
-    public Optional<Event.RecordReplayType> getRRType() { return rrType; }
+    public Optional<Event.RunType> getRRType() { return runType; }
 
     public Optional<List<String>> getReqIds() {
         return reqIds;

@@ -158,11 +158,11 @@ public interface ReqRespStore {
 	 * @param collection
 	 * @param reqids
 	 * @param paths
-	 * @param rrtype
+	 * @param runType
 	 * @return
 	 */
 	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
-			, List<String> paths, Event.RecordReplayType rrtype);
+			, List<String> paths, Event.RunType runType);
 
     Result<Event> getEvents(EventQuery eventQuery);
 
@@ -413,7 +413,7 @@ public interface ReqRespStore {
 			// Note that replayid is the collection for replay requests/responses
 			// replay.collection refers to the original collection
 			// return replay collection if non empty, else return recording collection
-			return replay.map(replay -> replay.replayid)
+			return replay.map(replay -> replay.replayId)
 					.or(() -> recording.map(recording -> recording.collection));
 		}
 
@@ -426,7 +426,7 @@ public interface ReqRespStore {
 
 		@JsonIgnore
         public Optional<String> getReplayId() {
-            return replay.map(replay -> replay.replayid);
+            return replay.map(replay -> replay.replayId);
         }
 
 		@JsonIgnore

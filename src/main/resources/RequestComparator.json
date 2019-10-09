@@ -7,8 +7,8 @@
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body/query",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/runType",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -23,7 +23,7 @@
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
             { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -38,7 +38,7 @@
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
             { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
-            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
@@ -98,10 +98,10 @@
             "method":       [ "POST" ],
             "service":      [ "restwrapjdbc" ],
             "c-request-id": [ "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923" ],
-            "customerid":   [ "ravivj" ],
+            "customerId":   [ "ravivj" ],
             "type":         [ "request" ],
             "timestamp":    [ "2019-04-05T03:45:30Z" ],
-            "rrtype":       [ "Record" ]
+            "runType":       [ "Record" ]
         },
         "hdrs": {
             "x-request-id":         [ "310b1af7-8df2-9049-8c73-a1e81b40355f" ],
@@ -122,8 +122,8 @@
         "body":         "{\"query\":\"INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date) VALUES (?, ?, ?, ?, ?)\",\"params\":[{\"index\":1,\"type\":\"integer\",\"value\":252},{\"index\":2,\"type\":\"integer\",\"value\":1},{\"index\":3,\"type\":\"integer\",\"value\":17905},{\"index\":4,\"type\":\"double\",\"value\":9.98},{\"index\":5,\"type\":\"string\",\"value\":\"2019-04-05 03:45:28\"}]}",
         "collection":   "test-Apr-5-1",
         "timestamp":    1554435930.000000000,
-        "rrtype":       "Record",
-        "customerid":   "ravivj",
+        "runType":       "Record",
+        "customerId":   "ravivj",
         "app":          "movieinfo",
         "path":         "restsql/update",
         "qparams":      {

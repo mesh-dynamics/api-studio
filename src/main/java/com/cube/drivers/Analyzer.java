@@ -68,14 +68,14 @@ public class Analyzer {
     private void analyze(ReqRespStore rrstore, Stream<List<Request>> reqs, Replay replay) {
 
         // using seed generated from replayid so that same requests get picked in replay and analyze
-        long seed = replay.replayid.hashCode();
+        long seed = replay.replayId.hashCode();
         Random random = new Random(seed);
 
         reqs.forEach(requestList -> {
             // for each batch of requests, expand on trace id for the given list of intermediate services
             // (a property of replay)
             List<Request> filteredList = requestList.stream().filter(request ->
-                    replay.samplerate.map(sr -> random.nextDouble() <= sr).orElse(true))
+                    replay.sampleRate.map(sr -> random.nextDouble() <= sr).orElse(true))
                     .collect(Collectors.toList());
 
             Stream<Request> enhancedRequests = rrstore.expandOnTraceId(filteredList, replay.intermediateServices
@@ -90,11 +90,11 @@ public class Analyzer {
                 // collection to set to replayid, since collection in replays are set to replayids
                 Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
                         r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
-                        Optional.of(Event.RecordReplayType.Replay), r.customerid, r.app);
+                        Optional.of(Event.RunType.Replay), r.customerId, r.app);
 
                 List<Request> matches = new ArrayList<>();
 
-                TemplateKey key = new TemplateKey(templateVersion, r.customerid.get(), r.app.get(),
+                TemplateKey key = new TemplateKey(templateVersion, r.customerId.get(), r.app.get(),
                     r.getService().get(), r.path
                         , TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
@@ -194,7 +194,7 @@ public class Analyzer {
         return recordreq.reqid.flatMap(recordreqid -> replayreq.reqid.flatMap(replayreqid -> {
             // fetch response of recording and replay
             // if enough information is not available to retrieve a template for matching , return a no match
-            if (recordreq.app.isEmpty() || recordreq.customerid.isEmpty() || recordreq.path.isEmpty() ||
+            if (recordreq.app.isEmpty() || recordreq.customerId.isEmpty() || recordreq.path.isEmpty() ||
                 recordreq.getService().isEmpty()) {
                 LOGGER.error("Not enough information to construct a template cache key for recorded req :: "
                         + recordreq.reqid.get());
@@ -203,7 +203,7 @@ public class Analyzer {
 
             try {
                 // get appropriate template from solr
-                TemplateKey key = new TemplateKey(templateVersion, recordreq.customerid.get(),
+                TemplateKey key = new TemplateKey(templateVersion, recordreq.customerId.get(),
                         recordreq.app.get(), recordreq.getService().get(), recordreq.path , TemplateKey.Type.Response);
                 ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
                 Optional<Response> replayresp = Optional.ofNullable(replayResponseMap.get(replayreqid));

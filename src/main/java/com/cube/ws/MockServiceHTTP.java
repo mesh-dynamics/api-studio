@@ -271,7 +271,7 @@ public class MockServiceHTTP {
 		Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
 		return rrstore.getCurrentReplayId(Optional.of(customerId), Optional.of(app), Optional.of(instanceId)).map(replayId -> new Request(
 				path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
-				Optional.of(replayId) , Optional.of(Event.RecordReplayType.Replay), Optional.of(customerId) , Optional.of(app)
+				Optional.of(replayId) , Optional.of(Event.RunType.Replay), Optional.of(customerId) , Optional.of(app)
 		));
 
 	}
@@ -286,7 +286,7 @@ public class MockServiceHTTP {
         Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
         return new Request(
             path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
-            Optional.of(replayId) , Optional.of(Event.RecordReplayType.Replay), Optional.of(customerId) , Optional.of(app));
+            Optional.of(replayId) , Optional.of(Event.RunType.Replay), Optional.of(customerId) , Optional.of(app));
 
     }
 
@@ -305,7 +305,7 @@ public class MockServiceHTTP {
                                                      String customerId, String app, String instanceId) {
         return  new com.cube.dao.Response(mockReqId, originalResponse.status, originalResponse.meta,
             originalResponse.hdrs, originalResponse.body, rrstore.getCurrentReplayId(Optional.of(customerId),
-            Optional.of(app), Optional.of(instanceId)) , Optional.of(Instant.now()), Optional.of(Event.RecordReplayType.Replay) ,
+            Optional.of(app), Optional.of(instanceId)) , Optional.of(Instant.now()), Optional.of(Event.RunType.Replay) ,
             Optional.of(customerId), Optional.of(app));
     }
 
@@ -329,7 +329,7 @@ public class MockServiceHTTP {
         Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
 	    		headers.getRequestHeaders(), service, collection,
-	    		Optional.of(Event.RecordReplayType.Record),
+                Optional.of(Event.RunType.Record),
 	    		Optional.of(customerid),
 	    		Optional.of(app));
 
@@ -341,7 +341,7 @@ public class MockServiceHTTP {
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
 				.or(() -> {
-					r.rrtype = Optional.of(Event.RecordReplayType.Manual);
+					r.runType = Optional.of(Event.RunType.Manual);
 					LOGGER.info("Using default response");
 					return getDefaultResponse(r);
 				});
@@ -422,7 +422,7 @@ public class MockServiceHTTP {
 
         Request request = new Request(path, Optional.empty(), queryParams, formParams,
             headers.getRequestHeaders(), service, collectionOpt,
-            Optional.of(Event.RecordReplayType.Record),
+            Optional.of(Event.RunType.Record),
             Optional.of(customerid),
             Optional.of(app));
 
@@ -455,7 +455,7 @@ public class MockServiceHTTP {
             })
             .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonmapper))
             .or(() -> {
-                request.rrtype = Optional.of(Event.RecordReplayType.Manual);
+                request.runType = Optional.of(Event.RunType.Manual);
                 LOGGER.info("Using default response");
                 return getDefaultResponse(request);
             });
@@ -512,7 +512,7 @@ public class MockServiceHTTP {
 
     public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit) {
         // eventually we will clean up code and make customerid and app non-optional in Request
-        String customerId = request.customerid.orElse("NA");
+        String customerId = request.customerId.orElse("NA");
         String app = request.app.orElse("NA");
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPRequest);
         request.collection.ifPresent(builder::withCollection);
@@ -521,7 +521,7 @@ public class MockServiceHTTP {
 
         return builder.withPaths(List.of(request.path))
             .withPayloadKey(payloadKey)
-            .withRRType(Event.RecordReplayType.Record)
+            .withRRType(Event.RunType.Record)
             .withSortOrderAsc(true)
             .withLimit(limit)
             .build();
@@ -529,7 +529,7 @@ public class MockServiceHTTP {
 
     public static EventQuery getResponseEventQuery(Request request, String reqId, int limit) {
         // eventually we will clean up code and make customerid and app non-optional in Request
-        String customerId = request.customerid.orElse("NA");
+        String customerId = request.customerId.orElse("NA");
         String app = request.app.orElse("NA");
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPResponse);
         request.collection.ifPresent(builder::withCollection);
@@ -598,7 +598,7 @@ public class MockServiceHTTP {
         reqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         reqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
@@ -626,7 +626,7 @@ public class MockServiceHTTP {
 
 	{
 		defaultReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));

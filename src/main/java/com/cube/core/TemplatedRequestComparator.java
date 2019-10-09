@@ -44,7 +44,7 @@ public class TemplatedRequestComparator extends TemplatedRRComparator implements
         ctbody = template.getRule(RRBase.BODYPATH).ct;
         ctcollection = template.getRule(RRBase.COLLECTIONPATH).ct;
         cttimestamp = template.getRule(RRBase.TIMESTAMPPATH).ct;
-        ctrrtype = template.getRule(RRBase.RRTYPEPATH).ct;
+        ctrrtype = template.getRule(RRBase.RUNTYPEPATH).ct;
         ctcustomerid = template.getRule(RRBase.CUSTOMERIDPATH).ct;
         ctapp = template.getRule(RRBase.APPPATH).ct;
         cthdrFields = hdrFieldTemplate.getPathCTs();

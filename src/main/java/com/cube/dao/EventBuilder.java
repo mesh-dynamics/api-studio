@@ -24,7 +24,7 @@ public class EventBuilder {
     private final String instanceId;
     private final String collection;
     private final String traceId;
-    private final Event.RecordReplayType rrType;
+    private final Event.RunType runType;
     private final Instant timestamp;
     private final String reqId;
     private final String apiPath;
@@ -35,14 +35,14 @@ public class EventBuilder {
     private int payloadKey = 0;
 
     public EventBuilder(String customerId, String app, String service, String instanceId, String collection, String traceId,
-                        Event.RecordReplayType rrType, Instant timestamp, String reqId, String apiPath, Event.EventType eventType) {
+                        Event.RunType runType, Instant timestamp, String reqId, String apiPath, Event.EventType eventType) {
         this.customerId = customerId;
         this.app = app;
         this.service = service;
         this.instanceId = instanceId;
         this.collection = collection;
         this.traceId = traceId;
-        this.rrType = rrType;
+        this.runType = runType;
         this.timestamp = timestamp;
         this.reqId = reqId;
         this.apiPath = apiPath;
@@ -71,7 +71,7 @@ public class EventBuilder {
     }
 
     public Event createEvent() throws InvalidEventException {
-        Event event = new Event(customerId, app, service, instanceId, collection, traceId, rrType, timestamp, reqId, apiPath,
+        Event event = new Event(customerId, app, service, instanceId, collection, traceId, runType, timestamp, reqId, apiPath,
         eventType,
         rawPayloadBinary, rawPayloadString, payload, payloadKey);
         if (event.validate()) {

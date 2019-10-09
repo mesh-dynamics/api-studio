@@ -94,8 +94,8 @@ public class ReqMatchSpec extends RRMatchSpec implements RequestComparator {
         if ((ret = ret.And(checkMatch(mbody, lhs.body, rhs.body))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mcollection, lhs.collection, rhs.collection))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mtimestamp, lhs.timestamp, rhs.timestamp))) == MatchType.NoMatch) return ret;
-        if ((ret = ret.And(checkMatch(mrrtype, lhs.rrtype, rhs.rrtype))) == MatchType.NoMatch) return ret;
-        if ((ret = ret.And(checkMatch(mcustomerid, lhs.customerid, rhs.customerid))) == MatchType.NoMatch) return ret;
+        if ((ret = ret.And(checkMatch(mrrtype, lhs.runType, rhs.runType))) == MatchType.NoMatch) return ret;
+        if ((ret = ret.And(checkMatch(mcustomerid, lhs.customerId, rhs.customerId))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mapp, lhs.app, rhs.app))) == MatchType.NoMatch) return ret;
 
         if ((ret = ret.And(checkMatch(mpath, lhs.path, rhs.path))) == MatchType.NoMatch) return ret;

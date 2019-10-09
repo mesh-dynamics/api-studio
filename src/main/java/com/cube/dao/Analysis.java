@@ -243,7 +243,7 @@ public class Analysis {
 		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
 		    this(rm.recordreq.reqid, rm.replayreq.flatMap(req -> req.reqid), reqmt, size,
 					rm.match,
-					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
+					rm.recordreq.customerId.orElse(""), rm.recordreq.app.orElse(""),
 					rm.recordreq.getService().orElse(""), rm.recordreq.path,
 					replayid, jsonmapper,
                     CommonUtils.getTraceId(rm.recordreq.hdrs),
