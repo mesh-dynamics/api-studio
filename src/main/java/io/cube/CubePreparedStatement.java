@@ -2,7 +2,6 @@ package io.cube;
 
 import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -30,7 +29,6 @@ import java.util.Optional;
 
 public class CubePreparedStatement extends CubeStatement implements PreparedStatement {
 
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubePreparedStatement.class);
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final PreparedStatement preparedStatement;
     private final Config config;

@@ -2,7 +2,6 @@ package io.cube;
 
 import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -28,8 +27,6 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 public class CubeConnection implements Connection {
-
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeConnection.class);
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final Driver driver;
     private final Connection connection;

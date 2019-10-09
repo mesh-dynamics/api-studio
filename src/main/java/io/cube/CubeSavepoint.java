@@ -1,7 +1,6 @@
 package io.cube;
 
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
 import java.sql.SQLException;
@@ -9,7 +8,6 @@ import java.sql.Savepoint;
 
 public class CubeSavepoint implements Savepoint {
 
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeSavepoint.class);
     private final Savepoint savepoint;
     private final CubeConnection cubeConnection;
     private final int savepointInstanceId;

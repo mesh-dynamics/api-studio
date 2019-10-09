@@ -1,11 +1,8 @@
 package io.cube;
 
-import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -13,8 +10,6 @@ import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 
 public class CubeDatabaseMetaData implements DatabaseMetaData {
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeDatabaseMetaData.class);
-    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final DatabaseMetaData metaData;
     private final CubeConnection cubeConnection;
     private final Config config;

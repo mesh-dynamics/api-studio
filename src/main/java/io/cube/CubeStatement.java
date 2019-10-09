@@ -2,7 +2,6 @@ package io.cube;
 
 import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -15,7 +14,6 @@ import java.util.Optional;
 
 public class CubeStatement implements Statement {
 
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeStatement.class);
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final Statement statement;
     private final CubeConnection cubeConnection;

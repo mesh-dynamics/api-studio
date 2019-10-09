@@ -2,7 +2,6 @@ package io.cube;
 
 import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -19,7 +18,6 @@ import java.util.logging.Logger;
 
 public class CubeDriver implements Driver {
 
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeDriver.class);
     private static final Driver INSTANCE = new CubeDriver();
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private static final Config config;

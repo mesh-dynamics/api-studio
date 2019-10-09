@@ -1,7 +1,6 @@
 package io.cube;
 
 import io.cube.agent.FnKey;
-import org.apache.logging.log4j.LogManager;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -28,7 +27,6 @@ import java.util.Map;
 
 public class CubeResultSet implements ResultSet {
 
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger(CubeResultSet.class);
     private final ResultSet resultSet;
     private final CubeStatement cubeStatement;
     private final Config config;
