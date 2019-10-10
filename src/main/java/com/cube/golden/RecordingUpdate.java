@@ -6,6 +6,7 @@ import com.cube.dao.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import java.time.Instant;
 import java.util.*;
@@ -188,14 +189,19 @@ public class RecordingUpdate {
         results.filter( res -> {
             if (res.reqmt.equals(Comparator.MatchType.NoMatch) || res.respmt.equals(Comparator.MatchType.NoMatch) ) {
                 res.recordTraceId.ifPresentOrElse( inCompletetraceIds::add , () -> res.replayTraceId.ifPresent( inCompletetraceIds::add ) );
-                LOGGER.info(String.format("Filtering out the ReqRespMatchResult as req/response mismatch found " +
-                    "with record trace id: %s & replay trace id: %s, record req id: %s, replay req id: %s",
-                    res.recordreqid, res.replayTraceId, res.recordreqid, res.replayreqid));
+                LOGGER.info(new ObjectMessage(Map.of("Action", "Filering out the ReqRespMatchResult as req/response has NoMatch",
+                    "Record Trace Id", res.recordTraceId.orElse("<Empty>"),
+                    "Replay Trace Id", res.replayTraceId.orElse("<Empty>"),
+                    "Record Request Id", res.recordreqid.orElse("<Empty>"),
+                    "Replay Request Id", res.replayreqid.orElse("<Empty>"))));
                 return false;
             } else if (inCompletetraceIds.contains(res.recordTraceId) || inCompletetraceIds.contains(res.replayTraceId)) {
-                LOGGER.info(String.format("Filtering out the ReqRespMatchResult as it found to be part of traceid " +
-                    "that has req/resp Mismatch type as NoMatch with record trace id: %s & response trace id: %s " +
-                    "and record reqid: %s, replay reqid: %s", res.recordTraceId, res.replayTraceId, res.recordreqid, res.replayreqid));
+                LOGGER.info(new ObjectMessage(Map.of("Action", "Filtering out the ReqRespMatchResult as it found to be part of " +
+                        "Trace Id that has req/resp Mismatch type as NoMatch",
+                    "Record Trace Id", res.recordTraceId.orElse("<Empty>"),
+                    "Replay Trace Id", res.replayTraceId.orElse("<Empty>"),
+                    "Record Request Id", res.recordreqid.orElse("<Empty>"),
+                    "Replay Request Id", res.replayreqid.orElse("<Empty>"))));
                 return false;
             } else {
                 return true;

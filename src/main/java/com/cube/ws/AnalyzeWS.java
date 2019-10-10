@@ -848,12 +848,14 @@ public class AnalyzeWS {
                 Optional.of(originalRec.rootRecordingId));
 
             rrstore.saveRecording(updatedRecording);
-            return Response.ok().entity("{\"Message\" :  \"Successfully created new recording by sanitizing the specified original recording" +
-                "\" , \"ID\" : \"" + updatedRecording.getId() + "\"}").build();
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully created new recording by sanitizing the specified original recording",
+                "ID", updatedRecording.getId()))).toString()).build();
         }  catch (Exception e) {
             LOGGER.error("Error while updating golden set :: "  + e.getMessage());
-            return Response.serverError().entity("{\"Message\" :  \"Error while updating recording\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
+            return Response.serverError().entity(new JSONObject(Map.of(
+                "Message", "Error while updating recording",
+                "Error", e.getMessage())).toString()).build();
         }
     }
 
