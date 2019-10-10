@@ -26,25 +26,25 @@ public class Recording {
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
 	/**
-     * @param customerid
+     * @param customerId
      * @param app
-     * @param instanceid
+     * @param instanceId
      * @param collection
      * @param status
      * @param templateVersionOpt
      */
-	public Recording(String customerid, String app, String instanceid, String collection, RecordingStatus status
+	public Recording(String customerId, String app, String instanceId, String collection, RecordingStatus status
         , Optional<Instant> updateTimestamp, Optional<String> templateVersionOpt, Optional<String> parentRecordingId
         , Optional<String> rootRecordingId) {
 		super();
-		this.customerid = customerid;
+		this.customerId = customerId;
 		this.app = app;
-		this.instanceid = instanceid;
+		this.instanceId = instanceId;
 		this.collection = collection;
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
         this.templateVersion = templateVersionOpt.or(() -> Optional.of(Recording.DEFAULT_TEMPLATE_VER));/*.orElse(DEFAULT_TEMPLATE_VER)*/;
-        this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-").concat(String.valueOf(Objects.hash(customerid, app,
+        this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-").concat(String.valueOf(Objects.hash(customerId, app,
             collection, templateVersion)));
         this.parentRecordingId = parentRecordingId;
         this.rootRecordingId = rootRecordingId;
@@ -54,9 +54,9 @@ public class Recording {
 	public Recording() {
 	    super();
 	    this.id = "";
-	    this.customerid = "";
+	    this.customerId = "";
 	    this.app = "";
-	    this.instanceid = "";
+	    this.instanceId = "";
 	    this.collection = "";
 	    this.templateVersion = Optional.empty();
 	    this.parentRecordingId = Optional.empty();
@@ -66,11 +66,11 @@ public class Recording {
     @JsonProperty("id")
     public final String id;
 	@JsonProperty("cust")
-	public final String customerid;
+	public final String customerId;
     @JsonProperty("app")
 	public final String app;
     @JsonProperty("instance")
-	public final String instanceid;
+	public final String instanceId;
     @JsonProperty("collec")
     public final String collection; // unique within a (customerid, app)
     @JsonProperty("status")
@@ -89,9 +89,9 @@ public class Recording {
     }
 
 
-	public static Optional<Recording> startRecording(String customerid, String app, String instanceid,
+	public static Optional<Recording> startRecording(String customerId, String app, String instanceId,
                                                      String collection, Optional<String> templateSetId, ReqRespStore rrstore) {
-		Recording recording = new Recording(customerid, app, instanceid, collection, RecordingStatus.Running
+		Recording recording = new Recording(customerId, app, instanceId, collection, RecordingStatus.Running
             , Optional.of(Instant.now()), templateSetId, Optional.empty(), Optional.empty());
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);

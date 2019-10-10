@@ -33,7 +33,7 @@ public class RRBase {
 
 
     /**
-	 * @param reqid
+	 * @param reqId
 	 * @param meta
 	 * @param hdrs
 	 * @param body
@@ -43,7 +43,7 @@ public class RRBase {
 	 * @param customerId
 	 * @param app
 	 */
-	public RRBase(Optional<String> reqid,
+	public RRBase(Optional<String> reqId,
 			MultivaluedMap<String, String> meta,
 			MultivaluedMap<String, String> hdrs,
 			String body,
@@ -53,7 +53,7 @@ public class RRBase {
 			Optional<String> customerId,
 			Optional<String> app) {
 		super();
-		this.reqid = reqid;
+		this.reqId = reqId;
 		this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
 		this.hdrs = hdrs != null ? hdrs : new MultivaluedHashMap<String, String>();
 		this.body = body;
@@ -70,7 +70,7 @@ public class RRBase {
 	 */
 	@SuppressWarnings("unused") RRBase() {
 		super();
-		this.reqid = Optional.empty();
+		this.reqId = Optional.empty();
 		this.meta = new MultivaluedHashMap<String, String>();
 		this.hdrs = new MultivaluedHashMap<String, String>();
 		this.body = "";
@@ -136,7 +136,7 @@ public class RRBase {
 									   Comparator bodyComparator,
 									   boolean needDiff) {
 		Comparator.Match match = new Comparator.Match(Comparator.MatchType.ExactMatch, "", new ArrayList<Comparator.Diff>());
-		template.getRule("/reqid").checkMatchStr(reqid, rhs.reqid, match, needDiff);
+		template.getRule("/reqId").checkMatchStr(reqId, rhs.reqId, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
 		if ((getMimeType().equalsIgnoreCase(APPLICATION_JSON) || (bodyComparator instanceof JsonComparator))
@@ -160,7 +160,7 @@ public class RRBase {
     }
 
 
-    public Optional<String> reqid;
+    public Optional<String> reqId;
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> meta;
     @JsonDeserialize(as=MultivaluedHashMap.class)

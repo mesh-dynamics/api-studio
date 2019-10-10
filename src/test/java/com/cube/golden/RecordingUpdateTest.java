@@ -21,7 +21,7 @@ class RecordingUpdateTest {
             e.printStackTrace();
         }
         ReqRespStoreSolr rrStore = (ReqRespStoreSolr) config.rrstore;
-        RecordingUpdate recordingUpdate = new RecordingUpdate(rrStore, config.jsonmapper);
+        RecordingUpdate recordingUpdate = new RecordingUpdate(rrStore, config.jsonMapper);
 
         var customerid = "Prasad";
         var app = "MovieInfo";
@@ -103,7 +103,7 @@ class RecordingUpdateTest {
         }
 
         ReqRespStoreSolr rrStore = (ReqRespStoreSolr) config.rrstore;
-        RecordingUpdate recordingUpdate = new RecordingUpdate(rrStore, config.jsonmapper);
+        RecordingUpdate recordingUpdate = new RecordingUpdate(rrStore, config.jsonMapper);
 
         Stream<Analysis.ReqRespMatchResult> reqRespMatchResultStream = recordingUpdate.getReqRespMatchResultStream(
             replayId);

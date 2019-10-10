@@ -218,7 +218,7 @@ public class MockServiceHTTP {
     public Response funcJson(@Context UriInfo uInfo,
                              String fnReqResponseAsString) {
         try {
-            FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseAsString, FnReqResponse.class);
+            FnReqResponse fnReqResponse = jsonMapper.readValue(fnReqResponseAsString, FnReqResponse.class);
             String traceIdString = fnReqResponse.traceId.orElse("N/A");
             LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
                 "trace_id" , traceIdString)));
@@ -236,7 +236,7 @@ public class MockServiceHTTP {
                         LOGGER.info(new ObjectMessage(Map.of("state" , "After Mock" , "func_name" , fnReqResponse.name ,
                             "trace_id" , traceIdString , "ret_val" , retValue.retVal)));
                         try {
-                            String retValueAsString = jsonmapper.writeValueAsString(retValue);
+                            String retValueAsString = jsonMapper.writeValueAsString(retValue);
                             return Response.ok().type(MediaType.APPLICATION_JSON).entity(retValueAsString).build();
                         } catch (JsonProcessingException e) {
                             LOGGER.error(new ObjectMessage(Map.of("func_name", fnReqResponse.name,
@@ -361,15 +361,15 @@ public class MockServiceHTTP {
             //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
 			// store a req-resp analysis match result for the mock request (during replay)
 			// and the matched recording request
-			mockRequest.ifPresent(mRequest -> respv.reqid.ifPresent(recordReqId -> {
+			mockRequest.ifPresent(mRequest -> respv.reqId.ifPresent(recordReqId -> {
 				Analysis.ReqRespMatchResult matchResult =
-                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqid,
+                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqId,
                         Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
                         "", customerid, app, service, path, mRequest.collection.get(),
                         CommonUtils.getTraceId(respv.meta),
                         CommonUtils.getTraceId(mRequest.hdrs));
 				rrstore.saveResult(matchResult);
-				com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mRequest.reqid,
+				com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mRequest.reqId,
                     customerid, app, instanceid);
 				rrstore.save(mockResponseToStore);
 			}));
@@ -386,7 +386,7 @@ public class MockServiceHTTP {
                 // TODO change it back to MockReqNoMatch
 				mockRequest.ifPresent(mRequest -> {
 					Analysis.ReqRespMatchResult matchResult =
-                        new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqid,
+                        new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqId,
                             Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
                             customerid, app, service, path, mRequest.collection.get(), Optional.empty(),
                             CommonUtils.getTraceId(mRequest.hdrs));
@@ -453,7 +453,7 @@ public class MockServiceHTTP {
                 EventQuery respQuery = getResponseEventQuery(request, matchingReqId, 1);
                 return rrstore.getEvents(respQuery).getObjects().findFirst();
             })
-            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonmapper))
+            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper))
             .or(() -> {
                 request.runType = Optional.of(Event.RunType.Manual);
                 LOGGER.info("Using default response");
@@ -475,15 +475,15 @@ public class MockServiceHTTP {
             //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request
-            respv.reqid.ifPresent(recordReqId -> {
+            respv.reqId.ifPresent(recordReqId -> {
                 Analysis.ReqRespMatchResult matchResult =
-                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mockRequest.reqid,
+                    new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mockRequest.reqId,
                         Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
                         "", customerid, app, service, path, mockRequest.collection.get(),
                         CommonUtils.getTraceId(respv.meta),
                         CommonUtils.getTraceId(mockRequest.hdrs));
                 rrstore.saveResult(matchResult);
-                com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mockRequest.reqid,
+                com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mockRequest.reqId,
                     customerid, app, instanceid);
                 rrstore.save(mockResponseToStore);
             });
@@ -500,7 +500,7 @@ public class MockServiceHTTP {
             // TODO change it back to MockReqNoMatch
 
             Analysis.ReqRespMatchResult matchResult =
-                new Analysis.ReqRespMatchResult(Optional.empty(), mockRequest.reqid,
+                new Analysis.ReqRespMatchResult(Optional.empty(), mockRequest.reqId,
                     Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
                     customerid, app, service, path, mockRequest.collection.get(), Optional.empty(),
                     CommonUtils.getTraceId(mockRequest.hdrs));
@@ -561,7 +561,7 @@ public class MockServiceHTTP {
 		super();
 		this.config = config;
 		this.rrstore = config.rrstore;
-		this.jsonmapper = config.jsonmapper;
+		this.jsonMapper = config.jsonMapper;
 		this.requestComparatorCache = config.requestComparatorCache;
 		this.replayResultCache = config.replayResultCache;
 		LOGGER.info("Cube mock service started");
@@ -569,7 +569,7 @@ public class MockServiceHTTP {
 
 
 	private ReqRespStore rrstore;
-	private ObjectMapper jsonmapper;
+	private ObjectMapper jsonMapper;
 	private RequestComparatorCache requestComparatorCache;
 	private ReplayResultCache replayResultCache;
 	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
@@ -607,7 +607,7 @@ public class MockServiceHTTP {
 		reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
 
 		// comment below line if earlier ReqMatchSpec is to be used
-		mspec = new TemplatedRequestComparator(reqTemplate, jsonmapper);
+		mspec = new TemplatedRequestComparator(reqTemplate, jsonMapper);
 	}
 
 	// matching to get default response
@@ -633,7 +633,7 @@ public class MockServiceHTTP {
 		defaultReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
-		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonmapper);
+		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonMapper);
 	}
 
 }

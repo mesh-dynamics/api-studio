@@ -82,14 +82,14 @@ public class Response extends RRBase {
 	}
 
 
-	public static Optional<Response> fromEvent(Event event, ObjectMapper jsonmapper) {
+	public static Optional<Response> fromEvent(Event event, ObjectMapper jsonMapper) {
 	    if (event.eventType != Event.EventType.HTTPResponse) {
 	        LOGGER.error(String.format("Not able to convert event to response. Event %s not of right type: ",
                 event.reqId, event.eventType.toString()));
 	        return Optional.empty();
         }
         try {
-            HTTPResponsePayload responsePayload = jsonmapper.readValue(event.rawPayloadString, HTTPResponsePayload.class);
+            HTTPResponsePayload responsePayload = jsonMapper.readValue(event.rawPayloadString, HTTPResponsePayload.class);
             return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, emptyMap(),
                 responsePayload.hdrs,
                 responsePayload.body, Optional.of(event.getCollection()), Optional.of(event.timestamp),
@@ -106,12 +106,12 @@ public class Response extends RRBase {
 
         HTTPResponsePayload payload = new HTTPResponsePayload(hdrs, status, body);
         String payloadStr;
-        payloadStr = config.jsonmapper.writeValueAsString(payload);
+        payloadStr = config.jsonMapper.writeValueAsString(payload);
 
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
-            reqid.orElse("NA"), "NA", Event.EventType.HTTPResponse);
+            reqId.orElse("NA"), "NA", Event.EventType.HTTPResponse);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
         event.parsePayLoad(config);

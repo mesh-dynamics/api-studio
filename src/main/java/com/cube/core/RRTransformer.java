@@ -21,7 +21,7 @@ public class RRTransformer {
 	//       however, we then need to structure this class properly
 	
 	// types of fields to transform
-	// TODO: qparams, fparams, meta, body
+	// TODO: queryParams, formParams, meta, body
 	JSONObject transforms; 
 	
 	public RRTransformer(JSONObject hdrs_xfmer) {

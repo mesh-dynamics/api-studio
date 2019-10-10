@@ -106,9 +106,9 @@ class JsonComparatorTest  {
             template.addRule(rule);
         }
 
-		JsonComparator comparator = new JsonComparator(template, config.jsonmapper);
+		JsonComparator comparator = new JsonComparator(template, config.jsonMapper);
 		Match m = comparator.compare(json1, json2);
-		String mjson = config.jsonmapper.writeValueAsString(m);
+		String mjson = config.jsonMapper.writeValueAsString(m);
 		JSONAssert.assertEquals(expected, mjson, false);
 	}
 

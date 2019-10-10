@@ -66,11 +66,11 @@ public class TemplateCache {
             if (jedis.exists(key.toString())) {
                 String comparatorJson = jedis.get(key.toString());
                 LOGGER.info("Successfully retrieved from redis key :: " + key.toString());
-                toReturn = config.jsonmapper.readValue(comparatorJson, CompareTemplate.class);
+                toReturn = config.jsonMapper.readValue(comparatorJson, CompareTemplate.class);
             } else {
                 toReturn = reqRespStore.getCompareTemplate(key).orElseThrow(() ->
                     new IOException("Template not found in solr " + key.toString()));
-                jedis.set(key.toString() , config.jsonmapper.writeValueAsString(toReturn));
+                jedis.set(key.toString() , config.jsonMapper.writeValueAsString(toReturn));
                 LOGGER.info("Successfully stored in redis key :: " + key.toString());
             }
             if (config.intentResolver.isIntentToRecord()) {

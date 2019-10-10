@@ -88,7 +88,7 @@ public class ReqMatchSpec extends RRMatchSpec implements RequestComparator {
 
         MatchType ret = MatchType.ExactMatch;
 
-        if ((ret = ret.And(checkMatch(mreqid, lhs.reqid, rhs.reqid))) == MatchType.NoMatch) return ret;
+        if ((ret = ret.And(checkMatch(mreqid, lhs.reqId, rhs.reqId))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mmeta, lhs.meta, rhs.meta, metafields))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mhdrs, lhs.hdrs, rhs.hdrs, hdrfields))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mbody, lhs.body, rhs.body))) == MatchType.NoMatch) return ret;
@@ -99,8 +99,8 @@ public class ReqMatchSpec extends RRMatchSpec implements RequestComparator {
         if ((ret = ret.And(checkMatch(mapp, lhs.app, rhs.app))) == MatchType.NoMatch) return ret;
 
         if ((ret = ret.And(checkMatch(mpath, lhs.path, rhs.path))) == MatchType.NoMatch) return ret;
-        if ((ret = ret.And(checkMatch(mqparams, lhs.qparams, rhs.qparams, qparamfields))) == MatchType.NoMatch) return ret;
-        if ((ret = ret.And(checkMatch(mfparams, lhs.fparams, rhs.fparams, fparamfields))) == MatchType.NoMatch) return ret;
+        if ((ret = ret.And(checkMatch(mqparams, lhs.queryParams, rhs.queryParams, qparamfields))) == MatchType.NoMatch) return ret;
+        if ((ret = ret.And(checkMatch(mfparams, lhs.formParams, rhs.formParams, fparamfields))) == MatchType.NoMatch) return ret;
         if ((ret = ret.And(checkMatch(mmethod, lhs.method, rhs.method))) == MatchType.NoMatch) return ret;
 
         return ret;

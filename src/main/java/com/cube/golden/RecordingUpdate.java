@@ -18,9 +18,9 @@ public class RecordingUpdate {
     private final ResponseTransformer responseTransformer;
     private static final Logger LOGGER = LogManager.getLogger(RecordingUpdate.class);
 
-    public RecordingUpdate(ReqRespStoreSolr rrStore, ObjectMapper jsonmapper) {
+    public RecordingUpdate(ReqRespStoreSolr rrStore, ObjectMapper jsonMapper) {
         this.rrStore = rrStore;
-        this.responseTransformer = new ResponseTransformer(jsonmapper);
+        this.responseTransformer = new ResponseTransformer(jsonMapper);
     }
 
     /*
@@ -122,19 +122,19 @@ public class RecordingUpdate {
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId/*, recordingOperationSetSP*/);
         results.forEach(res -> {
             try {
-            LOGGER.debug(String.format("get record and replay responses with recordreqid %s, replayreqid %s",
-                res.recordreqid.get(), res.replayreqid.get()));
-            Request recordRequest = res.recordreqid.flatMap(rrStore::getRequest)
-                .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordreqid.get()));
-            Response recordResponse = res.recordreqid.flatMap(rrStore::getResponse)
-                .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordreqid.get()));
-            Optional<Response> replayResponse = res.replayreqid.flatMap(rrStore::getResponse);
+            LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
+                res.recordReqId.get(), res.replayReqId.get()));
+            Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
+                .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
+            Response recordResponse = res.recordReqId.flatMap(rrStore::getResponse)
+                .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
+            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
 
             Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
                 apiPathVsUpdateOperationSet.get(recordRequest.path));
 
 
-            Optional<String> newReqId = generateReqId(recordResponse.reqid, newCollectionName);
+            Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
             Instant timeStamp = Instant.now();
 
             String transformedResponseBody = replayResponse.flatMap(repResponse ->
@@ -147,11 +147,11 @@ public class RecordingUpdate {
                     Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app);
 
             LOGGER.debug("applying transformations");
-            recordRequest.reqid = transformedResponse.reqid;
+            recordRequest.reqId = transformedResponse.reqId;
             recordRequest.collection = Optional.of(newCollectionName);
 
 
-            LOGGER.debug("saving request/response with reqid: " + transformedResponse.reqid);
+            LOGGER.debug("saving request/response with reqId: " + transformedResponse.reqId);
             boolean saved = rrStore.save(recordRequest) && rrStore.save(transformedResponse);
             if(!saved) {
                 LOGGER.debug("request/response not saved");
@@ -163,7 +163,7 @@ public class RecordingUpdate {
 
         });
 
-        rrStore.saveFnReqRespNewCollec(originalRec.customerid, originalRec.app,
+        rrStore.saveFnReqRespNewCollec(originalRec.customerId, originalRec.app,
             originalRec.collection, newCollectionName);
 
 
@@ -186,11 +186,11 @@ public class RecordingUpdate {
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId*//*, recordingOperationSetSP*//*);
         results.forEach(res -> {
             // get record and replay responses using IDs
-            LOGGER.debug(String.format("get record and replay responses with recordreqid %s, replayreqid %s",
-                res.recordreqid.get(), res.replayreqid.get()));
-            Optional<Response> recordResponse = res.recordreqid.flatMap(rrStore::getResponse);
-            Optional<Response> replayResponse = res.replayreqid.flatMap(rrStore::getResponse);
-            Optional<Request> recordRequest = res.recordreqid.flatMap(rrStore::getRequest);
+            LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
+                res.recordReqId.get(), res.replayReqId.get()));
+            Optional<Response> recordResponse = res.recordReqId.flatMap(rrStore::getResponse);
+            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
+            Optional<Request> recordRequest = res.recordReqId.flatMap(rrStore::getRequest);
 
             // apply the transformation operations
             LOGGER.debug("applying transformations");
@@ -199,12 +199,12 @@ public class RecordingUpdate {
 
             // store the new request/response
             recordRequest = recordRequest.map(request -> {
-                request.reqid = transformedResponse.reqid;
+                request.reqId = transformedResponse.reqId;
                 request.collection = Optional.of(newCollectionName);
                 return request;
             });
 
-            LOGGER.debug("saving request/response with reqid: " + transformedResponse.reqid);
+            LOGGER.debug("saving request/response with reqId: " + transformedResponse.reqId);
             boolean saved = rrStore.save(recordRequest.get()) && rrStore.save(transformedResponse);
             if(!saved) {
                 LOGGER.debug("request/response not saved");
@@ -229,7 +229,7 @@ public class RecordingUpdate {
 
     private Optional<String> generateReqId(Optional<String> recReqId, String collectionName) {
         return recReqId.map(
-            reqid -> "gu-" + Objects.hash(reqid, collectionName));
+            reqId -> "gu-" + Objects.hash(reqId, collectionName));
     }
 
 }

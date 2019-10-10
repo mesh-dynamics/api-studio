@@ -35,8 +35,8 @@ public class TemplatedRequestComparator extends TemplatedRRComparator implements
     private final List<PathCT> ctqparamFields;
     private final List<PathCT> ctfparamFields;
 
-    public TemplatedRequestComparator(CompareTemplate template, ObjectMapper jsonmapper) {
-        super(template, jsonmapper);
+    public TemplatedRequestComparator(CompareTemplate template, ObjectMapper jsonMapper) {
+        super(template, jsonMapper);
         qparamFieldTemplate = template.subsetWithPrefix(Request.QPARAMPATH);
         fparamFieldtemplate = template.subsetWithPrefix(Request.FPARAMPATH);
         ctreqid = template.getRule(RRBase.REQIDPATH).ct;

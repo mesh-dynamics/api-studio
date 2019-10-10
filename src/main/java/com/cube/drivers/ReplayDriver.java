@@ -22,6 +22,8 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import com.cube.ws.Config;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.UtilException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -47,6 +49,7 @@ public class ReplayDriver  {
     private final Replay replay;
     public final ReqRespStore rrstore;
     private ReplayResultCache replayResultCache;
+    private ObjectMapper jsonMapper;
 
     /**
      * @param endpoint
@@ -91,11 +94,12 @@ public class ReplayDriver  {
             status, paths, 0, 0, 0, null, samplerate, intermediateServices, templateVersion);
     }
 
-    private ReplayDriver(Replay r, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
+    private ReplayDriver(Replay replay, Config config) {
         super();
-        replay = r;
-        this.rrstore = rrstore;
-        this.replayResultCache = replayResultCache;
+        this.replay = replay;
+        this.rrstore = config.rrstore;
+        this.replayResultCache = config.replayResultCache;
+        this.jsonMapper = config.jsonMapper;
     }
 
 
@@ -136,7 +140,7 @@ public class ReplayDriver  {
             clientbuilder.authenticator(Authenticator.getDefault());
         HttpClient client = clientbuilder.build();
 
-        Pair<Stream<List<Request>>, Long> batchedResult = replay.getRequestBatchesUsingEvents(BATCHSIZE, rrstore);
+        Pair<Stream<List<Request>>, Long> batchedResult = replay.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, jsonMapper);
         replay.reqcnt = batchedResult.getRight().intValue(); // NOTE: converting long to int, should be ok, since we
         // never replay so many requests
 
@@ -159,7 +163,7 @@ public class ReplayDriver  {
                 try {
                     UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
                         .path(r.path);
-                    r.qparams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
+                    r.queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
                         String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
                             return UriComponent.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
                             // return URLEncoder.encode(v, "UTF-8"); // this had a problem of encoding space as +, which further gets encoded as %2B
@@ -185,7 +189,7 @@ public class ReplayDriver  {
                     reqs.add(reqbuilder.build());
                 } catch (Exception e) {
                     // encode can throw UnsupportedEncodingException
-                    LOGGER.error("Skipping request. Exception in creating uri: " + r.qparams.toString(), e);
+                    LOGGER.error("Skipping request. Exception in creating uri: " + r.queryParams.toString(), e);
                 }
             });
 
@@ -227,8 +231,8 @@ public class ReplayDriver  {
     }
 
 
-    public static Optional<ReplayDriver> getReplayDriver(String replayid, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
-        return getStatus(replayid, rrstore).map(r -> new ReplayDriver(r, rrstore,replayResultCache));
+    public static Optional<ReplayDriver> getReplayDriver(String replayid, Config config) {
+        return getStatus(replayid, config.rrstore).map(r -> new ReplayDriver(r, config));
     }
 
 

@@ -173,14 +173,15 @@ public class Replay {
 		return String.format("%s-%s", collection, UUID.randomUUID().toString());
 	}
 
-	public Pair<Stream<List<Request>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore) {
-        Result<Request> requests = mapEventToRequestResult(getEventResult(rrstore));
+	public Pair<Stream<List<Request>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore,
+                                                                          ObjectMapper jsonMapper) {
+        Result<Request> requests = mapEventToRequestResult(getEventResult(rrstore), jsonMapper);
         return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
     }
 
-    private Result<Request> mapEventToRequestResult(Result<Event> events) {
+    private Result<Request> mapEventToRequestResult(Result<Event> events, ObjectMapper jsonMapper) {
         return new Result<>(events.getObjects()
-                .map(event -> Request.fromEvent(event, new ObjectMapper()))
+                .map(event -> Request.fromEvent(event, jsonMapper))
                 .filter(Optional::isPresent)
                 .map(Optional::get), events.numResults, events.numFound);
     }

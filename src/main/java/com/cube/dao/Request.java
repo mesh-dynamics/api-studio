@@ -30,8 +30,8 @@ import org.apache.logging.log4j.message.ObjectMessage;
 public class Request extends RRBase {
     private static final Logger LOGGER = LogManager.getLogger(Request.class);
 
-	public static final String QPARAMPATH = "/qparams";
-	public static final String FPARAMPATH = "/fparams";
+	public static final String QPARAMPATH = "/queryParams";
+	public static final String FPARAMPATH = "/formParams";
 	public static final String PATHPATH = "/path";
 	public static final String METHODPATH = "/method";
 	public static final String ARGSPATH = "/args";
@@ -40,15 +40,15 @@ public class Request extends RRBase {
 
 	/**
 	 * @param path
-	 * @param reqid
-	 * @param qparams
+	 * @param reqId
+	 * @param queryParams
 	 * @param meta
 	 * @param hdrs
 	 * @param body
 	 */
-	public Request(String path, Optional<String> reqid, 
-			MultivaluedMap<String, String> qparams,
-			MultivaluedMap<String, String> fparams,
+	public Request(String path, Optional<String> reqId, 
+			MultivaluedMap<String, String> queryParams,
+			MultivaluedMap<String, String> formParams,
 			MultivaluedMap<String, String> meta, 
 			MultivaluedMap<String, String> hdrs, 
 			String method, 
@@ -58,10 +58,10 @@ public class Request extends RRBase {
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
-		super(reqid, meta, hdrs, body, collection, timestamp, runType, customerId, app);
+		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app);
 		this.path = path; 
-		this.qparams = qparams != null ? qparams : emptyMap();
-		this.fparams = fparams != null ? fparams : emptyMap();
+		this.queryParams = queryParams != null ? queryParams : emptyMap();
+		this.formParams = formParams != null ? formParams : emptyMap();
 		this.method = method;
 	}
 	
@@ -69,19 +69,19 @@ public class Request extends RRBase {
 	
 	/**
 	 * @param path
-	 * @param qparams
-	 * @param fparams
+	 * @param queryParams
+	 * @param formParams
 	 */
 	public Request(String path, Optional<String> id, 
-			MultivaluedMap<String, String> qparams, 
-			MultivaluedMap<String, String> fparams, 
+			MultivaluedMap<String, String> queryParams,
+			MultivaluedMap<String, String> formParams,
 			MultivaluedMap<String, String> hdrs, 
 			String service, 
 			Optional<String> collection, 
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
-		this(path, id, qparams, fparams, emptyMap(), 
+		this(path, id, queryParams, formParams, emptyMap(),
 				hdrs, "", "", collection, Optional.empty(), runType, customerId, app);
 		meta.add(RRBase.SERVICEFIELD, service);
 	}
@@ -106,21 +106,19 @@ public class Request extends RRBase {
 	private Request() {
 		super();
 		this.path = ""; 
-		this.qparams = new MultivaluedHashMap<String, String>();
-		this.fparams = new MultivaluedHashMap<String, String>();
+		this.queryParams = new MultivaluedHashMap<String, String>();
+		this.formParams = new MultivaluedHashMap<String, String>();
 		this.method = "";
 	}
-
-
 
 	static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
 	  = new TypeReference<MultivaluedHashMap<String, String>>() {};
 	
 	public final String path;
     @JsonDeserialize(as=MultivaluedHashMap.class)
-	public final MultivaluedMap<String, String> qparams; // query params
+	public final MultivaluedMap<String, String> queryParams; // query params
     @JsonDeserialize(as=MultivaluedHashMap.class)
-	public final MultivaluedMap<String, String> fparams; // form params
+	public final MultivaluedMap<String, String> formParams; // form params
 	public final String method;
 
 	private static MultivaluedHashMap<String, String> emptyMap () {
@@ -130,15 +128,15 @@ public class Request extends RRBase {
     public Event toEvent(RequestComparator comparator, Config config)
         throws JsonProcessingException, EventBuilder.InvalidEventException {
 
-        HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, qparams, fparams,
+        HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, queryParams, formParams,
             method, body);
         String payloadStr;
-        payloadStr = config.jsonmapper.writeValueAsString(payload);
+        payloadStr = config.jsonMapper.writeValueAsString(payload);
 
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
-            reqid.orElse(
+            reqId.orElse(
                 "NA"),
             path, Event.EventType.HTTPRequest);
         eventBuilder.setRawPayloadString(payloadStr);
@@ -151,20 +149,20 @@ public class Request extends RRBase {
     public static Optional<Request> fromEvent(Event event, ObjectMapper jsonMapper) {
         if (event.eventType != Event.EventType.HTTPRequest) {
             LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert event to response. " +
-                    "Event is not of right type:" , "event_type"
-                , event.eventType.toString() , "req_id", event.reqId)));
+                    "Event is not of right type:" , "eventType"
+                , event.eventType.toString() , "reqId", event.reqId)));
             return Optional.empty();
         }
 
         try {
             HTTPRequestPayload payload = jsonMapper.readValue(event.rawPayloadString, HTTPRequestPayload.class);
-            return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.qparams, payload.fparams,
+            return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams, payload.formParams,
                 new MultivaluedHashMap<>(), payload.hdrs, payload.method, payload.body,
                 Optional.of(event.getCollection()), Optional.of(event.timestamp),
                 Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app)));
         } catch (IOException e) {
-            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert Event to Request" +
-                    "Ev" , "event_type", event.eventType.toString() , "req_id", event.reqId)));
+            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert Event to Request",
+                "eventType", event.eventType.toString() , "reqId", event.reqId)));
             return Optional.empty();
         }
     }
@@ -175,8 +173,8 @@ public class Request extends RRBase {
 		// diff not needed, so pass false
 		Comparator.Match match = super.compare(rhs, template, metaFieldtemplate, hdrFieldTemplate, bodyComparator, false);
 		template.getRule("/path").checkMatchStr(path, rhs.path, match, false);
-		qparamFieldTemplate.checkMatch(qparams, rhs.qparams, match, false);
-		fparamFieldTemplate.checkMatch(fparams, rhs.fparams, match, false);
+		qparamFieldTemplate.checkMatch(queryParams, rhs.queryParams, match, false);
+		fparamFieldTemplate.checkMatch(formParams, rhs.formParams, match, false);
 		template.getRule("/method").checkMatchStr(method, rhs.method, match, false);
 
 		return match.mt;

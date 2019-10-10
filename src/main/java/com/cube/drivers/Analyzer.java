@@ -36,13 +36,13 @@ public class Analyzer {
 
     private static final Logger LOGGER = LogManager.getLogger(Analyzer.class);
 
-    private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper,
+    private Analyzer(String replayid, int reqcnt, ObjectMapper jsonMapper,
                      RequestComparatorCache requestComparatorCache, ResponseComparatorCache responseComparatorCache,
                      Optional<String> templateVersion) {
         analysis = new Analysis(replayid, reqcnt, templateVersion);
-        this.jsonmapper = jsonmapper;
+        this.jsonMapper = jsonMapper;
 
-        //comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonmapper);
+        //comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonMapper);
         //TemplatedRRComparator.EQUALITYTEMPLATE;
         this.responseComparatorCache = responseComparatorCache;
         this.requestComparatorCache = requestComparatorCache;
@@ -52,7 +52,7 @@ public class Analyzer {
 
     private Analysis analysis;
     //private ResponseComparator comparator = ResponseComparator.EQUALITYCOMPARATOR;
-    private final ObjectMapper jsonmapper;
+    private final ObjectMapper jsonMapper;
     // Template cache being passed from the config
     private final RequestComparatorCache requestComparatorCache;
     private final ResponseComparatorCache responseComparatorCache;
@@ -88,8 +88,8 @@ public class Analyzer {
                 // most fields are same as request except
                 // RRType should be Replay
                 // collection to set to replayid, since collection in replays are set to replayids
-                Request rq = new Request(r.path, r.reqid, r.qparams, r.fparams, r.meta,
-                        r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayid), r.timestamp,
+                Request rq = new Request(r.path, r.reqId, r.queryParams, r.formParams, r.meta,
+                        r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayId), r.timestamp,
                         Optional.of(Event.RunType.Replay), r.customerId, r.app);
 
                 List<Request> matches = new ArrayList<>();
@@ -103,7 +103,7 @@ public class Analyzer {
                 // TODO: add toString override for the Request object to debug log
                 if (!matches.isEmpty()) {
                     Map<String, Response> replayResponseMap = rrstore.getResponses(matches);
-                    Optional<Response> recordedResponse = r.reqid.flatMap(rrstore::getResponse);
+                    Optional<Response> recordedResponse = r.reqId.flatMap(rrstore::getResponse);
                     if (matches.size() > 1) {
                         analysis.reqmultiplematch++;
                     } else {
@@ -149,29 +149,29 @@ public class Analyzer {
                             break;
                     }
 
-                    LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqid.orElse("-1"));
-                    LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(jsonmapper).orElse(" N/A"));
-                    LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonmapper).orElse("N/A"));
+                    LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqId.orElse("-1"));
+                    LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(jsonMapper).orElse(" N/A"));
+                    LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(jsonMapper).orElse("N/A"));
                     LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody().orElse(" N/A"));
                     LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody().orElse(" N/A"));
                     bestmatch.getDiffs().forEach(
                             diff -> {
                                 try {
-                                    LOGGER.debug("DIFF :: " + jsonmapper.writeValueAsString(diff));
+                                    LOGGER.debug("DIFF :: " + jsonMapper.writeValueAsString(diff));
                                 } catch (JsonProcessingException e) {
                                     // DO NOTHING
                                 }
                             });
 
                     Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt, matches.size(),
-                            analysis.replayid, jsonmapper);
+                            analysis.replayId, jsonMapper);
                     rrstore.saveResult(res);
 
                 } else {
                     // TODO change it back to RecReqNoMatch
                     Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(new Analysis.RespMatchWithReq(r,
                         Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty()),
-                        Comparator.MatchType.NoMatch, matches.size(), analysis.replayid, jsonmapper);
+                        Comparator.MatchType.NoMatch, matches.size(), analysis.replayId, jsonMapper);
                     rrstore.saveResult(res);
                     analysis.reqnotmatched++;
                 }
@@ -179,7 +179,7 @@ public class Analyzer {
 
                 analysis.reqanalyzed++;
                 if (analysis.reqanalyzed % UPDBATCHSIZE == 0) {
-                    LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayid, analysis.reqanalyzed));
+                    LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayId, analysis.reqanalyzed));
                     rrstore.saveAnalysis(analysis);
                 }
 
@@ -191,13 +191,13 @@ public class Analyzer {
 
     private Analysis.RespMatchWithReq checkRespMatch(Request recordreq, Request replayreq, Optional<Response> recordedResponse ,
                                                      Map<String, Response> replayResponseMap) {
-        return recordreq.reqid.flatMap(recordreqid -> replayreq.reqid.flatMap(replayreqid -> {
+        return recordreq.reqId.flatMap(recordreqid -> replayreq.reqId.flatMap(replayreqid -> {
             // fetch response of recording and replay
             // if enough information is not available to retrieve a template for matching , return a no match
             if (recordreq.app.isEmpty() || recordreq.customerId.isEmpty() || recordreq.path.isEmpty() ||
                 recordreq.getService().isEmpty()) {
                 LOGGER.error("Not enough information to construct a template cache key for recorded req :: "
-                        + recordreq.reqid.get());
+                        + recordreq.reqId.get());
                 return Optional.empty();
             }
 
@@ -230,7 +230,7 @@ public class Analyzer {
                 // if analysis retrieval caused an error, log the error and return NO MATCH
                 String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
                 LOGGER.error("Exception while analyzing response :: " +
-                        recordreq.reqid.orElse(" -1") + " " +  e.getMessage() + " " + stackTraceError);
+                        recordreq.reqId.orElse(" -1") + " " +  e.getMessage() + " " + stackTraceError);
                 return Optional.empty();
             }
 
@@ -250,31 +250,31 @@ public class Analyzer {
     private static int UPDBATCHSIZE = 10;
 
     /**
-     * @param replayid
+     * @param replayId
      * @param rrstore
      * @return
      */
-    public static Optional<Analysis> getStatus(String replayid, ReqRespStore rrstore) {
-        return rrstore.getAnalysis(replayid);
+    public static Optional<Analysis> getStatus(String replayId, ReqRespStore rrstore) {
+        return rrstore.getAnalysis(replayId);
     }
 
 
 
 
     /**
-     * @param replayid
+     * @param replayId
      * @param tracefield
      * @param templateVersion
      * @return
      */
-    public static Optional<Analysis> analyze(String replayid, String tracefield,
-                                             ReqRespStore rrstore, ObjectMapper jsonmapper,
+    public static Optional<Analysis> analyze(String replayId, String tracefield,
+                                             ReqRespStore rrstore, ObjectMapper jsonMapper,
                                              RequestComparatorCache requestComparatorCache,
                                              ResponseComparatorCache responseComparatorCache,
                                              Optional<String> templateVersion) {
-        // String collection = Replay.getCollectionFromReplayId(replayid);
+        // String collection = Replay.getCollectionFromReplayId(replayId);
 
-        Optional<Replay> replay = rrstore.getReplay(replayid);
+        Optional<Replay> replay = rrstore.getReplay(replayId);
 
         // optional matching on traceid //and requestid
         // this is not being used
@@ -305,7 +305,7 @@ public class Analyzer {
         reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
-        RequestComparator mspec = new TemplatedRequestComparator(reqTemplate, jsonmapper);
+        RequestComparator mspec = new TemplatedRequestComparator(reqTemplate, jsonMapper);
         */
         //RequestComparator mspec = rmspec;
 
@@ -319,8 +319,8 @@ public class Analyzer {
             Optional<String> templateVersionToUse = templateVersion.or(() -> r.templateVersion);
 
             //Result<Request> reqs = r.getRequests(rrstore, true);
-            Analyzer analyzer = new Analyzer(replayid, result.getRight().intValue()
-                   , jsonmapper , requestComparatorCache, responseComparatorCache, templateVersionToUse);
+            Analyzer analyzer = new Analyzer(replayId, result.getRight().intValue()
+                   , jsonMapper , requestComparatorCache, responseComparatorCache, templateVersionToUse);
             if (!rrstore.saveAnalysis(analyzer.analysis)) {
                 return Optional.empty();
             }
@@ -335,7 +335,7 @@ public class Analyzer {
             Optional<String> service = Optional.empty();
             boolean bypath = true;
 
-            Collection<MatchResultAggregate> resultAggregates = rrstore.computeResultAggregate(replayid, service, bypath);
+            Collection<MatchResultAggregate> resultAggregates = rrstore.computeResultAggregate(replayId, service, bypath);
             resultAggregates.forEach( resultAggregate -> {
                 rrstore.saveMatchResultAggregate(resultAggregate);
             } );

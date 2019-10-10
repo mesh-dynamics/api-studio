@@ -3,7 +3,7 @@
         "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/runType",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -24,7 +24,7 @@
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
             { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/runType",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -153,7 +153,7 @@
     },
 
     "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38": {
-        "reqid":            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "reqId":            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "meta": {
             "x-request-id": [ "f762f47c-87a2-9cb7-a9b3-c1f68b8369da" ],
             "app":          [ "movieinfo" ],
@@ -184,7 +184,7 @@
     },
 
     "72471111-e096-4494-942e-5fa942c07e90" : {
-        "reqid":                    "72471111-e096-4494-942e-5fa942c07e90",
+        "reqId":                    "72471111-e096-4494-942e-5fa942c07e90",
         "meta": {
             "x-request-id":         [ "03386101-5d33-9bba-b2ea-e44480c241d2" ],
             "app":                  [ "bookinfo" ],

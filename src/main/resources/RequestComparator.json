@@ -3,7 +3,7 @@
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body/query",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -22,7 +22,7 @@
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
@@ -37,7 +37,7 @@
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
@@ -72,8 +72,8 @@
         "rules": [
             { "path": "/hdr/accept",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/meta/method",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/qparams/filmId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/fparams/filmName",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+            { "path": "/queryParams/filmId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/formParams/filmName",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": "FuzzyMatch"
     },
@@ -84,14 +84,14 @@
         "rules": [
             { "path": "/hdr/accept",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/meta/method",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
-            { "path": "/qparams/filmId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
-            { "path": "/fparams/filmName",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
+            { "path": "/queryParams/filmId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/formParams/filmName",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" }
         ],
         "output":  "NoMatch"
     },
 
     "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923" : {
-        "reqid":        "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
+        "reqId":        "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "meta":{
             "app":          [ "movieinfo" ],
             "instanceid":   [ "prod" ],
@@ -126,10 +126,10 @@
         "customerId":   "ravivj",
         "app":          "movieinfo",
         "path":         "restsql/update",
-        "qparams":      {
+        "queryParams":      {
             "filmId":   [ 230 ]
         },
-        "fparams":      {
+        "formParams":      {
             "filmName": [ "DIARY PANIC" ]
         },
         "method":       "POST"

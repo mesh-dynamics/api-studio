@@ -33,7 +33,7 @@ public class RequestComparatorTest {
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         config = new Config();
-        mapper = config.jsonmapper;
+        mapper = config.jsonMapper;
         mapper.registerModule(new JavaTimeModule());
     }
 
@@ -150,10 +150,10 @@ public class RequestComparatorTest {
         compareTest(testData, request1, request2, Optional.of("/hdr/accept"));
         request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
         compareTest(testData, request1, request2, Optional.of("/meta/method"));
-        request2.fparams.putSingle("filmName",request2.fparams.getFirst("filmName") + "K");
-        compareTest(testData, request1, request2, Optional.of("/fparams/filmName"));
-        request2.qparams.putSingle("filmId",request2.qparams.getFirst("filmName") + "K");
-        compareTest(testData, request1, request2, Optional.of("/qparams/filmId"));
+        request2.formParams.putSingle("filmName",request2.formParams.getFirst("filmName") + "K");
+        compareTest(testData, request1, request2, Optional.of("/formParams/filmName"));
+        request2.queryParams.putSingle("filmId",request2.queryParams.getFirst("filmName") + "K");
+        compareTest(testData, request1, request2, Optional.of("/queryParams/filmId"));
         compareTest(testData, request1, request2);
     }
 
@@ -186,39 +186,39 @@ public class RequestComparatorTest {
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Optional<String> temp = Optional.of("K");
 
-        Request request2 = new Request(temp.get(), request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+        Request request2 = new Request(temp.get(), request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
             request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId, request1.app);
         compareTest(testData, request1, request2, Optional.of("/path"));
 
-        request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs, temp.get(),
+        request2 = new Request(request1.path, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs, temp.get(),
             request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId, request1.app);
         compareTest(testData, request1, request2, Optional.of("/method"));
 
-        if (request1.reqid.isPresent()) {
-            request2 = new Request(request1.path, temp, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+        if (request1.reqId.isPresent()) {
+            request2 = new Request(request1.path, temp, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
                 request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId, request1.app);
-            compareTest(testData, request1, request2, Optional.of("/reqid"));
+            compareTest(testData, request1, request2, Optional.of("/reqId"));
         }
 
         if (request1.collection.isPresent()) {
-            request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+            request2 = new Request(request1.path, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
                 request1.method, request1.body, temp, request1.timestamp, request1.runType, request1.customerId, request1.app);
             compareTest(testData, request1, request2, Optional.of("/collection"));
         }
 
         if (request1.customerId.isPresent()) {
-            request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+            request2 = new Request(request1.path, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
                 request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, temp, request1.app);
             compareTest(testData, request1, request2, Optional.of("/customerid"));
         }
 
         if (request1.app.isPresent()) {
-            request2 = new Request(request1.path, request1.reqid, request1.qparams, request1.fparams, request1.meta, request1.hdrs,
+            request2 = new Request(request1.path, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
                 request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId,  Optional.of(request1.app.get() + "K"));
             compareTest(testData, request1, request2, Optional.of("/app"));
         }
 
-        request2 = new Request(temp.get(), temp, request1.qparams, request1.fparams, request1.meta, request1.hdrs, temp.get(),
+        request2 = new Request(temp.get(), temp, request1.queryParams, request1.formParams, request1.meta, request1.hdrs, temp.get(),
             request1.body, request1.collection, request1.timestamp, request1.runType, temp,  temp);
         compareTest(testData, request1, request2);
     }
@@ -279,7 +279,7 @@ public class RequestComparatorTest {
 //        for (String id: idList){
 //            Request request = config.rrstore.getRequest(id).get();
 //            System.out.println(mapper.writeValueAsString(request));
-//            System.out.println(request.qparams);
+//            System.out.println(request.queryParams);
 //            System.out.println(request.body);
 //            System.out.println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 //        }
