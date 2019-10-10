@@ -406,8 +406,7 @@ public class CubeStore {
     @POST
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response storeEvent(@Context UriInfo ui,
-                            Event event) {
+    public Response storeEvent(Event event) {
 
         Optional<String> err = processEvent(event);
 
