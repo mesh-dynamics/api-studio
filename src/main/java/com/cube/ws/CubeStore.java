@@ -370,6 +370,11 @@ public class CubeStore {
                                 "total", jsons.length,
                                 "success", numSuccess
                             )).toString();
+                            LOGGER.info(new ObjectMessage(
+                                Map.of(
+                                    "message", "finished processing",
+                                    "result", jsonResp
+                                )));
                             return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                         } catch (Exception e) {
                             LOGGER.error(new ObjectMessage(
@@ -407,6 +412,11 @@ public class CubeStore {
                             "total", total,
                             "success", numSuccess
                         )).toString();
+                        LOGGER.info(new ObjectMessage(
+                            Map.of(
+                                "message", "finished processing",
+                                "result", jsonResp
+                                )));
                         return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                     default :
                         return Response.serverError().entity("Content type not recognized :: " + ct).build();
@@ -425,14 +435,16 @@ public class CubeStore {
 
         return err.map(e -> {
             LOGGER.error(new ObjectMessage(
-                Map.of("message", "Dropping store for event."
+                Map.of("message", "Dropping store for event.",
                     "reason", e)));
+            /*
             try {
                 LOGGER.error(String.format("Event: %s", event == null ? "NULL" :
                     config.jsonmapper.writeValueAsString(event)));
             } catch (JsonProcessingException ex) {
                 LOGGER.error(String.format("Event: %s", event == null ? "NULL" : event.toString()));
             }
+            */
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(new ObjectMessage(
