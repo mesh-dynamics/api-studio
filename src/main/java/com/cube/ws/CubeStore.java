@@ -27,6 +27,7 @@ import javax.ws.rs.core.UriInfo;
 
 import com.cube.dao.*;
 
+import com.cube.utils.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -271,7 +272,7 @@ public class CubeStore {
         return contentType.map(
             ct -> {
                 switch(ct) {
-                    case "application/x-ndjson":
+                    case Constants.APPLICATION_X_NDJSON:
                         try {
                             String jsonMultiline = new String(messageBytes);
                             String[] jsons = jsonMultiline.split("\n");
@@ -283,7 +284,7 @@ public class CubeStore {
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
 
-                    case "application/x-msgpack":
+                    case Constants.APPLICATION_X_MSGPACK:
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
                         try {
                             while (unpacker.hasNext()) {
@@ -350,7 +351,7 @@ public class CubeStore {
         return contentType.map(
             ct -> {
                 switch(ct) {
-                    case "application/x-ndjson": // todo: move to constants
+                    case Constants.APPLICATION_X_NDJSON:
                         try {
                             String jsonMultiline = new String(messageBytes);
                             String[] jsons = jsonMultiline.split("\n");
@@ -370,7 +371,7 @@ public class CubeStore {
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
 
-                    case "application/x-msgpack": // todo: move to constants
+                    case Constants.APPLICATION_X_MSGPACK:
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
                         int total = 0, numSuccess = 0;
                         try {
@@ -559,7 +560,7 @@ public class CubeStore {
         return contentType.map(
             ct -> {
                 switch (ct) {
-                    case "application/x-ndjson":
+                    case Constants.APPLICATION_X_NDJSON:
                         try {
                             String jsonMultiline = new String(messageBytes);
                             // split on '\n' using the regex "\\\\n" because it's being interpreted as '\' and 'n' literals
@@ -569,7 +570,7 @@ public class CubeStore {
                             LOGGER.error("Error while processing multiline json " + e.getMessage());
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
-                    case "application/x-msgpack":
+                    case Constants.APPLICATION_X_MSGPACK:
                         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(new ByteArrayInputStream(messageBytes));
                         try {
                             while (unpacker.hasNext()) {
