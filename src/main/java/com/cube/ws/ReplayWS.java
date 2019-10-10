@@ -5,6 +5,7 @@ package com.cube.ws;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +37,8 @@ import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.ReplayDriver;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * @author prasad
@@ -228,15 +231,12 @@ public class ReplayWS {
         Recording recording = recordingOpt.get();
 
         // TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
-        Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
-            Optional.ofNullable(recording.instanceid), ReplayStatus.Running);
-        var ref = new Object() {Integer count = 0;};
-        String s = replays.map(r -> {ref.count ++; return r.replayid;})
-            .collect(Collectors.joining("\" , \"" , "[\"" , "\"]"));
-        if (ref.count != 0) {
-            return Response.status(Status.FORBIDDEN).entity(String.format("{\"Force Complete\" : %s}", s)).build();
+        List running_replays = rrstore.getReplay(Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
+            Optional.ofNullable(recording.instanceid), ReplayStatus.Running).map(replay -> replay.replayid).collect(Collectors.toList()) ;
+        if (!running_replays.isEmpty()) {
+            return Response.status(Status.FORBIDDEN).entity((new JSONObject(Map.of("Force Complete", new JSONArray(running_replays)))).toString()).build();
         }
-
+        
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
             Optional.ofNullable(recording.instanceid));
@@ -252,7 +252,7 @@ public class ReplayWS {
         Optional<String> templateSetVersion = Optional.ofNullable(formParams
             .getFirst("templateSetVer"))/*.orElse(Recording.DEFAULT_TEMPLATE_VER)*/;
 
-            return endpoint.map(e -> {
+        return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
                         return ReplayDriver.initReplay(e, recording.customerid, recording.app, recording.instanceid, recording.collection,
                             reqids, rrstore, async, paths, null, samplerate, intermediateServices,templateSetVersion)
@@ -274,7 +274,8 @@ public class ReplayWS {
                                 }
                             }).orElse(Response.serverError().build());
                 }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
-        }
+
+    }
 
 
 	/**
