@@ -15,7 +15,7 @@
     <Console name="ConsoleJSONAppender" target="SYSTEM_OUT">
       <CustomJsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
                   propertiesAsList="false" compact="true" properties="false"  includeStackTrace="true"
-                  locationInfo="false">
+                  locationInfo="false" stacktraceAsString="true">
       </CustomJsonLayout>
     </Console>
     <File name="File" fileName="${filename}">
@@ -25,10 +25,11 @@
  
   <Loggers> 
     <Root level="info">
-      <!-- <AppenderRef ref="STDOUT"/> -->
+       <AppenderRef ref="STDOUT"/>
       <!-- Useful docs https://logging.apache.org/log4j/2.x/manual/customconfig.html-->
       <AppenderRef ref="ConsoleJSONAppender"/>
-      <AppenderRef ref="File"/>
+
+      <!--      <AppenderRef ref="File"/>-->
     </Root>
   </Loggers>
  
