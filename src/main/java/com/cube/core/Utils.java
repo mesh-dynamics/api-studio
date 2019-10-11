@@ -109,6 +109,13 @@ public class Utils {
 		);
 	}
 
+	public static ValidateCompareTemplate validateTemplateSet(TemplateSet templateSet) {
+        return templateSet.templates.stream().map(CompareTemplateVersioned::validate)
+            .filter(v -> !v.isValid())
+            .findFirst()
+            .orElseGet(() -> new ValidateCompareTemplate(true, Optional.of("")));
+	}
+
 
     public static IntNode intToJson(Integer val) {
 		return IntNode.valueOf(val);

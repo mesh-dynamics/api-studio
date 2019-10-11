@@ -43,7 +43,6 @@
 			<version>${version.jaxb}</version>
 			<type>pom</type>
 		</dependency>
-
 	</dependencies>
   </dependencyManagement>
   <build>
