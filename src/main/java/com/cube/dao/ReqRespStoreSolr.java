@@ -363,8 +363,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         StringBuilder argsQuery = new StringBuilder();
         argsQuery.append("*:*");
         var counter = new Object(){int x =0;};
-        funcReqResponse.traceId.ifPresent(trace ->
-            argsQuery.append(" OR ").append("(").append(HDRTRACEF).append(":").append(trace).append(")^2"));
+        //funcReqResponse.traceId.ifPresent(trace ->
+          //  argsQuery.append(" OR ").append("(").append(HDRTRACEF).append(":").append(trace).append(")^2"));
         funcReqResponse.respTS.ifPresent(timestamp -> argsQuery.
             append(" OR ").append(TIMESTAMPF).append(":{").append(timestamp.toString()).append(" TO *]"));
         SolrQuery query = new SolrQuery(argsQuery.toString());
@@ -374,6 +374,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
         addSort(query, TIMESTAMPF, true);
+        funcReqResponse.traceId.ifPresent(trace -> addFilter(query, HDRTRACEF, trace));
         Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
             addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + INT_SUFFIX, argHashVal));
         Optional<Integer> maxResults = Optional.of(1);
@@ -2087,8 +2088,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
                 status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion, parentRecordingId, rootRecordingId));
         } else {
-            LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s",
-                    customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
+            LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
 
         return recording;
@@ -2107,9 +2107,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceId);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
-        recording.templateVersion.ifPresent(templateVer -> doc.setField(TEMPLATE_VERSION, templateVer));
+        doc.setField(TEMPLATE_VERSION, recording.templateVersion);
+        doc.setField(ROOT_RECORDING_ID, recording.rootRecordingId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_ID, parentRecId));
-        recording.rootRecordingId.ifPresent(rootRecId -> doc.setField(ROOT_RECORDING_ID, rootRecId));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
 
         return doc;

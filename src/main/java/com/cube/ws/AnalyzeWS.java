@@ -38,6 +38,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.RequestComparatorCache;
@@ -65,6 +67,7 @@ import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
+import com.cube.core.ValidateCompareTemplate;
 
 /**
  * @author prasad
@@ -214,6 +217,13 @@ public class AnalyzeWS {
             */
             Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);
             TemplateSet templateSet = Utils.templateRegistriesToTemplateSet(registries, customerId, appId, templateVersion);
+            //String templateSetJSON = jsonmapper.writeValueAsString(templateSet);
+
+            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(templateSet);
+            if(!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+            }
+
             Utils.invalidateCacheFromTemplateSet(templateSet, requestComparatorCache, responseComparatorCache);
             rrstore.saveTemplateSet(templateSet);
 
@@ -265,6 +275,11 @@ public class AnalyzeWS {
             } else {
                 return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
                     "either request or response :: " + type).build();
+            }
+
+            ValidateCompareTemplate validTemplate = template.validate();
+            if(!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
             requestComparatorCache.invalidateKey(key);
@@ -447,7 +462,7 @@ public class AnalyzeWS {
                 Recording recording = recordingOpt.get();
                 recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
                     + "\" , \"collection\" : \"" + recording.collection
-                    + recording.templateVersion.map(templatever -> "\" , \"templateVer\" : \"" + templatever).orElse("");
+                    + "\" , \"templateVer\" : \"" + recording.templateVersion;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
@@ -588,12 +603,19 @@ public class AnalyzeWS {
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
                                     @PathParam("app") String app, TemplateSet templateSet) {
         try {
+            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(templateSet);
+            if(!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+            }
             String templateSetId = rrstore.saveTemplateSet(templateSet);
-            return Response.ok("{\"Message\" :  \"Successfully saved template set\" , \"ID\" : \"" +
-                templateSetId + "\"}").build();
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved template set",
+                "ID", templateSetId,
+                "templateSetVersion", templateSet.version))).toString()).build();
         } catch (Exception e) {
-            return Response.serverError().entity("{\"Message\" :  \"Unable to save template set\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
+            return Response.serverError().entity((new JSONObject(Map.of(
+                "Message", "Unable to save template set",
+                "Error", e.getMessage()))).toString()).build();
         }
     }
 
@@ -692,6 +714,12 @@ public class AnalyzeWS {
             TemplateSet updated = templateSetOpt.flatMap(templateSet -> updateOperationSetOpt.map(updateOperationSet ->
                 transformer.updateTemplateSet(templateSet, updateOperationSet)))
                 .orElseThrow(() -> new Exception("Missing template set or template update operation set"));
+
+            // Validate updated template set
+            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updated);
+            if(!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+            }
             // save the new template set (and return the new version as a part of the response)
             rrstore.saveTemplateSet(updated);
             return Response.ok().entity("{\"Message\" :  \"Template Set successfully updated\" , \"ID\" : \"" +
@@ -769,9 +797,16 @@ public class AnalyzeWS {
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
             TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
+
+            // Validate updated template set
+            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updatedTemplateSet);
+            if(!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+            }
+
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
-            String newCollectionName = originalRec.collection.concat("-").concat(UUID.randomUUID().toString());
+            String newCollectionName = UUID.randomUUID().toString();
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
