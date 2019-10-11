@@ -79,8 +79,6 @@ public class Event {
 
     }
 
-
-
     public String getCollection() {
         return collection;
     }
