@@ -78,6 +78,7 @@ public class CubeStore {
 	@POST
 	@Path("/req")
     @Consumes({MediaType.APPLICATION_JSON})
+    // TODO: Event redesign cleanup: This can be removed
     public Response storereq(Request req) {
         setCollection(req);
         if (rrstore.save(req)) {
@@ -90,6 +91,7 @@ public class CubeStore {
 	@POST
 	@Path("/resp")
     @Consumes({MediaType.APPLICATION_JSON})
+    // TODO: Event redesign cleanup: This can be removed
     public Response storeresp(com.cube.dao.Response resp) {
         setCollection(resp);
         if (rrstore.save(resp)) {
@@ -103,6 +105,7 @@ public class CubeStore {
 	@POST
 	@Path("/rr/{var:.*}")
     @Consumes({MediaType.APPLICATION_JSON})
+    // TODO: Event redesign cleanup: This can be removed
     public Response storerr(@Context UriInfo ui,
                             @PathParam("var") String path,
                             ReqRespStore.ReqResp rr) {
@@ -115,6 +118,7 @@ public class CubeStore {
 
     }
 
+    // TODO: Event redesign cleanup: This can be removed
     private Optional<String> storeSingleReqResp(ReqRespStore.ReqResp rr, String path, MultivaluedMap<String, String> queryParams) {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
@@ -309,6 +313,7 @@ public class CubeStore {
         ).orElse(Response.serverError().entity("Content type not specified").build());
     }
 
+    // TODO: Event redesign cleanup: This can be removed
     private Optional<String> storeFnReqResp(String fnReqResponseString) throws Exception {
         FnReqResponse fnReqResponse = jsonMapper.readValue(fnReqResponseString, FnReqResponse.class);
         LOGGER.info("STORING FUNCTION  :: " + fnReqResponse.name);
@@ -328,6 +333,7 @@ public class CubeStore {
 	@POST
     @Path("/fr")
     @Consumes(MediaType.TEXT_PLAIN)
+    // TODO: Event redesign cleanup: This can be removed
     public Response storeFunc(String functionReqRespString /* @PathParam("customer") String customer,
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
@@ -542,6 +548,7 @@ public class CubeStore {
 
     @POST
     @Path("/frbatch")
+    // TODO: Event redesign cleanup: This can be removed
     public Response storeFuncBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
                                    byte[] messageBytes) {
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
@@ -811,6 +818,7 @@ public class CubeStore {
      */
     @GET
     @Path("requests")
+    // TODO: Event redesign cleanup: This can be removed
     public Response requests(@Context UriInfo ui) {
         MultivaluedMap<String, String> uriQueryParams = ui.getQueryParameters();
         Optional<String> customerid = Optional.ofNullable(uriQueryParams.getFirst("customerid"));
@@ -911,7 +919,8 @@ public class CubeStore {
 		});
 	}
 
-	private boolean saveDefaultResponse(String customerid, String app,
+    // TODO: Event redesign : This needs to be rewritten to store as event
+    private boolean saveDefaultResponse(String customerid, String app,
 			String serviceid, String path, String method, String respbody, int status, Optional<String> contenttype) {
 		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status,
 				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app), contenttype);
@@ -919,6 +928,7 @@ public class CubeStore {
 		return saveDefaultResponse(path, method, resp);
 	}
 
+    // TODO: Event redesign: This needs to be rewritten to store as event
 	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
 		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RunType.Manual), resp.customerId,
 				resp.app);

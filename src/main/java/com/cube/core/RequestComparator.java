@@ -17,6 +17,7 @@ import com.cube.dao.Request;
  * Date: 2019-03-13
  * @author Prasad M D
  */
+// TODO: Event redesign: This can be removed
 public interface RequestComparator {
 
     /**

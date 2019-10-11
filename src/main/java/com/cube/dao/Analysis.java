@@ -15,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.core.Comparator;
-import com.cube.core.Utils;
 import com.cube.ws.Config;
 
 
@@ -170,8 +169,56 @@ public class Analysis {
 		}
 	}
 
+    public static class RespMatchWithReqEvent  {
 
-	public static class  ReqRespMatchResult {
+        /**
+         * @param recordReq
+         * @param replayReq
+         * @param match
+         */
+        public RespMatchWithReqEvent(Event recordReq, Optional<Event> replayReq, Comparator.Match match,
+                                     Optional<Event> recordResp , Optional<Event> replayResp) {
+            this.recordReq = recordReq;
+            this.replayReq = replayReq;
+            this.recordResp = recordResp;
+            this.replayResp = replayResp;
+            this.match = match;
+        }
+
+        final Comparator.Match match;
+        final Event recordReq;
+        final Optional<Event> replayReq;
+        final Optional<Event> recordResp;
+        final Optional<Event> replayResp;
+
+        public Comparator.MatchType getmt() {
+            return match.mt;
+        }
+
+        public List<Comparator.Diff> getDiffs() {
+            return match.diffs;
+        }
+
+        public Optional<String> getRecordedResponseBody(Config config) {
+            return recordResp.map(response -> response.getPayloadAsString(config));
+        }
+
+        public Optional<String> getReplayResponseBody(Config config) {
+            return replayResp.map(response -> response.getPayloadAsString(config));
+        }
+
+        public Optional<String> getReplayReq(Config config) {
+            return replayReq.map(request -> request.getPayloadAsString(config));
+        }
+
+
+        public Optional<String> getRecordReq(Config config) {
+            return Optional.of(recordReq.getPayloadAsString(config));
+        }
+    }
+
+
+    public static class  ReqRespMatchResult {
 
 
 
@@ -250,8 +297,18 @@ public class Analysis {
                     rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
 		}
 
-		final public Optional<String> recordReqId;
-		final public Optional<String> replayReqId;
+        public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayid,
+                                  ObjectMapper jsonmapper) {
+            this(Optional.of(rm.recordReq.reqId), rm.replayReq.map(req -> req.reqId), reqmt, size,
+                rm.match,
+                rm.recordReq.customerId, rm.recordReq.app,
+                rm.recordReq.service, rm.recordReq.apiPath,
+                replayid, jsonmapper, Optional.of(rm.recordReq.traceId),
+                rm.replayReq.map(replayreq -> replayreq.traceId)) ;
+        }
+
+        final public Optional<String> recordReqId;
+        final public Optional<String> replayReqId;
 		final public Optional<String> recordTraceId;
 		final public Optional<String> replayTraceId;
 		final public Comparator.MatchType reqmt;

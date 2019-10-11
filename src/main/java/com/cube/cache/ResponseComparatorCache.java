@@ -19,6 +19,7 @@ import com.cube.core.TemplatedResponseComparator;
  * Returns ResponseComparator registered in database against the template key
  * If key not registered , returns a default ResponseComparator
  */
+// TODO: Event redesign: This and ResponseComparatorCache can be replaced by a single ComparatorCache
 public class ResponseComparatorCache {
 
     private TemplateCache templateCache;

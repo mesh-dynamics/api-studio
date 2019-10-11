@@ -38,4 +38,6 @@ public class TemplatedRRComparator {
         metaFieldtemplate = template.subsetWithPrefix(RRBase.METAPATH);
         bodyComparator = new JsonComparator(bodytemplate, jsonMapper);
     }
+
+
 }

@@ -185,7 +185,7 @@ public class Replay {
     }
 
     private Result<Event> getEventResult(ReqRespStore rrstore) {
-        EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPResponse)
+        EventQuery eventQuery = new EventQuery.Builder(customerId, app, Event.EventType.HTTPResponse)
             .withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
         return rrstore.getEvents(eventQuery);
     }
@@ -204,5 +204,16 @@ public class Replay {
 		Result<Request> requests = getRequests(rrstore);
 		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
 	}
+
+    @JsonIgnore
+    public Pair<Stream<List<Event>>, Long> getRequestEventBatches(int batchSize, ReqRespStore rrstore) {
+	    EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.getRequestEventTypes());
+	    EventQuery eventQuery = builder.withCollection(collection)
+            .withReqIds(reqIds)
+            .withPaths(paths)
+            .withRunType(Event.RunType.Record).build();
+        Result<Event> requests = rrstore.getEvents(eventQuery);
+        return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
+    }
 
 }

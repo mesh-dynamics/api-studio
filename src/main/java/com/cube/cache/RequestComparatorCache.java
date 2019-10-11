@@ -25,6 +25,7 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.ws.Config;
 
+// TODO: Event redesign: This and ResponseComparatorCache can be replaced by a single ComparatorCache
 public class RequestComparatorCache {
     private static final Logger LOGGER = LogManager.getLogger(RequestComparatorCache.class);
 

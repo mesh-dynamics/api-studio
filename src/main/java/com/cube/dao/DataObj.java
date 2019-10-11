@@ -7,8 +7,10 @@
 package com.cube.dao;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.function.Function;
+
+import com.cube.core.Comparator.MatchType;
+import com.cube.core.CompareTemplate;
 
 /*
  * Created by IntelliJ IDEA.
@@ -29,6 +31,8 @@ public interface DataObj {
     String serialize();
 
     void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
+
+    MatchType compare(DataObj rhs, CompareTemplate template);
 
     class PathNotFoundException extends Exception{
 

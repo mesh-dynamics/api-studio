@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+// TODO: Event redesign: This can be removed
 public class Response extends RRBase {
 
     private static final Logger LOGGER = LogManager.getLogger(Response.class);
