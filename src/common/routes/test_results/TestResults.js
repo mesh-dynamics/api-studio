@@ -6,6 +6,10 @@ import 'tippy.js/themes/light.css';
 import { connect } from "react-redux";
 import * as moment from 'moment';
 import { cubeActions } from "../../actions";
+import withFixedColumns from 'react-table-hoc-fixed-columns';
+import 'react-table-hoc-fixed-columns/lib/styles.css';
+
+const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 class TestResults extends Component {
 
@@ -126,8 +130,9 @@ class TestResults extends Component {
         for (let eachGroupKey in tempTableData) {
             tableData.push(tempTableData[eachGroupKey]);
         }
-        columns.push({
-            Header: () => <strong>Expand</strong>,
+        /*columns.push({
+            Header: "Expand",
+            fixed: "left",
             columns: [{
                 expander: true,
                 Header: () => <strong></strong>,
@@ -154,10 +159,36 @@ class TestResults extends Component {
                     userSelect: "none"
                 }
             }]
-        });
+        });*/
         columns.push({
             Header: "Service",
+            fixed: "left",
             columns: [{
+                expander: true,
+                Header: () => <strong></strong>,
+                width: 65,
+                sortable: false,
+                Expander: ({ isExpanded, ...rest }) => {
+                    if (rest.row && rest.row.serviceRowKey.indexOf("--") > 0) {
+                        return (<div>
+                            {isExpanded
+                                ? <span style={{ position: "relative", bottom: "5px" }}><i className="fas fa-minus-circle" style={{ "fontSize": "12px" }}></i></span>
+                                : <span style={{ position: "relative", bottom: "5px" }}><i className="fas fa-plus-circle" style={{ "fontSize": "12px" }}></i></span>}
+                        </div>);
+                    }
+                    rest.expander = false;
+                    return "";
+                },
+                headerClassName: "freeze-column",
+                className: "freeze-column",
+                style: {
+                    cursor: "pointer",
+                    fontSize: 25,
+                    padding: "0",
+                    textAlign: "center",
+                    userSelect: "none"
+                }
+            }, {
                 Header: () => <strong>Test Summary</strong>,
                 id: "serviceRowKey",
                 headerClassName: "freeze-column",
@@ -333,7 +364,7 @@ class TestResults extends Component {
         return (
             <div className="content-wrapper">
                 <h5>Test Results</h5>
-                <ReactTable
+                <ReactTableFixedColumns
                     data={tableData}
                     columns={columns}
                     subRowsKey="subRows"
