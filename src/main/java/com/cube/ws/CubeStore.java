@@ -448,8 +448,11 @@ public class CubeStore {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(new ObjectMessage(
-                Map.of("message", "Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqId, event.apiPath)));
+                Map.of("message", "Completed store",
+                    "type", event.eventType,
+                    "collection", event.getCollection(),
+                    "reqId", event.reqId,
+                    "path", event.apiPath)));
             return Response.ok().build();
         });
     }
@@ -474,8 +477,11 @@ public class CubeStore {
             return 0;
         } else {
             LOGGER.info(new ObjectMessage(
-                Map.of("message", "Completed store for type %s, for collection %s, reqid %s, path %s"
-                , event.eventType, event.getCollection(), event.reqId, event.apiPath)));
+                Map.of("message", "Completed store",
+                    "type", event.eventType,
+                    "collection", event.getCollection(),
+                    "reqId", event.reqId,
+                    "path", event.apiPath)));
             return 1;
         }
 	}
