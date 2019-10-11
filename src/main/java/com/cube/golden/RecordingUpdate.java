@@ -131,7 +131,7 @@ public class RecordingUpdate {
             Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
 
             Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
-                apiPathVsUpdateOperationSet.get(recordRequest.path));
+                apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
 
 
             Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);

@@ -95,7 +95,7 @@ public class Response extends RRBase {
                 responsePayload.body, Optional.of(event.getCollection()), Optional.of(event.timestamp),
                 Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app)));
         } catch (IOException e) {
-            LOGGER.error(String.format("Not able to convert event with reqid: %s and type %s to response. ",
+            LOGGER.error(String.format("Not able to convert event with reqId: %s and type %s to response. ",
                 event.reqId, event.eventType.toString()));
             return Optional.empty();
         }

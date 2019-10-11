@@ -100,7 +100,7 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withRRType(Event.RunType val) {
+        public Builder withRunType(Event.RunType val) {
             runType = val;
             return this;
         }

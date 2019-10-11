@@ -88,14 +88,14 @@ public class Analyzer {
                 // most fields are same as request except
                 // RRType should be Replay
                 // collection to set to replayid, since collection in replays are set to replayids
-                Request rq = new Request(r.path, r.reqId, r.queryParams, r.formParams, r.meta,
+                Request rq = new Request(r.apiPath, r.reqId, r.queryParams, r.formParams, r.meta,
                         r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayId), r.timestamp,
                         Optional.of(Event.RunType.Replay), r.customerId, r.app);
 
                 List<Request> matches = new ArrayList<>();
 
                 TemplateKey key = new TemplateKey(templateVersion, r.customerId.get(), r.app.get(),
-                    r.getService().get(), r.path
+                    r.getService().get(), r.apiPath
                         , TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
                 matches = rrstore.getRequests(rq, comparator, Optional.of(10))
@@ -194,7 +194,7 @@ public class Analyzer {
         return recordreq.reqId.flatMap(recordreqid -> replayreq.reqId.flatMap(replayreqid -> {
             // fetch response of recording and replay
             // if enough information is not available to retrieve a template for matching , return a no match
-            if (recordreq.app.isEmpty() || recordreq.customerId.isEmpty() || recordreq.path.isEmpty() ||
+            if (recordreq.app.isEmpty() || recordreq.customerId.isEmpty() || recordreq.apiPath.isEmpty() ||
                 recordreq.getService().isEmpty()) {
                 LOGGER.error("Not enough information to construct a template cache key for recorded req :: "
                         + recordreq.reqId.get());
@@ -204,7 +204,7 @@ public class Analyzer {
             try {
                 // get appropriate template from solr
                 TemplateKey key = new TemplateKey(templateVersion, recordreq.customerId.get(),
-                        recordreq.app.get(), recordreq.getService().get(), recordreq.path , TemplateKey.Type.Response);
+                        recordreq.app.get(), recordreq.getService().get(), recordreq.apiPath , TemplateKey.Type.Response);
                 ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
                 Optional<Response> replayresp = Optional.ofNullable(replayResponseMap.get(replayreqid));
                 //question ? what happens when these optionals don't contain any value ...

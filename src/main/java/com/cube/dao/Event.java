@@ -151,7 +151,7 @@ public class Event {
     }
 
     public final Instant timestamp;
-    public final String reqId; // for responses, this is the reqid of the corresponding request
+    public final String reqId; // for responses, this is the reqId of the corresponding request
     public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
     public final EventType eventType;
 

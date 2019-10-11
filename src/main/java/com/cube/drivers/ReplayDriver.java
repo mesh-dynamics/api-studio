@@ -162,7 +162,7 @@ public class ReplayDriver  {
 
                 try {
                     UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
-                        .path(r.path);
+                        .path(r.apiPath);
                     r.queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
                         String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
                             return UriComponent.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);

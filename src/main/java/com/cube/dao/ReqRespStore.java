@@ -127,16 +127,16 @@ public interface ReqRespStore {
                                 Optional<Integer> start);
 
     /**
-	 * @param reqid
-	 * @return the matching response on the reqid
+	 * @param reqId
+	 * @return the matching response on the reqId
 	 */
-	Optional<Response> getResponse(String reqid);
+	Optional<Response> getResponse(String reqId);
 
     /**
-     * @param reqid
-     * @return the matching response on the reqid
+     * @param reqId
+     * @return the matching response on the reqId
      */
-    Optional<Request> getRequest(String reqid);
+    Optional<Request> getRequest(String reqId);
 
 	/**
 	 * @param requests
@@ -147,7 +147,7 @@ public interface ReqRespStore {
 	/**
 	 * @param queryrequest
 	 * @return the response corresponding to the request matching in the db
-	 * to find the matching request, the reqid field of queryrequest is ignored
+	 * to find the matching request, the reqId field of queryrequest is ignored
 	 */
 	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
 
@@ -361,7 +361,7 @@ public interface ReqRespStore {
 	 * @param instanceid
 	 * @return For both record and replay, return the collection of the record stage
 	 */
-	Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
+	Optional<String> getCurrentRecordingCollection(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceid);
 
 
@@ -372,12 +372,12 @@ public interface ReqRespStore {
 	boolean saveRecording(Recording recording);
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param collection
 	 * @return
 	 */
-	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app,
+	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app,
                                                                String collection, Optional<String> templateSetVersion);
 
 
@@ -393,7 +393,7 @@ public interface ReqRespStore {
                                                             boolean bypath);
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param instanceid
 	 * @return
@@ -495,7 +495,7 @@ public interface ReqRespStore {
 
     /**
      * Get ReqResponseMatchResult for the given replay Id, record req id and replay req id
-     * It matches on both record and replay reqid. If any of them are empty, it requires the matching result to also
+     * It matches on both record and replay reqId. If any of them are empty, it requires the matching result to also
      * have empty value for that field
      * @param recordReqId
      * @param replayId

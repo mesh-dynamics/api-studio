@@ -1110,7 +1110,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         setRRFields(Types.Request, req, doc);
         doc.setField(TYPEF, Types.Request.toString());
-        doc.setField(PATHF, req.path);
+        doc.setField(PATHF, req.apiPath);
         doc.setField(METHODF, req.method);
         addFieldsToDoc(doc, QPARAMS, req.queryParams);
         addFieldsToDoc(doc, FPARAMS, req.formParams);
@@ -1734,7 +1734,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addMatch(spec.getCTapp(), query, qstr, APPF, qr.app);
         //addMatch(spec.getCTcontenttype, query, qstr, CONTENTTYPEF, qr.hdrs.getHeaderString(HttpHeaders.CONTENT_TYPE));
 
-        addMatch(spec.getCTpath(), query, qstr, PATHF, qr.path);
+        addMatch(spec.getCTpath(), query, qstr, PATHF, qr.apiPath);
         addMatch(query, qstr, QPARAMS, qr.queryParams, spec.getCTQparams());
         addMatch(query, qstr, FPARAMS, qr.formParams, spec.getCTFparams());
         addMatch(spec.getCTmethod(), query, qstr, METHODF, qr.method);

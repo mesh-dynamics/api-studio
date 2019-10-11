@@ -519,9 +519,9 @@ public class MockServiceHTTP {
         request.getService().ifPresent(builder::withService);
         request.getTraceId().ifPresent(builder::withTraceId);
 
-        return builder.withPaths(List.of(request.path))
+        return builder.withPaths(List.of(request.apiPath))
             .withPayloadKey(payloadKey)
-            .withRRType(Event.RunType.Record)
+            .withRunType(Event.RunType.Record)
             .withSortOrderAsc(true)
             .withLimit(limit)
             .build();

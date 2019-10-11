@@ -188,7 +188,7 @@ public class Replay {
 
     private Result<Event> getEventResult(ReqRespStore rrstore) {
         EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventQuery.EventType.HTTPResponse)
-            .withRRType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
+            .withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
         return rrstore.getEvents(eventQuery);
     }
 

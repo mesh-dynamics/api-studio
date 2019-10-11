@@ -24,11 +24,11 @@ import io.cube.agent.CommonUtils;
 
 public class RRBase {
 
-	public static final String REQIDPATH = "/reqid";
+	public static final String REQIDPATH = "/reqId";
 	public static final String COLLECTIONPATH = "/collection";
 	public static final String TIMESTAMPPATH = "/timestamp";
 	public static final String RUNTYPEPATH = "/runType";
-	public static final String CUSTOMERIDPATH = "/customerid";
+	public static final String CUSTOMERIDPATH = "/customerId";
 	public static final String APPPATH = "/app";
 
 

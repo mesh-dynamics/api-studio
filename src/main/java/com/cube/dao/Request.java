@@ -46,7 +46,7 @@ public class Request extends RRBase {
 	 * @param hdrs
 	 * @param body
 	 */
-	public Request(String path, Optional<String> reqId, 
+	public Request(String apiPath, Optional<String> reqId,
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
 			MultivaluedMap<String, String> meta, 
@@ -59,7 +59,7 @@ public class Request extends RRBase {
 			Optional<String> customerId,
 			Optional<String> app) {
 		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app);
-		this.path = path; 
+		this.apiPath = apiPath;
 		this.queryParams = queryParams != null ? queryParams : emptyMap();
 		this.formParams = formParams != null ? formParams : emptyMap();
 		this.method = method;
@@ -68,11 +68,11 @@ public class Request extends RRBase {
 	
 	
 	/**
-	 * @param path
+	 * @param apiPath
 	 * @param queryParams
 	 * @param formParams
 	 */
-	public Request(String path, Optional<String> id, 
+	public Request(String apiPath, Optional<String> id,
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
 			MultivaluedMap<String, String> hdrs, 
@@ -81,7 +81,7 @@ public class Request extends RRBase {
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
-		this(path, id, queryParams, formParams, emptyMap(),
+		this(apiPath, id, queryParams, formParams, emptyMap(),
 				hdrs, "", "", collection, Optional.empty(), runType, customerId, app);
 		meta.add(RRBase.SERVICEFIELD, service);
 	}
@@ -105,7 +105,7 @@ public class Request extends RRBase {
 	@SuppressWarnings("unused")
 	private Request() {
 		super();
-		this.path = ""; 
+		this.apiPath = "";
 		this.queryParams = new MultivaluedHashMap<String, String>();
 		this.formParams = new MultivaluedHashMap<String, String>();
 		this.method = "";
@@ -114,7 +114,7 @@ public class Request extends RRBase {
 	static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
 	  = new TypeReference<MultivaluedHashMap<String, String>>() {};
 	
-	public final String path;
+	public final String apiPath;
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> queryParams; // query params
     @JsonDeserialize(as=MultivaluedHashMap.class)
@@ -138,7 +138,7 @@ public class Request extends RRBase {
             getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
             reqId.orElse(
                 "NA"),
-            path, Event.EventType.HTTPRequest);
+            apiPath, Event.EventType.HTTPRequest);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
         event.parseAndSetKey(config, comparator.getCompareTemplate());
@@ -172,7 +172,7 @@ public class Request extends RRBase {
 
 		// diff not needed, so pass false
 		Comparator.Match match = super.compare(rhs, template, metaFieldtemplate, hdrFieldTemplate, bodyComparator, false);
-		template.getRule("/path").checkMatchStr(path, rhs.path, match, false);
+		template.getRule("/apiPath").checkMatchStr(apiPath, rhs.apiPath, match, false);
 		qparamFieldTemplate.checkMatch(queryParams, rhs.queryParams, match, false);
 		fparamFieldTemplate.checkMatch(formParams, rhs.formParams, match, false);
 		template.getRule("/method").checkMatchStr(method, rhs.method, match, false);

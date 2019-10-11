@@ -244,7 +244,7 @@ public class Analysis {
 		    this(rm.recordreq.reqId, rm.replayreq.flatMap(req -> req.reqId), reqmt, size,
 					rm.match,
 					rm.recordreq.customerId.orElse(""), rm.recordreq.app.orElse(""),
-					rm.recordreq.getService().orElse(""), rm.recordreq.path,
+					rm.recordreq.getService().orElse(""), rm.recordreq.apiPath,
 					replayId, jsonMapper,
                     CommonUtils.getTraceId(rm.recordreq.hdrs),
                     rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
