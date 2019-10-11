@@ -68,23 +68,30 @@ start_record() {
 	fi
 
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
-	curl -X POST \
+
+	RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$CUBE_HOST" \
-  -H 'cache-control: no-cache'
+  -H 'cache-control: no-cache')"
+  echo $RESPONSE
+  RECORDING_ID=$(echo $RESPONSE | sed 's/^.*"id":"\([^"]*\)".*/\1/')
+  echo "RECORDING_ID:" $RECORDING_ID
+
+  if [ $? -eq 0 ]; then
+		echo "Recording started"
+	else
+		echo "ERROR!! Recording did not started"
+	fi
+	echo $RECORDING_ID > $RECORDING_ID_TEMP_FILE
 }
 
 stop_record() {
-	COLLECTION_NAME=$(curl -X GET \
-  "http://$GATEWAY_URL/cs/currentcollection?customerid=$CUBE_CUSTOMER&app=$CUBE_APP&instanceid=$INSTANCEID" \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H "Host:$CUBE_HOST" \
-  -H 'cache-control: no-cache')
-	echo "recording complete"
+  RECORDING_ID=$(cat "$RECORDING_ID_TEMP_FILE")
+  echo "Stopping recording for recording ID:" $RECORDING_ID
 
 	curl -X POST \
-	http://$GATEWAY_URL/cs/stop/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME \
+	http://$GATEWAY_URL/cs/stop/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
@@ -207,6 +214,7 @@ main () {
 		exit 1 #Exist with nonzero exit code
 	fi
 	TEMPLATE_VERSION_TEMP_FILE=$APP_DIR/kubernetes/template_version.temp
+	RECORDING_ID_TEMP_FILE=$APP_DIR/kubernetes/recording_id.temp
 	get_environment #check kubernetes context
 	case "$1" in
 		init) OPERATION="init"; shift; generate_manifest $1; shift; init "$@";;
