@@ -18,11 +18,11 @@ public class MatchResultAggregate {
 	 * @param path
 	 * @param service
 	 * @param app
-	 * @param replayid
+	 * @param replayId
 	 */
-	public MatchResultAggregate(String app, String replayid, Optional<String> service, Optional<String> path) {
+	public MatchResultAggregate(String app, String replayId, Optional<String> service, Optional<String> path) {
 		this.app = app;
-		this.replayid = replayid;
+		this.replayId = replayId;
 
 		this.service = service;
 		this.path = path;
@@ -33,11 +33,11 @@ public class MatchResultAggregate {
      */
 	public MatchResultAggregate() {
 	    this.app = "";
-	    this.replayid = "";
+	    this.replayId = "";
     }
 
 	final public String app;
-	final public String replayid;
+	final public String replayId;
 
 	public Optional<String> service = Optional.empty();
 	public Optional<String> path = Optional.empty();

@@ -22,6 +22,8 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import com.cube.ws.Config;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.UtilException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -47,6 +49,7 @@ public class ReplayDriver  {
     private final Replay replay;
     public final ReqRespStore rrstore;
     private ReplayResultCache replayResultCache;
+    private ObjectMapper jsonMapper;
 
     /**
      * @param endpoint
@@ -91,11 +94,12 @@ public class ReplayDriver  {
             status, paths, 0, 0, 0, null, samplerate, intermediateServices, templateVersion);
     }
 
-    private ReplayDriver(Replay r, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
+    private ReplayDriver(Replay replay, Config config) {
         super();
-        replay = r;
-        this.rrstore = rrstore;
-        this.replayResultCache = replayResultCache;
+        this.replay = replay;
+        this.rrstore = config.rrstore;
+        this.replayResultCache = config.replayResultCache;
+        this.jsonMapper = config.jsonMapper;
     }
 
 
@@ -113,7 +117,7 @@ public class ReplayDriver  {
         //replayResultCache.startReplay(replay.customerid, replay.app, replay.instanceid, replay.replayid);
 
         // using seed generated from replayid so that same requests get picked in replay and analyze
-        long seed = replay.replayid.hashCode();
+        long seed = replay.replayId.hashCode();
         Random random = new Random(seed);
 
         // TODO: add support for matrix params
@@ -136,7 +140,7 @@ public class ReplayDriver  {
             clientbuilder.authenticator(Authenticator.getDefault());
         HttpClient client = clientbuilder.build();
 
-        Pair<Stream<List<Request>>, Long> batchedResult = replay.getRequestBatches(BATCHSIZE, rrstore);
+        Pair<Stream<List<Request>>, Long> batchedResult = replay.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, jsonMapper);
         replay.reqcnt = batchedResult.getRight().intValue(); // NOTE: converting long to int, should be ok, since we
         // never replay so many requests
 
@@ -150,7 +154,7 @@ public class ReplayDriver  {
                  TODO: currently sampling samples across all paths with same rate. If we want to ensure that we have some
                  minimum requests from each path (particularly the rare ones), we need to add more logic
                 */
-                if (replay.samplerate.map(sr -> random.nextDouble() > sr).orElse(false)) {
+                if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
                     return; // drop this request
                 }
                 // transform fields in the request before the replay.
@@ -158,8 +162,8 @@ public class ReplayDriver  {
 
                 try {
                     UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
-                        .path(r.path);
-                    r.qparams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
+                        .path(r.apiPath);
+                    r.queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
                         String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
                             return UriComponent.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
                             // return URLEncoder.encode(v, "UTF-8"); // this had a problem of encoding space as +, which further gets encoded as %2B
@@ -185,7 +189,7 @@ public class ReplayDriver  {
                     reqs.add(reqbuilder.build());
                 } catch (Exception e) {
                     // encode can throw UnsupportedEncodingException
-                    LOGGER.error("Skipping request. Exception in creating uri: " + r.qparams.toString(), e);
+                    LOGGER.error("Skipping request. Exception in creating uri: " + r.queryParams.toString(), e);
                 }
             });
 
@@ -208,11 +212,11 @@ public class ReplayDriver  {
     public boolean start() {
 
         if (replay.status != Replay.ReplayStatus.Init) {
-            String message = String.format("Replay with id %s is already running or completed", replay.replayid);
+            String message = String.format("Replay with id %s is already running or completed", replay.replayId);
             LOGGER.error(message);
             return false;
         }
-        LOGGER.info(String.format("Starting replay with id %s", replay.replayid));
+        LOGGER.info(String.format("Starting replay with id %s", replay.replayId));
         CompletableFuture.runAsync(this::replay).handle((ret, e) -> {
             if (e != null) {
                 LOGGER.error("Exception in replaying requests", e);
@@ -227,8 +231,8 @@ public class ReplayDriver  {
     }
 
 
-    public static Optional<ReplayDriver> getReplayDriver(String replayid, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
-        return getStatus(replayid, rrstore).map(r -> new ReplayDriver(r, rrstore,replayResultCache));
+    public static Optional<ReplayDriver> getReplayDriver(String replayid, Config config) {
+        return getStatus(replayid, config.rrstore).map(r -> new ReplayDriver(r, config));
     }
 
 
@@ -254,7 +258,7 @@ public class ReplayDriver  {
         List<CompletableFuture<Integer>> respcodes = httprequests.map(request -> {
             replay.reqsent++;
             if (replay.reqsent % UPDBATCHSIZE == 0) {
-                LOGGER.info(String.format("Replay %s sent %d requests", replay.replayid, replay.reqsent));
+                LOGGER.info(String.format("Replay %s sent %d requests", replay.replayId, replay.reqsent));
                 rrstore.saveReplay(replay);
             }
             return client.sendAsync(request, HttpResponse.BodyHandlers.discarding())
@@ -282,7 +286,7 @@ public class ReplayDriver  {
             try {
                 replay.reqsent++;
                 if (replay.reqsent % UPDBATCHSIZE == 0) {
-                    LOGGER.info(String.format("Replay %s completed %d requests", replay.replayid, replay.reqsent));
+                    LOGGER.info(String.format("Replay %s completed %d requests", replay.replayId, replay.reqsent));
                     rrstore.saveReplay(replay);
                 }
                 int ret = client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();

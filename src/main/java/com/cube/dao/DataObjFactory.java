@@ -32,7 +32,7 @@ public class DataObjFactory {
         switch (type) {
             case HTTPRequest:
             case HTTPResponse:
-                JsonObj obj = new JsonObj(payloadStr, config.jsonmapper);
+                JsonObj obj = new JsonObj(payloadStr, config.jsonMapper);
                 String mimeType = MediaType.TEXT_PLAIN;
                 try {
                     mimeType = obj.getValAsString("/hdr/content-type");
@@ -43,7 +43,7 @@ public class DataObjFactory {
                 return obj;
             case JavaRequest:
             case JavaResponse:
-                return new JsonObj(payloadStr, config.jsonmapper);
+                return new JsonObj(payloadStr, config.jsonMapper);
             case ThriftRequest:
             case ThriftResponse:
             case ProtoBufRequest:

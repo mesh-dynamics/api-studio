@@ -27,7 +27,7 @@ public class TemplatedRRComparator {
     protected final CompareTemplate metaFieldtemplate;
     protected final Comparator bodyComparator;
 
-    public TemplatedRRComparator(CompareTemplate template, ObjectMapper jsonmapper) {
+    public TemplatedRRComparator(CompareTemplate template, ObjectMapper jsonMapper) {
         this.template = template;
 
 
@@ -36,6 +36,6 @@ public class TemplatedRRComparator {
         bodytemplate = template.subsetWithPrefix(RRBase.BODYPATH);
         hdrFieldTemplate = template.subsetWithPrefix(RRBase.HDRPATH);
         metaFieldtemplate = template.subsetWithPrefix(RRBase.METAPATH);
-        bodyComparator = new JsonComparator(bodytemplate, jsonmapper);
+        bodyComparator = new JsonComparator(bodytemplate, jsonMapper);
     }
 }

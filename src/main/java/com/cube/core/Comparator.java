@@ -201,9 +201,9 @@ public interface Comparator {
             Collections.emptyList());
 
 
-		public String getDiffAsJsonStr(ObjectMapper jsonmapper) {
+		public String getDiffAsJsonStr(ObjectMapper jsonMapper) {
 			try {
-				return jsonmapper.writeValueAsString(diffs);
+				return jsonMapper.writeValueAsString(diffs);
 			} catch (JsonProcessingException e) {
 				LOGGER.error("Error in converting diffs to json: ", e);
 				return "";
