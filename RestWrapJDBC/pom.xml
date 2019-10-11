@@ -9,7 +9,7 @@
 		<version.jackson>2.8.7</version.jackson>
 		<version.dockerfile-maven>1.4.9</version.dockerfile-maven>
 		<version.jaeger>0.32.0</version.jaeger>
-    <docker.tag>demo-1.0</docker.tag>
+    <docker.tag>V1-SNAPSHOT</docker.tag>
 	</properties>
 
 	<parent>

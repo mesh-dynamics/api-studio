@@ -24,7 +24,7 @@ public class Config {
     public String MYSQL_PWD = "cubeio12";  // AWS RDS pwd
 
     // restwrapjdbc
-    public String RESTWRAPJDBC_URI =   "http://127.0.0.1:8081/restsql" ;//"http://restwrapjdbc:8080/restsql";
+    public String RESTWRAPJDBC_URI =   "http://restwrapjdbc:8080/restsql";
 
     // Flags
     public boolean USE_KUBE = false;

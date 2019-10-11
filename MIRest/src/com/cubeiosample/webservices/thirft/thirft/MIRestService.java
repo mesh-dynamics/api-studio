@@ -51,6 +51,11 @@ public class MIRestService  implements  MIRest.Iface {
 
 
     @Override
+    public boolean healthCheck() throws TException {
+        return true;
+    }
+
+    @Override
     public ListMovieResult listMovies(String filmName, String keyWord, String actor)
             throws GenericMIRestException, TException {
         JSONArray films;

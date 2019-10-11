@@ -153,6 +153,9 @@ struct ReturnMovieResult {
 }
 
 service MIRest {
+
+    bool healthCheck(),
+
     ListMovieResult listMovies(1: string filmName, 2: string keyWord, 3: string actor)
         throws (1: GenericMIRestException genericException),
 

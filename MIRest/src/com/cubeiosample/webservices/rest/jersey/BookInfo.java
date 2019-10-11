@@ -35,9 +35,9 @@ public class BookInfo {
     private long requestTimeStamp;
 
     private static String PRODUCTPAGE_URI = "http://productpage:9080";
-    private static String BOOKDETAILS_URI = "http://127.0.0.1:9080";
-    private static String BOOKRATINGS_URI = "http://127.0.0.1:9081";
-    private static String BOOKREVIEWS_URI = "http://127.0.0.1:9082";
+    private static String BOOKDETAILS_URI = "http://details:9080";
+    private static String BOOKRATINGS_URI = "http://ratings:9080";
+    private static String BOOKREVIEWS_URI = "http://reviews:9080";
 
     public BookInfo(Tracer tracer, Config config) {
         ClientConfig clientConfig = new ClientConfig()
