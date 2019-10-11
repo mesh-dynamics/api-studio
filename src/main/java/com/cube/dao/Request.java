@@ -148,7 +148,7 @@ public class Request extends RRBase {
 
     public static Optional<Request> fromEvent(Event event, ObjectMapper jsonMapper) {
         if (event.eventType != Event.EventType.HTTPRequest) {
-            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert event to response. " +
+            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert event to request. " +
                     "Event is not of right type:" , "eventType"
                 , event.eventType.toString() , "reqId", event.reqId)));
             return Optional.empty();

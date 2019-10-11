@@ -181,9 +181,7 @@ public class Replay {
 
     private Result<Request> mapEventToRequestResult(Result<Event> events, ObjectMapper jsonMapper) {
         return new Result<>(events.getObjects()
-                .map(event -> Request.fromEvent(event, jsonMapper))
-                .filter(Optional::isPresent)
-                .map(Optional::get), events.numResults, events.numFound);
+                .flatMap(event -> Request.fromEvent(event, jsonMapper).stream()), events.numResults, events.numFound);
     }
 
     private Result<Event> getEventResult(ReqRespStore rrstore) {
