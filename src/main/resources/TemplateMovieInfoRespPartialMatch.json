@@ -13,13 +13,13 @@
           "ct": "Equal"
         },
         {
-          "path": "/qparmas",
+          "path": "/queryParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
         },
         {
-          "path": "/fparams",
+          "path": "/formParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
@@ -90,13 +90,13 @@
           "ct": "Equal"
         },
         {
-          "path": "/qparmas",
+          "path": "/queryParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
         },
         {
-          "path": "/fparams",
+          "path": "/formParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
@@ -167,13 +167,13 @@
           "ct": "Equal"
         },
         {
-          "path": "/qparmas",
+          "path": "/queryParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
         },
         {
-          "path": "/fparams",
+          "path": "/formParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
@@ -244,13 +244,13 @@
           "ct": "Equal"
         },
         {
-          "path": "/qparmas",
+          "path": "/queryParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"
         },
         {
-          "path": "/fparams",
+          "path": "/formParams",
           "dt": "Obj",
           "pt": "Optional",
           "ct": "Equal"

@@ -66,7 +66,7 @@ public class Config {
 
     public final JedisPool jedisPool;
 
-	public final ObjectMapper jsonmapper = CubeObjectMapperProvider.createDefaultMapper();
+	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.createDefaultMapper();
 
 	//public final Tracer tracer = Utils.init("Cube");
 
@@ -97,8 +97,8 @@ public class Config {
             solr = new HttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
             templateCache = new TemplateCache(rrstore , this);
-            requestComparatorCache = new RequestComparatorCache(templateCache , jsonmapper);
-            responseComparatorCache = new ResponseComparatorCache(templateCache , jsonmapper);
+            requestComparatorCache = new RequestComparatorCache(templateCache , jsonMapper);
+            responseComparatorCache = new ResponseComparatorCache(templateCache , jsonMapper);
             replayResultCache = new ReplayResultCache(rrstore, this);
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);

@@ -19,19 +19,19 @@ public class HTTPRequestPayload {
     /**
      *
      * @param hdrs
-     * @param qparams
-     * @param fparams
+     * @param queryParams
+     * @param formParams
      * @param method
      * @param body
      */
 	public HTTPRequestPayload(MultivaluedMap<String, String> hdrs,
-                              MultivaluedMap<String, String> qparams,
-                              MultivaluedMap<String, String> fparams,
+                              MultivaluedMap<String, String> queryParams,
+                              MultivaluedMap<String, String> formParams,
                               String method,
                               String body) {
 	    this.hdrs = hdrs;
-		this.qparams = qparams;
-		this.fparams = fparams;
+		this.queryParams = queryParams;
+		this.formParams = formParams;
 		this.method = method;
 		this.body = body;
     }
@@ -45,8 +45,8 @@ public class HTTPRequestPayload {
 	private HTTPRequestPayload() {
 		super();
 		this.hdrs = new MultivaluedHashMap<String, String>();
-		this.qparams = new MultivaluedHashMap<String, String>();
-		this.fparams = new MultivaluedHashMap<String, String>();
+		this.queryParams = new MultivaluedHashMap<String, String>();
+		this.formParams = new MultivaluedHashMap<String, String>();
 		this.method = "";
 		this.body = "";
 	}
@@ -56,9 +56,9 @@ public class HTTPRequestPayload {
     @JsonDeserialize(as=MultivaluedHashMap.class)
     public final MultivaluedMap<String, String> hdrs;
     @JsonDeserialize(as=MultivaluedHashMap.class)
-	public final MultivaluedMap<String, String> qparams; // query params
+	public final MultivaluedMap<String, String> queryParams; // query params
     @JsonDeserialize(as=MultivaluedHashMap.class)
-	public final MultivaluedMap<String, String> fparams; // form params
+	public final MultivaluedMap<String, String> formParams; // form params
 	public final String method;
     public final String body;
 

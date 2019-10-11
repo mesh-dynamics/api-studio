@@ -78,7 +78,7 @@ public class ReplayWS {
         // TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
         Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
         var ref = new Object() {Integer count = 0;};
-        String s = replays.map(r -> {ref.count ++; return r.replayid;})
+        String s = replays.map(r -> {ref.count ++; return r.replayId;})
             .collect(Collectors.joining("\" , \"" , "[\"" , "\"]"));
         if (ref.count != 0) {
             return Response.status(Status.FORBIDDEN).entity(String.format("{\"Force Complete\" : %s}", s)).build();
@@ -115,10 +115,10 @@ public class ReplayWS {
                         .map(replay -> {
                             String json;
                             try {
-                                json = jsonmapper.writeValueAsString(replay);
+                                json = jsonMapper.writeValueAsString(replay);
                                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
                             } catch (JsonProcessingException ex) {
-                                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayid), ex);
+                                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayId), ex);
                                 return Response.serverError().build();
                             }
                         }).orElse(Response.serverError().build());
@@ -154,7 +154,7 @@ public class ReplayWS {
             if (replay.isPresent()) {
                 replay.get().updateXfmsFromJSONString(xfms);
             }
-            String replayJson = jsonmapper.writeValueAsString(replay);
+            String replayJson = jsonMapper.writeValueAsString(replay);
             return Response.ok(replayJson, MediaType.APPLICATION_JSON).build();
         } catch (Exception e) {
             LOGGER.error(String.format("Error in updating transforms %s: %s", replayid, xfmsParam.toString()), e);
@@ -173,7 +173,7 @@ public class ReplayWS {
         Response resp = replay.map(r -> {
             String json;
             try {
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
@@ -192,14 +192,14 @@ public class ReplayWS {
         Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 
         Response resp = replay.map(r -> {
-            rrstore.invalidateCurrentCollectionCache(r.customerid, r.app, r.instanceid);
+            rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
             if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
                 return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
             }
             String json;
             try {
                 r.status = ReplayStatus.Error;
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
                 return Response.serverError().build();
@@ -234,7 +234,7 @@ public class ReplayWS {
             String json;
             try {
                 r.status = ReplayStatus.Running;
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
                 return Response.serverError().build();
@@ -282,7 +282,7 @@ public class ReplayWS {
          /// end block for testing
          */
 
-        Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, this.rrstore, this.replayResultCache);
+        Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, config);
         Response resp = replay.map(r -> {
             boolean status = r.start();
             if (status) {
@@ -301,14 +301,14 @@ public class ReplayWS {
 	public ReplayWS(Config config) {
 		super();
 		this.rrstore = config.rrstore;
-		this.jsonmapper = config.jsonmapper;
+		this.jsonMapper = config.jsonMapper;
 		this.replayResultCache = config.replayResultCache;
 		this.config = config;
 	}
 
 
 	ReqRespStore rrstore;
-	ObjectMapper jsonmapper;
+	ObjectMapper jsonMapper;
 	ReplayResultCache replayResultCache;
 	private final Config config;
 }

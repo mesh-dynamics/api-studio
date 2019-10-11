@@ -28,10 +28,10 @@ public class TemplatedResponseComparator extends TemplatedRRComparator implement
     /**
      *
      * @param template
-     * @param jsonmapper
+     * @param jsonMapper
      */
-    public TemplatedResponseComparator(CompareTemplate template, ObjectMapper jsonmapper) {
-        super(template, jsonmapper);
+    public TemplatedResponseComparator(CompareTemplate template, ObjectMapper jsonMapper) {
+        super(template, jsonMapper);
     }
 
     @Override

@@ -144,34 +144,34 @@ public class CubeStore {
             }
             return t;
         });
-        Optional<Event.RecordReplayType> rrtype = Optional.ofNullable(meta.getFirst("rrtype")).flatMap(rrt -> Utils.valueOf(Event.RecordReplayType.class, rrt));
+        Optional<Event.RunType> runType = Optional.ofNullable(meta.getFirst("runType")).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
         Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
         Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
         Optional<String> service = Optional.ofNullable(meta.getFirst("service"));
         Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
 
-        //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqid %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
+        //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
         Optional<String> collection = getCurrentCollectionIfEmpty(inpcollection, customerid, app, instanceid);
 
         if (collection.isEmpty()) {
             // Dropping if collection is empty, i.e. recording is not started
-            LOGGER.info(String.format("Dropping store for type %s, reqid %s since collection is empty"
+            LOGGER.info(String.format("Dropping store for type %s, reqId %s since collection is empty"
                 , type.orElse("<empty>"), rid.orElse("<empty>")));
             return Optional.of("Collection is empty");
         } else {
-            LOGGER.info(String.format("Performing store for type %s, for collection %s, reqid %s, path %s"
+            LOGGER.info(String.format("Performing store for type %s, for collection %s, reqId %s, path %s"
                 , type.orElse("<empty>"), collection.orElse("<empty>"), rid.orElse("<empty>"), path));
         }
 
 
-        MultivaluedMap<String, String> fparams = new MultivaluedHashMap<String, String>();
+        MultivaluedMap<String, String> formParams = new MultivaluedHashMap<String, String>();
 
         return  type.map(t -> {
             if (t.equals("request")) {
                 Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
                 return method.map(mval -> {
-                    Request req = new Request(path, rid, queryParams, fparams, meta, hdrs, mval, rr.body, collection, timestamp, rrtype, customerid, app);
+                    Request req = new Request(path, rid, queryParams, formParams, meta, hdrs, mval, rr.body, collection, timestamp, runType, customerid, app);
 
                     // create Event object from Request
                     // fetch the template version, create template key and get a request comparator
@@ -218,7 +218,7 @@ public class CubeStore {
                     }
                 });
                 return s.map(sval -> {
-                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, rrtype, customerid, app);
+                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, runType, customerid, app);
                     Event responseEvent;
                     try {
                         // todo: consider creating the Event object directly instead of creating a Response
@@ -240,9 +240,8 @@ public class CubeStore {
 
     }
 
-
     private void processRRJson(String rrJson) throws Exception {
-        ReqRespStore.ReqResp rr = jsonmapper.readValue(rrJson, ReqRespStore.ReqResp.class);
+        ReqRespStore.ReqResp rr = jsonMapper.readValue(rrJson, ReqRespStore.ReqResp.class);
 
         // extract path and query params
         URIBuilder uriBuilder = new URIBuilder(rr.pathwparams);
@@ -311,7 +310,7 @@ public class CubeStore {
     }
 
     private Optional<String> storeFnReqResp(String fnReqResponseString) throws Exception {
-        FnReqResponse fnReqResponse = jsonmapper.readValue(fnReqResponseString, FnReqResponse.class);
+        FnReqResponse fnReqResponse = jsonMapper.readValue(fnReqResponseString, FnReqResponse.class);
         LOGGER.info("STORING FUNCTION  :: " + fnReqResponse.name);
         if (fnReqResponse.argVals != null) {
             Arrays.asList(fnReqResponse.argVals).stream().forEach(argVal
@@ -462,7 +461,7 @@ public class CubeStore {
     private int processEventJson(String eventJson) {
         Event event = null;
         try {
-            event = jsonmapper.readValue(eventJson, Event.class);
+            event = jsonMapper.readValue(eventJson, Event.class);
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of("message", "Error parsing Event JSON",
@@ -653,7 +652,7 @@ public class CubeStore {
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
-                    collection, customerid, app, recordingv.instanceid))
+                    collection, customerid, app, recordingv.instanceId))
                 .build());
         if (errResp.isPresent()) {
             return errResp.get();
@@ -672,7 +671,7 @@ public class CubeStore {
             .map(newr -> {
                 String json;
                 try {
-                    json = jsonmapper.writeValueAsString(newr);
+                    json = jsonMapper.writeValueAsString(newr);
                     return Response.ok(json, MediaType.APPLICATION_JSON).build();
                 } catch (JsonProcessingException ex) {
                     LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, collection %s", customerid, app, collection), ex);
@@ -698,7 +697,7 @@ public class CubeStore {
         Response resp = recording.map(r -> {
             String json;
             try {
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, collection %s.", customerid, app, collection), e);
@@ -723,7 +722,7 @@ public class CubeStore {
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(recordings);
+            json = jsonMapper.writeValueAsString(recordings);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, instance %s.",
@@ -742,7 +741,7 @@ public class CubeStore {
         List<GoldenSet> recordings = rrstore.getGoldenSetStream(customerid, app, instanceid).collect(Collectors.toList());
         String json;
         try {
-            json = jsonmapper.writeValueAsString(recordings);
+            json = jsonMapper.writeValueAsString(recordings);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Golden Set object to Json for customer %s, app %s, instance %s.",
@@ -779,7 +778,7 @@ public class CubeStore {
             Recording stoppedr = Recording.stopRecording(r, rrstore);
             String json;
             try {
-                json = jsonmapper.writeValueAsString(stoppedr);
+                json = jsonMapper.writeValueAsString(stoppedr);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException ex) {
                 LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, collection %s", customerid, app, collection), ex);
@@ -819,29 +818,29 @@ public class CubeStore {
     @GET
     @Path("requests")
     public Response requests(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
-        String service = Optional.ofNullable(queryParams.getFirst("service")).orElse("*");
-        String path = Optional.ofNullable(queryParams.getFirst("path")).orElse("*"); // the path to drill down on
-        Optional<String> pattern = Optional.ofNullable(queryParams.getFirst("pattern")); // the url should match
+        MultivaluedMap<String, String> uriQueryParams = ui.getQueryParameters();
+        Optional<String> customerid = Optional.ofNullable(uriQueryParams.getFirst("customerid"));
+        Optional<String> app = Optional.ofNullable(uriQueryParams.getFirst("app"));
+        Optional<String> collection = Optional.ofNullable(uriQueryParams.getFirst("collection"));
+        String service = Optional.ofNullable(uriQueryParams.getFirst("service")).orElse("*");
+        String path = Optional.ofNullable(uriQueryParams.getFirst("path")).orElse("*"); // the path to drill down on
+        Optional<String> pattern = Optional.ofNullable(uriQueryParams.getFirst("pattern")); // the url should match
         // this pattern
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        Optional<Integer> start = Optional.ofNullable(uriQueryParams.getFirst("start")).flatMap(Utils::strToInt); // for
         // paging
         Optional<Integer> nummatches =
-            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
+            Optional.ofNullable(uriQueryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
         // for paging
 
         MultivaluedMap<String, String> emptyMap = new MultivaluedHashMap<>();
 
-        MultivaluedMap<String, String> qparams = emptyMap;
-        MultivaluedMap<String, String> fparams = emptyMap;
+        MultivaluedMap<String, String> queryParams = emptyMap;
+        MultivaluedMap<String, String> formParams = emptyMap;
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
 
-        Request queryRequest = new Request(path, Optional.empty(), qparams, fparams, hdrs, service, collection,
-            Optional.of(Event.RecordReplayType.Record), customerid, app);
+        Request queryRequest = new Request(path, Optional.empty(), queryParams, formParams, hdrs, service, collection,
+            Optional.of(Event.RunType.Record), customerid, app);
 
         List<Request> requests =
             rrstore.getRequests(queryRequest, mspecForDrillDownQuery, nummatches, start)
@@ -849,7 +848,7 @@ public class CubeStore {
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(requests);
+            json = jsonMapper.writeValueAsString(requests);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Request list to Json for customer %s, app %s, " +
@@ -874,7 +873,7 @@ public class CubeStore {
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(events);
+            json = jsonMapper.writeValueAsString(events);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Event list to Json for customer %s, app %s, " +
@@ -892,13 +891,13 @@ public class CubeStore {
 	public CubeStore(Config config) {
 		super();
 		this.rrstore = config.rrstore;
-		this.jsonmapper = config.jsonmapper;
+		this.jsonMapper = config.jsonMapper;
 		this.config = config;
 	}
 
 
 	ReqRespStore rrstore;
-	ObjectMapper jsonmapper;
+	ObjectMapper jsonMapper;
 	Config config;
 
 	/**
@@ -907,7 +906,7 @@ public class CubeStore {
 	 * Set the collection field, if it is not already set
 	 */
 	private void setCollection(RRBase rr) {
-		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerid,
+		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerId,
 				rr.app, rr.getInstance());
 	}
 
@@ -927,20 +926,20 @@ public class CubeStore {
 	}
 
 	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
-		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RecordReplayType.Manual), resp.customerid,
+		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RunType.Manual), resp.customerId,
 				resp.app);
 
 		// check if default response has been saved earlier
 		rrstore.getRequests(req, MockServiceHTTP.mspecForDefault, Optional.of(1))
 			.findFirst().ifPresentOrElse(oldreq -> {
 			// set the id to the same value, so that this becomes an update operation
-			req.reqid = oldreq.reqid;
+			req.reqId = oldreq.reqId;
 		}, () -> {
 			// otherwise generate a new random uuid
-			req.reqid = Optional.of(UUID.randomUUID().toString());
+			req.reqId = Optional.of(UUID.randomUUID().toString());
 		});
 		if (rrstore.save(req)) {
-			resp.reqid = req.reqid;
+			resp.reqId = req.reqId;
 			return rrstore.save(resp) && rrstore.commit();
 		}
 		return false;
@@ -951,7 +950,7 @@ public class CubeStore {
 
     {
         drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(RRTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
@@ -961,7 +960,7 @@ public class CubeStore {
             CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
 
         // comment below line if earlier ReqMatchSpec is to be used
-        mspecForDrillDownQuery = new TemplatedRequestComparator(drilldownQueryReqTemplate, jsonmapper);
+        mspecForDrillDownQuery = new TemplatedRequestComparator(drilldownQueryReqTemplate, jsonMapper);
     }
 
 }

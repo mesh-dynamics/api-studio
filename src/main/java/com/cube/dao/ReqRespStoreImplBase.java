@@ -35,10 +35,10 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 * looks up the state and caches it for quick retrieval
 	 */
 	@Override
-	public Optional<String> getCurrentCollection(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid) {
+	public Optional<String> getCurrentCollection(Optional<String> customerId, Optional<String> app,
+			Optional<String> instanceId) {
 
-		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getCollection());
+		return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getCollection());
 	}
 
 
@@ -47,9 +47,9 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordingCollection(java.util.Optional, java.util.Optional, java.util.Optional)
 	 */
 	@Override
-	public Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid) {
-		return getCurrentRecordOrReplay(customerid, app, instanceid).flatMap(rr -> rr.getRecordingCollection());
+	public Optional<String> getCurrentRecordingCollection(Optional<String> customerId, Optional<String> app,
+			Optional<String> instanceId) {
+		return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getRecordingCollection());
 	}
 
 	@Override
@@ -65,21 +65,21 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 * looks up the state and caches it for quick retrieval
 	 */
 	@Override
-	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid) {
+	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
+			Optional<String> instanceId) {
 
-		CollectionKey ckey = new CollectionKey(customerid.orElse(""), app.orElse(""), instanceid.orElse(""));
+		CollectionKey ckey = new CollectionKey(customerId.orElse(""), app.orElse(""), instanceId.orElse(""));
 
 		// in this case matching has to be exact. Null values should match empty strings
-		Optional<String> ncustomerid = customerid.or(() -> Optional.of(""));
+		Optional<String> ncustomerid = customerId.or(() -> Optional.of(""));
 		Optional<String> napp = app.or(() -> Optional.of(""));
-		Optional<String> ninstanceid = instanceid.or(() -> Optional.of(""));
+		Optional<String> ninstanceid = instanceId.or(() -> Optional.of(""));
         Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey);
 		//Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
-		String customerAppInstance = "Cust :: " + customerid.orElse("") + " App :: " + app.orElse("") +
-            "Instance :: " + instanceid.orElse("");
+		String customerAppInstance = "Cust :: " + customerId.orElse("") + " App :: " + app.orElse("") +
+            "Instance :: " + instanceId.orElse("");
 
-		//LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerid.orElse(""), app.orElse(""), instanceid.orElse("")));
+		//LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerId.orElse(""), app.orElse(""), instanceId.orElse("")));
 		return cachedrr.map(cachedRRVal -> {
 		    LOGGER.info("Retrieved Record/Replay from Cache for " + customerAppInstance + " :: " + cachedRRVal.toString());
 		    return cachedRRVal;
@@ -109,9 +109,9 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#invalidateCurrentCollectionCache()
 	 */
-	public void invalidateCurrentCollectionCache(String customerid, String app,
-			String instanceid) {
-		CollectionKey ckey = new CollectionKey(customerid, app, instanceid);
+	public void invalidateCurrentCollectionCache(String customerId, String app,
+			String instanceId) {
+		CollectionKey ckey = new CollectionKey(customerId, app, instanceId);
         removeCollectionKey(ckey);
 		//currentCollectionMap.remove(ckey);
 	}
@@ -126,7 +126,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 */
 	@Override
 	public boolean saveReplay(Replay replay) {
-		invalidateCurrentCollectionCache(replay.customerid, replay.app, replay.instanceid);
+		invalidateCurrentCollectionCache(replay.customerId, replay.app, replay.instanceId);
 		return true;
 	}
 
@@ -137,7 +137,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 */
 	@Override
 	public boolean saveRecording(Recording recording) {
-		invalidateCurrentCollectionCache(recording.customerid, recording.app, recording.instanceid);
+		invalidateCurrentCollectionCache(recording.customerId, recording.app, recording.instanceId);
 		return true;
 	}
 
@@ -146,21 +146,21 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	static protected class CollectionKey {
 
 		/**
-		 * @param customerid
+		 * @param customerId
 		 * @param app
-		 * @param instanceid
+		 * @param instanceId
 		 */
-		private CollectionKey(String customerid, String app, String instanceid) {
+		private CollectionKey(String customerId, String app, String instanceId) {
 			super();
-			this.customerid = customerid;
+			this.customerId = customerId;
 			this.app = app;
-			this.instanceid = instanceid;
+			this.instanceId = instanceId;
 		}
 
 		@Override
 		public String toString() {
-            return MoreObjects.toStringHelper(this).add("customerId" ,  customerid).add("app" , app)
-                .add("instanceId" , instanceid).toString();
+            return MoreObjects.toStringHelper(this).add("customerId" ,  customerId).add("app" , app)
+                .add("instanceId" , instanceId).toString();
         }
 
 		/* (non-Javadoc)
@@ -171,8 +171,8 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + ((app == null) ? 0 : app.hashCode());
-			result = prime * result + ((customerid == null) ? 0 : customerid.hashCode());
-			result = prime * result + ((instanceid == null) ? 0 : instanceid.hashCode());
+			result = prime * result + ((customerId == null) ? 0 : customerId.hashCode());
+			result = prime * result + ((instanceId == null) ? 0 : instanceId.hashCode());
 			return result;
 		}
 
@@ -198,26 +198,26 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 			} else if (!app.equals(other.app)) {
 				return false;
 			}
-			if (customerid == null) {
-				if (other.customerid != null) {
+			if (customerId == null) {
+				if (other.customerId != null) {
 					return false;
 				}
-			} else if (!customerid.equals(other.customerid)) {
+			} else if (!customerId.equals(other.customerId)) {
 				return false;
 			}
-			if (instanceid == null) {
-				if (other.instanceid != null) {
+			if (instanceId == null) {
+				if (other.instanceId != null) {
 					return false;
 				}
-			} else if (!instanceid.equals(other.instanceid)) {
+			} else if (!instanceId.equals(other.instanceId)) {
 				return false;
 			}
 			return true;
 		}
 
-		final String customerid;
+		final String customerId;
 		final String app;
-		final String instanceid;
+		final String instanceId;
 	}
 
 	// map from (cust, app, instance) -> collection. collection is empty if there is no current recording or replay

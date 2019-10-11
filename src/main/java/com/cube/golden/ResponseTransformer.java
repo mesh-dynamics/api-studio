@@ -28,7 +28,7 @@ public class ResponseTransformer {
 
     /*
     * takes in Responses from the recording (golden) and replay and applies the operations given
-    * returns the modified Response with the given collection id and a generated reqid
+    * returns the modified Response with the given collection id and a generated reqId
     */
     public Optional<String> transformResponse(String recordResponseBody,
                                               String replayResponseBody,

@@ -307,21 +307,21 @@ public class JsonComparator implements Comparator {
 
 	public static void main(String[] args) throws Exception {
 		Config config = new Config();
-		ObjectMapper jsonmapper = config.jsonmapper;
-		ArrayNode root = jsonmapper.createArrayNode();
-		ObjectNode elem = jsonmapper.createObjectNode();
+		ObjectMapper jsonMapper = config.jsonMapper;
+		ArrayNode root = jsonMapper.createArrayNode();
+		ObjectNode elem = jsonMapper.createObjectNode();
 		root.add(elem);
 		elem.put("op", "ADD");
 		elem.put("path", "/a");
-		JsonNode val = jsonmapper.getNodeFactory().numberNode(1);
+		JsonNode val = jsonMapper.getNodeFactory().numberNode(1);
 		elem.set("value", val);
 
-		Diff diff = jsonmapper.treeToValue(elem, Diff.class);
+		Diff diff = jsonMapper.treeToValue(elem, Diff.class);
 		System.out.println(diff.toString());
-		Diff[] diffarr = jsonmapper.treeToValue(root, Diff[].class);
+		Diff[] diffarr = jsonMapper.treeToValue(root, Diff[].class);
 		System.out.println(Arrays.toString(diffarr));
-		System.out.println(jsonmapper.writeValueAsString(diff));
-		System.out.println(jsonmapper.writeValueAsString(diffarr));
+		System.out.println(jsonMapper.writeValueAsString(diff));
+		System.out.println(jsonMapper.writeValueAsString(diffarr));
 
 	}
 }
