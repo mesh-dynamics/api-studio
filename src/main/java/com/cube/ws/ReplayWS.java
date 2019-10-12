@@ -222,6 +222,12 @@ public class ReplayWS {
         Optional<Double> samplerate = Optional.ofNullable(formParams.getFirst("samplerate")).flatMap(v -> Utils.strToDouble(v));
         List<String> intermediateServices = Optional.ofNullable(formParams.get("intermservice")).orElse(new ArrayList<>());
 
+        if (!formParams.containsKey("userid")) {
+            return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userid Not Specified"))).toString()).build();
+        }
+
+        String userid = formParams.getFirst("userid");
+
         Optional<Recording> recordingOpt = rrstore.getRecording(recordingid);
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String.format("Cannot init Replay since cannot find recording for id %s", recordingid));
@@ -236,7 +242,7 @@ public class ReplayWS {
         if (!running_replays.isEmpty()) {
             return Response.status(Status.FORBIDDEN).entity((new JSONObject(Map.of("Force Complete", new JSONArray(running_replays)))).toString()).build();
         }
-        
+
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
             Optional.ofNullable(recording.instanceid));
@@ -254,7 +260,7 @@ public class ReplayWS {
 
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
-                        return ReplayDriver.initReplay(e, recording.customerid, recording.app, recording.instanceid, recording.collection,
+                        return ReplayDriver.initReplay(e, recording.customerid, recording.app, recording.instanceid, recording.collection, userid,
                             reqids, rrstore, async, paths, null, samplerate, intermediateServices,templateSetVersion)
                             .map(replay -> {
                                 String json;

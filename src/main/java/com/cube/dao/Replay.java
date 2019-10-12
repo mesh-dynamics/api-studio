@@ -49,6 +49,7 @@ public class Replay {
      * @param app
      * @param instanceid
      * @param collection
+     * @param userid
      * @param reqids
      * @param replayid
      * @param async
@@ -56,7 +57,7 @@ public class Replay {
      * @param status
      * @param samplerate
      */
-	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
+	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, String userid, List<String> reqids,
                   String replayid, boolean async, Optional<String> templateVersion, ReplayStatus status,
                   List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
                   Optional<Double> samplerate, List<String> intermediateServices) {
@@ -66,6 +67,7 @@ public class Replay {
 		this.app = app;
 		this.instanceid = instanceid;
 		this.collection = collection;
+		this.userid = userid;
 		this.reqids = reqids;
 		this.replayid = replayid;
 		this.async = async;
@@ -89,6 +91,7 @@ public class Replay {
 	    app = "";
 	    instanceid = "";
 	    collection = "";
+	    userid = "";
 	    replayid = "";
 	    async = false;
 	    samplerate = Optional.empty();
@@ -121,6 +124,8 @@ public class Replay {
 	public final String instanceid;
     @JsonProperty("collect")
 	public final String collection;
+    @JsonProperty("userid")
+    public final String userid;
     @JsonProperty("reqids")
 	public final List<String> reqids;
     @JsonProperty("templateVer")
