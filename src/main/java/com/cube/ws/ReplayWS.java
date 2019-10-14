@@ -235,7 +235,7 @@ public class ReplayWS {
         }
 
         Recording recording = recordingOpt.get();
-        
+
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
             Optional.ofNullable(recording.instanceid));
