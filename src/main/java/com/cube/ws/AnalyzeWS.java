@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,6 +59,7 @@ import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.cube.dao.Request;
 import com.cube.dao.Result;
 import com.cube.drivers.Analyzer;
 import com.cube.golden.RecordingUpdate;
@@ -421,6 +423,38 @@ public class AnalyzeWS {
             "recordReqId:replayId :: " + recordReqId + ":" + replayId).build());
     }
 
+    @GET
+    @Path("analysisResNoTrace/{replayId}/{recordReqId}")
+    public Response getAnalysisResultWithoutTrace(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,
+                                      @PathParam("replayId") String replayId) {
+        Optional<Analysis.ReqRespMatchResult> matchResult =
+            rrstore.getAnalysisMatchResult(recordReqId, replayId);
+        return matchResult.map(matchRes -> {
+            Optional<Request> request = rrstore.getRequest(recordReqId);
+            Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId);
+            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayreqid.flatMap(rrstore::getResponse);
+
+            Optional<String> diff  = Optional.of(matchRes.diff);
+            MatchRes matchResFinal = new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
+                matchRes.respmt, matchRes.path,
+                request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
+                request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
+                diff, recordedResponse, replayedResponse);
+
+            String resultJson = null;
+            try {
+                resultJson = jsonmapper.writeValueAsString(matchResFinal);
+            } catch (JsonProcessingException e) {
+                return Response.serverError()
+                    .entity( (new JSONObject(Map.of("msg"
+                        , "Json Processing Exception" , "error" , e.getMessage()))).toString()).build();
+            }
+            return Response.ok().type(MediaType.
+                APPLICATION_JSON).entity(resultJson).build();
+        }).orElse(Response.serverError().entity((new JSONObject(Map.of("msg" , "No Analysis Match Result Found"))).toString()).build());
+    }
+
+
     /**
      * Return Time Line results for a given customer id , app combo
      * Optional Parameters include restriction on <i>collection</i> id (later we should be able to specify
@@ -514,12 +548,14 @@ public class AnalyzeWS {
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
+        String[] app = {""};
 
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
             Result<Analysis.ReqRespMatchResult> result = rrstore.getAnalysisMatchResults(replayId, service, path,
                 reqmt, respmt, start, nummatches);
             numFound[0] = result.numFound;
+            app[0] = replay.app;
             List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
             List<String> reqids = res.stream().map(r -> r.recordreqid).flatMap(Optional::stream).collect(Collectors.toList());
 
@@ -555,7 +591,7 @@ public class AnalyzeWS {
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(new MatchResults(matchResList, numFound[0]));
+            json = jsonmapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0]));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Match results list to Json for replayid %s, app %s, " +
@@ -1026,13 +1062,15 @@ public class AnalyzeWS {
     }
 
     static class MatchResults {
-        public MatchResults(List<MatchRes> res, long numFound) {
+        public MatchResults(List<MatchRes> res, long numFound, String app) {
             this.res = res;
             this.numFound = numFound;
+            this.app = app;
         }
 
         public final List<MatchRes> res;
 	    public final long numFound;
+	    public String app;
     }
 
     static class RespAndMatchResults {
