@@ -235,14 +235,7 @@ public class ReplayWS {
         }
 
         Recording recording = recordingOpt.get();
-
-        // TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
-        List running_replays = rrstore.getReplay(Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
-            Optional.ofNullable(recording.instanceid), ReplayStatus.Running).map(replay -> replay.replayid).collect(Collectors.toList()) ;
-        if (!running_replays.isEmpty()) {
-            return Response.status(Status.FORBIDDEN).entity((new JSONObject(Map.of("Force Complete", new JSONArray(running_replays)))).toString()).build();
-        }
-
+        
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
             Optional.ofNullable(recording.instanceid));
