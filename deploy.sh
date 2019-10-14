@@ -61,7 +61,7 @@ start_record() {
 
 	if [ $USER_INP_TEMPLATE_VERSION = "y" ]; then
     local TEMPLATE_VERSION=$(cat "$TEMPLATE_VERSION_TEMP_FILE")
- 		echo $TEMPLATE_VERSION
+ 		echo "Template version : $TEMPLATE_VERSION"
 	else
 		echo "Enter Template version"
 		read TEMPLATE_VERSION
@@ -120,12 +120,6 @@ replay_setup() {
 }
 
 replay() {
-	if [ -z "$1" ]; then
-		echo "Enter collection name to replay"
-		read COLLECTION_NAME
-	else
-		COLLECTION_NAME=$1
-	fi
 	if [ ! -z "$REPLAY_PATHS" ]; then
 		REPLAY_PATHS=$(echo $REPLAY_PATHS | tr "," "\n")
 		for path in $REPLAY_PATHS
@@ -137,19 +131,28 @@ replay() {
 	else
 		BODY="endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID"
 	fi
-	#Make replay init call and get replay ID
-	REPLAY_ID=$(curl -X POST \
-	http://$GATEWAY_URL/rs/init/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME \
-	-H 'Content-Type: application/x-www-form-urlencoded' \
-	-H 'cache-control: no-cache' \
-	-H "Host: $CUBE_HOST" \
-	-d "$BODY" | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
-	#Make reply start call
-	curl -f -X POST \
-  http://$GATEWAY_URL/rs/start/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
+
+	if [ -e "$RECORDING_ID_TEMP_FILE" ]; then
+		echo "Picking up Recording Id from file $RECORDING_ID_TEMP_FILE. Okay ? y/n"
+		read USER_INP_RECORDING_ID
+	else
+		USER_INP_RECORDING_ID="n"
+	fi
+
+	if [ $USER_INP_RECORDING_ID = "y" ]; then
+    local RECORDING_ID=$(cat "$RECORDING_ID_TEMP_FILE")
+ 		echo "Recording id for replay : $RECORDING_ID"
+	else
+		echo "Enter Recording Id"
+		read RECORDING_ID
+	fi
+
+  REPLAY_ID=$(curl -f -X POST \
+  http://$GATEWAY_URL/rs/start/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
-	-H "Host: $CUBE_HOST"
+	-H "Host: $CUBE_HOST" \
+	-d "$BODY" | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
