@@ -262,18 +262,16 @@ public class ReplayWS {
                         // TODO: introduce response transforms as necessary
                         return ReplayDriver.initReplay(e, recording.customerid, recording.app, recording.instanceid, recording.collection, userid,
                             reqids, rrstore, async, paths, null, samplerate, intermediateServices,templateSetVersion)
-                            .map(replay -> {
+                            .map(replayDriver -> {
                                 String json;
+                                Replay replay = replayDriver.getReplay();
                                 try {
                                     json = jsonmapper.writeValueAsString(replay);
-                                    Optional<ReplayDriver> replayDriver = ReplayDriver.getReplayDriver(replay.replayid, this.rrstore, this.replayResultCache);
-                                    return replayDriver.map(r -> {
-                                        boolean status = r.start();
-                                        if (status) {
-                                            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                                        }
-                                        return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
-                                    }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replay.replayid).build());
+                                    boolean status = replayDriver.start();
+                                    if (status) {
+                                        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                                    }
+                                    return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
                                 } catch (JsonProcessingException ex) {
                                     LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayid), ex);
                                     return Response.serverError().build();
