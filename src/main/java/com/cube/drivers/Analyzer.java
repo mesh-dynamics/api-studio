@@ -482,6 +482,7 @@ public class Analyzer {
     }
 
 
+    private static int TRACEBATCHSIZE = 20; // for batching of TRACEID queries
 
 
     /**
@@ -535,7 +536,7 @@ public class Analyzer {
         return replay.flatMap(r -> {
             // get request in batches ... for batching of corresponding trace id queries
             // TODO need to get the batch size from some config
-            Pair<Stream<List<Event>> , Long> result = r.getRequestEventBatches(20 , rrstore);
+            Pair<Stream<List<Event>> , Long> result = r.getRequestEventBatches(TRACEBATCHSIZE , rrstore);
 
             // if version is passed in analyze request, use it. Else, use the version associated
             // with the Replay
