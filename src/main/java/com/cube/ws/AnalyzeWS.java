@@ -548,7 +548,7 @@ public class AnalyzeWS {
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
-        String[] app = {""};
+        String[] app = {"" , ""};
 
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
@@ -556,6 +556,7 @@ public class AnalyzeWS {
                 reqmt, respmt, start, nummatches);
             numFound[0] = result.numFound;
             app[0] = replay.app;
+            app[1] = replay.templateVersion.orElse("DEFAULT");
             List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
             List<String> reqids = res.stream().map(r -> r.recordreqid).flatMap(Optional::stream).collect(Collectors.toList());
 
@@ -591,7 +592,7 @@ public class AnalyzeWS {
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0]));
+            json = jsonmapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Match results list to Json for replayid %s, app %s, " +
@@ -1062,15 +1063,17 @@ public class AnalyzeWS {
     }
 
     static class MatchResults {
-        public MatchResults(List<MatchRes> res, long numFound, String app) {
+        public MatchResults(List<MatchRes> res, long numFound, String app, String templateVersion) {
             this.res = res;
             this.numFound = numFound;
             this.app = app;
+            this.templateVersion = templateVersion;
         }
 
         public final List<MatchRes> res;
 	    public final long numFound;
 	    public String app;
+	    public String templateVersion;
     }
 
     static class RespAndMatchResults {
