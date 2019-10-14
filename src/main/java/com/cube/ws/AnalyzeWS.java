@@ -436,7 +436,7 @@ public class AnalyzeWS {
 
             Optional<String> diff  = Optional.of(matchRes.diff);
             MatchRes matchResFinal = new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
-                matchRes.respmt, matchRes.path,
+                matchRes.respmt, matchRes.service, matchRes.path,
                 request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
                 request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
                 diff, recordedResponse, replayedResponse);
@@ -583,7 +583,7 @@ public class AnalyzeWS {
                 }
 
                 return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
-                    matchRes.respmt, matchRes.path,
+                    matchRes.respmt, matchRes.service, matchRes.path,
                     request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
                     request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
                     diff, recordResponse, replayResponse);
@@ -1024,6 +1024,7 @@ public class AnalyzeWS {
                         Comparator.MatchType reqmt,
                         int nummatch,
                         Comparator.MatchType respmt,
+                        String service,
                         String path,
                         MultivaluedMap<String, String> qparams,
                         MultivaluedMap<String, String> fparams,
@@ -1035,6 +1036,7 @@ public class AnalyzeWS {
             this.reqmt = reqmt;
             this.nummatch = nummatch;
             this.respmt = respmt;
+            this.service = service;
             this.path = path;
             this.qparams = qparams;
             this.fparams = fparams;
@@ -1049,6 +1051,7 @@ public class AnalyzeWS {
         public final Comparator.MatchType reqmt;
         public final int nummatch;
         public final Comparator.MatchType respmt;
+        public final String service;
         public final String path;
         @JsonDeserialize(as=MultivaluedHashMap.class)
         public final MultivaluedMap<String, String> qparams; // query params
