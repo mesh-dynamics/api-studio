@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+// TODO: Event redesign: This can be removed
 public class Request extends RRBase {
     private static final Logger LOGGER = LogManager.getLogger(Request.class);
 
@@ -39,7 +40,7 @@ public class Request extends RRBase {
 
 
 	/**
-	 * @param path
+	 * @param apiPath
 	 * @param reqId
 	 * @param queryParams
 	 * @param meta

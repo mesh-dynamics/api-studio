@@ -17,6 +17,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.cube.dao.Event.EventType;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-09-23
@@ -32,20 +34,20 @@ public class EventQuery {
 
     private final String customerId;
     private final String app;
-    private final EventType eventType;
+    private final List<EventType> eventTypes;
 
-    private final Optional<String> service;
+    private final List<String> services;
     private final Optional<String> instanceId;
     private final Optional<String> collection;
 
-    private final Optional<String> traceId;
+    private final List<String> traceIds;
     private final Optional<Event.RunType> runType;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
     private final Optional<Instant> timestamp;
 
-    private final Optional<List<String>> reqIds;
-    private final Optional<List<String>> paths;
+    private final List<String> reqIds;
+    private final List<String> paths;
     private final Optional<Integer> payloadKey;
     private final Optional<Integer> offset;
     private final Optional<Integer> limit;
@@ -54,12 +56,12 @@ public class EventQuery {
     public static class Builder {
         private final String customerId;
         private final String app;
-        private final EventType eventType;
+        private final List<EventType> eventTypes;
 
-        private String service = null;
+        private List<String> services = Collections.emptyList();
         private String instanceId = null;
         private String collection = null;
-        private String traceId = null;
+        private List<String> traceIds = Collections.emptyList();
         private Event.RunType runType = null;
         private String spanId = null;
         private String parentSpanId = null;
@@ -71,17 +73,32 @@ public class EventQuery {
         private Integer limit = null;
         private Boolean sortOrderAsc = null;
 
+        //@JsonCreator
+        public Builder(String customerId,
+                       String app,
+                       EventType eventType) {
+            this.customerId = customerId;
+            this.app = app;
+            this.eventTypes = List.of(eventType);
+        }
+
         @JsonCreator
         public Builder(@JsonProperty("customerId") String customerId,
                        @JsonProperty("app") String app,
-                       @JsonProperty("eventType") EventType eventType) {
+                       @JsonProperty("eventTypes") List<EventType> eventTypes) {
             this.customerId = customerId;
             this.app = app;
-            this.eventType = eventType;
+            this.eventTypes = eventTypes;
         }
 
         public Builder withService(String val) {
-            service = val;
+            services = List.of(val);
+            return this;
+        }
+
+
+        public Builder withServices(List<String> vals) {
+            services = vals;
             return this;
         }
 
@@ -96,9 +113,15 @@ public class EventQuery {
         }
 
         public Builder withTraceId(String val) {
-            traceId = val;
+            traceIds = List.of(val);
             return this;
         }
+
+        public Builder withTraceIds(List<String> vals) {
+            traceIds = vals;
+            return this;
+        }
+
 
         public Builder withRunType(Event.RunType val) {
             runType = val;
@@ -120,8 +143,18 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withReqId(String val) {
+            reqIds = List.of(val);
+            return this;
+        }
+
         public Builder withReqIds(List<String> val) {
             reqIds = val;
+            return this;
+        }
+
+        public Builder withPath(String val) {
+            paths = List.of(val);
             return this;
         }
 
@@ -159,17 +192,17 @@ public class EventQuery {
     private EventQuery(Builder builder) {
         customerId = builder.customerId;
         app = builder.app;
-        eventType = builder.eventType;
-        service = Optional.ofNullable(builder.service);
+        eventTypes = builder.eventTypes;
+        services = builder.services;
         instanceId = Optional.ofNullable(builder.instanceId);
         collection = Optional.ofNullable(builder.collection);
-        traceId = Optional.ofNullable(builder.traceId);
+        traceIds = builder.traceIds;
         runType = Optional.ofNullable(builder.runType);
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
         timestamp = Optional.ofNullable(builder.timestamp);
-        reqIds = Optional.ofNullable(builder.reqIds);
-        paths = Optional.ofNullable(builder.paths);
+        reqIds = builder.reqIds;
+        paths = builder.paths;
         payloadKey = Optional.ofNullable(builder.payloadKey);
         offset = Optional.ofNullable(builder.offset);
         limit = Optional.ofNullable(builder.limit);
@@ -184,33 +217,33 @@ public class EventQuery {
         return app;
     }
 
-    public EventType getEventType() {
-        return eventType;
+    public List<EventType> getEventTypes() {
+        return eventTypes;
     }
 
     public Optional<String> getCollection() {
         return collection;
     }
 
-    public Optional<String> getService() {
-        return service;
+    public List<String> getServices() {
+        return services;
     }
 
     public Optional<String> getInstanceId() {
         return instanceId;
     }
 
-    public Optional<String> getTraceId() {
-        return traceId;
+    public List<String> getTraceIds() {
+        return traceIds;
     }
 
     public Optional<Event.RunType> getRRType() { return runType; }
 
-    public Optional<List<String>> getReqIds() {
+    public List<String> getReqIds() {
         return reqIds;
     }
 
-    public Optional<List<String>> getPaths() {
+    public List<String> getPaths() {
         return paths;
     }
 
@@ -230,15 +263,5 @@ public class EventQuery {
         return sortOrderAsc;
     }
 
-    public enum EventType {
-        HTTPRequest,
-        HTTPResponse,
-        JavaRequest,
-        JavaResponse,
-        ThriftRequest,
-        ThriftResponse,
-        ProtoBufRequest,
-        ProtoBufResponse
-    }
 
 }

@@ -10,21 +10,25 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 
 import javax.ws.rs.core.MediaType;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.cube.agent.UtilException;
+
+import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate;
 
 /*
  * Created by IntelliJ IDEA.
@@ -38,19 +42,19 @@ public class JsonObj implements DataObj {
         this(jsonStrToObj(json, jsonMapper), jsonMapper);
     }
 
-    private JsonObj(Optional<JsonNode> root, ObjectMapper jsonMapper) {
+    private JsonObj(JsonNode root, ObjectMapper jsonMapper) {
         this.objRoot = root;
         this.jsonMapper = jsonMapper;
     }
 
     @Override
     public boolean isLeaf() {
-        return objRoot.map(JsonNode::isValueNode).orElse(true);
+        return objRoot.isValueNode() || objRoot.isMissingNode();
     }
 
     @Override
     public boolean isEmpty() {
-        return objRoot.isEmpty();
+        return objRoot.isMissingNode();
     }
 
     @Override
@@ -60,22 +64,42 @@ public class JsonObj implements DataObj {
 
     @Override
     public String getValAsString(String path) throws PathNotFoundException {
-        Optional<String> val = getNode(path).flatMap(this::nodeToString);
-        return val.orElseThrow(() -> new PathNotFoundException());
+        JsonNode node = getNode(path);
+        if (!node.isMissingNode()) {
+            return nodeToString(getNode(path));
+        } else {
+            throw new PathNotFoundException();
+        }
     }
 
     @Override
     public String serialize() {
+        // TODO: Not yet implemented
         return null;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return jsonMapper.writeValueAsString(objRoot);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(new ObjectMessage(Map.of("message", "Not able to serialize json",
+                "value", objRoot.toString())));
+            return objRoot.toString();
+        }
     }
 
     @Override
     public void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals) {
         // Using json pointer to handle proper escaping in case keys have special characters
         JsonPointer path = JsonPointer.compile("");
-        objRoot.ifPresent(root -> {
-            processNode(root, filter, vals, path);
-        });
+        processNode(objRoot, filter, vals, path);
+    }
+
+    @Override
+    public Comparator.MatchType compare(DataObj rhs, CompareTemplate template) {
+
+        return null;
     }
 
     /**
@@ -84,7 +108,7 @@ public class JsonObj implements DataObj {
      * @param mimetype
      */
     public boolean unwrapAsJson(String path, String mimetype) {
-        return objRoot.map(root -> unwrapAsJson(root, path, mimetype)).orElse(false);
+        return unwrapAsJson(objRoot, path, mimetype);
     }
 
     private boolean unwrapAsJson(JsonNode root, String path, String mimetype) {
@@ -132,30 +156,33 @@ public class JsonObj implements DataObj {
         }
     }
 
-    private static Optional<JsonNode> jsonStrToObj(String json, ObjectMapper jsonMapper) {
+    private static JsonNode jsonStrToObj(String json, ObjectMapper jsonMapper) {
         try {
-            return Optional.ofNullable(jsonMapper.readTree(json));
+            return jsonMapper.readTree(json);
         } catch (IOException e) {
             LOGGER.error("Not able to parse json: " + json);
-            return Optional.empty();
+            return MissingNode.getInstance();
         }
     }
 
-    private Optional<JsonNode> getNode(String path) {
-        return objRoot.map(obj -> obj.at(path))
-            .filter(val -> !val.isMissingNode());
+    private JsonNode getNode(String path) {
+        return objRoot.at(path);
     }
 
-    private Optional<String> nodeToString(JsonNode node) {
+    private String nodeToString(JsonNode node) {
         try {
-            return Optional.of(jsonMapper.writeValueAsString(node));
+            return jsonMapper.writeValueAsString(node);
         } catch (JsonProcessingException e) {
             LOGGER.error("Error in converting json node to string: " + node.toString());
-            return Optional.empty();
+            return node.toString();
         }
     }
 
 
-    private final Optional<JsonNode> objRoot;
+    private final JsonNode objRoot;
     private final ObjectMapper jsonMapper;
+
+    public JsonNode getRoot() {
+        return objRoot;
+    }
 }

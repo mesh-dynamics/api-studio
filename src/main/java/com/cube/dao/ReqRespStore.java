@@ -102,9 +102,11 @@ public interface ReqRespStore {
         MatchResultAggregate
     }
 
+    // TODO: Event redesign cleanup: This can be removed
 	boolean save(Request req);
 
-	boolean save(Response resp);
+    // TODO: Event redesign cleanup: This can be removed
+    boolean save(Response resp);
 
     boolean save(Event event);
 
@@ -114,6 +116,7 @@ public interface ReqRespStore {
 	 * @param nummatches - max number of matches
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
+    // TODO: Event redesign: This needs to be rewritten to get as event
 	Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches);
 
     /**
@@ -123,6 +126,7 @@ public interface ReqRespStore {
      * @param start - skip the first "start" number of matches (for paging)
      * @return the requests matching queryrequest based on the matching spec
      */
+    // TODO: Event redesign: This needs to be rewritten to get as event
     Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches,
                                 Optional<Integer> start);
 
@@ -130,18 +134,21 @@ public interface ReqRespStore {
 	 * @param reqId
 	 * @return the matching response on the reqId
 	 */
-	Optional<Response> getResponse(String reqId);
+    // TODO: Event redesign: This needs to be rewritten to get as event
+    Optional<Response> getResponse(String reqId);
 
     /**
      * @param reqId
      * @return the matching response on the reqId
      */
+    // TODO: Event redesign: This needs to be rewritten to get as event
     Optional<Request> getRequest(String reqId);
 
 	/**
 	 * @param requests
 	 * @return
 	 */
+    // TODO: Event redesign: This needs to be rewritten to get as event
 	Map<String, Response> getResponses(List<Request> requests);
 
 	/**
@@ -149,7 +156,11 @@ public interface ReqRespStore {
 	 * @return the response corresponding to the request matching in the db
 	 * to find the matching request, the reqId field of queryrequest is ignored
 	 */
+    // TODO: Event redesign cleanup: This can be removed
 	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
+
+
+	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
 
 	/**
@@ -161,7 +172,8 @@ public interface ReqRespStore {
 	 * @param runType
 	 * @return
 	 */
-	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
+    // TODO: Event redesign: This needs to be rewritten to get as event
+    Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
 			, List<String> paths, Event.RunType runType);
 
     Result<Event> getEvents(EventQuery eventQuery);
@@ -356,7 +368,7 @@ public interface ReqRespStore {
 
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param instanceid
 	 * @return For both record and replay, return the collection of the record stage
@@ -398,7 +410,7 @@ public interface ReqRespStore {
 	 * @param instanceid
 	 * @return
 	 */
-	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerid, Optional<String> app,
+	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceid);
 
 	/**
@@ -548,7 +560,8 @@ public interface ReqRespStore {
 	 * @param collectionId
 	 * @return
 	 */
-	Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
+    // TODO: Event redesign cleanup: This can be removed
+    Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
 			, String collectionId);
 
 	/**

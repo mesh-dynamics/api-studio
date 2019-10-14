@@ -79,6 +79,10 @@ public class Event {
 
     }
 
+    public static List<EventType> getRequestEventTypes() {
+        return requestEventTypes;
+    }
+
     public String getCollection() {
         return collection;
     }
@@ -120,8 +124,21 @@ public class Event {
 
     @JsonIgnore
     public boolean isRequestType() {
-        return eventType == EventType.HTTPRequest || eventType == EventType.JavaRequest
-            || eventType == EventType.ThriftRequest || eventType == EventType.ProtoBufRequest;
+        return requestEventTypes.contains(eventType);
+    }
+
+    public String getReqId() {
+        return reqId;
+    }
+
+    public String getPayloadAsString(Config config) {
+        parsePayLoad(config);
+        return payload.toString();
+    }
+
+    public DataObj getPayload(Config config) {
+        parsePayLoad(config);
+        return payload;
     }
 
     public enum EventType {
@@ -132,8 +149,30 @@ public class Event {
         ThriftRequest,
         ThriftResponse,
         ProtoBufRequest,
-        ProtoBufResponse
+        ProtoBufResponse;
+
+        public static EventType getResponseType(EventType eventType) {
+            switch (eventType) {
+                case HTTPRequest:
+                case HTTPResponse:
+                    return HTTPResponse;
+                case JavaRequest:
+                case JavaResponse:
+                    return JavaRequest; // JavaRequest itself has response. Check if JavaResponse can be removed
+                case ThriftRequest:
+                case ThriftResponse:
+                    return ThriftResponse;
+                case ProtoBufRequest:
+                case ProtoBufResponse:
+                    return ProtoBufResponse;
+                default:
+                    return HTTPResponse;
+            }
+        }
     }
+
+    public static List<EventType> requestEventTypes = List.of(EventType.HTTPRequest, EventType.JavaRequest,
+        EventType.ThriftRequest, EventType.ProtoBufRequest);
 
     public final String customerId;
     public final String app;

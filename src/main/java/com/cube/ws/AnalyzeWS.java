@@ -100,9 +100,7 @@ public class AnalyzeWS {
             Optional.ofNullable(formParams.getFirst("templateSet"));
 
 
-        Optional<Analysis> analysis = Analyzer
-            .analyze(replayid, tracefield, rrstore
-                , jsonMapper, requestComparatorCache, responseComparatorCache, templateVersion);
+        Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, templateVersion, config);
 
         return analysis.map(av -> {
             String json;
@@ -495,6 +493,7 @@ public class AnalyzeWS {
      */
     @GET
     @Path("analysisResByPath/{replayId}")
+    // TODO: Event redesign: This needs to be rewritten to get as event
     public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));

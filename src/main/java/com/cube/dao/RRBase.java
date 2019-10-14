@@ -22,6 +22,7 @@ import com.cube.ws.Config;
 
 import io.cube.agent.CommonUtils;
 
+// TODO: Event redesign: This can be removed
 public class RRBase {
 
 	public static final String REQIDPATH = "/reqId";

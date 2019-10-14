@@ -83,6 +83,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#save(com.cube.dao.ReqRespStore.Request)
      */
+    // TODO: Event redesign cleanup: This can be removed
     @Override
     public boolean save(Request req) {
 
@@ -247,13 +248,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, CUSTOMERIDF, eventQuery.getCustomerId());
         addFilter(query, APPF, eventQuery.getApp());
-        addFilter(query, SERVICEF, eventQuery.getService());
+        addFilter(query, SERVICEF, eventQuery.getServices());
         addFilter(query, COLLECTIONF, eventQuery.getCollection());
-        addFilter(query, TRACEIDF, eventQuery.getTraceId());
+        addFilter(query, TRACEIDF, eventQuery.getTraceIds());
         addFilter(query, RRTYPEF, eventQuery.getRRType().map(Object::toString));
-        addFilter(query, REQIDF, eventQuery.getReqIds().orElse(Collections.emptyList()));
-        addFilter(query, PATHF, eventQuery.getPaths().orElse(Collections.emptyList()));
-        addFilter(query, EVENTTYPEF, Optional.ofNullable(eventQuery.getEventType()).map(type -> type.toString()));
+        addFilter(query, REQIDF, eventQuery.getReqIds());
+        addFilter(query, PATHF, eventQuery.getPaths());
+        addFilter(query, EVENTTYPEF, eventQuery.getEventTypes().stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilterInt(query, PAYLOADKEYF, eventQuery.getPayloadKey());
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
 

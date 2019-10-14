@@ -6,6 +6,8 @@
 
 package com.cube.core;
 
+import com.cube.dao.DataObj;
+import com.cube.dao.JsonObj;
 import com.cube.dao.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -38,5 +40,16 @@ public class TemplatedResponseComparator extends TemplatedRRComparator implement
     public Comparator.Match compare(Response lhs, Response rhs) {
         return lhs.compare(rhs, template, metaFieldtemplate, hdrFieldTemplate, bodyComparator);
     }
+
+    @Override
+    public CompareTemplate getCompareTemplate() {
+        return template;
+    }
+
+    @Override
+    public Comparator.Match compare(DataObj lhs, DataObj rhs) {
+        return bodyComparator.compare(lhs, rhs);
+    }
+
 
 }

@@ -107,6 +107,7 @@ public class RecordingUpdate {
     /*
     * apply the operations on a recording collection
      */
+    // TODO: Event redesign: This needs to be rewritten to get as event
     public boolean applyRecordingOperationSet(String replayId, String newCollectionName,
                                                 String recordingOperationSetId, Recording originalRec) {
 

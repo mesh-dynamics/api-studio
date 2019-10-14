@@ -11,6 +11,7 @@ import java.util.*;
 import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,6 +24,8 @@ import com.flipkart.zjsonpatch.JsonDiff;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.CompareTemplate.DataType;
+import com.cube.dao.DataObj;
+import com.cube.dao.JsonObj;
 import com.cube.ws.Config;
 
 /**
@@ -71,59 +74,81 @@ public class JsonComparator implements Comparator {
 		    return new Match(MatchType.Exception, e.getMessage(), result);
         }
 
-		// first validate the rhs (new json)
-		validate(rhsroot, result);
+		return compare(lhsroot, rhsroot);
 
-		// Now diff new (rhs) with the old (lhs)
-		EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,
-				DiffFlags.OMIT_MOVE_OPERATION,
-				DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE);
-		JsonNode patch = JsonDiff.asJson(lhsroot, rhsroot, flags);
-		Diff[] diffs;
-
-		try {
-			diffs = jsonMapper.treeToValue(patch, Diff[].class);
-		} catch (JsonProcessingException e) {
-			LOGGER.error("Error in parsing diffs: " + patch.toString(), e);
-			return new Match(MatchType.Exception, e.getMessage(), result);
-		}
-
-		int numerrs = result.size();
-		for (var diff : diffs) {
-			TemplateEntry rule = template.getRule(diff.path);
-			switch (diff.op) {
-			case Diff.ADD:
-			case Diff.REPLACE:
-				diff.resolution = matchVals(rule, diff.fromValue, diff.value);
-				break;
-			case Diff.REMOVE:
-				if (rule.pt == PresenceType.Optional) {
-					diff.resolution = Resolution.OK_Optional;
-				} else if (rule.pt == PresenceType.Default) {
-					diff.resolution = Resolution.OK_DefaultPT;
-				} else {
-					diff.resolution = Resolution.ERR_Required;
-				}
-				break;
-			default:
-				LOGGER.error("Unexpected op in diff, ignoring: " + diff.op);
-			}
-			if (diff.resolution.isErr()) {
-				numerrs++;
-			}
-
-			// remove duplicates
-			result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
-			result.add(diff);
-		}
-
-		String matchmeta = "JsonDiff";
-		MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
-			(diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
-		return new Match(mt, matchmeta, result);
 	}
 
-	/**
+	private Match compare(JsonNode lhsRoot, JsonNode rhsRoot) {
+        List<Diff> result = new ArrayList<>();
+
+        // first validate the rhs (new json)
+        validate(rhsRoot, result);
+
+        // Now diff new (rhs) with the old (lhs)
+        EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,
+            DiffFlags.OMIT_MOVE_OPERATION,
+            DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE);
+        JsonNode patch = JsonDiff.asJson(lhsRoot, rhsRoot, flags);
+        Diff[] diffs;
+
+        try {
+            diffs = jsonMapper.treeToValue(patch, Diff[].class);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error in parsing diffs: " + patch.toString(), e);
+            return new Match(MatchType.Exception, e.getMessage(), result);
+        }
+
+        int numerrs = result.size();
+        for (var diff : diffs) {
+            TemplateEntry rule = template.getRule(diff.path);
+            switch (diff.op) {
+                case Diff.ADD:
+                case Diff.REPLACE:
+                    diff.resolution = matchVals(rule, diff.fromValue, diff.value);
+                    break;
+                case Diff.REMOVE:
+                    if (rule.pt == PresenceType.Optional) {
+                        diff.resolution = Resolution.OK_Optional;
+                    } else if (rule.pt == PresenceType.Default) {
+                        diff.resolution = Resolution.OK_DefaultPT;
+                    } else {
+                        diff.resolution = Resolution.ERR_Required;
+                    }
+                    break;
+                default:
+                    LOGGER.error("Unexpected op in diff, ignoring: " + diff.op);
+            }
+            if (diff.resolution.isErr()) {
+                numerrs++;
+            }
+
+            // remove duplicates
+            result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
+            result.add(diff);
+        }
+
+        String matchmeta = "JsonDiff";
+        MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
+            (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
+        return new Match(mt, matchmeta, result);
+    }
+
+    @Override
+    public Match compare(DataObj lhs, DataObj rhs) {
+        if ((lhs instanceof JsonObj) && (rhs instanceof JsonObj)) {
+            JsonObj lhsObj = (JsonObj) lhs;
+            JsonObj rhsObj = (JsonObj) rhs;
+            return compare(lhsObj.getRoot(), rhsObj.getRoot());
+        } else {
+            ObjectMessage objectMessage = new ObjectMessage(Map.of("message", "Payload not of json type in JsonComparator", "lhs",
+                lhs.toString(), "rhs", rhs.toString()));
+            List<Diff> result = new ArrayList<>();
+            LOGGER.error(objectMessage);
+            return new Match(MatchType.Exception, objectMessage.getFormattedMessage(), result);
+        }
+    }
+
+    /**
 	 * @param root
 	 * @param resdiffs
 	 * Validate if any required element are missing, validate data types and formats
