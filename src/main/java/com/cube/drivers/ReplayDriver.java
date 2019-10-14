@@ -226,13 +226,7 @@ public class ReplayDriver  {
         return rrstore.getReplay(replayid);
     }
 
-
-    public static Optional<ReplayDriver> getReplayDriver(String replayid, ReqRespStore rrstore, ReplayResultCache replayResultCache) {
-        return getStatus(replayid, rrstore).map(r -> new ReplayDriver(r, rrstore,replayResultCache));
-    }
-
-
-    public static Optional<Replay> initReplay(String endpoint, String customerid, String app, String instanceid,
+    public static Optional<ReplayDriver> initReplay(String endpoint, String customerid, String app, String instanceid,
                                               String collection, List<String> reqids,
                                               ReqRespStore rrstore, boolean async, List<String> paths,
                                               JSONObject xfms, Optional<Double> samplerate, List<String> intermediateServices, Optional<String> templateSetVersion) {
@@ -240,11 +234,14 @@ public class ReplayDriver  {
         ReplayDriver replaydriver = new ReplayDriver(endpoint, customerid, app, instanceid, collection,
                 reqids, rrstore, replayid, async, Replay.ReplayStatus.Init, paths, samplerate, intermediateServices, templateSetVersion);
         if (rrstore.saveReplay(replaydriver.replay)) {
-            return Optional.of(replaydriver.replay);
+            return Optional.of(replaydriver);
         }
         return Optional.empty();
     }
 
+    public Replay getReplay() {
+        return replay;
+    }
 
     private static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
     private static int BATCHSIZE = 40; // this controls the number of requests in a batch that could be sent in async fashion
