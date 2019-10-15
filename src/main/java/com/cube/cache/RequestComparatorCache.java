@@ -2,9 +2,9 @@ package com.cube.cache;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import com.cube.core.JsonComparator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,15 +25,18 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.ws.Config;
 
+// TODO: Event redesign: This and ResponseComparatorCache can be replaced by a single ComparatorCache
 public class RequestComparatorCache {
     private static final Logger LOGGER = LogManager.getLogger(RequestComparatorCache.class);
 
     private TemplateCache templateCache;
 
     private LoadingCache<TemplateKey , RequestComparator> requestComparatorCache;
+    private LoadingCache<TemplateKey, JsonComparator> functionComparatorCache;
 
     private RequestComparator defaultRequestComparatorWithoutReqId;
     private RequestComparator defaultRequestComparatorWithReqId;
+    private JsonComparator defaultFunctionComparator;
 
 
     public RequestComparatorCache(TemplateCache cache , ObjectMapper jsonMapper) {
@@ -41,11 +44,12 @@ public class RequestComparatorCache {
 
         CompareTemplate defaultTemplateWithoutReqId = new CompareTemplate();
         CompareTemplate defaultTemplateWithReqId = new CompareTemplate();
+        CompareTemplate defaultFunctionTemplate = new CompareTemplate();
         List<TemplateEntry> defaultRules = new ArrayList<>();
         defaultRules.add(new TemplateEntry(PATHPATH,DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(QPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(FPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(RRTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(RUNTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(CUSTOMERIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(APPPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(COLLECTIONPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
@@ -57,11 +61,15 @@ public class RequestComparatorCache {
         });
         defaultTemplateWithReqId.addRule(new TemplateEntry(REQIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
 
+        //Function Template
+        defaultFunctionTemplate.addRule(new TemplateEntry(ARGSPATH, DataType.NrptArray, PresenceType.Required, ComparisonType.Equal));
+
 
         defaultRequestComparatorWithoutReqId = new TemplatedRequestComparator(defaultTemplateWithoutReqId
                 , jsonMapper);
         defaultRequestComparatorWithReqId = new TemplatedRequestComparator(defaultTemplateWithReqId
                 , jsonMapper);
+        defaultFunctionComparator = new JsonComparator(defaultFunctionTemplate, jsonMapper);
 
         this.requestComparatorCache = CacheBuilder.newBuilder().maximumSize(100).build(
                 new CacheLoader<>() {
@@ -72,6 +80,17 @@ public class RequestComparatorCache {
                         return new TemplatedRequestComparator(template , jsonMapper);
                     }
                 }
+        );
+
+        this.functionComparatorCache = CacheBuilder.newBuilder().maximumSize(100).build(
+            new CacheLoader<>() {
+                @Override
+                public JsonComparator load(TemplateKey templateKey) throws Exception {
+                    CompareTemplate template = templateCache.fetchCompareTemplate(templateKey);
+                    LOGGER.info("Successfully loaded into cache request comparator for key :: " + templateKey);
+                    return new JsonComparator(template , jsonMapper);
+                }
+            }
         );
     }
 
@@ -94,13 +113,28 @@ public class RequestComparatorCache {
         }
     }
 
+    public JsonComparator getFunctionComparator(TemplateKey key) {
+        try {
+            return functionComparatorCache.get(key);
+        } catch (ExecutionException e) {
+            LOGGER.error("Unable to find template key :: " + key
+                + " in Request Comparator Cache , sending default key " + e.getMessage());
+            return defaultFunctionComparator;
+        } catch (Throwable e) {
+            LOGGER.error("Unhandled exception occured (re-throwing) :: " + e.getMessage());
+            throw e;
+        }
+    }
+
     public void invalidateKey(TemplateKey key)  {
         requestComparatorCache.invalidate(key);
+        functionComparatorCache.invalidate(key);
         templateCache.invalidateKey(key);
     }
 
     public void invalidateAll() {
         requestComparatorCache.invalidateAll();
+        functionComparatorCache.invalidateAll();
     }
 
 }

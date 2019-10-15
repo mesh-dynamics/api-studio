@@ -21,7 +21,7 @@ class ResponseTransformerTest {
             e.printStackTrace();
         }
 
-        ResponseTransformer responseTransformer = new ResponseTransformer(config.jsonmapper);
+        ResponseTransformer responseTransformer = new ResponseTransformer(config.jsonMapper);
 
         // response from golden collection
         String body1 = "[{\"actors_lastnames\":[\"SWANK\",\"HOPKINS\",\"SINATRA\",\"MANSFIELD\",\"ZELLWEGER\"]," +

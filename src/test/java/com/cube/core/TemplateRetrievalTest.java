@@ -54,7 +54,7 @@ public class TemplateRetrievalTest {
             Config config = new Config();
             ReqRespStore rrStore = config.rrstore;
             TemplateCache templateCache = new TemplateCache(rrStore ,config);
-            ObjectMapper objectMapper = config.jsonmapper;
+            ObjectMapper objectMapper = config.jsonMapper;
             RequestComparatorCache requestComparatorCache = new RequestComparatorCache(templateCache , objectMapper);
             TemplateKey key = new TemplateKey(Optional.empty(), "ravivj" , "movieinfo"
                     , "productpage" , "productpage" , TemplateKey.Type.Request);

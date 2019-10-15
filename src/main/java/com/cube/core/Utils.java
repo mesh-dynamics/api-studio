@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -92,7 +93,7 @@ public class Utils {
 
     public static Optional<Boolean> strToBool(String b) {
         try {
-            return Optional.of(Boolean.valueOf(b));
+            return Optional.of(BooleanUtils.toBoolean(b));
         } catch (Exception e) {
             return Optional.empty();
         }

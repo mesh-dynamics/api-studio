@@ -18,52 +18,50 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.cube.core.*;
+import com.cube.ws.Config;
+
 import io.cube.agent.CommonUtils;
 
+// TODO: Event redesign: This can be removed
 public class RRBase {
 
-	public static final String REQIDPATH = "/reqid";
+	public static final String REQIDPATH = "/reqId";
 	public static final String COLLECTIONPATH = "/collection";
 	public static final String TIMESTAMPPATH = "/timestamp";
-	public static final String RRTYPEPATH = "/rrtype";
-	public static final String CUSTOMERIDPATH = "/customerid";
+	public static final String RUNTYPEPATH = "/runType";
+	public static final String CUSTOMERIDPATH = "/customerId";
 	public static final String APPPATH = "/app";
 
-	public static enum RR {
-		Record,
-		Replay,
-		Manual  // manually created e.g. default requests and responses
-	}
 
-	/**
-	 * @param reqid
+    /**
+	 * @param reqId
 	 * @param meta
 	 * @param hdrs
 	 * @param body
 	 * @param collection
 	 * @param timestamp
-	 * @param rrtype
-	 * @param customerid
+	 * @param runType
+	 * @param customerId
 	 * @param app
 	 */
-	public RRBase(Optional<String> reqid,
+	public RRBase(Optional<String> reqId,
 			MultivaluedMap<String, String> meta,
 			MultivaluedMap<String, String> hdrs,
 			String body,
 			Optional<String> collection,
 			Optional<Instant> timestamp,
-			Optional<RR> rrtype,
-			Optional<String> customerid,
+			Optional<Event.RunType> runType,
+			Optional<String> customerId,
 			Optional<String> app) {
 		super();
-		this.reqid = reqid;
+		this.reqId = reqId;
 		this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
 		this.hdrs = hdrs != null ? hdrs : new MultivaluedHashMap<String, String>();
 		this.body = body;
 		this.collection = collection;
 		this.timestamp = timestamp;
-		this.rrtype = rrtype;
-		this.customerid = customerid;
+		this.runType = runType;
+		this.customerId = customerId;
 		this.app = app;
 	}
 
@@ -73,14 +71,14 @@ public class RRBase {
 	 */
 	@SuppressWarnings("unused") RRBase() {
 		super();
-		this.reqid = Optional.empty();
+		this.reqId = Optional.empty();
 		this.meta = new MultivaluedHashMap<String, String>();
 		this.hdrs = new MultivaluedHashMap<String, String>();
 		this.body = "";
 		this.collection = Optional.empty();
 		this.timestamp = Optional.empty();
-		this.rrtype = Optional.empty();
-		this.customerid = Optional.empty();
+		this.runType = Optional.empty();
+		this.customerId = Optional.empty();
 		this.app = Optional.empty();
 	}
 
@@ -96,7 +94,13 @@ public class RRBase {
 		setMetaField(SERVICEFIELD, serviceid);
 	}
 
-	/**
+	@JsonIgnore
+    public Optional<String> getTraceId() {
+	    return getHdrField(Config.DEFAULT_TRACE_FIELD);
+    }
+
+
+    /**
 	 * @return
 	 */
 	@JsonIgnore
@@ -117,6 +121,15 @@ public class RRBase {
 		meta.putSingle(fieldname, value);
 	}
 
+
+    /**
+     * @return
+     */
+    @JsonIgnore
+    private Optional<String> getHdrField(String fieldname) {
+        return Optional.ofNullable(hdrs.getFirst(fieldname));
+    }
+
 	protected Comparator.Match compare(RRBase rhs,
 									   CompareTemplate template,
 									   CompareTemplate metaFieldTemplate,
@@ -124,7 +137,7 @@ public class RRBase {
 									   Comparator bodyComparator,
 									   boolean needDiff) {
 		Comparator.Match match = new Comparator.Match(Comparator.MatchType.ExactMatch, "", new ArrayList<Comparator.Diff>());
-		template.getRule("/reqid").checkMatchStr(reqid, rhs.reqid, match, needDiff);
+		template.getRule("/reqId").checkMatchStr(reqId, rhs.reqId, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
 		if ((getMimeType().equalsIgnoreCase(APPLICATION_JSON) || (bodyComparator instanceof JsonComparator))
@@ -136,8 +149,8 @@ public class RRBase {
 		}
 		template.getRule("/collection").checkMatchStr(collection, rhs.collection, match, needDiff);
 		template.getRule("/timestamp").checkMatchStr(timestamp.toString(), rhs.timestamp.toString(), match, needDiff);
-		template.getRule("/rrtype").checkMatchStr(rrtype.toString(), rhs.rrtype.toString(), match, needDiff);
-		template.getRule("/customerid").checkMatchStr(customerid, rhs.customerid, match, needDiff);
+		template.getRule("/runType").checkMatchStr(runType.toString(), rhs.runType.toString(), match, needDiff);
+		template.getRule("/customerId").checkMatchStr(customerId, rhs.customerId, match, needDiff);
 		template.getRule("/app").checkMatchStr(app, rhs.app, match, needDiff);
 		return match;
 	}
@@ -148,7 +161,7 @@ public class RRBase {
     }
 
 
-    public Optional<String> reqid;
+    public Optional<String> reqId;
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> meta;
     @JsonDeserialize(as=MultivaluedHashMap.class)
@@ -156,8 +169,8 @@ public class RRBase {
 	public final String body;
 	public Optional<String> collection;
 	public final Optional<Instant> timestamp;
-	public Optional<RR> rrtype; // this can be "record" or "replay"
-	public final Optional<String> customerid;
+	public Optional<Event.RunType> runType; // this can be "record" or "replay"
+	public final Optional<String> customerId;
 	public final Optional<String> app;
 
 	public static final String SERVICEFIELD = "service";

@@ -41,6 +41,7 @@ public interface ReqRespStore {
 
     Optional<TemplateSet> getTemplateSet(String customerid, String app, String version);
 
+
     public class ReqResp {
 
 
@@ -82,6 +83,7 @@ public interface ReqRespStore {
 	}
 
 	enum Types {
+        Event,
 		Request,
 		Response,
 		ReplayMeta, // replay metadata
@@ -100,16 +102,21 @@ public interface ReqRespStore {
         MatchResultAggregate
     }
 
+    // TODO: Event redesign cleanup: This can be removed
 	boolean save(Request req);
 
-	boolean save(Response resp);
+    // TODO: Event redesign cleanup: This can be removed
+    boolean save(Response resp);
 
-	/**
+    boolean save(Event event);
+
+    /**
 	 * @param queryrequest
 	 * @param mspec - the matching specification
 	 * @param nummatches - max number of matches
 	 * @return the requests matching queryrequest based on the matching spec
 	 */
+    // TODO: Event redesign: This needs to be rewritten to get as event
 	Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches);
 
     /**
@@ -119,33 +126,41 @@ public interface ReqRespStore {
      * @param start - skip the first "start" number of matches (for paging)
      * @return the requests matching queryrequest based on the matching spec
      */
+    // TODO: Event redesign: This needs to be rewritten to get as event
     Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches,
                                 Optional<Integer> start);
 
     /**
-	 * @param reqid
-	 * @return the matching response on the reqid
+	 * @param reqId
+	 * @return the matching response on the reqId
 	 */
-	Optional<Response> getResponse(String reqid);
+    // TODO: Event redesign: This needs to be rewritten to get as event
+    Optional<Response> getResponse(String reqId);
 
     /**
-     * @param reqid
-     * @return the matching response on the reqid
+     * @param reqId
+     * @return the matching response on the reqId
      */
-    Optional<Request> getRequest(String reqid);
+    // TODO: Event redesign: This needs to be rewritten to get as event
+    Optional<Request> getRequest(String reqId);
 
 	/**
 	 * @param requests
 	 * @return
 	 */
+    // TODO: Event redesign: This needs to be rewritten to get as event
 	Map<String, Response> getResponses(List<Request> requests);
 
 	/**
 	 * @param queryrequest
 	 * @return the response corresponding to the request matching in the db
-	 * to find the matching request, the reqid field of queryrequest is ignored
+	 * to find the matching request, the reqId field of queryrequest is ignored
 	 */
+    // TODO: Event redesign cleanup: This can be removed
 	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
+
+
+	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
 
 	/**
@@ -154,11 +169,14 @@ public interface ReqRespStore {
 	 * @param collection
 	 * @param reqids
 	 * @param paths
-	 * @param rrtype
+	 * @param runType
 	 * @return
 	 */
-	Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
-			, List<String> paths, RRBase.RR rrtype);
+    // TODO: Event redesign: This needs to be rewritten to get as event
+    Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
+			, List<String> paths, Event.RunType runType);
+
+    Result<Event> getEvents(EventQuery eventQuery);
 
 	/**
 	 * @param replay
@@ -350,12 +368,12 @@ public interface ReqRespStore {
 
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param instanceid
 	 * @return For both record and replay, return the collection of the record stage
 	 */
-	Optional<String> getCurrentRecordingCollection(Optional<String> customerid, Optional<String> app,
+	Optional<String> getCurrentRecordingCollection(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceid);
 
 
@@ -366,12 +384,12 @@ public interface ReqRespStore {
 	boolean saveRecording(Recording recording);
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param collection
 	 * @return
 	 */
-	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app,
+	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app,
                                                                String collection, Optional<String> templateSetVersion);
 
 
@@ -387,12 +405,12 @@ public interface ReqRespStore {
                                                             boolean bypath);
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param instanceid
 	 * @return
 	 */
-	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerid, Optional<String> app,
+	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceid);
 
 	/**
@@ -407,7 +425,7 @@ public interface ReqRespStore {
 			// Note that replayid is the collection for replay requests/responses
 			// replay.collection refers to the original collection
 			// return replay collection if non empty, else return recording collection
-			return replay.map(replay -> replay.replayid)
+			return replay.map(replay -> replay.replayId)
 					.or(() -> recording.map(recording -> recording.collection));
 		}
 
@@ -420,13 +438,18 @@ public interface ReqRespStore {
 
 		@JsonIgnore
         public Optional<String> getReplayId() {
-            return replay.map(replay -> replay.replayid);
+            return replay.map(replay -> replay.replayId);
         }
 
 		@JsonIgnore
 		public boolean isRecording() {
 			return recording.isPresent();
 		}
+
+		@JsonIgnore
+        public Optional<String> getTemplateVersion() {
+            return replay.flatMap(replay1 -> replay1.templateVersion);
+        }
 
 		// for json de-serialization
 		public RecordOrReplay() {
@@ -448,7 +471,7 @@ public interface ReqRespStore {
 			this(Optional.of(recording), Optional.empty());
 		}
 
-		public RecordOrReplay(Replay replay) {
+		private RecordOrReplay(Replay replay) {
 			this(Optional.empty(), Optional.of(replay));
 		}
 
@@ -483,7 +506,7 @@ public interface ReqRespStore {
 
     /**
      * Get ReqResponseMatchResult for the given replay Id, record req id and replay req id
-     * It matches on both record and replay reqid. If any of them are empty, it requires the matching result to also
+     * It matches on both record and replay reqId. If any of them are empty, it requires the matching result to also
      * have empty value for that field
      * @param recordReqId
      * @param replayId
@@ -536,7 +559,8 @@ public interface ReqRespStore {
 	 * @param collectionId
 	 * @return
 	 */
-	Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
+    // TODO: Event redesign cleanup: This can be removed
+    Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
 			, String collectionId);
 
 	/**
