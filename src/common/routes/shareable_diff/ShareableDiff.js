@@ -72,7 +72,7 @@ class ShareableDiff extends Component {
             .value();
         console.log("urlParameters: ", urlParameters);
         let response, json, { resultsFetched } = this.state;
-        let url = `${config.analyzeBaseUrl}/analysisResByPath/${urlParameters["replayId"]}?start=${resultsFetched}&includediff=true`;
+        let url = `${config.analyzeBaseUrl}/analysisResNoTrace/${urlParameters["replayId"]}/${urlParameters["recordRequestId"]}`;
         let dataList = {};
         try {
             response = await fetch(url, {
@@ -84,9 +84,9 @@ class ShareableDiff extends Component {
             if (response.ok) {
                 json = await response.json();
                 dataList = json;
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
+                let diffLayoutData = this.validateAndCreateDiffLayoutData([dataList]);
                 this.setState({
-                    replayList: this.state.replayList.concat(dataList.res),
+                    replayList: this.state.replayList.concat([dataList]),
                     diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData)
                 });
             } else {
@@ -100,7 +100,7 @@ class ShareableDiff extends Component {
     }
 
     validateAndCreateDiffLayoutData(replayList) {
-        let diffLayoutData = replayList.filter((item, index) => {return index == 1;}).map((item, index) => {
+        let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders;
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
