@@ -1429,7 +1429,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
 
-    private static Optional<Replay> docToReplay(SolrDocument doc, ReqRespStore rrstore) {
+    private static Optional<Replay> docToReplay(SolrDocument doc) {
 
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
@@ -1502,7 +1502,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYIDF, replayid);
 
         Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToReplay(doc, this));
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToReplay(doc));
 
     }
 
@@ -1571,8 +1571,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
-                             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
+    public Result<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
+                             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection, Optional<Integer> start) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
@@ -1587,7 +1587,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, CREATIONTIMESTAMPF, false /* desc */);
 
         //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
+        return SolrIterator.getResults(solr, query, numofResults, ReqRespStoreSolr::docToReplay, start);
+//        return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
     }
 
     @Override
@@ -1595,7 +1596,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceid.stream().collect(Collectors.toList());
-        return getReplay(customerid, app, instanceidList, status, numofResults, collection);
+        return getReplay(customerid, app, instanceidList, status, numofResults, collection, Optional.empty()).objects;
     }
 
     // Some useful functions

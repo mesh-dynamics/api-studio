@@ -199,11 +199,11 @@ public interface ReqRespStore {
      * @param status
      * @param collection
      * @param numOfResults
+     * @param start
      * @return
      */
-    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
-                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
-
+    Result<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
+                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection, Optional<Integer> start);
 
     /**
      *

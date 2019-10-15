@@ -480,10 +480,13 @@ public class AnalyzeWS {
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
-        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
-            map(Integer::valueOf).or(() -> Optional.of(20));
-        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection);
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt);
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).map(Integer::valueOf).or(() -> Optional.of(20));
+
+        Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection, start);
+        long numFound = replaysResult.numFound;
+        Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
             String creationTimeStamp = replay.creationTimeStamp;
@@ -517,7 +520,9 @@ public class AnalyzeWS {
             }
             jsonBuilder.append("}");
             return jsonBuilder.toString();
-        }).collect(Collectors.joining(" , ", "[", "]"));
+        }).collect(Collectors.joining(" , ", "", ""));
+        finalJson = "{" + "\"numFound\" : " + numFound + "," +
+            "\"timelineResults\" : [" + finalJson + "]}";
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
