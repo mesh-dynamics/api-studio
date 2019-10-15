@@ -22,46 +22,46 @@ steps:
         exclude:
         - pull_request
 
-  - name: docker_build
-    image: plugins/docker
-    settings:
-      username: cubeiocorp
-      password: 'S9qe2fJ8*vtk'
-      repo: cubeiocorp/cubeui
-      tags: ${DRONE_COMMIT}
-    resources:
-      requests:
-        cpu: 0.1
-        memory: "1500Mi"
-      limits:
-        memory: "1500Mi"
-    when:
-      branch:
-      - ui-redesign
-      event:
-        exclude:
-        - pull_request
-
-  - name: Test_build
-    image: plugins/docker
-    settings:
-      username: cubeiocorp
-      password: 'S9qe2fJ8*vtk'
-      repo: cubeiocorp/cubeui
-      tags: ${DRONE_COMMIT}
-      dry_run: true
-    resources:
-      requests:
-        cpu: 0.1
-        memory: "1500Mi"
-      limits:
-        memory: "1500Mi"
-    when:
-      branch:
-      - ui-redesign
-      event:
-        include:
-        - pull_request
+  # - name: docker_build
+  #   image: plugins/docker
+  #   settings:
+  #     username: cubeiocorp
+  #     password: 'S9qe2fJ8*vtk'
+  #     repo: cubeiocorp/cubeui
+  #     tags: ${DRONE_COMMIT}
+  #   resources:
+  #     requests:
+  #       cpu: 0.1
+  #       memory: "1500Mi"
+  #     limits:
+  #       memory: "1500Mi"
+  #   when:
+  #     branch:
+  #     - ui-redesign
+  #     event:
+  #       exclude:
+  #       - pull_request
+  #
+  # - name: Test_build
+  #   image: plugins/docker
+  #   settings:
+  #     username: cubeiocorp
+  #     password: 'S9qe2fJ8*vtk'
+  #     repo: cubeiocorp/cubeui
+  #     tags: ${DRONE_COMMIT}
+  #     dry_run: true
+  #   resources:
+  #     requests:
+  #       cpu: 0.1
+  #       memory: "1500Mi"
+  #     limits:
+  #       memory: "1500Mi"
+  #   when:
+  #     branch:
+  #     - master
+  #     event:
+  #       include:
+  #       - pull_request
 
   - name: Test_build_master
     image: plugins/docker
@@ -96,7 +96,7 @@ steps:
       tag: ${DRONE_COMMIT}
     when:
       branch:
-      - ui-redesign
+      - master
       event:
         exclude:
         - pull_request
@@ -113,7 +113,7 @@ steps:
       tag: ${DRONE_COMMIT}
     when:
       branch:
-      - ui-redesign
+      - master
       event:
         exclude:
         - pull_request
@@ -121,5 +121,5 @@ steps:
 trigger:
   branch:
   - master
-  - ui-redesign
+  # - ui-redesign
 
