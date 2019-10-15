@@ -226,7 +226,7 @@ public class CubeStore {
                     Event responseEvent;
                     try {
                         // todo: consider creating the Event object directly instead of creating a Response
-                        responseEvent = resp.toEvent(config);
+                        responseEvent = resp.toEvent(config, path);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");

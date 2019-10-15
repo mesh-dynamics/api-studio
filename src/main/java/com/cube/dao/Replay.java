@@ -5,6 +5,7 @@
  */
 package com.cube.dao;
 
+import com.cube.dao.Event.EventType;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -185,7 +186,7 @@ public class Replay {
     }
 
     private Result<Event> getEventResult(ReqRespStore rrstore) {
-        EventQuery eventQuery = new EventQuery.Builder(customerId, app, Event.EventType.HTTPResponse)
+        EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.HTTPRequest)
             .withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
         return rrstore.getEvents(eventQuery);
     }
