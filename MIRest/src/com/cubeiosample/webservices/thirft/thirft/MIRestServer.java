@@ -1,9 +1,7 @@
 package com.cubeiosample.webservices.thirft.thirft;
 
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -16,7 +14,7 @@ public class MIRestServer {
         TServerTransport serverTransport = new TServerSocket(9090);
         /*THttpClient*/
         server = new TSimpleServer(new TServer.Args(serverTransport)
-                .processor(new MIRest.Processor<>(new MIRestService())));
+                .processor(new MIRest.Processor<>(new MIThriftService())));
 
         System.out.print("Starting the server... ");
 
@@ -40,6 +38,7 @@ public class MIRestServer {
         try {
             server.start();
         } catch (TTransportException e) {
+            System.out.println("Server has stopped due to exception :: " + e.getMessage());
             e.printStackTrace();
         }
     }

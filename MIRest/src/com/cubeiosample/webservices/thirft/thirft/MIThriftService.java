@@ -6,7 +6,16 @@ import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
+import org.apache.thrift.TSerializer;
+import org.apache.thrift.protocol.TJSONProtocol;
+import org.apache.thrift.protocol.TJSONProtocol.Factory;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.protocol.TProtocolFactory;
+import org.apache.thrift.transport.TFileTransport;
+import org.apache.thrift.transport.TMemoryBuffer;
+import org.apache.thrift.transport.TTransport;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -18,30 +27,35 @@ import io.cube.utils.Tracing;
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Scope;
 
-public class MIRestService  implements  MIRest.Iface {
+public class MIThriftService implements  MIRest.Iface {
 
-    private static Logger LOGGER  = Logger.getLogger(MIRestService.class);
+    private static Logger LOGGER  = Logger.getLogger(MIThriftService.class);
     private static JaegerTracer tracer;
     private static Config config;
 
     private static MovieRentals mv;
     private static ListMoviesCache lmc;
 
+    private static TSerializer tSerializer;
+    private static TDeserializer tDeserializer;
+
     static {
-        LOGGER = Logger.getLogger(MIRestService.class);
+        LOGGER = Logger.getLogger(MIThriftService.class);
         BasicConfigurator.configure();
     }
 
     static {
         Scope scope = null;
         try {
-            tracer = Tracing.init("MIRest");
+            tracer = Tracing.init("MIThrift");
             scope = tracer.buildSpan("startingup").startActive(true);
-            scope.span().setTag("starting-up", "MovieRentalRest");
+            scope.span().setTag("starting-up", "MovieRentalThrift");
             LOGGER.debug("MIRest tracer: " + tracer.toString());
             config = new Config();
             mv = new MovieRentals(tracer, config);
             lmc = new ListMoviesCache(mv, config);
+            tSerializer = new TSerializer(new TJSONProtocol.Factory(true));
+            tDeserializer = new TDeserializer(new TJSONProtocol.Factory(true));
         } catch (ClassNotFoundException e) {
             LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
         } finally {
@@ -72,6 +86,12 @@ public class MIRestService  implements  MIRest.Iface {
         } catch (Exception e) {
             LOGGER.error("Error Occurred while fetching list of movies :: " + e.getMessage());
         }
+
+        String serialized = tSerializer.toString(listMovieResult);
+        LOGGER.info("SERIALIZED :: " + serialized);
+        ListMovieResult listMovieResult1  = new ListMovieResult();
+        tDeserializer.fromString(listMovieResult1 , serialized);
+        LOGGER.info("FROM DE-SERIALIZED :: " + tSerializer.toString(listMovieResult1));
         return listMovieResult;
     }
 

@@ -26,7 +26,7 @@ services:
       - 8080
   mirest:
     image: cubeiocorp/sample-apps-mithrift:V1-SNAPSHOT
-    container_name: mirest
+    container_name: mithrift
     build: ./MIRest
     #network_mode: "host"
     expose:
