@@ -1,7 +1,6 @@
 package com.cube.golden;
 
 
-import com.cube.core.Comparator;
 import com.cube.dao.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -184,29 +183,8 @@ public class RecordingUpdate {
 
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
 
-       Set<String> inCompletetraceIds = new HashSet<>();
-
-        results.filter( res -> {
-            if (res.reqmt.equals(Comparator.MatchType.NoMatch) || res.respmt.equals(Comparator.MatchType.NoMatch) ) {
-                res.recordTraceId.ifPresentOrElse( inCompletetraceIds::add , () -> res.replayTraceId.ifPresent( inCompletetraceIds::add ) );
-                LOGGER.info(new ObjectMessage(Map.of("Action", "Filering out the ReqRespMatchResult as req/response has NoMatch",
-                    "Record Trace Id", res.recordTraceId.orElse("<Empty>"),
-                    "Replay Trace Id", res.replayTraceId.orElse("<Empty>"),
-                    "Record Request Id", res.recordreqid.orElse("<Empty>"),
-                    "Replay Request Id", res.replayreqid.orElse("<Empty>"))));
-                return false;
-            } else if (inCompletetraceIds.contains(res.recordTraceId) || inCompletetraceIds.contains(res.replayTraceId)) {
-                LOGGER.info(new ObjectMessage(Map.of("Action", "Filtering out the ReqRespMatchResult as it found to be part of " +
-                        "Trace Id that has req/resp Mismatch type as NoMatch",
-                    "Record Trace Id", res.recordTraceId.orElse("<Empty>"),
-                    "Replay Trace Id", res.replayTraceId.orElse("<Empty>"),
-                    "Record Request Id", res.recordreqid.orElse("<Empty>"),
-                    "Replay Request Id", res.replayreqid.orElse("<Empty>"))));
-                return false;
-            } else {
-                return true;
-            }
-        }).forEach(res -> {
+        //1. Create a new collection with all the Req/Responses
+        results.forEach(res -> {
            try {
                Request recordRequest = res.recordreqid.flatMap(rrStore::getRequest)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordreqid.get()));
@@ -229,11 +207,28 @@ public class RecordingUpdate {
 
                if(!saved) {
                    LOGGER.debug("request/response not saved");
-                   // todo raise error?
+                   throw new Exception ("Unable to persist new sanitized collection");
                }
            } catch (Exception e) {
-               LOGGER.error("Error occurred while sanitizing :: " + e.getMessage(), e);
+               LOGGER.error("Error occurred creating new collection while sanitizing :: " + e.getMessage(), e);
            }
+        });
+
+        rrStore.commit();
+
+        //2. Get all the ReqResMatchResult with MatchType as NoMatch either for request or response match
+        Stream<Analysis.ReqRespMatchResult> resultsOnlyNoMatch = rrStore.getAnalysisMatchResultOnlyNoMatch(replayId).getObjects();
+
+        //3. Delete all the requests and responses in the new collection that has the trace id in the above list
+        resultsOnlyNoMatch.forEach( res -> {
+            res.recordTraceId.ifPresentOrElse( recTraceId -> {
+                rrStore.deleteReqResByTraceId(recTraceId, newCollectionName);
+                res.replayTraceId.ifPresent(repTraceId -> {
+                    if (!repTraceId.equalsIgnoreCase(recTraceId)) {
+                        rrStore.deleteReqResByTraceId(repTraceId, newCollectionName);
+                    }
+                });
+            }, () -> res.replayTraceId.ifPresent(repTraceId -> rrStore.deleteReqResByTraceId(repTraceId, newCollectionName)));
         });
 
         return true;

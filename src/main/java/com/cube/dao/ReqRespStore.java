@@ -4,13 +4,8 @@
 package com.cube.dao;
 
 import java.io.IOException;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -492,7 +487,6 @@ public interface ReqRespStore {
     Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
                                                         String replayId);
 
-
     /**
      * Get results matching a path and other constraints
      * @param replayId
@@ -508,6 +502,21 @@ public interface ReqRespStore {
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
                             Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
 
+    /**
+     * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
+     * as NoMatch
+     * @param replayId
+     * @return
+     */
+    Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
+
+    /**
+     * Deletes the Requests and Responses from the passed collection that has the given trace id
+     * @param traceId
+     * @param newCollectionName
+     * @return
+     */
+    boolean deleteReqResByTraceId(String traceId, String newCollectionName);
 
     /**
 	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service

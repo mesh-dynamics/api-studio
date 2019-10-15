@@ -8,18 +8,8 @@ import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -887,6 +877,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String HDRSPANF = HDR + "_"  + Config.DEFAULT_SPAN_FIELD + STRINGSET_SUFFIX;
     private static final String HDRPARENTSPANF = HDR + "_"  + Config.DEFAULT_PARENT_SPAN_FIELD + STRINGSET_SUFFIX;
     private static final String METASERVICEF = META + "_service" + STRINGSET_SUFFIX;
+    private static final String METAREQID = META + "_c" + "-request-id" + STRINGSET_SUFFIX;
+    private static final String METATRACEID = META + "_" + Config.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
@@ -1347,6 +1339,59 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             throw e;
         }
     }
+
+    private FnKey deleteFuncKey;
+
+    private boolean deleteDocsByQuery(String query) {
+        if (deleteFuncKey == null) {
+            try {
+                Method currentMethod = solr.getClass().getMethod("delete", query.getClass());
+                deleteFuncKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app,
+                    config.commonConfig.instance, config.commonConfig.serviceName, currentMethod);
+            } catch (Exception e) {
+                LOGGER.error("Couldn't Initiate delete function key :: " + e.getMessage());
+            }
+        }
+        // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
+        if (config.intentResolver.isIntentToMock()) {
+            FnResponseObj ret = config.mocker.mock(deleteFuncKey , CommonUtils.getCurrentTraceId(),
+                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
+            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+                UtilException.throwAsUnchecked((Throwable)ret.retVal);
+            }
+            UpdateResponse fromSolr = (UpdateResponse) ret.retVal;
+            return fromSolr != null;
+        }
+
+        UpdateResponse fromSolr = null;
+        boolean toReturn = false;
+        try {
+            fromSolr = solr.deleteByQuery(query);
+            toReturn = true;
+
+        } catch (Exception e) {
+            LOGGER.error("Error in deleting documents from solr using query " +
+                query, e);
+        }
+        // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
+        try {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
+                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), query);
+            }
+            return toReturn;
+        } catch (Throwable e) {
+            if (config.intentResolver.isIntentToRecord()) {
+                config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
+                    CommonUtils.getCurrentSpanId(),
+                    CommonUtils.getParentSpanId(),
+                    e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), query);
+            }
+            throw e;
+        }
+    }
+
 
     // field names in Solr for Replay object
     private static final String IDF = "id";
@@ -1840,6 +1885,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RESPMTF, respmt.map(Enum::toString));
 
         return SolrIterator.getResults(solr, query, nummatches, ReqRespStoreSolr::docToAnalysisMatchResult, start);
+    }
+
+    @Override
+    public Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId) {
+        SolrQuery query = new SolrQuery( REQMTF + ":" + Comparator.MatchType.NoMatch.toString() + " OR " + RESPMTF + ":" + Comparator.MatchType.NoMatch.toString());
+        query.setFields("*");
+        addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+        addFilter(query, REPLAYIDF, replayId);
+
+        return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToAnalysisMatchResult, Optional.empty());
+    }
+
+    @Override
+    public boolean deleteReqResByTraceId(String traceId, String newCollectionName) {
+        String queryString = "(" + HDRTRACEF + ":" + traceId + " OR " + METATRACEID + ":" + traceId + ") AND " + COLLECTIONF +":" + newCollectionName;
+        return deleteDocsByQuery(queryString);
     }
 
     /**

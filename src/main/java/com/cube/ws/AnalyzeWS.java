@@ -852,9 +852,9 @@ public class AnalyzeWS {
                 "Message", "Successfully created new recording by sanitizing the specified original recording",
                 "ID", updatedRecording.getId()))).toString()).build();
         }  catch (Exception e) {
-            LOGGER.error("Error while updating golden set :: "  + e.getMessage());
+            LOGGER.error("Error while creating sanitized golden set :: "  + e.getMessage(), e);
             return Response.serverError().entity(new JSONObject(Map.of(
-                "Message", "Error while updating recording",
+                "Message", "Error while creating sanitized golden set",
                 "Error", e.getMessage())).toString()).build();
         }
     }
