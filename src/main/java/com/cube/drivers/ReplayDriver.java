@@ -13,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -65,7 +66,7 @@ public class ReplayDriver  {
      */
     private ReplayDriver(String endpoint, String customerid, String app, String instanceid, String collection, String userid, List<String> reqids,
                          ReqRespStore rrstore, String replayid, boolean async, Replay.ReplayStatus status,
-                         List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+                         List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
                          Optional<Double> samplerate, List<String> intermediateServices, Optional<String> templateVersion) {
         this.replay = new Replay(endpoint, customerid, app, instanceid, collection, userid, reqids, replayid, async,
             templateVersion, status, paths, reqcnt, reqsent, reqfailed, creationTimestamp, samplerate, intermediateServices);

@@ -30,6 +30,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import com.cube.core.Utils;
 import io.cube.agent.CommonUtils;
+import jnr.ffi.annotations.In;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -934,15 +935,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static void addEndRangeFilter(SolrQuery query, String fieldname, String fval, boolean endInclusive, boolean quote) {
         String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        String queryFmt = endInclusive ? "%s:[* TO %s*]" : "%s:[* TO %s]";
+        String queryFmt = endInclusive ? "%s:[* TO %s]" : "%s:[* TO %s}";
         query.addFilterQuery(String.format(queryFmt, fieldname, newfval));
     }
 
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<String> fval, boolean endInclusive) {
-        fval.ifPresent(val -> addEndRangeFilter(query, fieldname, val, endInclusive, true));
+    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval, boolean endInclusive) {
+        fval.ifPresent(val -> addEndRangeFilter(query, fieldname, val.toString(), endInclusive, true));
     }
 
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<String> fval) {
+    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval) {
         addEndRangeFilter(query, fieldname, fval, true);
     }
 
@@ -1374,7 +1375,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQCNTF = CPREFIX + "reqcnt" + INT_SUFFIX;
     private static final String REQSENTF = CPREFIX + "reqsent" + INT_SUFFIX;
     private static final String REQFAILEDF = CPREFIX + "reqfailed" + INT_SUFFIX;
-    private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp" + STRING_SUFFIX;
+    private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp" + DATE_SUFFIX;
     private static final String SAMPLERATEF = CPREFIX + "samplerate" + DOUBLE_SUFFIX;
     private static final String REPLAYPATHSTATF = CPREFIX + "pathstat" + STRINGSET_SUFFIX;
     private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv" + STRINGSET_SUFFIX;
@@ -1409,7 +1410,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQCNTF, replay.reqcnt);
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
-        doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp);
+        doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp.toString());
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
         replay.templateVersion.ifPresent(templateVer -> doc.setField(TEMPLATE_VERSION, templateVer));
@@ -1461,7 +1462,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         int reqcnt = getIntField(doc, REQCNTF).orElse(0);
         int reqsent = getIntField(doc, REQSENTF).orElse(0);
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
-        Optional<String> creationTimestamp = getStrField(doc, CREATIONTIMESTAMPF);
+        Optional<Instant> creationTimestamp = getTSField(doc, CREATIONTIMESTAMPF);
         Optional<Double> samplerate = getDblField(doc, SAMPLERATEF);
         List<String> intermediateService = getStrFieldMV(doc , INTERMEDIATESERVF);
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSION);
@@ -1473,7 +1474,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             try {
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), userid.get(),
 				        reqids, replayid.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
-                        creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toString() : creationTimestamp.get(),
+                        creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toInstant() : creationTimestamp.get(),
                         samplerate , intermediateService));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
@@ -1590,7 +1591,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
                                     List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection,
-                                    Optional<String> userid, Optional<String> endDate) {
+                                    Optional<String> userid, Optional<Instant> endDate) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
