@@ -4,6 +4,9 @@
 package com.cube.ws;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -478,15 +480,31 @@ public class AnalyzeWS {
         List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
+        Optional<String> userid = Optional.ofNullable(queryParams.getFirst("userid"));
+        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("enddate"));
+
+        Optional<Instant> endDateTS = Optional.empty();
+        // For checking correct date format
+        if(endDate.isPresent()) {
+            try {
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd"); // The date is finally translated as yyyy-MM-ddT00:00:00Z"
+                endDateTS = Optional.of(df.parse(endDate.get()).toInstant());
+            } catch (ParseException e) {
+                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                    Map.of("Message", "Date format should be yyyy-MM-dd",
+                        "Error", e.getMessage())).toString())).build();
+            }
+        }
+
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
             map(Integer::valueOf).or(() -> Optional.of(20));
         Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection);
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection, userid, endDateTS);
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
-            String creationTimeStamp = replay.creationTimeStamp;
+            Instant creationTimeStamp = replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerid, replay.app
                 ,  replay.collection , replay.templateVersion);
             String recordingInfo = "";
@@ -505,7 +523,7 @@ public class AnalyzeWS {
 //            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
-            jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp
+            jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
                 + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonmapper.writeValueAsString(res);

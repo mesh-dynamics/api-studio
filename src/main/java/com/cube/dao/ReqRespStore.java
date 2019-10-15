@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -227,6 +228,22 @@ public interface ReqRespStore {
      */
     Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app,
                              Optional<String> instanceid, ReplayStatus status);
+
+    /**
+     *
+     * @param customerid
+     * @param app
+     * @param instanceid
+     * @param status
+     * @param numofResults
+     * @param collection
+     * @param userid
+     * @param endDate
+     * @return
+     */
+    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
+                                    List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection,
+                                    Optional<String> userid, Optional<Instant> endDate);
 
 	static void main(String[] args) throws IOException{
 

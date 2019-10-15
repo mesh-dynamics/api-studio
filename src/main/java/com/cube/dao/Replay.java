@@ -6,6 +6,7 @@
 package com.cube.dao;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +50,7 @@ public class Replay {
      * @param app
      * @param instanceid
      * @param collection
+     * @param userid
      * @param reqids
      * @param replayid
      * @param async
@@ -56,9 +58,9 @@ public class Replay {
      * @param status
      * @param samplerate
      */
-	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
+	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, String userid, List<String> reqids,
                   String replayid, boolean async, Optional<String> templateVersion, ReplayStatus status,
-                  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+                  List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
                   Optional<Double> samplerate, List<String> intermediateServices) {
 		super();
 		this.endpoint = endpoint;
@@ -66,6 +68,7 @@ public class Replay {
 		this.app = app;
 		this.instanceid = instanceid;
 		this.collection = collection;
+		this.userid = userid;
 		this.reqids = reqids;
 		this.replayid = replayid;
 		this.async = async;
@@ -75,7 +78,7 @@ public class Replay {
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
-		this.creationTimeStamp = creationTimestamp == null ? format.format(new Date()) : creationTimestamp;
+		this.creationTimeStamp = creationTimestamp == null ? Instant.now() : creationTimestamp;
 		this.xfmer = Optional.ofNullable(null);
 		this.samplerate = samplerate;
 		this.intermediateServices = intermediateServices;
@@ -89,10 +92,11 @@ public class Replay {
 	    app = "";
 	    instanceid = "";
 	    collection = "";
+	    userid = "";
 	    replayid = "";
 	    async = false;
 	    samplerate = Optional.empty();
-	    creationTimeStamp = "";
+	    creationTimeStamp = Instant.now();
 	    reqids = Collections.emptyList();
 	    paths = Collections.emptyList();
 	    intermediateServices = Collections.emptyList();
@@ -121,6 +125,8 @@ public class Replay {
 	public final String instanceid;
     @JsonProperty("collect")
 	public final String collection;
+    @JsonProperty("userid")
+    public final String userid;
     @JsonProperty("reqids")
 	public final List<String> reqids;
     @JsonProperty("templateVer")
@@ -145,10 +151,8 @@ public class Replay {
     public transient Optional<RRTransformer> xfmer;
     @JsonProperty("smplrate")
 	public final Optional<Double> samplerate;
-
-	private transient SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	@JsonProperty("timestmp")
-	public final String creationTimeStamp;
+    public final Instant creationTimeStamp;
 
 	static final String uuidpatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayidpatternStr = "^(.*)-" + uuidpatternStr + "$";
