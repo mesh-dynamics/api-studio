@@ -5,6 +5,7 @@ package com.cube.ws;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,6 +37,8 @@ import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.ReplayDriver;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * @author prasad
@@ -51,79 +54,6 @@ public class ReplayWS {
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Replay service status\": \"RS is healthy\"}").build();
-    }
-
-
-	@POST
-	@Path("init/{customerid}/{app}/{collection}")
-	@Consumes("application/x-www-form-urlencoded")
-    public Response init(@Context UriInfo ui,
-                         @PathParam("collection") String collection,
-                         MultivaluedMap<String, String> formParams,
-                         @PathParam("customerid") String customerid,
-                         @PathParam("app") String app) {
-        // TODO: move all these constant strings to a file so we can easily change them.
-        boolean async = Optional.ofNullable(formParams.getFirst("async"))
-            .map(v -> {
-                return (v == "t") ? true : false;
-            })
-            .orElse(false);
-        List<String> reqids = Optional.ofNullable(formParams.get("reqids")).orElse(new ArrayList<String>());
-        Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endpoint"));
-        Optional<String> instanceid = Optional.ofNullable(formParams.getFirst("instanceid"));
-        List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
-        Optional<Double> samplerate = Optional.ofNullable(formParams.getFirst("samplerate")).flatMap(v -> Utils.strToDouble(v));
-        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermservice")).orElse(new ArrayList<>());
-
-        // TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
-        Stream<Replay> replays = rrstore.getReplay(Optional.ofNullable(customerid), Optional.ofNullable(app), instanceid, ReplayStatus.Running);
-        var ref = new Object() {Integer count = 0;};
-        String s = replays.map(r -> {ref.count ++; return r.replayId;})
-            .collect(Collectors.joining("\" , \"" , "[\"" , "\"]"));
-        if (ref.count != 0) {
-            return Response.status(Status.FORBIDDEN).entity(String.format("{\"Force Complete\" : %s}", s)).build();
-        }
-
-        // check if recording or replay is ongoing for (customer, app, instanceid)
-        Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
-            instanceid);
-        if (errResp.isPresent()) {
-            return errResp.get();
-        }
-
-        // TODO need to enforce tempalte version specification later
-        /*if (!formParams.containsKey("templateSetVer")) {
-            return Response.status(Status.BAD_REQUEST).entity("{\"Cause\" : \"Template Set Version Not Specified\"}").build();
-        }*/
-
-        Optional<String> templateSetVersion = Optional.ofNullable(formParams
-            .getFirst("templateSetVer"))/*.orElse(Recording.DEFAULT_TEMPLATE_VER)*/;
-
-
-        Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerid, app, collection, templateSetVersion);
-        if (recording.isEmpty()) {
-            LOGGER.error(String.format("Cannot init Replay since collection %s does not exist", collection));
-            return Response.status(Status.NOT_FOUND).entity(String.format("Collection %s does not exist", collection)).build();
-        }
-
-        return endpoint
-            .map(e -> {
-                return instanceid.map(inst -> {
-                    // TODO: introduce response transforms as necessary
-                    return ReplayDriver.initReplay(e, customerid, app, inst, collection, reqids, rrstore, async, paths, null, samplerate
-                        , intermediateServices,templateSetVersion)
-                        .map(replay -> {
-                            String json;
-                            try {
-                                json = jsonMapper.writeValueAsString(replay);
-                                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                            } catch (JsonProcessingException ex) {
-                                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayId), ex);
-                                return Response.serverError().build();
-                            }
-                        }).orElse(Response.serverError().build());
-                }).orElse(Response.status(Status.BAD_REQUEST).entity("Instanceid not specified").build());
-            }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
     }
 
 
@@ -250,12 +180,10 @@ public class ReplayWS {
 
 
     @POST
-    @Path("start/{customerid}/{app}/{collection}/{replayid}")
+    @Path("start/{recordingid}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response start(@Context UriInfo ui, @PathParam("collection") String collection,
-                          @PathParam("replayid") String replayid,
-                          @PathParam("customerid") String customerid,
-                          @PathParam("app") String app,
+    public Response start(@Context UriInfo ui,
+                          @PathParam("recordingid") String recordingid,
                           MultivaluedMap<String, String> formParams) {
         /**
          // Block for testing -- we need to initialize the auth token to inject
@@ -282,17 +210,70 @@ public class ReplayWS {
          /// end block for testing
          */
 
-        Optional<ReplayDriver> replay = ReplayDriver.getReplayDriver(replayid, config);
-        Response resp = replay.map(r -> {
-            boolean status = r.start();
-            if (status) {
-                return Response.ok().build();
-            }
-            return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
+        // TODO: move all these constant strings to a file so we can easily change them.
+        boolean async = Optional.ofNullable(formParams.getFirst("async"))
+            .map(v -> {
+                return (v == "t") ? true : false;
+            })
+            .orElse(false);
+        List<String> reqids = Optional.ofNullable(formParams.get("reqids")).orElse(new ArrayList<String>());
+        Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endpoint"));
+        List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
+        Optional<Double> samplerate = Optional.ofNullable(formParams.getFirst("samplerate")).flatMap(v -> Utils.strToDouble(v));
+        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermservice")).orElse(new ArrayList<>());
 
-        return resp;
+        Optional<Recording> recordingOpt = rrstore.getRecording(recordingid);
+        if (recordingOpt.isEmpty()) {
+            LOGGER.error(String.format("Cannot init Replay since cannot find recording for id %s", recordingid));
+            return Response.status(Status.NOT_FOUND).entity(String.format("cannot find recording for id %s", recordingid)).build();
+        }
+
+        Recording recording = recordingOpt.get();
+
+        // TODO: add <user> who initiates the replay to the "key" in addition to customerid, app, instanceid
+        List running_replays = rrstore.getReplay(Optional.ofNullable(recording.customerId), Optional.ofNullable(recording.app),
+            Optional.ofNullable(recording.instanceId), ReplayStatus.Running).map(replay -> replay.replayId).collect(Collectors.toList()) ;
+        if (!running_replays.isEmpty()) {
+            return Response.status(Status.FORBIDDEN).entity((new JSONObject(Map.of("Force Complete", new JSONArray(running_replays)))).toString()).build();
+        }
+
+        // check if recording or replay is ongoing for (customer, app, instanceid)
+        Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId), Optional.ofNullable(recording.app),
+            Optional.ofNullable(recording.instanceId));
+        if (errResp.isPresent()) {
+            return errResp.get();
+        }
+
+            // TODO need to enforce template version specification later
+        /*if (!formParams.containsKey("templateSetVer")) {
+            return Response.status(Status.BAD_REQUEST).entity("{\"Cause\" : \"Template Set Version Not Specified\"}").build();
+        }*/
+
+        Optional<String> templateSetVersion = Optional.ofNullable(formParams
+            .getFirst("templateSetVer"))/*.orElse(Recording.DEFAULT_TEMPLATE_VER)*/;
+
+        return endpoint.map(e -> {
+                        // TODO: introduce response transforms as necessary
+                        return ReplayDriver.initReplay(e, recording.customerId, recording.app, recording.instanceId, recording.collection,
+                            reqids, rrstore, async, paths, null, samplerate, intermediateServices,templateSetVersion)
+                            .map(replayDriver -> {
+                                String json;
+                                Replay replay = replayDriver.getReplay();
+                                try {
+                                    json = jsonMapper.writeValueAsString(replay);
+                                    boolean status = replayDriver.start();
+                                    if (status) {
+                                        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                                    }
+                                    return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
+                                } catch (JsonProcessingException ex) {
+                                    LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayId), ex);
+                                    return Response.serverError().build();
+                                }
+                            }).orElse(Response.serverError().build());
+                }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
     }
+
 
 	/**
 	 * @param config

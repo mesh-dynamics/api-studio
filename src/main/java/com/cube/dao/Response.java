@@ -102,7 +102,7 @@ public class Response extends RRBase {
         }
     }
 
-    public Event toEvent(Config config)
+    public Event toEvent(Config config, String apiPath)
         throws JsonProcessingException, EventBuilder.InvalidEventException {
 
         HTTPResponsePayload payload = new HTTPResponsePayload(hdrs, status, body);
@@ -112,7 +112,7 @@ public class Response extends RRBase {
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
-            reqId.orElse("NA"), "NA", Event.EventType.HTTPResponse);
+            reqId.orElse("NA"), apiPath, Event.EventType.HTTPResponse);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
         event.parsePayLoad(config);

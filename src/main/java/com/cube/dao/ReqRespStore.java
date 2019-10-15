@@ -449,7 +449,7 @@ public interface ReqRespStore {
 		@JsonIgnore
         public Optional<String> getTemplateVersion() {
             return replay.flatMap(replay1 -> replay1.templateVersion)
-                .or(() -> recording.flatMap(recording1 -> recording1.templateVersion));
+                .or(() -> recording.map(recording -> recording.templateVersion));
         }
 
 		// for json de-serialization

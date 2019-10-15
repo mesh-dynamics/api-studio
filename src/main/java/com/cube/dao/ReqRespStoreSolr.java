@@ -2085,9 +2085,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_ID);
         Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_ID);
         if (customerId.isPresent() && app.isPresent()
-                && instanceid.isPresent() && collection.isPresent() && status.isPresent()) {
+                && instanceid.isPresent() && collection.isPresent() && status.isPresent() && templateVersion.isPresent()) {
             recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
-                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion, parentRecordingId, rootRecordingId));
+                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
