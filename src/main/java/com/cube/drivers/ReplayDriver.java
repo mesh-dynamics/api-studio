@@ -13,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -54,6 +55,7 @@ public class ReplayDriver  {
      * @param app
      * @param instanceid
      * @param collection
+     * @param userid
      * @param reqids
      * @param rrstore
      * @param replayid
@@ -62,11 +64,11 @@ public class ReplayDriver  {
      * @param samplerate
      * @param templateVersion
      */
-    private ReplayDriver(String endpoint, String customerid, String app, String instanceid, String collection, List<String> reqids,
+    private ReplayDriver(String endpoint, String customerid, String app, String instanceid, String collection, String userid, List<String> reqids,
                          ReqRespStore rrstore, String replayid, boolean async, Replay.ReplayStatus status,
-                         List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+                         List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
                          Optional<Double> samplerate, List<String> intermediateServices, Optional<String> templateVersion) {
-        this.replay = new Replay(endpoint, customerid, app, instanceid, collection, reqids, replayid, async,
+        this.replay = new Replay(endpoint, customerid, app, instanceid, collection, userid, reqids, replayid, async,
             templateVersion, status, paths, reqcnt, reqsent, reqfailed, creationTimestamp, samplerate, intermediateServices);
         this.rrstore = rrstore;
     }
@@ -76,6 +78,7 @@ public class ReplayDriver  {
      * @param customerid
      * @param app
      * @param collection
+     * @param userid
      * @param reqids
      * @param replayid
      * @param async
@@ -84,10 +87,10 @@ public class ReplayDriver  {
      * @param templateVersion
      */
     private ReplayDriver(String endpoint, String customerid, String app, String instanceid,
-                         String collection, List<String> reqids, ReqRespStore rrstore,
+                         String collection, String userid, List<String> reqids, ReqRespStore rrstore,
                          String replayid, boolean async, Replay.ReplayStatus status,
                          List<String> paths, Optional<Double> samplerate, List<String> intermediateServices, Optional<String> templateVersion) {
-        this(endpoint, customerid, app, instanceid, collection, reqids, rrstore, replayid, async,
+        this(endpoint, customerid, app, instanceid, collection, userid, reqids, rrstore, replayid, async,
             status, paths, 0, 0, 0, null, samplerate, intermediateServices, templateVersion);
     }
 
@@ -227,11 +230,11 @@ public class ReplayDriver  {
     }
 
     public static Optional<ReplayDriver> initReplay(String endpoint, String customerid, String app, String instanceid,
-                                              String collection, List<String> reqids,
+                                              String collection, String userid, List<String> reqids,
                                               ReqRespStore rrstore, boolean async, List<String> paths,
                                               JSONObject xfms, Optional<Double> samplerate, List<String> intermediateServices, Optional<String> templateSetVersion) {
         String replayid = Replay.getReplayIdFromCollection(collection);
-        ReplayDriver replaydriver = new ReplayDriver(endpoint, customerid, app, instanceid, collection,
+        ReplayDriver replaydriver = new ReplayDriver(endpoint, customerid, app, instanceid, collection, userid,
                 reqids, rrstore, replayid, async, Replay.ReplayStatus.Init, paths, samplerate, intermediateServices, templateSetVersion);
         if (rrstore.saveReplay(replaydriver.replay)) {
             return Optional.of(replaydriver);
