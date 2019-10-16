@@ -255,7 +255,7 @@ public class ReplayWS {
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
                         return ReplayDriver.initReplay(e, recording.customerId, recording.app, recording.instanceId, recording.collection,
-                            reqids, rrstore, async, paths, null, samplerate, intermediateServices,templateSetVersion)
+                            reqids, async, paths, null, samplerate, intermediateServices,templateSetVersion, config)
                             .map(replayDriver -> {
                                 String json;
                                 Replay replay = replayDriver.getReplay();
