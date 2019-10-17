@@ -513,10 +513,10 @@ public interface ReqRespStore {
     /**
      * Deletes the Requests and Responses from the passed collection that has the given trace id
      * @param traceId
-     * @param newCollectionName
+     * @param collectionName
      * @return
      */
-    boolean deleteReqResByTraceId(String traceId, String newCollectionName);
+    boolean deleteReqResByTraceId(String traceId, String collectionName);
 
     /**
 	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service

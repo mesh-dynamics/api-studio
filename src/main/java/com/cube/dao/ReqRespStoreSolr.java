@@ -1345,7 +1345,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private boolean deleteDocsByQuery(String query) {
         if (deleteFuncKey == null) {
             try {
-                Method currentMethod = solr.getClass().getMethod("delete", query.getClass());
+                Method currentMethod = solr.getClass().getMethod("deleteByQuery", query.getClass());
                 deleteFuncKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app,
                     config.commonConfig.instance, config.commonConfig.serviceName, currentMethod);
             } catch (Exception e) {
@@ -1898,8 +1898,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean deleteReqResByTraceId(String traceId, String newCollectionName) {
-        String queryString = "(" + HDRTRACEF + ":" + traceId + " OR " + METATRACEID + ":" + traceId + ") AND " + COLLECTIONF +":" + newCollectionName;
+    public boolean deleteReqResByTraceId(String traceId, String collectionName) {
+        String queryString = "(" + HDRTRACEF + ":" + traceId + " OR " + METATRACEID + ":" + traceId + ") AND " + COLLECTIONF +":" + collectionName;
         return deleteDocsByQuery(queryString);
     }
 
