@@ -52,7 +52,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
-import org.apache.zookeeper.Op;
 import redis.clients.jedis.Jedis;
 
 import com.cube.agent.FnReqResponse;
@@ -1450,14 +1449,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static Optional<Replay> docToReplay(SolrDocument doc) {
 
         Optional<String> app = getStrField(doc, APPF);
-        Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<Boolean> async = getBoolField(doc, ASYNCF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
-        Optional<String> customerid = getStrField(doc, CUSTOMERIDF);
-        Optional<String> userid = getStrField(doc, USERIDF);
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
+        Optional<String> userId = getStrField(doc, USERIDF);
         Optional<String> endpoint = getStrField(doc, ENDPOINTF);
-        Optional<String> replayid = getStrField(doc, REPLAYIDF);
-        List<String> reqids = getStrFieldMV(doc, REQIDSF);
+        Optional<String> replayId = getStrField(doc, REPLAYIDF);
+        List<String> reqIds = getStrFieldMV(doc, REQIDSF);
         Optional<ReplayStatus> status = getStrField(doc, REPLAYSTATUSF).flatMap(s -> Utils.valueOf(ReplayStatus.class, s));
         List<String> paths = getStrFieldMV(doc, PATHSF);
         int reqcnt = getIntField(doc, REQCNTF).orElse(0);
@@ -1469,19 +1468,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSION);
 
         Optional<Replay> replay = Optional.empty();
-        if (endpoint.isPresent() && customerid.isPresent() && app.isPresent() &&
-                instanceid.isPresent() && collection.isPresent()
-                && replayid.isPresent() && async.isPresent() && status.isPresent() && userid.isPresent()) {
+        if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
+                instanceId.isPresent() && collection.isPresent()
+                && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent()) {
             try {
-				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), userid.get(),
-				        reqids, replayid.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
+				replay = Optional.of(new Replay(endpoint.get(), customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get(),
+				        reqIds, replayId.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toInstant() : creationTimestamp.get(),
                         samplerate , intermediateService));
 			} catch (ParseException e) {
-				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
+				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayId.orElse("")));
 			}
         } else {
-            LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayid.orElse("")));
+            LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayId.orElse("")));
         }
 
         return replay;
@@ -1590,18 +1589,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
-            List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numofResults,  Optional<Integer> start,
-            Optional<String> userid, Optional<Instant> endDate) {
+    public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
+            List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
+            Optional<String> userId, Optional<Instant> endDate) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
-        addFilter(query, CUSTOMERIDF, customerid);
+        addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
-        addFilter(query, INSTANCEIDF, instanceid);
+        addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
         addFilter(query, COLLECTIONF , collection);
-        addFilter(query, USERIDF, userid);
+        addFilter(query, USERIDF, userId);
         addEndRangeFilter(query, CREATIONTIMESTAMPF, endDate, true);
         // Heuristic: getting the latest replayid if there are multiple.
         // TODO: what happens if there are multiple replays running for the
@@ -1609,8 +1608,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, CREATIONTIMESTAMPF, false /* desc */);
 
         //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getResults(solr, query, numofResults, ReqRespStoreSolr::docToReplay, start);
-//        return SolrIterator.getStream(solr, query, numofResults).flatMap(doc -> docToReplay(doc, this).stream());
+        return SolrIterator.getResults(solr, query, numOfResults, ReqRespStoreSolr::docToReplay, start);
     }
 
     @Override
@@ -1690,17 +1688,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    public Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
-                                                        boolean bypath) {
+    public Stream<MatchResultAggregate> getResultAggregate(String replayId, Optional<String> service,
+                                                        boolean byPath) {
 
         SolrQuery query = new SolrQuery("*:*");
         query.setFields("*");
         addFilter(query, TYPEF, Types.MatchResultAggregate.toString());
-        addFilter(query, REPLAYIDF, replayid);
+        addFilter(query, REPLAYIDF, replayId);
 //        addFilter(query, SERVICEF, service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
         service.ifPresent(servicev -> addFilter(query, SERVICEF, servicev));
 
-        if(!bypath) {
+        if(!byPath) {
             addFilter(query, PATHF, DEFAULT_EMPTY_FIELD_VALUE);
         }
 

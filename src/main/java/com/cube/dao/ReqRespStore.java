@@ -205,9 +205,9 @@ public interface ReqRespStore {
      * @param endDate
      * @return
      */
-    Result<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
+    Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
                              List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
-                             Optional<String> userid, Optional<Instant> endDate);
+                             Optional<String> userId, Optional<Instant> endDate);
 
     /**
      *
@@ -310,8 +310,8 @@ public interface ReqRespStore {
      * This method just gets the aggregates using Solr query which were pre-computed and
      * stored. For computation of aggregates check computeResultAggregate method.
      */
-    Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
-                                                            boolean bypath);
+    Stream<MatchResultAggregate> getResultAggregate(String replayId, Optional<String> service,
+                                                            boolean byPath);
 
 
     /**
