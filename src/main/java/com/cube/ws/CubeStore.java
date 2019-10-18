@@ -222,8 +222,9 @@ public class CubeStore {
                     }
                 });
                 return s.map(sval -> {
+                    String reqApiPath = Optional.ofNullable(meta.getFirst(METAPATHFIELD)).orElse("");
                     com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection
-                        , timestamp, runType, customerid, app, path);
+                        , timestamp, runType, customerid, app, reqApiPath);
                     Event responseEvent;
                     try {
                         // todo: consider creating the Event object directly instead of creating a Response
