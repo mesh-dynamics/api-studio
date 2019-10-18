@@ -307,7 +307,7 @@ public class MockServiceHTTP {
         return  new com.cube.dao.Response(mockReqId, originalResponse.status, originalResponse.meta,
             originalResponse.hdrs, originalResponse.body, rrstore.getCurrentReplayId(Optional.of(customerId),
             Optional.of(app), Optional.of(instanceId)) , Optional.of(Instant.now()), Optional.of(Event.RunType.Replay) ,
-            Optional.of(customerId), Optional.of(app));
+            Optional.of(customerId), Optional.of(app), originalResponse.apiPath);
     }
 
     /**

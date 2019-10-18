@@ -59,9 +59,8 @@ public class Request extends RRBase {
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
-		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app);
-		this.apiPath = apiPath;
-		this.queryParams = queryParams != null ? queryParams : emptyMap();
+		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app, apiPath);
+        this.queryParams = queryParams != null ? queryParams : emptyMap();
 		this.formParams = formParams != null ? formParams : emptyMap();
 		this.method = method;
 	}
@@ -106,16 +105,14 @@ public class Request extends RRBase {
 	@SuppressWarnings("unused")
 	private Request() {
 		super();
-		this.apiPath = "";
-		this.queryParams = new MultivaluedHashMap<String, String>();
+        this.queryParams = new MultivaluedHashMap<String, String>();
 		this.formParams = new MultivaluedHashMap<String, String>();
 		this.method = "";
 	}
 
 	static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
 	  = new TypeReference<MultivaluedHashMap<String, String>>() {};
-	
-	public final String apiPath;
+
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> queryParams; // query params
     @JsonDeserialize(as=MultivaluedHashMap.class)

@@ -29,7 +29,7 @@ class ResponseTransformerTest {
         Response recordResponse = new Response(Optional.empty(), 200, body1,
             Optional.of("golden_collection"), Optional.empty(),
             Optional.empty(),
-            Optional.of("aa"));
+            Optional.of("aa"), "/");
 
         // response from replayed collection
         String body2 = "[{\"display_actors\":[\"NATALIE HOPKINS\",\"GROUCHO SINATRA\",\"ED MANSFIELD\",\"JOE " +
@@ -40,7 +40,7 @@ class ResponseTransformerTest {
         Response replayResponse = new Response(Optional.empty(), 200, body2,
             Optional.of("replay_collection"), Optional.empty(),
             Optional.empty(),
-            Optional.of("aa"));
+            Optional.of("aa"), "/");
 
         // update operations list
         List<ReqRespUpdateOperation> operationsList = Arrays.asList(
