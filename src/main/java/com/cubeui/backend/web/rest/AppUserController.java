@@ -81,21 +81,21 @@ public class AppUserController {
         }
         Optional<AppUser> existing = this.appUserRepository.findById(appUserDTO.getId());
         if(existing.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("AppUser with ID '" + appUserDTO.getId() + "' not found."));
-        Optional<App> app = null;
+        Optional<App> app = Optional.empty();
         if(appUserDTO.getAppId() != null) {
             app = appRepository.findById(appUserDTO.getAppId());
             if(app.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + appUserDTO.getAppId() + "' not found."));
         }
-        Optional<User> user = null;
+        Optional<User> user = Optional.empty();
         if(appUserDTO.getUserId() != null) {
             user = userRepository.findById(appUserDTO.getUserId());
             if(user.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("User with ID '" + appUserDTO.getUserId() + "' not found."));
         }
-        Optional.ofNullable(app).ifPresent(givenApp -> {
-            existing.get().setApp(givenApp.get());
+        app.ifPresent(givenApp -> {
+            existing.get().setApp(givenApp);
         });
-        Optional.ofNullable(user).ifPresent(usr -> {
-            existing.get().setUser(usr.get());
+        user.ifPresent(usr -> {
+            existing.get().setUser(usr);
         });
         this.appUserRepository.save(existing.get());
         return created(

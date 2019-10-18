@@ -69,7 +69,7 @@ public class AppController {
             return status(FORBIDDEN).body(new ErrorResponse("App with ID '" + appDTO.getId() +"' already exists."));
         }
         if(appDTO.getName() == null) return status(FORBIDDEN).body(new ErrorResponse("Mandatory field Name is empty."));
-        Optional<Customer> customer = null;
+        Optional<Customer> customer = Optional.empty();
         if(appDTO.getCustomerId() != null) {
             customer = customerService.getById(appDTO.getCustomerId());
             if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
@@ -97,13 +97,13 @@ public class AppController {
         }
         Optional<App> existing = appRepository.findById(appDTO.getId());
         if(existing.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + appDTO.getId() + "' not found."));
-        Optional<Customer> customer = null;
+        Optional<Customer> customer = Optional.empty();
         if(appDTO.getCustomerId() != null) {
             customer = customerService.getById(appDTO.getCustomerId());
             if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
         }
-        Optional.ofNullable(customer).ifPresent(givenCustomer -> {
-            existing.get().setCustomer(givenCustomer.get());
+        customer.ifPresent(givenCustomer -> {
+            existing.get().setCustomer(givenCustomer);
         });
         Optional.ofNullable(appDTO.getName()).ifPresent((name -> {
             existing.get().setName(name);
