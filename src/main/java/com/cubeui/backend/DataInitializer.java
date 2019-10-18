@@ -1523,23 +1523,7 @@ public class DataInitializer implements CommandLineRunner {
         if(!appUserRepository.existsById(168L)) {
             AppUser appUser = new AppUser();
             appUser.setId(168L);
-            appUser.setApp(appRepository.findById(5L).get());
-            appUser.setUser(userRepository.findById(147L).get());
-            appUserRepository.save(appUser);
-        }
-
-        if(!appUserRepository.existsById(169L)) {
-            AppUser appUser = new AppUser();
-            appUser.setId(169L);
             appUser.setApp(appRepository.findById(4L).get());
-            appUser.setUser(userRepository.findById(160L).get());
-            appUserRepository.save(appUser);
-        }
-
-        if(!appUserRepository.existsById(170L)) {
-            AppUser appUser = new AppUser();
-            appUser.setId(170L);
-            appUser.setApp(appRepository.findById(5L).get());
             appUser.setUser(userRepository.findById(160L).get());
             appUserRepository.save(appUser);
         }
