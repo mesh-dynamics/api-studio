@@ -68,6 +68,8 @@ start_record() {
 	fi
 
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
+	kubectl apply -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
+	kubectl patch daemonsets fluentd --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.yaml)" -n logging --record
 
 	RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
@@ -96,9 +98,13 @@ stop_record() {
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
+	kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
+	kubectl rollout undo daemonset -n logging fluentd # TODO: change this to use a remove patch
 }
 
 replay_setup() {
+	kubectl apply -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
+	kubectl patch daemonsets fluentd --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.yaml)" -n logging --record
 	kubectl apply -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
 	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
@@ -163,9 +169,25 @@ replay() {
 
 stop_replay() {
 	kubectl delete -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
+	kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
+	kubectl rollout undo daemonset -n logging fluentd
 	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
 		kubectl delete -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
 	fi
+}
+
+replay_status() {
+	if [ -z "$1" ]; then
+		echo "Enter collection name to check replay status"
+		read COLLECTION_NAME
+	else
+		COLLECTION_NAME=$1
+	fi
+	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
+	curl http://$GATEWAY_URL/rs/status/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
+	-H 'Content-Type: application/x-www-form-urlencoded' \
+	  -H 'cache-control: no-cache' \
+		-H "Host: $CUBE_HOST" | jq -r "."
 }
 
 analyze() {
@@ -175,7 +197,7 @@ analyze() {
 	  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
 	  -H 'Content-Type: application/x-www-form-urlencoded' \
 	  -H 'cache-control: no-cache' \
-		-H "Host: $CUBE_HOST"
+		-H "Host: $CUBE_HOST" | jq -r "."
 }
 
 export_dev_env_variables() {
@@ -226,6 +248,7 @@ main () {
 		setup_replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay_setup "$@";;
 		replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay "$@";;
 		stop_replay) OPERATION="stopreplay"; shift; generate_manifest $1; shift; stop_replay "$@";;
+		replay_status) OPERATION="replay_status"; shift; generate_manifest $1; shift; replay_status "$@";;
 		register_matcher) OPERATION="none"; shift; generate_manifest $1; shift; register_matcher "$@";;
 		analyze) OPERATION="analyze"; shift; generate_manifest $1; shift; analyze "$@";;
 		clean) OPERATION="clean"; shift; generate_manifest $1; shift; clean "$@";;

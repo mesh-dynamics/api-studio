@@ -1,6 +1,28 @@
 [
   {
     "id" : "ResponseTemplate-cubews-record",
+    "path" : "cs/start",
+    "service" : "cubews-record",
+    "template" : {
+      "prefixPath": "",
+      "rules": [
+        {
+          "path" : "/body",
+          "pt" : "Required",
+          "dt" : "Obj",
+          "ct" : "Equal"
+        },
+        {
+          "path" : "/body/timestmp",
+          "pt" : "Required",
+          "dt" : "Float",
+          "ct" : "Ignore"
+        }
+      ]
+    }
+  },
+  {
+    "id" : "ResponseTemplate-cubews-record",
     "path" : "cs/stop",
     "service" : "cubews-record",
     "template" : {

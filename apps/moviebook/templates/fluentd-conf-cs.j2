@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: fluentd-moviebook-conf-{{namespace}}
+  namespace: logging
+data:
+  fluent-moviebook-{{namespace}}.conf: |-
+    # tail movieinfo (envoy) logs
+    <source>
+      @type tail
+      @id in_tail_cube_envoy_movieinfo_{{namespace}}
+      path /var/log/containers/*{{namespace}}_istio-proxy*.log
+      exclude_path ["/var/log/containers/cubews*{{namespace}}_istio-proxy*.log"]
+      pos_file /var/log/fluentd-containers-{{namespace}}-cube-envoy-movieinfo.log.pos
+      tag cube.envoy.movieinfo.{{namespace}}
+      read_from_head true
+      <parse>
+        @type json
+      </parse>
+    </source>
+
+    # filter for parsing envoy proxy logs
+    <filter cube.envoy.**>
+      @type parser
+      key_name log
+      <parse>
+        @type regexp
+        expression script log: \[cube\](?<inner_json>.*)$
+      </parse>
+    </filter>
+    # send inner_json
+    <filter cube.**>
+      @type parser
+      format json
+      key_name inner_json
+      reserve_data false
+      remove_key_name_field true
+    </filter>
+    # http output for movieinfo logs
+    <match cube.envoy.movieinfo.{{namespace}}>
+      @type http
+      endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/rrbatch
+      open_timeout 5
+      <format>
+        @type json
+      </format>
+      <buffer log>
+        @type memory
+        chunk_limit_records 10
+        flush_interval 10
+      </buffer>
+    </match>

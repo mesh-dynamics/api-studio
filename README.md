@@ -30,33 +30,38 @@ brew cask install osxfuse
 brew install datawire/blackbird/telepresence
 ```
 
-7. Start local kubernetes cluster with minikube  
+7. Install `jq`
+```
+brew install jq
+```
+
+8. Start local kubernetes cluster with minikube  
 ```
 minikube start --memory=8192 --cpus=4
 ```
 
-8. Enable ingress setup on `minikube`  
+9. Enable ingress setup on `minikube`  
 ```
 minikube addons enable ingress
 ```
 
-9. Apply the `minikube` docker env to your shell. This will make the host
+10. Apply the `minikube` docker env to your shell. This will make the host
 docker use the docker registry inside the minikube vm.  
 ```
 $ eval $(minikube docker-env)
 ```
 
-10. Download [`Istio`](https://istio.io/)  
+11. Download [`Istio`](https://istio.io/)  
 ```
 $ curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.0.6 sh -
 ```
 
-11. Add Istio to PATH variable to make it easy to access Istio binaries.  
+12. Add Istio to PATH variable to make it easy to access Istio binaries.  
 ```
 $ export PATH=$PWD/istio-1.0.6/bin:$PATH
 ```
 
-12. Install Istio’s Custom Resource Definitions via kubectl apply, and wait a few seconds for the CRDs to be committed in the kube-apiserver.  
+13. Install Istio’s Custom Resource Definitions via kubectl apply, and wait a few seconds for the CRDs to be committed in the kube-apiserver.  
 ```
 $ kubectl apply -f istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
 ```
@@ -64,22 +69,22 @@ $ kubectl apply -f istio-1.0.6/install/kubernetes/helm/istio/templates/crds.yaml
 > NOTE: Since we are running Istio with Minikube, we need to make one change before going ahead – changing the Ingress Gateway service from type LoadBalancer to NodePort.  
 <b> IN CASE OF AWS, SKIP STEP 13. </b>
 
-13. Open the file istio-1.0.6/install/kubernetes/istio-demo.yaml, search for LoadBalancer and replace it with NodePort.
+14. Open the file istio-1.0.6/install/kubernetes/istio-demo.yaml, search for LoadBalancer and replace it with NodePort.
 
-14. Install Istio  
+15. Install Istio  
 ```
 $ kubectl apply -f istio-1.0.6/install/kubernetes/istio-demo.yaml
 ```
 
-15. Jaeger dashboard
+16. Jaeger dashboard
 ```
 kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686 &
 ```
 Access the Jaeger dashboard by opening your browser to http://localhost:16686.
 
-16. minikube dashboard -- useful for ssh, browsing logs per pod, etc.
+17. minikube dashboard -- useful for ssh, browsing logs per pod, etc.
 ```
 minikube dashboard
 ```
 
-17. [Setup moviebook/Cube app](docs/README.md)
+18. [Setup moviebook/Cube app](docs/README.md)

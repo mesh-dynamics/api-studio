@@ -1,0 +1,13 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: fluentd
+        volumeMounts:
+        - name: fluentd-moviebook-conf-{{namespace}}
+          mountPath: /fluentd/etc/conf.d/fluent-moviebook-{{namespace}}.conf
+          subPath: fluent-moviebook-{{namespace}}.conf
+      volumes:
+      - name: fluentd-moviebook-conf-{{namespace}}
+        configMap:
+          name: "fluentd-moviebook-conf-{{namespace}}"

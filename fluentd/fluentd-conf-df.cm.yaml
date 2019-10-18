@@ -1,0 +1,138 @@
+apiVersion: v1
+data:
+  fluent.conf: |-
+    # tail movieinfo (envoy) logs
+    <source>
+      @type tail
+      @id in_tail_cube_envoy_movieinfo
+      path /var/log/containers/*staging_istio-proxy*.log
+      exclude_path ["/var/log/containers/cubews*staging_istio-proxy*.log"]
+      pos_file /var/log/cube-fluentd-containers-cube-envoy-movieinfo.log.pos
+      tag cube.envoy.movieinfo
+      read_from_head true
+      <parse>
+        @type json
+      </parse>
+    </source>
+    
+    # tail cubews (envoy) logs
+    <source>
+      @type tail
+      @id in_tail_cube_envoy_cubews
+      path /var/log/containers/cubews*staging_istio-proxy*.log
+      pos_file /var/log/cube-fluentd-containers-cube-envoy-cubews.log.pos
+      tag cube.envoy.cubews
+      read_from_head true
+      <parse>
+        @type json
+      </parse>
+    </source>
+    
+    # tail cubews (cubews agent) logs
+    <source>
+      @type tail
+      @id in_tail_cube_agent_cubews
+      path /var/log/containers/cubews*staging_cubews*.log
+      pos_file /var/log/cube-fluentd-containers-cube-agent-cubews.log.pos
+      tag cube.agent.cubews
+      read_from_head true
+      <parse>
+        @type json
+      </parse>
+    </source>
+
+
+    # tail custom directory
+    # <source>
+    #   @type tail
+    #   @id in_tail_cube_var
+    #   path /var/cube/*.log
+    #   pos_file /var/cube/cube-var-log.pos
+    #   tag cube.var
+    #   read_from_head true
+    #   <parse>
+    #    @type regexp
+    #    expression \[cube\]\[(?<type>(record|replay))\](?<log>.*)
+    #   </parse>
+    # </source>
+    
+    # filter for parsing envoy proxy logs
+    <filter cube.envoy.*>
+      @type parser
+      key_name log
+      <parse>
+        @type regexp
+        expression script log: \[cube\](?<inner_json>.*)$
+      </parse>
+    </filter>
+ 
+    # filter for parsing cubews agent logs
+    <filter cube.agent.*>
+      @type parser
+      key_name log
+      <parse>
+        @type regexp
+        expression Cube FnReqResp Event:(?<inner_json>.*)$
+      </parse>
+    </filter>
+
+    # send inner_json
+    <filter cube.**>
+      @type parser
+      format json
+      key_name inner_json
+      reserve_data false
+      remove_key_name_field true
+    </filter>
+
+    # http output for movieinfo logs
+    <match cube.envoy.movieinfo>
+      @type http
+      endpoint http://cubews-record.staging.svc:8080/cs/rrbatch
+      open_timeout 5
+      <format>
+        @type json
+      </format>
+      <buffer log>
+        @type memory
+        chunk_limit_records 10
+        flush_interval 10
+      </buffer>
+    </match>
+
+    # http output for cube dogfooding (envoy)
+    <match cube.envoy.cubews>
+      @type http
+      endpoint http://cubews-record.cube.svc:8080/cs/rrbatch
+      open_timeout 5
+      <format>
+        @type json
+      </format>
+      <buffer log>
+        @type memory
+        chunk_limit_records 10
+        flush_interval 10
+      </buffer>
+    </match>
+
+    # http output for cube dogfooding (agent)
+    <match cube.agent.cubews>
+      @type http
+      endpoint http://cubews-record.cube.svc:8080/cs/frbatch
+      open_timeout 5
+      <format>
+        @type json
+      </format>
+      <buffer log>
+        @type memory
+        chunk_limit_records 10
+        flush_interval 10
+      </buffer>
+    </match>
+
+
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: cube-fluentd-conf
+  namespace: logging

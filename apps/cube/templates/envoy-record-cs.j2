@@ -66,7 +66,8 @@ spec:
                   buf[#buf+1] = delim .. '"body":"' .. escape_str(b) .. '"'
                   buf[#buf+1] = '}'
                   data = table.concat(buf)
-                  -- handle:logErr(data)
+                  handle:logErr('[cube]' .. data)
+                  --[[
                   handle:logErr("Making http call to cube: " .. "/cs/rr" .. path)
                   local hhdr, hbody = handle:httpCall(
                   "outbound|8080||cubews-record.{{master_namespace}}.svc.cluster.local",
@@ -78,6 +79,7 @@ spec:
                   },
                   data,
                   5000)
+                  --]]
                 end
                 function envoy_on_response(response_handle)
                   local meta = {}
