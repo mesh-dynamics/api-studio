@@ -10,8 +10,6 @@ export const cubeService = {
     getGraphDataByAppId,
     fetchCollectionList,
     forceCompleteReplay,
-    getReplayId,
-    startReplay,
     checkStatusForReplay,
     fetchAnalysis,
     fetchReport,
@@ -359,72 +357,6 @@ async function forceCompleteReplay(fcId) {
     }).catch(function(error){
         throw (error.response);
     });
-}
-
-async function getReplayId(collectionId, app, instance, gatewayEndPoint, ctv) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.replayBaseUrl}/init/${user.customer_name}/${app}/${collectionId}`;
-    let replayId;
-    const searchParams = new URLSearchParams();
-    searchParams.set('endpoint', gatewayEndPoint);
-    searchParams.set('instanceid', instance);
-    searchParams.set('templateSetVer', ctv);
-    if (app != 'Cube') {
-        searchParams.set('paths', 'minfo/listmovies');
-        searchParams.append('paths', 'minfo/returnmovie');
-        searchParams.append('paths', 'minfo/rentmovie');
-        searchParams.append('paths', 'minfo/liststores');
-    }
-    return await axios.post(url, searchParams).then(function(response) {
-        return response;
-    }).catch(function(error){
-        throw (error.response);
-    });
-    /*try {
-        let urrl = url;
-        response = await fetch(urrl, {
-            method: "post",
-            body: searchParams,
-            headers: new Headers({
-                "Content-Type": "application/x-www-form-urlencoded",
-                "cache-control": "no-cache"
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            return json;
-        } else {
-            throw new Error(response);
-        }
-    } catch (e) {
-        console.log(JSON.stringify(e));
-        throw e;
-    }*/
-}
-
-async function startReplay(collectionId, replayId, app) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.replayBaseUrl}/start/${user.customer_name}/${app}/${collectionId}/${replayId}`;
-
-    try {
-        let urrl = url;
-        response = await fetch(urrl, {
-            method: "post",
-            headers: new Headers({
-                "cache-control": "no-cache"
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            return json;
-        } else {
-            throw new Error("Response not ok startReplay");
-        }
-    } catch (e) {
-        throw e;
-    }
 }
 
 async function checkStatusForReplay(collectionId, replayId, app) {

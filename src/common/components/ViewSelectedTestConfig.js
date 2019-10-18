@@ -26,7 +26,6 @@ class ViewSelectedTestConfig extends React.Component {
         this.replay = this.replay.bind(this);
         this.handleChangeForInstance = this.handleChangeForInstance.bind(this);
         this.getReplayStatus = this.getReplayStatus.bind(this);
-        this.getReplayId = this.getReplayId.bind(this);
         this.handleFC = this.handleFC.bind(this);
     }
 
@@ -71,40 +70,6 @@ class ViewSelectedTestConfig extends React.Component {
         });
     }
 
-    getReplayId() {
-        const {cube, dispatch} = this.props;
-        if (!cube.selectedTestId) {
-            alert('Select Golden To Replay');
-        } else {
-            let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
-            this.setState({show: true});
-            let selectedInstances = cube.instances.filter((item) => item.name == instance && item.app.name == cube.selectedApp);
-            let gatewayEndpoint = selectedInstances.length > 0 ? selectedInstances[0].gatewayEndpoint : "http://demo.dev.cubecorp.io";
-            this.getReplayIdCall(cube.selectedTestId, cube.selectedApp , instance, gatewayEndpoint, cube.collectionTemplateVersion);
-        }
-    }
-
-    replay (replayId) {
-        console.log(replayId);
-        const {cube, dispatch} = this.props;
-        if (!cube.selectedTestId) {
-            alert('select golden to replay');
-        } /*else if (!cube.gateway) {
-            alert('select gateway point');
-        }*/ else if(!replayId) {
-            alert("Fetching replay id\n try after some time");
-        } else {
-            //this.setState({show: true});
-            dispatch(cubeActions.startReplay(cube.selectedTestId, replayId.replayid, cube.selectedApp));
-            this.doAnalysis = true;
-            this.statusInterval = setInterval(checkStatus, 1000);
-        }
-
-        function checkStatus() {
-            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, replayId.replayid));
-        }
-    }
-
     getReplayStatus() {
         const {cube, dispatch} = this.props;
         dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid, cube.selectedApp));
@@ -126,7 +91,7 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version));
+            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
         }
     }
 
@@ -191,7 +156,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleClose = () => {
         this.setState({ show: false, showCT: false });
-    }
+    };
 
 
     render() {
@@ -245,7 +210,7 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10">
-                    <div onClick={this.getReplayId} className="cube-btn width-100 text-center">RUN TEST</div>
+                    <div onClick={this.replay} className="cube-btn width-100 text-center">RUN TEST</div>
                 </div>
 
                 <Modal show={this.state.show}>
@@ -282,6 +247,52 @@ class ViewSelectedTestConfig extends React.Component {
                 </Modal>
             </div>
         );
+    }
+
+    replay () {
+        const {cube, dispatch} = this.props;
+        if (!cube.selectedTestId) {
+            alert('select golden to replay');
+        } else {
+            this.setState({show: true});
+            /*dispatch(cubeActions.startReplay(cube.selectedGolden));
+            */
+            let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
+            let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
+            let selectedInstances = cube.instances.filter((item) => item.name == instance && item.app.name == cube.selectedApp);
+            let gatewayEndpoint = selectedInstances.length > 0 ? selectedInstances[0].gatewayEndpoint : "http://demo.dev.cubecorp.io";
+            const searchParams = new URLSearchParams();
+            searchParams.set('endpoint', gatewayEndpoint);
+            searchParams.set('templateSetVer', cube.collectionTemplateVersion);
+            if (cube.selectedApp != 'Cube') {
+                searchParams.set('paths', 'minfo/listmovies');
+                searchParams.append('paths', 'minfo/returnmovie');
+                searchParams.append('paths', 'minfo/rentmovie');
+                searchParams.append('paths', 'minfo/liststores');
+            }
+            const configForHTTP = {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            };
+            axios.post(url, searchParams, configForHTTP).then((response) => {
+                this.setState({replayId: response.data});
+                this.doAnalysis = true;
+                this.statusInterval = setInterval(checkStatus, 1000);
+            }).catch((error) => {
+                if (error.response.data && error.response.data['Force Complete']) {
+                    this.setState({fcId: error.response.data['Force Complete'], show: false});
+                } else if (error.response.status == 409) {
+                    let regex = /Replay ongoing for customer (.+?), app (.+?), instance (.+?), with collection name (.+)\./g;
+                    const temp = regex.exec(error.response.data);
+                    this.setState({fcId: temp[(temp.length - 1)], show: false});
+                }
+            });
+        }
+
+        let checkStatus = () => {
+            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayid));
+        };
     }
 
     async getReplayIdCall(collectionId, app, instance, gatewayEndPoint, templateVer) {

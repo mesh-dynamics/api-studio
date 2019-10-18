@@ -3,6 +3,7 @@ import Tippy from '@tippy.js/react'
 import 'tippy.js/themes/light-border.css'
 import { Glyphicon } from 'react-bootstrap'
 import { connect } from "react-redux"
+import {cubeActions} from "../../actions";
 
 class OperationSetLabel extends React.Component {
     constructor(props, context) {
@@ -31,6 +32,28 @@ class OperationSetLabel extends React.Component {
         return false;
     }
 
+    removeFromOS = () => {
+        const {cube, jsonPath, dispatch} = this.props;
+        for (let i =  0; i < cube.newOperationSet.length; i++) {
+            if (cube.newOperationSet[i].path == jsonPath) {
+                dispatch(cubeActions.removeFromNOS(i));
+                return;
+            }
+        }
+        return;
+    };
+
+    removeFromOperations = () => {
+        const {cube, jsonPath, dispatch} = this.props;
+        for (let i =  0; i < cube.operations.length; i++) {
+            if (cube.operations[i].path == jsonPath) {
+                dispatch(cubeActions.removeFromOperations(i));
+                return;
+            }
+        }
+        return;
+    };
+
     render() {
         const tippyContent = (
             <div>
@@ -40,10 +63,10 @@ class OperationSetLabel extends React.Component {
         return this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0 ? (
             <span>
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
-                    <span className={this.findInOperationSet() ? '' : 'hidden'}><Glyphicon glyph="asterisk" /></span>
+                    <span onDoubleClick={this.removeFromOS} className={this.findInOperationSet() ? '' : 'hidden'}><Glyphicon glyph="asterisk" /></span>
                 </Tippy>
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
-                    <span className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
+                    <span onDoubleClick={this.removeFromOperations} className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
                 </Tippy>
             </span>
         ) : "";

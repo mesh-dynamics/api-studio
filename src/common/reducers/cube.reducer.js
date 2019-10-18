@@ -35,6 +35,7 @@ const initialState = {
     testIds: [],
     fcId: null,
     selectedTestId: null,
+    selectedGolden: null,
     collectionTemplateVersion: null,
     golden: null,
     goldenTimeStamp: null,
@@ -97,6 +98,7 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 selectedTestId: null,
+                selectedGolden: null,
                 collectionTemplateVersion: null,
                 fcId: action.data
             };
@@ -104,6 +106,7 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 selectedTestId: null,
+                selectedGolden: null,
                 collectionTemplateVersion: null,
                 fcId: null
             };
@@ -197,6 +200,7 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 selectedTestId: action.data.collec,
+                selectedGolden: action.data.golden,
                 collectionTemplateVersion: action.data.ver
             };
         case cubeConstants.REPLAY_ID_SUCCESS:
@@ -288,6 +292,18 @@ export function cube (state = initialState, action) {
                 ...state,
                 operations: state.operations.concat(action.data)
             };
+        case cubeConstants.REMOVE_FROM_OPERATIONSETS:
+            state.newOperationSet.splice(action.data, 1);
+            return {
+                ...state,
+                newOperationSet: state.newOperationSet
+            };
+        case cubeConstants.REMOVE_FROM_OPERATIONS:
+            state.operations.splice(action.data, 1);
+            return {
+                ...state,
+                operations: state.operations
+            };
         case cubeConstants.TEMPLATE_VER_SUCCESS:
             return {
                 ...state,
@@ -314,7 +330,8 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 golden: null,
-                goldenTimeStamp: null
+                goldenTimeStamp: null,
+                newGoldenId: null
             };
         default:
             return state

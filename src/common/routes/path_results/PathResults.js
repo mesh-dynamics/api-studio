@@ -60,12 +60,19 @@ class PathResults extends Component {
     }
 
     handleClose() {
-        const { history } = this.props;
+        const { history, dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
         this.setState({ showNewGolden: false });
         setTimeout(() => {
             history.push("/test_config");
         })
     }
+
+    handleCloseDone = () => {
+        let { dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+    };
 
     updateGolden() {
         const { cube, dispatch } = this.props;
@@ -233,7 +240,8 @@ class PathResults extends Component {
                                 </Modal.Body>
                                 <Modal.Footer className={cube.newGoldenId ? "" : "hidden"}>
                                     <div>
-                                        <span onClick={this.handleClose} className="cube-btn">Go TO Test Config</span>
+                                        <span onClick={this.handleClose} className="cube-btn">Go TO Test Config</span>&nbsp;&nbsp;
+                                        <span onClick={this.handleCloseDone} className="cube-btn">Done</span>
                                     </div>
                                 </Modal.Footer>
                             </Modal>

@@ -6,17 +6,14 @@ export const cubeActions = {
     setSelectedApp,
     getInstances,
     getTestIds,
-    setGateway,
     setGolden,
     getTestConfigByAppId,
     setTestConfig,
     setSelectedTestIdAndVersion,
     setSelectedInstance,
     forceCompleteReplay,
-    getReplayId,
     getGraphData,
     getGraphDataByAppId,
-    startReplay,
     getReplayStatus,
     getAnalysis,
     getReport,
@@ -34,6 +31,8 @@ export const cubeActions = {
     updateGoldenSet,
     pushToOperationSet,
     pushToOperations,
+    removeFromNOS,
+    removeFromOperations,
     getNewTemplateVerInfo,
     updateTemplateOperationSet
 };
@@ -79,6 +78,14 @@ function clearGolden() {
 
 function pushToOperations(o) {
     return {type: cubeConstants.PUSH_TO_OPERATIONS, data: o};
+}
+
+function removeFromNOS(index) {
+    return {type: cubeConstants.REMOVE_FROM_OPERATIONSETS, data: index};
+}
+
+function removeFromOperations(index) {
+    return {type: cubeConstants.REMOVE_FROM_OPERATIONS, data: index};
 }
 
 function updateTemplateOperationSet(templateVer, body) {
@@ -198,10 +205,6 @@ function forceCompleteReplay(fcId) {
     function success(fcId, date) { return { type: cubeConstants.CLEAR_FORCE_COMPLETE, data: fcId, date: date }; }
 }
 
-function setGateway ( gateway ) {
-    return {type: cubeConstants.SET_GATEWAY, data: gateway};
-}
-
 function getTestConfigByAppId(appId) {
     return async dispatch => {
         try {
@@ -270,8 +273,8 @@ function getTestIds (app) {
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 
-function setSelectedTestIdAndVersion ( testIdLabel, version ) {
-    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version}};
+function setSelectedTestIdAndVersion ( testIdLabel, version, golden ) {
+    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version, golden: golden}};
 }
 
 function getGraphDataByAppId(appId) {
@@ -306,24 +309,6 @@ function getGraphData (app) {
     function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
-function getReplayId(testIdLabel, app, instance, gatewayEndPoint, ctv) {
-    return async dispatch => {
-        try {
-            let replayId = await cubeService.getReplayId(testIdLabel, app, instance, gatewayEndPoint, ctv);
-            console.log(JSON.stringify(replayId));
-            dispatch(success(replayId.data, Date.now()));
-        } catch (error) {
-            console.log(error);
-            if (error.data && error.data['Force Complete']) {
-                dispatch(failure(error.data['Force Complete'], Date.now()));
-            }
-        }
-    };
-
-    function success(replayId, date) { return { type: cubeConstants.REPLAY_ID_SUCCESS, data: replayId, date: date } }
-    function failure(fc, date) { return { type: cubeConstants.NEED_FORCE_COMPLETE, data: fc, date: date } }
-}
-
 function getTimelineData(app = 'Cube', instanceid = 'prod') {
     return async dispatch => {
         try {
@@ -335,18 +320,6 @@ function getTimelineData(app = 'Cube', instanceid = 'prod') {
     };
 
     function success(timeline, date) { return { type: cubeConstants.TIMELINE_DATA_SUCCESS, data: timeline, date: date } }
-}
-
-function startReplay(collectionId, replayId, app) {
-    return async dispatch => {
-        try {
-            dispatch(success(Date.now()));
-            let startReplay = await cubeService.startReplay(collectionId, replayId, app);
-            dispatch(success(Date.now()));
-        } catch (error) {
-        }
-    }
-    function success(date) { return { type: cubeConstants.CLEAR_PREVIOUS_DATA, date: date } }
 }
 
 function getReplayStatus(collectionId, replayId, app) {
