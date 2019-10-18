@@ -479,8 +479,8 @@ public class AnalyzeWS {
         List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
-        Optional<String> userid = Optional.ofNullable(queryParams.getFirst("userid"));
-        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("enddate"));
+        Optional<String> userId = Optional.ofNullable(queryParams.getFirst("userId"));
+        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("endDate"));
 
         Optional<Instant> endDateTS = Optional.empty();
         // For checking correct date format
@@ -495,12 +495,15 @@ public class AnalyzeWS {
             }
         }
 
-        boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
+        boolean byPath = Optional.ofNullable(queryParams.getFirst("byPath"))
             .map(v -> v.equals("y")).orElse(false);
-        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
-            map(Integer::valueOf).or(() -> Optional.of(20));
-        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection, userid, endDateTS);
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt);
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numResults")).map(Integer::valueOf).or(() -> Optional.of(20));
+
+        Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS);
+        long numFound = replaysResult.numFound;
+        Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
             Instant creationTimeStamp = replay.creationTimeStamp;
@@ -516,7 +519,7 @@ public class AnalyzeWS {
                     + "\" , \"templateVer\" : \"" + recording.templateVersion;
             }
 
-            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, byPath);
             Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
 
 //            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
@@ -534,7 +537,9 @@ public class AnalyzeWS {
             }
             jsonBuilder.append("}");
             return jsonBuilder.toString();
-        }).collect(Collectors.joining(" , ", "[", "]"));
+        }).collect(Collectors.joining(" , ", "", ""));
+        finalJson = "{" + "\"numFound\" : " + numFound + "," +
+            "\"timelineResults\" : [" + finalJson + "]}";
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
