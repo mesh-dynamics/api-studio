@@ -17,7 +17,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -36,8 +38,10 @@ public class AppController {
     private CustomerService customerService;
     private InstanceRepository instanceRepository;
     private InstanceUserRepository instanceUserRepository;
+    private UserRepository userRepository;
+    private AppUserRepository appUserRepository;
 
-    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService, InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository) {
+    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService, InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, UserRepository userRepository, AppUserRepository appUserRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -48,12 +52,15 @@ public class AppController {
         this.customerService = customerService;
         this.instanceRepository = instanceRepository;
         this.instanceUserRepository = instanceUserRepository;
+        this.userRepository = userRepository;
+        this.appUserRepository = appUserRepository;
     }
 
     @GetMapping("")
     public ResponseEntity all(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        return ok(this.appRepository.findByCustomerId(user.getCustomer().getId()));
+        Optional<List<AppUser>> appUsers = this.appUserRepository.findByUserId(user.getId());
+        return ok(appUsers.get().stream().map(AppUser::getApp).collect(Collectors.toList()));
     }
 
     @PostMapping("")
@@ -61,23 +68,26 @@ public class AppController {
         if (appDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("App with ID '" + appDTO.getId() +"' already exists."));
         }
-        Optional<Customer> customer = customerService.getById(appDTO.getCustomerId());
-        if (customer.isPresent()) {
-            App saved = this.appRepository.save(
-                    App.builder()
-                            .name(appDTO.getName())
-                            .customer(customer.get())
-                            .build());
-            return created(
-                    ServletUriComponentsBuilder
-                            .fromContextPath(request)
-                            .path("/api/app/{id}")
-                            .buildAndExpand(saved.getId())
-                            .toUri())
-                    .body(saved);
+        if(appDTO.getName() == null) return status(FORBIDDEN).body(new ErrorResponse("Mandatory field Name is empty."));
+        Optional<Customer> customer = Optional.empty();
+        if(appDTO.getCustomerId() != null) {
+            customer = customerService.getById(appDTO.getCustomerId());
+            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
         } else {
-            throw new RecordNotFoundException("Customer with ID '" + appDTO.getCustomerId() + "' not found.");
+            return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field Customer Id is empty."));
         }
+        App saved = this.appRepository.save(
+                App.builder()
+                        .name(appDTO.getName())
+                        .customer(customer.get())
+                        .build());
+        return created(
+                ServletUriComponentsBuilder
+                        .fromContextPath(request)
+                        .path("/api/app/{id}")
+                        .buildAndExpand(saved.getId())
+                        .toUri())
+                .body(saved);
     }
 
     @PutMapping("")
@@ -86,22 +96,26 @@ public class AppController {
             return status(FORBIDDEN).body(new ErrorResponse("App id not provided"));
         }
         Optional<App> existing = appRepository.findById(appDTO.getId());
-        if (existing.isPresent()) {
-            existing.ifPresent(app -> {
-                app.setCustomer(customerService.getById(appDTO.getCustomerId()).get());
-                app.setName(appDTO.getName());
-            });
-            this.appRepository.save(existing.get());
-            return created(
-                    ServletUriComponentsBuilder
-                            .fromContextPath(request)
-                            .path("/api/app/{id}")
-                            .buildAndExpand(existing.get().getId())
-                            .toUri())
-                    .body(existing);
-        } else {
-            throw new RecordNotFoundException("App with ID '" + appDTO.getId() + "' not found.");
+        if(existing.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + appDTO.getId() + "' not found."));
+        Optional<Customer> customer = Optional.empty();
+        if(appDTO.getCustomerId() != null) {
+            customer = customerService.getById(appDTO.getCustomerId());
+            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
         }
+        customer.ifPresent(givenCustomer -> {
+            existing.get().setCustomer(givenCustomer);
+        });
+        Optional.ofNullable(appDTO.getName()).ifPresent((name -> {
+            existing.get().setName(name);
+        }));
+        this.appRepository.save(existing.get());
+        return created(
+                ServletUriComponentsBuilder
+                        .fromContextPath(request)
+                        .path("/api/app/{id}")
+                        .buildAndExpand(existing.get().getId())
+                        .toUri())
+                .body(existing);
     }
 
     @GetMapping("/{id}/services")

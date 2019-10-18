@@ -68,6 +68,14 @@ CREATE TABLE cube.app (
 
 CREATE INDEX app_index ON cube.app(customer_id);
 
+create TABLE cube.app_user (
+  user_id BIGINT NOT NULL REFERENCES cube.cubeuser(id) ON DELETE CASCADE,
+  app_id BIGINT NOT NULL REFERENCES cube.app(id) ON DELETE CASCADE,
+  UNIQUE(user_id, app_id)
+);
+
+CREATE INDEX app_user_index ON cube.app_user(user_id);
+
 CREATE TRIGGER set_timestamp_app
 BEFORE UPDATE ON cube.app
 FOR EACH ROW

@@ -50,7 +50,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private InstanceUserRepository instanceUserRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository, InstanceUserRepository instanceUserRepository) {
+    private AppUserRepository appUserRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository, InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository) {
         this.userService = userService;
         this.customerService = customerService;
 
@@ -67,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.instanceUserRepository = instanceUserRepository;
+        this.appUserRepository = appUserRepository;
     }
 
     @Override
@@ -1444,6 +1447,85 @@ public class DataInitializer implements CommandLineRunner {
             instanceUser.setInstance(instanceRepository.findById(157L).get());
             instanceUser.setUser(userRepository.findById(147L).get());
             instanceUserRepository.save(instanceUser);
+        }
+
+        if (!userRepository.existsById(160L)){
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(160L);
+            userDTO.setName("Demo");
+            userDTO.setEmail("narvar@cubecorp.io");
+            userDTO.setPassword("password123");
+            userDTO.setCustomerId(1L);
+            userDTO.setRoles(Arrays.asList("ROLE_USER"));
+            userDTO.setActivated(true);
+            User user = this.userService.save(userDTO, true);
+            log.info("User with email '{}' created", user.getUsername());
+        }
+
+        if(!instanceRepository.existsById(161L)) {
+            Instance instance = new Instance();
+            instance.setId(161L);
+            instance.setName("NARVAR");
+            instance.setGatewayEndpoint("http://narvar.prod.v2.cubecorp.io");
+            instance.setApp(this.appRepository.findById(4L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceRepository.existsById(162L)) {
+            Instance instance = new Instance();
+            instance.setId(162L);
+            instance.setName("NARVAR");
+            instance.setGatewayEndpoint("http://narvar.prod.v2.cubecorp.io");
+            instance.setApp(this.appRepository.findById(5L).get());
+            this.instanceRepository.save(instance);
+        }
+
+        if(!instanceUserRepository.existsById(163L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(163L);
+            instanceUser.setInstance(instanceRepository.findById(161L).get());
+            instanceUser.setUser(userRepository.findById(160L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!instanceUserRepository.existsById(164L)) {
+            InstanceUser instanceUser = new InstanceUser();
+            instanceUser.setId(164L);
+            instanceUser.setInstance(instanceRepository.findById(162L).get());
+            instanceUser.setUser(userRepository.findById(160L).get());
+            instanceUserRepository.save(instanceUser);
+        }
+
+        if(!appUserRepository.existsById(165L)) {
+            AppUser appUser = new AppUser();
+            appUser.setId(165L);
+            appUser.setApp(appRepository.findById(4L).get());
+            appUser.setUser(userRepository.findById(2L).get());
+            appUserRepository.save(appUser);
+        }
+
+        if(!appUserRepository.existsById(166L)) {
+            AppUser appUser = new AppUser();
+            appUser.setId(166L);
+            appUser.setApp(appRepository.findById(5L).get());
+            appUser.setUser(userRepository.findById(2L).get());
+            appUserRepository.save(appUser);
+        }
+
+        if(!appUserRepository.existsById(167L)) {
+            AppUser appUser = new AppUser();
+            appUser.setId(167L);
+            appUser.setApp(appRepository.findById(4L).get());
+            appUser.setUser(userRepository.findById(147L).get());
+            appUserRepository.save(appUser);
+        }
+
+        if(!appUserRepository.existsById(168L)) {
+            AppUser appUser = new AppUser();
+            appUser.setId(168L);
+            appUser.setApp(appRepository.findById(4L).get());
+            appUser.setUser(userRepository.findById(160L).get());
+            appUserRepository.save(appUser);
         }
     }
 }
