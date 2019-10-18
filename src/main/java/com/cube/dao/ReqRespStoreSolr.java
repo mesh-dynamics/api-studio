@@ -1411,9 +1411,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp.toString());
+        doc.setField(TEMPLATE_VERSION, replay.templateVersion);
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.samplerate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
-        replay.templateVersion.ifPresent(templateVer -> doc.setField(TEMPLATE_VERSION, templateVer));
 
         return doc;
     }
@@ -1473,7 +1473,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 && replayid.isPresent() && async.isPresent() && status.isPresent() && userid.isPresent()) {
             try {
 				replay = Optional.of(new Replay(endpoint.get(), customerid.get(), app.get(), instanceid.get(), collection.get(), userid.get(),
-				        reqids, replayid.get(), async.get(), templateVersion, status.get(), paths, reqcnt, reqsent, reqfailed,
+				        reqids, replayid.get(), async.get(), templateVersion.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toInstant() : creationTimestamp.get(),
                         samplerate , intermediateService));
 			} catch (ParseException e) {
@@ -1758,8 +1758,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, analysis.replayid);
         doc.setField(OBJJSONF, json);
         doc.setField(TYPEF, type);
-        analysis.templateVersion.ifPresent(v -> doc.setField(TEMPLATE_VERSION, v));
-
+        doc.setField(TEMPLATE_VERSION, analysis.templateVersion);
         return doc;
     }
 
@@ -2074,7 +2073,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app,
-                                                        String collection, Optional<String> templateSetVersion) {
+                                                        String collection, String templateSetVersion) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
