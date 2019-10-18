@@ -838,9 +838,9 @@ public class AnalyzeWS {
                 new Exception("Unable to find template set mentioned in the specified golden set"));
 
             String newCollectionName = originalRec.collection + "-" + UUID.randomUUID().toString();
-            boolean b = recordingUpdate.createSanitizedCollection(replayId, newCollectionName, originalRec);
+            boolean created = recordingUpdate.createSanitizedCollection(replayId, newCollectionName, originalRec);
 
-            if (!b) throw new Exception("Unable to create an updated collection from existing golden");
+            if (!created) throw new Exception("Unable to create an updated collection from existing golden");
 
             Recording updatedRecording = new Recording(originalRec.customerid,
                 originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
