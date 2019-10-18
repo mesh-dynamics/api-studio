@@ -46,14 +46,14 @@ public class AppUserController {
         if(appUserDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("AppUser with ID " + appUserDTO.getId() + "already exists"));
         }
-        Optional<App> app = null;
+        Optional<App> app = Optional.empty();
         if(appUserDTO.getAppId() != null) {
             app = appRepository.findById(appUserDTO.getAppId());
             if(app.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + appUserDTO.getAppId() + "' not found."));
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field App Id is empty."));
         }
-        Optional<User> user = null;
+        Optional<User> user = Optional.empty();
         if(appUserDTO.getUserId() != null) {
             user = userRepository.findById(appUserDTO.getUserId());
             if(user.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("User with ID '" + appUserDTO.getUserId() + "' not found."));
