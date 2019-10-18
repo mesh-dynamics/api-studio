@@ -111,7 +111,7 @@ public class Response extends RRBase {
 
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
-            getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
+            getMetaField(Config.DEFAULT_TRACE_FIELD).orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
             reqId.orElse("NA"), apiPath, Event.EventType.HTTPResponse);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
