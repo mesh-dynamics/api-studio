@@ -41,7 +41,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
@@ -877,6 +876,41 @@ public class AnalyzeWS {
             LOGGER.error("Error while updating golden set :: "  + e.getMessage());
             return Response.serverError().entity("{\"Message\" :  \"Error while updating recording\" , \"Error\" : \"" +
                 e.getMessage() + "\"}").build();
+        }
+    }
+
+    @POST
+    @Path("sanitizeGoldenSet")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response sanitizeRecording (@QueryParam("recordingId") String recordingId,
+                                       @QueryParam("replayId") String replayId)   {
+
+        try {
+            Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
+                new Exception("Unable to find recording object for the given id"));
+            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerid, originalRec.app, originalRec
+                .templateVersion).orElseThrow(() ->
+                new Exception("Unable to find template set mentioned in the specified golden set"));
+
+            String newCollectionName = originalRec.collection + "-" + UUID.randomUUID().toString();
+            boolean created = recordingUpdate.createSanitizedCollection(replayId, newCollectionName, originalRec);
+
+            if (!created) throw new Exception("Unable to create an updated collection from existing golden");
+
+            Recording updatedRecording = new Recording(originalRec.customerid,
+                originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
+                Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
+                Optional.of(originalRec.rootRecordingId));
+
+            rrstore.saveRecording(updatedRecording);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully created new recording by sanitizing the specified original recording",
+                "ID", updatedRecording.getId()))).toString()).build();
+        }  catch (Exception e) {
+            LOGGER.error("Error while creating sanitized golden set :: "  + e.getMessage(), e);
+            return Response.serverError().entity(new JSONObject(Map.of(
+                "Message", "Error while creating sanitized golden set",
+                "Error", e.getMessage())).toString()).build();
         }
     }
 

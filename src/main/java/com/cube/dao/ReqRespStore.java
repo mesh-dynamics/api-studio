@@ -509,7 +509,6 @@ public interface ReqRespStore {
     Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
                                                         String replayId);
 
-
     /**
      * Get results matching a path and other constraints
      * @param replayId
@@ -525,6 +524,21 @@ public interface ReqRespStore {
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
                             Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
 
+    /**
+     * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
+     * as NoMatch
+     * @param replayId
+     * @return
+     */
+    Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
+
+    /**
+     * Deletes the Requests and Responses from the passed collection that has the given trace id
+     * @param traceId
+     * @param collectionName
+     * @return
+     */
+    boolean deleteReqResByTraceId(String traceId, String collectionName);
 
     /**
 	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
