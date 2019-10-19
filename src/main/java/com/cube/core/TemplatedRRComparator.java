@@ -33,7 +33,9 @@ public class TemplatedRRComparator {
 
         // the fields below are computed and stored for efficiency purposes, so that we don't
         // have to redo the work on each response compare
-        bodytemplate = template.subsetWithPrefix(RRBase.BODYPATH);
+        //bodytemplate = template.subsetWithPrefix(RRBase.BODYPATH);
+        bodytemplate = template; // with Event model, all rules are for payload
+        // TODO: hdrFieldTemplate and metaFieldTemplate can be removed
         hdrFieldTemplate = template.subsetWithPrefix(RRBase.HDRPATH);
         metaFieldtemplate = template.subsetWithPrefix(RRBase.METAPATH);
         bodyComparator = new JsonComparator(bodytemplate, jsonMapper);

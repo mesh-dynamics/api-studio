@@ -26,6 +26,7 @@ public class DataObjFactory {
 
     private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);
 
+    public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr, Config config) {
 
@@ -35,7 +36,7 @@ public class DataObjFactory {
                 JsonObj obj = new JsonObj(payloadStr, config.jsonMapper);
                 String mimeType = MediaType.TEXT_PLAIN;
                 try {
-                    mimeType = obj.getValAsString("/hdr/content-type");
+                    mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
                 } catch (DataObj.PathNotFoundException e) {
                     LOGGER.error("Content-type not found, using default of TEXT_PLAIN for payload: " + payloadStr);
                 }
