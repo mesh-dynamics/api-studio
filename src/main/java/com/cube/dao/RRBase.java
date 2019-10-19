@@ -45,14 +45,14 @@ public class RRBase {
 	 * @param app
 	 */
 	public RRBase(Optional<String> reqId,
-			MultivaluedMap<String, String> meta,
-			MultivaluedMap<String, String> hdrs,
-			String body,
-			Optional<String> collection,
-			Optional<Instant> timestamp,
-			Optional<Event.RunType> runType,
-			Optional<String> customerId,
-			Optional<String> app) {
+                  MultivaluedMap<String, String> meta,
+                  MultivaluedMap<String, String> hdrs,
+                  String body,
+                  Optional<String> collection,
+                  Optional<Instant> timestamp,
+                  Optional<Event.RunType> runType,
+                  Optional<String> customerId,
+                  Optional<String> app, String apiPath) {
 		super();
 		this.reqId = reqId;
 		this.meta = meta != null ? meta : new MultivaluedHashMap<String, String>();
@@ -63,7 +63,8 @@ public class RRBase {
 		this.runType = runType;
 		this.customerId = customerId;
 		this.app = app;
-	}
+        this.apiPath = apiPath;
+    }
 
 
 	/**
@@ -80,7 +81,8 @@ public class RRBase {
 		this.runType = Optional.empty();
 		this.customerId = Optional.empty();
 		this.app = Optional.empty();
-	}
+        this.apiPath = "";
+    }
 
 	/**
 	 * @return
@@ -161,6 +163,7 @@ public class RRBase {
     }
 
 
+    public final String apiPath;
     public Optional<String> reqId;
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> meta;
@@ -176,6 +179,7 @@ public class RRBase {
 	public static final String SERVICEFIELD = "service";
 	public static final String INSTANCEIDFIELD = "instanceid";
 	public static final String HDRPATHFIELD = "_path";
+	public static final String METAPATHFIELD = "apiPath"; // Used for responses
 
 	public static final String HDRPATH = "/hdr";
 	public static final String METAPATH = "/meta";

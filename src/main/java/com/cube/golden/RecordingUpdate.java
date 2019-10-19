@@ -145,7 +145,8 @@ public class RecordingUpdate {
 
             Response transformedResponse = new Response(newReqId, recordResponse.status,
                 recordResponse.meta, recordResponse.hdrs, transformedResponseBody, Optional.of(newCollectionName),
-                    Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app);
+                    Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app,
+                recordResponse.apiPath);
 
             LOGGER.debug("applying transformations");
             recordRequest.reqId = transformedResponse.reqId;

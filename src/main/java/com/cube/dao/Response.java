@@ -43,8 +43,8 @@ public class Response extends RRBase {
 			Optional<Instant> timestamp, 
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
-			Optional<String> app) {
-		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app);
+			Optional<String> app, String apiPath) {
+		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app, apiPath);
 		this.status = status;
 	}
 	
@@ -53,9 +53,9 @@ public class Response extends RRBase {
 			Optional<String> collection,
 			Optional<String> customerId,
 			Optional<String> app,
-			Optional<String> contenttype) {
+			Optional<String> contenttype, String apiPath) {
 		this(reqId, status, emptyMap(), emptyMap(), body, collection, Optional.empty(), Optional.empty(),
-				customerId, app);
+				customerId, app, apiPath);
 		contenttype.ifPresent(ct -> hdrs.add(HttpHeaders.CONTENT_TYPE, ct));
 	}
 	
@@ -94,7 +94,7 @@ public class Response extends RRBase {
             return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, emptyMap(),
                 responsePayload.hdrs,
                 responsePayload.body, Optional.of(event.getCollection()), Optional.of(event.timestamp),
-                Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app)));
+                Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app), event.apiPath));
         } catch (IOException e) {
             LOGGER.error(String.format("Not able to convert event with reqId: %s and type %s to response. ",
                 event.reqId, event.eventType.toString()));

@@ -1095,6 +1095,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         	doc.setField(IDF, type.toString() + "-" + id);
         });
         doc.setField(BODYF, rr.body);
+        doc.setField(PATHF, rr.apiPath);
         addFieldsToDoc(doc, META, rr.meta);
         addFieldsToDoc(doc, HDR, rr.hdrs);
         rr.collection.ifPresent(c -> doc.setField(COLLECTIONF, c));
@@ -1112,7 +1113,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         setRRFields(Types.Request, req, doc);
         doc.setField(TYPEF, Types.Request.toString());
-        doc.setField(PATHF, req.apiPath);
         doc.setField(METHODF, req.method);
         addFieldsToDoc(doc, QPARAMS, req.queryParams);
         addFieldsToDoc(doc, FPARAMS, req.formParams);
@@ -1367,6 +1367,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> type = getStrField(doc, TYPEF);
         Optional<Integer> status = getIntField(doc, STATUSF);
         Optional<String> reqId = getStrField(doc, REQIDF);
+        Optional<String> path = getStrField(doc, PATHF);
+
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         Optional<String> body = getStrFieldMVFirst(doc, BODYF).or(() -> getStrField(doc, OLDBODYF)); // TODO - remove
@@ -1395,10 +1397,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
         }
 
-        final String b = body.orElse("");
+        final String pathVal = path.orElse("");
+        final String bodyVal = body.orElse("");
         return type.flatMap(t -> {
             if (t.equals(Types.Response.toString())) {
-                return status.map(sv -> new Response(reqId, sv, meta, hdrs, b, collection, timestamp, runType, customerId, app));
+                return status.map(sv -> new Response(reqId, sv, meta, hdrs, bodyVal, collection, timestamp, runType,
+                    customerId, app, pathVal));
             } else {
                 return Optional.empty();
             }

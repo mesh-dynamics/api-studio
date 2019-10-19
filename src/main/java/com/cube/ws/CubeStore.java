@@ -222,7 +222,9 @@ public class CubeStore {
                     }
                 });
                 return s.map(sval -> {
-                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection, timestamp, runType, customerid, app);
+                    String reqApiPath = Optional.ofNullable(meta.getFirst(METAPATHFIELD)).orElse("");
+                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection
+                        , timestamp, runType, customerid, app, reqApiPath);
                     Event responseEvent;
                     try {
                         // todo: consider creating the Event object directly instead of creating a Response
@@ -923,7 +925,7 @@ public class CubeStore {
     private boolean saveDefaultResponse(String customerid, String app,
 			String serviceid, String path, String method, String respbody, int status, Optional<String> contenttype) {
 		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status,
-				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app), contenttype);
+				respbody, Optional.empty(), Optional.ofNullable(customerid), Optional.ofNullable(app), contenttype, path);
 		resp.setService(serviceid);
 		return saveDefaultResponse(path, method, resp);
 	}
