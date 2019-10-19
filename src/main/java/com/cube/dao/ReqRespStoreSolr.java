@@ -1397,12 +1397,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
         }
 
-        final String p = path.orElse("");
-        final String b = body.orElse("");
+        final String pathVal = path.orElse("");
+        final String bodyVal = body.orElse("");
         return type.flatMap(t -> {
             if (t.equals(Types.Response.toString())) {
-                return status.map(sv -> new Response(reqId, sv, meta, hdrs, b, collection, timestamp, runType,
-                    customerId, app, p));
+                return status.map(sv -> new Response(reqId, sv, meta, hdrs, bodyVal, collection, timestamp, runType,
+                    customerId, app, pathVal));
             } else {
                 return Optional.empty();
             }
