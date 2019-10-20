@@ -200,11 +200,14 @@ public interface ReqRespStore {
      * @param status
      * @param collection
      * @param numOfResults
+     * @param start
+     * @param userid
+     * @param endDate
      * @return
      */
-    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
-                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
-
+    Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
+                             List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
+                             Optional<String> userId, Optional<Instant> endDate);
 
     /**
      *
@@ -228,22 +231,6 @@ public interface ReqRespStore {
      */
     Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app,
                              Optional<String> instanceid, ReplayStatus status);
-
-    /**
-     *
-     * @param customerid
-     * @param app
-     * @param instanceid
-     * @param status
-     * @param numofResults
-     * @param collection
-     * @param userid
-     * @param endDate
-     * @return
-     */
-    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
-                                    List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection,
-                                    Optional<String> userid, Optional<Instant> endDate);
 
 	static void main(String[] args) throws IOException{
 
@@ -323,8 +310,8 @@ public interface ReqRespStore {
      * This method just gets the aggregates using Solr query which were pre-computed and
      * stored. For computation of aggregates check computeResultAggregate method.
      */
-    Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
-                                                            boolean bypath);
+    Stream<MatchResultAggregate> getResultAggregate(String replayId, Optional<String> service,
+                                                            boolean byPath);
 
 
     /**
@@ -508,7 +495,6 @@ public interface ReqRespStore {
     Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
                                                         String replayId);
 
-
     /**
      * Get results matching a path and other constraints
      * @param replayId
@@ -524,6 +510,21 @@ public interface ReqRespStore {
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
                             Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
 
+    /**
+     * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
+     * as NoMatch
+     * @param replayId
+     * @return
+     */
+    Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
+
+    /**
+     * Deletes the Requests and Responses from the passed collection that has the given trace id
+     * @param traceId
+     * @param collectionName
+     * @return
+     */
+    boolean deleteReqResByTraceId(String traceId, String collectionName);
 
     /**
 	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
