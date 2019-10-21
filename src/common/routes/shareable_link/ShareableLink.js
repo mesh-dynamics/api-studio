@@ -7,6 +7,7 @@ import 'tippy.js/themes/light.css';
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
+import generator from '../../utils/generator/json-path-generator';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -38,7 +39,9 @@ class ShareableLink extends Component {
             selectedRequestMatchType: "All",
             selectedResponseMatchType: "All",
             selectedResolutionType: "All",
-            selectedDiffOperationType: "All"
+            selectedDiffOperationType: "All",
+            app: "",
+            templateVersion: ""
         }
         this.handleChange = this.handleChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
@@ -101,7 +104,9 @@ class ShareableLink extends Component {
                     replayList: this.state.replayList.concat(dataList.res),
                     diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData),
                     totalRequests: dataList.numFound,
-                    resultsFetched: this.state.resultsFetched + dataList.res.length
+                    resultsFetched: this.state.resultsFetched + dataList.res.length,
+                    app: dataList.app,
+                    templateVersion: dataList.templateVersion
                 });
             } else {
                 throw new Error("Response not ok fetchTimeline");
@@ -114,7 +119,7 @@ class ShareableLink extends Component {
 
     validateAndCreateDiffLayoutData(replayList) {
         let diffLayoutData = replayList.map((item, index) => {
-            let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders;
+            let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body";
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 if (item.recordResponse.body) {
@@ -164,16 +169,29 @@ class ShareableLink extends Component {
             else diff = [];
             let actJSON = JSON.stringify(replayedData, undefined, 4),
                 expJSON = JSON.stringify(recordedData, undefined, 4);
-            let reductedDiffArray = null;
+            let reductedDiffArray = null, missedRequiredFields = [];
             if (diff && diff.length > 0) {
-                let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
+                let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
                 reductedDiffArray = reduceDiff.computeDiffArray();
+                let expJSONPaths = generator(recordedData, "", "", prefix);
+                missedRequiredFields = diff.filter((eachItem) => {
+                    return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
+                })
             } else if (diff && diff.length == 0) {
                 if (_.isEqual(expJSON, actJSON)) {
                     let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
                     reductedDiffArray = reduceDiff.computeDiffArray();
                 }
             }
+            let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
+                return {
+                    ...eachItem,
+                    service: item.service,
+                    app: this.state.app,
+                    templateVersion: this.state.templateVersion,
+                    apiPath: item.path
+                }
+            });
             return {
                 ...item,
                 recordedResponseHeaders,
@@ -183,7 +201,8 @@ class ShareableLink extends Component {
                 actJSON,
                 expJSON,
                 parsedDiff: diff,
-                reductedDiffArray,
+                reductedDiffArray: updatedReductedDiffArray,
+                missedRequiredFields,
                 show: true
             }
         });
@@ -382,6 +401,11 @@ class ShareableLink extends Component {
                 )}
                 {item.recordedData != null && item.replayedData != null && (
                     <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
+                        <div>
+                            {item.missedRequiredFields.map((eachMissedField) => {
+                                return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
+                            })}
+                        </div>
                         <div className="diff-wrapper">
                             < ReactDiffViewer
                                 styles={newStyles}
