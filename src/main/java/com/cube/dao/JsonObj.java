@@ -116,12 +116,12 @@ public class JsonObj implements DataObj {
         JsonNode valParent = root.at(pathPtr.head());
         if (valParent != null &&  valParent.isObject()) {
             ObjectNode valParentObj = (ObjectNode) valParent;
-            String fieldName = pathPtr.last().toString();
+            String fieldName = pathPtr.last().getMatchingProperty();
             JsonNode val = valParentObj.get(fieldName);
             if (val != null && val.isTextual()) {
                 // parse it as per mime type
                 // currently handling only json type
-                if (mimetype == MediaType.APPLICATION_JSON) {
+                if (mimetype.equals(MediaType.APPLICATION_JSON)) {
                     try {
                         JsonNode parsedVal = jsonMapper.readTree(val.asText());
                         valParentObj.set(fieldName, parsedVal);
@@ -171,6 +171,9 @@ public class JsonObj implements DataObj {
 
     private String nodeToString(JsonNode node) {
         try {
+            if (node.isTextual()) {
+                return node.asText();
+            }
             return jsonMapper.writeValueAsString(node);
         } catch (JsonProcessingException e) {
             LOGGER.error("Error in converting json node to string: " + node.toString());

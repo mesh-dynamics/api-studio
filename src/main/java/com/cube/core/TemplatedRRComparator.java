@@ -26,6 +26,7 @@ public class TemplatedRRComparator {
     protected final CompareTemplate hdrFieldTemplate;
     protected final CompareTemplate metaFieldtemplate;
     protected final Comparator bodyComparator;
+    protected final Comparator fullComparator;
 
     public TemplatedRRComparator(CompareTemplate template, ObjectMapper jsonMapper) {
         this.template = template;
@@ -34,9 +35,11 @@ public class TemplatedRRComparator {
         // the fields below are computed and stored for efficiency purposes, so that we don't
         // have to redo the work on each response compare
         bodytemplate = template.subsetWithPrefix(RRBase.BODYPATH);
+        // TODO: Event Redesign: hdrFieldTemplate and metaFieldTemplate can be removed
         hdrFieldTemplate = template.subsetWithPrefix(RRBase.HDRPATH);
         metaFieldtemplate = template.subsetWithPrefix(RRBase.METAPATH);
         bodyComparator = new JsonComparator(bodytemplate, jsonMapper);
+        fullComparator = new JsonComparator(template, jsonMapper);
     }
 
 
