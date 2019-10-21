@@ -46,6 +46,8 @@ public class RequestComparatorCache {
         CompareTemplate defaultTemplateWithReqId = new CompareTemplate();
         CompareTemplate defaultFunctionTemplate = new CompareTemplate();
         List<TemplateEntry> defaultRules = new ArrayList<>();
+        //TODO: Event redesign: Remove rules on RUNTYPE, CUSTOMERID, APP, COLLECTION, SERVICE, TRACE and add rule on
+        // BODY
         defaultRules.add(new TemplateEntry(PATHPATH,DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(QPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(FPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));

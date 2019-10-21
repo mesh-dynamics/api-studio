@@ -48,7 +48,7 @@ public class TemplatedResponseComparator extends TemplatedRRComparator implement
 
     @Override
     public Comparator.Match compare(DataObj lhs, DataObj rhs) {
-        return bodyComparator.compare(lhs, rhs);
+        return fullComparator.compare(lhs, rhs);
     }
 
 

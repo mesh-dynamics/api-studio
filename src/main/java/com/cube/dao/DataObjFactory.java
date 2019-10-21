@@ -38,7 +38,7 @@ public class DataObjFactory {
                 try {
                     mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
                 } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.error("Content-type not found, using default of TEXT_PLAIN for payload: " + payloadStr);
+                    LOGGER.info("Content-type not found, using default of TEXT_PLAIN for payload: " + payloadStr);
                 }
                 obj.unwrapAsJson("/body", mimeType);
                 return obj;
