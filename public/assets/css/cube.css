@@ -4617,3 +4617,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     background: #FFBE00;
     color: black;
 }
+
+.react-datepicker-popper {
+    z-index: 999 !important;
+}

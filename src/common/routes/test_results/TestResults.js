@@ -8,6 +8,8 @@ import * as moment from 'moment';
 import { cubeActions } from "../../actions";
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 import 'react-table-hoc-fixed-columns/lib/styles.css';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
@@ -15,8 +17,37 @@ class TestResults extends Component {
 
     constructor(props) {
         super(props);
+        this.state = {
+            endDate: new Date(),
+            userFilter: "ALL"
+        };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
+
+    clearFilter = () => {
+        const {dispatch, cube} = this.props;
+        dispatch(cubeActions.getTimelineData(cube.selectedApp));
+        this.setState({
+            endDate: new Date(),
+            userFilter: "ALL"
+        });
+    };
+
+    changeUserFilter = event => {
+        const {dispatch, cube} = this.props;
+        dispatch(cubeActions.getTimelineData(cube.selectedApp, event.target.value, this.state.endDate));
+        this.setState({
+            userFilter: event.target.value
+        });
+    };
+
+    handleDateFilter = date => {
+        const {dispatch, cube} = this.props;
+        dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, date));
+        this.setState({
+            endDate: date
+        });
+    };
 
     setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
         if (!cellData) return;
@@ -363,7 +394,37 @@ class TestResults extends Component {
         }
         return (
             <div className="content-wrapper">
-                <h5>Test Results</h5>
+                <div className="heading">
+                    <h5 className="pull-left">Test Results</h5>
+                    <div className="fiters pull-right" style={{width: "300px"}}>
+                        <div className="inline-block margin-bottom-10" style={{paddingRight: "10px", borderRight: "1px solid #ddd", marginRight:"10px"}}>
+                            <div className="margin-bottom-10">
+                                <span>USER: </span>
+                                <select onChange={(event) => this.changeUserFilter(event)} value={this.state.userFilter} style={{width: "140px"}}>
+                                    <option value="ALL">ALL</option>
+                                    <option value="ME">ME</option>
+                                </select>
+                            </div>
+
+                            <div className="">
+                                <span>DATE: </span>
+                                <DatePicker
+                                    style={{width: "140px"}}
+                                    selected={this.state.endDate}
+                                    maxDate={new Date()}
+                                    onChange={this.handleDateFilter} />
+                            </div>
+                        </div>
+
+                        <div className="inline-block" style={{verticalAlign: "top"}}>
+                            <i className="fas fa-filter"></i>&nbsp;
+                            <span className="link" onClick={this.clearFilter}>Clear</span>
+                        </div>
+
+                    </div>
+                    <div className="clear"></div>
+                </div>
+
                 <ReactTableFixedColumns
                     data={tableData}
                     columns={columns}

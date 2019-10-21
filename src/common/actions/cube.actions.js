@@ -309,10 +309,10 @@ function getGraphData (app) {
     function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
-function getTimelineData(app = 'Cube', instanceid = 'prod') {
+function getTimelineData(app = 'Cube', userId = 'ALL', endDate = new Date()) {
     return async dispatch => {
         try {
-            let timeline = await cubeService.fetchTimelineData(app, instanceid);
+            let timeline = await cubeService.fetchTimelineData(app, userId, endDate);
             dispatch(success(timeline, Date.now()));
         } catch (error) {
 
