@@ -299,7 +299,7 @@ class TestResults extends Component {
                                         borderRadius: '2px'
                                     }}
                                 >
-                                    <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"mouseenter"} appendTo={"parent"} flipOnUpdate={true} maxWidth={450}
+                                    <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"mouseenter"} delay={[800, 0]} appendTo={"parent"} flipOnUpdate={true} maxWidth={450}
                                         content={
                                             <div style={{ overflowY: "auto", fontSize: "14px" }} className="grey">
                                                 <div style={{ color: "#333333", padding: "15px", textAlign: "left" }}>
@@ -351,7 +351,7 @@ class TestResults extends Component {
                                     }
                                 }
                             >
-                                <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"mouseenter"} appendTo={"parent"} flipOnUpdate={true} maxWidth={450}
+                                <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"mouseenter"} delay={[800, 0]} appendTo={"parent"} flipOnUpdate={true} maxWidth={450}
                                     content={
                                         <div style={{ overflowY: "auto", fontSize: "14px" }} className="grey">
                                             <div style={{ color: "#333333", padding: "15px", textAlign: "left" }}>
