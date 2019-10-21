@@ -1525,7 +1525,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
                 instanceId.isPresent() && collection.isPresent()
-                && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent()) {
+                && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent() && templateVersion.isPresent()) {
             try {
 				replay = Optional.of(new Replay(endpoint.get(), customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get(),
 				        reqIds, replayId.get(), async.get(), templateVersion.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
