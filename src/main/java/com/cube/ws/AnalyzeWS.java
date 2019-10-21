@@ -41,7 +41,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
@@ -480,8 +479,8 @@ public class AnalyzeWS {
         List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
-        Optional<String> userid = Optional.ofNullable(queryParams.getFirst("userid"));
-        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("enddate"));
+        Optional<String> userId = Optional.ofNullable(queryParams.getFirst("userId"));
+        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("endDate"));
 
         Optional<Instant> endDateTS = Optional.empty();
         // For checking correct date format
@@ -496,12 +495,15 @@ public class AnalyzeWS {
             }
         }
 
-        boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
+        boolean byPath = Optional.ofNullable(queryParams.getFirst("byPath"))
             .map(v -> v.equals("y")).orElse(false);
-        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numresults")).
-            map(Integer::valueOf).or(() -> Optional.of(20));
-        Stream<Replay> replays = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), numResults, collection, userid, endDateTS);
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt);
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numResults")).map(Integer::valueOf).or(() -> Optional.of(20));
+
+        Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS);
+        long numFound = replaysResult.numFound;
+        Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
             String replayid = replay.replayid;
             Instant creationTimeStamp = replay.creationTimeStamp;
@@ -517,7 +519,7 @@ public class AnalyzeWS {
                     + "\" , \"templateVer\" : \"" + recording.templateVersion;
             }
 
-            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, byPath);
             Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
 
 //            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
@@ -535,7 +537,9 @@ public class AnalyzeWS {
             }
             jsonBuilder.append("}");
             return jsonBuilder.toString();
-        }).collect(Collectors.joining(" , ", "[", "]"));
+        }).collect(Collectors.joining(" , ", "", ""));
+        finalJson = "{" + "\"numFound\" : " + numFound + "," +
+            "\"timelineResults\" : [" + finalJson + "]}";
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
@@ -877,6 +881,41 @@ public class AnalyzeWS {
             LOGGER.error("Error while updating golden set :: "  + e.getMessage());
             return Response.serverError().entity("{\"Message\" :  \"Error while updating recording\" , \"Error\" : \"" +
                 e.getMessage() + "\"}").build();
+        }
+    }
+
+    @POST
+    @Path("sanitizeGoldenSet")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response sanitizeRecording (@QueryParam("recordingId") String recordingId,
+                                       @QueryParam("replayId") String replayId)   {
+
+        try {
+            Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
+                new Exception("Unable to find recording object for the given id"));
+            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerid, originalRec.app, originalRec
+                .templateVersion).orElseThrow(() ->
+                new Exception("Unable to find template set mentioned in the specified golden set"));
+
+            String newCollectionName = originalRec.collection + "-" + UUID.randomUUID().toString();
+            boolean created = recordingUpdate.createSanitizedCollection(replayId, newCollectionName, originalRec);
+
+            if (!created) throw new Exception("Unable to create an updated collection from existing golden");
+
+            Recording updatedRecording = new Recording(originalRec.customerid,
+                originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
+                Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
+                Optional.of(originalRec.rootRecordingId));
+
+            rrstore.saveRecording(updatedRecording);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully created new recording by sanitizing the specified original recording",
+                "ID", updatedRecording.getId()))).toString()).build();
+        }  catch (Exception e) {
+            LOGGER.error("Error while creating sanitized golden set :: "  + e.getMessage(), e);
+            return Response.serverError().entity(new JSONObject(Map.of(
+                "Message", "Error while creating sanitized golden set",
+                "Error", e.getMessage())).toString()).build();
         }
     }
 
