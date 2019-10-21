@@ -35,7 +35,7 @@
         },
         "rules": [
             { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" },
-            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Default", "comparisonType": "Default", "customization": "" }
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -43,9 +43,9 @@
             "diffs": [
                 { "op":"replace",   "path":"/hdr/h3",       "value": 5.458,     "fromValue":5.456,      "resolution":"ERR_ValMismatch"      },
                 { "op":"replace",   "path":"/body/b1",      "value": "test456", "fromValue":"test123",  "resolution":"ERR_ValMismatch"      },
-                { "op":"add",       "path":"/body/b2/1",    "value": 2,                                 "resolution":"OK_OtherValInvalid"   },
+                { "op":"add",       "path":"/body/b2/1",    "value": 2,                                 "resolution":"ERR_RequiredGolden"   },
                 { "op":"remove",    "path":"/body/b2/3",    "value": 3,                                 "resolution":"ERR_Required"                   },
-                { "op":"add",       "path":"/b3",           "value": { "a1": "a1v1", "a2": 15 },        "resolution":"ERR_NewField"   }
+                { "op":"add",       "path":"/b3",           "value": { "a1": "a1v1", "a2": 15 },        "resolution":"ERR_RequiredGolden"   }
             ]
         }
     },
@@ -80,17 +80,17 @@
         },
         "rules": [
             { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" },
-            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Default", "comparisonType": "Default", "customization": "" }
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Optional", "comparisonType": "Ignore", "customization": "" }
         ],
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
             "diffs":[
                 {"op": "replace",   "path": "/hdr/h3",      "value": 5.458,     "fromValue":5.456,      "resolution":"OK_OptionalMismatch"  },
-                {"op": "add",       "path": "/body/b2/1",   "value": 2,                                 "resolution":"OK_OtherValInvalid"   },
-                {"op": "remove",    "path": "/body/b2/3",   "value": 3,                                 "resolution":"ERR_Required"         },
+                {"op": "add",       "path": "/body/b2/1",   "value": 2,                                 "resolution":"OK_Ignore"   },
+                {"op": "remove",    "path": "/body/b2/3",   "value": 3,                                 "resolution":"OK_Optional"         },
                 {"op": "replace",   "path": "/body/b1",     "value": "test456", "fromValue":"test123",  "resolution":"OK_OptionalMismatch"  },
-                {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_NewField"   }
+                {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_RequiredGolden"   }
             ]
         }
     },
@@ -112,7 +112,7 @@
       "mt":           "NoMatch",
       "matchmeta":    "JsonDiff",
       "diffs":[
-        {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_NewField"   }
+        {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_RequiredGolden"   }
       ]
     }
   },
@@ -253,39 +253,36 @@
             "str3": "Monica",
             "str4": "Monica",
             "str5": "Monica",
-            "str6": "Monica",
-            "str7": "Monica"
+            "str6": "Monica"
         },
         "rules": [
             { "path": "/int1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
             { "path": "/int2",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
             { "path": "/int3",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "" },
-            { "path": "/int4",  "dataType": "Int", "presenceType": "Default",  "comparisonType": "Equal",           "customization": "" },
+            { "path": "/int4",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" },
             { "path": "/int5",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
             { "path": "/str1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "EqualOptional",   "customization": "" },
             { "path": "/str2",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Ignore",          "customization": "" },
-            { "path": "/str3",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Default",         "customization": "" },
+            { "path": "/str3",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",         "customization": "" },
             { "path": "/str4",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "" },
             { "path": "/str5",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",   "customization": "" },
-            { "path": "/str6",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" },
-            { "path": "/str7",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Default",         "customization": "" }
+            { "path": "/str6",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" }
         ],
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
             "diffs": [
                 { "op": "add", "path": "/int1", "value": 1,         "resolution": "ERR_ValTypeMismatch" },
-                { "op": "add", "path": "/int2", "value": 1,         "resolution": "ERR_NewField"  },
+                { "op": "add", "path": "/int2", "value": 1,         "resolution": "ERR_RequiredGolden"  },
                 { "op": "add", "path": "/int3", "value": 1,         "resolution": "OK_OtherValInvalid"  },
-                { "op": "add", "path": "/int4", "value": 1,         "resolution": "ERR_NewField"  },
-                { "op": "add", "path": "/int5", "value": 1,         "resolution": "ERR_NewField"  },
-                { "op": "add", "path": "/str1", "value": "Monica",  "resolution": "ERR_NewField"  },
+                { "op": "add", "path": "/int4", "value": 1,         "resolution": "OK_Ignore"  },
+                { "op": "add", "path": "/int5", "value": 1,         "resolution": "ERR_RequiredGolden"  },
+                { "op": "add", "path": "/str1", "value": "Monica",  "resolution": "ERR_RequiredGolden"  },
                 { "op": "add", "path": "/str2", "value": "Monica",  "resolution": "OK_Ignore"           },
-                { "op": "add", "path": "/str3", "value": "Monica",  "resolution": "OK_DefaultCT"                  },
+                { "op": "add", "path": "/str3", "value": "Monica",  "resolution": "OK_OtherValInvalid"                  },
                 { "op": "add", "path": "/str4", "value": "Monica",  "resolution": "OK_OtherValInvalid"  },
                 { "op": "add", "path": "/str5", "value": "Monica",  "resolution": "OK_OtherValInvalid"  },
-                { "op": "add", "path": "/str6", "value": "Monica",  "resolution": "OK_Ignore"           },
-                { "op": "add", "path": "/str7", "value": "Monica",  "resolution": "OK_DefaultCT"                  }
+                { "op": "add", "path": "/str6", "value": "Monica",  "resolution": "OK_Ignore"           }
             ]
         }
     },

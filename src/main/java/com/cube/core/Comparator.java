@@ -108,6 +108,7 @@ public interface Comparator {
         OK_DefaultCT, // Return when both are present and ComparisonType is set to Default.
 		ERR_NotExpected, // This indicates that presence type is required and the old object does not have the value
 		ERR_Required,
+        ERR_RequiredGolden,
 		ERR_ValMismatch,
 		ERR_ValTypeMismatch,
 		ERR_ValFormatMismatch,
@@ -119,7 +120,8 @@ public interface Comparator {
 		public boolean isErr() {
 			return this == Resolution.ERR_NotExpected || this == ERR_Required ||
 					this == ERR_ValMismatch || this == ERR_ValTypeMismatch ||
-					this == ERR_ValFormatMismatch || this == ERR || this == ERR_NewField;
+					this == ERR_ValFormatMismatch || this == ERR || this == ERR_NewField ||
+                    this == ERR_RequiredGolden;
 		}
 
 		public MatchType toMatchType() {
