@@ -442,10 +442,10 @@ async function fetchReport(collectionId, replayId) {
 async function fetchTimelineData(app, userId, endDate) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let ed = endDate.getFullYear() + '/' + (endDate.getMonth() + 1) + '/' + (endDate.getDate() + 1);
-    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?bypath=y&enddate=${ed}`;
+    let ed = endDate.getFullYear() + '-' + (endDate.getMonth() + 1) + '-' + (endDate.getDate() + 1);
+    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&endDate=${ed}`;
     if (userId !== 'ALL') {
-        url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?bypath=y&userid=${user.username}&enddate=${ed}`;
+        url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&userid=${user.username}&endDate=${ed}`;
     }
     let timelineData = {};
     try {

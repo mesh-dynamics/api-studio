@@ -74,7 +74,7 @@ class TestResults extends Component {
                 </div >);
         }
 
-        let timelineData = cube.timelineData,
+        let timelineData = cube.timelineData.timelineResults,
             columns = [], uniquePaths = [], tableData = [], tableDataPathMap = {},
             allRunsTimestamps = [];
         let tempTableData = {};

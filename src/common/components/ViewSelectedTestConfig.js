@@ -257,6 +257,7 @@ class ViewSelectedTestConfig extends React.Component {
             this.setState({show: true});
             /*dispatch(cubeActions.startReplay(cube.selectedGolden));
             */
+            let user = JSON.parse(localStorage.getItem('user'));
             let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
             let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
             let selectedInstances = cube.instances.filter((item) => item.name == instance && item.app.name == cube.selectedApp);
@@ -264,6 +265,7 @@ class ViewSelectedTestConfig extends React.Component {
             const searchParams = new URLSearchParams();
             searchParams.set('endpoint', gatewayEndpoint);
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
+            searchParams.set('userid', user.username);
             if (cube.selectedApp != 'Cube') {
                 searchParams.set('paths', 'minfo/listmovies');
                 searchParams.append('paths', 'minfo/returnmovie');

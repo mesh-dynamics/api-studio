@@ -55,7 +55,7 @@ function getApps () {
             dispatch(success(appsList, Date.now()));
             dispatch(cubeActions.setSelectedApp(appsList[0].name));
             dispatch(cubeActions.getGraphDataByAppId(appsList[0].id));
-            dispatch(cubeActions.getTimelineData());
+            dispatch(cubeActions.getTimelineData(appsList[0].name));
             dispatch(cubeActions.getTestConfigByAppId(appsList[0].id));
             dispatch(cubeActions.getTestIds(appsList[0].name));
         } catch (error) {
