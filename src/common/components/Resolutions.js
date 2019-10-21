@@ -6,70 +6,85 @@ import 'tippy.js/themes/light-border.css'
 
 const resolutionsIconMap = {
     "OK": {
-        "description": "OK:exact match",
+        "description": "Value matched.",
         "icon": "ok-circle",
         "color": "#5efc82"
     },
-    "OK_Optional": {
-        "description": "OK:Optional (item is missing in the test, and the item is optional)",
+    "OK_DefaultCT": {
+        "description": "Value mismatch. Ignored due to default.",
         "icon": "ok-circle",
         "color": "#5efc82"
     },
-    "OK_Ignore": {
-        "description": "OK:Ignore (instruction to ignore comparison)",
-        "icon": "ok-circle",
-        "color": "#5efc82"
-    },
-    "OK_CustomMatch": {
-        "description": "OK:CustomMatch (matched after applying custom matching)",
-        "icon": "ok-circle",
-        "color": "#5efc82"
-    },
-    "OK_OtherValInvalid": {
-        "description": "OK:Invalid, // the val to compare against does not exist or is not of right type in the master",
-        "icon": "warning-sign",
-        "color": "#ffdd4b"
-    },
-    "OK_OptionalMismatch": {
-        "description": "OK:OptionalMismatch, // vals mismatched but comparison type was EqualOptional (used in scoring case for prioritizing) [This should never happen in the comparison]",
-        "icon": "warning-sign",
-        "color": "#ffdd4b"
-    },
-    "ERR_NotExpected": {
-        "description": "ERROR: Not expected",
+    "ERR_ValTypeMismatch": {
+        "description": "Error: Data type mismatch.",
         "icon": "remove-circle",
         "color": "#d50000"
     },
-    "ERR_Required": {
-        "description": "ERROR:Required (required item missing in test)",
+    "OK_DefaultPT": {
+        "description": "Missing item in test. Ignored due to default.",
+        "icon": "ok-circle",
+        "color": "#5efc82"
+    },
+    "ERR_NewField ": {
+        "description": "Error: New item in test.",
+        "icon": "remove-circle",
+        "color": "#d50000"
+    },
+    "OK_CustomMatch": {
+        "description": "Value matched.",
+        "icon": "ok-circle",
+        "color": "#5efc82"
+    },
+    "ERR_ValFormatMismatch": {
+        "description": "Error: Value format mismatch.",
         "icon": "remove-circle",
         "color": "#d50000"
     },
     "ERR_ValMismatch": {
-        "description": "ERROR:ValueMismatch (values do not match -- regardless of required or optional item)",
+        "description": "Error: Value mismatch.",
         "icon": "remove-circle",
         "color": "#d50000"
     },
-    "ERR_ValTypeMismatch": {
-        "description": "ERROR:ValueTypeMismatch",
+    "OK_Ignore": {
+        "description": "Value ignored.",
+        "icon": "ok-circle",
+        "color": "#5efc82"
+    },
+    "ERR_Required": {
+        "description": "Error: Missing required item in test.",
         "icon": "remove-circle",
         "color": "#d50000"
     },
-    "ERR_ValFormatMismatch": {
-        "description": "ERROR:ValueFormatMismatch",
+    "OK_Optional": {
+        "description": "Missing optional item in test.",
+        "icon": "warning-sign",
+        "color": "#ffdd4b"
+    },
+    "ERR_RequiredGolden": {
+        "description": "Error: Missing required item in golden.",
         "icon": "remove-circle",
         "color": "#d50000"
     },
-    "ERR_NewField": {
-        "description": "ERROR:ERR_NewField",
+    "OK_OtherValInvalid": {
+        "description": "Missing optional item in golden.",
+        "icon": "warning-sign",
+        "color": "#ffdd4b"
+    },
+    "ERR_InvalidExtractionMethod": {
+        "description": "Error: Data does not match rule.",
+        "icon": "remove-circle",
+        "color": "#d50000"
+    },
+    "ERR_RequiredBoth": {
+        "description": "Error: Missing required item in golden and test.",
         "icon": "remove-circle",
         "color": "#d50000"
     },
     "ERR": {
-        "description": "ERROR:UnkownError",
+        "description": "Error",
         "icon": "remove-circle",
         "color": "#d50000"
-    },
+    }
 };
 
 class Resolutions extends React.Component {
