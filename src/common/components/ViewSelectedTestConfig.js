@@ -222,13 +222,14 @@ class ViewSelectedTestConfig extends React.Component {
                         <div className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "" : "hidden"}>Test Completed</div>
                         <h3>
                             Status: {cube.replayStatus}&nbsp;&nbsp;
-                            {cube.replayStatusObj ? (<small>Completed: {'' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
+                            {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
                         </h3>
                     </Modal.Body>
                     <Modal.Footer className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "text-center" : "hidden"}>
                         <Link to="/">
-                            <span onClick={this.handleClose} className="cube-btn">View Results</span>
+                            <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
+                        <span onClick={this.handleClose} className="cube-btn">Done</span>
                     </Modal.Footer>
                 </Modal>
 
@@ -263,9 +264,10 @@ class ViewSelectedTestConfig extends React.Component {
             let selectedInstances = cube.instances.filter((item) => item.name == instance && item.app.name == cube.selectedApp);
             let gatewayEndpoint = selectedInstances.length > 0 ? selectedInstances[0].gatewayEndpoint : "http://demo.dev.cubecorp.io";
             const searchParams = new URLSearchParams();
-            searchParams.set('endpoint', gatewayEndpoint);
+            searchParams.set('endPoint', gatewayEndpoint);
+            searchParams.set('instanceId', instance);
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
-            searchParams.set('userid', user.username);
+            searchParams.set('userId', user.username);
             if (cube.selectedApp != 'Cube') {
                 searchParams.set('paths', 'minfo/listmovies');
                 searchParams.append('paths', 'minfo/returnmovie');
