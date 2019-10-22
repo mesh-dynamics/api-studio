@@ -133,9 +133,9 @@ replay() {
 			TEMP_PATH="$TEMP_PATH""paths=$path&"
 		done
 		REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-		BODY="$REPLAY_PATHS&endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID"
+		BODY="$REPLAY_PATHS&endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID&userid=$CUBE_CUSTOMER"
 	else
-		BODY="endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID"
+		BODY="endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID&userid=$CUBE_CUSTOMER"
 	fi
 
 	if [ -e "$RECORDING_ID_TEMP_FILE" ]; then
@@ -164,6 +164,8 @@ replay() {
 	else
 		echo "ERROR!! Replay did not started"
 	fi
+
+	echo "Replay id created : $REPLAY_ID"
 	echo $REPLAY_ID > $APP_DIR/kubernetes/replayid.temp
 }
 
