@@ -236,7 +236,7 @@ public class MockServiceHTTP {
 	    		Optional.of(app));
 
         Optional<String> templateVersion =
-            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> replay.templateVersion));
+            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> Optional.of(replay.templateVersion)));
 
 	    TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);

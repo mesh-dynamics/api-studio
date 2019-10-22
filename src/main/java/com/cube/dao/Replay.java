@@ -59,7 +59,7 @@ public class Replay {
      * @param samplerate
      */
 	public Replay(String endpoint, String customerid, String app, String instanceid, String collection, String userid, List<String> reqids,
-                  String replayid, boolean async, Optional<String> templateVersion, ReplayStatus status,
+                  String replayid, boolean async, String templateVersion, ReplayStatus status,
                   List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
                   Optional<Double> samplerate, List<String> intermediateServices) {
 		super();
@@ -100,7 +100,7 @@ public class Replay {
 	    reqids = Collections.emptyList();
 	    paths = Collections.emptyList();
 	    intermediateServices = Collections.emptyList();
-	    templateVersion = Optional.empty();
+	    templateVersion = "";
     }
 
 	/*
@@ -130,7 +130,7 @@ public class Replay {
     @JsonProperty("reqids")
 	public final List<String> reqids;
     @JsonProperty("templateVer")
-	public final Optional<String> templateVersion;
+	public final String templateVersion;
     @JsonProperty("id")
     public final String replayid; // this needs to be globally unique
     @JsonProperty("async")
