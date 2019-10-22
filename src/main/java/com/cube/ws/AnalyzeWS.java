@@ -98,14 +98,10 @@ public class AnalyzeWS {
         String tracefield = Optional.ofNullable(formParams.get("tracefield"))
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Config.DEFAULT_TRACE_FIELD);
-        // override templateSet specified in recording if it is passed in the param
-        Optional<String> templateVersion =
-            Optional.ofNullable(formParams.getFirst("templateSet"));
-
 
         Optional<Analysis> analysis = Analyzer
             .analyze(replayid, tracefield, rrstore
-                , jsonmapper, requestComparatorCache, responseComparatorCache, templateVersion);
+                , jsonmapper, requestComparatorCache, responseComparatorCache);
 
         return analysis.map(av -> {
             String json;
@@ -578,7 +574,7 @@ public class AnalyzeWS {
                 reqmt, respmt, start, nummatches);
             numFound[0] = result.numFound;
             app[0] = replay.app;
-            app[1] = replay.templateVersion.orElse("DEFAULT");
+            app[1] = replay.templateVersion;
             List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
             List<String> reqids = res.stream().map(r -> r.recordreqid).flatMap(Optional::stream).collect(Collectors.toList());
 

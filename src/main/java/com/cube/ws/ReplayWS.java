@@ -243,18 +243,11 @@ public class ReplayWS {
             return errResp.get();
         }
 
-            // TODO need to enforce template version specification later
-        /*if (!formParams.containsKey("templateSetVer")) {
-            return Response.status(Status.BAD_REQUEST).entity("{\"Cause\" : \"Template Set Version Not Specified\"}").build();
-        }*/
-
-        Optional<String> templateSetVersion = Optional.ofNullable(formParams
-            .getFirst("templateSetVer"))/*.orElse(Recording.DEFAULT_TEMPLATE_VER)*/;
 
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
                         return ReplayDriver.initReplay(e, recording.customerid, recording.app, recording.instanceid, recording.collection, userid,
-                            reqids, rrstore, async, paths, null, samplerate, intermediateServices,templateSetVersion)
+                            reqids, rrstore, async, paths, null, samplerate, intermediateServices, recording.templateVersion)
                             .map(replayDriver -> {
                                 String json;
                                 Replay replay = replayDriver.getReplay();

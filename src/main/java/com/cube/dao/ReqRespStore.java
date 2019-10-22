@@ -375,8 +375,7 @@ public interface ReqRespStore {
 	 * @param collection
 	 * @return
 	 */
-	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app,
-                                                               String collection, Optional<String> templateSetVersion);
+	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerid, String app, String collection, String templateSetVersion);
 
 
 

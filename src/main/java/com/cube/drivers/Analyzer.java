@@ -38,7 +38,7 @@ public class Analyzer {
 
     private Analyzer(String replayid, int reqcnt, ObjectMapper jsonmapper,
                      RequestComparatorCache requestComparatorCache, ResponseComparatorCache responseComparatorCache,
-                     Optional<String> templateVersion) {
+                     String templateVersion) {
         analysis = new Analysis(replayid, reqcnt, templateVersion);
         this.jsonmapper = jsonmapper;
 
@@ -56,7 +56,7 @@ public class Analyzer {
     // Template cache being passed from the config
     private final RequestComparatorCache requestComparatorCache;
     private final ResponseComparatorCache responseComparatorCache;
-    private final Optional<String> templateVersion;
+    private final String templateVersion;
 
 
 
@@ -94,7 +94,7 @@ public class Analyzer {
 
                 List<Request> matches = new ArrayList<>();
 
-                TemplateKey key = new TemplateKey(templateVersion, r.customerid.get(), r.app.get(),
+                TemplateKey key = new TemplateKey(Optional.of(templateVersion), r.customerid.get(), r.app.get(),
                     r.getService().get(), r.path
                         , TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
@@ -203,7 +203,7 @@ public class Analyzer {
 
             try {
                 // get appropriate template from solr
-                TemplateKey key = new TemplateKey(templateVersion, recordreq.customerid.get(),
+                TemplateKey key = new TemplateKey(Optional.of(templateVersion), recordreq.customerid.get(),
                         recordreq.app.get(), recordreq.getService().get(), recordreq.path , TemplateKey.Type.Response);
                 ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
                 Optional<Response> replayresp = Optional.ofNullable(replayResponseMap.get(replayreqid));
@@ -264,14 +264,12 @@ public class Analyzer {
     /**
      * @param replayid
      * @param tracefield
-     * @param templateVersion
      * @return
      */
     public static Optional<Analysis> analyze(String replayid, String tracefield,
                                              ReqRespStore rrstore, ObjectMapper jsonmapper,
                                              RequestComparatorCache requestComparatorCache,
-                                             ResponseComparatorCache responseComparatorCache,
-                                             Optional<String> templateVersion) {
+                                             ResponseComparatorCache responseComparatorCache) {
         // String collection = Replay.getCollectionFromReplayId(replayid);
 
         Optional<Replay> replay = rrstore.getReplay(replayid);
@@ -314,9 +312,7 @@ public class Analyzer {
             // TODO need to get the batch size from some config
             Pair<Stream<List<Request>> , Long> result = r.getRequestBatches(20 , rrstore);
 
-            // if version is passed in analyze request, use it. Else, use the version associated
-            // with the Replay
-            Optional<String> templateVersionToUse = templateVersion.or(() -> r.templateVersion);
+            String templateVersionToUse = r.templateVersion;
 
             //Result<Request> reqs = r.getRequests(rrstore, true);
             Analyzer analyzer = new Analyzer(replayid, result.getRight().intValue()
