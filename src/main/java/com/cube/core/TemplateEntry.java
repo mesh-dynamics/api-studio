@@ -120,7 +120,7 @@ public class TemplateEntry {
         if (pt == CompareTemplate.PresenceType.Default && !isParentArray) {
             return ERR_NewField;
         }
-        else if(pt == CompareTemplate.PresenceType.Required) {
+        else if(pt == CompareTemplate.PresenceType.Required && !isParentArray) {
             return ERR_RequiredGolden;
         }
         switch (ct) {
