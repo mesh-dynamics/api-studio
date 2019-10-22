@@ -146,12 +146,13 @@ export class CytoscapeReactWrapper extends React.Component {
                 {
                     selector: 'node[testConfig="mockService"]',
                     style: {
-                        'background-color': '#FFA500',
-                        'line-color': '#FFA500',
-                        'target-arrow-color': '#FFA500',
-                        'source-arrow-color': '#FFA500',
-                        'color': "#fff",
-                        'border-color': '#FFA500'
+                        'background-color': '#FFFFCC',
+                        'line-color': '#FFFFCC',
+                        'target-arrow-color': '#FFFFCC',
+                        'source-arrow-color': '#FFFFCC',
+                        'border-style': 'dotted',
+                        'border-color': '#666',
+                        'border-width': '2px'
                     }
                 },
                 {
@@ -193,7 +194,7 @@ export class CytoscapeReactWrapper extends React.Component {
                 },
 
                 {
-                selector: 'edge:selected',
+                    selector: 'edge:selected',
                     style: {
                         'width': 2
                     }
@@ -201,12 +202,13 @@ export class CytoscapeReactWrapper extends React.Component {
                 {
                     selector: 'edge[testConfig="testDirection"]',
                     style: {
-                        'background-color': '#FFA500',
-                        'line-color': '#FFA500',
-                        'target-arrow-color': '#FFA500',
-                        'source-arrow-color': '#FFA500',
+                        'background-color': '#85cc00',
+                        'line-style': 'dashed',
+                        'line-color': '#85cc00',
+                        'target-arrow-color': '#85cc00',
+                        'source-arrow-color': '#85cc00',
                         'color': "#fff",
-                        'border-color': '#FFA500',
+                        'border-color': '#85cc00',
                         'width': 2
                     }
                 },
