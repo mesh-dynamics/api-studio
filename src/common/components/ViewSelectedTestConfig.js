@@ -70,6 +70,10 @@ class ViewSelectedTestConfig extends React.Component {
         });
     }
 
+    handleFCDone = () => {
+        this.setState({fcId: null});
+    };
+
     getReplayStatus() {
         const {cube, dispatch} = this.props;
         dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid, cube.selectedApp));
@@ -243,7 +247,8 @@ class ViewSelectedTestConfig extends React.Component {
                         </p>
                     </Modal.Body>
                     <Modal.Footer>
-                        <span onClick={this.handleFC} className="cube-btn">Force Complete</span>
+                        <span onClick={this.handleFC} className="cube-btn">Force Complete</span>&nbsp;&nbsp;
+                        <span onClick={this.handleFCDone} className="cube-btn">Done</span>
                     </Modal.Footer>
                 </Modal>
             </div>
@@ -289,7 +294,14 @@ class ViewSelectedTestConfig extends React.Component {
                 } else if (error.response.status == 409) {
                     let regex = /Replay ongoing for customer (.+?), app (.+?), instance (.+?), with collection name (.+)\./g;
                     const temp = regex.exec(error.response.data);
-                    this.setState({fcId: temp[(temp.length - 1)], show: false});
+                    if (temp && temp.length) {
+                        this.setState({fcId: temp[(temp.length - 1)], show: false});
+                    } else {
+                        alert(error.response.data);
+                    }
+                } else {
+                    this.setState({show: false});
+                    alert(error.response.data);
                 }
             });
         }
@@ -297,35 +309,6 @@ class ViewSelectedTestConfig extends React.Component {
         let checkStatus = () => {
             dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayid));
         };
-    }
-
-    async getReplayIdCall(collectionId, app, instance, gatewayEndPoint, templateVer) {
-        let user = JSON.parse(localStorage.getItem('user'));
-        let response, json;
-        let url = `${config.replayBaseUrl}/init/${user.customer_name}/${app}/${collectionId}`;
-        let replayId;
-        const searchParams = new URLSearchParams();
-        searchParams.set('endpoint', gatewayEndPoint);
-        searchParams.set('instanceid', instance);
-        searchParams.set('templateSetVer', templateVer);
-        if (app != 'Cube') {
-            searchParams.set('paths', 'minfo/listmovies');
-            searchParams.append('paths', 'minfo/returnmovie');
-            searchParams.append('paths', 'minfo/rentmovie');
-            searchParams.append('paths', 'minfo/liststores');
-        }
-        axios.post(url, searchParams).then((response) => {
-            this.setState({replayId: response.data});
-            this.replay(response.data);
-        }).catch((error) => {
-            if (error.response.data && error.response.data['Force Complete']) {
-                this.setState({fcId: error.response.data['Force Complete'], show: false});
-            } else if (error.response.status == 409) {
-                let regex = /Replay ongoing for customer (.+?), app (.+?), instance (.+?), with collection name (.+)\./g;
-                const temp = regex.exec(error.response.data);
-                this.setState({fcId: temp[(temp.length - 1)], show: false});
-            }
-        });
     }
 }
 
