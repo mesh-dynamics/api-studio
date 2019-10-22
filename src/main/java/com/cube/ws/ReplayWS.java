@@ -221,17 +221,17 @@ public class ReplayWS {
         List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
         Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate")).flatMap(v -> Utils.strToDouble(v));
         List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService")).orElse(new ArrayList<>());
+        String userId = formParams.getFirst("userId");
+        String instanceId = formParams.getFirst("instanceId");
 
-        if (!formParams.containsKey("userId")) {
+        if (userId==null) {
             return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userId Not Specified"))).toString()).build();
         }
 
-        if (!formParams.containsKey("instanceId")) {
+        if (instanceId==null) {
             return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","instanceId Not Specified"))).toString()).build();
         }
 
-        String userId = formParams.getFirst("userId");
-        String instanceId = formParams.getFirst("instanceId");
 
         Optional<Recording> recordingOpt = rrstore.getRecording(recordingId);
         if (recordingOpt.isEmpty()) {
