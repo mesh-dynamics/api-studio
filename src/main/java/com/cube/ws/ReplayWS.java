@@ -180,10 +180,10 @@ public class ReplayWS {
 
 
     @POST
-    @Path("start/{recordingid}")
+    @Path("start/{recordingId}")
     @Consumes("application/x-www-form-urlencoded")
     public Response start(@Context UriInfo ui,
-                          @PathParam("recordingid") String recordingid,
+                          @PathParam("recordingId") String recordingId,
                           MultivaluedMap<String, String> formParams) {
         /**
          // Block for testing -- we need to initialize the auth token to inject
@@ -216,29 +216,34 @@ public class ReplayWS {
                 return (v == "t") ? true : false;
             })
             .orElse(false);
-        List<String> reqids = Optional.ofNullable(formParams.get("reqids")).orElse(new ArrayList<String>());
-        Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endpoint"));
+        List<String> reqIds = Optional.ofNullable(formParams.get("reqIds")).orElse(new ArrayList<String>());
+        Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endPoint"));
         List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
-        Optional<Double> samplerate = Optional.ofNullable(formParams.getFirst("samplerate")).flatMap(v -> Utils.strToDouble(v));
-        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermservice")).orElse(new ArrayList<>());
+        Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate")).flatMap(v -> Utils.strToDouble(v));
+        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService")).orElse(new ArrayList<>());
+        String userId = formParams.getFirst("userId");
+        String instanceId = formParams.getFirst("instanceId");
 
-        if (!formParams.containsKey("userid")) {
-            return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userid Not Specified"))).toString()).build();
+        if (userId==null) {
+            return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userId Not Specified"))).toString()).build();
         }
 
-        String userid = formParams.getFirst("userid");
+        if (instanceId==null) {
+            return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","instanceId Not Specified"))).toString()).build();
+        }
 
-        Optional<Recording> recordingOpt = rrstore.getRecording(recordingid);
+
+        Optional<Recording> recordingOpt = rrstore.getRecording(recordingId);
         if (recordingOpt.isEmpty()) {
-            LOGGER.error(String.format("Cannot init Replay since cannot find recording for id %s", recordingid));
-            return Response.status(Status.NOT_FOUND).entity(String.format("cannot find recording for id %s", recordingid)).build();
+            LOGGER.error(String.format("Cannot init Replay since cannot find recording for id %s", recordingId));
+            return Response.status(Status.NOT_FOUND).entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
         Recording recording = recordingOpt.get();
 
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
-            Optional.ofNullable(recording.instanceid));
+            Optional.ofNullable(instanceId));
         if (errResp.isPresent()) {
             return errResp.get();
         }
@@ -246,8 +251,8 @@ public class ReplayWS {
 
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
-                        return ReplayDriver.initReplay(e, recording.customerid, recording.app, recording.instanceid, recording.collection, userid,
-                            reqids, rrstore, async, paths, null, samplerate, intermediateServices, recording.templateVersion)
+                        return ReplayDriver.initReplay(e, recording.customerid, recording.app, instanceId, recording.collection, userId,
+                            reqIds, rrstore, async, paths, null, sampleRate, intermediateServices, recording.templateVersion)
                             .map(replayDriver -> {
                                 String json;
                                 Replay replay = replayDriver.getReplay();
