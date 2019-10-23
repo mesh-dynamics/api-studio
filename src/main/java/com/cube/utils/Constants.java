@@ -19,10 +19,12 @@ public class Constants {
     public static final String EVENT_NOT_FOUND = "EVENT_NOT_FOUND";
     public static final String STORE_EVENT_FAILED = "STORE_EVENT_FAILED";
     public static final String INVALID_EVENT = "INVALID_EVENT";
+    public static final String INVALID_INPUT = "INVALID_INPUT";
 
     //EXCEPTIONS
     public static final String IO_EXCEPTION = "IO_EXCEPTION";
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
+    public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
 
     //COMMON STRINGS
     public static final String CUSTOMER_ID = "customerId";

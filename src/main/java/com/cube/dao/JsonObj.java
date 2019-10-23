@@ -38,7 +38,7 @@ public class JsonObj implements DataObj {
 
     private static final Logger LOGGER = LogManager.getLogger(JsonObj.class);
 
-    JsonObj(String json, ObjectMapper jsonMapper) {
+    public JsonObj(String json, ObjectMapper jsonMapper) {
         this(jsonStrToObj(json, jsonMapper), jsonMapper);
     }
 

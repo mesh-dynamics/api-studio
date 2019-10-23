@@ -236,17 +236,17 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static JSONObject apiErrorResponse(String status, String msgId, String msg) {
-        JSONObject apiErrorResponse = new JSONObject();
-        apiErrorResponse.put(Constants.STATUS, status);
+    public static JSONObject buildErrorResponse(String status, String msgId, String msg) {
+        JSONObject errorResponse = new JSONObject();
+        errorResponse.put(Constants.STATUS, status);
 
         JSONObject data = new JSONObject();
         data.put(Constants.MESSAGE_ID, msgId);
         data.put(Constants.MESSAGE, msg);
 
-        apiErrorResponse.put(Constants.DATA, data);
+        errorResponse.put(Constants.DATA, data);
 
-        return apiErrorResponse;
+        return errorResponse;
     }
 
 }

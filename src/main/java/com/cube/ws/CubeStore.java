@@ -3,10 +3,10 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
 import com.cube.dao.EventBuilder.InvalidEventException;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -48,7 +48,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
 
-import static com.cube.core.Utils.apiErrorResponse;
+import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.PATHPATH;
 import com.cube.agent.FnReqResponse;
@@ -630,13 +630,10 @@ public class CubeStore {
 
 
     /**
-     * @param compositeEvent
-     * compositeEvent consists of both the request and response payload. They need to be specified
-     * as the fields reqPayloadStr and respPayloadStr in the json.
-     * If the request event is already present, response event is stored.
-     * If the request event is not present, both request and response events are stored.
-     *
-     *
+     * @param compositeEvent compositeEvent consists of both the request and response payload. They
+     * need to be specified as the fields reqPayloadStr and respPayloadStr in the json. If the request
+     * event is already present, response event is stored. If the request event is not present, both
+     * request and response events are stored.
      * @return
      * success - successful setting of default response for the request
      * fail - if storing request/response event fails
@@ -647,47 +644,55 @@ public class CubeStore {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response setDefaultRespForEvent(String compositeEvent) {
 
+        if (compositeEvent == null) {
+            return Response.serverError().entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
+                    "Invalid input!")).build();
+        }
+
         try {
-            JsonNode jsonNode = jsonMapper.readTree(compositeEvent);
-            if (storeReqAndRespEvent(jsonNode)) {
+            JsonObj jsonObj = new JsonObj(compositeEvent, jsonMapper);
+            //JsonNode jsonNode = jsonMapper.readTree(compositeEvent);
+            if (storeReqAndRespEvent(jsonObj)) {
                 JSONObject apiResponse = new JSONObject();
                 apiResponse.put(Constants.STATUS, Constants.SUCCESS);
 
                 return Response.ok().entity(apiResponse).build();
             } else {
                 return Response.serverError().entity(
-                    apiErrorResponse(Constants.ERROR, Constants.STORE_EVENT_FAILED,
+                    buildErrorResponse(Constants.FAIL, Constants.STORE_EVENT_FAILED,
                         "Storing default response for event failed!")).build();
             }
 
-        } catch (IOException e) {
-            return Response.serverError().entity(
-                apiErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
-                    "Invalid json, I/O Exception occured")).build();
         } catch (InvalidEventException e) {
             return Response.serverError().entity(
-                apiErrorResponse(Constants.ERROR, Constants.INVALID_EVENT,
-                    "Trying to store invalid request/response event")).build();
+                buildErrorResponse(Constants.ERROR, Constants.INVALID_EVENT,
+                    "Trying to store invalid request/response event : " + e.getMessage())).build();
         } catch (RuntimeException e) {
             return Response.serverError().entity(
-                apiErrorResponse(Constants.ERROR, Constants.RUNTIME_EXCEPTION,
-                    "Runtime exception occured. Check if the inputs are valid")).build();
+                buildErrorResponse(Constants.ERROR, Constants.RUNTIME_EXCEPTION,
+                    "Runtime exception occured. Check if the inputs are valid : " + e.getMessage()))
+                .build();
+        } catch (PathNotFoundException e) {
+            return Response.serverError().entity(
+                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    "Invalid json : " + e.getMessage())).build();
         }
     }
 
-    private boolean storeReqAndRespEvent(JsonNode jsonNode)
-        throws InvalidEventException {
-        String customerId = jsonNode.get(Constants.CUSTOMER_ID).asText();
-        String app = jsonNode.get(Constants.APP).asText();
-        EventType eventType = Event.EventType.valueOf(jsonNode.get(Constants.EVENT_TYPE).asText());
-        String service = jsonNode.get(Constants.SERVICE).asText();
-        String instanceId = jsonNode.get(Constants.INSTANCE_ID).asText();
-        String apiPath = jsonNode.get(Constants.API_PATH).asText();
-        String traceId = jsonNode.get(Constants.TRACE_ID).asText();
-        String reqId = jsonNode.get(Constants.REQ_ID).asText();
+    private boolean storeReqAndRespEvent(JsonObj jsonObj)
+        throws InvalidEventException, PathNotFoundException {
+        String customerId = jsonObj.getValAsString(Constants.CUSTOMER_ID);
+        String app = jsonObj.getValAsString(Constants.APP);
+        EventType eventType = Event.EventType.valueOf(jsonObj.getValAsString(Constants.EVENT_TYPE));
+        String service = jsonObj.getValAsString(Constants.SERVICE);
+        String instanceId = jsonObj.getValAsString(Constants.INSTANCE_ID);
+        String apiPath = jsonObj.getValAsString(Constants.API_PATH);
+        String traceId = jsonObj.getValAsString(Constants.TRACE_ID);
+        String reqId = jsonObj.getValAsString(Constants.REQ_ID);
         //TODO:Add support for binary payload
-        String reqPayload = jsonNode.get(Constants.REQ_PAYLOAD_STR).asText();
-        String respPayload = jsonNode.get(Constants.RESP_PAYLOAD_STR).asText();
+        String reqPayload = jsonObj.getValAsString(Constants.REQ_PAYLOAD_STR);
+        String respPayload = jsonObj.getValAsString(Constants.RESP_PAYLOAD_STR);
 
         EventQuery reqQuery = new EventQuery.Builder(customerId, app, eventType)
             .withService(service).withInstanceId(instanceId)
