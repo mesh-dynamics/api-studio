@@ -33,11 +33,8 @@ http {
     default_type        application/octet-stream;
 
 
-    log_format cube_main escape=json '{"meta" : [ {"type" : "request"} , {"c-request-id" : "$crequestid" } , {"method" : "$request_method"} , {"timestamp" : "$time_local"} , {"rrtype" : "Record"} , {"customerid" : "CubeCorp"} , {"app" : "MovieInfo" } , {"instanceid" : "test-sm"} , {"service" : "$service"} ] , "body" : "$request_body" , "hdrs" : "$request_headers" , "path" : "${request_uri}/${args}"}
-{"meta" : [ {"type" : "response"} , {"c-request-id" : "$crequestid" } , {"x-request-id" : "$request_id"} , {"status" : "$status"} , {"timestamp" : "$time_local"} , {"rrtype" : "Record"} , {"customerid" : "CubeCorp"} , {"app" : "MovieInfo" } , {"instanceid" : "test-sm"} , {"service" : "$service"} ] , "body" : "$response_body" , "hdrs" : "$response_headers" , "path" : "${request_uri}/${args}" , "content_type" : "$sent_http_content_type" , "content_length" : "$sent_http_content_length"}';
-
-
-    #{ "host" : "$host" , "timestamp" : "$time_local" , "server_protocol" : "$server_protocol" , "request_str" : "$request_uri" , "method" : "$request_method" , "request_args" : "$args" , "request_hdrs" : "$request_headers" , "request_body" : "$request_body" , "content_length" : "$sent_http_content_length" , "content_type" : "$sent_http_content_type" , "response_hdrs" : "$response_headers" , "status" : "$status" , "error" : "$err" , "response_body" : "$response_body" , "request_id" : "$request_id"}
+    log_format cube_main escape=json '{"meta" : [ {"type" : "request"} , {"c-request-id" : "$crequest_id" } , {"method" : "$request_method"} , {"timestamp" : "$time_local"} , {"rrtype" : "$run_type"} , {"customerid" : "$customer_id"} , {"app" : "$app_name" } , {"instanceid" : "$instance_id"} , {"service" : "$service"} ] , "body" : "$request_body" , "hdrs" : "$request_headers" , "path" : "$request_uri"}
+{"meta" : [ {"type" : "response"} , {"c-request-id" : "$crequest_id" } , {"x-request-id" : "$request_id"} , {"status" : "$status"} , {"timestamp" : "$time_local"} , {"rrtype" : "$run_type"} , {"customerid" : "$customer_id"} , {"app" : "$app_name" } , {"instanceid" : "$instance_id"} , {"service" : "$service"} ] , "body" : "$response_body" , "hdrs" : "$custom_response_headers" , "path" : "$request_uri"}';
 
 
     map $status $cond {
@@ -48,13 +45,16 @@ http {
       default   1;
     }
 
-    capture_response_body                   off;
+    map $response_headers $custom_response_headers {
+	~\[\] '[{"content-type":"$sent_http_content_type"},{"content-length":"$sent_http_content_length"}]';
+	~\[(?P<existing>.+)\] '[$existing,{"content-type":"$sent_http_content_type"},{"content-length":"$sent_http_content_length"}]';
+    }
+
+
     capture_response_body_buffer_size       1m;
     capture_header_buffer_size            10k;
     capture_response_body_if                $cond 1;
     capture_response_body_if_latency_more   0s;
-
-
 
     map $response_body $err {
       ~\"error\":\"(?<e>.+)\" $e;
@@ -76,9 +76,15 @@ http {
             	resolver 8.8.8.8;
 	 	add_header x-b3-trace-id $request_id;
 	        add_header x-request-id $request_id;
-	        set $xb3traceid  '${request_id}';
-	        set $service 'cube_example';
-	        set $crequestid  '${service}-${request_id}';
+	        set $x_b3_trace_id  '${request_id}';
+	        set $service '${host}';
+	        set $crequest_id  '${service}-${request_id}';
+		set $customer_id 'CubeCorp';
+		set $instance_id 'test-dc';
+		set $app_name 'MovieInfo';
+		set $run_type 'Record';
+		set $replay_endpoint '';
+
             	proxy_pass http://$http_host$uri$is_args$args;
         }
 
@@ -135,3 +141,4 @@ http {
 #    }
 
 }
+
