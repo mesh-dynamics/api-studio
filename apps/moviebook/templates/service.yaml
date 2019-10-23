@@ -282,7 +282,7 @@ spec:
     spec:
       containers:
       - name: movieinfo
-        image: cubeiocorp/sample_apps-mirest:demo-1.0
+        image: cubeiocorp/sample_apps-mirest:be3a7539cc64b3fc35d5a8482262d74937a99903
         imagePullPolicy: IfNotPresent
         resources:
           requests:
