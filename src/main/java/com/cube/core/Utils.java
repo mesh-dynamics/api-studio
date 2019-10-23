@@ -3,6 +3,7 @@
  */
 package com.cube.core;
 
+import com.cube.utils.Constants;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -28,6 +29,7 @@ import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.golden.TemplateSet;
+import org.json.JSONObject;
 
 
 /**
@@ -232,6 +234,19 @@ public class Utils {
         URIBuilder uriBuilder = new URIBuilder(baseUrl);
         return uriBuilder.setPath(uriBuilder.getPath() + "/" + suffix)
             .build().normalize().toString();
+    }
+
+    public static JSONObject apiErrorResponse(String status, String msgId, String msg) {
+        JSONObject apiErrorResponse = new JSONObject();
+        apiErrorResponse.put(Constants.STATUS, status);
+
+        JSONObject data = new JSONObject();
+        data.put(Constants.MESSAGE_ID, msgId);
+        data.put(Constants.MESSAGE, msg);
+
+        apiErrorResponse.put(Constants.DATA, data);
+
+        return apiErrorResponse;
     }
 
 }

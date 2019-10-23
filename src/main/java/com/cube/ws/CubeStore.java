@@ -3,6 +3,10 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.Event.EventType;
+import com.cube.dao.Event.RunType;
+import com.cube.dao.EventBuilder.InvalidEventException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -43,6 +47,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+
+import static com.cube.core.Utils.apiErrorResponse;
 import static com.cube.dao.RRBase.*;
 import static com.cube.dao.Request.PATHPATH;
 import com.cube.agent.FnReqResponse;
@@ -622,7 +628,124 @@ public class CubeStore {
         return Response.serverError().entity("Not able to store default response").build();
     }
 
-	/* here the body is the full json response */
+
+    /**
+     * @param compositeEvent
+     * compositeEvent consists of both the request and response payload. They need to be specified
+     * as the fields reqPayloadStr and respPayloadStr in the json.
+     * If the request event is already present, response event is stored.
+     * If the request event is not present, both request and response events are stored.
+     *
+     *
+     * @return
+     * success - successful setting of default response for the request
+     * fail - if storing request/response event fails
+     * error - if an exception occurs.
+     */
+    @POST
+    @Path("event/setDefaultResponse")
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response setDefaultRespForEvent(String compositeEvent) {
+
+        try {
+            JsonNode jsonNode = jsonMapper.readTree(compositeEvent);
+            if (storeReqAndRespEvent(jsonNode)) {
+                JSONObject apiResponse = new JSONObject();
+                apiResponse.put(Constants.STATUS, Constants.SUCCESS);
+
+                return Response.ok().entity(apiResponse).build();
+            } else {
+                return Response.serverError().entity(
+                    apiErrorResponse(Constants.ERROR, Constants.STORE_EVENT_FAILED,
+                        "Storing default response for event failed!")).build();
+            }
+
+        } catch (IOException e) {
+            return Response.serverError().entity(
+                apiErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                    "Invalid json, I/O Exception occured")).build();
+        } catch (InvalidEventException e) {
+            return Response.serverError().entity(
+                apiErrorResponse(Constants.ERROR, Constants.INVALID_EVENT,
+                    "Trying to store invalid request/response event")).build();
+        } catch (RuntimeException e) {
+            return Response.serverError().entity(
+                apiErrorResponse(Constants.ERROR, Constants.RUNTIME_EXCEPTION,
+                    "Runtime exception occured. Check if the inputs are valid")).build();
+        }
+    }
+
+    private boolean storeReqAndRespEvent(JsonNode jsonNode)
+        throws InvalidEventException {
+        String customerId = jsonNode.get(Constants.CUSTOMER_ID).asText();
+        String app = jsonNode.get(Constants.APP).asText();
+        EventType eventType = Event.EventType.valueOf(jsonNode.get(Constants.EVENT_TYPE).asText());
+        String service = jsonNode.get(Constants.SERVICE).asText();
+        String instanceId = jsonNode.get(Constants.INSTANCE_ID).asText();
+        String apiPath = jsonNode.get(Constants.API_PATH).asText();
+        String traceId = jsonNode.get(Constants.TRACE_ID).asText();
+        String reqId = jsonNode.get(Constants.REQ_ID).asText();
+        //TODO:Add support for binary payload
+        String reqPayload = jsonNode.get(Constants.REQ_PAYLOAD_STR).asText();
+        String respPayload = jsonNode.get(Constants.RESP_PAYLOAD_STR).asText();
+
+        EventQuery reqQuery = new EventQuery.Builder(customerId, app, eventType)
+            .withService(service).withInstanceId(instanceId)
+            .withPaths(List.of(apiPath)).withTraceId(traceId)
+            .withReqId(reqId).withOffset(0).withLimit(1)
+            .build();
+
+        Optional<Event> reqEvent = rrstore.getEvents(reqQuery).getObjects().findFirst();
+
+        //Store request event if not present.
+        if (reqEvent.isEmpty()) {
+            LOGGER.debug(new ObjectMessage(
+                Map.of("message", "Request Event not found. Storing request event",
+                    "type", eventType,
+                    "reqId", reqId,
+                    "path", apiPath)));
+
+            EventBuilder eventBuilder = new EventBuilder(customerId, app,
+                service, instanceId, "NA",
+                traceId, RunType.Manual, Instant.now(),
+                reqId, apiPath, eventType);
+            eventBuilder.setRawPayloadString(reqPayload);
+            reqEvent = Optional.of(eventBuilder.createEvent());
+            //We cannot use storeEvent API as it checks for a running record/replay.
+            //This API is standalone and should work without an active record/replay.
+            if (!rrstore.save(reqEvent.get())) {
+                LOGGER.debug(new ObjectMessage(
+                    Map.of("message", "Storing Request Event failed.",
+                        "type", eventType,
+                        "reqId", reqId,
+                        "path", apiPath)));
+
+                return false;
+            }
+        }
+
+        //Store default response
+        EventBuilder eventBuilder = new EventBuilder(customerId, app,
+            service, instanceId, "NA",
+            traceId, RunType.Manual, Instant.now(),
+            reqEvent.get().reqId, apiPath, Event.EventType.getResponseType(eventType));
+        eventBuilder.setRawPayloadString(respPayload);
+        //We cannot use storeEvent API as it checks for an active record/replay.
+        //This API is standalone and should work without an active record/replay.
+        if (!rrstore.save(eventBuilder.createEvent())) {
+            LOGGER.debug(new ObjectMessage(
+                Map.of("message", "Storing Response Event failed.",
+                    "type", eventType,
+                    "reqId", reqId,
+                    "path", apiPath)));
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /* here the body is the full json response */
 	@POST
 	@Path("/setdefault/{method}/{var:.+}")
 	@Consumes({MediaType.APPLICATION_JSON})
