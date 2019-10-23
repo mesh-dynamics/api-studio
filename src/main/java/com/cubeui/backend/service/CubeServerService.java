@@ -1,6 +1,7 @@
 package com.cubeui.backend.service;
 
 import com.cubeui.backend.web.ErrorResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -22,6 +23,9 @@ import static org.springframework.http.ResponseEntity.*;
 @Service
 @Transactional
 public class CubeServerService {
+
+    @Value("${cube.server.baseUrl}")
+    private String cubeServerBaseUrl = CUBE_SERVER_HREF;
 
     private RestTemplate restTemplate;
 
@@ -52,7 +56,7 @@ public class CubeServerService {
     }
 
     private ResponseEntity fetchResponse(HttpServletRequest request, Optional<String> requestBody, HttpMethod method){
-        String path = CUBE_SERVER_HREF + request.getRequestURI();
+        String path = cubeServerBaseUrl + request.getRequestURI().replace("/api", "");
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }

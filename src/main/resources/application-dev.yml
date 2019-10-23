@@ -50,4 +50,8 @@ logging:
         org.springframework.security: DEBUG
         com.cubeui.backend: DEBUG
     file: app.log
+
+cube:
+    server:
+        baseUrl: http://demo.dev.cubecorp.io
   

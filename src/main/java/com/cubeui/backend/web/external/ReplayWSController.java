@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/rs")
+@RequestMapping("/api/rs")
 public class ReplayWSController {
 
     private CubeServerService cubeServerService;
@@ -44,7 +44,7 @@ public class ReplayWSController {
         return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
     }
 
-    @PostMapping(value = "/start/{customerid}/{app}/{collection}/{replayid}", consumes = "application/x-www-form-urlencoded")
+    @PostMapping(value = "/start/{goldenId}", consumes = "application/x-www-form-urlencoded")
     public ResponseEntity start(HttpServletRequest request, @RequestBody String requestBody) {
         return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
     }
