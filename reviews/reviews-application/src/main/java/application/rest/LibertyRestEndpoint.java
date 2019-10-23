@@ -48,14 +48,18 @@ public class LibertyRestEndpoint extends Application {
     private static Double FAIL_PERCENT = 0.01;
     private static Double FAIL_PERCENT_STD_DEV = 0.002;
     private static long TIME_BETWEEN_RUNS = 60000L;
+    private static int NUMBER_OF_REVIEWS = 2;
 
     private long requestTimeStamp = new Date().getTime();
     private Double randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
+
+    public static String reviews = "";
 
     static {
         String failPercent = System.getenv("FAIL_PERCENT");
         String failPercentStdDev = System.getenv("FAIL_PERCENT");
         String timeBetweenRuns = System.getenv("TIME_BETWEEN_RUNS");
+        String numberOfReviews = System.getenv("NUMBER_OF_REVIEWS");
         if (failPercent != null) {
             FAIL_PERCENT = Double.parseDouble(failPercent);
         }
@@ -65,41 +69,57 @@ public class LibertyRestEndpoint extends Application {
         if (timeBetweenRuns != null) {
             TIME_BETWEEN_RUNS = Long.parseLong(timeBetweenRuns);
         }
+
+        if (numberOfReviews != null) {
+            NUMBER_OF_REVIEWS = Integer.parseInt(numberOfReviews);
+        }
+
+        for (int i=0; i < NUMBER_OF_REVIEWS-2; i++) {
+            // reviewer 1:
+            reviews += ", {";
+            reviews += "  \"reviewer\": \"Reviewer" + i + "\",";
+            reviews += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
+            if (ratings_enabled) {
+                    reviews += ", \"rating\": {\"stars\": " + 3 + ", \"color\": \"" + star_color + "\"}";
+            }
+            reviews += "}";
+        }
     }
 
     private String getJsonResponse (String productId, int starsReviewer1, int starsReviewer2) {
     	String result = "{";
     	result += "\"id\": \"" + productId + "\",";
     	result += "\"reviews\": [";
+        // reviewer 1:
+        result += "{";
+        result += "  \"reviewer\": \"Reviewer1\",";
+        result += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
+        if (ratings_enabled) {
+            if (starsReviewer1 != -1) {
+                result += ", \"rating\": {\"stars\": " + starsReviewer1 + ", \"color\": \"" + star_color + "\"}";
+            }
+            else {
+                result += ", \"rating\": {\"error\": \"Ratings service is currently unavailable\"}";
+            }
+        }
+        result += "},";
 
-    	// reviewer 1:
-    	result += "{";
-    	result += "  \"reviewer\": \"Reviewer1\",";
-    	result += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
-      if (ratings_enabled) {
-        if (starsReviewer1 != -1) {
-          result += ", \"rating\": {\"stars\": " + starsReviewer1 + ", \"color\": \"" + star_color + "\"}";
+        // reviewer 2:
+        result += "{";
+        result += "  \"reviewer\": \"Reviewer2\",";
+        result += "  \"text\": \"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"";
+        if (ratings_enabled) {
+            if (starsReviewer2 != -1) {
+                result += ", \"rating\": {\"stars\": " + starsReviewer2 + ", \"color\": \"" + star_color + "\"}";
+            }
+            else {
+                result += ", \"rating\": {\"error\": \"Ratings service is currently unavailable\"}";
+            }
         }
-        else {
-          result += ", \"rating\": {\"error\": \"Ratings service is currently unavailable\"}";
-        }
-      }
-    	result += "},";
-    	
-    	// reviewer 2:
-    	result += "{";
-    	result += "  \"reviewer\": \"Reviewer2\",";
-    	result += "  \"text\": \"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"";
-      if (ratings_enabled) {
-        if (starsReviewer2 != -1) {
-          result += ", \"rating\": {\"stars\": " + starsReviewer2 + ", \"color\": \"" + star_color + "\"}";
-        }
-        else {
-          result += ", \"rating\": {\"error\": \"Ratings service is currently unavailable\"}";
-        }
-      }
-    	result += "}";
-    	
+        result += "}";
+
+        result += reviews;
+
     	result += "]";
     	result += "}";
 
