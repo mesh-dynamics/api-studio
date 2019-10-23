@@ -87,13 +87,15 @@ class ShareableLink extends Component {
             replayId = urlParameters["replayId"];
         if(!replayId) throw new Error("replayId is required");
         let response, json, { resultsFetched } = this.state;
+        let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${resultsFetched}&includediff=true&path=${apiPath}`;
         let dataList = {};
         try {
             response = await fetch(url, {
                 method: "get",
                 headers: new Headers({
-                    "cache-control": "no-cache"
+                    "cache-control": "no-cache",
+                    "Authorization": "Bearer " + user['access_token']
                 })
             });
             if (response.ok) {

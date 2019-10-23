@@ -52,13 +52,15 @@ async function fetchAppsList() {
 
 async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId) {
     let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.analyzeBaseUrl}/updateGoldenSet/${recordingId}/${replayId}/${collectionUpdOpSetId}/${templateVer}`;
     let updateRes;
     try {
         response = await fetch(url, {
             method: "get",
             headers:{
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                "Authorization": "Bearer " + user['access_token']
             }
         });
         if (response.ok) {
@@ -77,6 +79,7 @@ async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, reco
 
 async function updateTemplateOperationSet(templateVer, body) {
     let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.analyzeBaseUrl}/updateTemplateOperationSet/${templateVer}`;
     let updateRes;
     try {
@@ -85,7 +88,8 @@ async function updateTemplateOperationSet(templateVer, body) {
             body: JSON.stringify(body),
             headers:{
                 "Content-Type": "application/json",
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                "Authorization": "Bearer " + user['access_token']
             }
         });
         if (response.ok) {
@@ -104,6 +108,7 @@ async function updateTemplateOperationSet(templateVer, body) {
 
 async function updateRecordingOperationSet(rosData) {
     let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/update`;
     let updateRes;
     try {
@@ -112,7 +117,8 @@ async function updateRecordingOperationSet(rosData) {
             body: JSON.stringify(rosData),
             headers:{
                 "Content-Type": "application/json",
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                "Authorization": "Bearer " + user['access_token']
             }
         });
         if (response.ok) {
@@ -138,7 +144,8 @@ async function getNewTemplateVerInfo(app, currentTemplateVer) {
         response = await fetch(url, {
             method: "post",
             headers:{
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                "Authorization": "Bearer " + user['access_token']
             }
         });
         if (response.ok) {
@@ -164,7 +171,8 @@ async function getCollectionUpdateOperationSet(app) {
         response = await fetch(url, {
             method: "post",
             headers:{
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                "Authorization": "Bearer " + user['access_token']
             }
         });
         if (response.ok) {
@@ -333,7 +341,8 @@ async function fetchCollectionList(app) {
             method: "get",
             mode: 'cors',
             headers:{
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                "Authorization": "Bearer " + user['access_token']
             }
         });
         if (response.ok) {
@@ -351,8 +360,13 @@ async function fetchCollectionList(app) {
 }
 
 async function forceCompleteReplay(fcId) {
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.replayBaseUrl}/forcecomplete/${fcId}`;
-    await axios.post(url, {}).then(function(response){
+    await axios.post(url, {
+        headers: {
+            "Authorization": "Bearer " + user['access_token']
+        }
+    }).then(function(response){
         return response;
     }).catch(function(error){
         throw (error.response);
@@ -368,7 +382,8 @@ async function checkStatusForReplay(collectionId, replayId, app) {
         response = await fetch(url, {
             method: "get",
             headers: new Headers({
-                "cache-control": "no-cache"
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
             })
         });
         if (response.ok) {
@@ -388,6 +403,7 @@ async function checkStatusForReplay(collectionId, replayId, app) {
 
 async function fetchAnalysis(collectionId, replayId) {
     let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.analyzeBaseUrl}/analyze/${replayId}`;
     const searchParams = new URLSearchParams();
     searchParams.set('tracefield', 'x-b3-traceid');
@@ -398,7 +414,8 @@ async function fetchAnalysis(collectionId, replayId) {
             body: searchParams,
             headers: new Headers({
                 "Content-Type": "application/x-www-form-urlencoded",
-                "cache-control": "no-cache"
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
             })
         });
         if (response.ok) {
@@ -416,13 +433,15 @@ async function fetchAnalysis(collectionId, replayId) {
 
 async function fetchReport(collectionId, replayId) {
     let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.analyzeBaseUrl}/aggrresult/${replayId}?bypath=y`;
     let report = {};
     try {
         response = await fetch(url, {
             method: "get",
             headers: new Headers({
-                "cache-control": "no-cache"
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
             })
         });
         if (response.ok) {
@@ -452,7 +471,8 @@ async function fetchTimelineData(app, userId, endDate) {
         response = await fetch(url, {
             method: "get",
             headers: new Headers({
-                "cache-control": "no-cache"
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
             })
         });
         if (response.ok) {
@@ -471,6 +491,7 @@ async function fetchTimelineData(app, userId, endDate) {
 
 async function getDiffData(replayId, recordReqId, replayReqId) {
     let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.analyzeBaseUrl}/analysisResByReq/${replayId}?recordReqId=${recordReqId}&replayReqId=${replayReqId}`;
     let diffData = {};
 
@@ -478,7 +499,8 @@ async function getDiffData(replayId, recordReqId, replayReqId) {
         response = await fetch(url, {
             method: "get",
             headers: new Headers({
-                "cache-control": "no-cache"
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
             })
         });
         if (response.ok) {

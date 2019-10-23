@@ -150,13 +150,15 @@ class Analysis extends Component {
         const {cube} = this.props;
         console.log(cube);
         let response, json;
+        let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResByPath/${cube.replayId.replayid}?service=${tr.service}&path=${tr.path}%2A&start=0&includediff=true`;
         let dataList = {};
         try {
             response = await fetch(url, {
                 method: "get",
                 headers: new Headers({
-                    "cache-control": "no-cache"
+                    "cache-control": "no-cache",
+                    "Authorization": "Bearer " + user['access_token']
                 })
             });
             if (response.ok) {

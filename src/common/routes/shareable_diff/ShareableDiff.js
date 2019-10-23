@@ -72,13 +72,15 @@ class ShareableDiff extends Component {
             .value();
         console.log("urlParameters: ", urlParameters);
         let response, json, { resultsFetched } = this.state;
+        let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResNoTrace/${urlParameters["replayId"]}/${urlParameters["recordRequestId"]}`;
         let dataList = {};
         try {
             response = await fetch(url, {
                 method: "get",
                 headers: new Headers({
-                    "cache-control": "no-cache"
+                    "cache-control": "no-cache",
+                    "Authorization": "Bearer " + user['access_token']
                 })
             });
             if (response.ok) {
