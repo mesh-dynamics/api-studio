@@ -1,8 +1,8 @@
 const config = {
     apiBaseUrl: "/api",
-    recordBaseUrl: "/api/cs",
-    replayBaseUrl: "/api/rs",
-    analyzeBaseUrl: "/api/as"
+    recordBaseUrl: "/cs",
+    replayBaseUrl: "/rs",
+    analyzeBaseUrl: "/as"
 };
 
 export default config;

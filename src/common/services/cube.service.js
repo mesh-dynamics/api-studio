@@ -461,7 +461,9 @@ async function fetchReport(collectionId, replayId) {
 async function fetchTimelineData(app, userId, endDate) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let ed = endDate.getFullYear() + '-' + (endDate.getMonth() + 1) + '-' + (endDate.getDate() + 1);
+    let edTemp = new Date(endDate.toISOString().split('T')[0]);
+    edTemp.setDate(edTemp.getDate() + 1);
+    let ed = edTemp.getFullYear() + '-' + (edTemp.getMonth() + 1) + '-' + edTemp.getDate();
     let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&endDate=${ed}`;
     if (userId !== 'ALL') {
         url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&userId=${user.username}&endDate=${ed}`;
