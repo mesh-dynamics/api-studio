@@ -259,13 +259,15 @@ class PathResults extends Component {
             return
         }
         let response, json;
+        let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResByPath/${pathResultsParams.replayId}?service=${pathResultsParams.service}&path=${pathResultsParams.path}%2A&start=0&includediff=true`;
         let dataList = {};
         try {
             response = await fetch(url, {
                 method: "get",
                 headers: new Headers({
-                    "cache-control": "no-cache"
+                    "cache-control": "no-cache",
+                    "Authorization": "Bearer " + user['access_token']
                 })
             });
             if (response.ok) {

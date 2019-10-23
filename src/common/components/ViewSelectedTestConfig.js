@@ -281,7 +281,8 @@ class ViewSelectedTestConfig extends React.Component {
             }
             const configForHTTP = {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    "Authorization": "Bearer " + user['access_token']
                 }
             };
             axios.post(url, searchParams, configForHTTP).then((response) => {

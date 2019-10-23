@@ -232,7 +232,8 @@ class GoldenPopover extends React.Component {
             response = await fetch(url, {
                 method: "get",
                 headers: new Headers({
-                    "cache-control": "no-cache"
+                    "cache-control": "no-cache",
+                    "Authorization": "Bearer " + user['access_token']
                 })
             });
             if (response.ok) {
