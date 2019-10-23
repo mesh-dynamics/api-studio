@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/as")
+@RequestMapping("/api/as")
 public class AnalyzeWSController {
 
     private CubeServerService cubeServerService;
@@ -38,7 +38,7 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request);
     }
 
-    @GetMapping("/timelineres/{customer}/{app}/{instanceId}")
+    @GetMapping("/timelineres/{customer}/{app}")
     public ResponseEntity getTimelineResults(HttpServletRequest request) {
         return cubeServerService.fetchGetResponse(request);
     }

@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/cs")
+@RequestMapping("/api/cs")
 public class CubeStoreController {
 
 

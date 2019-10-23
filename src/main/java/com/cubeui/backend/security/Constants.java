@@ -2,7 +2,7 @@ package com.cubeui.backend.security;
 
 public final class Constants {
 
-    public static final String CUBE_SERVER_HREF = "http://staging.cubecorp.io";
+    public static final String CUBE_SERVER_HREF = "http://localhost:9080";
     public static final String DEFAULT_LANGUAGE = "en";
     public static final int PASSWORD_MIN_LENGTH = 4;
     public static final int PASSWORD_MAX_LENGTH = 100;
