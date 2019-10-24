@@ -491,12 +491,12 @@ public class MockServiceHTTP {
 
             return resp.map(respv -> {
                 ResponseBuilder builder = Response.status(respv.status);
-                respv.hdrs.forEach((f, vl) -> vl.forEach((v) -> {
-                    // System.out.println(String.format("k=%s, v=%s", f, v));
+                respv.hdrs.forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+                    // System.out.println(String.format("key=%s, val=%s", fieldName, val));
                     // looks like setting some headers causes a problem, so skip them
                     // TODO: check if this is a comprehensive list
-                    if (Utils.ALLOWED_HEADERS.test(f) && !f.startsWith(":"))
-                        builder.header(f, v);
+                    if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":"))
+                        builder.header(fieldName, val);
                 }));
                 // Increment match counter in cache
                 // TODO commenting out call to cache

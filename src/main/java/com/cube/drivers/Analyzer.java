@@ -543,7 +543,7 @@ public class Analyzer {
                 return Optional.empty();
             }
 
-            analyzer.analyzeWithEvent(rrstore, result.getLeft().limit(1), r); // TODO: temporary limit of 1 fordebugging
+            analyzer.analyzeWithEvent(rrstore, result.getLeft(), r);
 
             // update the stored analysis
             rrstore.saveAnalysis(analyzer.analysis);
