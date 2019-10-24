@@ -4,14 +4,14 @@ metadata:
   name: fluentd-cube-conf-{{namespace}}
   namespace: logging
 data:
-  fluent-cube.conf-{{namespace}}: |-
+  fluent-cube-{{namespace}}.conf: |-
     # tail cubews (envoy) logs
     <source>
       @type tail
       @id in_tail_cube_envoy_cubews_{{namespace}}
       path /var/log/containers/cubews*{{namespace}}_istio-proxy*.log
       pos_file /var/log/fluentd-containers-{{namespace}}-cube-envoy-cubews.log.pos
-      tag cube.envoy.cubews.{{namespace}}
+      tag cube.cubews.envoy.{{namespace}}
       read_from_head true
       <parse>
         @type json
@@ -24,7 +24,7 @@ data:
       @id in_tail_cube_agent_cubews_{{namespace}}
       path /var/log/containers/cubews*{{namespace}}_cubews*.log
       pos_file /var/log/fluentd-containers-{{namespace}}-cube-agent-cubews.log.pos
-      tag cube.agent.cubews.{{namespace}}
+      tag cube.cubews.agent.{{namespace}}
       read_from_head true
       <parse>
         @type json
@@ -33,7 +33,7 @@ data:
 
 
     # filter for parsing envoy proxy logs
-    <filter cube.envoy.*>
+    <filter cube.cubews.envoy.*>
       @type parser
       key_name log
       <parse>
@@ -43,7 +43,7 @@ data:
     </filter>
 
     # filter for parsing cubews agent logs
-    <filter cube.agent.*>
+    <filter cube.cubews.agent.*>
       @type parser
       key_name log
       <parse>
@@ -53,7 +53,7 @@ data:
     </filter>
 
     # send inner_json
-    <filter cube.**>
+    <filter cube.cubews.**>
       @type parser
       format json
       key_name inner_json
@@ -63,7 +63,7 @@ data:
 
 
     # http output for cube dogfooding (envoy)
-    <match cube.envoy.cubews.*>
+    <match cube.cubews.envoy.*>
       @type http
       endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/rrbatch
       open_timeout 5
@@ -78,7 +78,7 @@ data:
     </match>
 
     # http output for cube dogfooding (agent)
-    <match cube.agent.cubews.*>
+    <match cube.cubews.agent.*>
       @type http
       endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/frbatch
       open_timeout 5

@@ -98,8 +98,9 @@ stop_record() {
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
-	kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
-	kubectl rollout undo daemonset -n logging fluentd # TODO: change this to use a remove patch
+	# TODO: move to  'cleanup' 
+	#kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
+	#kubectl rollout undo daemonset -n logging fluentd # TODO: change this to use a remove patch
 }
 
 replay_setup() {
@@ -171,8 +172,9 @@ replay() {
 
 stop_replay() {
 	kubectl delete -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
-	kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
-	kubectl rollout undo daemonset -n logging fluentd
+	# TODO: move to 'cleanup'
+	#kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml 
+	#kubectl rollout undo daemonset -n logging fluentd
 	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
 		kubectl delete -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
 	fi

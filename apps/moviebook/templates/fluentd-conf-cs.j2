@@ -13,7 +13,7 @@ data:
       path /var/log/containers/*{{namespace}}_istio-proxy*.log
       exclude_path ["/var/log/containers/cubews*{{namespace}}_istio-proxy*.log"]
       pos_file /var/log/fluentd-containers-{{namespace}}-cube-envoy-movieinfo.log.pos
-      tag cube.envoy.movieinfo.{{namespace}}
+      tag cube.movieinfo.envoy.{{namespace}}
       read_from_head true
       <parse>
         @type json
@@ -21,7 +21,7 @@ data:
     </source>
 
     # filter for parsing envoy proxy logs
-    <filter cube.envoy.**>
+    <filter cube.movieinfo.envoy.*>
       @type parser
       key_name log
       <parse>
@@ -29,18 +29,20 @@ data:
         expression script log: \[cube\](?<inner_json>.*)$
       </parse>
     </filter>
+
     # send inner_json
-    <filter cube.**>
+    <filter cube.movieinfo.**>
       @type parser
       format json
       key_name inner_json
       reserve_data false
       remove_key_name_field true
     </filter>
+
     # http output for movieinfo logs
-    <match cube.envoy.movieinfo.{{namespace}}>
+    <match cube.movieinfo.envoy.{{namespace}}>
       @type http
-      endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/rrbatch
+      endpoint http://{{cube_host}}/cs/rrbatch
       open_timeout 5
       <format>
         @type json
