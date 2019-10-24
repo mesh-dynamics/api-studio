@@ -111,6 +111,7 @@ public class Event {
         payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
         LOGGER.info("Generating event key from vals: " + keyVals.toString());
         payloadKey = Objects.hash(keyVals);
+        LOGGER.info("Event key = " + payloadKey);
     }
 
     public DataObj parsePayLoad(Config config) {

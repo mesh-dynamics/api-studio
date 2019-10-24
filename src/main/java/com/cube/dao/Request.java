@@ -76,13 +76,15 @@ public class Request extends RRBase {
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
 			MultivaluedMap<String, String> hdrs, 
-			String service, 
+			String service,
+			String method,
+			String body,
 			Optional<String> collection, 
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
 		this(apiPath, id, queryParams, formParams, emptyMap(),
-				hdrs, "", "", collection, Optional.empty(), runType, customerId, app);
+				hdrs, method, body, collection, Optional.empty(), runType, customerId, app);
 		meta.add(RRBase.SERVICEFIELD, service);
 	}
 
