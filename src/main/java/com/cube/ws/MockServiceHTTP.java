@@ -111,6 +111,7 @@ public class MockServiceHTTP {
         return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, HttpMethod.POST, body, headers);
     }
 
+    // TODO: Event redesign - remove commented code once stable
     /*
 	@POST
 	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")

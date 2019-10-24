@@ -11,10 +11,12 @@ import static com.cube.dao.Event.RunType.Record;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -109,9 +111,9 @@ public class Event {
         parsePayLoad(config);
         List<String> keyVals = new ArrayList<>();
         payload.collectKeyVals(path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal, keyVals);
-        LOGGER.info("Generating event key from vals: " + keyVals.toString());
+        LOGGER.info(new ObjectMessage(Map.of("message", "Generating event key from vals", "vals", keyVals.toString())));
         payloadKey = Objects.hash(keyVals);
-        LOGGER.info("Event key = " + payloadKey);
+        LOGGER.info(new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
     }
 
     public DataObj parsePayLoad(Config config) {
