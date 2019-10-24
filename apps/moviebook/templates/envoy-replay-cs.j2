@@ -87,7 +87,7 @@ spec:
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "test-movieinfo-c1"
-                  meta["rrtype"] = "Replay"
+                  meta["runType"] = "Replay"
                   meta["customerid"] = "{{customer}}"
                   meta["app"] = "{{cube_application}}"
                   meta["instanceid"] = "{{cube_instanceid}}"
@@ -97,6 +97,7 @@ spec:
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
                   if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
                   if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
+                  if (apiPath) then meta["apiPath"] = apiPath end
                   logHdrBody(response_handle, meta)
                 end
                 function envoy_on_request(request_handle)
@@ -107,13 +108,14 @@ spec:
                   xb3traceid = request_handle:headers():get("x-b3-traceid")
                   xb3spanid = request_handle:headers():get("x-b3-spanid")
                   xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  apiPath = request_handle:headers():get(":path") or "/"
                   crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "test-movieinfo-c1"
-                  meta["rrtype"] = "Replay"
+                  meta["runType"] = "Replay"
                   meta["customerid"] = "{{customer}}"
                   meta["app"] = "{{cube_application}}"
                   meta["instanceid"] = "{{cube_instanceid}}"
