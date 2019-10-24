@@ -158,9 +158,6 @@ public class ReplayWS {
         Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 
         Response resp = replay.map(r -> {
-            if (r.status != ReplayStatus.Init) {
-                return Response.ok(String.format("Replay id state is not Init: %s", r.status.toString())).build();
-            }
             String json;
             try {
                 r.status = ReplayStatus.Running;

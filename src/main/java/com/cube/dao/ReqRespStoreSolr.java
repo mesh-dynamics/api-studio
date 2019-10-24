@@ -1183,7 +1183,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
             instanceId.orElse(null), collection.orElse(null), traceid.orElse(null),
             runType.orElse(null), timestamp.orElse(null),
-            reqId.orElse(null), path.orElse(null), eType);
+            reqId.orElse(null), path.orElse("NA" /*null*/), eType); // TODO: tmp comment
         eventBuilder.setRawPayloadString(payloadStr.orElse(null));
         eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));
         eventBuilder.setPayloadKey(payloadKey.orElse(0));

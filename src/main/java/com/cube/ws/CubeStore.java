@@ -841,7 +841,8 @@ public class CubeStore {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
 
-        Request queryRequest = new Request(path, Optional.empty(), queryParams, formParams, hdrs, service, collection,
+        Request queryRequest = new Request(path, Optional.empty(), queryParams, formParams, hdrs, service, "", "",
+            collection,
             Optional.of(Event.RunType.Record), customerid, app);
 
         List<Request> requests =

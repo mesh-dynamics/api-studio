@@ -46,17 +46,24 @@ public class RequestComparatorCache {
         CompareTemplate defaultTemplateWithReqId = new CompareTemplate();
         CompareTemplate defaultFunctionTemplate = new CompareTemplate();
         List<TemplateEntry> defaultRules = new ArrayList<>();
-        //TODO: Event redesign: Remove rules on RUNTYPE, CUSTOMERID, APP, COLLECTION, SERVICE, TRACE and add rule on
-        // BODY
-        defaultRules.add(new TemplateEntry(PATHPATH,DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        //TODO: Event redesign: cleanup the commented rules
+        //defaultRules.add(new TemplateEntry(PATHPATH,DataType.Str, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(QPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
         defaultRules.add(new TemplateEntry(FPARAMPATH, DataType.Obj, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(RUNTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(CUSTOMERIDPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(APPPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(COLLECTIONPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        defaultRules.add(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        //defaultRules.add(new TemplateEntry(RUNTYPEPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        //defaultRules.add(new TemplateEntry(CUSTOMERIDPATH, DataType.Str, PresenceType.Optional, ComparisonType
+        // .Equal));
+        //defaultRules.add(new TemplateEntry(APPPATH, DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        //defaultRules.add(new TemplateEntry(COLLECTIONPATH, DataType.Str, PresenceType.Optional, ComparisonType
+        // .Equal));
+        //defaultRules.add(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, DataType.Str, PresenceType.Optional,
+        //    ComparisonType.Equal));
+        //defaultRules.add(new TemplateEntry(HDRPATH+"/"+Config.DEFAULT_TRACE_FIELD, DataType.Str,q/para
+        //    PresenceType.Optional, ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(BODYPATH, CompareTemplate.DataType.Default,
+            CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Equal));
+        defaultRules.add(new TemplateEntry(METHODPATH, DataType.Str, CompareTemplate.PresenceType.Required,
+            CompareTemplate.ComparisonType.Equal));
         defaultRules.forEach(rule -> {
             defaultTemplateWithoutReqId.addRule(rule);
             defaultTemplateWithReqId.addRule(rule);

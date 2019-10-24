@@ -54,7 +54,7 @@ public class Utils {
         treeSet.addAll(Set.of("connection", "content-length",
                 "date", "expect", "from", "host", "origin",
                 "referer", "upgrade",
-                "via", "warning"));
+                "via", "warning", "transfer-encoding"));
         DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
     }
 
