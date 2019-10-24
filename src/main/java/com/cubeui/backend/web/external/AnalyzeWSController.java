@@ -38,6 +38,11 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request);
     }
 
+    @GetMapping("/analysisResByPath/{replayId}")
+    public ResponseEntity getAnalysisResultByPath(HttpServletRequest request) {
+        return cubeServerService.fetchGetResponse(request);
+    }
+
     @GetMapping("/timelineres/{customer}/{app}")
     public ResponseEntity getTimelineResults(HttpServletRequest request) {
         return cubeServerService.fetchGetResponse(request);
