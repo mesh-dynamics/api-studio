@@ -25,7 +25,7 @@ const resolutionsIconMap = {
         "icon": "ok-circle",
         "color": "#5efc82"
     },
-    "ERR_NewField ": {
+    "ERR_NewField": {
         "description": "Error: New item in test.",
         "icon": "remove-circle",
         "color": "#d50000"
