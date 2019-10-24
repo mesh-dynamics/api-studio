@@ -652,7 +652,6 @@ public class CubeStore {
 
         try {
             JsonObj jsonObj = new JsonObj(compositeEvent, jsonMapper);
-            //JsonNode jsonNode = jsonMapper.readTree(compositeEvent);
             if (storeReqAndRespEvent(jsonObj)) {
                 JSONObject apiResponse = new JSONObject();
                 apiResponse.put(Constants.STATUS, Constants.SUCCESS);
