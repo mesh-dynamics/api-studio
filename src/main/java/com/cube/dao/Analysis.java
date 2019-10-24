@@ -36,7 +36,7 @@ public class Analysis {
 	/**
 	 * @param replayId
 	 */
-	public Analysis(String replayId, int reqcnt, Optional<String> templateVersion) {
+	public Analysis(String replayId, int reqcnt, String templateVersion) {
 		this.replayId = replayId;
 		this.status = Status.Running;
 		this.reqcnt = reqcnt;
@@ -57,7 +57,7 @@ public class Analysis {
 		this.replayId = "";
 		// Assuming this value will be overwritten during json deserialization
 		this.timestamp = System.currentTimeMillis();
-		this.templateVersion = Optional.empty();
+		this.templateVersion = "";
 	}
 
 
@@ -81,7 +81,7 @@ public class Analysis {
 	 *
 	 */
 	public int reqanalyzed;
-    public final Optional<String> templateVersion;
+    public final String templateVersion;
 
 
 
