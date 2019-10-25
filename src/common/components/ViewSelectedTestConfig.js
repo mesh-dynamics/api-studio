@@ -43,9 +43,9 @@ class ViewSelectedTestConfig extends React.Component {
             //this.setState({show: false, toAnalysis: true});
             const {dispatch} = this.props;
             if(this.doAnalysis) {
-                dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayid));
+                dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayId));
                 if (cube.analysis) {
-                    dispatch(cubeActions.getReport(cube.selectedTestId, replayId.replayid));
+                    dispatch(cubeActions.getReport(cube.selectedTestId, replayId.replayId));
                     dispatch(cubeActions.getTimelineData(cube.selectedApp));
                     this.doAnalysis = false;
                 }
@@ -76,7 +76,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     getReplayStatus() {
         const {cube, dispatch} = this.props;
-        dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayid, cube.selectedApp));
+        dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayId, cube.selectedApp));
     }
 
 
@@ -308,7 +308,7 @@ class ViewSelectedTestConfig extends React.Component {
         }
 
         let checkStatus = () => {
-            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayid));
+            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayId, cube.selectedApp));
         };
     }
 }
