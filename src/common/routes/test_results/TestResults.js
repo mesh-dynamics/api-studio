@@ -347,7 +347,7 @@ class TestResults extends Component {
                                 }}
                                 onClick={
                                     () => {
-                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayid, row.value.recordingId, row.value.templateVer, row.value.dateTime, 1)
+                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayId, row.value.recordingId, row.value.templateVer, row.value.dateTime, 1)
                                     }
                                 }
                             >
