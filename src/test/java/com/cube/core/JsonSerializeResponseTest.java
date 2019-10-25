@@ -20,7 +20,7 @@ public class JsonSerializeResponseTest {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new Jdk8Module());
             mapper.registerModule(new JavaTimeModule());
-            Optional<Response> response = reqRespStore.getResponse("72471111-e096-4494-942e-5fa942c07e90");
+            Optional<Response> response = reqRespStore.getResponseOld("72471111-e096-4494-942e-5fa942c07e90");
             String responseAsJson = mapper.writeValueAsString(response);
             Response response1 = mapper.readValue(responseAsJson , Response.class);
             System.out.println(response1.reqId);
