@@ -426,8 +426,11 @@ public class AnalyzeWS {
             rrstore.getAnalysisMatchResult(recordReqId, replayId);
         return matchResult.map(matchRes -> {
             Optional<Request> request = rrstore.getRequest(recordReqId);
-            Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId);
-            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse);
+            Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId)
+                .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+
+            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+                .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
             Optional<String> diff  = Optional.of(matchRes.diff);
             MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
@@ -577,17 +580,18 @@ public class AnalyzeWS {
             List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
             List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream).collect(Collectors.toList());
 
-            Map<String, com.cube.dao.Request> requestMap = new HashMap<>();
+            Map<String, Event> requestMap = new HashMap<>();
             if (!reqids.isEmpty()) {
                 // empty reqId list would lead to returning of all requests, so check for it
-                Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
+                Result<Event> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
                     reqids, Collections.emptyList(), Event.RunType.Record);
-                requestResult.getObjects().forEach(req -> req.reqId.ifPresent(reqidv -> requestMap.put(reqidv, req)));
+                requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
             return res.stream().map(matchRes -> {
-                Optional<com.cube.dao.Request> request =
-                    matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
+                Optional<Request> request =
+                    matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
+                    .flatMap(event -> Request.fromEvent(event, jsonMapper));
 
                 Optional<String> diff = Optional.empty();
                 Optional<com.cube.dao.Response> recordResponse = Optional.empty();
@@ -595,8 +599,10 @@ public class AnalyzeWS {
 
                 if(includeDiff.orElse(false)) {
                     diff = Optional.of(matchRes.diff);
-                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse);
-                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse);
+                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
+                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
                 }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
@@ -635,8 +641,10 @@ public class AnalyzeWS {
 
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
-        Optional<com.cube.dao.Response> recordResponse = recordReqId.flatMap(rrstore::getResponse);
-        Optional<com.cube.dao.Response> replayResponse = replayReqId.flatMap(rrstore::getResponse);
+        Optional<com.cube.dao.Response> recordResponse = recordReqId.flatMap(rrstore::getResponse)
+            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+        Optional<com.cube.dao.Response> replayResponse = replayReqId.flatMap(rrstore::getResponse)
+            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
 
         String json;

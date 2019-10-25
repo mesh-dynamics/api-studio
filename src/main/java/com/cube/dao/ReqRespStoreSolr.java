@@ -219,27 +219,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
      */
     @Override
-    public Result<Request> getRequests(String customerId, String app, String collection,
+    public Result<Event> getRequests(String customerId, String app, String collection,
                                        List<String> reqids, List<String> paths, Event.RunType runType) {
-        final SolrQuery query = new SolrQuery("*:*");
-        query.addField("*");
-        addFilter(query, TYPEF, Types.Request.toString());
-        addFilter(query, CUSTOMERIDF, customerId);
-        addFilter(query, APPF, app);
-        addFilter(query, COLLECTIONF, collection);
-        String reqfilter = reqids.stream().collect(Collectors.joining(" OR ", "(", ")"));
-        if (reqids.size() > 0)
-            addFilter(query, REQIDF, reqfilter, false);
 
-        String pathfilter = paths.stream().collect(Collectors.joining(" OR ", "(", ")"));
-        if (paths.size() > 0)
-            addFilter(query, PATHF, pathfilter, false);
+        // TODO: Event redesign - change this include all event types
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
+        builder.withCollection(collection)
+            .withReqIds(reqids)
+            .withPaths(paths)
+            .withRunType(runType);
 
-
-        query.addFilterQuery(String.format("%s:%s", RRTYPEF, runType.toString()));
-
-        return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToRequest);
-
+        return getEvents(builder.build());
     }
 
     @Override
@@ -804,7 +794,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getResponse(java.lang.String)
      */
     @Override
-    public Optional<Response> getResponse(String reqId) {
+    public Optional<Event> getResponse(String reqId) {
+
+        // TODO: Event redesign - change this include all event types
+        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPResponse);
+        builder.withReqId(reqId);
+
+        return getEvents(builder.build()).getObjects().findFirst();
+    }
+
+    // TODO: Event redesign, remove this later
+    @Override
+    public Optional<Response> getResponseOld(String reqId) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         //query.setRows(1);
@@ -816,6 +817,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToResponse(doc));
 
     }
+
 
     @Override
     public Map<String, Response> getResponses(List<Request> requests) {
@@ -859,9 +861,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Optional<Response> getRespForReq(Request qr, RequestComparator mspec) {
+        //TODO: Event redesign: this is reading from old style Response (used for default response). Change this
         // Find request, without considering request id
         Optional<Request> req = getRequests(qr, mspec, Optional.of(1)).findFirst();
-        return req.flatMap(reqv -> reqv.reqId).flatMap(this::getResponse);
+        return req.flatMap(reqv -> reqv.reqId).flatMap(this::getResponseOld);
     }
 
     /**
