@@ -3,12 +3,14 @@
  */
 package com.cube.core;
 
+import com.cube.dao.DataObj;
 import com.cube.dao.Response;
 
 /**
  * @author prasad
  *
  */
+// TODO: Event redesign: This can be removed
 public interface ResponseComparator {
 
 	static ResponseComparator EQUALITYCOMPARATOR = new EqualityResponseComparator();
@@ -19,5 +21,9 @@ public interface ResponseComparator {
 	 * @return
 	 */
 	Comparator.Match compare(Response lhs, Response rhs);
+
+    CompareTemplate getCompareTemplate();
+
+    Comparator.Match compare(DataObj lhs, DataObj rhs);
 
 }

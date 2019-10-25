@@ -15,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.core.Comparator;
-import com.cube.core.Utils;
 import com.cube.ws.Config;
 
 
@@ -35,10 +34,10 @@ public class Analysis {
 
 
 	/**
-	 * @param replayid
+	 * @param replayId
 	 */
-	public Analysis(String replayid, int reqcnt, String templateVersion) {
-		this.replayid = replayid;
+	public Analysis(String replayId, int reqcnt, String templateVersion) {
+		this.replayId = replayId;
 		this.status = Status.Running;
 		this.reqcnt = reqcnt;
 		this.timestamp = System.currentTimeMillis();
@@ -49,20 +48,20 @@ public class Analysis {
 
 	/**
 	 * This constructor is only for jackson json deserialization
-     * @param replayid
+     * @param replayId
      * @param reqcnt
      */
 
-	private Analysis(String replayid, int reqcnt) {
+	private Analysis(String replayId, int reqcnt) {
 		super();
-		this.replayid = "";
+		this.replayId = "";
 		// Assuming this value will be overwritten during json deserialization
 		this.timestamp = System.currentTimeMillis();
 		this.templateVersion = "";
 	}
 
 
-	public final String replayid;
+	public final String replayId;
 	public Status status;
 	public int reqcnt=0; // total number of requests
 	public int reqmatched=0; // number of requests exactly matched
@@ -170,65 +169,113 @@ public class Analysis {
 		}
 	}
 
+    public static class RespMatchWithReqEvent  {
 
-	public static class  ReqRespMatchResult {
+        /**
+         * @param recordReq
+         * @param replayReq
+         * @param match
+         */
+        public RespMatchWithReqEvent(Event recordReq, Optional<Event> replayReq, Comparator.Match match,
+                                     Optional<Event> recordResp , Optional<Event> replayResp) {
+            this.recordReq = recordReq;
+            this.replayReq = replayReq;
+            this.recordResp = recordResp;
+            this.replayResp = replayResp;
+            this.match = match;
+        }
+
+        final Comparator.Match match;
+        final Event recordReq;
+        final Optional<Event> replayReq;
+        final Optional<Event> recordResp;
+        final Optional<Event> replayResp;
+
+        public Comparator.MatchType getmt() {
+            return match.mt;
+        }
+
+        public List<Comparator.Diff> getDiffs() {
+            return match.diffs;
+        }
+
+        public Optional<String> getRecordedResponseBody(Config config) {
+            return recordResp.map(response -> response.getPayloadAsString(config));
+        }
+
+        public Optional<String> getReplayResponseBody(Config config) {
+            return replayResp.map(response -> response.getPayloadAsString(config));
+        }
+
+        public Optional<String> getReplayReq(Config config) {
+            return replayReq.map(request -> request.getPayloadAsString(config));
+        }
+
+
+        public Optional<String> getRecordReq(Config config) {
+            return Optional.of(recordReq.getPayloadAsString(config));
+        }
+    }
+
+
+    public static class  ReqRespMatchResult {
 
 
 
 		/**
-		 * @param recordreqid
+		 * @param recordReqId
 		 * @param replayreqid
 		 * @param reqmt
 		 * @param match
-		 * @param customerid
+		 * @param customerId
 		 * @param app
 		 * @param service
 		 * @param path
-		 * @param replayid
-		 * @param jsonmapper
+		 * @param replayId
+		 * @param jsonMapper
 		 */
-		private ReqRespMatchResult(Optional<String> recordreqid, Optional<String> replayreqid, Comparator.MatchType reqmt, int nummatch,
+		private ReqRespMatchResult(Optional<String> recordReqId, Optional<String> replayreqid, Comparator.MatchType reqmt, int nummatch,
 								   Comparator.Match match,
-								   String customerid, String app,
-								   String service, String path, String replayid, ObjectMapper jsonmapper,
+								   String customerId, String app,
+								   String service, String path, String replayId, ObjectMapper jsonMapper,
                                    Optional<String> recordTraceId, Optional<String> replayTraceId) {
-			this(recordreqid, replayreqid, reqmt, nummatch, match.mt, match.matchmeta,
-					match.getDiffAsJsonStr(jsonmapper), customerid, app, service, path, replayid, recordTraceId, replayTraceId);
+			this(recordReqId, replayreqid, reqmt, nummatch, match.mt, match.matchmeta,
+					match.getDiffAsJsonStr(jsonMapper), customerId, app, service, path, replayId, recordTraceId, replayTraceId);
 		}
 
 		/**
 		 *
-		 * @param recordreqid
-		 * @param replayreqid
+		 * @param recordReqId
+		 * @param replayReqId
 		 * @param reqMt
-		 * @param nummatch
+		 * @param numMatch
 		 * @param respMt
 		 * @param matchMetaData
 		 * @param diff
-		 * @param customerid
+		 * @param customerId
 		 * @param app
 		 * @param service
 		 * @param path
-		 * @param replayid
+		 * @param replayId
 		 */
-		public ReqRespMatchResult(Optional<String> recordreqid, Optional<String> replayreqid, Comparator.MatchType reqMt, int nummatch,
+		public ReqRespMatchResult(Optional<String> recordReqId, Optional<String> replayReqId, Comparator.MatchType reqMt, int numMatch,
 								   Comparator.MatchType respMt, String matchMetaData, String diff,
-								   String customerid, String app,
-								   String service, String path, String replayid,
+								   String customerId, String app,
+								   String service, String path, String replayId,
                                    Optional<String> recordTraceId, Optional<String> replayTraceId) {
 			super();
-			this.recordreqid = recordreqid;
-			this.replayreqid = replayreqid;
+			this.recordReqId = recordReqId;
+			this.replayReqId = replayReqId;
 			this.reqmt = reqMt;
-			this.nummatch = nummatch;
+			this.numMatch = numMatch;
 			this.respmt = respMt;
-			this.respmatchmetadata = matchMetaData;
+			this.respMatchMetadata = matchMetaData;
 			this.diff = diff;
-			this.customerid = customerid;
+			this.customerId = customerId;
 			this.app = app;
 			this.service = service;
 			this.path = path;
-			this.replayid = replayid;
+			this.replayId = replayId;
 			this.recordTraceId = recordTraceId;
 			this.replayTraceId = replayTraceId;
 		}
@@ -237,33 +284,43 @@ public class Analysis {
 		 * @param rm
 		 * @param reqmt
 		 * @param size
-		 * @param replayid
-		 * @param jsonmapper
+		 * @param replayId
+		 * @param jsonMapper
 		 */
-		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayid, ObjectMapper jsonmapper) {
-		    this(rm.recordreq.reqid, rm.replayreq.flatMap(req -> req.reqid), reqmt, size,
+		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayId, ObjectMapper jsonMapper) {
+		    this(rm.recordreq.reqId, rm.replayreq.flatMap(req -> req.reqId), reqmt, size,
 					rm.match,
-					rm.recordreq.customerid.orElse(""), rm.recordreq.app.orElse(""),
-					rm.recordreq.getService().orElse(""), rm.recordreq.path,
-					replayid, jsonmapper,
+					rm.recordreq.customerId.orElse(""), rm.recordreq.app.orElse(""),
+					rm.recordreq.getService().orElse(""), rm.recordreq.apiPath,
+					replayId, jsonMapper,
                     CommonUtils.getTraceId(rm.recordreq.hdrs),
                     rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
 		}
 
-		final public Optional<String> recordreqid;
-		final public Optional<String> replayreqid;
+        public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayid,
+                                  ObjectMapper jsonmapper) {
+            this(Optional.of(rm.recordReq.reqId), rm.replayReq.map(req -> req.reqId), reqmt, size,
+                rm.match,
+                rm.recordReq.customerId, rm.recordReq.app,
+                rm.recordReq.service, rm.recordReq.apiPath,
+                replayid, jsonmapper, Optional.of(rm.recordReq.traceId),
+                rm.replayReq.map(replayreq -> replayreq.traceId)) ;
+        }
+
+        final public Optional<String> recordReqId;
+        final public Optional<String> replayReqId;
 		final public Optional<String> recordTraceId;
 		final public Optional<String> replayTraceId;
 		final public Comparator.MatchType reqmt;
-		final public int nummatch;
+		final public int numMatch;
 		final public Comparator.MatchType respmt;
-		final public String respmatchmetadata;
+		final public String respMatchMetadata;
 		final public String diff;
-		final public String customerid;
+		final public String customerId;
 		final public String app;
 		final public String service;
 		final public String path;
-		final public String replayid;
+		final public String replayId;
 	}
 
 }

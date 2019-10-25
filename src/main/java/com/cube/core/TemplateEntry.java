@@ -155,7 +155,7 @@ public class TemplateEntry {
             case Floor:
             case Ceil:
                 // not valid for strings
-                return ERR_ValFormatMismatch;
+                return ERR_InvalidExtractionMethod;
         }
 
         switch (ct) {
@@ -298,7 +298,7 @@ public class TemplateEntry {
                 break;
             case Regex:
                 // invalid extraction method for double
-                return ERR_ValTypeMismatch;
+                return ERR_InvalidExtractionMethod;
             case Default:
                 // do nothing
                 break;
@@ -347,5 +347,7 @@ public class TemplateEntry {
         return this.path;
     }
 
-
+    public CompareTemplate.ComparisonType getCompareType() {
+        return ct;
+    }
 }

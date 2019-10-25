@@ -19,6 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.Op;
 
+import com.cube.dao.DataObj;
+
 /**
  * @author prasad
  *
@@ -32,6 +34,8 @@ public interface Comparator {
 	 * @return
 	 */
 	Match compare(String lhs, String rhs);
+
+	Match compare(DataObj lhs, DataObj rhs);
 
 	public enum MatchType {
 		Default,
@@ -106,22 +110,25 @@ public interface Comparator {
 		OK_OptionalMismatch, // vals mismatched but comparison type was EqualOptional (used in scoring case for prioritizing)
         OK_DefaultPT, // Return when presence type is default.
         OK_DefaultCT, // Return when both are present and ComparisonType is set to Default.
-		ERR_NotExpected, // This indicates that presence type is required and the old object does not have the value
 		ERR_Required,
         ERR_RequiredGolden,
 		ERR_ValMismatch,
 		ERR_ValTypeMismatch,
 		ERR_ValFormatMismatch,
-        ERR_NewField,
+        ERR_NewField, // This indicates that presence type is required/default and the old object does not have the
+        // value
+        ERR_InvalidExtractionMethod, // extraction method does not match type (e.g. regex for double)
+        ERR_NotExpected,
 		ERR;
 		/**
 		 * @return
 		 */
 		public boolean isErr() {
-			return this == Resolution.ERR_NotExpected || this == ERR_Required ||
+			return this == ERR_NotExpected || this == ERR_Required ||
 					this == ERR_ValMismatch || this == ERR_ValTypeMismatch ||
 					this == ERR_ValFormatMismatch || this == ERR || this == ERR_NewField ||
-                    this == ERR_RequiredGolden;
+                    this == ERR_RequiredGolden || this == ERR_InvalidExtractionMethod;
+
 		}
 
 		public MatchType toMatchType() {
@@ -202,9 +209,9 @@ public interface Comparator {
             Collections.emptyList());
 
 
-		public String getDiffAsJsonStr(ObjectMapper jsonmapper) {
+		public String getDiffAsJsonStr(ObjectMapper jsonMapper) {
 			try {
-				return jsonmapper.writeValueAsString(diffs);
+				return jsonMapper.writeValueAsString(diffs);
 			} catch (JsonProcessingException e) {
 				LOGGER.error("Error in converting diffs to json: ", e);
 				return "";

@@ -84,7 +84,7 @@ public class ReplayWS {
             if (replay.isPresent()) {
                 replay.get().updateXfmsFromJSONString(xfms);
             }
-            String replayJson = jsonmapper.writeValueAsString(replay);
+            String replayJson = jsonMapper.writeValueAsString(replay);
             return Response.ok(replayJson, MediaType.APPLICATION_JSON).build();
         } catch (Exception e) {
             LOGGER.error(String.format("Error in updating transforms %s: %s", replayid, xfmsParam.toString()), e);
@@ -103,7 +103,7 @@ public class ReplayWS {
         Response resp = replay.map(r -> {
             String json;
             try {
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
@@ -122,14 +122,14 @@ public class ReplayWS {
         Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 
         Response resp = replay.map(r -> {
-            rrstore.invalidateCurrentCollectionCache(r.customerid, r.app, r.instanceid);
+            rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
             if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
                 return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
             }
             String json;
             try {
                 r.status = ReplayStatus.Error;
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
                 return Response.serverError().build();
@@ -158,13 +158,10 @@ public class ReplayWS {
         Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
 
         Response resp = replay.map(r -> {
-            if (r.status != ReplayStatus.Init) {
-                return Response.ok(String.format("Replay id state is not Init: %s", r.status.toString())).build();
-            }
             String json;
             try {
                 r.status = ReplayStatus.Running;
-                json = jsonmapper.writeValueAsString(r);
+                json = jsonMapper.writeValueAsString(r);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
                 return Response.serverError().build();
@@ -242,8 +239,8 @@ public class ReplayWS {
         Recording recording = recordingOpt.get();
 
         // check if recording or replay is ongoing for (customer, app, instanceid)
-        Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerid), Optional.ofNullable(recording.app),
-            Optional.ofNullable(instanceId));
+        Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId),
+            Optional.ofNullable(recording.app), Optional.ofNullable(instanceId));
         if (errResp.isPresent()) {
             return errResp.get();
         }
@@ -251,25 +248,25 @@ public class ReplayWS {
 
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
-                        return ReplayDriver.initReplay(e, recording.customerid, recording.app, instanceId, recording.collection, userId,
-                            reqIds, rrstore, async, paths, null, sampleRate, intermediateServices, recording.templateVersion)
+                        return ReplayDriver.initReplay(e, recording.customerId, recording.app, recording.instanceId, recording.collection,
+                            userId, reqIds, async, paths, null, sampleRate, intermediateServices,
+                            recording.templateVersion, config)
                             .map(replayDriver -> {
                                 String json;
                                 Replay replay = replayDriver.getReplay();
                                 try {
-                                    json = jsonmapper.writeValueAsString(replay);
+                                    json = jsonMapper.writeValueAsString(replay);
                                     boolean status = replayDriver.start();
                                     if (status) {
                                         return Response.ok(json, MediaType.APPLICATION_JSON).build();
                                     }
                                     return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
                                 } catch (JsonProcessingException ex) {
-                                    LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayid), ex);
+                                    LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayId), ex);
                                     return Response.serverError().build();
                                 }
                             }).orElse(Response.serverError().build());
                 }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
-
     }
 
 
@@ -280,14 +277,14 @@ public class ReplayWS {
 	public ReplayWS(Config config) {
 		super();
 		this.rrstore = config.rrstore;
-		this.jsonmapper = config.jsonmapper;
+		this.jsonMapper = config.jsonMapper;
 		this.replayResultCache = config.replayResultCache;
 		this.config = config;
 	}
 
 
 	ReqRespStore rrstore;
-	ObjectMapper jsonmapper;
+	ObjectMapper jsonMapper;
 	ReplayResultCache replayResultCache;
 	private final Config config;
 }

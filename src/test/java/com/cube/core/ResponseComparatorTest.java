@@ -36,7 +36,7 @@ public class ResponseComparatorTest {
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         config = new Config();
-        mapper = config.jsonmapper;
+        mapper = config.jsonMapper;
         mapper.registerModule(new JavaTimeModule());
     }
 
@@ -158,8 +158,9 @@ public class ResponseComparatorTest {
         body.put("year", 1000);
         body.put("type", "softcopy");
         body.put("pages", 3.14);
-        Response response2 = new Response(response1.reqid, response1.status, response1.meta, response1.hdrs,
-            body.toString(), response1.collection, response1.timestamp, response1.rrtype, response1.customerid, response1.app);
+        Response response2 = new Response(response1.reqId, response1.status, response1.meta, response1.hdrs,
+            body.toString(), response1.collection, response1.timestamp, response1.runType, response1.customerId,
+            response1.app, response1.apiPath);
         compareTest(testData, response1, response2);
     }
 
@@ -202,7 +203,7 @@ public class ResponseComparatorTest {
         TemplatedResponseComparator comparator = new TemplatedResponseComparator(template, mapper);
         Match m = comparator.compare(response1, response2);
 
-        String mjson = config.jsonmapper.writeValueAsString(m);
+        String mjson = config.jsonMapper.writeValueAsString(m);
         JSONAssert.assertEquals(expected, mjson, false);
     }
 

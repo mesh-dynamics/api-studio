@@ -3,11 +3,11 @@
         "res1": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/runType",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/timestamp",     "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
@@ -24,11 +24,11 @@
         "res2": "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "rules": [
             { "path": "/hdr/content-type",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
-            { "path": "/reqid",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/rrtype",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/customerid",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/runType",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/timestamp",     "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
@@ -153,7 +153,7 @@
     },
 
     "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38": {
-        "reqid":            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
+        "reqId":            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "meta": {
             "x-request-id": [ "f762f47c-87a2-9cb7-a9b3-c1f68b8369da" ],
             "app":          [ "movieinfo" ],
@@ -161,10 +161,10 @@
             "x-b3-traceid": [ "d4cdb304db17cf31" ],
             "service":      [ "movieinfo" ],
             "c-request-id": [ "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38" ],
-            "customerid":   [ "prasad" ],
+            "customerId":   [ "prasad" ],
             "type":         [ "response" ],
             "status":       [ "200" ],
-            "rrtype":       [ "Record" ],
+            "runType":       [ "Record" ],
             "timestamp":    [ "2019-03-28T12:48:54Z" ]
         },
         "hdrs": {
@@ -177,14 +177,14 @@
         "body":         "{\"MIRest status\": \"MovieInfo is healthy\"}",
         "collection":   "test7",
         "timestamp":    1553777334.000000000,
-        "rrtype":       "Record",
-        "customerid":   "prasad",
+        "runType":       "Record",
+        "customerId":   "prasad",
         "app":          "movieinfo",
         "status":       200
     },
 
     "72471111-e096-4494-942e-5fa942c07e90" : {
-        "reqid":                    "72471111-e096-4494-942e-5fa942c07e90",
+        "reqId":                    "72471111-e096-4494-942e-5fa942c07e90",
         "meta": {
             "x-request-id":         [ "03386101-5d33-9bba-b2ea-e44480c241d2" ],
             "app":                  [ "bookinfo" ],
@@ -192,12 +192,12 @@
             "x-b3-traceid":         [ "b13ee0f6ed747bdf" ],
             "service":              [ "details" ],
             "c-request-id":         [ "72471111-e096-4494-942e-5fa942c07e90" ],
-            "customerid":           [ "cube" ],
+            "customerId":           [ "cube" ],
             "collection":           [ "testc1" ],
             "type":                 [ "response" ],
             "status":               [ "200" ],
             "timestamp":            [ "2019-01-04T09:09:00Z" ],
-            "rrtype":               [ "Record" ]
+            "runType":               [ "Record" ]
         },
         "hdrs":{
             "date":                             [ "Fri, 04 Jan 2019 09:09:00 GMT" ],
@@ -211,8 +211,8 @@
         "body":         "{\"id\":0,\"author\":\"William Shakespeare\",\"year\":1595,\"type\":\"paperback\",\"pages\":200,\"publisher\":\"PublisherA\",\"language\":\"English\",\"ISBN-10\":\"1234567890\",\"ISBN-13\":\"123-1234567890\"}",
         "collection":   "testc1",
         "timestamp":    1546592940.000000000,
-        "rrtype":       "Record",
-        "customerid":   "cube",
+        "runType":       "Record",
+        "customerId":   "cube",
         "app":          "bookinfo",
         "status":       200
     }
