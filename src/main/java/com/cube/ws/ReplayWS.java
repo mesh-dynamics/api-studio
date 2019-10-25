@@ -248,7 +248,8 @@ public class ReplayWS {
 
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
-                        return ReplayDriver.initReplay(e, recording.customerId, recording.app, recording.instanceId, recording.collection,
+                        return ReplayDriver.initReplay(e, recording.customerId, recording.app, instanceId,
+                            recording.collection,
                             userId, reqIds, async, paths, null, sampleRate, intermediateServices,
                             recording.templateVersion, config)
                             .map(replayDriver -> {
