@@ -10,10 +10,10 @@ do
   TEMP_PATH="$TEMP_PATH""paths=$path&"
 done
 REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-BODY="$REPLAY_PATHS&endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=DEFAULT"
+BODY="$REPLAY_PATHS&endpoint=http://staging.dev.cubecorp.io&instanceId=test&templateSetVer=DEFAULT&userId=CubeCorp"
 
 REPLAY_ID=$(curl -X POST \
-	http://demo.dev.cubecorp.io/rs/start/CubeCorp/Cube/fluentd-test-df-49 \
+	http://demo.dev.cubecorp.io/rs/start/Recording-1398381203 \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-d $BODY \
