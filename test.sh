@@ -13,17 +13,17 @@ REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
 BODY="$REPLAY_PATHS&endpoint=http://staging.dev.cubecorp.io&instanceid=test&templateSetVer=DEFAULT"
 
 REPLAY_ID=$(curl -X POST \
-	http://demo.dev.cubecorp.io/rs/init/CubeCorp/Cube/fluentd-test-df-49 \
+	http://demo.dev.cubecorp.io/rs/start/CubeCorp/Cube/fluentd-test-df-49 \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-d $BODY \
 | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
 
 #Start replay
-curl -f -X POST \
-  http://demo.dev.cubecorp.io/rs/start/CubeCorp/Cube/fluentd-test-df-49/$REPLAY_ID \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -H 'cache-control: no-cache'
+#curl -f -X POST \
+#  http://demo.dev.cubecorp.io/rs/start/CubeCorp/Cube/fluentd-test-df-49/$REPLAY_ID \
+#  -H 'Content-Type: application/x-www-form-urlencoded' \
+#  -H 'cache-control: no-cache'
 
 #Status Check
 COUNT=0
