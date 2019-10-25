@@ -53,8 +53,8 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
+import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.RRBase;
 import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Replay;
@@ -99,14 +99,12 @@ public class AnalyzeWS {
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Config.DEFAULT_TRACE_FIELD);
 
-        Optional<Analysis> analysis = Analyzer
-            .analyze(replayid, tracefield, rrstore
-                , jsonmapper, requestComparatorCache, responseComparatorCache);
+        Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, config);
 
         return analysis.map(av -> {
             String json;
             try {
-                json = jsonmapper.writeValueAsString(av);
+                json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayid), e);
@@ -124,7 +122,7 @@ public class AnalyzeWS {
         Response resp = analysis.map(av -> {
             String json;
             try {
-                json = jsonmapper.writeValueAsString(av);
+                json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayid), e);
@@ -149,7 +147,7 @@ public class AnalyzeWS {
 //        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
         String json;
         try {
-            json = jsonmapper.writeValueAsString(res);
+            json = jsonMapper.writeValueAsString(res);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s", replayid), e);
@@ -190,8 +188,8 @@ public class AnalyzeWS {
                                         String templateRegistryArray) {
         try {
             //TODO study the impact of enabling this flag in other deserialization methods
-            //jsonmapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
-            TemplateRegistries registries = jsonmapper.readValue(templateRegistryArray, TemplateRegistries.class);
+            //jsonMapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+            TemplateRegistries registries = jsonMapper.readValue(templateRegistryArray, TemplateRegistries.class);
             /*
             List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
             TemplateKey.Type templateKeyType;
@@ -208,7 +206,7 @@ public class AnalyzeWS {
             templateRegistries.forEach(UtilException.rethrowConsumer(registry -> {
                 TemplateKey key = new TemplateKey(customerId, appId, registry.getService()
                     , registry.getPath(), templateKeyType);
-                rrstore.saveCompareTemplate(key, jsonmapper.writeValueAsString(registry.getTemplate()));
+                rrstore.saveCompareTemplate(key, jsonMapper.writeValueAsString(registry.getTemplate()));
                 requestComparatorCache.invalidateKey(key);
                 responseComparatorCache.invalidateKey(key);
 
@@ -264,7 +262,7 @@ public class AnalyzeWS {
         try {
             //This is just to see the template is not invalid, and can be parsed according
             // to our class definition , otherwise send error response
-            CompareTemplate template = jsonmapper.readValue(templateAsJson, CompareTemplate.class);
+            CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
             TemplateKey key;
             if ("request".equalsIgnoreCase(type)) {
                 key = new TemplateKey(Optional.empty(), customerId, appId, serviceName, path, TemplateKey.Type.Request);
@@ -359,7 +357,7 @@ public class AnalyzeWS {
         if (rule.isPresent()) {
             try {
                 return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(jsonmapper.writeValueAsString(rule.get())).build();
+                    .entity(jsonMapper.writeValueAsString(rule.get())).build();
             } catch (Exception e) {
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
                     .entity("{\"Error\":\"Not able to convert rule to json\"}").build();
@@ -377,7 +375,7 @@ public class AnalyzeWS {
 	private String getJsonArrayString(Stream<Analysis.ReqRespMatchResult> reqRespMatchResults) {
 		return reqRespMatchResults.flatMap(result -> {
 			try {
-				return Stream.of(jsonmapper.writeValueAsString(result));
+				return Stream.of(jsonMapper.writeValueAsString(result));
 			} catch (JsonProcessingException e) {
 				return Stream.empty();
 			}
@@ -429,18 +427,18 @@ public class AnalyzeWS {
         return matchResult.map(matchRes -> {
             Optional<Request> request = rrstore.getRequest(recordReqId);
             Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId);
-            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayreqid.flatMap(rrstore::getResponse);
+            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse);
 
             Optional<String> diff  = Optional.of(matchRes.diff);
-            MatchRes matchResFinal = new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
+            MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
                 matchRes.respmt, matchRes.service, matchRes.path,
-                request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
-                request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
+                request.map(req -> req.queryParams).orElse(new MultivaluedHashMap<>()),
+                request.map(req -> req.formParams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
                 diff, recordedResponse, replayedResponse);
 
             String resultJson = null;
             try {
-                resultJson = jsonmapper.writeValueAsString(matchResFinal);
+                resultJson = jsonMapper.writeValueAsString(matchResFinal);
             } catch (JsonProcessingException e) {
                 return Response.serverError()
                     .entity( (new JSONObject(Map.of("msg"
@@ -501,10 +499,10 @@ public class AnalyzeWS {
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
-            String replayid = replay.replayid;
+            String replayid = replay.replayId;
             Instant creationTimeStamp = replay.creationTimeStamp;
-            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerid, replay.app
-                ,  replay.collection , replay.templateVersion);
+            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
+                replay.collection , replay.templateVersion);
             String recordingInfo = "";
             if (recordingOpt.isEmpty()) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
@@ -524,7 +522,7 @@ public class AnalyzeWS {
             jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
                 + recordingInfo +  "\" , \"results\" : ");
             try {
-                json = jsonmapper.writeValueAsString(res);
+                json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
             } catch (JsonProcessingException e) {
                 jsonBuilder.append("[]");
@@ -547,6 +545,7 @@ public class AnalyzeWS {
      */
     @GET
     @Path("analysisResByPath/{replayId}")
+    // TODO: Event redesign: This needs to be rewritten to get as event
     public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
@@ -576,19 +575,19 @@ public class AnalyzeWS {
             app[0] = replay.app;
             app[1] = replay.templateVersion;
             List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
-            List<String> reqids = res.stream().map(r -> r.recordreqid).flatMap(Optional::stream).collect(Collectors.toList());
+            List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream).collect(Collectors.toList());
 
             Map<String, com.cube.dao.Request> requestMap = new HashMap<>();
             if (!reqids.isEmpty()) {
-                // empty reqid list would lead to returning of all requests, so check for it
-                Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerid, replay.app, replay.collection,
-                    reqids, Collections.emptyList(), RRBase.RR.Record);
-                requestResult.getObjects().forEach(req -> req.reqid.ifPresent(reqidv -> requestMap.put(reqidv, req)));
+                // empty reqId list would lead to returning of all requests, so check for it
+                Result<com.cube.dao.Request> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
+                    reqids, Collections.emptyList(), Event.RunType.Record);
+                requestResult.getObjects().forEach(req -> req.reqId.ifPresent(reqidv -> requestMap.put(reqidv, req)));
             }
 
             return res.stream().map(matchRes -> {
                 Optional<com.cube.dao.Request> request =
-                    matchRes.recordreqid.flatMap(reqid -> Optional.ofNullable(requestMap.get(reqid)));
+                    matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
 
                 Optional<String> diff = Optional.empty();
                 Optional<com.cube.dao.Response> recordResponse = Optional.empty();
@@ -596,21 +595,21 @@ public class AnalyzeWS {
 
                 if(includeDiff.orElse(false)) {
                     diff = Optional.of(matchRes.diff);
-                    recordResponse = matchRes.recordreqid.flatMap(rrstore::getResponse);
-                    replayResponse = matchRes.replayreqid.flatMap(rrstore::getResponse);
+                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse);
+                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse);
                 }
 
-                return new MatchRes(matchRes.recordreqid, matchRes.replayreqid, matchRes.reqmt, matchRes.nummatch,
+                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
                     matchRes.respmt, matchRes.service, matchRes.path,
-                    request.map(req -> req.qparams).orElse(new MultivaluedHashMap<>()),
-                    request.map(req -> req.fparams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
+                    request.map(req -> req.queryParams).orElse(new MultivaluedHashMap<>()),
+                    request.map(req -> req.formParams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
                     diff, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
+            json = jsonMapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting Match results list to Json for replayid %s, app %s, " +
@@ -642,11 +641,11 @@ public class AnalyzeWS {
 
         String json;
         try {
-            json = jsonmapper.writeValueAsString(new RespAndMatchResults(recordResponse, replayResponse, matchResult));
+            json = jsonMapper.writeValueAsString(new RespAndMatchResults(recordResponse, replayResponse, matchResult));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting response and match results to Json for replayid %s, " +
-                "recordreqid %s, replay reqid %s", replayId, recordReqId, replayReqId));
+                "recordReqId %s, replay reqId %s", replayId, recordReqId, replayReqId));
             return Response.serverError().build();
         }
     }
@@ -729,7 +728,7 @@ public class AnalyzeWS {
             new TypeReference<>() {};
         try {
             // deserialize new operations to be added
-            Map<TemplateKey, SingleTemplateUpdateOperation> updates = jsonmapper.readValue(templateUpdateOperations,
+            Map<TemplateKey, SingleTemplateUpdateOperation> updates = jsonMapper.readValue(templateUpdateOperations,
                 typeReference);
             // get existing operation set against the id specified
             Optional<TemplateUpdateOperationSet> updateOperationSetOpt = rrstore.getTemplateUpdateOperationSet(operationSetId);
@@ -815,7 +814,7 @@ public class AnalyzeWS {
     public Response fetchAllGoldenSetsWithRoot(@PathParam("rootGoldenSetId") String rootGoldenSetId) {
         try {
             List<GoldenSet> goldenSetList = rrstore.getAllDerivedGoldenSets(rootGoldenSetId).collect(Collectors.toList());
-            String asJson = jsonmapper.writeValueAsString(goldenSetList);
+            String asJson = jsonMapper.writeValueAsString(goldenSetList);
             return Response.ok().entity(asJson).build();
         } catch (Exception e) {
             LOGGER.error("Error while retrieving golden sets for root :: "  + rootGoldenSetId + " :: " + e.getMessage());
@@ -844,7 +843,7 @@ public class AnalyzeWS {
         try{
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
-            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerid, originalRec.app, originalRec
+            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
                 .templateVersion).orElseThrow(() ->
                 new Exception("Unable to find template set mentioned in the specified golden set"));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
@@ -865,8 +864,8 @@ public class AnalyzeWS {
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
-            Recording updatedRecording = new Recording(originalRec.customerid,
-                originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
+            Recording updatedRecording = new Recording(originalRec.customerId,
+                originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
                 Optional.of(originalRec.rootRecordingId));
 
@@ -889,7 +888,7 @@ public class AnalyzeWS {
         try {
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
-            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerid, originalRec.app, originalRec
+            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
                 .templateVersion).orElseThrow(() ->
                 new Exception("Unable to find template set mentioned in the specified golden set"));
 
@@ -898,8 +897,8 @@ public class AnalyzeWS {
 
             if (!created) throw new Exception("Unable to create an updated collection from existing golden");
 
-            Recording updatedRecording = new Recording(originalRec.customerid,
-                originalRec.app, originalRec.instanceid, newCollectionName, Recording.RecordingStatus.Completed,
+            Recording updatedRecording = new Recording(originalRec.customerId,
+                originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
                 Optional.of(originalRec.rootRecordingId));
 
@@ -942,7 +941,7 @@ public class AnalyzeWS {
 
         String json = null;
         try {
-            json = jsonmapper.writeValueAsString(Map.of("operationSetId", operationSetId));
+            json = jsonMapper.writeValueAsString(Map.of("operationSetId", operationSetId));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -965,7 +964,7 @@ public class AnalyzeWS {
             return recordingOperationSet
                 .map(operationSet -> {
                     try {
-                        String json = jsonmapper.writeValueAsString(operationSet);
+                        String json = jsonMapper.writeValueAsString(operationSet);
                         return Response.ok(json, MediaType.APPLICATION_JSON).build();
                     } catch (JsonProcessingException e) {
                         LOGGER.error("Error converting JSON to String: " + e);
@@ -1004,7 +1003,7 @@ public class AnalyzeWS {
             String response = "Success";
             String type = MediaType.TEXT_PLAIN;
             try {
-                response = jsonmapper
+                response = jsonMapper
                     .writeValueAsString(Map.of("Message" , "Successfully updated Recording Update Operation Set"
                         , "ID" , recordingOperationSetId));
                 type = MediaType.APPLICATION_JSON;
@@ -1050,16 +1049,16 @@ public class AnalyzeWS {
 	public AnalyzeWS(Config config) {
 		super();
 		this.rrstore = config.rrstore;
-		this.jsonmapper = config.jsonmapper;
+		this.jsonMapper = config.jsonMapper;
 		this.config = config;
 		this.requestComparatorCache = config.requestComparatorCache;
 		this.responseComparatorCache = config.responseComparatorCache;
-		this.recordingUpdate = new RecordingUpdate((ReqRespStoreSolr) rrstore, jsonmapper);
+		this.recordingUpdate = new RecordingUpdate((ReqRespStoreSolr) rrstore, jsonMapper);
 	}
 
 
 	ReqRespStore rrstore;
-	ObjectMapper jsonmapper;
+	ObjectMapper jsonMapper;
 	Config config;
     private final RecordingUpdate recordingUpdate;
     // Template cache to retrieve analysis templates from solr
@@ -1072,44 +1071,44 @@ public class AnalyzeWS {
 	static class MatchRes {
 
 
-        public MatchRes(Optional<String> recordreqid,
-                        Optional<String> replayreqid,
+        public MatchRes(Optional<String> recordReqId,
+                        Optional<String> replayReqId,
                         Comparator.MatchType reqmt,
-                        int nummatch,
+                        int numMatch,
                         Comparator.MatchType respmt,
                         String service,
                         String path,
-                        MultivaluedMap<String, String> qparams,
-                        MultivaluedMap<String, String> fparams,
+                        MultivaluedMap<String, String> queryParams,
+                        MultivaluedMap<String, String> formParams,
                         Optional<String> method, Optional<String> diff,
                         Optional<com.cube.dao.Response> recordResponse,
                         Optional<com.cube.dao.Response> replayResponse) {
-            this.recordreqid = recordreqid;
-            this.replayreqid = replayreqid;
+            this.recordReqId = recordReqId;
+            this.replayReqId = replayReqId;
             this.reqmt = reqmt;
-            this.nummatch = nummatch;
+            this.numMatch = numMatch;
             this.respmt = respmt;
             this.service = service;
             this.path = path;
-            this.qparams = qparams;
-            this.fparams = fparams;
+            this.queryParams = queryParams;
+            this.formParams = formParams;
             this.method = method;
             this.diff = diff;
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
         }
 
-        public final Optional<String> recordreqid;
-        public final Optional<String> replayreqid;
+        public final Optional<String> recordReqId;
+        public final Optional<String> replayReqId;
         public final Comparator.MatchType reqmt;
-        public final int nummatch;
+        public final int numMatch;
         public final Comparator.MatchType respmt;
         public final String service;
         public final String path;
         @JsonDeserialize(as=MultivaluedHashMap.class)
-        public final MultivaluedMap<String, String> qparams; // query params
+        public final MultivaluedMap<String, String> queryParams;
         @JsonDeserialize(as=MultivaluedHashMap.class)
-        public final MultivaluedMap<String, String> fparams; // form params
+        public final MultivaluedMap<String, String> formParams;
         public final Optional<String> method;
         public final Optional<String> diff;
         public final Optional<com.cube.dao.Response> recordResponse;

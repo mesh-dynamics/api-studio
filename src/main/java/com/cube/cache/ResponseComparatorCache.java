@@ -19,6 +19,7 @@ import com.cube.core.TemplatedResponseComparator;
  * Returns ResponseComparator registered in database against the template key
  * If key not registered , returns a default ResponseComparator
  */
+// TODO: Event redesign: This and ResponseComparatorCache can be replaced by a single ComparatorCache
 public class ResponseComparatorCache {
 
     private TemplateCache templateCache;
@@ -31,7 +32,7 @@ public class ResponseComparatorCache {
 
     public ResponseComparatorCache(TemplateCache cache , ObjectMapper jsonMapper) {
         this.templateCache = cache;
-        TemplateEntry equalityRule = new TemplateEntry("/body", CompareTemplate.DataType.Str,
+        TemplateEntry equalityRule = new TemplateEntry("/body", CompareTemplate.DataType.Default,
                 CompareTemplate.PresenceType.Required, CompareTemplate.ComparisonType.Equal);
         CompareTemplate defaultTemplate = new CompareTemplate();
         defaultTemplate.addRule(equalityRule);

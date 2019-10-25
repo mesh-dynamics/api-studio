@@ -3,6 +3,7 @@
  */
 package com.cube.core;
 
+import com.cube.dao.DataObj;
 import com.cube.dao.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -30,5 +31,17 @@ public class EqualityResponseComparator implements ResponseComparator {
 		}
 		
 	}
+
+    @Override
+    public CompareTemplate getCompareTemplate() {
+        //  TODO: Not implemented. This class itself can be removed later
+        return null;
+    }
+
+    @Override
+    public Comparator.Match compare(DataObj lhs, DataObj rhs) {
+	    // TODO: Not implemented. This class itself can be removed later
+        return null;
+    }
 
 }
