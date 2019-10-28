@@ -128,9 +128,9 @@ public class RecordingUpdate {
                 res.recordReqId.get(), res.replayReqId.get()));
             Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
                 .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-            Response recordResponse = res.recordReqId.flatMap(rrStore::getResponse)
+            Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
                 .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
-            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
+            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponseOld);
 
             Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
                 apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
@@ -181,6 +181,7 @@ public class RecordingUpdate {
         return true; // todo: false?
     }
 
+    // TODO: Event redesign: revisit this with Event apis
     public boolean createSanitizedCollection(String replayId, String newCollectionName, Recording originalRec) {
 
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
@@ -190,7 +191,7 @@ public class RecordingUpdate {
            try {
                Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-               Response recordResponse = res.recordReqId.flatMap(rrStore::getResponse)
+               Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
 
                Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);

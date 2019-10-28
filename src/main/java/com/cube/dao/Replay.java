@@ -199,6 +199,8 @@ public class Replay {
     /**
 	 * @return
 	 */
+    // TODO: Event redesign - remove this
+    /*
 	@JsonIgnore
 	public Result<Request> getRequests(ReqRespStore rrstore) {
 		Result<Request> res = rrstore.getRequests(customerId, app, collection, reqIds, paths, Event.RunType.Record);
@@ -210,6 +212,7 @@ public class Replay {
 		Result<Request> requests = getRequests(rrstore);
 		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
 	}
+    */
 
     @JsonIgnore
     public Pair<Stream<List<Event>>, Long> getRequestEventBatches(int batchSize, ReqRespStore rrstore) {

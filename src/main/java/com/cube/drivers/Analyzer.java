@@ -107,7 +107,7 @@ public class Analyzer {
                 // TODO: add toString override for the Request object to debug log
                 if (!matches.isEmpty()) {
                     Map<String, Response> replayResponseMap = rrstore.getResponses(matches);
-                    Optional<Response> recordedResponse = r.reqId.flatMap(rrstore::getResponse);
+                    Optional<Response> recordedResponse = r.reqId.flatMap(rrstore::getResponseOld);
                     if (matches.size() > 1) {
                         analysis.reqmultiplematch++;
                     } else {
