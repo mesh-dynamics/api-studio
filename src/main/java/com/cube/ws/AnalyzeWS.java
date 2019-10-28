@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -483,9 +484,10 @@ public class AnalyzeWS {
         // For checking correct date format
         if(endDate.isPresent()) {
             try {
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd"); // The date is finally translated as yyyy-MM-ddT00:00:00Z"
-                endDateTS = Optional.of(df.parse(endDate.get()).toInstant());
-            } catch (ParseException e) {
+                // Accepted format for date as per ISO-8601 are -
+                // yyyy-MM-ddTHH:MM:SSZ UTC, with an offset of +00:00
+                endDateTS = Optional.of(Instant.parse(endDate.get()));
+            } catch (DateTimeParseException e) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                     Map.of("Message", "Date format should be yyyy-MM-dd",
                         "Error", e.getMessage())).toString())).build();
