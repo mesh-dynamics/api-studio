@@ -442,6 +442,8 @@ public class MockServiceHTTP {
             Optional.of(instanceid));
         Optional<String> collectionOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
         Optional<String> replayIdOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
+        boolean considerTrace = Boolean.parseBoolean(Optional.ofNullable(headers.getRequestHeaders().
+            getFirst("cube-consider-trace")).orElse("true"));
 
         if (replayIdOpt.isEmpty()) {
             LOGGER.error("Cannot mock request since replay/collection is empty");
@@ -476,7 +478,7 @@ public class MockServiceHTTP {
             return notFound();
         }
 
-        EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1);
+        EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1, considerTrace);
         Optional<Event> respEvent = rrstore.getEvents(reqQuery).getObjects().findFirst()
             .flatMap(event -> rrstore.getRespEventForReqEvent(event));
 
@@ -546,15 +548,16 @@ public class MockServiceHTTP {
 
     }
 
-    public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit) {
+    public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit, boolean considerTrace) {
         // eventually we will clean up code and make customerid and app non-optional in Request
         String customerId = request.customerId.orElse("NA");
         String app = request.app.orElse("NA");
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
         request.collection.ifPresent(builder::withCollection);
         request.getService().ifPresent(builder::withService);
-        request.getTraceId().ifPresent(builder::withTraceId);
-
+        if (considerTrace) {
+            request.getTraceId().ifPresent(builder::withTraceId);
+        }
         return builder.withPaths(List.of(request.apiPath))
             .withPayloadKey(payloadKey)
             .withRunType(Event.RunType.Record)

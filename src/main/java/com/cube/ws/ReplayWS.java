@@ -220,6 +220,8 @@ public class ReplayWS {
         List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService")).orElse(new ArrayList<>());
         String userId = formParams.getFirst("userId");
         String instanceId = formParams.getFirst("instanceId");
+        boolean startReplay = Boolean.parseBoolean(Optional.ofNullable(formParams.getFirst("startReplay"))
+            .orElse("true"));
 
         if (userId==null) {
             return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userId Not Specified"))).toString()).build();
@@ -257,11 +259,16 @@ public class ReplayWS {
                                 Replay replay = replayDriver.getReplay();
                                 try {
                                     json = jsonMapper.writeValueAsString(replay);
-                                    boolean status = replayDriver.start();
-                                    if (status) {
+                                    if (startReplay) {
+                                        boolean status = replayDriver.start();
+                                        if (status) {
+                                            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                                        }
+                                        return Response.status(Response.Status.CONFLICT).entity(
+                                            "Not able to start replay. It may be already running or completed").build();
+                                    } else {
                                         return Response.ok(json, MediaType.APPLICATION_JSON).build();
                                     }
-                                    return Response.status(Response.Status.CONFLICT).entity("Not able to start replay. It may be already running or completed").build();
                                 } catch (JsonProcessingException ex) {
                                     LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayId), ex);
                                     return Response.serverError().build();
