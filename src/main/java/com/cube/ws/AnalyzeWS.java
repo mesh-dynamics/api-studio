@@ -28,7 +28,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -39,7 +38,6 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
@@ -425,11 +423,13 @@ public class AnalyzeWS {
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayId);
         return matchResult.map(matchRes -> {
-            Optional<Request> request = rrstore.getRequest(recordReqId);
+            Optional<Request> request = rrstore.getRequest(recordReqId).flatMap(event -> Request.fromEvent(event, jsonMapper));
             Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId)
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
-            Optional<com.cube.dao.Request> replayedRequest = matchRes.replayReqId.flatMap(rrstore::getRequest);
+            Optional<com.cube.dao.Request> replayedRequest = matchRes.replayReqId
+                .flatMap(rrstore::getRequest)
+                .flatMap(event -> Request.fromEvent(event, jsonMapper));
 
             Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
@@ -602,7 +602,9 @@ public class AnalyzeWS {
 
                 if(includeDiff.orElse(false)) {
                     recordedRequest = request;
-                    replayedRequest = matchRes.replayReqId.flatMap(rrstore::getRequest);
+                    replayedRequest = matchRes.replayReqId
+                        .flatMap(rrstore::getRequest)
+                        .flatMap(event -> Request.fromEvent(event, jsonMapper));
                     diff = Optional.of(matchRes.diff);
                     recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
                         .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));

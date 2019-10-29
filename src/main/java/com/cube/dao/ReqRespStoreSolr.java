@@ -838,11 +838,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return result;
     }
 
+    @Override
+    public Optional<Event> getRequest(String reqId) {
+
+        // TODO: Event redesign - change this include all request event types
+        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPRequest);
+        builder.withReqId(reqId);
+
+        return getEvents(builder.build()).getObjects().findFirst();
+    }
+
+
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getRequest(java.lang.String)
+     * @see com.cube.dao.ReqRespStore#getRequestOld(java.lang.String)
      */
     @Override
-    public Optional<Request> getRequest(String reqId) {
+    public Optional<Request> getRequestOld(String reqId) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
