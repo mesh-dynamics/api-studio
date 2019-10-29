@@ -221,7 +221,20 @@ get_environment() {
 }
 
 clean() {
-	kubectl delete namespace $NAMESPACE
+	kubectl delete all --all -n $NAMESPACE
+	kubectl delete virtualservices.networking.istio.io --all -n $NAMESPACE
+	kubectl delete envoyfilters.networking.istio.io --all -n $NAMESPACE
+	kubectl delete destinationrules.networking.istio.io --all -n $NAMESPACE
+	kubectl delete gateways.networking.istio.io --all -n $NAMESPACE
+	kubectl delete serviceentries.networking.istio.io --all -n $NAMESPACE
+	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-moviebook-conf-$NAMESPACE/{print NR-1}")
+	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-moviebook-conf-$NAMESPACE/{print NR-1}")
+	sed -i -e "s/add/remove/g" $APP_DIR/kubernetes/fluentd_patch.json
+	sed -i -e "s:/spec/template/spec/containers/0/volumeMounts/-:/spec/template/spec/containers/0/volumeMounts/$volumeMountsindex:g" $APP_DIR/kubernetes/fluentd_patch.json
+	sed -i -e "s:/spec/template/spec/volumes/-:/spec/template/spec/volumes/$volumeindex:g" $APP_DIR/kubernetes/fluentd_patch.json
+	rm $APP_DIR/kubernetes/fluentd_patch.json-e
+	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
+
 }
 main () {
 	# To debug this script, run it with TRACE=1 in the enviornment
