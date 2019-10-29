@@ -40,6 +40,8 @@ import com.cube.drivers.ReplayDriver;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import io.cube.agent.CommonUtils;
+
 /**
  * @author prasad
  * The replay service
@@ -220,8 +222,7 @@ public class ReplayWS {
         List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService")).orElse(new ArrayList<>());
         String userId = formParams.getFirst("userId");
         String instanceId = formParams.getFirst("instanceId");
-        boolean startReplay = Boolean.parseBoolean(Optional.ofNullable(formParams.getFirst("startReplay"))
-            .orElse("true"));
+        boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
 
         if (userId==null) {
             return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userId Not Specified"))).toString()).build();

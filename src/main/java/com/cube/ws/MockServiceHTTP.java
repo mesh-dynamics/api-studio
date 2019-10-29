@@ -442,8 +442,8 @@ public class MockServiceHTTP {
             Optional.of(instanceid));
         Optional<String> collectionOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
         Optional<String> replayIdOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
-        boolean considerTrace = Boolean.parseBoolean(Optional.ofNullable(headers.getRequestHeaders().
-            getFirst("cube-consider-trace")).orElse("true"));
+        boolean considerTrace = Utils.strToBool(headers.getRequestHeaders()
+            .getFirst("cube-consider-trace")).orElse(true);
 
         if (replayIdOpt.isEmpty()) {
             LOGGER.error("Cannot mock request since replay/collection is empty");
