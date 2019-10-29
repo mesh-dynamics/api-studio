@@ -774,7 +774,6 @@ public class CubeStore {
                           @PathParam("instanceid") String instanceid,
                           @PathParam("collection") String collection,
                           @PathParam("templateSetVersion") String templateSetVersion) {
-//        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
 	    // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
             Optional.ofNullable(instanceid));
@@ -784,7 +783,7 @@ public class CubeStore {
 
         // check if recording collection name is unique for (customerid, app)
         Optional<Recording> recording = rrstore
-            .getRecordingByCollectionAndTemplateVer(customerid, app, collection, Optional.of(templateSetVersion));
+            .getRecordingByCollectionAndTemplateVer(customerid, app, collection, templateSetVersion);
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
@@ -819,15 +818,14 @@ public class CubeStore {
 
 
 	@GET
-	@Path("status/{customerid}/{app}/{collection}")
+	@Path("status/{customerid}/{app}/{collection}/{templateSetVersion}")
     public Response status(@Context UriInfo ui,
                            @PathParam("collection") String collection,
                            @PathParam("customerid") String customerid,
-                           @PathParam("app") String app
-                           /*@PathParam("templateSetVersion") String templateSetVersion*/) {
-        String templateSetVersion = Recording.DEFAULT_TEMPLATE_VER;
+                           @PathParam("app") String app,
+                           @PathParam("templateSetVersion") String templateSetVersion) {
 	    Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerid,
-            app, collection, Optional.of(templateSetVersion));
+            app, collection, templateSetVersion);
 
         Response resp = recording.map(r -> {
             String json;
@@ -970,7 +968,8 @@ public class CubeStore {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
         pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
 
-        Request queryRequest = new Request(path, Optional.empty(), queryParams, formParams, hdrs, service, collection,
+        Request queryRequest = new Request(path, Optional.empty(), queryParams, formParams, hdrs, service, "", "",
+            collection,
             Optional.of(Event.RunType.Record), customerid, app);
 
         List<Request> requests =

@@ -7,6 +7,7 @@ package com.cube.dao;
 
 import com.cube.dao.Event.EventType;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -51,6 +52,7 @@ public class Replay {
      * @param app
      * @param instanceId
      * @param collection
+     * @param userId
      * @param reqIds
      * @param replayId
      * @param async
@@ -58,9 +60,10 @@ public class Replay {
      * @param status
      * @param sampleRate
      */
-	public Replay(String endpoint, String customerId, String app, String instanceId, String collection, List<String> reqIds,
-                  String replayId, boolean async, Optional<String> templateVersion, ReplayStatus status,
-                  List<String> paths, int reqcnt, int reqsent, int reqfailed, String creationTimestamp,
+	public Replay(String endpoint, String customerId, String app, String instanceId, String collection, String userId
+            , List<String> reqIds,
+                  String replayId, boolean async, String templateVersion, ReplayStatus status,
+                  List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
                   Optional<Double> sampleRate, List<String> intermediateServices) {
 		super();
 		this.endpoint = endpoint;
@@ -68,6 +71,7 @@ public class Replay {
 		this.app = app;
 		this.instanceId = instanceId;
 		this.collection = collection;
+        this.userId = userId;
 		this.reqIds = reqIds;
 		this.replayId = replayId;
 		this.async = async;
@@ -77,7 +81,7 @@ public class Replay {
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
-		this.creationTimeStamp = creationTimestamp == null ? format.format(new Date()) : creationTimestamp;
+		this.creationTimeStamp = creationTimestamp == null ? Instant.now() : creationTimestamp;
 		this.xfmer = Optional.ofNullable(null);
 		this.sampleRate = sampleRate;
 		this.intermediateServices = intermediateServices;
@@ -91,14 +95,15 @@ public class Replay {
 	    app = "";
 	    instanceId = "";
 	    collection = "";
+	    userId = "";
 	    replayId = "";
 	    async = false;
 	    sampleRate = Optional.empty();
-	    creationTimeStamp = "";
+        creationTimeStamp = Instant.now();
 	    reqIds = Collections.emptyList();
 	    paths = Collections.emptyList();
 	    intermediateServices = Collections.emptyList();
-	    templateVersion = Optional.empty();
+	    templateVersion = "";
     }
 
 	/*
@@ -123,10 +128,12 @@ public class Replay {
 	public final String instanceId;
     @JsonProperty("collect")
 	public final String collection;
+    @JsonProperty("userid")
+    public final String userId;
     @JsonProperty("reqIds")
 	public final List<String> reqIds;
     @JsonProperty("templateVer")
-	public final Optional<String> templateVersion;
+	public final String templateVersion;
     @JsonProperty("id")
     public final String replayId; // this needs to be globally unique
     @JsonProperty("async")
@@ -147,10 +154,8 @@ public class Replay {
     public transient Optional<RRTransformer> xfmer;
     @JsonProperty("smplrate")
 	public final Optional<Double> sampleRate;
-
-	private transient SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	@JsonProperty("timestmp")
-	public final String creationTimeStamp;
+    public final Instant creationTimeStamp;
 
 	static final String uuidPatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayIdPatternStr = "^(.*)-" + uuidPatternStr + "$";
@@ -194,6 +199,8 @@ public class Replay {
     /**
 	 * @return
 	 */
+    // TODO: Event redesign - remove this
+    /*
 	@JsonIgnore
 	public Result<Request> getRequests(ReqRespStore rrstore) {
 		Result<Request> res = rrstore.getRequests(customerId, app, collection, reqIds, paths, Event.RunType.Record);
@@ -205,6 +212,7 @@ public class Replay {
 		Result<Request> requests = getRequests(rrstore);
 		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
 	}
+    */
 
     @JsonIgnore
     public Pair<Stream<List<Event>>, Long> getRequestEventBatches(int batchSize, ReqRespStore rrstore) {

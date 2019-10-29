@@ -40,7 +40,7 @@ public class Analyzer {
 
     private static final Logger LOGGER = LogManager.getLogger(Analyzer.class);
 
-    private Analyzer(String replayid, int reqcnt, Optional<String> templateVersion, Config config) {
+    private Analyzer(String replayid, int reqcnt, String templateVersion, Config config) {
         this.config = config;
         analysis = new Analysis(replayid, reqcnt, templateVersion);
         this.jsonMapper = config.jsonMapper;
@@ -60,7 +60,7 @@ public class Analyzer {
     // Template cache being passed from the config
     private final RequestComparatorCache requestComparatorCache;
     private final ResponseComparatorCache responseComparatorCache;
-    private final Optional<String> templateVersion;
+    private final String templateVersion;
 
 
 
@@ -99,16 +99,15 @@ public class Analyzer {
 
                 List<Request> matches = new ArrayList<>();
 
-                TemplateKey key = new TemplateKey(templateVersion, r.customerId.get(), r.app.get(),
-                    r.getService().get(), r.apiPath
-                        , TemplateKey.Type.Request);
+                TemplateKey key = new TemplateKey(Optional.of(templateVersion), r.customerId.get(), r.app.get(),
+                    r.getService().get(), r.apiPath, TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
                 matches = rrstore.getRequests(rq, comparator, Optional.of(10))
                         .collect(Collectors.toList());
                 // TODO: add toString override for the Request object to debug log
                 if (!matches.isEmpty()) {
                     Map<String, Response> replayResponseMap = rrstore.getResponses(matches);
-                    Optional<Response> recordedResponse = r.reqId.flatMap(rrstore::getResponse);
+                    Optional<Response> recordedResponse = r.reqId.flatMap(rrstore::getResponseOld);
                     if (matches.size() > 1) {
                         analysis.reqmultiplematch++;
                     } else {
@@ -220,7 +219,7 @@ public class Analyzer {
                 // find matching request in replay
                 EventQuery eventQuery = reqEventToEventQuery(r, analysis.replayId, 10);
 
-                TemplateKey key = new TemplateKey(templateVersion, replay.customerId, replay.app,
+                TemplateKey key = new TemplateKey(Optional.of(templateVersion), replay.customerId, replay.app,
                     r.service, r.apiPath, TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
 
@@ -337,7 +336,7 @@ public class Analyzer {
 
             try {
                 // get appropriate template from solr
-                TemplateKey key = new TemplateKey(templateVersion, recordreq.customerId.get(),
+                TemplateKey key = new TemplateKey(Optional.of(templateVersion), recordreq.customerId.get(),
                         recordreq.app.get(), recordreq.getService().get(), recordreq.apiPath , TemplateKey.Type.Response);
                 ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
                 Optional<Response> replayresp = Optional.ofNullable(replayResponseMap.get(replayreqid));
@@ -379,7 +378,7 @@ public class Analyzer {
 
         try {
             // get appropriate template from solr
-            TemplateKey key = new TemplateKey(templateVersion, recordreq.customerId,
+            TemplateKey key = new TemplateKey(Optional.of(templateVersion), recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath , TemplateKey.Type.Response);
             ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
             Optional<Event> replayresp = Optional.ofNullable(replayResponseMap.get(replayreq.reqId));
@@ -488,11 +487,9 @@ public class Analyzer {
     /**
      * @param replayId
      * @param tracefield
-     * @param templateVersion
      * @return
      */
     public static Optional<Analysis> analyze(String replayId, String tracefield,
-                                             Optional<String> templateVersion,
                                              Config config) {
         // String collection = Replay.getCollectionFromReplayId(replayid);
 
@@ -538,9 +535,7 @@ public class Analyzer {
             // TODO need to get the batch size from some config
             Pair<Stream<List<Event>> , Long> result = r.getRequestEventBatches(TRACEBATCHSIZE , rrstore);
 
-            // if version is passed in analyze request, use it. Else, use the version associated
-            // with the Replay
-            Optional<String> templateVersionToUse = templateVersion.or(() -> r.templateVersion);
+            String templateVersionToUse = r.templateVersion;
 
             //Result<Request> reqs = r.getRequests(rrstore, true);
             Analyzer analyzer = new Analyzer(replayId, result.getRight().intValue(), templateVersionToUse, config);

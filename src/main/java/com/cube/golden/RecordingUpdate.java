@@ -5,6 +5,7 @@ import com.cube.dao.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import java.time.Instant;
 import java.util.*;
@@ -127,9 +128,9 @@ public class RecordingUpdate {
                 res.recordReqId.get(), res.replayReqId.get()));
             Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
                 .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-            Response recordResponse = res.recordReqId.flatMap(rrStore::getResponse)
+            Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
                 .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
-            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
+            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponseOld);
 
             Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
                 apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
@@ -160,7 +161,7 @@ public class RecordingUpdate {
                 // todo raise error?
             }
             } catch (Exception e) {
-                LOGGER.error("Error occured while transforming response :: " + e.getMessage());
+                LOGGER.error("Error occured while transforming response :: " + e.getMessage(), e);
             }
 
         });
@@ -178,6 +179,63 @@ public class RecordingUpdate {
             );*/
 
         return true; // todo: false?
+    }
+
+    // TODO: Event redesign: revisit this with Event apis
+    public boolean createSanitizedCollection(String replayId, String newCollectionName, Recording originalRec) {
+
+        Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
+
+        //1. Create a new collection with all the Req/Responses
+        results.forEach(res -> {
+           try {
+               Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
+                   .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
+               Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
+                   .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
+
+               Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
+               Instant timeStamp = Instant.now();
+
+               Response transformedResponse = new Response(newReqId, recordResponse.status,
+                   recordResponse.meta, recordResponse.hdrs, recordResponse.body, Optional.of(newCollectionName),
+                   Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app,
+                   recordResponse.apiPath);
+
+               LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
+               recordRequest.reqId = transformedResponse.reqId;
+               recordRequest.collection = Optional.of(newCollectionName);
+
+               LOGGER.debug("saving request/response with reqid: " + newReqId);
+               boolean saved = rrStore.save(recordRequest) && rrStore.save(transformedResponse);
+
+               if(!saved) {
+                   LOGGER.debug("request/response not saved");
+                   throw new Exception ("Unable to persist new sanitized collection");
+               }
+           } catch (Exception e) {
+               LOGGER.error("Error occurred creating new collection while sanitizing :: " + e.getMessage(), e);
+           }
+        });
+
+        rrStore.commit();
+
+        //2. Get all the ReqResMatchResult with MatchType as NoMatch either for request or response match
+        Stream<Analysis.ReqRespMatchResult> resultsOnlyNoMatch = rrStore.getAnalysisMatchResultOnlyNoMatch(replayId).getObjects();
+
+        //3. Delete all the requests and responses in the new collection that has the trace id in the above list
+        resultsOnlyNoMatch.forEach( res -> {
+            res.recordTraceId.ifPresentOrElse( recTraceId -> {
+                rrStore.deleteReqResByTraceId(recTraceId, newCollectionName);
+                res.replayTraceId.ifPresent(repTraceId -> {
+                    if (!repTraceId.equalsIgnoreCase(recTraceId)) {
+                        rrStore.deleteReqResByTraceId(repTraceId, newCollectionName);
+                    }
+                });
+            }, () -> res.replayTraceId.ifPresent(repTraceId -> rrStore.deleteReqResByTraceId(repTraceId, newCollectionName)));
+        });
+
+        return true;
     }
 
     // fetch the request/response from the replay, apply the transformation operations and store to Solr
@@ -233,5 +291,4 @@ public class RecordingUpdate {
         return recReqId.map(
             reqId -> "gu-" + Objects.hash(reqId, collectionName));
     }
-
 }

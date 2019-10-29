@@ -15,6 +15,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -78,7 +79,6 @@ public class MockServiceHTTP {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
     }
 
-
 	@GET
     @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
     public Response get(@Context UriInfo ui, @PathParam("var") String path,
@@ -86,9 +86,11 @@ public class MockServiceHTTP {
                         @PathParam("customerid") String customerid,
                         @PathParam("app") String app,
                         @PathParam("instanceid") String instanceid,
-                        @PathParam("service") String service) {
+                        @PathParam("service") String service,
+                        String body) {
         LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, headers);
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service,
+            HttpMethod.GET, body, headers);
     }
 
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two.
@@ -96,19 +98,21 @@ public class MockServiceHTTP {
 
 	@POST
     @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response postForms(@Context UriInfo ui,
                               @Context HttpHeaders headers,
                               @PathParam("var") String path,
-                              MultivaluedMap<String, String> formParams,
                               @PathParam("customerid") String customerid,
                               @PathParam("app") String app,
                               @PathParam("instanceid") String instanceid,
-                              @PathParam("service") String service) {
-        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, formParams: %s", customerid, app, path, ui.toString(), formParams.toString()));
-        return getResp(ui, path, formParams, customerid, app, instanceid, service, headers);
+                              @PathParam("service") String service,
+                              String body) {
+        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerid, app, path,
+            ui.toString(), body));
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, HttpMethod.POST, body, headers);
     }
 
+    // TODO: Event redesign - remove commented code once stable
+    /*
 	@POST
 	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -130,6 +134,7 @@ public class MockServiceHTTP {
         }
         return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
     }
+    */
 
     private Optional<ReqRespStore.RecordOrReplay> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
         return rrstore.getCurrentRecordOrReplay(Optional.of(customerId),
@@ -270,7 +275,7 @@ public class MockServiceHTTP {
 		// we can generate a new request id here in the mock service
 		Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
 		return rrstore.getCurrentReplayId(Optional.of(customerId), Optional.of(app), Optional.of(instanceId)).map(replayId -> new Request(
-				path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
+				path, requestId, queryParams, formParams, headers.getRequestHeaders(), service, "", "",
 				Optional.of(replayId) , Optional.of(Event.RunType.Replay), Optional.of(customerId) , Optional.of(app)
 		));
 
@@ -279,13 +284,14 @@ public class MockServiceHTTP {
 
     private Request createRequestMockNew(String path, MultivaluedMap<String, String> formParams,
                                                 String customerId, String app, String instanceId, String service,
+                                                String method, String body,
                                                 HttpHeaders headers, MultivaluedMap<String,String> queryParams,
                                                 String replayId) {
         // At the time of mock, our lua filters don't get deployed, hence no request id is generated
         // we can generate a new request id here in the mock service
         Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
         return new Request(
-            path, requestId, queryParams, formParams, headers.getRequestHeaders(), service ,
+            path, requestId, queryParams, formParams, headers.getRequestHeaders(), service, method, body,
             Optional.of(replayId) , Optional.of(Event.RunType.Replay), Optional.of(customerId) , Optional.of(app));
 
     }
@@ -352,13 +358,13 @@ public class MockServiceHTTP {
         Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(customerid, app, instanceid);
         Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
 	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
-	    		headers.getRequestHeaders(), service, collection,
+	    		headers.getRequestHeaders(), service, "", "", collection,
                 Optional.of(Event.RunType.Record),
 	    		Optional.of(customerid),
 	    		Optional.of(app));
 
         Optional<String> templateVersion =
-            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> replay.templateVersion));
+            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> Optional.of(replay.templateVersion)));
 
 	    TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
@@ -423,7 +429,7 @@ public class MockServiceHTTP {
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
                              String customerid, String app, String instanceid,
-                             String service, HttpHeaders headers) {
+                             String service, String method, String body, HttpHeaders headers) {
 
         LOGGER.info(String.format("Mocking request for %s", path));
 
@@ -445,13 +451,13 @@ public class MockServiceHTTP {
         String replayId = replayIdOpt.get();
 
         Request request = new Request(path, Optional.empty(), queryParams, formParams,
-            headers.getRequestHeaders(), service, collectionOpt,
+            headers.getRequestHeaders(), service, method, body, collectionOpt,
             Optional.of(Event.RunType.Record),
             Optional.of(customerid),
             Optional.of(app));
 
         Optional<String> templateVersion =
-            recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> replay.templateVersion));
+            recordOrReplay.flatMap(rr -> rr.replay.map(replay -> replay.templateVersion));
 
         TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
         RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
@@ -459,7 +465,7 @@ public class MockServiceHTTP {
 
         // first store the original request as a part of the replay
         Request mockRequest = createRequestMockNew(path, formParams, customerid, app, instanceid,
-        service, headers, queryParams, replayId);
+        service, method, body, headers, queryParams, replayId);
         Event mockRequestEvent;
         try {
             mockRequestEvent = mockRequest.toEvent(comparator, config);
@@ -486,12 +492,12 @@ public class MockServiceHTTP {
 
             return resp.map(respv -> {
                 ResponseBuilder builder = Response.status(respv.status);
-                respv.hdrs.forEach((f, vl) -> vl.forEach((v) -> {
-                    // System.out.println(String.format("k=%s, v=%s", f, v));
+                respv.hdrs.forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+                    // System.out.println(String.format("key=%s, val=%s", fieldName, val));
                     // looks like setting some headers causes a problem, so skip them
                     // TODO: check if this is a comprehensive list
-                    if (!f.equals("transfer-encoding"))
-                        builder.header(f, v);
+                    if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":"))
+                        builder.header(fieldName, val);
                 }));
                 // Increment match counter in cache
                 // TODO commenting out call to cache

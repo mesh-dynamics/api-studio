@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -135,7 +136,10 @@ public interface ReqRespStore {
 	 * @return the matching response on the reqId
 	 */
     // TODO: Event redesign: This needs to be rewritten to get as event
-    Optional<Response> getResponse(String reqId);
+    Optional<Event> getResponse(String reqId);
+
+    // TODO: Event redesign: Remove this
+    Optional<Response> getResponseOld(String reqId);
 
     /**
      * @param reqId
@@ -173,7 +177,7 @@ public interface ReqRespStore {
 	 * @return
 	 */
     // TODO: Event redesign: This needs to be rewritten to get as event
-    Result<Request> getRequests(String customerid, String app, String collection, List<String> reqids
+    Result<Event> getRequests(String customerid, String app, String collection, List<String> reqids
 			, List<String> paths, Event.RunType runType);
 
     Result<Event> getEvents(EventQuery eventQuery);
@@ -211,17 +215,20 @@ public interface ReqRespStore {
 
     /**
      *
-     * @param customerid
+     * @param customerId
      * @param app
-     * @param instanceid
+     * @param instanceId
      * @param status
      * @param collection
      * @param numOfResults
+     * @param start
+     * @param userId
+     * @param endDate
      * @return
      */
-    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, List<String> instanceid,
-                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
-
+    Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
+                             List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
+                             Optional<String> userId, Optional<Instant> endDate);
 
     /**
      *
@@ -315,7 +322,7 @@ public interface ReqRespStore {
 
 
     /**
-     * @param replayid
+     * @param replayId
      * @param service
      * @return If service is empty, return aggregate results for all services. If
      * service is non-empty, return results for all paths in the service if bypath is true
@@ -324,8 +331,8 @@ public interface ReqRespStore {
      * This method just gets the aggregates using Solr query which were pre-computed and
      * stored. For computation of aggregates check computeResultAggregate method.
      */
-    Stream<MatchResultAggregate> getResultAggregate(String replayid, Optional<String> service,
-                                                            boolean bypath);
+    Stream<MatchResultAggregate> getResultAggregate(String replayId, Optional<String> service,
+                                                            boolean byPath);
 
 
     /**
@@ -389,10 +396,8 @@ public interface ReqRespStore {
 	 * @param collection
 	 * @return
 	 */
-	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app,
-                                                               String collection, Optional<String> templateSetVersion);
-
-
+	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
+                                                               String templateSetVersion);
 
 	/**
 	 * @param replayid
@@ -448,7 +453,7 @@ public interface ReqRespStore {
 
 		@JsonIgnore
         public Optional<String> getTemplateVersion() {
-            return replay.flatMap(replay1 -> replay1.templateVersion)
+            return replay.map(replay1 -> replay1.templateVersion)
                 .or(() -> recording.map(recording -> recording.templateVersion));
         }
 
@@ -516,7 +521,6 @@ public interface ReqRespStore {
     Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
                                                         String replayId);
 
-
     /**
      * Get results matching a path and other constraints
      * @param replayId
@@ -532,6 +536,21 @@ public interface ReqRespStore {
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
                             Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
 
+    /**
+     * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
+     * as NoMatch
+     * @param replayId
+     * @return
+     */
+    Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
+
+    /**
+     * Deletes the Requests and Responses from the passed collection that has the given trace id
+     * @param traceId
+     * @param collectionName
+     * @return
+     */
+    boolean deleteReqResByTraceId(String traceId, String collectionName);
 
     /**
 	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
