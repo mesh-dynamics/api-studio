@@ -118,13 +118,12 @@ public interface Comparator {
         ERR_NewField, // This indicates that presence type is required/default and the old object does not have the
         // value
         ERR_InvalidExtractionMethod, // extraction method does not match type (e.g. regex for double)
-        ERR_NotExpected,
 		ERR;
 		/**
 		 * @return
 		 */
 		public boolean isErr() {
-			return this == ERR_NotExpected || this == ERR_Required ||
+			return  this == ERR_Required ||
 					this == ERR_ValMismatch || this == ERR_ValTypeMismatch ||
 					this == ERR_ValFormatMismatch || this == ERR || this == ERR_NewField ||
                     this == ERR_RequiredGolden || this == ERR_InvalidExtractionMethod;
