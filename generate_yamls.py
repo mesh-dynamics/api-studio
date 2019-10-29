@@ -30,7 +30,7 @@ def init_files(base_dir, template_dir, namespace, cube_application, cube_custome
     solr_core=sys.argv[12]
     env = Environment(loader=FileSystemLoader(template_dir))
     for file in os.listdir(template_dir):
-        if file.endswith(".yaml"):
+        if file.endswith(".yaml") or file.endswith(".json"):
             template = env.get_template(file)
             outfile = base_dir + "/kubernetes/" + file
             with open(outfile, "w") as out:
@@ -42,14 +42,6 @@ def recap_files(operation, base_dir, template_dir, namespace, cube_application, 
     cube_instanceid = sys.argv[6]
     master_namespace = sys.argv[7]
     env = Environment(loader=FileSystemLoader(template_dir))
-    fluentd_files = ["fluentd-conf-cs.j2","fluentd_patch.j2"]
-    for file in fluentd_files:
-        fluentd_template = env.get_template(file)
-        fluentd_outfile = base_dir + "/kubernetes/" + file.replace(".j2", ".yaml")
-        with open(fluentd_outfile, "w") as out:
-            output_from_template = fluentd_template.render(namespace=namespace, master_namespace=master_namespace)
-            out.write(output_from_template)
-            out.close()
     if operation == "record":
         outfile = base_dir + "/kubernetes/envoy-record-cs.yaml"
         template = env.get_template("envoy-record-cs.j2")
