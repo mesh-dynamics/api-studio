@@ -489,7 +489,7 @@ public class AnalyzeWS {
                 endDateTS = Optional.of(Instant.parse(endDate.get()));
             } catch (DateTimeParseException e) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
-                    Map.of("Message", "Date format should be yyyy-MM-dd",
+                    Map.of("Message", "Date format should be yyyy-MM-ddTHH:MM:SSZ",
                         "Error", e.getMessage())).toString())).build();
             }
         }
