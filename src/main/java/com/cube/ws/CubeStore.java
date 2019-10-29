@@ -234,7 +234,7 @@ public class CubeStore {
                     Event responseEvent;
                     try {
                         // todo: consider creating the Event object directly instead of creating a Response
-                        responseEvent = resp.toEvent(config, path);
+                        responseEvent = resp.toEvent(config, reqApiPath);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
