@@ -60,6 +60,11 @@ const resolutionsIconMap = {
         "icon": "warning-sign",
         "color": "#ffdd4b"
     },
+    "OK_OptionalMismatch": {
+        "description": "Missing optional item in test.",
+        "icon": "warning-sign",
+        "color": "#ffdd4b"
+    },
     "ERR_RequiredGolden": {
         "description": "Error: Missing required item in golden.",
         "icon": "remove-circle",
@@ -96,9 +101,9 @@ class Resolutions extends React.Component {
         let icon = "ok-circle", color = "#f7f7f7", description, resolution;
         if (this.props.serverSideDiff) {
             resolution = this.props.serverSideDiff.resolution;
-            icon = resolutionsIconMap[resolution].icon;
-            color = resolutionsIconMap[resolution].color;
-            description = resolutionsIconMap[resolution].description;
+            icon = resolutionsIconMap[resolution] ? resolutionsIconMap[resolution].icon : "warning-sign";
+            color = resolutionsIconMap[resolution] ? resolutionsIconMap[resolution].color : "#ffdd4b";
+            description = resolutionsIconMap[resolution] ? resolutionsIconMap[resolution].description : resolution;
         }
 
         let tippyContent = (
