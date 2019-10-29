@@ -19,7 +19,8 @@ class TestResults extends Component {
         super(props);
         this.state = {
             endDate: new Date(),
-            userFilter: "ALL"
+            userFilter: "ALL",
+            noFilter: true
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -29,7 +30,8 @@ class TestResults extends Component {
         dispatch(cubeActions.getTimelineData(cube.selectedApp));
         this.setState({
             endDate: new Date(),
-            userFilter: "ALL"
+            userFilter: "ALL",
+            noFilter: true
         });
     };
 
@@ -37,7 +39,8 @@ class TestResults extends Component {
         const {dispatch, cube} = this.props;
         dispatch(cubeActions.getTimelineData(cube.selectedApp, event.target.value, this.state.endDate));
         this.setState({
-            userFilter: event.target.value
+            userFilter: event.target.value,
+            noFilter: false
         });
     };
 
@@ -45,13 +48,14 @@ class TestResults extends Component {
         const {dispatch, cube} = this.props;
         dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, date));
         this.setState({
-            endDate: date
+            endDate: date,
+            noFilter: false
         });
     };
 
     setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
         if (!cellData) return;
-        const { dispatch, history } = this.props;
+        const { dispatch, history, cube } = this.props;
         dispatch(cubeActions.setPathResultsParams({
             path: path,
             service: service,
@@ -61,7 +65,7 @@ class TestResults extends Component {
             currentTemplateVer: currentTemplateVer
         }));
         setTimeout(() => {
-            history.push("/path_results");
+            history.push(`/shareable_link?replayId=${replayId}&app=${cube.selectedApp}`);
         });
     }
 
@@ -416,7 +420,7 @@ class TestResults extends Component {
                             </div>
                         </div>
 
-                        <div className="inline-block" style={{verticalAlign: "top"}}>
+                        <div className={this.state.noFilter ? "inline-block" : "inline-block active-filter"} style={{verticalAlign: "top"}}>
                             <i className="fas fa-filter"></i>&nbsp;
                             <span className="link" onClick={this.clearFilter}>Clear</span>
                         </div>

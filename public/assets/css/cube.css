@@ -4439,7 +4439,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 }
 
 .link:hover {
-    color: #00B2FF;
+    color: #00B2FF !important;
     cursor: pointer;
 }
 
@@ -4620,4 +4620,8 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 
 .react-datepicker-popper {
     z-index: 999 !important;
+}
+
+.active-filter, .active-filter .link {
+    color: green;
 }
