@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem } from 'react-bootstrap';
 import _ from 'lodash';
-import Tippy from '@tippy.js/react';
-import 'tippy.js/themes/light.css';
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
@@ -328,56 +326,6 @@ class ShareableLink extends Component {
         let jsxContent = diffLayoutData.map((item, index) => {
             return (<div key={item.path + '-' + index} style={{ borderBottom: "1px solid #eee", display: item.show ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
-                    <div className="inline-block margin-right-10">
-                        <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true} maxWidth={500}
-                            content={
-                                <div style={{ overflowY: "auto", fontSize: "14px" }} className="grey" id={`tooltip-${index}`}>
-                                    <div style={{ padding: "10px", color: "#333333", textAlign: "left" }}>
-                                        <div className="row margin-bottom-10">
-                                            <div className="col-md-3">Method:</div>
-                                            <div className="col-md-9 bold">{item.method}</div>
-                                        </div>
-
-                                        <div className="row margin-bottom-10">
-                                            <div className="col-md-3">URL:</div>
-                                            <div className="col-md-9 bold">{item.path}</div>
-                                        </div>
-
-                                        <div className="row margin-bottom-10">
-                                            <div className="col-md-3">Parameters:</div>
-                                            <div className="col-md-9">
-                                                <table className="table table-bordered" style={{ width: "100%", tableLayout: "fixed" }}>
-                                                    <thead>
-                                                        <tr>
-                                                            <th style={{ background: "#efefef", width: "30%" }}>Key</th>
-                                                            <th style={{ background: "#efefef", width: "70%" }}>Value</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {
-                                                            item.qparams && !_.isEmpty(item.qparams) ?
-                                                                Object.entries(item.qparams).map(([key, value]) => (<tr key={key}>
-                                                                    <td style={{ background: "#ffffff", wordBreak: "break-word", whiteSpace: "normal", width: "30%" }}>{key}</td>
-                                                                    <td style={{ background: "#ffffff", wordBreak: "break-word", whiteSpace: "normal", width: "70%" }}>{value}</td>
-                                                                </tr>))
-                                                                : <tr></tr>
-                                                        }
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        <div className="row margin-bottom-10">
-                                            <div className="col-md-3">Body:</div>
-                                            <div className="col-md-9">
-                                                <pre style={{ backgroundColor: "#D5D5D5" }}>{JSON.stringify(item.fparams, undefined, 4)}</pre>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>}>
-                            <div><Glyphicon glyph="option-horizontal" /> </div>
-                        </Tippy>
-                    </div>
                     {item.path}
                 </div>
                 {item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
