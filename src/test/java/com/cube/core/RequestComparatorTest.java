@@ -277,7 +277,7 @@ public class RequestComparatorTest {
 //            "movieinfo504e9d35-0087-4289-91a0-67333360b7f9"
 //        };
 //        for (String id: idList){
-//            Request request = config.rrstore.getRequest(id).get();
+//            Request request = config.rrstore.getRequestOld(id).get();
 //            System.out.println(mapper.writeValueAsString(request));
 //            System.out.println(request.queryParams);
 //            System.out.println(request.body);
