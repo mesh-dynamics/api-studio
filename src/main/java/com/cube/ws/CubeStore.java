@@ -649,7 +649,7 @@ public class CubeStore {
                           @PathParam("templateSetVersion") String templateSetVersion) {
 	    // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerid), Optional.ofNullable(app),
-            Optional.ofNullable(instanceid));
+            Optional.ofNullable(instanceid), Optional.empty());
         if (errResp.isPresent()) {
             return errResp.get();
         }
