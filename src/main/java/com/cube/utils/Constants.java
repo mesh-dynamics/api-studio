@@ -26,19 +26,28 @@ public class Constants {
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
     public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
 
-    //COMMON STRINGS
-    public static final String CUSTOMER_ID = "customerId";
-    public static final String APP = "app";
-    public static final String SERVICE = "service";
-    public static final String INSTANCE_ID = "instanceId";
-    public static final String COLLECTION = "collection";
-    public static final String TRACE_ID = "traceId";
-    public static final String RUN_TYPE = "runType";
-    public static final String TIMESTAMP = "timestamp";
-    public static final String REQ_ID = "reqId";
-    public static final String API_PATH = "apiPath";
-    public static final String EVENT_TYPE = "eventType";
-    public static final String REQ_PAYLOAD_STR = "reqPayloadStr";
-    public static final String RESP_PAYLOAD_STR = "respPayloadStr";
+    //JSON FETCH PATH
+    public static final String CUSTOMER_ID_PATH = "/customerId";
+    public static final String APP_PATH = "/app";
+    public static final String SERVICE_PATH = "/service";
+    public static final String INSTANCE_ID_PATH = "/instanceId";
+    public static final String COLLECTION_PATH = "/collection";
+    public static final String TRACE_ID_PATH = "/traceId";
+    public static final String RUN_TYPE_PATH = "/runType";
+    public static final String TIMESTAMP_PATH = "/timestamp";
+    public static final String REQ_ID_PATH = "/reqId";
+    public static final String API_PATH_PATH = "/apiPath";
+    public static final String EVENT_TYPE_PATH = "/eventType";
+    public static final String REQ_PAYLOAD_STR_PATH = "/reqPayloadStr";
+    public static final String RESP_PAYLOAD_STR_PATH = "/respPayloadStr";
+    public static final String QUERY_PARAMS_PATH = "/queryParams";
+    public static final String FORM_PARAMS_PATH = "/formParams";
+    public static final String PATH_PATH = "/path";
+    public static final String METHOD_PATH = "/method";
+    public static final String ARGS_PATH = "/args";
+    public static final String FN_RESPONSE_PATH = "/response";
+    public static final String HDR_PATH = "/hdr";
+    public static final String META_PATH = "/meta";
+    public static final String BODY_PATH = "/body";
 
 }

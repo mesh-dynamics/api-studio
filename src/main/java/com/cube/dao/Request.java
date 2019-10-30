@@ -31,13 +31,6 @@ import org.apache.logging.log4j.message.ObjectMessage;
 public class Request extends RRBase {
     private static final Logger LOGGER = LogManager.getLogger(Request.class);
 
-	public static final String QPARAMPATH = "/queryParams";
-	public static final String FPARAMPATH = "/formParams";
-	public static final String PATHPATH = "/path";
-	public static final String METHODPATH = "/method";
-	public static final String ARGSPATH = "/args";
-	public static final String FNRESPONSEPATH = "/response";
-
 
 	/**
 	 * @param apiPath

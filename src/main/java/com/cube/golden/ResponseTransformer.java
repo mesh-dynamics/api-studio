@@ -1,5 +1,6 @@
 package com.cube.golden;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -94,7 +95,7 @@ public class ResponseTransformer {
     private JsonNode processOperation(JsonNode recRoot, JsonNode repRoot,
                                       ReqRespUpdateOperation operation) {
         ReqRespUpdateOperation newop = new ReqRespUpdateOperation(operation.operationType,
-            StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH));
+            StringUtils.removeStart(operation.jsonpath, Constants.BODY_PATH));
         //String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
         switch (newop.operationType) {
             // todo: check existence of value at path

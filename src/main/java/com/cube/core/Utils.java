@@ -236,7 +236,15 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static JSONObject buildErrorResponse(String status, String msgId, String msg) {
+    public static String buildSuccessResponse(String status, JSONObject data) {
+        JSONObject successResponse = new JSONObject();
+        successResponse.put(Constants.STATUS, status);
+        successResponse.put(Constants.DATA, data);
+
+        return successResponse.toString();
+    }
+
+    public static String buildErrorResponse(String status, String msgId, String msg) {
         JSONObject errorResponse = new JSONObject();
         errorResponse.put(Constants.STATUS, status);
 
@@ -246,7 +254,7 @@ public class Utils {
 
         errorResponse.put(Constants.DATA, data);
 
-        return errorResponse;
+        return errorResponse.toString();
     }
 
 }

@@ -15,6 +15,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import static com.cube.utils.Constants.BODY_PATH;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.cube.core.*;
@@ -24,14 +25,6 @@ import io.cube.agent.CommonUtils;
 
 // TODO: Event redesign: This can be removed
 public class RRBase {
-
-	public static final String REQIDPATH = "/reqId";
-	public static final String COLLECTIONPATH = "/collection";
-	public static final String TIMESTAMPPATH = "/timestamp";
-	public static final String RUNTYPEPATH = "/runType";
-	public static final String CUSTOMERIDPATH = "/customerId";
-	public static final String APPPATH = "/app";
-
 
     /**
 	 * @param reqId
@@ -144,7 +137,7 @@ public class RRBase {
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
 		if ((getMimeType().equalsIgnoreCase(APPLICATION_JSON) || (bodyComparator instanceof JsonComparator))
 				&& ((JsonComparator) bodyComparator).shouldConsiderAsObj()) {
-			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODYPATH);
+			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODY_PATH);
 		} else {
 			// treat as simple string
 			template.getRule("/body").checkMatchStr(body, rhs.body, match, needDiff);
@@ -180,9 +173,5 @@ public class RRBase {
 	public static final String INSTANCEIDFIELD = "instanceid";
 	public static final String HDRPATHFIELD = "_path";
 	public static final String METAPATHFIELD = "apiPath"; // Used for responses
-
-	public static final String HDRPATH = "/hdr";
-	public static final String METAPATH = "/meta";
-	public static final String BODYPATH = "/body";
 
 }

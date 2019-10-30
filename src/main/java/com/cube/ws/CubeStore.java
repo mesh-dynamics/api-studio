@@ -7,6 +7,7 @@ import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
 import com.cube.dao.EventBuilder.InvalidEventException;
+import com.fasterxml.jackson.jaxrs.json.annotation.JSONP.Def;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -49,8 +50,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.UtilException;
 
 import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
 import static com.cube.dao.RRBase.*;
-import static com.cube.dao.Request.PATHPATH;
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
@@ -630,10 +631,11 @@ public class CubeStore {
 
 
     /**
-     * @param compositeEvent compositeEvent consists of both the request and response payload. They
-     * need to be specified as the fields reqPayloadStr and respPayloadStr in the json. If the request
-     * event is already present, response event is stored. If the request event is not present, both
-     * request and response events are stored.
+     * @param defaultEvent defaultEvent is a wrapper on top of Event to accomodate both request and
+     * response payload. While the request payload is sent as part of the Event object, response
+     * payload will be specified as the rawRespPayloadString or rawRespPayloadBinary depending on
+     * the type.If the request event is already present, response event is stored.
+     * If the request event is not present, both request and response events are stored.
      * @return
      * success - successful setting of default response for the request
      * fail - if storing request/response event fails
@@ -642,109 +644,101 @@ public class CubeStore {
     @POST
     @Path("event/setDefaultResponse")
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response setDefaultRespForEvent(String compositeEvent) {
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response setDefaultRespForEvent(DefaultEvent defaultEvent) {
 
-        if (compositeEvent == null) {
-            return Response.serverError().entity(
+        if (defaultEvent == null) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
                     "Invalid input!")).build();
         }
 
         try {
-            JsonObj jsonObj = new JsonObj(compositeEvent, jsonMapper);
-            if (storeReqAndRespEvent(jsonObj)) {
-                JSONObject apiResponse = new JSONObject();
-                apiResponse.put(Constants.STATUS, Constants.SUCCESS);
-
-                return Response.ok().entity(apiResponse).build();
+            if (storeReqAndRespEvent(defaultEvent)) {
+                return Response.ok().type(MediaType.APPLICATION_JSON)
+                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
             } else {
-                return Response.serverError().entity(
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.FAIL, Constants.STORE_EVENT_FAILED,
                         "Storing default response for event failed!")).build();
             }
 
         } catch (InvalidEventException e) {
-            return Response.serverError().entity(
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.INVALID_EVENT,
                     "Trying to store invalid request/response event : " + e.getMessage())).build();
         } catch (RuntimeException e) {
-            return Response.serverError().entity(
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.RUNTIME_EXCEPTION,
                     "Runtime exception occured. Check if the inputs are valid : " + e.getMessage()))
                 .build();
-        } catch (PathNotFoundException e) {
-            return Response.serverError().entity(
-                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                    "Invalid json : " + e.getMessage())).build();
         }
     }
 
-    private boolean storeReqAndRespEvent(JsonObj jsonObj)
-        throws InvalidEventException, PathNotFoundException {
-        String customerId = jsonObj.getValAsString(Constants.CUSTOMER_ID);
-        String app = jsonObj.getValAsString(Constants.APP);
-        EventType eventType = Event.EventType.valueOf(jsonObj.getValAsString(Constants.EVENT_TYPE));
-        String service = jsonObj.getValAsString(Constants.SERVICE);
-        String instanceId = jsonObj.getValAsString(Constants.INSTANCE_ID);
-        String apiPath = jsonObj.getValAsString(Constants.API_PATH);
-        String traceId = jsonObj.getValAsString(Constants.TRACE_ID);
-        String reqId = jsonObj.getValAsString(Constants.REQ_ID);
-        //TODO:Add support for binary payload
-        String reqPayload = jsonObj.getValAsString(Constants.REQ_PAYLOAD_STR);
-        String respPayload = jsonObj.getValAsString(Constants.RESP_PAYLOAD_STR);
+    private boolean storeReqAndRespEvent(DefaultEvent defaultEvent)
+        throws InvalidEventException {
+        Event reqEvent = defaultEvent.getEvent();
 
-        EventQuery reqQuery = new EventQuery.Builder(customerId, app, eventType)
-            .withService(service).withInstanceId(instanceId)
-            .withPaths(List.of(apiPath)).withTraceId(traceId)
-            .withReqId(reqId).withOffset(0).withLimit(1)
+        if (reqEvent == null || !reqEvent.validate()) {
+            LOGGER.debug(new ObjectMessage(
+                Map.of("message", "Invalid Request event!")));
+            throw new InvalidEventException();
+        }
+
+        EventQuery reqQuery = new EventQuery.Builder(reqEvent.customerId, reqEvent.app, reqEvent.eventType)
+            .withService(reqEvent.service).withInstanceId(reqEvent.instanceId)
+            .withPaths(List.of(reqEvent.apiPath)).withTraceId(reqEvent.traceId)
+            .withReqId(reqEvent.reqId).withOffset(0).withLimit(1)
             .build();
 
-        Optional<Event> reqEvent = rrstore.getEvents(reqQuery).getObjects().findFirst();
+        Optional<Event> storedReqEvent = rrstore.getEvents(reqQuery).getObjects().findFirst();
 
         //Store request event if not present.
-        if (reqEvent.isEmpty()) {
+        if (storedReqEvent.isEmpty()) {
             LOGGER.debug(new ObjectMessage(
                 Map.of("message", "Request Event not found. Storing request event",
-                    "type", eventType,
-                    "reqId", reqId,
-                    "path", apiPath)));
+                    "type", reqEvent.eventType,
+                    "reqId", reqEvent.reqId,
+                    "path", reqEvent.apiPath)));
 
-            EventBuilder eventBuilder = new EventBuilder(customerId, app,
-                service, instanceId, "NA",
-                traceId, RunType.Manual, Instant.now(),
-                reqId, apiPath, eventType);
-            eventBuilder.setRawPayloadString(reqPayload);
-            reqEvent = Optional.of(eventBuilder.createEvent());
+            EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
+                reqEvent.service, reqEvent.instanceId, "NA",
+                reqEvent.traceId, RunType.Manual, Instant.now(),
+                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType);
+            eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
+            storedReqEvent = Optional.of(eventBuilder.createEvent());
             //We cannot use storeEvent API as it checks for a running record/replay.
             //This API is standalone and should work without an active record/replay.
-            if (!rrstore.save(reqEvent.get())) {
+            if (!rrstore.save(storedReqEvent.get())) {
                 LOGGER.debug(new ObjectMessage(
                     Map.of("message", "Storing Request Event failed.",
-                        "type", eventType,
-                        "reqId", reqId,
-                        "path", apiPath)));
+                        "type", reqEvent.eventType,
+                        "reqId", reqEvent.reqId,
+                        "path", reqEvent.apiPath)));
 
                 return false;
             }
         }
 
         //Store default response
-        EventBuilder eventBuilder = new EventBuilder(customerId, app,
-            service, instanceId, "NA",
-            traceId, RunType.Manual, Instant.now(),
-            reqEvent.get().reqId, apiPath, Event.EventType.getResponseType(eventType));
-        eventBuilder.setRawPayloadString(respPayload);
+        EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
+            reqEvent.service, reqEvent.instanceId, "NA",
+            reqEvent.traceId, RunType.Manual, Instant.now(),
+            reqEvent.reqId, reqEvent.apiPath, Event.EventType.getResponseType(reqEvent.eventType));
+        eventBuilder.setRawPayloadString(defaultEvent.getRawRespPayloadString());
         //We cannot use storeEvent API as it checks for an active record/replay.
         //This API is standalone and should work without an active record/replay.
         if (!rrstore.save(eventBuilder.createEvent())) {
             LOGGER.debug(new ObjectMessage(
                 Map.of("message", "Storing Response Event failed.",
-                    "type", eventType,
-                    "reqId", reqId,
-                    "path", apiPath)));
+                    "type", reqEvent.eventType,
+                    "reqId", reqEvent.reqId,
+                    "path", reqEvent.apiPath)));
 
             return false;
         }
+
+        rrstore.commit();
 
         return true;
     }
@@ -1081,13 +1075,13 @@ public class CubeStore {
     static RequestComparator mspecForDrillDownQuery;
 
     {
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(HDRPATH + "/" + HDRPATHFIELD,
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH + "/" + HDRPATHFIELD,
             CompareTemplate.DataType.Str,
             CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
 

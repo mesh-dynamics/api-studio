@@ -1,10 +1,9 @@
 package com.cube.ws;
 
 import static com.cube.dao.RRBase.*;
-import static com.cube.dao.Request.*;
 
+import com.cube.utils.Constants;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -618,16 +617,16 @@ public class MockServiceHTTP {
 	private CompareTemplate reqTemplate = new CompareTemplate();
 
 	{
-        reqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-        reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.QUERY_PARAMS_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.FORM_PARAMS_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.REQ_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+        reqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspec = new TemplatedRequestComparator(reqTemplate, jsonMapper);
@@ -648,12 +647,12 @@ public class MockServiceHTTP {
 	private CompareTemplate defaultReqTemplate = new CompareTemplate();
 
 	{
-		defaultReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-		defaultReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonMapper);
