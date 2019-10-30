@@ -463,7 +463,7 @@ async function fetchTimelineData(app, userId, endDate) {
     let response, json;
     let edTemp = new Date(endDate.toISOString().split('T')[0] + " 00:00");
     edTemp.setDate(endDate.getDate() + 1);
-    let ed = edTemp.getFullYear() + '-' + (edTemp.getMonth() + 1) + '-' + edTemp.getDate();
+    let ed = edTemp.toISOString();
     let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&endDate=${ed}`;
     if (userId !== 'ALL') {
         url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&userId=${user.username}&endDate=${ed}`;

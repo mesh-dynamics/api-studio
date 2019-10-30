@@ -6,6 +6,10 @@ import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
 import generator from '../../utils/generator/json-path-generator';
+import {connect} from "react-redux";
+import {cubeActions} from "../../actions";
+import {Link} from "react-router-dom";
+import Modal from "react-bootstrap/lib/Modal";
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -41,9 +45,16 @@ class ShareableLink extends Component {
             selectedResponseMatchType: "All",
             selectedResolutionType: "All",
             selectedDiffOperationType: "All",
+            showNewGolden: false,
             app: "",
-            templateVersion: ""
-        }
+            templateVersion: "",
+            newTemplateVerInfo: null,
+            golden: null,
+            apiPath: "",
+            service: "",
+            replayId: null,
+            recordingId: null
+        };
         this.handleChange = this.handleChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
 
@@ -51,7 +62,35 @@ class ShareableLink extends Component {
     }
 
     componentDidMount() {
-        this.fetchReplayList();
+        const {dispatch} = this.props;
+        let urlParameters = _.chain(window.location.search)
+            .replace('?', '')
+            .split('&')
+            .map(_.partial(_.split, _, '=', 2))
+            .fromPairs()
+            .value();
+        const apiPath = urlParameters["apiPath"] ? urlParameters["apiPath"]  : "%2A",
+            replayId = urlParameters["replayId"],
+            app = urlParameters["app"],
+            recordingId = urlParameters["recordingId"],
+            currentTemplateVer = urlParameters["currentTemplateVer"],
+            service = urlParameters["service"];
+
+        dispatch(cubeActions.setSelectedApp(app));
+        this.setState({
+            apiPath: apiPath,
+            replayId: replayId,
+            service: service,
+            recordingId: recordingId,
+            currentTemplateVer: currentTemplateVer,
+            app: app
+        });
+        setTimeout(() => {
+            dispatch(cubeActions.getCollectionUpdateOperationSet(app));
+            dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
+            dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            this.fetchReplayList();
+        });
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -61,8 +100,33 @@ class ShareableLink extends Component {
         this.fetchReplayList();
     }
 
-    componentWillUnmount() {
+    componentWillReceiveProps(nextProps, prevState) {
+        let { cube, dispatch } = nextProps;
+        if (cube && (cube.goldenInProg || cube.newGoldenId)) {
+            this.setState({ showNewGolden: true });
+        }
     }
+
+    componentWillUnmount() {
+        let { dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+    }
+
+    handleClose = () => {
+        const { history, dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+        setTimeout(() => {
+            history.push("/test_config");
+        })
+    }
+
+    handleCloseDone = () => {
+        let { dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+    };
 
     handleChange(e) {
         this.setState({ filterPath: e.target.value });
@@ -81,14 +145,7 @@ class ShareableLink extends Component {
     }
 
     async fetchReplayList() {
-        let urlParameters = _.chain(window.location.search)
-            .replace('?', '')
-            .split('&')
-            .map(_.partial(_.split, _, '=', 2))
-            .fromPairs()
-            .value();
-        const apiPath = urlParameters["apiPath"] ? urlParameters["apiPath"]  : "%2A",
-            replayId = urlParameters["replayId"];
+        const {apiPath, replayId} = this.state;
         if(!replayId) throw new Error("replayId is required");
         let response, json, { resultsFetched } = this.state;
         let user = JSON.parse(localStorage.getItem('user'));
@@ -112,7 +169,7 @@ class ShareableLink extends Component {
                     totalRequests: dataList.numFound,
                     resultsFetched: this.state.resultsFetched + dataList.res.length,
                     app: dataList.app,
-                    templateVersion: dataList.templateVersion
+                    templateVersion: dataList.templateVersion,
                 });
             } else {
                 throw new Error("Response not ok fetchTimeline");
@@ -268,6 +325,7 @@ class ShareableLink extends Component {
     render() {
         let { diffLayoutData, selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType } = this.state;
         let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], resolutionTypes = [], diffOperationTypes = [];
+        const {cube} = this.props;
 
         diffLayoutData.filter(function (eachItem) {
             apiPaths.push({value: eachItem.path, count: 0});
@@ -493,7 +551,14 @@ class ShareableLink extends Component {
         });
 
         return (
-            <div style={{ padding: "18px", marginTop: "36px" }}>
+            <div className="content-wrapper">
+                <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
+                    <Link to={"/"}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                    <span className="link pull-right" onClick={this.updateGolden}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-check-square font-15"></i>&nbsp;UPDATE OPERATIONS</span>
+                    <Link to="/review_golden_updates" className="hidden">
+                        <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
+                    </Link>
+                </div>
                 <div >
                     <div style={{ marginBottom: "18px" }}>
                         <div style={{ display: "inline-block" }}>
@@ -569,10 +634,69 @@ class ShareableLink extends Component {
                 <div>
                     {jsxContent}
                 </div>
+
+                <Modal show={this.state.showNewGolden}>
+                    <Modal.Header>
+                        <Modal.Title>Golden Update</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p className={cube.newGoldenId ? "" : "hidden"}>Golden ID: {cube.newGoldenId}</p>
+                        <p className={cube.newGoldenId ? "hidden" : ""}>Updating Operations...</p>
+                    </Modal.Body>
+                    <Modal.Footer className={cube.newGoldenId ? "" : "hidden"}>
+                        <div>
+                            <span onClick={this.handleClose} className="cube-btn">Go TO Test Config</span>&nbsp;&nbsp;
+                            <span onClick={this.handleCloseDone} className="cube-btn">Done</span>
+                        </div>
+                    </Modal.Footer>
+                </Modal>
             </div>
 
         );
     }
+
+    updateGolden = () => {
+        const { cube, dispatch } = this.props;
+        let user = JSON.parse(localStorage.getItem('user'));
+        let gObj = {
+            "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
+            "service": this.state.service,
+            "path": this.state.path,
+            "operationSet": cube.newOperationSet,
+            "customer": user.customer_name,
+            "app": this.state.app
+        };
+
+        let keyObjForRule = {
+            customerId: user.customer_name,
+            appId: this.state.app,
+            serviceId: this.state.service,
+            path: this.state.path,
+            version: this.state.currentTemplateVer,
+            reqOrResp: "Response"
+        };
+
+        const rObj = {};
+        const rObjKey = JSON.stringify(keyObjForRule);
+        for (const op of cube.operations) {
+
+        }
+        rObj[rObjKey] = { operations: cube.operations };
+
+        dispatch(cubeActions.updateRecordingOperationSet(gObj, this.state.replayId,
+            cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'],
+            this.state.recordingId, this.state.app));
+        dispatch(cubeActions.updateTemplateOperationSet(cube.newTemplateVerInfo['ID'], rObj));
+    };
 }
 
-export default ShareableLink;
+function mapStateToProps(state) {
+    const cube = state.cube;
+    return {
+        cube
+    }
+}
+
+const connectedShareableLink = connect(mapStateToProps)(ShareableLink);
+
+export default connectedShareableLink;
