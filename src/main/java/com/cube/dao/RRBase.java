@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import com.cube.utils.Constants;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -15,7 +16,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import static com.cube.utils.Constants.BODY_PATH;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.cube.core.*;
@@ -137,7 +137,7 @@ public class RRBase {
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
 		if ((getMimeType().equalsIgnoreCase(APPLICATION_JSON) || (bodyComparator instanceof JsonComparator))
 				&& ((JsonComparator) bodyComparator).shouldConsiderAsObj()) {
-			match.merge(bodyComparator.compare(body, rhs.body), needDiff, BODY_PATH);
+			match.merge(bodyComparator.compare(body, rhs.body), needDiff, Constants.BODY_PATH);
 		} else {
 			// treat as simple string
 			template.getRule("/body").checkMatchStr(body, rhs.body, match, needDiff);
