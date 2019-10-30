@@ -93,7 +93,7 @@ public class Utils {
 
     public static Optional<Boolean> strToBool(String b) {
         try {
-            return Optional.of(BooleanUtils.toBoolean(b));
+            return Optional.ofNullable(b).map(BooleanUtils::toBoolean);
         } catch (Exception e) {
             return Optional.empty();
         }
