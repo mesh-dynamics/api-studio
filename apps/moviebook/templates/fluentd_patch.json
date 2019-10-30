@@ -1,0 +1,21 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value" : {
+      "name" : "fluentd-moviebook-conf-{{namespace}}",
+      "mountPath": "/fluentd/etc/conf.d/fluent-moviebook-{{namespace}}.conf",
+      "subPath": "fluent-moviebook-{{namespace}}.conf"
+      }
+  },
+  {
+  "op": "add",
+  "path": "/spec/template/spec/volumes/-",
+  "value" : {
+    "name" : "fluentd-moviebook-conf-{{namespace}}",
+    "configMap" : {
+      "name" : "fluentd-moviebook-conf-{{namespace}}"
+      }
+    }
+  }
+]

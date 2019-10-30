@@ -25,7 +25,8 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
-	kubectl apply -f $APP_DIR/kubernetes
+	kubectl apply -f $APP_DIR/kubernetes || :
+	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
 	#Check if route exists
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
@@ -69,7 +70,6 @@ start_record() {
 
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 	kubectl apply -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
-	kubectl patch daemonsets fluentd --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.yaml)" -n logging --record
 
 	RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
@@ -98,14 +98,10 @@ stop_record() {
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
-	# TODO: move to  'cleanup' 
-	#kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
-	#kubectl rollout undo daemonset -n logging fluentd # TODO: change this to use a remove patch
 }
 
 replay_setup() {
 	kubectl apply -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
-	kubectl patch daemonsets fluentd --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.yaml)" -n logging --record
 	kubectl apply -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
 	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
@@ -172,9 +168,6 @@ replay() {
 
 stop_replay() {
 	kubectl delete -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
-	# TODO: move to 'cleanup'
-	#kubectl delete -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml 
-	#kubectl rollout undo daemonset -n logging fluentd
 	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
 		kubectl delete -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
 	fi
@@ -228,7 +221,20 @@ get_environment() {
 }
 
 clean() {
-	kubectl delete namespace $NAMESPACE
+	kubectl delete all --all -n $NAMESPACE
+	kubectl delete virtualservices.networking.istio.io --all -n $NAMESPACE
+	kubectl delete envoyfilters.networking.istio.io --all -n $NAMESPACE
+	kubectl delete destinationrules.networking.istio.io --all -n $NAMESPACE
+	kubectl delete gateways.networking.istio.io --all -n $NAMESPACE
+	kubectl delete serviceentries.networking.istio.io --all -n $NAMESPACE
+	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-moviebook-conf-$NAMESPACE/{print NR-1}")
+	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-moviebook-conf-$NAMESPACE/{print NR-1}")
+	sed -e "s/add/remove/g" $APP_DIR/kubernetes/fluentd_patch.json > $APP_DIR/kubernetes/fluentd_patch_remove.json
+	sed -i -e "s:/spec/template/spec/containers/0/volumeMounts/-:/spec/template/spec/containers/0/volumeMounts/$volumeMountsindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
+	sed -i -e "s:/spec/template/spec/volumes/-:/spec/template/spec/volumes/$volumeindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
+	rm $APP_DIR/kubernetes/fluentd_patch_remove.json-e
+	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch_remove.json)" -n logging --record
+
 }
 main () {
 	# To debug this script, run it with TRACE=1 in the enviornment

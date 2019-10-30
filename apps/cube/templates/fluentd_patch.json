@@ -1,0 +1,21 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value" : {
+      "name" : "fluentd-cube-conf-{{namespace}}",
+      "mountPath": "/fluentd/etc/conf.d/fluent-cube-{{namespace}}.conf",
+      "subPath": "fluent-cube-{{namespace}}.conf"
+      }
+  },
+  {
+  "op": "add",
+  "path": "/spec/template/spec/volumes/-",
+  "value" : {
+    "name" : "fluentd-cube-conf-{{namespace}}",
+    "configMap" : {
+      "name" : "fluentd-cube-conf-{{namespace}}"
+      }
+    }
+  }
+]
