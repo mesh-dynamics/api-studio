@@ -62,38 +62,38 @@ public class Utils {
             ALLOWED_HEADERS = (header) -> !DISALLOWED_HEADERS_SET.contains(header);
 
 	/**
-	 * @param s
+	 * @param intStr
 	 * @return
 	 */
-	public static Optional<Integer> strToInt(String s) {
+	public static Optional<Integer> strToInt(String intStr) {
 		try {
-			return Optional.ofNullable(Integer.valueOf(s));
+			return Optional.ofNullable(Integer.valueOf(intStr));
 		} catch (Exception e) {
 			return Optional.empty();
 		}
 	}
 
 
-	public static Optional<Double> strToDouble(String s) {
+	public static Optional<Double> strToDouble(String dblStr) {
 		try {
-			return Optional.ofNullable(Double.valueOf(s));
+			return Optional.ofNullable(Double.valueOf(dblStr));
 		} catch (Exception e) {
 			return Optional.empty();
 		}
 	}
 
 
-    public static Optional<Long> strToLong(String s) {
+    public static Optional<Long> strToLong(String longStr) {
         try {
-            return Optional.ofNullable(Long.valueOf(s));
+            return Optional.ofNullable(Long.valueOf(longStr));
         } catch (Exception e) {
             return Optional.empty();
         }
     }
 
-    public static Optional<Boolean> strToBool(String b) {
+    public static Optional<Boolean> strToBool(String boolStr) {
         try {
-            return Optional.ofNullable(b).map(BooleanUtils::toBoolean);
+            return Optional.ofNullable(boolStr).map(BooleanUtils::toBoolean);
         } catch (Exception e) {
             return Optional.empty();
         }
