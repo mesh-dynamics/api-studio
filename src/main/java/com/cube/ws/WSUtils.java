@@ -9,12 +9,7 @@ package com.cube.ws;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.json.JSONObject;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.dao.ReqRespStore;
 
