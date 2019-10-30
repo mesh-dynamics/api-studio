@@ -107,7 +107,7 @@
                 {"op":"noop",       "path":"/body/id",      "value":0,          "resolution":"ERR_ValTypeMismatch"},
                 {"op":"replace",    "path":"/body/year",    "value":1000,       "fromValue":1595,"resolution":"ERR_ValMismatch"},
                 {"op":"replace",    "path":"/body/type",    "value":"softcopy",     "fromValue":"paperback","resolution":"OK_OptionalMismatch"},
-                {"op":"replace",    "path":"/body/pages",   "value":3.14,       "fromValue":200,"resolution":"ERR_NewField"},
+                {"op":"replace",    "path":"/body/pages",   "value":3.14,       "fromValue":200,"resolution":"ERR_ValMismatch"},
                 {"op":"replace",    "path":"/",             "value":"testc1",       "fromValue":"testc1","resolution":"OK_DefaultCT"},
                 {"op":"replace",    "path":"/",             "value":"Optional[2019-01-04T09:09:00Z]",       "fromValue":"Optional[2019-01-04T09:09:00Z]","resolution":"OK_DefaultCT"},
                 {"op":"replace",    "path":"/",             "value":"Optional[Record]",     "fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
@@ -124,7 +124,7 @@
         "rules": [
             { "path": "/body/MIRest status",  "dataType": "Str",  "presenceType": "Optional", "comparisonType": "Equal",  "customization": "" },
             { "path": "/body/id",             "dataType": "Int",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
-            { "path": "/body/author",         "dataType": "Str",  "presenceType": "Default", "comparisonType":  "Ignore",  "customization": "" },
+            { "path": "/body/author",         "dataType": "Str",  "presenceType": "Optional", "comparisonType":  "Ignore",  "customization": "" },
             { "path": "/body/year",           "dataType": "Int",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" }
         ],
         "output": {
@@ -133,7 +133,7 @@
             "diffs":[
                 {"op":"replace",    "path":"/","value":"72471111-e096-4494-942e-5fa942c07e90","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
                 {"op":"remove",     "path":"/body/MIRest status","value":"MovieInfo is healthy","resolution":"OK_Optional"},
-                {"op":"add",        "path":"/body/id","value":0,"resolution":"ERR_NewField"},
+                {"op":"add",        "path":"/body/id","value":0,"resolution":"ERR_RequiredGolden"},
                 {"op":"add",        "path":"/body/author","value":"William Shakespeare","resolution":"OK_Ignore"},
                 {"op":"add",        "path":"/body/year","value":1595,"resolution":"OK_Ignore"},
                 {"op":"add",        "path":"/body/type","value":"paperback","resolution":"OK_DefaultCT"},
