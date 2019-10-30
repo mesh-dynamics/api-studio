@@ -67,7 +67,7 @@ public class Utils {
 	 */
 	public static Optional<Integer> strToInt(String intStr) {
 		try {
-			return Optional.ofNullable(Integer.valueOf(intStr));
+			return Optional.ofNullable(intStr).map(Integer::valueOf);
 		} catch (Exception e) {
 			return Optional.empty();
 		}
@@ -76,7 +76,7 @@ public class Utils {
 
 	public static Optional<Double> strToDouble(String dblStr) {
 		try {
-			return Optional.ofNullable(Double.valueOf(dblStr));
+			return Optional.ofNullable(dblStr).map(Double::valueOf);
 		} catch (Exception e) {
 			return Optional.empty();
 		}
@@ -85,7 +85,7 @@ public class Utils {
 
     public static Optional<Long> strToLong(String longStr) {
         try {
-            return Optional.ofNullable(Long.valueOf(longStr));
+            return Optional.ofNullable(longStr).map(Long::valueOf);
         } catch (Exception e) {
             return Optional.empty();
         }
