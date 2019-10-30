@@ -290,19 +290,16 @@ class ViewSelectedTestConfig extends React.Component {
                 this.doAnalysis = true;
                 this.statusInterval = setInterval(checkStatus, 1000);
             }).catch((error) => {
-                if (error.response.data && error.response.data['Force Complete']) {
-                    this.setState({fcId: error.response.data['Force Complete'], show: false});
-                } else if (error.response.status == 409) {
-                    let regex = /Replay ongoing for customer (.+?), app (.+?), instance (.+?), with collection name (.+)\./g;
-                    const temp = regex.exec(error.response.data);
-                    if (temp && temp.length) {
-                        this.setState({fcId: temp[(temp.length - 1)], show: false});
+                if(error.response.data) {
+                    if (error.response.data['replayId'] !== "None") {
+                        this.setState({fcId: error.response.data['replayId'], show: false});
                     } else {
-                        alert(error.response.data);
+                        this.setState({show: false});
+                        alert(error.response.data['message']);
                     }
                 } else {
                     this.setState({show: false});
-                    alert(error.response.data);
+                    alert(error.response.statusText);
                 }
             });
         }
