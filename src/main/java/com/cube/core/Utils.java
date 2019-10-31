@@ -3,7 +3,9 @@
  */
 package com.cube.core;
 
+import com.cube.dao.Event;
 import com.cube.utils.Constants;
+import com.cube.ws.Config;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -192,7 +194,7 @@ public class Utils {
     {
         templateSet.templates.stream().forEach(compareTemplateVersioned -> {
             TemplateKey key =
-                new TemplateKey(Optional.of(templateSet.version), templateSet.customer, templateSet.app,
+                new TemplateKey(templateSet.version, templateSet.customer, templateSet.app,
                     compareTemplateVersioned.service,
                     compareTemplateVersioned.prefixpath, compareTemplateVersioned.type);
             requestComparatorCache.invalidateKey(key);
@@ -214,7 +216,7 @@ public class Utils {
             String version = m.group(5);
             String type = m.group(6);
             //System.out.println(customerId + " " + appId + " " + service + " " + path + " " + version + " " + type);
-            templateKey = new TemplateKey(Optional.of(version) , customerId, appId, service, path, ("Request".equalsIgnoreCase(type) ?
+            templateKey = new TemplateKey(version, customerId, appId, service, path, ("Request".equalsIgnoreCase(type) ?
                 TemplateKey.Type.Request : TemplateKey.Type.Response));
             toReturn = Optional.of(templateKey);
         } else {
@@ -234,6 +236,21 @@ public class Utils {
         URIBuilder uriBuilder = new URIBuilder(baseUrl);
         return uriBuilder.setPath(uriBuilder.getPath() + "/" + suffix)
             .build().normalize().toString();
+    }
+
+    public static CompareTemplate getCompareTemplate(Config config, Event event, String templateVersion) {
+        TemplateKey tkey =
+            new TemplateKey(templateVersion, event.customerId,
+                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+
+        CompareTemplate compareTemplate;
+        if (event.eventType.equals(Event.EventType.JavaRequest)) {
+            compareTemplate = config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
+        } else{
+            compareTemplate =
+                config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
+        }
+        return compareTemplate;
     }
 
     public static String buildSuccessResponse(String status, JSONObject data) {

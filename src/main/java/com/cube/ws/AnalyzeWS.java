@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -265,9 +266,9 @@ public class AnalyzeWS {
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
             TemplateKey key;
             if ("request".equalsIgnoreCase(type)) {
-                key = new TemplateKey(Optional.empty(), customerId, appId, serviceName, path, TemplateKey.Type.Request);
+                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path, TemplateKey.Type.Request);
             } else if ("response".equalsIgnoreCase(type)) {
-                key = new TemplateKey(Optional.of("DEFAULT"), customerId, appId, serviceName, path,
+                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path,
                     TemplateKey.Type.Response);
             } else {
                 return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
@@ -348,7 +349,7 @@ public class AnalyzeWS {
                 .entity("{\"Error\": \"jsonpath is mssing\"}").build();
         }
 
-        TemplateKey tkey = new TemplateKey(Optional.of(templateVersion), customerId, appId, service, apipath.get(),
+        TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType);
 
         Optional<TemplateEntry> rule = rrstore.getCompareTemplate(tkey)

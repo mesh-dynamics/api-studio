@@ -6,11 +6,9 @@
 
 package com.cube.ws;
 
-import java.util.Optional;
-
-import javax.ws.rs.core.Response;
-
 import com.cube.dao.ReqRespStore;
+import java.util.Optional;
+import javax.ws.rs.core.Response;
 
 /*
  * Created by IntelliJ IDEA.

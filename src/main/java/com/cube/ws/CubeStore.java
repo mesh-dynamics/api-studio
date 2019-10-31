@@ -136,7 +136,6 @@ public class CubeStore {
 
         Optional<String> rid = Optional.ofNullable(meta.getFirst("c-request-id"));
         Optional<String> type = Optional.ofNullable(meta.getFirst("type"));
-        Optional<String> inpcollection = Optional.ofNullable(meta.getFirst("collection"));
         // TODO: the following can pass replayid to cubestore but currently requests don't match in the mock
         // since we don't have the ability to ignore certain fields (in header and body)
         //if (inpcollection.isEmpty()) {
@@ -160,7 +159,15 @@ public class CubeStore {
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
-        Optional<String> collection = getCurrentCollectionIfEmpty(inpcollection, customerid, app, instanceid);
+        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerid, app, instanceid);
+        if (recordOrReplay.isEmpty()) {
+            // Dropping if there is no current recording.
+            LOGGER.info(String.format("Dropping store for type %s, reqId %s since no current recording"
+                , type.orElse("<empty>"), rid.orElse("<empty>")));
+            return Optional.of("No current record/replay!");
+        }
+
+        Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 
         if (collection.isEmpty()) {
             // Dropping if collection is empty, i.e. recording is not started
@@ -183,11 +190,10 @@ public class CubeStore {
 
                     // create Event object from Request
                     // fetch the template version, create template key and get a request comparator
-                    Optional<String> templateVersion = rrstore.getCurrentRecordOrReplay(customerid, app, instanceid)
-                        .flatMap(RecordOrReplay::getTemplateVersion);
+                    String templateVersion = recordOrReplay.get().getTemplateVersion();
                     if(!(customerid.isPresent() && app.isPresent() && service.isPresent())) {
-                        LOGGER.error("customer id, app or service not present");
-                        return Optional.of("customer id, app or service not present");
+                        LOGGER.error("customer id, app, service not present");
+                        return Optional.of("customer id, app, service not present");
                     }
 
                     TemplateKey tkey =
@@ -516,6 +522,11 @@ public class CubeStore {
         Optional<RecordOrReplay> recordOrReplay =
             rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
                 Optional.of(event.app), Optional.of(event.instanceId));
+
+        if (recordOrReplay.isEmpty()) {
+            return Optional.of("No current record/replay!");
+        }
+
         collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
@@ -526,7 +537,8 @@ public class CubeStore {
         if (event.isRequestType()) {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
-            event.parseAndSetKey(config, getCompareTemplate(event, recordOrReplay));
+            event.parseAndSetKey(config,
+                Utils.getCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
         }
 
         boolean saveResult = rrstore.save(event);
@@ -535,21 +547,6 @@ public class CubeStore {
         }
 
         return Optional.empty();
-    }
-
-    private CompareTemplate getCompareTemplate(Event event, Optional<RecordOrReplay> recordOrReplay) {
-        TemplateKey tkey =
-            new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-
-        CompareTemplate compareTemplate;
-        if (event.eventType.equals(Event.EventType.JavaRequest)) {
-            compareTemplate = config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
-        } else{
-            compareTemplate =
-                config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
-        }
-        return compareTemplate;
     }
 
     @POST
@@ -630,13 +627,14 @@ public class CubeStore {
     /**
      * @param defaultEvent defaultEvent is a wrapper on top of Event to accomodate both request and
      * response payload. While the request payload is sent as part of the Event object, response
-     * payload will be specified as the rawRespPayloadString or rawRespPayloadBinary depending on
-     * the type.If the request event is already present, response event is stored.
+     * payload will be specified as the rawRespPayloadString or rawRespPayloadBinary depending on the
+     * type.
+     *
+     * If the request event is already present, response event is stored.
      * If the request event is not present, both request and response events are stored.
-     * @return
-     * success - successful setting of default response for the request
-     * fail - if storing request/response event fails
-     * error - if an exception occurs.
+     *
+     * @return success - successful setting of default response for the request fail - if storing
+     * request/response event fails error - if an exception occurs.
      */
     @POST
     @Path("event/setDefaultResponse")
@@ -651,6 +649,7 @@ public class CubeStore {
         }
 
         try {
+
             if (storeReqAndRespEvent(defaultEvent)) {
                 return Response.ok().type(MediaType.APPLICATION_JSON)
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
@@ -682,7 +681,8 @@ public class CubeStore {
             throw new InvalidEventException();
         }
 
-        EventQuery reqQuery = new EventQuery.Builder(reqEvent.customerId, reqEvent.app, reqEvent.eventType)
+        EventQuery reqQuery = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
+            reqEvent.eventType)
             .withService(reqEvent.service).withInstanceId(reqEvent.instanceId)
             .withPaths(List.of(reqEvent.apiPath)).withTraceId(reqEvent.traceId)
             .withReqId(reqEvent.reqId).withOffset(0).withLimit(1)
@@ -703,10 +703,13 @@ public class CubeStore {
                 reqEvent.traceId, RunType.Manual, Instant.now(),
                 reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType);
             eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
-            storedReqEvent = Optional.of(eventBuilder.createEvent());
+            Event defaultReqEvent = eventBuilder.createEvent();
+            defaultReqEvent.parseAndSetKey(config, Utils.
+                getCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+
             //We cannot use storeEvent API as it checks for a running record/replay.
             //This API is standalone and should work without an active record/replay.
-            if (!rrstore.save(storedReqEvent.get())) {
+            if (!rrstore.save(defaultReqEvent)) {
                 LOGGER.debug(new ObjectMessage(
                     Map.of("message", "Storing Request Event failed.",
                         "type", reqEvent.eventType,
@@ -723,9 +726,13 @@ public class CubeStore {
             reqEvent.traceId, RunType.Manual, Instant.now(),
             reqEvent.reqId, reqEvent.apiPath, Event.EventType.getResponseType(reqEvent.eventType));
         eventBuilder.setRawPayloadString(defaultEvent.getRawRespPayloadString());
+        Event defaultRespEvent = eventBuilder.createEvent();
+        defaultRespEvent.parseAndSetKey(config,
+            Utils.getCompareTemplate(config, defaultRespEvent, Constants.DEFAULT_TEMPLATE_VER));
+
         //We cannot use storeEvent API as it checks for an active record/replay.
         //This API is standalone and should work without an active record/replay.
-        if (!rrstore.save(eventBuilder.createEvent())) {
+        if (!rrstore.save(defaultRespEvent)) {
             LOGGER.debug(new ObjectMessage(
                 Map.of("message", "Storing Response Event failed.",
                     "type", reqEvent.eventType,
@@ -917,7 +924,7 @@ public class CubeStore {
     @Path("/warmupcache")
     public Response warmUpCache(@Context UriInfo uriInfo) {
         try {
-            TemplateKey key = new TemplateKey(Optional.empty(), "ravivj", "movieinfo"
+            TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", TemplateKey.Type.Response);
             ResponseComparator comparator = this.config.responseComparatorCache.getResponseComparator(key);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());

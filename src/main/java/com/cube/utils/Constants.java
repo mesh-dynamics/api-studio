@@ -3,6 +3,7 @@ package com.cube.utils;
 public class Constants {
     public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
     public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
+    public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
     //API RESPONSE STRINGS
     public static final String STATUS = "status";

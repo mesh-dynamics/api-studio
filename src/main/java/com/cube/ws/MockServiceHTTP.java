@@ -141,22 +141,29 @@ public class MockServiceHTTP {
     }
 
     private boolean setFunctionPayloadKeyAndCollection(Event event) {
-	    if (event!= null && event.eventType.equals(Event.EventType.JavaRequest)) {
-            Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
-            Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
+        if (event != null && event.eventType.equals(Event.EventType.JavaRequest)) {
+            Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(
+                event.customerId, event.app, event.instanceId);
+            Optional<String> collection = recordOrReplay
+                .flatMap(ReqRespStore.RecordOrReplay::getCollection);
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
                 event.setCollection(collection.get());
-                event.parseAndSetKey(config, getFunctionCompareTemplate(event, recordOrReplay));
+                event.parseAndSetKey(config, Utils
+                    .getCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
                 return true;
             } else {
-                LOGGER.error(new ObjectMessage(Map.of("reason", "Collection not found" , "customerId",
-                    event.customerId, "app", event.app, "instanceId", event.instanceId, "trace_id" , event.traceId)));
+                LOGGER
+                    .error(new ObjectMessage(Map.of("reason", "Collection not found", "customerId",
+                        event.customerId, "app", event.app, "instanceId", event.instanceId,
+                        "trace_id", event.traceId)));
                 return false;
             }
         } else {
-            LOGGER.error(new ObjectMessage(Map.of("reason", "Invalid event - either event is null, or some required field missing, or both binary " +
-                "and string payloads set")));
+            LOGGER.error(new ObjectMessage(Map.of("reason",
+                "Invalid event - either event is null, or some required field missing, or both binary "
+                    +
+                    "and string payloads set")));
             return false;
         }
     }
@@ -173,13 +180,6 @@ public class MockServiceHTTP {
             .withCollection(event.getCollection()).withPayloadKey(event.payloadKey)
             .withOffset(offset).withLimit(limit).withSortOrderAsc(isSortOrderAsc)
             .build();
-    }
-
-    private CompareTemplate getFunctionCompareTemplate(Event event, Optional<ReqRespStore.RecordOrReplay> recordOrReplay) {
-        TemplateKey tkey =
-            new TemplateKey(recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getTemplateVersion), event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-        return config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
     }
 
     @POST
@@ -365,7 +365,7 @@ public class MockServiceHTTP {
         Optional<String> templateVersion =
             recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> Optional.of(replay.templateVersion)));
 
-	    TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
+	    TemplateKey key = new TemplateKey(templateVersion.get(), customerid, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
@@ -455,8 +455,7 @@ public class MockServiceHTTP {
             Optional.of(customerid),
             Optional.of(app));
 
-        Optional<String> templateVersion =
-            recordOrReplay.flatMap(rr -> rr.replay.map(replay -> replay.templateVersion));
+        String templateVersion = recordOrReplay.get().getTemplateVersion();
 
         TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
         RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
