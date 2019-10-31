@@ -33,7 +33,9 @@ public class MovieRentalRest {
 	static ListMoviesCache lmc;
 	static JaegerTracer tracer;
 	static Config config;
-	
+
+	private static String twentykReviews ="";
+
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
 		BasicConfigurator.configure();
@@ -53,6 +55,15 @@ public class MovieRentalRest {
 			LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
 		} finally {
 		  scope.span().finish();
+		}
+
+		//cooked up reviews
+		for (int i=0; i < 20000; i++) {
+			// reviewer 1:
+			twentykReviews += ", {";
+			twentykReviews += "  \"reviewer\": \"Reviewer" + i + "\",";
+			twentykReviews += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
+			twentykReviews += "}";
 		}
 	}
 	
@@ -235,6 +246,51 @@ public class MovieRentalRest {
 			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
     return Response.ok().type(MediaType.APPLICATION_JSON).entity(dues.toString()).build();
+	}
+
+	@Path("/reviewslist")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response listReviews (@QueryParam("count") Integer reviewsCount) {
+		long starttime = System.currentTimeMillis();
+		String reviews = "";
+
+		String reviewResult = "{";
+		reviewResult += "\"id\": \"" + "69" + "\",";
+		reviewResult += "\"reviews\": [";
+		// reviewer 1:
+		reviewResult += "{";
+		reviewResult += "  \"reviewer\": \"Reviewer1\",";
+		reviewResult += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
+		reviewResult += "}";
+
+		if (reviewsCount < 20000) {
+			//It should be a cooked up reviews
+			for (int i=0; i < reviewsCount; i++) {
+				// reviewer 1:
+				reviews += ", {";
+				reviews += "  \"reviewer\": \"Reviewer" + i + "\",";
+				reviews += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
+				reviews += "}";
+			}
+			reviewResult += reviews;
+		} else {
+				int howmany20ks = reviewsCount / 20000;
+				if (howmany20ks > 0) {
+					for (int i =0; i < howmany20ks; i++) {
+						reviews += twentykReviews;
+					}
+					reviewResult +=reviews;
+				}
+		}
+
+		reviewResult += "]";
+		reviewResult += "}";
+		JSONObject result = new JSONObject(reviewResult);
+		long endtime = System.currentTimeMillis();
+		LOGGER.info("Time took to construct review response (in ms) :" + (endtime-starttime));
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
+
 	}
 	
 	/*
