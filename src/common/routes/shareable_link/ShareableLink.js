@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb } from 'react-bootstrap';
+import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label } from 'react-bootstrap';
 import _ from 'lodash';
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
@@ -568,30 +568,9 @@ class ShareableLink extends Component {
                     </Link>
                 </div>
                 <div >
-                    <Breadcrumb style={{}}>
-                        <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
-                        <Breadcrumb.Item href="javascript:void(0);">
-                            <DropdownButton title="Services" id="dropdown-size-medium">
-                                <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
-                                    All
-                                </MenuItem>
-                                <MenuItem divider />
-                                {[]}
-                            </DropdownButton>
-                        </Breadcrumb.Item>
-                        <Breadcrumb.Item active>
-                            <DropdownButton title="API Path" id="dropdown-size-medium">
-                                <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
-                                    <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                </MenuItem>
-                                <MenuItem divider />
-                                {apiPathMenuItems}
-                            </DropdownButton>
-                        </Breadcrumb.Item>
-                    </Breadcrumb>
                     <div style={{ marginBottom: "18px" }}>
                         <div style={{ display: "inline-block" }}>
-                            {/* <div style={{ paddingRight: "9px", display: "inline-block" }}>
+                            <div style={{ paddingRight: "9px", display: "inline-block" }}>
                                 <DropdownButton title="API Path" id="dropdown-size-medium">
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
                                         <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
@@ -599,7 +578,7 @@ class ShareableLink extends Component {
                                     <MenuItem divider />
                                     {apiPathMenuItems}
                                 </DropdownButton>
-                            </div> */}
+                            </div>
                             <div style={{ paddingRight: "9px", display: "inline-block" }}>
                                 <DropdownButton title="Request Match Type" id="dropdown-size-medium">
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", "All")}>
@@ -639,7 +618,12 @@ class ShareableLink extends Component {
                         </div>
                         <div style={{ display: "inline-block" }}>
                             <FormGroup>
-                                
+                                <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders">Request Headers</Checkbox>
+                                <Checkbox inline onChange={this.toggleMessageContents} value="requestParams">Request Params</Checkbox>
+                                <Checkbox inline onChange={this.toggleMessageContents} value="requestBody">Request Body</Checkbox>
+                                <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
+                                <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
+                                <Checkbox inline >Marked for golden update</Checkbox>
                             </FormGroup>
                         </div>
                     </div>
@@ -653,12 +637,6 @@ class ShareableLink extends Component {
                             id="filterPathInputId"
                             inputRef={ref => { this.input = ref; }}
                         />
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders">Request Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestParams">Request Params</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody">Request Body</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
-                        <Checkbox inline >Marked for golden update</Checkbox>
                     </FormGroup>
                 </div>
                 <div>
