@@ -150,7 +150,7 @@ public class MockServiceHTTP {
             if (collection.isPresent()) {
                 event.setCollection(collection.get());
                 event.parseAndSetKey(config, Utils
-                    .getCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
+                    .getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
                 return true;
             } else {
                 LOGGER

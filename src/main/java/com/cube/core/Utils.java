@@ -238,7 +238,7 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static CompareTemplate getCompareTemplate(Config config, Event event, String templateVersion) {
+    public static CompareTemplate getRequestCompareTemplate(Config config, Event event, String templateVersion) {
         TemplateKey tkey =
             new TemplateKey(templateVersion, event.customerId,
                 event.app, event.service, event.apiPath, TemplateKey.Type.Request);

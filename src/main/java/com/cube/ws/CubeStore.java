@@ -538,7 +538,7 @@ public class CubeStore {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
             event.parseAndSetKey(config,
-                Utils.getCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
+                Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
         }
 
         boolean saveResult = rrstore.save(event);
@@ -687,7 +687,7 @@ public class CubeStore {
         eventBuilder.setRawPayloadString(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
         defaultRespEvent.parseAndSetKey(config,
-            Utils.getCompareTemplate(config, defaultRespEvent, Constants.DEFAULT_TEMPLATE_VER));
+            Utils.getRequestCompareTemplate(config, defaultRespEvent, Constants.DEFAULT_TEMPLATE_VER));
 
         //We cannot use storeEvent API as it checks for an active record/replay.
         //This API is standalone and should work without an active record/replay.
@@ -736,7 +736,7 @@ public class CubeStore {
             eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
             Event defaultReqEvent = eventBuilder.createEvent();
             defaultReqEvent.parseAndSetKey(config, Utils.
-                getCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+                getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
 
             //We cannot use storeEvent API as it checks for a running record/replay.
             //This API is standalone and should work without an active record/replay.
