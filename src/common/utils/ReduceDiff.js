@@ -64,11 +64,11 @@ class ReduceDiff {
         return [diffReason, tempReducedDiffArray];
     }
 
-    _addDiffedJSONSubObjToReducedDiffArray(diffReason, currentDiffReason, tempReducedDiffArray, reducedDiffArray, iter, jsonPath, jsonPathArray, prettyPrintedJSONLines) {
+    _addDiffedJSONSubObjToReducedDiffArray(diffReason, currentDiffReason, tempReducedDiffArray, reducedDiffArray, iter, jsonPath, jsonPathArray, prettyPrintedJSONLines, tempJsonPathWithBegin) {
         /*
             This method loops through the entire object which is either added or removed and add to the pre-final result and then to final result.
         */
-        let jsonPathWOBegin = jsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, ""),
+        let jsonPathWOBegin = tempJsonPathWithBegin.replace(BEGIN_BRACKET, "").replace(END_BRACKET, ""),
         jsonPathWOEND;
         while (jsonPathWOEND !== jsonPathWOBegin) {
             [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray, null, jsonPath);
@@ -172,11 +172,15 @@ class ReduceDiff {
                 */
                 if(tempStack.length > 0) {
                     if(removedPathObject && tempExpJsonPath.indexOf(BEGIN_BRACKET) > -1) {
-                        [tempDiffReason, tempReducedDiffArray, expIter] = this._addDiffedJSONSubObjToReducedDiffArray(tempDiffReason, REMOVED, tempReducedDiffArray, reducedDiffArray, expIter, tempExpJsonPath, expectedJSONPathArray, this.prettyPrintedExpJSONLines);
+                        let tempExpJsonPathWithBegin = tempExpJsonPath;
+                        tempExpJsonPath = expectedJSONPathArray[expIter] ? expectedJSONPathArray[expIter][0] : "";
+                        [tempDiffReason, tempReducedDiffArray, expIter] = this._addDiffedJSONSubObjToReducedDiffArray(tempDiffReason, REMOVED, tempReducedDiffArray, reducedDiffArray, expIter, tempExpJsonPath, expectedJSONPathArray, this.prettyPrintedExpJSONLines, tempExpJsonPathWithBegin);
                         tempStack.pop();
                         expIter++;
                     } else if(addedPathObject && tempActJsonPath.indexOf(BEGIN_BRACKET) > -1) {
-                        [tempDiffReason, tempReducedDiffArray, actIter] = this._addDiffedJSONSubObjToReducedDiffArray(tempDiffReason, ADDED, tempReducedDiffArray, reducedDiffArray, actIter, tempActJsonPath, actualJSONPathArray, this.prettyPrintedActJSONLines);
+                        let tempActJsonPathWithBegin = tempActJsonPath;
+                        tempActJsonPath = actualJSONPathArray[actIter] ? actualJSONPathArray[actIter][0] : "";
+                        [tempDiffReason, tempReducedDiffArray, actIter] = this._addDiffedJSONSubObjToReducedDiffArray(tempDiffReason, ADDED, tempReducedDiffArray, reducedDiffArray, actIter, tempActJsonPath, actualJSONPathArray, this.prettyPrintedActJSONLines, tempActJsonPathWithBegin);
                         tempStack.pop();
                         actIter++;
                     }
