@@ -39,8 +39,6 @@ public class Constants {
     public static final String REQ_ID_PATH = "/reqId";
     public static final String API_PATH_PATH = "/apiPath";
     public static final String EVENT_TYPE_PATH = "/eventType";
-    public static final String REQ_PAYLOAD_STR_PATH = "/reqPayloadStr";
-    public static final String RESP_PAYLOAD_STR_PATH = "/respPayloadStr";
     public static final String QUERY_PARAMS_PATH = "/queryParams";
     public static final String FORM_PARAMS_PATH = "/formParams";
     public static final String PATH_PATH = "/path";
