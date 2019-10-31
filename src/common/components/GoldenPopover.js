@@ -57,6 +57,7 @@ class GoldenPopover extends React.Component {
     }
 
     updateGolden() {
+        console.log(this.props.serverSideDiff);
         const {dispatch, serverSideDiff, cube} = this.props;
         if (serverSideDiff) {
             let operation = {

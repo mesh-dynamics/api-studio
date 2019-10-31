@@ -86,6 +86,14 @@ class ShareableLink extends Component {
             app: app
         });
         setTimeout(() => {
+            const { dispatch, history, cube } = this.props;
+            dispatch(cubeActions.setPathResultsParams({
+                path: apiPath,
+                service: service,
+                replayId: replayId,
+                recordingId: recordingId,
+                currentTemplateVer: currentTemplateVer
+            }));
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));

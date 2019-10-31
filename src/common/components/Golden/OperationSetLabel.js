@@ -15,7 +15,7 @@ class OperationSetLabel extends React.Component {
     findInOperationSet() {
         const {cube, jsonPath} = this.props;
         for (const op of cube.newOperationSet) {
-            if (op.path == jsonPath) {
+            if (jsonPath.includes(op.path)) {
                 return true;
             }
         }
@@ -25,7 +25,7 @@ class OperationSetLabel extends React.Component {
     findInOperations() {
         const {cube, jsonPath} = this.props;
         for (const op of cube.operations) {
-            if (op.path == jsonPath) {
+            if (jsonPath.includes(op.path)) {
                 return true;
             }
         }
@@ -35,7 +35,7 @@ class OperationSetLabel extends React.Component {
     removeFromOS = () => {
         const {cube, jsonPath, dispatch} = this.props;
         for (let i =  0; i < cube.newOperationSet.length; i++) {
-            if (cube.newOperationSet[i].path == jsonPath) {
+            if (jsonPath.includes(cube.newOperationSet[i].path)) {
                 dispatch(cubeActions.removeFromNOS(i));
                 return;
             }
@@ -46,7 +46,7 @@ class OperationSetLabel extends React.Component {
     removeFromOperations = () => {
         const {cube, jsonPath, dispatch} = this.props;
         for (let i =  0; i < cube.operations.length; i++) {
-            if (cube.operations[i].path == jsonPath) {
+            if (jsonPath.includes(cube.operations[i].path)) {
                 dispatch(cubeActions.removeFromOperations(i));
                 return;
             }
