@@ -1068,7 +1068,7 @@ public class AnalyzeWS {
 		this.config = config;
 		this.requestComparatorCache = config.requestComparatorCache;
 		this.responseComparatorCache = config.responseComparatorCache;
-		this.recordingUpdate = new RecordingUpdate((ReqRespStoreSolr) rrstore, jsonMapper);
+		this.recordingUpdate = new RecordingUpdate(config);
 	}
 
 

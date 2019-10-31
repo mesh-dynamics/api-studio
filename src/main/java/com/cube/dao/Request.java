@@ -7,6 +7,7 @@ import static com.cube.dao.Event.RunType.Record;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -156,8 +157,11 @@ public class Request extends RRBase {
 
         try {
             HTTPRequestPayload payload = jsonMapper.readValue(event.rawPayloadString, HTTPRequestPayload.class);
+            MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
+            meta.put(SERVICEFIELD, List.of(event.service));
+            meta.put(INSTANCEIDFIELD, List.of(event.instanceId));
             return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams, payload.formParams,
-                new MultivaluedHashMap<>(), payload.hdrs, payload.method, payload.body,
+                meta, payload.hdrs, payload.method, payload.body,
                 Optional.of(event.getCollection()), Optional.of(event.timestamp),
                 Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app)));
         } catch (IOException e) {

@@ -374,6 +374,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return solrDocumentResult.getObjects().findFirst().flatMap(doc -> solrDocToFnResponse(doc,solrDocumentResult.numFound>1));
     }
 
+    // TODO: Event redesign: This should be event based
     @Override
     public boolean saveFnReqRespNewCollec(String customer, String app, String collection
         , String newCollection) {
@@ -459,6 +460,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, solrQuery, Optional.of(1)).findFirst().flatMap(this::solrDocToTemplateUpdateOperationSet);
     }
 
+    @Override
     public boolean storeRecordingOperationSetMeta(RecordingOperationSetMeta recordingOperationSetMeta){
         SolrInputDocument solrDoc = new SolrInputDocument();
         solrDoc.setField(IDF, recordingOperationSetMeta.id);
@@ -469,6 +471,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     // get recordingOperationSet for a given operationset id, service and path
+    @Override
     public Optional<RecordingOperationSetMeta> getRecordingOperationSetMeta(String recordingOperationSetId) {
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, TYPEF, Types.RecordingOperationSetMeta.toString());
@@ -490,7 +493,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
-
+    @Override
     public boolean storeRecordingOperationSet(RecordingOperationSetSP recordingOperationSetSP) {
         SolrInputDocument solrDoc = new SolrInputDocument();
         solrDoc.setField(IDF, recordingOperationSetSP.id);
@@ -514,6 +517,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     // get recordingOperationSet for a given operationset id, service and path
+    @Override
     public Optional<RecordingOperationSetSP> getRecordingOperationSetSP(String recordingOperationSetId, String service,
                                                                         String path) {
         SolrQuery query = new SolrQuery("*:*");
@@ -527,6 +531,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     // get all recordingOperationSets for a given operationset id
+    @Override
     public Stream<RecordingOperationSetSP> getRecordingOperationSetSPs(String recordingOperationSetId) {
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, TYPEF, Types.RecordingOperationSet.toString());
