@@ -86,6 +86,14 @@ class ShareableLink extends Component {
             app: app
         });
         setTimeout(() => {
+            const { dispatch, history, cube } = this.props;
+            dispatch(cubeActions.setPathResultsParams({
+                path: apiPath,
+                service: service,
+                replayId: replayId,
+                recordingId: recordingId,
+                currentTemplateVer: currentTemplateVer
+            }));
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
@@ -661,7 +669,7 @@ class ShareableLink extends Component {
         let gObj = {
             "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
             "service": this.state.service,
-            "path": this.state.path,
+            "path": this.state.apiPath,
             "operationSet": cube.newOperationSet,
             "customer": user.customer_name,
             "app": this.state.app
@@ -671,7 +679,7 @@ class ShareableLink extends Component {
             customerId: user.customer_name,
             appId: this.state.app,
             serviceId: this.state.service,
-            path: this.state.path,
+            path: this.state.apiPath,
             version: this.state.currentTemplateVer,
             reqOrResp: "Response"
         };
