@@ -34,7 +34,7 @@ public class MovieRentalRest {
 	static JaegerTracer tracer;
 	static Config config;
 
-	private static String twentykReviews ="";
+	private static StringBuffer twentykReviews = new StringBuffer();
 
 	static {
 		LOGGER = Logger.getLogger(MovieRentalRest.class);
@@ -60,10 +60,10 @@ public class MovieRentalRest {
 		//cooked up reviews
 		for (int i=0; i < 20000; i++) {
 			// reviewer 1:
-			twentykReviews += ", {";
-			twentykReviews += "  \"reviewer\": \"Reviewer" + i + "\",";
-			twentykReviews += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
-			twentykReviews += "}";
+			twentykReviews.append(", {");
+			twentykReviews.append("  \"reviewer\": \"Reviewer" + i + "\",");
+			twentykReviews.append("  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"");
+			twentykReviews.append("}");
 		}
 	}
 	
@@ -253,44 +253,51 @@ public class MovieRentalRest {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response listReviews (@QueryParam("count") Integer reviewsCount) {
 		long starttime = System.currentTimeMillis();
-		String reviews = "";
+		StringBuffer reviews = new StringBuffer();
 
-		String reviewResult = "{";
-		reviewResult += "\"id\": \"" + "69" + "\",";
-		reviewResult += "\"reviews\": [";
+		StringBuffer reviewResult = new StringBuffer("{");
+		reviewResult.append("\"id\": \"69\",") ;
+		reviewResult.append("\"reviews\": [");
 		// reviewer 1:
-		reviewResult += "{";
-		reviewResult += "  \"reviewer\": \"Reviewer1\",";
-		reviewResult += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
-		reviewResult += "}";
+		reviewResult.append("{");
+		reviewResult.append("\"reviewer\": \"Reviewer1\",");
+		reviewResult.append("  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"");
+		reviewResult.append("}");
 
 		if (reviewsCount < 20000) {
 			//It should be a cooked up reviews
 			for (int i=0; i < reviewsCount; i++) {
 				// reviewer 1:
-				reviews += ", {";
-				reviews += "  \"reviewer\": \"Reviewer" + i + "\",";
-				reviews += "  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"";
-				reviews += "}";
+				reviews.append(", {");
+				reviews.append("  \"reviewer\": \"Reviewer" + i + "\",");
+				reviews.append("  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"");
+				reviews.append("}");
 			}
-			reviewResult += reviews;
+			reviewResult.append(reviews);
 		} else {
 				int howmany20ks = reviewsCount / 20000;
+				int remaining = reviewsCount % 20000;
 				if (howmany20ks > 0) {
 					for (int i =0; i < howmany20ks; i++) {
-						reviews += twentykReviews;
+						reviews.append(twentykReviews);
 					}
-					reviewResult +=reviews;
+					for (int i=0; i < remaining; i++) {
+						// reviewer 1:
+						reviews.append(", {");
+						reviews.append("  \"reviewer\": \"Reviewer" + i + "\",");
+						reviews.append("  \"text\": \"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"");
+						reviews.append("}");
+					}
+					reviewResult.append(reviews);
 				}
 		}
 
-		reviewResult += "]";
-		reviewResult += "}";
-		JSONObject result = new JSONObject(reviewResult);
+		reviewResult.append("]");
+		reviewResult.append("}");
+		JSONObject result = new JSONObject(reviewResult.toString());
 		long endtime = System.currentTimeMillis();
 		LOGGER.info("Time took to construct review response (in ms) :" + (endtime-starttime));
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
-
 	}
 	
 	/*
