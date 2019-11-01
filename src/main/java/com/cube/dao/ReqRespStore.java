@@ -636,6 +636,20 @@ public interface ReqRespStore {
 
 	//boolean updateCollection(Recording sourceRecording, List<ReqRespUpdateOperation> recordingUpdateSpec);
 
+    boolean storeRecordingOperationSetMeta(RecordingOperationSetMeta recordingOperationSetMeta);
+
+    // get recordingOperationSet for a given operationset id, service and path
+    Optional<RecordingOperationSetMeta> getRecordingOperationSetMeta(String recordingOperationSetId);
+
+    boolean storeRecordingOperationSet(RecordingOperationSetSP recordingOperationSetSP);
+
+    // get recordingOperationSet for a given operationset id, service and path
+    Optional<RecordingOperationSetSP> getRecordingOperationSetSP(String recordingOperationSetId, String service,
+                                                                 String path);
+
+    // get all recordingOperationSets for a given operationset id
+    Stream<RecordingOperationSetSP> getRecordingOperationSetSPs(String recordingOperationSetId);
+
     /**
      * Save a template set
      * @param templateSet Template Set

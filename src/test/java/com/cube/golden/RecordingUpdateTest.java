@@ -20,8 +20,7 @@ class RecordingUpdateTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        ReqRespStoreSolr rrStore = (ReqRespStoreSolr) config.rrstore;
-        RecordingUpdate recordingUpdate = new RecordingUpdate(rrStore, config.jsonMapper);
+        RecordingUpdate recordingUpdate = new RecordingUpdate(config);
 
         var customerid = "Prasad";
         var app = "MovieInfo";
