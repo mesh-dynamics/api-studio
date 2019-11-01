@@ -9,6 +9,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -40,7 +40,6 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
@@ -426,9 +425,13 @@ public class AnalyzeWS {
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayId);
         return matchResult.map(matchRes -> {
-            Optional<Request> request = rrstore.getRequest(recordReqId);
+            Optional<Request> request = rrstore.getRequest(recordReqId).flatMap(event -> Request.fromEvent(event, jsonMapper));
             Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId)
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+
+            Optional<com.cube.dao.Request> replayedRequest = matchRes.replayReqId
+                .flatMap(rrstore::getRequest)
+                .flatMap(event -> Request.fromEvent(event, jsonMapper));
 
             Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
@@ -436,9 +439,7 @@ public class AnalyzeWS {
             Optional<String> diff  = Optional.of(matchRes.diff);
             MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
                 matchRes.respmt, matchRes.service, matchRes.path,
-                request.map(req -> req.queryParams).orElse(new MultivaluedHashMap<>()),
-                request.map(req -> req.formParams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
-                diff, recordedResponse, replayedResponse);
+                diff, request, replayedRequest, recordedResponse, replayedResponse);
 
             String resultJson = null;
             try {
@@ -484,11 +485,12 @@ public class AnalyzeWS {
         // For checking correct date format
         if(endDate.isPresent()) {
             try {
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd"); // The date is finally translated as yyyy-MM-ddT00:00:00Z"
-                endDateTS = Optional.of(df.parse(endDate.get()).toInstant());
-            } catch (ParseException e) {
+                // Accepted format for date as per ISO-8601 are -
+                // yyyy-MM-ddTHH:MM:SSZ UTC, with an offset of +00:00
+                endDateTS = Optional.of(Instant.parse(endDate.get()));
+            } catch (DateTimeParseException e) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
-                    Map.of("Message", "Date format should be yyyy-MM-dd",
+                    Map.of("Message", "Date format should be yyyy-MM-ddTHH:MM:SSZ",
                         "Error", e.getMessage())).toString())).build();
             }
         }
@@ -594,11 +596,18 @@ public class AnalyzeWS {
                     matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
                     .flatMap(event -> Request.fromEvent(event, jsonMapper));
 
+                Optional<Request> recordedRequest = Optional.empty();
+                Optional<Request> replayedRequest = Optional.empty();
                 Optional<String> diff = Optional.empty();
                 Optional<com.cube.dao.Response> recordResponse = Optional.empty();
                 Optional<com.cube.dao.Response> replayResponse = Optional.empty();
 
+
                 if(includeDiff.orElse(false)) {
+                    recordedRequest = request;
+                    replayedRequest = matchRes.replayReqId
+                        .flatMap(rrstore::getRequest)
+                        .flatMap(event -> Request.fromEvent(event, jsonMapper));
                     diff = Optional.of(matchRes.diff);
                     recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
                         .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
@@ -608,9 +617,7 @@ public class AnalyzeWS {
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
                     matchRes.respmt, matchRes.service, matchRes.path,
-                    request.map(req -> req.queryParams).orElse(new MultivaluedHashMap<>()),
-                    request.map(req -> req.formParams).orElse(new MultivaluedHashMap<>()), request.map(req -> req.method),
-                    diff, recordResponse, replayResponse);
+                    diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1087,9 +1094,9 @@ public class AnalyzeWS {
                         Comparator.MatchType respmt,
                         String service,
                         String path,
-                        MultivaluedMap<String, String> queryParams,
-                        MultivaluedMap<String, String> formParams,
-                        Optional<String> method, Optional<String> diff,
+                        Optional<String> diff,
+                        Optional<com.cube.dao.Request> recordRequest,
+                        Optional<com.cube.dao.Request> replayRequest,
                         Optional<com.cube.dao.Response> recordResponse,
                         Optional<com.cube.dao.Response> replayResponse) {
             this.recordReqId = recordReqId;
@@ -1099,10 +1106,9 @@ public class AnalyzeWS {
             this.respmt = respmt;
             this.service = service;
             this.path = path;
-            this.queryParams = queryParams;
-            this.formParams = formParams;
-            this.method = method;
             this.diff = diff;
+            this.recordRequest = recordRequest;
+            this.replayRequest = replayRequest;
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
         }
@@ -1114,12 +1120,9 @@ public class AnalyzeWS {
         public final Comparator.MatchType respmt;
         public final String service;
         public final String path;
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-        public final MultivaluedMap<String, String> queryParams;
-        @JsonDeserialize(as=MultivaluedHashMap.class)
-        public final MultivaluedMap<String, String> formParams;
-        public final Optional<String> method;
         public final Optional<String> diff;
+        public final Optional<com.cube.dao.Request> recordRequest;
+        public final Optional<com.cube.dao.Request> replayRequest;
         public final Optional<com.cube.dao.Response> recordResponse;
         public final Optional<com.cube.dao.Response> replayResponse;
 

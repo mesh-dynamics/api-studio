@@ -111,6 +111,7 @@ public interface Comparator {
         OK_DefaultPT, // Return when presence type is default.
         OK_DefaultCT, // Return when both are present and ComparisonType is set to Default.
 		ERR_Required,
+        ERR_RequiredGolden,
 		ERR_ValMismatch,
 		ERR_ValTypeMismatch,
 		ERR_ValFormatMismatch,
@@ -122,9 +123,11 @@ public interface Comparator {
 		 * @return
 		 */
 		public boolean isErr() {
-			return this == ERR_Required || this == ERR_ValMismatch || this == ERR_ValTypeMismatch ||
+			return  this == ERR_Required ||
+					this == ERR_ValMismatch || this == ERR_ValTypeMismatch ||
 					this == ERR_ValFormatMismatch || this == ERR || this == ERR_NewField ||
-                this == ERR_InvalidExtractionMethod;
+                    this == ERR_RequiredGolden || this == ERR_InvalidExtractionMethod;
+
 		}
 
 		public MatchType toMatchType() {

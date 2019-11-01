@@ -117,8 +117,10 @@ public class TemplateEntry {
      * Assuming compare type is not ignore or default
      */
     Comparator.Resolution lhsmissing() {
-        if ((pt == CompareTemplate.PresenceType.Default || pt == CompareTemplate.PresenceType.Required) && !isParentArray) {
+        if (pt == CompareTemplate.PresenceType.Default && !isParentArray) {
             return ERR_NewField;
+        } else if(pt == CompareTemplate.PresenceType.Required && !isParentArray) {
+            return ERR_RequiredGolden;
         }
         switch (ct) {
             case Ignore:

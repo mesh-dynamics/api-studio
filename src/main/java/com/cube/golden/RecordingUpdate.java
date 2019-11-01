@@ -5,7 +5,6 @@ import com.cube.dao.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import java.time.Instant;
 import java.util.*;
@@ -126,7 +125,7 @@ public class RecordingUpdate {
             try {
             LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
                 res.recordReqId.get(), res.replayReqId.get()));
-            Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
+            Request recordRequest = res.recordReqId.flatMap(rrStore::getRequestOld)
                 .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
             Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
                 .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
@@ -189,7 +188,7 @@ public class RecordingUpdate {
         //1. Create a new collection with all the Req/Responses
         results.forEach(res -> {
            try {
-               Request recordRequest = res.recordReqId.flatMap(rrStore::getRequest)
+               Request recordRequest = res.recordReqId.flatMap(rrStore::getRequestOld)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
                Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
@@ -250,7 +249,7 @@ public class RecordingUpdate {
                 res.recordReqId.get(), res.replayReqId.get()));
             Optional<Response> recordResponse = res.recordReqId.flatMap(rrStore::getResponse);
             Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
-            Optional<Request> recordRequest = res.recordReqId.flatMap(rrStore::getRequest);
+            Optional<Request> recordRequest = res.recordReqId.flatMap(rrStore::getRequestOld);
 
             // apply the transformation operations
             LOGGER.debug("applying transformations");

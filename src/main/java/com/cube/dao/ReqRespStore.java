@@ -136,7 +136,6 @@ public interface ReqRespStore {
 	 * @param reqId
 	 * @return the matching response on the reqId
 	 */
-    // TODO: Event redesign: This needs to be rewritten to get as event
     Optional<Event> getResponse(String reqId);
 
     // TODO: Event redesign: Remove this
@@ -144,10 +143,16 @@ public interface ReqRespStore {
 
     /**
      * @param reqId
+     * @return the matching request on the reqId
+     */
+    Optional<Event> getRequest(String reqId);
+
+    /**
+     * @param reqId
      * @return the matching response on the reqId
      */
-    // TODO: Event redesign: This needs to be rewritten to get as event
-    Optional<Request> getRequest(String reqId);
+    // TODO: Event redesign: Remove this
+    Optional<Request> getRequestOld(String reqId);
 
 	/**
 	 * @param requests

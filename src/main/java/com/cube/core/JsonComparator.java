@@ -285,7 +285,7 @@ public class JsonComparator implements Comparator {
 				}
 				*/
                 Optional<Double> lhs = fromValue.flatMap(v -> {
-                    return v.isDouble() || v.isFloat() || v.isLong() ?
+                    return (v.isDouble() || v.isFloat() || v.isLong() || v.isInt()) ?
                         Optional.of(v.asDouble()) : Optional.empty();
                 });
 				Optional<Double> rhs = value.map(JsonNode::asDouble);
