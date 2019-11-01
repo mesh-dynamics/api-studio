@@ -579,7 +579,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public String saveTemplateSet(TemplateSet templateSet) throws Exception {
         List<String> templateIds = new ArrayList<>();
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
-            TemplateKey templateKey = new TemplateKey(Optional.of(templateSet.version), templateSet.customer,
+            TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
                 templateSet.app,
                 template.service , template.requestPath, template.type);
                 templateIds.add(saveCompareTemplate(templateKey, config.jsonMapper.writeValueAsString(template)));

@@ -23,8 +23,6 @@ public class Recording {
 		Error
 	}
 
-    public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
-
 	/**
      * @param customerId
      * @param app

@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -457,9 +458,10 @@ public interface ReqRespStore {
 		}
 
 		@JsonIgnore
-        public Optional<String> getTemplateVersion() {
+        public String getTemplateVersion() {
             return replay.map(replay1 -> replay1.templateVersion)
-                .or(() -> recording.map(recording -> recording.templateVersion));
+                .orElseGet(() -> recording.map(recording1 -> recording1.templateVersion).orElse(
+                    Constants.DEFAULT_TEMPLATE_VER));
         }
 
 		// for json de-serialization

@@ -99,7 +99,7 @@ public class Analyzer {
 
                 List<Request> matches = new ArrayList<>();
 
-                TemplateKey key = new TemplateKey(Optional.of(templateVersion), r.customerId.get(), r.app.get(),
+                TemplateKey key = new TemplateKey(templateVersion, r.customerId.get(), r.app.get(),
                     r.getService().get(), r.apiPath, TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
                 matches = rrstore.getRequests(rq, comparator, Optional.of(10))
@@ -219,7 +219,7 @@ public class Analyzer {
                 // find matching request in replay
                 EventQuery eventQuery = reqEventToEventQuery(r, analysis.replayId, 10);
 
-                TemplateKey key = new TemplateKey(Optional.of(templateVersion), replay.customerId, replay.app,
+                TemplateKey key = new TemplateKey(templateVersion, replay.customerId, replay.app,
                     r.service, r.apiPath, TemplateKey.Type.Request);
                 RequestComparator comparator = requestComparatorCache.getRequestComparator(key, false);
 
@@ -336,7 +336,7 @@ public class Analyzer {
 
             try {
                 // get appropriate template from solr
-                TemplateKey key = new TemplateKey(Optional.of(templateVersion), recordreq.customerId.get(),
+                TemplateKey key = new TemplateKey(templateVersion, recordreq.customerId.get(),
                         recordreq.app.get(), recordreq.getService().get(), recordreq.apiPath , TemplateKey.Type.Response);
                 ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
                 Optional<Response> replayresp = Optional.ofNullable(replayResponseMap.get(replayreqid));
@@ -378,7 +378,7 @@ public class Analyzer {
 
         try {
             // get appropriate template from solr
-            TemplateKey key = new TemplateKey(Optional.of(templateVersion), recordreq.customerId,
+            TemplateKey key = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath , TemplateKey.Type.Response);
             ResponseComparator comparator = responseComparatorCache.getResponseComparator(key);
             Optional<Event> replayresp = Optional.ofNullable(replayResponseMap.get(replayreq.reqId));
