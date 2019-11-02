@@ -89,7 +89,7 @@ public class FindAndRentMovies {
 		  // play traffic for recording.
 		for (int i=0; i<nm; i++) {
 			System.out.println("Request Number: " + i);
-			String movie = movies[i];
+			String movie = movies[i % movies.length];
 			  // list films
 			  Response response1 = callWithRetries(targetService.path("listmovies").queryParam("filmName", movie).request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token), null, true, 1);
 			  if (response1 == null || response1.getStatus() != 200) {
@@ -167,13 +167,18 @@ public class FindAndRentMovies {
 			  returnMovieInfo.put("rent", rentalResult.getDouble("rent"));  
 			  Response response4 = callWithRetries(targetService.path("returnmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
 					  Entity.entity(returnMovieInfo.toString(), MediaType.APPLICATION_JSON), false, 1);
-			  JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
+			  try {
+				  JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
+				  System.out.println("return movie result: " + returnMovieResult.toString() +"\n\n");
+			  } catch (JSONException e) {
+			  	System.out.println("Exception in reading response as json");
+			  	System.out.println("Response = " + response4);
+			  }
 			  if (response4.getStatus() != 200) {
 				  System.out.println(response4.getStatus());
 			  }
 			  response4.close();
 			  
-			  System.out.println("return movie result: " + returnMovieResult.toString() +"\n\n");
 		  }
 	}
 	
