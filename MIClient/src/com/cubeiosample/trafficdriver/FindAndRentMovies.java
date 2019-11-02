@@ -167,12 +167,13 @@ public class FindAndRentMovies {
 			  returnMovieInfo.put("rent", rentalResult.getDouble("rent"));  
 			  Response response4 = callWithRetries(targetService.path("returnmovie").request().header(HttpHeaders.AUTHORIZATION, token), 
 					  Entity.entity(returnMovieInfo.toString(), MediaType.APPLICATION_JSON), false, 1);
+			  String responseAsString = response4.readEntity(String.class);
 			  try {
-				  JSONObject returnMovieResult = new JSONObject(response4.readEntity(String.class));
+				  JSONObject returnMovieResult = new JSONObject(responseAsString);
 				  System.out.println("return movie result: " + returnMovieResult.toString() +"\n\n");
 			  } catch (JSONException e) {
 			  	System.out.println("Exception in reading response as json");
-			  	System.out.println("Response = " + response4);
+			  	System.out.println("Response = " + responseAsString);
 			  }
 			  if (response4.getStatus() != 200) {
 				  System.out.println(response4.getStatus());
