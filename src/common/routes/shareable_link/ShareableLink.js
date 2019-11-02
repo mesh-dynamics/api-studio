@@ -115,6 +115,8 @@ class ShareableLink extends Component {
         let { cube, dispatch } = nextProps;
         if (cube && (cube.goldenInProg || cube.newGoldenId)) {
             this.setState({ showNewGolden: true });
+        } else {
+            this.setState({ showNewGolden: false });
         }
     }
 

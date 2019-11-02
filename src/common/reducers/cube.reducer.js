@@ -331,7 +331,8 @@ export function cube (state = initialState, action) {
                 ...state,
                 golden: null,
                 goldenTimeStamp: null,
-                newGoldenId: null
+                newGoldenId: null,
+                goldenInProg: false
             };
         default:
             return state

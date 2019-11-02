@@ -151,6 +151,8 @@ function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingI
             dispatch(cubeActions.getTestIds(app));
         } catch (error) {
             console.error("Failed to updateGoldenSet", Date.now());
+            dispatch(cubeActions.clearGolden());
+            alert("Unable to update golden set");
         }
     }
     function success(updateRes, date) { return { type: cubeConstants.NEW_GOLDEN_ADDED, data: updateRes, date: date }; }
