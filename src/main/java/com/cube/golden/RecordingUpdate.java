@@ -161,7 +161,7 @@ public class RecordingUpdate {
             recordRequest.reqId = transformedResponse.reqId;
             recordRequest.collection = Optional.of(newCollectionName);
 
-            TemplateKey key = new TemplateKey(Optional.of(originalRec.templateVersion), originalRec.customerId,
+            TemplateKey key = new TemplateKey(originalRec.templateVersion, originalRec.customerId,
                 originalRec.app, recordRequest.getService().orElse("NA"), recordRequest.apiPath,
                 TemplateKey.Type.Request);
             RequestComparator comparator = config.requestComparatorCache.getRequestComparator(key , true);
