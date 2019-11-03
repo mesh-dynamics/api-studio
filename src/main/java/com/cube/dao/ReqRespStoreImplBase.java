@@ -42,6 +42,11 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
         return getEvents(eventQuery).getObjects().findFirst();
     }
 
+    @Override
+    public Optional<Event> getDefaultRespEvent(EventQuery eventQuery) {
+        return getEvents(eventQuery).getObjects().findFirst();
+    }
+
     /* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentCollection(java.util.Optional, java.util.Optional, java.util.Optional)
 	 * For a (cust, app, instance), there is one current collection. Either a recording is going on or a replay or nothing. This

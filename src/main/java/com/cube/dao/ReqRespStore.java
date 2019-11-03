@@ -172,6 +172,8 @@ public interface ReqRespStore {
 
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
+    Optional<Event> getDefaultRespEvent(EventQuery eventQuery);
+
 
 	/**
 	 * @param customerid

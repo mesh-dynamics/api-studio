@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
 import com.cube.dao.EventBuilder.InvalidEventException;
 import java.io.ByteArrayInputStream;
@@ -653,6 +654,11 @@ public class CubeStore {
         try {
             Event eventData = defaultEvent.getEvent();
             Optional<Event> defaultReqEvent = getOrStoreDefaultReqEvent(eventData);
+            if (eventData.eventType.equals(EventType.JavaRequest)) {
+                //For Java Functions, request and response are stored in the same event.
+                return Response.ok().type(MediaType.APPLICATION_JSON)
+                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
+            }
             if (defaultReqEvent.isPresent() && storeDefaultRespEvent(defaultReqEvent.get(),
                     defaultEvent.getRawRespPayloadString())) {
                 return Response.ok().type(MediaType.APPLICATION_JSON)
@@ -733,6 +739,7 @@ public class CubeStore {
                 reqEvent.service, "NA", "NA",
                 "NA", RunType.Manual, Instant.now(),
                 "NA", reqEvent.apiPath, reqEvent.eventType);
+            //TODO:Add support for Binary payload.
             eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
             Event defaultReqEvent = eventBuilder.createEvent();
             defaultReqEvent.parseAndSetKey(config, Utils.
