@@ -152,11 +152,11 @@ public class CubeStore {
             }
             return t;
         });
-        Optional<Event.RunType> runType = Optional.ofNullable(meta.getFirst("runType")).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
-        Optional<String> customerid = Optional.ofNullable(meta.getFirst("customerid"));
-        Optional<String> app = Optional.ofNullable(meta.getFirst("app"));
-        Optional<String> service = Optional.ofNullable(meta.getFirst("service"));
-        Optional<String> instanceid = Optional.ofNullable(meta.getFirst(RRBase.INSTANCEIDFIELD));
+        Optional<Event.RunType> runType = Optional.ofNullable(meta.getFirst(Constants.RUN_TYPE_FIELD)).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
+        Optional<String> customerid = Optional.ofNullable(meta.getFirst(Constants.CUSTOMER_ID_FIELD));
+        Optional<String> app = Optional.ofNullable(meta.getFirst(Constants.APP_FIELD));
+        Optional<String> service = Optional.ofNullable(meta.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> instanceid = Optional.ofNullable(meta.getFirst(Constants.INSTANCE_ID_FIELD));
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
@@ -184,7 +184,7 @@ public class CubeStore {
         MultivaluedMap<String, String> formParams = new MultivaluedHashMap<String, String>();
 
         return  type.map(t -> {
-            if (t.equals("request")) {
+            if (t.equals(Constants.REQUEST)) {
                 Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
                 return method.map(mval -> {
                     Request req = new Request(path, rid, queryParams, formParams, meta, hdrs, mval, rr.body, collection, timestamp, runType, customerid, app);
@@ -222,8 +222,8 @@ public class CubeStore {
                     Optional<String> empty = Optional.empty();
                     return empty;
                 }).orElse(Optional.of("Method field missing"));
-            } else if (t.equals("response")) {
-                Optional<String> status = Optional.ofNullable(meta.getFirst("status"));
+            } else if (t.equals(Constants.RESPONSE)) {
+                Optional<String> status = Optional.ofNullable(meta.getFirst(Constants.STATUS));
                 Optional<Integer> s = status.flatMap(sval -> {
                     try {
                         return Optional.of(Integer.valueOf(sval));
@@ -284,7 +284,7 @@ public class CubeStore {
     public Response storeRrBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
                                  byte[] messageBytes) {
 
-        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
+        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
         LOGGER.info("Batch RR received. Content Type: " + contentType);
         return contentType.map(
             ct -> {
@@ -364,7 +364,7 @@ public class CubeStore {
     @POST
     @Path("/storeEventBatch")
     public Response storeEventBatch(@Context HttpHeaders headers, byte[] messageBytes) {
-        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
+        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
         LOGGER.info(new ObjectMessage(
             Map.of(
                 "message", "Batch Events received.",
@@ -555,7 +555,7 @@ public class CubeStore {
     // TODO: Event redesign cleanup: This can be removed
     public Response storeFuncBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
                                    byte[] messageBytes) {
-        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst("content-type"));
+        Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
 
         return contentType.map(
             ct -> {
@@ -605,10 +605,10 @@ public class CubeStore {
                                @PathParam("app") String app,
                                @PathParam("serviceid") String serviceid,
                                @PathParam("method") String method) {
-        String respbody = Optional.ofNullable(formParams.getFirst("body")).orElse("");
-        Optional<String> contenttype = Optional.ofNullable(formParams.getFirst("content-type"));
+        String respbody = Optional.ofNullable(formParams.getFirst(Constants.BODY)).orElse("");
+        Optional<String> contenttype = Optional.ofNullable(formParams.getFirst(Constants.CONTENT_TYPE));
         int status = Status.OK.getStatusCode();
-        Optional<String> sparam = Optional.ofNullable(formParams.getFirst("status"));
+        Optional<String> sparam = Optional.ofNullable(formParams.getFirst(Constants.STATUS));
         if (sparam.isPresent()) {
             Optional<Integer> sval = Utils.strToInt(sparam.get());
             if (sval.isEmpty()) {
@@ -858,10 +858,10 @@ public class CubeStore {
 	@Path("recordings")
     public Response recordings(@Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
-        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-        Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst("status"))
+        Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
+        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
+        Optional<String> app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
+        Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst(Constants.STATUS))
             .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
 
         List<Recording> recordings = rrstore.getRecording(customerid, app, instanceid, status)
@@ -901,9 +901,9 @@ public class CubeStore {
 	@Path("currentcollection")
     public Response currentcollection(@Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst("instanceid"));
-        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst("customerid"));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
+        Optional<String> instanceid = Optional.ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
+        Optional<String> customerid = Optional.ofNullable(queryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
+        Optional<String> app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
         String currentcollection = rrstore.getCurrentCollection(customerid, app, instanceid)
             .orElse("No current collection");
         return Response.ok(currentcollection).build();
@@ -962,14 +962,14 @@ public class CubeStore {
     // TODO: Event redesign cleanup: This can be removed
     public Response requests(@Context UriInfo ui) {
         MultivaluedMap<String, String> uriQueryParams = ui.getQueryParameters();
-        Optional<String> customerid = Optional.ofNullable(uriQueryParams.getFirst("customerid"));
-        Optional<String> app = Optional.ofNullable(uriQueryParams.getFirst("app"));
-        Optional<String> collection = Optional.ofNullable(uriQueryParams.getFirst("collection"));
-        String service = Optional.ofNullable(uriQueryParams.getFirst("service")).orElse("*");
-        String path = Optional.ofNullable(uriQueryParams.getFirst("path")).orElse("*"); // the path to drill down on
+        Optional<String> customerid = Optional.ofNullable(uriQueryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
+        Optional<String> app = Optional.ofNullable(uriQueryParams.getFirst(Constants.APP_FIELD));
+        Optional<String> collection = Optional.ofNullable(uriQueryParams.getFirst(Constants.COLLECTION_FIELD));
+        String service = Optional.ofNullable(uriQueryParams.getFirst(Constants.SERVICE_FIELD)).orElse("*");
+        String path = Optional.ofNullable(uriQueryParams.getFirst(Constants.PATH_FIELD)).orElse("*"); // the path to drill down on
         Optional<String> pattern = Optional.ofNullable(uriQueryParams.getFirst("pattern")); // the url should match
         // this pattern
-        Optional<Integer> start = Optional.ofNullable(uriQueryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        Optional<Integer> start = Optional.ofNullable(uriQueryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
         // paging
         Optional<Integer> nummatches =
             Optional.ofNullable(uriQueryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
@@ -1100,7 +1100,7 @@ public class CubeStore {
         drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + Constants.SERVICE_FIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
         drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH + "/" + HDRPATHFIELD,
             CompareTemplate.DataType.Str,
             CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));

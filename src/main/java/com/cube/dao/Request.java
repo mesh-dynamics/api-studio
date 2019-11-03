@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import static com.cube.dao.Event.RunType.Record;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -79,7 +80,7 @@ public class Request extends RRBase {
 			Optional<String> app) {
 		this(apiPath, id, queryParams, formParams, emptyMap(),
 				hdrs, method, body, collection, Optional.empty(), runType, customerId, app);
-		meta.add(RRBase.SERVICEFIELD, service);
+		meta.add(Constants.SERVICE_FIELD, service);
 	}
 
 	public Request(Optional<String> serviceid, 
@@ -151,8 +152,8 @@ public class Request extends RRBase {
         try {
             HTTPRequestPayload payload = jsonMapper.readValue(event.rawPayloadString, HTTPRequestPayload.class);
             MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
-            meta.put(SERVICEFIELD, List.of(event.service));
-            meta.put(INSTANCEIDFIELD, List.of(event.instanceId));
+            meta.put(Constants.SERVICE_FIELD, List.of(event.service));
+            meta.put(Constants.INSTANCE_ID_FIELD, List.of(event.instanceId));
             return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams, payload.formParams,
                 meta, payload.hdrs, payload.method, payload.body,
                 Optional.of(event.getCollection()), Optional.of(event.timestamp),
@@ -169,10 +170,10 @@ public class Request extends RRBase {
 
 		// diff not needed, so pass false
 		Comparator.Match match = super.compare(rhs, template, metaFieldtemplate, hdrFieldTemplate, bodyComparator, false);
-		template.getRule("/apiPath").checkMatchStr(apiPath, rhs.apiPath, match, false);
+		template.getRule(Constants.API_PATH_PATH).checkMatchStr(apiPath, rhs.apiPath, match, false);
 		qparamFieldTemplate.checkMatch(queryParams, rhs.queryParams, match, false);
 		fparamFieldTemplate.checkMatch(formParams, rhs.formParams, match, false);
-		template.getRule("/method").checkMatchStr(method, rhs.method, match, false);
+		template.getRule(Constants.METHOD_PATH).checkMatchStr(method, rhs.method, match, false);
 
 		return match.mt;
 	}

@@ -642,7 +642,7 @@ public class MockServiceHTTP {
 			.withMreqid(ComparisonType.EqualOptional)
 			.withMcollection(ComparisonType.Equal)
 			.withMmeta(ComparisonType.Equal)
-			.withMetafields(Collections.singletonList(SERVICEFIELD))
+			.withMetafields(Collections.singletonList(Constants.SERVICE_FIELD))
 			.withMhdrs(ComparisonType.EqualOptional)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
@@ -658,7 +658,7 @@ public class MockServiceHTTP {
         reqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(Constants.REQ_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
         reqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + Constants.SERVICE_FIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
@@ -673,7 +673,7 @@ public class MockServiceHTTP {
 			.withMapp(ComparisonType.Equal)
 			.withMcollection(ComparisonType.EqualOptional)
 			.withMmeta(ComparisonType.Equal)
-			.withMetafields(Collections.singletonList(SERVICEFIELD))
+			.withMetafields(Collections.singletonList(Constants.SERVICE_FIELD))
 			.build();
 
 
@@ -685,7 +685,7 @@ public class MockServiceHTTP {
 		defaultReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-		defaultReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + Constants.SERVICE_FIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonMapper);

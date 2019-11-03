@@ -39,8 +39,8 @@ public class UploadTemplatesForSampleApp {
             arr.forEach(x ->
             {
                 JSONObject elem = (JSONObject) x;
-                String path = elem.getString("path");
-                String service = elem.getString("service");
+                String path = elem.getString(Constants.PATH_FIELD);
+                String service = elem.getString(Constants.SERVICE_FIELD);
                 JSONObject template = elem.getJSONObject("template");
                 String templateAsString = template.toString();
                 reqRespStore.saveCompareTemplate(

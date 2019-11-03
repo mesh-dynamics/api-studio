@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -900,27 +901,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String TYPEF = CPREFIX + "type" + STRING_SUFFIX;
 
     // field names in Solr
-    private static final String PATHF = CPREFIX + "path" + STRING_SUFFIX;
-    private static final String REQIDF = CPREFIX + "reqId" + STRING_SUFFIX;
-    private static final String METHODF = CPREFIX + "method" + STRING_SUFFIX;
-    private static final String BODYF = CPREFIX + "body" + NOTINDEXED_SUFFIX;
-    private static final String OLDBODYF = CPREFIX + "body" + TEXT_SUFFIX;
-    private static final String COLLECTIONF = CPREFIX + "collection" + STRING_SUFFIX;
-    private static final String TIMESTAMPF = CPREFIX + "timestamp" + DATE_SUFFIX;
-    private static final String RRTYPEF = CPREFIX + "runType" + STRING_SUFFIX;
-    private static final String CUSTOMERIDF = CPREFIX + "customerId" + STRING_SUFFIX;
-    private static final String USERIDF = CPREFIX + "userId" + STRING_SUFFIX;
-    private static final String APPF = CPREFIX + "app" + STRING_SUFFIX;
-    private static final String INSTANCEIDF = CPREFIX + "instanceid" + STRING_SUFFIX;
-    private static final String STATUSF = CPREFIX + "status" + INT_SUFFIX;
+    private static final String PATHF = CPREFIX + Constants.PATH_FIELD + STRING_SUFFIX;
+    private static final String REQIDF = CPREFIX + Constants.REQ_ID_FIELD + STRING_SUFFIX;
+    private static final String METHODF = CPREFIX + Constants.METHOD_FIELD + STRING_SUFFIX;
+    private static final String BODYF = CPREFIX + Constants.BODY + NOTINDEXED_SUFFIX;
+    private static final String OLDBODYF = CPREFIX + Constants.BODY + TEXT_SUFFIX;
+    private static final String COLLECTIONF = CPREFIX + Constants.COLLECTION_FIELD + STRING_SUFFIX;
+    private static final String TIMESTAMPF = CPREFIX + Constants.TIMESTAMP_FIELD + DATE_SUFFIX;
+    private static final String RRTYPEF = CPREFIX + Constants.RUN_TYPE_FIELD + STRING_SUFFIX;
+    private static final String CUSTOMERIDF = CPREFIX + Constants.CUSTOMER_ID_FIELD + STRING_SUFFIX;
+    private static final String USERIDF = CPREFIX + Constants.USER_ID_FIELD + STRING_SUFFIX;
+    private static final String APPF = CPREFIX + Constants.APP_FIELD + STRING_SUFFIX;
+    private static final String INSTANCEIDF = CPREFIX + Constants.INSTANCE_ID_FIELD + STRING_SUFFIX;
+    private static final String STATUSF = CPREFIX + Constants.STATUS + INT_SUFFIX;
     private static final String CONTENTTYPEF = CPREFIX + "contenttype" + STRING_SUFFIX;
     private static final String OPERATIONSETIDF = CPREFIX + "operationsetid" + STRING_SUFFIX;
     private static final String OPERATIONLIST = CPREFIX + "operationlist" + STRINGSET_SUFFIX;
-    private static final String TRACEIDF = CPREFIX + "traceid" + STRING_SUFFIX;
+    private static final String TRACEIDF = CPREFIX + Constants.TRACE_ID_FIELD + STRING_SUFFIX;
     private static final String PAYLOADBINF = CPREFIX + "payloadBin" + BIN_SUFFIX;
     private static final String PAYLOADSTRF = CPREFIX + "payloadStr" + NOTINDEXED_SUFFIX;
     private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
-    private static final String EVENTTYPEF = CPREFIX + "eventType" + STRING_SUFFIX;
+    private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1566,11 +1567,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     // field names in Solr for Replay object
     private static final String IDF = "id";
     private static final String ENDPOINTF = CPREFIX + "endpoint" + STRING_SUFFIX;
-    private static final String REQIDSF = CPREFIX + "reqId" + STRINGSET_SUFFIX;
+    private static final String REQIDSF = CPREFIX + Constants.REQ_ID_FIELD + STRINGSET_SUFFIX;
     private static final String REPLAYIDF = CPREFIX + "replayId" + STRING_SUFFIX;
     private static final String ASYNCF = CPREFIX + "async" + BOOLEAN_SUFFIX;
     private static final String REPLAYSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
-    private static final String PATHSF = CPREFIX + "path" + STRINGSET_SUFFIX;
+    private static final String PATHSF = CPREFIX + Constants.PATH_FIELD + STRINGSET_SUFFIX;
     private static final String REQCNTF = CPREFIX + "reqcnt" + INT_SUFFIX;
     private static final String REQSENTF = CPREFIX + "reqsent" + INT_SUFFIX;
     private static final String REQFAILEDF = CPREFIX + "reqfailed" + INT_SUFFIX;
@@ -1962,7 +1963,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMTF = CPREFIX + "respmt" + STRING_SUFFIX; // match type
     private static final String RESPMATCHMETADATAF = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
-    private static final String SERVICEF = CPREFIX + "service" + STRING_SUFFIX;
+    private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
     private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
     private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid" + STRING_SUFFIX;
 

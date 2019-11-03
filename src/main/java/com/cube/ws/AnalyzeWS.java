@@ -137,7 +137,7 @@ public class AnalyzeWS {
     public Response getResultAggregate(@Context UriInfo ui,
                                        @PathParam("replayid") String replayid) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
 
@@ -264,9 +264,9 @@ public class AnalyzeWS {
             // to our class definition , otherwise send error response
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
             TemplateKey key;
-            if ("request".equalsIgnoreCase(type)) {
+            if (Constants.REQUEST.equalsIgnoreCase(type)) {
                 key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path, TemplateKey.Type.Request);
-            } else if ("response".equalsIgnoreCase(type)) {
+            } else if (Constants.RESPONSE.equalsIgnoreCase(type)) {
                 key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path,
                     TemplateKey.Type.Response);
             } else {
@@ -336,12 +336,12 @@ public class AnalyzeWS {
                                        TemplateKey.Type ruleType) {
 
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
-        Optional<String> apipath = Optional.ofNullable(queryParams.getFirst("apipath"));
-        Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst("jsonpath"));
+        Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
+        Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst(Constants.JSON_PATH_FIELD));
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity("{\"Error\": \"apipath is mssing\"}").build();
+                .entity("{\"Error\": \"apiPath is mssing\"}").build();
         }
         if (jsonpath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -475,11 +475,11 @@ public class AnalyzeWS {
     public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
                                        @PathParam("app") String app) {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
-        List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
-        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
-        Optional<String> userId = Optional.ofNullable(queryParams.getFirst("userId"));
-        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("endDate"));
+        List<String> instanceId = Optional.ofNullable(queryParams.get(Constants.INSTANCE_ID_FIELD)).orElse(Collections.EMPTY_LIST);
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
+        Optional<String> userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
+        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst(Constants.END_DATE_FIELD));
 
         Optional<Instant> endDateTS = Optional.empty();
         // For checking correct date format
@@ -497,8 +497,8 @@ public class AnalyzeWS {
 
         boolean byPath = Optional.ofNullable(queryParams.getFirst("byPath"))
             .map(v -> v.equals("y")).orElse(false);
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt);
-        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numResults")).map(Integer::valueOf).or(() -> Optional.of(20));
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).map(Integer::valueOf).or(() -> Optional.of(20));
 
         Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
             List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS);
@@ -554,10 +554,10 @@ public class AnalyzeWS {
     // TODO: Event redesign: This needs to be rewritten to get as event
     public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
-        Optional<String> path = Optional.ofNullable(queryParams.getFirst("path")); // the path to drill
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> path = Optional.ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill
         // down on
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
         // paging
         Optional<Integer> nummatches =
             Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
