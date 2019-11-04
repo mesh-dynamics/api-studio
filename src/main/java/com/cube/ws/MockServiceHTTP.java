@@ -1,10 +1,10 @@
 package com.cube.ws;
 
-import static com.cube.dao.RRBase.*;
+import static com.cube.core.Utils.buildErrorResponse;
 
+import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
-import com.cube.dao.EventBuilder.InvalidEventException;
 import com.cube.utils.Constants;
 import java.time.Instant;
 import java.util.Arrays;
@@ -191,32 +191,73 @@ public class MockServiceHTTP {
     public Response mockFunction(Event event) {
         if (setFunctionPayloadKeyAndCollection(event)) {
             EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
-            Result<Event> matchingEvent =  rrstore.getEvents(eventQuery);
+            Result<Event> matchingEvent = rrstore.getEvents(eventQuery);
 
             return matchingEvent.getObjects().findFirst().map(retEvent -> {
-                LOGGER.debug(new ObjectMessage(Map.of("state" , "After Mock" , "func_signature" , retEvent.apiPath ,
-                    "trace_id" , retEvent.traceId , "ret_val" , retEvent.rawPayloadString)));
+                LOGGER.debug(new ObjectMessage(
+                    Map.of("state", "After Mock", "func_signature", retEvent.apiPath,
+                        "trace_id", retEvent.traceId, "ret_val", retEvent.rawPayloadString)));
                 try {
-                    FnResponse fnResponse = new FnResponse(retEvent.parsePayLoad(config).getValAsString("/response"), Optional.of(retEvent.timestamp),
-                        FnReqResponse.RetStatus.Success, Optional.empty(), matchingEvent.numFound>1);
-
-                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse).build();
-                } catch (DataObj.PathNotFoundException e) {
+                    FnResponse fnResponse = new FnResponse(
+                        retEvent.parsePayLoad(config).getValAsString("/response"),
+                        Optional.of(retEvent.timestamp),
+                        FnReqResponse.RetStatus.Success, Optional.empty(),
+                        matchingEvent.numFound > 1);
+                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
+                        .build();
+                } catch (PathNotFoundException e) {
                     LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath,
-                        "trace_id", event.traceId)) , e);
-                    return errorResponse("Unable to find response path in json " + e.getMessage());
+                        "trace_id", event.traceId, "exception", e.getMessage())));
+                    return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                        buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                            "Unable to find response path in json ")).build();
                 }
-            }).orElseGet(() -> {
-                String errorReason = "Unable to find matching request";
-                LOGGER.error(new ObjectMessage(Map.of("func_signature" , event.apiPath , "trace_id"
-                , event.traceId , "reason" , errorReason)));
-                return errorResponse(errorReason);});
+            }).orElseGet(() -> getDefaultFuncResp(event));
         } else {
             String errorReason = "Invalid event or no record/replay found.";
-            LOGGER.error(new ObjectMessage(Map.of("func_signature" , event.apiPath , "trace_id"
-                , event.traceId , "reason" , errorReason)));
-            return errorResponse(errorReason);
+            LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath, "trace_id"
+                , event.traceId, "reason", errorReason)));
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_EVENT,
+                    errorReason)).build();
         }
+    }
+
+    private Response getDefaultFuncResp(Event event) {
+        String errorReason = "Unable to find matching request, looking for default response";
+        LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath, "trace_id"
+            , event.traceId, "reason", errorReason)));
+
+        EventQuery.Builder defEventQuery = new EventQuery.Builder(event.customerId,
+            event.app, event.eventType);
+        defEventQuery.withService(event.service);
+        defEventQuery.withRunType(RunType.Manual);
+        defEventQuery.withPaths(List.of(event.apiPath));
+
+        Optional<Event> defaultRespEvent = rrstore
+            .getDefaultRespEvent(defEventQuery.build());
+        if (defaultRespEvent.isPresent()) {
+            FnResponse fnResponse = null;
+            try {
+                fnResponse = new FnResponse(
+                    defaultRespEvent.get().parsePayLoad(config).getValAsString("/response"),
+                    Optional.of(defaultRespEvent.get().timestamp),
+                    FnReqResponse.RetStatus.Success, Optional.empty(),
+                    false);
+            } catch (PathNotFoundException e) {
+                LOGGER.error(new ObjectMessage(
+                    Map.of("func_signature", event.apiPath, "exception", e.getMessage())));
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Unable to find response path in json ")).build();
+            }
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
+                .build();
+        }
+
+        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+            buildErrorResponse(Constants.FAIL, Constants.EVENT_NOT_FOUND,
+                errorReason)).build();
     }
 
     @POST
@@ -495,14 +536,7 @@ public class MockServiceHTTP {
                     request.runType = Optional.of(Event.RunType.Manual);
                     LOGGER.info("Using default response");
 
-                    EventQuery.Builder eventQuery = new EventQuery.Builder(
-                        request.customerId.orElse("NA"),
-                        request.app.orElse("NA"), EventType.HTTPResponse);
-                    eventQuery.withService(request.getService().orElse("NA"));
-                    eventQuery.withPaths(List.of(request.apiPath));
-                    eventQuery.withRunType(RunType.Manual);
-
-                    EventQuery respQuery = eventQuery.build();
+                    EventQuery respQuery = getDefaultRespEventQuery(request);
                     Optional<Event> defRespEvent = rrstore.getDefaultRespEvent(respQuery);
                     if (defRespEvent.isPresent()) {
                         return com.cube.dao.Response.fromEvent(defRespEvent.get(), jsonMapper);
@@ -575,6 +609,17 @@ public class MockServiceHTTP {
             return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
         });
 
+    }
+
+    private EventQuery getDefaultRespEventQuery(Request request) {
+        EventQuery.Builder eventQuery = new EventQuery.Builder(
+            request.customerId.orElse("NA"),
+            request.app.orElse("NA"), EventType.HTTPResponse);
+        eventQuery.withService(request.getService().orElse("NA"));
+        eventQuery.withPaths(List.of(request.apiPath));
+        eventQuery.withRunType(RunType.Manual);
+
+        return eventQuery.build();
     }
 
     public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit, boolean considerTrace) {
