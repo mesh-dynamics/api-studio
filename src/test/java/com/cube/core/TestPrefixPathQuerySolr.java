@@ -136,8 +136,7 @@ public class TestPrefixPathQuerySolr {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new Jdk8Module());
 
-            String urlString = "http://18.191.135.125:8983/solr/cube";
-            SolrClient Solr = new HttpSolrClient.Builder(urlString).build();
+            SolrClient Solr = config.solr;
 
 
             List<String> pathElements =
