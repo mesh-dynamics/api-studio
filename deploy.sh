@@ -45,6 +45,35 @@ if [ -z "$1" ]; then
 ./update_templates.py $TEMPLATE_SCENARIO $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $TEMPLATE_VERSION_TEMP_FILE $NAMESPACE_HOST $APP_DIR
 }
 
+set_default() {
+echo "Setting default responses for RESTWrap!"
+
+RESPONSE = "$(curl -X POST \
+  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc", \
+  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"NA", \
+  "reqId":"NA","apiPath":"restsql/initialize","eventType":"HTTPRequest","rawPayloadString":{}}, \
+  "rawRespPayloadString":{"content-type":"application/json", \
+  "body":{"status":"Connection pool created."},"status":200}}')"
+
+echo $RESPONSE
+
+RESPONSE = "$(curl -X POST \
+  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc", \
+  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"NA", \
+  "reqId":"NA","apiPath":"restsql/update","eventType":"HTTPRequest","rawPayloadString":{}}, \
+  "rawRespPayloadString":{"content-type":"application/json", \
+  "body":{"num_updates":1},"status":200}}')"
+
+echo $RESPONSE
+
+}
+
 start_record() {
 	if [ -z "$1" ]; then
 		echo "Enter collection name"
@@ -260,9 +289,10 @@ main () {
 		stop_replay) OPERATION="stopreplay"; shift; generate_manifest $1; shift; stop_replay "$@";;
 		replay_status) OPERATION="replay_status"; shift; generate_manifest $1; shift; replay_status "$@";;
 		register_matcher) OPERATION="none"; shift; generate_manifest $1; shift; register_matcher "$@";;
+		set_default) OPERATION="none"; shift; generate_manifest $1; shift; set_default "$@";;
 		analyze) OPERATION="analyze"; shift; generate_manifest $1; shift; analyze "$@";;
 		clean) OPERATION="clean"; shift; generate_manifest $1; shift; clean "$@";;
-		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, analyze, clean)."
+		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, set_default, analyze, clean)."
 	esac
 }
 
