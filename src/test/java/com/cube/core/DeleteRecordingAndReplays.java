@@ -9,13 +9,15 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 
+import com.cube.ws.Config;
+
 public class DeleteRecordingAndReplays {
 
     public static void main(String[] args){
         try {
             //Preparing the Solr client
-            String urlString = "http://18.191.135.125:8983/solr/cube";
-            SolrClient Solr = new HttpSolrClient.Builder(urlString).build();
+            Config config = new Config();
+            SolrClient Solr = config.solr;
 
             String collection = "test-april-29-6";
 
