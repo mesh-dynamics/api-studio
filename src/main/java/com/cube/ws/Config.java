@@ -3,6 +3,33 @@
  */
 package com.cube.ws;
 
+import java.util.Properties;
+import java.util.regex.Pattern;
+
+import javax.inject.Singleton;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import io.cube.agent.CommonConfig;
+import io.cube.agent.FluentDLogRecorder;
+import io.cube.agent.IntentResolver;
+import io.cube.agent.Mocker;
+import io.cube.agent.Recorder;
+import io.cube.agent.SimpleMocker;
+import io.cube.agent.TraceIntentResolver;
+import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
@@ -13,30 +40,6 @@ import com.cube.dao.ReqRespStoreSolr;
 import com.cube.serialize.GsonPatternSerializer;
 import com.cube.serialize.GsonSolrDocumentListSerializer;
 import com.cube.serialize.GsonSolrDocumentSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import io.cube.agent.CommonConfig;
-import io.cube.agent.FluentDLogRecorder;
-import io.cube.agent.IntentResolver;
-import io.cube.agent.Mocker;
-import io.cube.agent.Recorder;
-import io.cube.agent.SimpleMocker;
-import io.cube.agent.TraceIntentResolver;
-import net.dongliu.gson.GsonJava8TypeAdapterFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-
-import javax.inject.Singleton;
-import java.util.Properties;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Pattern;
 
 /**
  * @author prasad
@@ -53,7 +56,7 @@ public class Config {
     public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
 
 	final Properties properties;
-	final SolrClient solr;
+	public final SolrClient solr;
 	public final ReqRespStore rrstore;
 	// Adding a compare template cache
     public final TemplateCache templateCache;
@@ -73,19 +76,17 @@ public class Config {
 	public final Recorder recorder;
 	public final Mocker mocker;
 
-	ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
-
     public IntentResolver intentResolver = new TraceIntentResolver();
     public CommonConfig commonConfig = new CommonConfig();
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
-		String solrurl = "http://18.191.135.125:8983/solr/cube";   // TODO: pass this default from kube conf
+		String solrurl = null;
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
-            String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.191.135.125:8983/solr/");
+            String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
             String solrCore = fromEnvOrProperties("solr_core" , "cube");
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
         } catch(Exception eta){

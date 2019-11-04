@@ -40,7 +40,7 @@ public class TemplateSetTransformer {
         String newVersion = UUID.randomUUID().toString();
 
         Map<TemplateKey, CompareTemplateVersioned> sourceTemplateMap = sourceTemplates.stream()
-            .collect(Collectors.toMap(template -> new TemplateKey(Optional.of(sourceTemplateSet.version),
+            .collect(Collectors.toMap(template -> new TemplateKey(sourceTemplateSet.version,
             sourceTemplateSet.customer, sourceTemplateSet.app, template.service,
             template.requestPath, template.type) , Function.identity()));
 

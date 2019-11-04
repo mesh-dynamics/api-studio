@@ -18,7 +18,7 @@ public class TemplateKey {
     private String appId;
     private String serviceId;
     private String path;
-    private Optional<String> version; // this is the version of the TemplateSet
+    private String version; // this is the version of the TemplateSet
     private Type reqOrResp;
 
     public Type getReqOrResp() {
@@ -30,7 +30,7 @@ public class TemplateKey {
         Response
     }
 
-    public TemplateKey(Optional<String> version, String customerId, String appId, String serviceId, String path , Type reqOrResp) {
+    public TemplateKey(String version, String customerId, String appId, String serviceId, String path , Type reqOrResp) {
         this(customerId,appId,serviceId,path,reqOrResp);
         this.version = version;
     }
@@ -92,5 +92,5 @@ public class TemplateKey {
         return path;
     }
 
-    public String getVersion() { return version.orElse(Recording.DEFAULT_TEMPLATE_VER); }
+    public String getVersion() { return version; }
 }

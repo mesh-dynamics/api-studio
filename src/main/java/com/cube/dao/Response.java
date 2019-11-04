@@ -12,6 +12,7 @@ import com.cube.ws.Config;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -91,7 +92,12 @@ public class Response extends RRBase {
         }
         try {
             HTTPResponsePayload responsePayload = jsonMapper.readValue(event.rawPayloadString, HTTPResponsePayload.class);
-            return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, emptyMap(),
+            MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
+            meta.put(SERVICEFIELD, List.of(event.service));
+            meta.put(INSTANCEIDFIELD, List.of(event.instanceId));
+            meta.put(Config.DEFAULT_TRACE_FIELD, List.of(event.traceId));
+
+            return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, meta,
                 responsePayload.hdrs,
                 responsePayload.body, Optional.of(event.getCollection()), Optional.of(event.timestamp),
                 Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app), event.apiPath));

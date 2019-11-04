@@ -6,12 +6,13 @@
 
 package com.cube.core;
 
+import com.cube.utils.Constants;
+
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.core.CompareTemplate.ComparisonType;
-import com.cube.dao.RRBase;
 import com.cube.dao.Request;
 
 /*
@@ -37,19 +38,19 @@ public class TemplatedRequestComparator extends TemplatedRRComparator implements
 
     public TemplatedRequestComparator(CompareTemplate template, ObjectMapper jsonMapper) {
         super(template, jsonMapper);
-        qparamFieldTemplate = template.subsetWithPrefix(Request.QPARAMPATH);
-        fparamFieldtemplate = template.subsetWithPrefix(Request.FPARAMPATH);
-        ctreqid = template.getRule(RRBase.REQIDPATH).ct;
+        qparamFieldTemplate = template.subsetWithPrefix(Constants.QUERY_PARAMS_PATH);
+        fparamFieldtemplate = template.subsetWithPrefix(Constants.FORM_PARAMS_PATH);
+        ctreqid = template.getRule(Constants.REQ_ID_PATH).ct;
         ctmetaFields = metaFieldtemplate.getPathCTs();
-        ctbody = template.getRule(RRBase.BODYPATH).ct;
-        ctcollection = template.getRule(RRBase.COLLECTIONPATH).ct;
-        cttimestamp = template.getRule(RRBase.TIMESTAMPPATH).ct;
-        ctrrtype = template.getRule(RRBase.RUNTYPEPATH).ct;
-        ctcustomerid = template.getRule(RRBase.CUSTOMERIDPATH).ct;
-        ctapp = template.getRule(RRBase.APPPATH).ct;
+        ctbody = template.getRule(Constants.BODY_PATH).ct;
+        ctcollection = template.getRule(Constants.COLLECTION_PATH).ct;
+        cttimestamp = template.getRule(Constants.TIMESTAMP_PATH).ct;
+        ctrrtype = template.getRule(Constants.RUN_TYPE_PATH).ct;
+        ctcustomerid = template.getRule(Constants.CUSTOMER_ID_PATH).ct;
+        ctapp = template.getRule(Constants.APP_PATH).ct;
         cthdrFields = hdrFieldTemplate.getPathCTs();
-        ctpath = template.getRule(Request.PATHPATH).ct;
-        ctmethod = template.getRule(Request.METHODPATH).ct;
+        ctpath = template.getRule(Constants.PATH_PATH).ct;
+        ctmethod = template.getRule(Constants.METHOD_PATH).ct;
         ctqparamFields = qparamFieldTemplate.getPathCTs();
         ctfparamFields = fparamFieldtemplate.getPathCTs();
     }

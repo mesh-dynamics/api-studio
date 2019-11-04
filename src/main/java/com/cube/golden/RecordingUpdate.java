@@ -1,7 +1,11 @@
 package com.cube.golden;
 
 
+import com.cube.cache.TemplateKey;
+import com.cube.core.RequestComparator;
 import com.cube.dao.*;
+import com.cube.ws.Config;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,13 +18,13 @@ import java.util.stream.Stream;
 
 public class RecordingUpdate {
 
-    private final ReqRespStoreSolr rrStore;
+    private final Config config;
     private final ResponseTransformer responseTransformer;
     private static final Logger LOGGER = LogManager.getLogger(RecordingUpdate.class);
 
-    public RecordingUpdate(ReqRespStoreSolr rrStore, ObjectMapper jsonMapper) {
-        this.rrStore = rrStore;
-        this.responseTransformer = new ResponseTransformer(jsonMapper);
+    public RecordingUpdate(Config config) {
+        this.config = config;
+        this.responseTransformer = new ResponseTransformer(config.jsonMapper);
     }
 
     /*
@@ -29,7 +33,7 @@ public class RecordingUpdate {
     public String createRecordingOperationSet(String customer, String app){
         RecordingOperationSetMeta recordingOperationSetMeta = new RecordingOperationSetMeta(customer, app);
         LOGGER.info("Creating new recording operation set with id: " + recordingOperationSetMeta.id);
-        boolean stored = rrStore.storeRecordingOperationSetMeta(recordingOperationSetMeta);
+        boolean stored = config.rrstore.storeRecordingOperationSetMeta(recordingOperationSetMeta);
         if (!stored) {
             LOGGER.error("error storing recording operation set");
             return null; // todo: what to return if storing fails?
@@ -46,7 +50,7 @@ public class RecordingUpdate {
         // fetch operation set meta from Solr to verify the recordingOperationSetId
         LOGGER.info("Fetching and verifying recordingOperationSetId");
 
-        Optional<RecordingOperationSetMeta> recordingOperationSetMeta = rrStore.getRecordingOperationSetMeta(
+        Optional<RecordingOperationSetMeta> recordingOperationSetMeta = config.rrstore.getRecordingOperationSetMeta(
             updateRequest.operationSetId);
         if(recordingOperationSetMeta.isEmpty()) {
             LOGGER.error(String.format("recording operation set with id %s does not exist", updateRequest.operationSetId));
@@ -59,7 +63,7 @@ public class RecordingUpdate {
                 "recordingOperationSetId %s", updateRequest.service,
             updateRequest.path, updateRequest.operationSetId));
         Optional<RecordingOperationSetSP> storedOperationSet =
-            rrStore.getRecordingOperationSetSP(updateRequest.operationSetId,
+            config.rrstore.getRecordingOperationSetSP(updateRequest.operationSetId,
                 updateRequest.service, updateRequest.path);
         return storedOperationSet
             // if present, update/insert the new operations
@@ -76,7 +80,7 @@ public class RecordingUpdate {
                 // store it back
                 // if successful return true
                 LOGGER.info("Storing updated operation set");
-                return rrStore.storeRecordingOperationSet(recordingOperationSet);
+                return config.rrstore.storeRecordingOperationSet(recordingOperationSet);
             })
             // if empty, create a new one (we have verified the existence of the recordingOperationSetId)
             .orElseGet(() -> {
@@ -84,7 +88,7 @@ public class RecordingUpdate {
 //                RecordingOperationSetSP recordingOperationSet
 //                    = new RecordingOperationSetSP(recordingOperationSetId, recordingOperationSetMeta.get().customer,
 //                    recordingOperationSetMeta.get().app, Optional.of(service), Optional.of(path), newOperationSet);
-                return rrStore.storeRecordingOperationSet(updateRequest);
+                return config.rrstore.storeRecordingOperationSet(updateRequest);
             });
     }
 
@@ -101,13 +105,15 @@ public class RecordingUpdate {
     */
     public Optional<RecordingOperationSetSP> getRecordingOperationSet(String recordingOperationSetId,
                                                                       String service, String path){
-        return rrStore.getRecordingOperationSetSP(recordingOperationSetId, service, path);
+        return config.rrstore.getRecordingOperationSetSP(recordingOperationSetId, service, path);
     }
 
     /*
     * apply the operations on a recording collection
      */
     // TODO: Event redesign: This needs to be rewritten to get as event
+    // TODO: sort the match results by (service, apiPath) and process each apiPath at a time, so that comparator need
+    //  not be lookup up repeatedly
     public boolean applyRecordingOperationSet(String replayId, String newCollectionName,
                                                 String recordingOperationSetId, Recording originalRec) {
 
@@ -118,18 +124,21 @@ public class RecordingUpdate {
         // create a new collection
         // store it
         Map<String, RecordingOperationSetSP> apiPathVsUpdateOperationSet =
-            rrStore.getRecordingOperationSetSPs(recordingOperationSetId).collect(Collectors.toMap( set -> set.path
+            config.rrstore.getRecordingOperationSetSPs(recordingOperationSetId).collect(Collectors.toMap( set -> set.path
             , Function.identity()));
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId/*, recordingOperationSetSP*/);
         results.forEach(res -> {
             try {
             LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
                 res.recordReqId.get(), res.replayReqId.get()));
-            Request recordRequest = res.recordReqId.flatMap(rrStore::getRequestOld)
+            Request recordRequest = res.recordReqId.flatMap(config.rrstore::getRequest)
+                .flatMap(event -> Request.fromEvent(event, config.jsonMapper))
                 .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-            Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
+            Response recordResponse = res.recordReqId.flatMap(config.rrstore::getResponse)
+                .flatMap(event -> Response.fromEvent(event, config.jsonMapper))
                 .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
-            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponseOld);
+            Optional<Response> replayResponse = res.replayReqId.flatMap(config.rrstore::getResponse)
+                .flatMap(event -> Response.fromEvent(event, config.jsonMapper));
 
             Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
                 apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
@@ -152,9 +161,15 @@ public class RecordingUpdate {
             recordRequest.reqId = transformedResponse.reqId;
             recordRequest.collection = Optional.of(newCollectionName);
 
+            TemplateKey key = new TemplateKey(originalRec.templateVersion, originalRec.customerId,
+                originalRec.app, recordRequest.getService().orElse("NA"), recordRequest.apiPath,
+                TemplateKey.Type.Request);
+            RequestComparator comparator = config.requestComparatorCache.getRequestComparator(key , true);
+
 
             LOGGER.debug("saving request/response with reqId: " + transformedResponse.reqId);
-            boolean saved = rrStore.save(recordRequest) && rrStore.save(transformedResponse);
+            boolean saved =
+                config.rrstore.save(recordRequest.toEvent(comparator, config)) && config.rrstore.save(transformedResponse.toEvent(config, recordRequest.apiPath));
             if(!saved) {
                 LOGGER.debug("request/response not saved");
                 // todo raise error?
@@ -165,14 +180,14 @@ public class RecordingUpdate {
 
         });
 
-        rrStore.saveFnReqRespNewCollec(originalRec.customerId, originalRec.app,
+        config.rrstore.saveFnReqRespNewCollec(originalRec.customerId, originalRec.app,
             originalRec.collection, newCollectionName);
 
 
         // get the operation sets using operation set id
         // for each operation set, perform the transformation and store the new collection
         /*LOGGER.debug("fetching RecordingOperationSets for " + recordingOperationSetId);
-        rrStore.getRecordingOperationSetSPs(recordingOperationSetId)
+        config.rrstore.getRecordingOperationSetSPs(recordingOperationSetId)
             .forEach(recordingOperationSet ->
                 fetchTransformAndStore(replayId, newCollectionName, recordingOperationSet)
             );*/
@@ -188,9 +203,9 @@ public class RecordingUpdate {
         //1. Create a new collection with all the Req/Responses
         results.forEach(res -> {
            try {
-               Request recordRequest = res.recordReqId.flatMap(rrStore::getRequestOld)
+               Request recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestOld)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-               Response recordResponse = res.recordReqId.flatMap(rrStore::getResponseOld)
+               Response recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseOld)
                    .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
 
                Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
@@ -206,7 +221,7 @@ public class RecordingUpdate {
                recordRequest.collection = Optional.of(newCollectionName);
 
                LOGGER.debug("saving request/response with reqid: " + newReqId);
-               boolean saved = rrStore.save(recordRequest) && rrStore.save(transformedResponse);
+               boolean saved = config.rrstore.save(recordRequest) && config.rrstore.save(transformedResponse);
 
                if(!saved) {
                    LOGGER.debug("request/response not saved");
@@ -217,21 +232,21 @@ public class RecordingUpdate {
            }
         });
 
-        rrStore.commit();
+        config.rrstore.commit();
 
         //2. Get all the ReqResMatchResult with MatchType as NoMatch either for request or response match
-        Stream<Analysis.ReqRespMatchResult> resultsOnlyNoMatch = rrStore.getAnalysisMatchResultOnlyNoMatch(replayId).getObjects();
+        Stream<Analysis.ReqRespMatchResult> resultsOnlyNoMatch = config.rrstore.getAnalysisMatchResultOnlyNoMatch(replayId).getObjects();
 
         //3. Delete all the requests and responses in the new collection that has the trace id in the above list
         resultsOnlyNoMatch.forEach( res -> {
             res.recordTraceId.ifPresentOrElse( recTraceId -> {
-                rrStore.deleteReqResByTraceId(recTraceId, newCollectionName);
+                config.rrstore.deleteReqResByTraceId(recTraceId, newCollectionName);
                 res.replayTraceId.ifPresent(repTraceId -> {
                     if (!repTraceId.equalsIgnoreCase(recTraceId)) {
-                        rrStore.deleteReqResByTraceId(repTraceId, newCollectionName);
+                        config.rrstore.deleteReqResByTraceId(repTraceId, newCollectionName);
                     }
                 });
-            }, () -> res.replayTraceId.ifPresent(repTraceId -> rrStore.deleteReqResByTraceId(repTraceId, newCollectionName)));
+            }, () -> res.replayTraceId.ifPresent(repTraceId -> config.rrstore.deleteReqResByTraceId(repTraceId, newCollectionName)));
         });
 
         return true;
@@ -247,9 +262,9 @@ public class RecordingUpdate {
             // get record and replay responses using IDs
             LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
                 res.recordReqId.get(), res.replayReqId.get()));
-            Optional<Response> recordResponse = res.recordReqId.flatMap(rrStore::getResponse);
-            Optional<Response> replayResponse = res.replayReqId.flatMap(rrStore::getResponse);
-            Optional<Request> recordRequest = res.recordReqId.flatMap(rrStore::getRequestOld);
+            Optional<Response> recordResponse = res.recordReqId.flatMap(config.rrstore::getResponse);
+            Optional<Response> replayResponse = res.replayReqId.flatMap(config.rrstore::getResponse);
+            Optional<Request> recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestOld);
 
             // apply the transformation operations
             LOGGER.debug("applying transformations");
@@ -264,7 +279,7 @@ public class RecordingUpdate {
             });
 
             LOGGER.debug("saving request/response with reqId: " + transformedResponse.reqId);
-            boolean saved = rrStore.save(recordRequest.get()) && rrStore.save(transformedResponse);
+            boolean saved = config.rrstore.save(recordRequest.get()) && config.rrstore.save(transformedResponse);
             if(!saved) {
                 LOGGER.debug("request/response not saved");
                 // todo raise error?
@@ -273,7 +288,7 @@ public class RecordingUpdate {
     }
 
      Stream<Analysis.ReqRespMatchResult> getReqRespMatchResultStream(String replayId/*, RecordingOperationSetSP recordingOperationSetSP*/) {
-        Result<Analysis.ReqRespMatchResult> matchResults = rrStore.getAnalysisMatchResults(
+        Result<Analysis.ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
             replayId,
             Optional.empty(),//Optional.of(recordingOperationSetSP.service),
             Optional.empty(),//Optional.of(recordingOperationSetSP.path),

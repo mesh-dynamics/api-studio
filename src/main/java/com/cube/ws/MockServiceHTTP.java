@@ -1,10 +1,9 @@
 package com.cube.ws;
 
 import static com.cube.dao.RRBase.*;
-import static com.cube.dao.Request.*;
 
+import com.cube.utils.Constants;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -142,22 +141,29 @@ public class MockServiceHTTP {
     }
 
     private boolean setFunctionPayloadKeyAndCollection(Event event) {
-	    if (event!= null && event.eventType.equals(Event.EventType.JavaRequest)) {
-            Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
-            Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
+        if (event != null && event.eventType.equals(Event.EventType.JavaRequest)) {
+            Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(
+                event.customerId, event.app, event.instanceId);
+            Optional<String> collection = recordOrReplay
+                .flatMap(ReqRespStore.RecordOrReplay::getCollection);
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
                 event.setCollection(collection.get());
-                event.parseAndSetKey(config, getFunctionCompareTemplate(event, recordOrReplay));
+                event.parseAndSetKey(config, Utils
+                    .getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
                 return true;
             } else {
-                LOGGER.error(new ObjectMessage(Map.of("reason", "Collection not found" , "customerId",
-                    event.customerId, "app", event.app, "instanceId", event.instanceId, "trace_id" , event.traceId)));
+                LOGGER
+                    .error(new ObjectMessage(Map.of("reason", "Collection not found", "customerId",
+                        event.customerId, "app", event.app, "instanceId", event.instanceId,
+                        "trace_id", event.traceId)));
                 return false;
             }
         } else {
-            LOGGER.error(new ObjectMessage(Map.of("reason", "Invalid event - either event is null, or some required field missing, or both binary " +
-                "and string payloads set")));
+            LOGGER.error(new ObjectMessage(Map.of("reason",
+                "Invalid event - either event is null, or some required field missing, or both binary "
+                    +
+                    "and string payloads set")));
             return false;
         }
     }
@@ -174,13 +180,6 @@ public class MockServiceHTTP {
             .withCollection(event.getCollection()).withPayloadKey(event.payloadKey)
             .withOffset(offset).withLimit(limit).withSortOrderAsc(isSortOrderAsc)
             .build();
-    }
-
-    private CompareTemplate getFunctionCompareTemplate(Event event, Optional<ReqRespStore.RecordOrReplay> recordOrReplay) {
-        TemplateKey tkey =
-            new TemplateKey(recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getTemplateVersion), event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-        return config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
     }
 
     @POST
@@ -366,7 +365,7 @@ public class MockServiceHTTP {
         Optional<String> templateVersion =
             recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> Optional.of(replay.templateVersion)));
 
-	    TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
+	    TemplateKey key = new TemplateKey(templateVersion.get(), customerid, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
@@ -458,8 +457,7 @@ public class MockServiceHTTP {
             Optional.of(customerid),
             Optional.of(app));
 
-        Optional<String> templateVersion =
-            recordOrReplay.flatMap(rr -> rr.replay.map(replay -> replay.templateVersion));
+        String templateVersion = recordOrReplay.get().getTemplateVersion();
 
         TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
         RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
@@ -621,16 +619,16 @@ public class MockServiceHTTP {
 	private CompareTemplate reqTemplate = new CompareTemplate();
 
 	{
-        reqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(QPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(FPARAMPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(REQIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-        reqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		reqTemplate.addRule(new TemplateEntry(HDRPATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.QUERY_PARAMS_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.FORM_PARAMS_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.REQ_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+        reqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		reqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspec = new TemplatedRequestComparator(reqTemplate, jsonMapper);
@@ -651,12 +649,12 @@ public class MockServiceHTTP {
 	private CompareTemplate defaultReqTemplate = new CompareTemplate();
 
 	{
-		defaultReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-		defaultReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-		defaultReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonMapper);
