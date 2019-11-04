@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import com.cube.utils.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -31,7 +32,7 @@ public class TemplateRetrievalTest {
             ReqRespStore rrStore = config.rrstore;
             TemplateCache templateCache = new TemplateCache(rrStore, config);
             CompareTemplate template = templateCache.fetchCompareTemplate(new TemplateKey
-                    (Optional.empty(), "ravivj" , "movieinfo" , "movieinfo" , "minfo/returnmovie"
+                    (Constants.DEFAULT_TEMPLATE_VER, "ravivj" , "movieinfo" , "movieinfo" , "minfo/returnmovie"
                             , TemplateKey.Type.Response));
 
             template.getRules().forEach(rule -> System.out.println(rule.path));
@@ -56,7 +57,7 @@ public class TemplateRetrievalTest {
             TemplateCache templateCache = new TemplateCache(rrStore ,config);
             ObjectMapper objectMapper = config.jsonMapper;
             RequestComparatorCache requestComparatorCache = new RequestComparatorCache(templateCache , objectMapper);
-            TemplateKey key = new TemplateKey(Optional.empty(), "ravivj" , "movieinfo"
+            TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj" , "movieinfo"
                     , "productpage" , "productpage" , TemplateKey.Type.Request);
             RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
             assertSame(comparator.getCTapp().toString() , "Equal") ;

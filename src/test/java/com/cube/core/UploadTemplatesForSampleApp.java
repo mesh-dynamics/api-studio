@@ -1,16 +1,14 @@
 package com.cube.core;
 
+import com.cube.utils.Constants;
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.Optional;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.google.api.client.json.Json;
-import com.google.gson.JsonObject;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
 
@@ -46,7 +44,7 @@ public class UploadTemplatesForSampleApp {
                 JSONObject template = elem.getJSONObject("template");
                 String templateAsString = template.toString();
                 reqRespStore.saveCompareTemplate(
-                        new TemplateKey(Optional.empty(), customerId , app , service , path , TemplateKey.Type.Response)
+                        new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId , app , service , path , TemplateKey.Type.Response)
                  , templateAsString);
             });
 

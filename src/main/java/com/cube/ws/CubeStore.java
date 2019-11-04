@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.Event.RunType;
+import com.cube.dao.EventBuilder.InvalidEventException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -43,8 +45,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
 import static com.cube.dao.RRBase.*;
-import static com.cube.dao.Request.PATHPATH;
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
@@ -132,7 +136,6 @@ public class CubeStore {
 
         Optional<String> rid = Optional.ofNullable(meta.getFirst("c-request-id"));
         Optional<String> type = Optional.ofNullable(meta.getFirst("type"));
-        Optional<String> inpcollection = Optional.ofNullable(meta.getFirst("collection"));
         // TODO: the following can pass replayid to cubestore but currently requests don't match in the mock
         // since we don't have the ability to ignore certain fields (in header and body)
         //if (inpcollection.isEmpty()) {
@@ -156,7 +159,15 @@ public class CubeStore {
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
-        Optional<String> collection = getCurrentCollectionIfEmpty(inpcollection, customerid, app, instanceid);
+        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerid, app, instanceid);
+        if (recordOrReplay.isEmpty()) {
+            // Dropping if there is no current recording.
+            LOGGER.info(String.format("Dropping store for type %s, reqId %s since no current recording"
+                , type.orElse("<empty>"), rid.orElse("<empty>")));
+            return Optional.of("No current record/replay!");
+        }
+
+        Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 
         if (collection.isEmpty()) {
             // Dropping if collection is empty, i.e. recording is not started
@@ -179,8 +190,7 @@ public class CubeStore {
 
                     // create Event object from Request
                     // fetch the template version, create template key and get a request comparator
-                    Optional<String> templateVersion = rrstore.getCurrentRecordOrReplay(customerid, app, instanceid)
-                        .flatMap(RecordOrReplay::getTemplateVersion);
+                    String templateVersion = recordOrReplay.get().getTemplateVersion();
                     if(!(customerid.isPresent() && app.isPresent() && service.isPresent())) {
                         LOGGER.error("customer id, app or service not present");
                         return Optional.of("customer id, app or service not present");
@@ -228,7 +238,7 @@ public class CubeStore {
                     Event responseEvent;
                     try {
                         // todo: consider creating the Event object directly instead of creating a Response
-                        responseEvent = resp.toEvent(config, path);
+                        responseEvent = resp.toEvent(config, reqApiPath);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
@@ -512,6 +522,11 @@ public class CubeStore {
         Optional<RecordOrReplay> recordOrReplay =
             rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
                 Optional.of(event.app), Optional.of(event.instanceId));
+
+        if (recordOrReplay.isEmpty()) {
+            return Optional.of("No current record/replay!");
+        }
+
         collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
@@ -522,7 +537,8 @@ public class CubeStore {
         if (event.isRequestType()) {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
-            event.parseAndSetKey(config, getCompareTemplate(event, recordOrReplay));
+            event.parseAndSetKey(config,
+                Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
         }
 
         boolean saveResult = rrstore.save(event);
@@ -531,21 +547,6 @@ public class CubeStore {
         }
 
         return Optional.empty();
-    }
-
-    private CompareTemplate getCompareTemplate(Event event, Optional<RecordOrReplay> recordOrReplay) {
-        TemplateKey tkey =
-            new TemplateKey(recordOrReplay.flatMap(RecordOrReplay::getTemplateVersion), event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
-
-        CompareTemplate compareTemplate;
-        if (event.eventType.equals(Event.EventType.JavaRequest)) {
-            compareTemplate = config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
-        } else{
-            compareTemplate =
-                config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
-        }
-        return compareTemplate;
     }
 
     @POST
@@ -622,7 +623,140 @@ public class CubeStore {
         return Response.serverError().entity("Not able to store default response").build();
     }
 
-	/* here the body is the full json response */
+
+    /**
+     * @param defaultEvent defaultEvent is a wrapper on top of Event to accomodate both request and
+     * response payload. While the request payload is sent as part of the Event object, response
+     * payload will be specified as the rawRespPayloadString or rawRespPayloadBinary depending on the
+     * type.
+     *
+     * If the request event is already present, response event is stored.
+     * If the request event is not present, both request and response events are stored.
+     *
+     * @return
+     * success - successful setting of default response for the request
+     * fail - if storing request/response event fails
+     * error - if an exception occurs.
+     */
+    @POST
+    @Path("event/setDefaultResponse")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response setDefaultRespForEvent(DefaultEvent defaultEvent) {
+
+        if (defaultEvent == null) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
+                    "Invalid input!")).build();
+        }
+
+        try {
+            Event eventData = defaultEvent.getEvent();
+            Optional<Event> defaultReqEvent = getOrStoreDefaultReqEvent(eventData);
+            if (defaultReqEvent.isPresent() && storeDefaultRespEvent(defaultReqEvent.get(),
+                    defaultEvent.getRawRespPayloadString())) {
+                return Response.ok().type(MediaType.APPLICATION_JSON)
+                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
+            } else {
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.FAIL, Constants.STORE_EVENT_FAILED,
+                        "Storing default response for event failed!")).build();
+            }
+
+        } catch (InvalidEventException e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.INVALID_EVENT,
+                    "Trying to store invalid request/response event : " + e.getMessage())).build();
+        } catch (RuntimeException e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.RUNTIME_EXCEPTION,
+                    "Runtime exception occured. Check if the inputs are valid : " + e.getMessage()))
+                .build();
+        }
+    }
+
+    private boolean storeDefaultRespEvent(
+        Event defaultReqEvent, String payload) throws InvalidEventException {
+        //Store default response
+        EventBuilder eventBuilder = new EventBuilder(defaultReqEvent.customerId,
+            defaultReqEvent.app,
+            defaultReqEvent.service, "NA", "NA",
+            "NA", RunType.Manual, Instant.now(),
+            "NA", defaultReqEvent.apiPath,
+            Event.EventType.getResponseType(defaultReqEvent.eventType));
+        eventBuilder.setRawPayloadString(payload);
+        Event defaultRespEvent = eventBuilder.createEvent();
+        defaultRespEvent.parseAndSetKey(config,
+            Utils.getRequestCompareTemplate(config, defaultRespEvent, Constants.DEFAULT_TEMPLATE_VER));
+
+        //We cannot use storeEvent API as it checks for an active record/replay.
+        //This API is standalone and should work without an active record/replay.
+        if (!rrstore.save(defaultRespEvent)) {
+            LOGGER.debug(new ObjectMessage(
+                Map.of("message", "Storing Response Event failed.",
+                    "type", defaultReqEvent.eventType,
+                    "reqId", defaultReqEvent.reqId,
+                    "path", defaultReqEvent.apiPath)));
+
+            return false;
+        }
+
+        rrstore.commit();
+        return true;
+    }
+
+    private Optional<Event> getOrStoreDefaultReqEvent(Event reqEvent) throws InvalidEventException {
+        if (reqEvent == null || !reqEvent.validate()) {
+            LOGGER.debug(new ObjectMessage(
+                Map.of("message", "Invalid Request event!")));
+            throw new InvalidEventException();
+        }
+
+        EventQuery reqQuery = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
+            reqEvent.eventType)
+            .withService(reqEvent.service)
+            .withPaths(List.of(reqEvent.apiPath))
+            .withOffset(0).withLimit(1)
+            .build();
+
+        Optional<Event> matchingReqEvent = rrstore.getEvents(reqQuery).getObjects().findFirst();
+
+        //Store request event if not present.
+        if (matchingReqEvent.isEmpty()) {
+            LOGGER.debug(new ObjectMessage(
+                Map.of("message", "Request Event not found. Storing request event",
+                    "type", reqEvent.eventType,
+                    "reqId", reqEvent.reqId,
+                    "path", reqEvent.apiPath)));
+
+            EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
+                reqEvent.service, "NA", "NA",
+                "NA", RunType.Manual, Instant.now(),
+                "NA", reqEvent.apiPath, reqEvent.eventType);
+            eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
+            Event defaultReqEvent = eventBuilder.createEvent();
+            defaultReqEvent.parseAndSetKey(config, Utils.
+                getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+
+            //We cannot use storeEvent API as it checks for a running record/replay.
+            //This API is standalone and should work without an active record/replay.
+            if (!rrstore.save(defaultReqEvent)) {
+                LOGGER.debug(new ObjectMessage(
+                    Map.of("message", "Storing Request Event failed.",
+                        "type", reqEvent.eventType,
+                        "reqId", reqEvent.reqId,
+                        "path", reqEvent.apiPath)));
+
+                return Optional.empty();
+            }
+
+            return Optional.of(defaultReqEvent);
+        }
+
+        return matchingReqEvent;
+    }
+
+    /* here the body is the full json response */
 	@POST
 	@Path("/setdefault/{method}/{var:.+}")
 	@Consumes({MediaType.APPLICATION_JSON})
@@ -799,7 +933,7 @@ public class CubeStore {
     @Path("/warmupcache")
     public Response warmUpCache(@Context UriInfo uriInfo) {
         try {
-            TemplateKey key = new TemplateKey(Optional.empty(), "ravivj", "movieinfo"
+            TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", TemplateKey.Type.Response);
             ResponseComparator comparator = this.config.responseComparatorCache.getResponseComparator(key);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());
@@ -954,13 +1088,13 @@ public class CubeStore {
     static RequestComparator mspecForDrillDownQuery;
 
     {
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(PATHPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(RUNTYPEPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(CUSTOMERIDPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(APPPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(COLLECTIONPATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(METAPATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(HDRPATH + "/" + HDRPATHFIELD,
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
+        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH + "/" + HDRPATHFIELD,
             CompareTemplate.DataType.Str,
             CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
 

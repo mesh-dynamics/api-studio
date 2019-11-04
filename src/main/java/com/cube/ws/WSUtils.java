@@ -6,12 +6,10 @@
 
 package com.cube.ws;
 
+import com.cube.dao.ReqRespStore;
 import java.util.Map;
 import java.util.Optional;
-
 import javax.ws.rs.core.Response;
-
-import com.cube.dao.ReqRespStore;
 
 /*
  * Created by IntelliJ IDEA.

@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -457,9 +458,10 @@ public interface ReqRespStore {
 		}
 
 		@JsonIgnore
-        public Optional<String> getTemplateVersion() {
+        public String getTemplateVersion() {
             return replay.map(replay1 -> replay1.templateVersion)
-                .or(() -> recording.map(recording -> recording.templateVersion));
+                .orElseGet(() -> recording.map(recording1 -> recording1.templateVersion).orElse(
+                    Constants.DEFAULT_TEMPLATE_VER));
         }
 
 		// for json de-serialization
@@ -633,6 +635,20 @@ public interface ReqRespStore {
 	Optional<TemplateUpdateOperationSet> getTemplateUpdateOperationSet(String templateUpdateOperationSetId);
 
 	//boolean updateCollection(Recording sourceRecording, List<ReqRespUpdateOperation> recordingUpdateSpec);
+
+    boolean storeRecordingOperationSetMeta(RecordingOperationSetMeta recordingOperationSetMeta);
+
+    // get recordingOperationSet for a given operationset id, service and path
+    Optional<RecordingOperationSetMeta> getRecordingOperationSetMeta(String recordingOperationSetId);
+
+    boolean storeRecordingOperationSet(RecordingOperationSetSP recordingOperationSetSP);
+
+    // get recordingOperationSet for a given operationset id, service and path
+    Optional<RecordingOperationSetSP> getRecordingOperationSetSP(String recordingOperationSetId, String service,
+                                                                 String path);
+
+    // get all recordingOperationSets for a given operationset id
+    Stream<RecordingOperationSetSP> getRecordingOperationSetSPs(String recordingOperationSetId);
 
     /**
      * Save a template set
