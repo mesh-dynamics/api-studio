@@ -288,6 +288,11 @@ public class AnalyzeWS {
         } catch (IOException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
         }
+        catch (Exception e) {
+            return Response.serverError().entity((new JSONObject(Map.of(
+                "Message", "Unable to save template set",
+                "Error", e.getMessage()))).toString()).build();
+        }
     }
 
     /**

@@ -69,6 +69,9 @@ public class TestPrefixPathQuerySolr {
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
 
         });
 
