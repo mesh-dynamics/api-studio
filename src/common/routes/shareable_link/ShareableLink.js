@@ -154,7 +154,23 @@ class ShareableLink extends Component {
     }
 
     handleMetaDataSelect(metaDataType, value) {
-        this.setState({[metaDataType] : value});
+        if (metaDataType == "selectedAPI") {
+            const {dispatch} = this.props;
+            this.setState({apiPath: value, [metaDataType] : value});
+            setTimeout(() => {
+                dispatch(cubeActions.setPathResultsParams({
+                    path: value,
+                    service: this.state.service,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId,
+                    currentTemplateVer: this.state.currentTemplateVer
+                }));
+            });
+        } else if (metaDataType == "selectedService") {
+            this.setState({service: value, [metaDataType] : value});
+        } else {
+            this.setState({[metaDataType] : value});
+        }
     }
 
     async fetchReplayList() {
