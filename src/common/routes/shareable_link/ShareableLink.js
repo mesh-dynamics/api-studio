@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb } from 'react-bootstrap';
 import _ from 'lodash';
+import axios from "axios";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
@@ -108,7 +109,7 @@ class ShareableLink extends Component {
         if (this.state.resultsFetched === prevState.resultsFetched) {
             return;
         }
-        this.fetchReplayList();
+        //this.fetchReplayList();
     }
 
     componentWillReceiveProps(nextProps, prevState) {
@@ -178,8 +179,13 @@ class ShareableLink extends Component {
         if(!replayId) throw new Error("replayId is required");
         let response, json, { resultsFetched } = this.state;
         let user = JSON.parse(localStorage.getItem('user'));
-        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${resultsFetched}&includediff=true&path=%2A`;
+        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includediff=true&path=%2A`;
         let dataList = {};
+
+        
+        let promises = [], fetchedResults = 0, layoutDataWithDiff = [], totalNumberOfRequest = 0, pageSize = 20, replayListData = [];
+
+
         try {
             response = await fetch(url, {
                 method: "get",
@@ -193,12 +199,40 @@ class ShareableLink extends Component {
                 dataList = json;
                 let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
                 this.setState({
-                    replayList: this.state.replayList.concat(dataList.res),
-                    diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData),
-                    totalRequests: dataList.numFound,
-                    resultsFetched: this.state.resultsFetched + dataList.res.length,
+                    //diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData),
                     app: dataList.app,
                     templateVersion: dataList.templateVersion,
+                });
+
+                layoutDataWithDiff.push(...diffLayoutData);
+
+                fetchedResults = dataList.res.length;
+                totalNumberOfRequest = dataList.numFound;
+                let allFetched = false;
+                let requestHeaders = {
+                    headers: {
+                        "cache-control": "no-cache",
+                        "Authorization": "Bearer " + user['access_token']
+                    }
+                };
+                while(!allFetched) {
+                    if(fetchedResults >= totalNumberOfRequest) {
+                        allFetched = true;
+                        break;
+                    }
+                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includediff=true&path=%2A`;
+                    promises.push(axios.get(url, requestHeaders));
+                    fetchedResults = fetchedResults + pageSize;
+                }
+                let self = this;
+                axios.all(promises).then(function(results) {
+                    results.forEach(function(eachResponse) {
+                        let eachDiffLayoutData = self.validateAndCreateDiffLayoutData(eachResponse.data.res);
+                        layoutDataWithDiff.push(...eachDiffLayoutData);
+                    });
+                    self.setState({
+                        diffLayoutData: layoutDataWithDiff
+                    });
                 });
             } else {
                 throw new Error("Response not ok fetchTimeline");
@@ -437,6 +471,9 @@ class ShareableLink extends Component {
             }
             return idx === index;
         };
+        let diffLayoutDataFiltered = diffLayoutData.filter(function(eachItem) {
+            return eachItem.show === true;
+        });
         requestMatchTypes = requestMatchTypes.filter(filterFunction);
         responseMatchTypes = responseMatchTypes.filter(filterFunction);
         services = services.filter(filterFunction);
@@ -495,75 +532,11 @@ class ShareableLink extends Component {
                 <Glyphicon style={{ visibility: selectedDiffOperationType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
-        let jsxContent = diffLayoutData.map((item, index) => {
+        let jsxContent = diffLayoutDataFiltered.map((item, index) => {
             return (<div key={item.recordReqId} style={{ borderBottom: "1px solid #eee", display: item.show ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
-                {item.recordedRequestHeaders != null && item.replayedRequestHeaders != null && (
-                    <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
-                        <div className="headers-diff-wrapper">
-                            < ReactDiffViewer
-                                styles={newStyles}
-                                oldValue={JSON.stringify(item.recordedRequestHeaders, undefined, 4)}
-                                newValue={JSON.stringify(item.replayedRequestHeaders, undefined, 4)}
-                                splitView={true}
-                                disableWordDiff={false}
-                                diffArray={null}
-                                onLineNumberClick={(lineId, e) => { return; }}
-                            />
-                        </div>
-                    </div>
-                )}
-                {item.recordedRequestParams != null && item.replayedRequestParams != null && (
-                    <div style={{ display: this.state.showRequestMessageParams ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Params</Label></h4>
-                        <div className="headers-diff-wrapper">
-                            < ReactDiffViewer
-                                styles={newStyles}
-                                oldValue={JSON.stringify(item.recordedRequestParams, undefined, 4)}
-                                newValue={JSON.stringify(item.replayedRequestParams, undefined, 4)}
-                                splitView={true}
-                                disableWordDiff={false}
-                                diffArray={null}
-                                onLineNumberClick={(lineId, e) => { return; }}
-                            />
-                        </div>
-                    </div>
-                )}
-                {item.recordedRequestBody != null && item.replayedRequestBody != null && (
-                    <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body (Includes Form Params)</Label></h4>
-                        <div className="headers-diff-wrapper">
-                            < ReactDiffViewer
-                                styles={newStyles}
-                                oldValue={JSON.stringify(item.recordedRequestBody, undefined, 4)}
-                                newValue={JSON.stringify(item.replayedRequestBody, undefined, 4)}
-                                splitView={true}
-                                disableWordDiff={false}
-                                diffArray={null}
-                                onLineNumberClick={(lineId, e) => { return; }}
-                            />
-                        </div>
-                    </div>
-                )}
-                {item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
-                    <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
-                        <div className="headers-diff-wrapper">
-                            < ReactDiffViewer
-                                styles={newStyles}
-                                oldValue={JSON.stringify(item.recordedResponseHeaders, undefined, 4)}
-                                newValue={JSON.stringify(item.replayedResponseHeaders, undefined, 4)}
-                                splitView={true}
-                                disableWordDiff={false}
-                                diffArray={null}
-                                onLineNumberClick={(lineId, e) => { return; }}
-                            />
-                        </div>
-                    </div>
-                )}
                 {item.recordedData == null && (
                     <div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Recorded Data</div>
                 )}
