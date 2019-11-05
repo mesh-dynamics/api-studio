@@ -91,15 +91,15 @@ public class AnalyzeWS {
 
 
 	@POST
-    @Path("analyze/{replayid}")
+    @Path("analyze/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response analyze(@Context UriInfo ui, @PathParam("replayid") String replayid,
+    public Response analyze(@Context UriInfo ui, @PathParam("replayId") String replayId,
                             MultivaluedMap<String, String> formParams) {
         String tracefield = Optional.ofNullable(formParams.get("tracefield"))
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Config.DEFAULT_TRACE_FIELD);
 
-        Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, config);
+        Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
 
         return analysis.map(av -> {
             String json;
@@ -107,7 +107,7 @@ public class AnalyzeWS {
                 json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
         }).orElse(Response.serverError().build());
@@ -115,42 +115,42 @@ public class AnalyzeWS {
 
 
 	@GET
-    @Path("status/{replayid}")
+    @Path("status/{replayId}")
     public Response status(@Context UriInfo ui,
-                           @PathParam("replayid") String replayid) {
-        Optional<Analysis> analysis = Analyzer.getStatus(replayid, rrstore);
+                           @PathParam("replayId") String replayId) {
+        Optional<Analysis> analysis = Analyzer.getStatus(replayId, rrstore);
         Response resp = analysis.map(av -> {
             String json;
             try {
                 json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Analysis not found for replayid: " + replayid).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Analysis not found for replayId: " + replayId).build());
         return resp;
     }
 
 	@GET
-    @Path("aggrresult/{replayid}")
+    @Path("aggrresult/{replayId}")
     public Response getResultAggregate(@Context UriInfo ui,
-                                       @PathParam("replayid") String replayid) {
+                                       @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
 
-        Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+        Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, bypath);
         Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
 
-//        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
+//        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayId, service, bypath);
         String json;
         try {
             json = jsonMapper.writeValueAsString(res);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s", replayid), e);
+            LOGGER.error(String.format("Error in converting result aggregate object to Json for replayId %s", replayId), e);
             return Response.serverError().build();
         }
     }
@@ -505,7 +505,7 @@ public class AnalyzeWS {
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
-            String replayid = replay.replayId;
+            String replayId = replay.replayId;
             Instant creationTimeStamp = replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
                 replay.collection , replay.templateVersion);
@@ -519,21 +519,21 @@ public class AnalyzeWS {
                     + "\" , \"templateVer\" : \"" + recording.templateVersion;
             }
 
-            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, byPath);
+            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
             Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
 
-//            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
+//            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayId, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
-            jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
+            jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
                 + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
             } catch (JsonProcessingException e) {
                 jsonBuilder.append("[]");
-                LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s",
-                    replayid), e);
+                LOGGER.error(String.format("Error in converting result aggregate object to Json for replayId %s",
+                    replayId), e);
             }
             jsonBuilder.append("}");
             return jsonBuilder.toString();
@@ -626,7 +626,7 @@ public class AnalyzeWS {
             json = jsonMapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Match results list to Json for replayid %s, app %s, " +
+            LOGGER.error(String.format("Error in converting Match results list to Json for replayId %s, app %s, " +
                     "collection %s.", replayId));
             return Response.serverError().build();
         }
@@ -660,7 +660,7 @@ public class AnalyzeWS {
             json = jsonMapper.writeValueAsString(new RespAndMatchResults(recordResponse, replayResponse, matchResult));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting response and match results to Json for replayid %s, " +
+            LOGGER.error(String.format("Error in converting response and match results to Json for replayId %s, " +
                 "recordReqId %s, replay reqId %s", replayId, recordReqId, replayReqId));
             return Response.serverError().build();
         }

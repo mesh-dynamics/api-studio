@@ -1783,9 +1783,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Replay.ReplayStatus)
      */
     @Override
-    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceid,
+    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
                                     ReplayStatus status) {
-        return getReplay(customerId,app,instanceid,List.of(status),Optional.of(1),Optional.empty());
+        return getReplay(customerId,app,instanceId,List.of(status),Optional.of(1),Optional.empty());
     }
 
     @Override
@@ -1812,10 +1812,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceid,
+    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
-        List<String> instanceidList = instanceid.stream().collect(Collectors.toList());
+        List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty()).objects;
     }
 
@@ -2191,7 +2191,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> app = getStrField(doc, APPF);
-        Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
@@ -2200,11 +2200,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_ID);
         Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_ID);
         if (customerId.isPresent() && app.isPresent()
-                && instanceid.isPresent() && collection.isPresent() && status.isPresent() && templateVersion.isPresent()) {
-            recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
+                && instanceId.isPresent() && collection.isPresent() && status.isPresent() && templateVersion.isPresent()) {
+            recording = Optional.of(new Recording(customerId.get(), app.get(), instanceId.get(), collection.get(),
                 status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId));
         } else {
-            LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
+            LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceId.orElse("")));
         }
 
         return recording;
@@ -2247,14 +2247,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-            Optional<String> instanceid, Optional<RecordingStatus> status) {
+            Optional<String> instanceId, Optional<RecordingStatus> status) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
-        addFilter(query, INSTANCEIDF, instanceid);
+        addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
         addSort(query, TIMESTAMPF, false); // descending
 

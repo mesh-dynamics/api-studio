@@ -297,13 +297,13 @@ public class Analysis {
                     rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
 		}
 
-        public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayid,
+        public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayId,
                                   ObjectMapper jsonmapper) {
             this(Optional.of(rm.recordReq.reqId), rm.replayReq.map(req -> req.reqId), reqmt, size,
                 rm.match,
                 rm.recordReq.customerId, rm.recordReq.app,
                 rm.recordReq.service, rm.recordReq.apiPath,
-                replayid, jsonmapper, Optional.of(rm.recordReq.traceId),
+                replayId, jsonmapper, Optional.of(rm.recordReq.traceId),
                 rm.replayReq.map(replayreq -> replayreq.traceId)) ;
         }
 
