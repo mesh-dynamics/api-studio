@@ -156,13 +156,17 @@ public class MockServiceHTTP {
                 return true;
             } else {
                 LOGGER
-                    .error(new ObjectMessage(Map.of("reason", "Collection not found", "customerId",
-                        event.customerId, "app", event.app, "instanceId", event.instanceId,
-                        "trace_id", event.traceId)));
+                    .error(new ObjectMessage(Map.of(
+                        Constants.REASON, "Collection not found",
+                        Constants.CUSTOMER_ID_FIELD, event.customerId,
+                        Constants.APP_FIELD, event.app,
+                        Constants.INSTANCE_ID_FIELD, event.instanceId,
+                        Constants.TRACE_ID_FIELD, event.traceId)));
                 return false;
             }
         } else {
-            LOGGER.error(new ObjectMessage(Map.of("reason",
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.REASON,
                 "Invalid event - either event is null, or some required field missing, or both binary "
                     +
                     "and string payloads set")));
@@ -172,7 +176,7 @@ public class MockServiceHTTP {
 
     private Response errorResponse(String errorReason) {
         return Response.serverError().type(MediaType.APPLICATION_JSON).
-            entity((new JSONObject(Map.of("reason", errorReason))).toString()).build();
+            entity((new JSONObject(Map.of(Constants.REASON, errorReason))).toString()).build();
     }
 
     private EventQuery buildFunctionEventQuery(Event event, int offset, int limit, boolean isSortOrderAsc) {
@@ -194,19 +198,25 @@ public class MockServiceHTTP {
 
             return matchingEvent.getObjects().findFirst().map(retEvent -> {
                 LOGGER.debug(new ObjectMessage(
-                    Map.of("state", "After Mock", "func_signature", retEvent.apiPath,
-                        "trace_id", retEvent.traceId, "ret_val", retEvent.rawPayloadString)));
+                    Map.of(
+                        Constants.API_PATH_FIELD, retEvent.apiPath,
+                        Constants.TRACE_ID_FIELD, retEvent.traceId,
+                        Constants.DATA, retEvent.rawPayloadString)));
                 try {
                     FnResponse fnResponse = new FnResponse(
-                        retEvent.parsePayLoad(config).getValAsString("/response"),
+                        retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
                         Optional.of(retEvent.timestamp),
                         FnReqResponse.RetStatus.Success, Optional.empty(),
                         matchingEvent.numFound > 1);
                     return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                         .build();
                 } catch (PathNotFoundException e) {
-                    LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath,
-                        "trace_id", event.traceId, "exception", e.getMessage())));
+                    LOGGER.error(new ObjectMessage(
+                        Map.of(
+                            Constants.API_PATH_FIELD, event.apiPath,
+                            Constants.TRACE_ID_FIELD, event.traceId,
+                            Constants.EXCEPTION_STACK, e.getMessage()
+                        )));
                     return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                         buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                             "Unable to find response path in json ")).build();
@@ -214,8 +224,12 @@ public class MockServiceHTTP {
             }).orElseGet(() -> getDefaultFuncResp(event));
         } else {
             String errorReason = "Invalid event or no record/replay found.";
-            LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath, "trace_id"
-                , event.traceId, "reason", errorReason)));
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.API_PATH_FIELD, event.apiPath,
+                    Constants.TRACE_ID_FIELD, event.traceId,
+                    Constants.REASON, errorReason
+                )));
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.FAIL, Constants.INVALID_EVENT,
                     errorReason)).build();
@@ -224,8 +238,11 @@ public class MockServiceHTTP {
 
     private Response getDefaultFuncResp(Event event) {
         String errorReason = "Unable to find matching request, looking for default response";
-        LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath, "trace_id"
-            , event.traceId, "reason", errorReason)));
+        LOGGER.error(new ObjectMessage(
+            Map.of(
+                Constants.API_PATH_FIELD, event.apiPath,
+                Constants.TRACE_ID_FIELD, event.traceId,
+                Constants.REASON, errorReason)));
 
         EventQuery.Builder defEventQuery = new EventQuery.Builder(event.customerId,
             event.app, event.eventType);
@@ -245,7 +262,10 @@ public class MockServiceHTTP {
                     false);
             } catch (PathNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
-                    Map.of("func_signature", event.apiPath, "exception", e.getMessage())));
+                    Map.of(
+                        Constants.API_PATH_FIELD, event.apiPath,
+                        Constants.EXCEPTION_STACK, e.getMessage()
+                    )));
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Unable to find response path in json ")).build();
@@ -295,12 +315,12 @@ public class MockServiceHTTP {
                 ).orElseGet(() -> {
                         String errorReason = "Unable to find matching request";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , traceIdString , "reason" , errorReason)));
+                            , traceIdString , Constants.REASON , errorReason)));
                         return errorResponse(errorReason);}))
                 .orElseGet(() -> {
                         String errorReason = "Unable to locate collection for given customer, app, instance combo";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , traceIdString , "reason" , errorReason)));
+                            , traceIdString , Constants.REASON , errorReason)));
                         return errorResponse(errorReason);});
         } catch (Exception e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).
@@ -542,11 +562,11 @@ public class MockServiceHTTP {
                     }
 
                     LOGGER.error(new ObjectMessage(
-                        Map.of("message", "No default response found for request.",
-                            "customerId", request.customerId,
-                            "app", request.app,
-                            "service", request.getService(),
-                            "path", request.apiPath)));
+                        Map.of(Constants.MESSAGE, "No default response found for request.",
+                            Constants.CUSTOMER_ID_FIELD, request.customerId,
+                            Constants.APP_FIELD, request.app,
+                            Constants.SERVICE_FIELD, request.getService(),
+                            Constants.API_PATH_FIELD, request.apiPath)));
 
                     return Optional.empty();
                 });
@@ -581,9 +601,9 @@ public class MockServiceHTTP {
                         rrstore.save(mockResponseToStore);
                     } catch (EventBuilder.InvalidEventException e) {
                         LOGGER.error(new ObjectMessage(
-                            Map.of("message", "Not able to store mock event",
-                                "traceId", respEventVal.traceId,
-                                "reqId", respEventVal.reqId)));
+                            Map.of(Constants.MESSAGE, "Not able to store mock event",
+                                Constants.TRACE_ID_FIELD, respEventVal.traceId,
+                                Constants.REQ_ID_FIELD, respEventVal.reqId)));
                     }
                 });
                 return builder.entity(respv.body).build();

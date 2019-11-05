@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -37,10 +35,8 @@ import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.ReplayDriver;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import io.cube.agent.CommonUtils;
 
 /**
  * @author prasad

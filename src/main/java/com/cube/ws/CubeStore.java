@@ -367,8 +367,8 @@ public class CubeStore {
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
         LOGGER.info(new ObjectMessage(
             Map.of(
-                "message", "Batch Events received.",
-                "content type",  contentType
+                Constants.MESSAGE, "Batch Events received.",
+                Constants.CONTENT_TYPE,  contentType
             )));
         return contentType.map(
             ct -> {
@@ -390,14 +390,14 @@ public class CubeStore {
                             )).toString();
                             LOGGER.info(new ObjectMessage(
                                 Map.of(
-                                    "message", "finished processing",
-                                    "result", jsonResp
+                                    Constants.MESSAGE, "finished processing",
+                                    Constants.DATA, jsonResp
                                 )));
                             return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                         } catch (Exception e) {
                             LOGGER.error(new ObjectMessage(
-                                Map.of("message", "Error while processing multiline json",
-                                    "reason" , e.getMessage()
+                                Map.of(Constants.MESSAGE, "Error while processing multiline json",
+                                    Constants.EXCEPTION_STACK , e.getMessage()
                                 )));
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
@@ -414,15 +414,15 @@ public class CubeStore {
                                     numSuccess += s;
                                 } else {
                                     LOGGER.error(new ObjectMessage(
-                                        Map.of("reason",
+                                        Map.of(Constants.REASON,
                                             "Unidentified format type in message pack stream " + nextType.name())));
                                     unpacker.skipValue();
                                 }
                             }
                         } catch (Exception e) {
                             LOGGER.error(new ObjectMessage(
-                                Map.of("message", "Error while unpacking message pack byte stream ",
-                                    "reason", e.getMessage())
+                                Map.of(Constants.MESSAGE, "Error while unpacking message pack byte stream ",
+                                    Constants.EXCEPTION_STACK, e.getMessage())
                             ));
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
@@ -432,8 +432,8 @@ public class CubeStore {
                         )).toString();
                         LOGGER.info(new ObjectMessage(
                             Map.of(
-                                "message", "finished processing",
-                                "result", jsonResp
+                                Constants.MESSAGE, "finished processing",
+                                Constants.DATA, jsonResp
                                 )));
                         return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                     default :
@@ -453,24 +453,16 @@ public class CubeStore {
 
         return err.map(e -> {
             LOGGER.error(new ObjectMessage(
-                Map.of("message", "Dropping store for event.",
-                    "reason", e)));
-            /*
-            try {
-                LOGGER.error(String.format("Event: %s", event == null ? "NULL" :
-                    config.jsonmapper.writeValueAsString(event)));
-            } catch (JsonProcessingException ex) {
-                LOGGER.error(String.format("Event: %s", event == null ? "NULL" : event.toString()));
-            }
-            */
+                Map.of(Constants.MESSAGE, "Dropping store for event.",
+                    Constants.REASON, e)));
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
             LOGGER.info(new ObjectMessage(
-                Map.of("message", "Completed store",
-                    "type", event.eventType,
-                    "collection", event.getCollection(),
-                    "reqId", event.reqId,
-                    "path", event.apiPath)));
+                Map.of(Constants.MESSAGE, "Completed store",
+                    Constants.EVENT_TYPE_FIELD, event.eventType,
+                    Constants.COLLECTION_FIELD, event.getCollection(),
+                    Constants.REQ_ID_FIELD, event.reqId,
+                    Constants.API_PATH_FIELD, event.apiPath)));
             return Response.ok().build();
         });
     }
@@ -483,23 +475,23 @@ public class CubeStore {
             event = jsonMapper.readValue(eventJson, Event.class);
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
-                Map.of("message", "Error parsing Event JSON",
-                    "reason", e.getMessage())));
+                Map.of(Constants.MESSAGE, "Error parsing Event JSON",
+                    Constants.EXCEPTION_STACK, e.getMessage())));
             return 0;
         }
         Optional<String> err = processEvent(event);
         if(err.isPresent()) {
             LOGGER.error(new ObjectMessage(
-                Map.of("message", "Dropping store for event",
-                    "reason", err.get())));
+                Map.of(Constants.MESSAGE, "Dropping store for event",
+                    Constants.REASON, err.get())));
             return 0;
         } else {
             LOGGER.info(new ObjectMessage(
-                Map.of("message", "Completed store",
-                    "type", event.eventType,
-                    "collection", event.getCollection(),
-                    "reqId", event.reqId,
-                    "path", event.apiPath)));
+                Map.of(Constants.MESSAGE, "Completed store",
+                    Constants.EVENT_TYPE_FIELD, event.eventType,
+                    Constants.COLLECTION_FIELD, event.getCollection(),
+                    Constants.REQ_ID_FIELD, event.reqId,
+                    Constants.API_PATH_FIELD, event.apiPath)));
             return 1;
         }
 	}
@@ -699,10 +691,10 @@ public class CubeStore {
         //This API is standalone and should work without an active record/replay.
         if (!rrstore.save(defaultRespEvent)) {
             LOGGER.debug(new ObjectMessage(
-                Map.of("message", "Storing Response Event failed.",
-                    "type", defaultReqEvent.eventType,
-                    "reqId", defaultReqEvent.reqId,
-                    "path", defaultReqEvent.apiPath)));
+                Map.of(Constants.MESSAGE, "Storing Response Event failed.",
+                    Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
+                    Constants.REQ_ID_FIELD, defaultReqEvent.reqId,
+                    Constants.API_PATH_FIELD, defaultReqEvent.apiPath)));
 
             return false;
         }
@@ -714,7 +706,7 @@ public class CubeStore {
     private Optional<Event> getOrStoreDefaultReqEvent(Event reqEvent) throws InvalidEventException {
         if (reqEvent == null || !reqEvent.validate()) {
             LOGGER.debug(new ObjectMessage(
-                Map.of("message", "Invalid Request event!")));
+                Map.of(Constants.MESSAGE, "Invalid Request event!")));
             throw new InvalidEventException();
         }
 
@@ -730,10 +722,10 @@ public class CubeStore {
         //Store request event if not present.
         if (matchingReqEvent.isEmpty()) {
             LOGGER.debug(new ObjectMessage(
-                Map.of("message", "Request Event not found. Storing request event",
-                    "type", reqEvent.eventType,
-                    "reqId", reqEvent.reqId,
-                    "path", reqEvent.apiPath)));
+                Map.of(Constants.MESSAGE, "Request Event not found. Storing request event",
+                    Constants.EVENT_TYPE_FIELD, reqEvent.eventType,
+                    Constants.REQ_ID_FIELD, reqEvent.reqId,
+                    Constants.API_PATH_FIELD, reqEvent.apiPath)));
 
             EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
                 reqEvent.service, "NA", "NA",
@@ -749,10 +741,10 @@ public class CubeStore {
             //This API is standalone and should work without an active record/replay.
             if (!rrstore.save(defaultReqEvent)) {
                 LOGGER.debug(new ObjectMessage(
-                    Map.of("message", "Storing Request Event failed.",
-                        "type", reqEvent.eventType,
-                        "reqId", reqEvent.reqId,
-                        "path", reqEvent.apiPath)));
+                    Map.of(Constants.MESSAGE, "Storing Request Event failed.",
+                        Constants.EVENT_TYPE_FIELD, reqEvent.eventType,
+                        Constants.REQ_ID_FIELD, reqEvent.reqId,
+                        Constants.API_PATH_FIELD, reqEvent.apiPath)));
 
                 return Optional.empty();
             }

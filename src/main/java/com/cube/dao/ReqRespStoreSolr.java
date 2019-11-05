@@ -31,7 +31,6 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import com.cube.core.Utils;
 import io.cube.agent.CommonUtils;
-import jnr.ffi.annotations.In;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

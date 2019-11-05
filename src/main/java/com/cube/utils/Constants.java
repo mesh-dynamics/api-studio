@@ -18,6 +18,8 @@ public class Constants {
     public static final String RESPONSE_OBJ = "responseObj";
     public static final String MESSAGE_ID = "messageId";
     public static final String MESSAGE = "message";
+    public static final String REASON = "reason";
+    public static final String EXCEPTION_STACK = "exceptionStack";
 
 
     //MESSAGE_IDs
@@ -72,7 +74,5 @@ public class Constants {
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
-
-
 
 }
