@@ -37,10 +37,15 @@ class ShareableLink extends Component {
             resultsFetched: 0,
             filterPath: '',
             showResponseMessageHeaders: false,
+            shownResponseMessageHeaders: false,
             showResponseMessageBody: true,
+            shownResponseMessageBody: true,
             showRequestMessageHeaders: false,
+            shownRequestMessageHeaders: false,
             showRequestMessageParams: false,
+            shownRequestMessageParams: false,
             showRequestMessageBody: false,
+            shownRequestMessageBody: false,
             selectedService: "All",
             selectedAPI: "All",
             selectedRequestMatchType: "All",
@@ -147,11 +152,11 @@ class ShareableLink extends Component {
     }
 
     toggleMessageContents(e) {
-        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked });
-        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked });
-        if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked });
-        if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked });
-        if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked });
+        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
+        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
+        if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
+        if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked, shownRequestMessageParams: true });
+        if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
     }
 
     handleMetaDataSelect(metaDataType, value) {
@@ -537,6 +542,70 @@ class ShareableLink extends Component {
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
+                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders != null && item.replayedRequestHeaders != null && (
+                    <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestHeaders, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestHeaders, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={null}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showRequestMessageParams || this.state.shownRequestMessageParams) && item.recordedRequestParams != null && item.replayedRequestParams != null && (
+                    <div style={{ display: this.state.showRequestMessageParams ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Params</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestParams, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestParams, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={null}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && item.recordedRequestBody != null && item.replayedRequestBody != null && (
+                    <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body (Includes Form Params)</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestBody, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestBody, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={null}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
+                    <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedResponseHeaders, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedResponseHeaders, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={null}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
                 {item.recordedData == null && (
                     <div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Recorded Data</div>
                 )}

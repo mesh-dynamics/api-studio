@@ -43,17 +43,12 @@ class GoldenPopover extends React.Component {
 
     updateRule() {
         const {dispatch, serverSideDiff, jsonPath} = this.props;
-        if (serverSideDiff) {
-            this.hideGR();
-            let obj = {};
-            obj.type = "REPLACE";
-            obj.path = jsonPath.replace("<BEGIN>", "");
-            obj.newRule = this.state.newRule;
-            dispatch(cubeActions.pushToOperations(obj));
-        } else {
-            this.hideGR();
-            alert("Can't update rule for this line");
-        }
+        this.hideGR();
+        let obj = {};
+        obj.type = "REPLACE";
+        obj.path = jsonPath.replace("<BEGIN>", "");
+        obj.newRule = this.state.newRule;
+        dispatch(cubeActions.pushToOperations(obj));
     }
 
     updateGolden() {
