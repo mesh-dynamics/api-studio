@@ -344,7 +344,7 @@ class ShareableLink extends Component {
             if (item.replayRequest) {
                 replayedRequestHeaders = item.replayRequest.hdrs ? item.replayRequest.hdrs : {};
                 replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
-                if (item.recordRequest.body) {
+                if (item.replayRequest.body) {
                     try {
                         if (item.replayRequest.mimeType.indexOf('json') > -1 && item.replayRequest.mimeType.indexOf('json') > -1) {
                             replayedRequestBody = JSON.parse(item.replayRequest.body);
