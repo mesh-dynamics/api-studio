@@ -71,6 +71,8 @@ import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.core.ValidateCompareTemplate;
+import com.cube.core.Utils;
+import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -289,9 +291,9 @@ public class AnalyzeWS {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
         }
         catch (Exception e) {
-            return Response.serverError().entity((new JSONObject(Map.of(
-                "Message", "Unable to save template set",
-                "Error", e.getMessage()))).toString()).build();
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
+                    e.getMessage()))).build();
         }
     }
 
