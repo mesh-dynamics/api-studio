@@ -57,7 +57,6 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
-import com.cube.dao.DataObj;
 import com.cube.dao.Event;
 import com.cube.dao.EventBuilder;
 import com.cube.dao.EventQuery;
@@ -82,16 +81,16 @@ public class MockServiceHTTP {
     }
 
 	@GET
-    @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     public Response get(@Context UriInfo ui, @PathParam("var") String path,
                         @Context HttpHeaders headers,
-                        @PathParam("customerid") String customerid,
+                        @PathParam("customerId") String customerId,
                         @PathParam("app") String app,
-                        @PathParam("instanceid") String instanceid,
+                        @PathParam("instanceId") String instanceId,
                         @PathParam("service") String service,
                         String body) {
-        LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service,
+        LOGGER.debug(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s", customerId, app, path, ui.toString()));
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
             HttpMethod.GET, body, headers);
     }
 
@@ -99,34 +98,34 @@ public class MockServiceHTTP {
 	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
 	@POST
-    @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     public Response postForms(@Context UriInfo ui,
                               @Context HttpHeaders headers,
                               @PathParam("var") String path,
-                              @PathParam("customerid") String customerid,
+                              @PathParam("customerId") String customerId,
                               @PathParam("app") String app,
-                              @PathParam("instanceid") String instanceid,
+                              @PathParam("instanceId") String instanceId,
                               @PathParam("service") String service,
                               String body) {
-        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerid, app, path,
+        LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, HttpMethod.POST, body, headers);
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers);
     }
 
     // TODO: Event redesign - remove commented code once stable
     /*
 	@POST
-	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+	@Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response postJson(@Context UriInfo ui,
                              @PathParam("var") String path,
-                             @PathParam("customerid") String customerid,
+                             @PathParam("customerId") String customerId,
                              @PathParam("app") String app,
-                             @PathParam("instanceid") String instanceid,
+                             @PathParam("instanceId") String instanceId,
                              @PathParam("service") String service,
                              @Context HttpHeaders headers,
                              String body) {
-        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
+        LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerId, app, path, ui.toString(), headers.toString(), body));
         JSONObject obj = new JSONObject(body);
         MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
         for (String key : obj.keySet()) {
@@ -134,7 +133,7 @@ public class MockServiceHTTP {
             l.add(obj.get(key).toString());
             mmap.put(key, l);
         }
-        return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
+        return getResp(ui, path, mmap, customerId, app, instanceId, service, headers);
     }
     */
 
@@ -383,7 +382,7 @@ public class MockServiceHTTP {
 
     // TODO: Event redesign cleanup: This can be removed
     private Response getRespOld(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-			String customerid, String app, String instanceid,
+			String customerId, String app, String instanceId,
 			String service, HttpHeaders headers) {
 
 		LOGGER.info(String.format("Mocking request for %s", path));
@@ -392,24 +391,24 @@ public class MockServiceHTTP {
 		// first store the original request as a part of the replay
 		// this is optional as there might not be any running replay which is a rare case
 		// otherwise we'll always be able to construct a new request from the parameters
-		Optional<Request> mockRequest = createRequestMock(path, formParams, customerid, app, instanceid,
+		Optional<Request> mockRequest = createRequestMock(path, formParams, customerId, app, instanceId,
 				service, headers, queryParams);
 		mockRequest.ifPresent(mRequest -> rrstore.save(mRequest));
 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(customerid, app, instanceid);
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(customerId, app, instanceId);
         Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
-	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
-	    		headers.getRequestHeaders(), service, "", "", collection,
-                Optional.of(Event.RunType.Record),
-	    		Optional.of(customerid),
-	    		Optional.of(app));
+        Request r = new Request(path, Optional.empty(), queryParams, formParams,
+            headers.getRequestHeaders(), service, "", "", collection,
+            Optional.of(Event.RunType.Record),
+            Optional.of(customerId),
+            Optional.of(app));
 
         Optional<String> templateVersion =
             recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> Optional.of(replay.templateVersion)));
 
-	    TemplateKey key = new TemplateKey(templateVersion.get(), customerid, app, service, path, TemplateKey.Type.Request);
+	    TemplateKey key = new TemplateKey(templateVersion.get(), customerId, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
@@ -431,26 +430,26 @@ public class MockServiceHTTP {
 			}));
 		    // Increment match counter in cache
             // TODO commenting out call to cache
-            //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+            //replayResultCache.incrementReqMatchCounter(customerId, app, service, path, instanceId);
 			// store a req-resp analysis match result for the mock request (during replay)
 			// and the matched recording request
 			mockRequest.ifPresent(mRequest -> respv.reqId.ifPresent(recordReqId -> {
 				Analysis.ReqRespMatchResult matchResult =
                     new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqId,
                         Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
-                        "", customerid, app, service, path, mRequest.collection.get(),
+                        "", customerId, app, service, path, mRequest.collection.get(),
                         CommonUtils.getTraceId(respv.meta),
                         CommonUtils.getTraceId(mRequest.hdrs));
 				rrstore.saveResult(matchResult);
 				com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mRequest.reqId,
-                    customerid, app, instanceid);
+                    customerId, app, instanceId);
 				rrstore.save(mockResponseToStore);
 			}));
 		    return builder.entity(respv.body).build();
 	    }).orElseGet(() -> {
 				// Increment not match counter in cache
 				// TODO commenting out call to cache
-                //replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+                //replayResultCache.incrementReqNotMatchCounter(customerId, app, service, path, instanceId);
 				//TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
 				//a recorded request, here in the mock we have a replay request which did not match
 				//with any recorded request, but still to properly calculate no match counts for
@@ -461,7 +460,7 @@ public class MockServiceHTTP {
 					Analysis.ReqRespMatchResult matchResult =
                         new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqId,
                             Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
-                            customerid, app, service, path, mRequest.collection.get(), Optional.empty(),
+                            customerId, app, service, path, mRequest.collection.get(), Optional.empty(),
                             CommonUtils.getTraceId(mRequest.hdrs));
 					rrstore.saveResult(matchResult);
 				});
@@ -471,7 +470,7 @@ public class MockServiceHTTP {
 	}
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-        String customerid, String app, String instanceid,
+        String customerId, String app, String instanceId,
         String service, String method, String body, HttpHeaders headers) {
 
         LOGGER.info(String.format("Mocking request for %s", path));
@@ -481,9 +480,9 @@ public class MockServiceHTTP {
         // pathParams are not used in our case, since we are matching full path
         // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
         Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore
-            .getCurrentRecordOrReplay(Optional.of(customerid),
+            .getCurrentRecordOrReplay(Optional.of(customerId),
                 Optional.of(app),
-                Optional.of(instanceid));
+                Optional.of(instanceId));
         Optional<String> collectionOpt = recordOrReplay
             .flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
         Optional<String> replayIdOpt = recordOrReplay
@@ -501,17 +500,17 @@ public class MockServiceHTTP {
         Request request = new Request(path, Optional.empty(), queryParams, formParams,
             headers.getRequestHeaders(), service, method, body, collectionOpt,
             Optional.of(Event.RunType.Record),
-            Optional.of(customerid),
+            Optional.of(customerId),
             Optional.of(app));
 
         String templateVersion = recordOrReplay.get().getTemplateVersion();
 
-        TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path,
+        TemplateKey key = new TemplateKey(templateVersion, customerId, app, service, path,
             TemplateKey.Type.Request);
         RequestComparator comparator = requestComparatorCache.getRequestComparator(key, true);
 
         // first store the original request as a part of the replay
-        Request mockRequest = createRequestMockNew(path, formParams, customerid, app, instanceid,
+        Request mockRequest = createRequestMockNew(path, formParams, customerId, app, instanceId,
             service, method, body, headers, queryParams, replayId);
         Event mockRequestEvent;
         try {
@@ -564,21 +563,21 @@ public class MockServiceHTTP {
                 }));
                 // Increment match counter in cache
                 // TODO commenting out call to cache
-                //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+                //replayResultCache.incrementReqMatchCounter(customerId, app, service, path, instanceId);
                 // store a req-resp analysis match result for the mock request (during replay)
                 // and the matched recording request
                 respv.reqId.ifPresent(recordReqId -> {
                     Analysis.ReqRespMatchResult matchResult =
                         new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mockRequest.reqId,
                             Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
-                            "", customerid, app, service, path, mockRequest.collection.get(),
+                            "", customerId, app, service, path, mockRequest.collection.get(),
                             CommonUtils.getTraceId(respv.meta),
                             CommonUtils.getTraceId(mockRequest.hdrs));
                     rrstore.saveResult(matchResult);
                     try {
                         Event mockResponseToStore = createMockResponseEvent(respEventVal,
                             mockRequest.reqId,
-                            customerid, app, instanceid, replayId);
+                            customerId, app, instanceId, replayId);
                         rrstore.save(mockResponseToStore);
                     } catch (EventBuilder.InvalidEventException e) {
                         LOGGER.error(new ObjectMessage(
@@ -592,7 +591,7 @@ public class MockServiceHTTP {
         }).orElseGet(() -> {
             // Increment not match counter in cache
             // TODO commenting out call to cache
-            //replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+            //replayResultCache.incrementReqNotMatchCounter(customerId, app, service, path, instanceId);
             //TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
             //a recorded request, here in the mock we have a replay request which did not match
             //with any recorded request, but still to properly calculate no match counts for
@@ -603,7 +602,7 @@ public class MockServiceHTTP {
             Analysis.ReqRespMatchResult matchResult =
                 new Analysis.ReqRespMatchResult(Optional.empty(), mockRequest.reqId,
                     Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
-                    customerid, app, service, path, mockRequest.collection.get(), Optional.empty(),
+                    customerId, app, service, path, mockRequest.collection.get(), Optional.empty(),
                     CommonUtils.getTraceId(mockRequest.hdrs));
             rrstore.saveResult(matchResult);
             return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
@@ -623,7 +622,7 @@ public class MockServiceHTTP {
     }
 
     public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit, boolean considerTrace) {
-        // eventually we will clean up code and make customerid and app non-optional in Request
+        // eventually we will clean up code and make customerId and app non-optional in Request
         String customerId = request.customerId.orElse("NA");
         String app = request.app.orElse("NA");
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
