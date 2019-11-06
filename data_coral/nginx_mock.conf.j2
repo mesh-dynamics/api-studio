@@ -73,19 +73,20 @@ http {
         access_log  /var/log/nginx/cube.http.access.log  cube_main;
 
         location / {
-            	resolver 8.8.8.8;
-	 	#add_header x-b3-trace-id $request_id;
-	        #add_header x-request-id $request_id;
-	        set $x_b3_trace_id  '${request_id}';
-	        set $service '${host}';
-	        set $crequest_id  '${service}-${request_id}';
-		set $customer_id 'CubeCorp';
-		set $instance_id 'test-dc';
-		set $app_name 'MovieInfo';
-		set $run_type 'Record';
-		set $replay_endpoint '';
-
-            	proxy_pass http://$http_host$uri$is_args$args;
+            resolver 8.8.8.8;
+  	        set $x_b3_trace_id  '${request_id}';
+  	        set $service '${host}';
+  	        set $crequest_id  '${service}-${request_id}';
+            set $customer_id '{{customer_id}}';
+        		set $instance_id '{{instance_id}}';
+        		set $app_name '{{app_name}}';
+        		set $run_type '{{run_type}}';
+        		set $mock_host '{{mock_host}}';
+  		      set $mock_uri_prefix '/ms/${customer_id}/${app_name}/${instance_id}/${service}';
+            proxy_pass http://$mock_host$mock_uri_prefix$uri$is_args$args ;
+        		proxy_set_header cube-consider-trace 'false';
+        		proxy_set_header x-b3-trace-id $request_id;
+        		proxy_set_header x-request-id $request_id;
         }
 
         error_page   500 502 503 504  /50x.html;
@@ -106,17 +107,20 @@ http {
     	ssl_certificate_key /etc/nginx/mitm/mycert.private.pem;
 
 	location / {
-		resolver 8.8.8.8;
-		set $x_b3_trace_id  '${request_id}';
+		      resolver 8.8.8.8;
+        	set $x_b3_trace_id  '${request_id}';
 	        set $service '${host}';
 	        set $crequest_id  '${service}-${request_id}';
-		set $customer_id 'CubeCorp';
-		set $instance_id 'test-dc';
-		set $app_name 'MovieInfo';
-		set $run_type 'Record';
-		set $replay_endpoint '';
-
-        	proxy_pass https://$http_host$uri$is_args$args;
+      		set $customer_id '{{customer_id}}';
+      		set $instance_id '{{instance_id}}';
+      		set $app_name '{{app_name}}';
+      		set $run_type '{{run_type}}';
+      		set $mock_host '{{mock_host}}';
+      		set $mock_uri_prefix '/ms/${customer_id}/${app_name}/${instance_id}/${service}';
+      		proxy_pass http://$mock_host$mock_uri_prefix$uri$is_args$args ;
+      		proxy_set_header cube-consider-trace 'false';
+      		proxy_set_header x-b3-trace-id $request_id;
+      		proxy_set_header x-request-id $request_id;
     	}
     }
 # Settings for a TLS enabled server.
@@ -150,4 +154,3 @@ http {
 #    }
 
 }
-
