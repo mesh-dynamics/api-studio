@@ -76,11 +76,11 @@ http {
     	        set $x_b3_trace_id  '${request_id}';
     	        set $service '${host}';
     	        set $crequest_id  '${service}-${request_id}';
-          		set $customer_id '{{customer_id}}';
-          		set $instance_id '{{instance_id}}';
-          		set $app_name '{{app_name}}';
-          		set $run_type '{{run_type}}';
-    		      proxy_pass http://$http_host$uri$is_args$args;
+          	set $customer_id '{{customer_id}}';
+          	set $instance_id '{{instance_id}}';
+          	set $app_name '{{app_name}}';
+          	set $run_type '{{run_type}}';
+    		proxy_pass http://$http_host$uri$is_args$args;
         }
 
         error_page   500 502 503 504  /50x.html;
@@ -101,15 +101,15 @@ http {
     	ssl_certificate_key /etc/nginx/mitm/mycert.private.pem;
 
 	location / {
-		      resolver 8.8.8.8;
-		      set $x_b3_trace_id  '${request_id}';
+		resolver 8.8.8.8;
+		set $x_b3_trace_id  '${request_id}';
 	        set $service '${host}';
 	        set $crequest_id  '${service}-${request_id}';
-          set $customer_id '{{customer_id}}';
-          set $instance_id '{{instance_id}}';
-          set $app_name '{{app_name}}';
-          set $run_type '{{run_type}}';
-		     	proxy_pass https://$http_host$uri$is_args$args;
+          	set $customer_id '{{customer_id}}';
+          	set $instance_id '{{instance_id}}';
+          	set $app_name '{{app_name}}';
+          	set $run_type '{{run_type}}';
+		proxy_pass https://$http_host$uri$is_args$args;
     	}
     }
 # Settings for a TLS enabled server.
