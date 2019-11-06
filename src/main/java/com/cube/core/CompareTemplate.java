@@ -105,7 +105,7 @@ public class CompareTemplate {
 	 * is found. Never returns null. Will return default rule if nothing is found.
 	 */
 	public TemplateEntry getRule(String path) {
-		TemplateEntry toReturn = get(path).orElseGet(() -> getInheritedRule(path));
+		TemplateEntry toReturn = get(path).orElseGet(() -> getInheritedRule(path, path));
 		// TODO maybe it's better to precompute these values
 		toReturn.isParentArray = isParentArray(path);
 		return toReturn;
@@ -157,15 +157,16 @@ public class CompareTemplate {
 	/*
 	 * Equality and Ignore compare rules can be inherited from the nearest ancestor
 	 */
-	private TemplateEntry getInheritedRule(String path) {
+	private TemplateEntry getInheritedRule(String path, String origPath) {
 		int index = path.lastIndexOf('/');
 		if (index != -1) {
 			String subPath = path.substring(0, index);
 			return get(subPath).flatMap(rule -> {
 			    if (rule.dt == DataType.RptArray) {
-                    Optional<TemplateEntry> starRule = get(subPath + "/*");
-                    if (starRule.isPresent()) {
-                        return starRule;
+                    Optional<TemplateEntry> starRuleOpt = get(subPath + "/*");
+                    if (starRuleOpt.isPresent()) {
+                        TemplateEntry starRule = starRuleOpt.get();
+                        return Optional.of(new TemplateEntry(origPath, starRule.dt, starRule.pt, starRule.ct));
                     }
                 }
 
@@ -175,13 +176,14 @@ public class CompareTemplate {
                     LOGGER.error("Internal logical error - ComparisonType/PresenceType is explicitly set to Default");
                     return Optional.empty();
                 } else {
-                    return Optional.of(new TemplateEntry("/", DataType.Default, rule.pt, rule.ct));
+                    return Optional.of(new TemplateEntry(origPath, DataType.Default, rule.pt, rule.ct));
                 }
 
-			}).orElseGet(() -> getInheritedRule(subPath));
+			}).orElseGet(() -> getInheritedRule(subPath, origPath));
 		} else {
-			return DEFAULT_RULE;
-		}
+			return new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default);
+
+        }
 	}
 
 	public void checkMatch(MultivaluedMap<String, String> lhsfmap, MultivaluedMap<String, String> rhsfmap,
@@ -239,7 +241,6 @@ public class CompareTemplate {
 		return Optional.ofNullable(rules.get(path));
 	}
 
-	private static final TemplateEntry DEFAULT_RULE = new TemplateEntry("/", DataType.Default, PresenceType.Default, ComparisonType.Default);
 
 	/**
 	 * @param rule

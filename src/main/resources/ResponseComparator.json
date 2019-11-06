@@ -50,15 +50,15 @@
             "mt":"NoMatch",
             "matchmeta":"",
             "diffs":[
-                {"op":"replace",    "path":"/",                 "value":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/reqId",                 "value":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
                 {"op":"replace",    "path":"/hdr/content-type", "value":"[application/jsonK]","fromValue":"[application/json]","resolution":"ERR_ValMismatch"},
-                {"op":"replace",    "path":"/",                 "value":"{\"MIRest status\": \"MovieInfo is healthy\"}","fromValue":"{\"MIRest status\": \"MovieInfo is healthy\"}","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",                 "value":"test7","fromValue":"test7","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",                 "value":"Optional[2019-03-28T12:48:54Z]","fromValue":"Optional[2019-03-28T12:48:54Z]","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",                 "value":"Optional[Record]","fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",                 "value":"prasad","fromValue":"prasad","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",                 "value":"movieinfo","fromValue":"movieinfo","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",                 "value":200,"fromValue":200,"resolution":"OK_DefaultCT"}
+                {"op":"replace",    "path":"/body",                 "value":"{\"MIRest status\": \"MovieInfo is healthy\"}","fromValue":"{\"MIRest status\": \"MovieInfo is healthy\"}","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/collection",                 "value":"test7","fromValue":"test7","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/timestamp",                 "value":"Optional[2019-03-28T12:48:54Z]","fromValue":"Optional[2019-03-28T12:48:54Z]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/runType",                 "value":"Optional[Record]","fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/customerId",                 "value":"prasad","fromValue":"prasad","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/app",                 "value":"movieinfo","fromValue":"movieinfo","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/status",                 "value":200,"fromValue":200,"resolution":"OK_DefaultCT"}
             ],
         }
     },
@@ -77,13 +77,13 @@
             "mt": "FuzzyMatch",
             "matchmeta": "",
             "diffs": [
-                {"op": "replace", "path": "/", "value": "72471111-e096-4494-942e-5fa942c07e90", "fromValue": "72471111-e096-4494-942e-5fa942c07e90", "resolution": "OK_DefaultCT"},
-                {"op": "replace", "path": "/", "value": "testc1", "fromValue": "testc1", "resolution": "OK_DefaultCT"},
-                {"op": "replace", "path": "/", "value": "Optional[2019-01-04T09:09:00Z]", "fromValue": "Optional[2019-01-04T09:09:00Z]", "resolution": "OK_DefaultCT"},
-                {"op": "replace", "path": "/", "value": "Optional[Record]", "fromValue": "Optional[Record]", "resolution": "OK_DefaultCT"},
-                {"op": "replace", "path": "/", "value": "cube", "fromValue": "cube", "resolution": "OK_DefaultCT"},
-                {"op": "replace", "path": "/", "value": "bookinfo", "fromValue": "bookinfo", "resolution": "OK_DefaultCT"},
-                {"op": "replace", "path": "/", "value": 200, "fromValue": 200, "resolution": "OK_DefaultCT"}
+                {"op": "replace", "path": "/reqId", "value": "72471111-e096-4494-942e-5fa942c07e90", "fromValue": "72471111-e096-4494-942e-5fa942c07e90", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/collection", "value": "testc1", "fromValue": "testc1", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/timestamp", "value": "Optional[2019-01-04T09:09:00Z]", "fromValue": "Optional[2019-01-04T09:09:00Z]", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/runType", "value": "Optional[Record]", "fromValue": "Optional[Record]", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/customerId", "value": "cube", "fromValue": "cube", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/app", "value": "bookinfo", "fromValue": "bookinfo", "resolution": "OK_DefaultCT"},
+                {"op": "replace", "path": "/status", "value": 200, "fromValue": 200, "resolution": "OK_DefaultCT"}
             ]
         }
     },
@@ -102,18 +102,18 @@
             "mt":"NoMatch",
             "matchmeta":"",
             "diffs":[
-                {"op":"replace",    "path":"/",             "value":"72471111-e096-4494-942e-5fa942c07e90",     "fromValue":"72471111-e096-4494-942e-5fa942c07e90", "resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/reqId",             "value":"72471111-e096-4494-942e-5fa942c07e90",     "fromValue":"72471111-e096-4494-942e-5fa942c07e90", "resolution":"OK_DefaultCT"},
                 {"op":"noop",       "path":"/body/author",  "value":"William Shakespeare",          "resolution":"ERR_ValTypeMismatch"},
                 {"op":"noop",       "path":"/body/id",      "value":0,          "resolution":"ERR_ValTypeMismatch"},
                 {"op":"replace",    "path":"/body/year",    "value":1000,       "fromValue":1595,"resolution":"ERR_ValMismatch"},
                 {"op":"replace",    "path":"/body/type",    "value":"softcopy",     "fromValue":"paperback","resolution":"OK_OptionalMismatch"},
                 {"op":"replace",    "path":"/body/pages",   "value":3.14,       "fromValue":200,"resolution":"ERR_ValMismatch"},
-                {"op":"replace",    "path":"/",             "value":"testc1",       "fromValue":"testc1","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",             "value":"Optional[2019-01-04T09:09:00Z]",       "fromValue":"Optional[2019-01-04T09:09:00Z]","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",             "value":"Optional[Record]",     "fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",             "value":"cube",         "fromValue":"cube","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",             "value":"bookinfo",     "fromValue":"bookinfo","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/",             "value":200,            "fromValue":200,"resolution":"OK_DefaultCT"}
+                {"op":"replace",    "path":"/collection",             "value":"testc1",       "fromValue":"testc1","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/timestamp",             "value":"Optional[2019-01-04T09:09:00Z]",       "fromValue":"Optional[2019-01-04T09:09:00Z]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/runType",             "value":"Optional[Record]",     "fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/customerId",             "value":"cube",         "fromValue":"cube","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/app",             "value":"bookinfo",     "fromValue":"bookinfo","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/status",             "value":200,            "fromValue":200,"resolution":"OK_DefaultCT"}
             ],
         }
     },
@@ -131,7 +131,7 @@
             "mt":"NoMatch",
             "matchmeta":"",
             "diffs":[
-                {"op":"replace",    "path":"/","value":"72471111-e096-4494-942e-5fa942c07e90","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/reqId","value":"72471111-e096-4494-942e-5fa942c07e90","fromValue":"movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38","resolution":"OK_DefaultCT"},
                 {"op":"remove",     "path":"/body/MIRest status","value":"MovieInfo is healthy","resolution":"OK_Optional"},
                 {"op":"add",        "path":"/body/id","value":0,"resolution":"ERR_RequiredGolden"},
                 {"op":"add",        "path":"/body/author","value":"William Shakespeare","resolution":"OK_Ignore"},
@@ -142,12 +142,12 @@
                 {"op":"add",        "path":"/body/language","value":"English","resolution":"OK_DefaultCT"},
                 {"op":"add",        "path":"/body/ISBN-10","value":"1234567890","resolution":"OK_DefaultCT"},
                 {"op":"add",        "path":"/body/ISBN-13","value":"123-1234567890","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/","value":"testc1","fromValue":"test7","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/","value":"Optional[2019-01-04T09:09:00Z]","fromValue":"Optional[2019-03-28T12:48:54Z]","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/","value":"Optional[Record]","fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/","value":"cube","fromValue":"prasad","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/","value":"bookinfo","fromValue":"movieinfo","resolution":"OK_DefaultCT"},
-                {"op":"replace",    "path":"/","value":200,"fromValue":200,"resolution":"OK_DefaultCT"}
+                {"op":"replace",    "path":"/collection","value":"testc1","fromValue":"test7","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/timestamp","value":"Optional[2019-01-04T09:09:00Z]","fromValue":"Optional[2019-03-28T12:48:54Z]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/runType","value":"Optional[Record]","fromValue":"Optional[Record]","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/customerId","value":"cube","fromValue":"prasad","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/app","value":"bookinfo","fromValue":"movieinfo","resolution":"OK_DefaultCT"},
+                {"op":"replace",    "path":"/status","value":200,"fromValue":200,"resolution":"OK_DefaultCT"}
             ],
         }
     },
