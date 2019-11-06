@@ -80,8 +80,7 @@ http {
           		set $instance_id '{{instance_id}}';
           		set $app_name '{{app_name}}';
           		set $run_type '{{run_type}}';
-    		      set $replay_endpoint '';
-              proxy_pass http://$http_host$uri$is_args$args;
+    		      proxy_pass http://$http_host$uri$is_args$args;
         }
 
         error_page   500 502 503 504  /50x.html;
@@ -110,8 +109,7 @@ http {
           set $instance_id '{{instance_id}}';
           set $app_name '{{app_name}}';
           set $run_type '{{run_type}}';
-		      set $replay_endpoint '';
-        	proxy_pass https://$http_host$uri$is_args$args;
+		     	proxy_pass https://$http_host$uri$is_args$args;
     	}
     }
 # Settings for a TLS enabled server.
