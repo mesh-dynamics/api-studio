@@ -290,7 +290,7 @@ public class AnalyzeWS {
         } catch (IOException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
         }
-        catch (Exception e) {
+        catch (CompareTemplate.CompareTemplateStoreException e) {
             return Response.serverError().entity((
                 Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
                     e.getMessage()))).build();
@@ -689,7 +689,19 @@ public class AnalyzeWS {
                 "Message", "Successfully saved template set",
                 "ID", templateSetId,
                 "templateSetVersion", templateSet.version))).toString()).build();
-        } catch (Exception e) {
+        } catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
+                    e.getMessage()))).build();
+        }
+
+        catch (TemplateSet.TemplateSetMetaStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED, "Unable to save template meta: " +
+                    e.getMessage()))).build();
+        }
+
+        catch (Exception e) {
             return Response.serverError().entity((new JSONObject(Map.of(
                 "Message", "Unable to save template set",
                 "Error", e.getMessage()))).toString()).build();

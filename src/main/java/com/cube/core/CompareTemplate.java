@@ -248,4 +248,11 @@ public class CompareTemplate {
 		rules.put(rule.path, rule);
 	}
 
+	public static class CompareTemplateStoreException extends Exception {
+	    public CompareTemplateStoreException(String message) {
+	        super(message);
+        }
+
+    }
+
 }

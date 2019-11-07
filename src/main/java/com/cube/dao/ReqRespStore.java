@@ -208,7 +208,7 @@ public interface ReqRespStore {
 	 * @param templateAsJson
 	 * @return
 	 */
-	String saveCompareTemplate(TemplateKey key, String templateAsJson) throws Exception;
+	String saveCompareTemplate(TemplateKey key, String templateAsJson) throws CompareTemplate.CompareTemplateStoreException;
 
 	/**
 	 * Retrieve an analysis template from the database for

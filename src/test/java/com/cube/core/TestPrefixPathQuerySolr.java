@@ -69,7 +69,7 @@ public class TestPrefixPathQuerySolr {
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
-            catch (Exception e) {
+            catch (CompareTemplate.CompareTemplateStoreException e) {
                 e.printStackTrace();
             }
 

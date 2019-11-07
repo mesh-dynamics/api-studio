@@ -22,6 +22,8 @@ public class Constants {
     public static final String INVALID_EVENT = "INVALID_EVENT";
     public static final String INVALID_INPUT = "INVALID_INPUT";
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
+    public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
+
 
 
     //EXCEPTIONS
