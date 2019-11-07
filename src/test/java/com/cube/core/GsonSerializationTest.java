@@ -15,6 +15,7 @@ import io.cube.agent.GsonPatternDeserializer;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 import com.cube.serialize.GsonSolrDocumentListSerializer;
+import com.cube.ws.Config;
 
 public class GsonSerializationTest {
 
@@ -23,8 +24,8 @@ public class GsonSerializationTest {
             Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
                 .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).registerTypeAdapter(SolrDocumentList.class,
                     new GsonSolrDocumentListSerializer()).create();
-            String urlString = "http://18.191.135.125:8983/solr/cube";
-            SolrClient Solr = new HttpSolrClient.Builder(urlString).build();
+            Config config = new Config();
+            SolrClient Solr = config.solr;
 
             SolrQuery query = new SolrQuery();
             query.setQuery("*:*");
