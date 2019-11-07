@@ -1,0 +1,33 @@
+<source>
+  @type tail
+  @id in_tail_cube_nginx
+  path {{path}}
+  pos_file {{pos_file}}
+  tag cube.nginx
+  read_from_head true
+  <parse>
+    @type json
+  </parse>
+</source>
+<filter cube.nginx>
+  @type parser
+  key_name hdrs
+  hash_value_field hdrs
+  reserve_data true
+  #remove_key_name_field true
+  <parse>
+    @type json
+  </parse>
+</filter>
+<match cube.nginx>
+  @type http
+  endpoint  {{endpoint}}
+  open_timeout 5
+  <format>
+    @type json
+  </format>
+  <buffer log>
+    @type memory
+    chunk_limit_records {{chunk_limit_records}}
+  </buffer>
+</match>

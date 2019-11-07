@@ -625,7 +625,7 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
     ngx_uint_t        i;
 
     header_elts = part->elts;
-    b->last = ngx_cpymem(b->last, "{" , ngx_strlen("{"));
+    b->last = ngx_cpymem(b->last, "[" , ngx_strlen("["));
     ngx_uint_t count = 0;
 
     for (i = 0; /* void */; i++) {
@@ -641,6 +641,7 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
       }
 
       count ++;
+      b->last = ngx_cpymem(b->last, "{" , ngx_strlen("{"));
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
       b->last = ngx_cpymem(b->last, header_elts[i].key.data , header_elts[i].key.len);
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
@@ -648,11 +649,12 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
       b->last = ngx_cpymem(b->last, header_elts[i].value.data , header_elts[i].value.len);
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
+      b->last = ngx_cpymem(b->last, "}" , ngx_strlen("}"));
       b->last = ngx_cpymem(b->last, "," , ngx_strlen(","));
 
     }
 
-    b->last = ngx_cpymem(b->last, "}" , ngx_strlen("}"));
+    b->last = ngx_cpymem(b->last, "]" , ngx_strlen("]"));
     return NGX_OK;
 
 }
@@ -663,7 +665,7 @@ static size_t estimate_copy_size(ngx_list_part_t* part) {
     ngx_table_elt_t   *header_elts;
     ngx_uint_t        i;
 
-    header_size += ngx_strlen("{}");
+    header_size += ngx_strlen("[]");
     header_elts = part->elts;
 
     for (i =0; /* void */;i++) {
@@ -679,12 +681,11 @@ static size_t estimate_copy_size(ngx_list_part_t* part) {
       }
       count ++;
       header_size += header_elts[i].key.len + header_elts[i].value.len
-        + 4*ngx_strlen("\"") + ngx_strlen(",") + ngx_strlen(":");
+        + 4*ngx_strlen("\"") + ngx_strlen(",") + ngx_strlen(":") + ngx_strlen("{}");
     }
 
     return header_size;
 }
-
 
 static ngx_int_t
 ngx_http_response_body_filter_header(ngx_http_request_t *r)
