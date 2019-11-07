@@ -256,7 +256,7 @@ public class MockServiceHTTP {
             FnResponse fnResponse = null;
             try {
                 fnResponse = new FnResponse(
-                    defaultRespEvent.get().parsePayLoad(config).getValAsString("/response"),
+                    defaultRespEvent.get().parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
                     Optional.of(defaultRespEvent.get().timestamp),
                     FnReqResponse.RetStatus.Success, Optional.empty(),
                     false);
