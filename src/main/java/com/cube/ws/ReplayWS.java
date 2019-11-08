@@ -105,6 +105,8 @@ public class ReplayWS {
         Response resp = replay.map(r -> {
             String json;
             try {
+                r.status = rrstore.getCurrentRecordOrReplay(Optional.of(r.customerId), Optional.of(r.app), Optional.of(r.instanceId))
+                    .flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay).map(runningReplay -> runningReplay.status).orElse(r.status);
                 json = jsonMapper.writeValueAsString(r);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
