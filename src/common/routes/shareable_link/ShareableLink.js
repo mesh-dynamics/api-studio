@@ -60,10 +60,14 @@ class ShareableLink extends Component {
             apiPath: "",
             service: "",
             replayId: null,
-            recordingId: null
+            recordingId: null,
+            showOnlyFailures: false,
+            showOnlyMarkedForGolden: false
         };
         this.handleChange = this.handleChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
+        this.toggleShowOnlyFailures = this.toggleShowOnlyFailures.bind(this);
+        this.toggleShowOnlyMarkedForUpdate = this.toggleShowOnlyMarkedForUpdate.bind(this);
 
         this.inputElementRef = React.createRef();
     }
@@ -151,12 +155,30 @@ class ShareableLink extends Component {
         this.setState({ filterPath: e.target.value });
     }
 
+    toggleShowOnlyFailures(e) {
+        this.setState({showOnlyFailures : e.target.checked});
+    }
+
+    toggleShowOnlyMarkedForUpdate(e) {
+        this.setState({showOnlyMarkedForGolden : e.target.checked});
+    }
+
     toggleMessageContents(e) {
+
         if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
         if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
         if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
         if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked, shownRequestMessageParams: true });
         if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
+        
+
+        setTimeout(() => {
+            const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageParams, showRequestMessageBody } = this.state;
+
+            if(showResponseMessageHeaders === false && showResponseMessageBody === false && showRequestMessageHeaders === false &&  showRequestMessageParams === false && showRequestMessageBody === false) {
+                this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
+            }
+        });
     }
 
     handleMetaDataSelect(metaDataType, value) {
@@ -391,7 +413,7 @@ class ShareableLink extends Component {
     }
 
     render() {
-        let { diffLayoutData, selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType, selectedService } = this.state;
+        let { diffLayoutData, selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType, selectedService, showOnlyFailures } = this.state;
         let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], services = [], resolutionTypes = [], diffOperationTypes = [];
         const {cube} = this.props;
         diffLayoutData.filter(function (eachItem) {
@@ -538,7 +560,8 @@ class ShareableLink extends Component {
             </MenuItem>);
         });
         let jsxContent = diffLayoutDataFiltered.map((item, index) => {
-            return (<div key={item.recordReqId} style={{ borderBottom: "1px solid #eee", display: item.show ? "block" : "none" }}>
+            let toShow = showOnlyFailures ? item.respmt === "NoMatch" ? true : false : item.show;
+            return (<div key={item.recordReqId} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
@@ -726,9 +749,9 @@ class ShareableLink extends Component {
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
                         <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                        <Checkbox inline >Show requests with failures</Checkbox>
+                        <Checkbox inline onChange={this.toggleShowOnlyFailures}>Show requests with failures only</Checkbox>
                         <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                        <Checkbox inline >Marked for golden update</Checkbox>
+                        <Checkbox inline onChange={this.toggleShowOnlyMarkedForUpdate}>Marked for golden update</Checkbox>
                     </FormGroup>
                 </div>
                 <div>
