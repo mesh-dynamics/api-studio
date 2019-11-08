@@ -561,7 +561,7 @@ class ShareableLink extends Component {
         });
         let jsxContent = diffLayoutDataFiltered.map((item, index) => {
             let toShow = showOnlyFailures ? item.respmt === "NoMatch" ? true : false : item.show;
-            return (<div key={item.recordReqId} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
+            return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
