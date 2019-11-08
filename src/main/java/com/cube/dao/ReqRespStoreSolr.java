@@ -141,7 +141,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey recordReplayStoreKey;
 
     @Override
-    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key) {
+    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL) {
         Optional<RecordOrReplay> toReturn = Optional.empty();
         if (recordReplayRetrieveKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
@@ -166,7 +166,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 LOGGER.info("Successfully retrieved from redis, key :: " + keyStr);
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
                 Long ttl = jedis.ttl(keyStr);
-                if (ttl != -1) {
+                if (ttl != -1 && extendTTL) {
                     jedis.expire(keyStr, config.REDIS_DELETE_TTL);
                     LOGGER.info("Extending ttl for redis key :: " + keyStr);
                 }
