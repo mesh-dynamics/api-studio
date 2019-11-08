@@ -35,4 +35,11 @@ public class TemplateSet {
         this.templates = compareTemplateVersionedList;
     }
 
+    public static class TemplateSetMetaStoreException extends Exception {
+        public TemplateSetMetaStoreException(String message) {
+            super(message);
+        }
+
+    }
+
 }
