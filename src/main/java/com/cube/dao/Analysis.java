@@ -28,6 +28,7 @@ public class Analysis {
 
 	public enum Status {
 		Running,
+        MatchingCompleted,
 		Completed,
 		Error
 	}

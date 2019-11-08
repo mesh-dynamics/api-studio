@@ -317,7 +317,7 @@ public class Analyzer {
 
             });
         });
-        analysis.status = Analysis.Status.Completed;
+        analysis.status = Analysis.Status.MatchingCompleted;
 
     }
 
@@ -557,6 +557,10 @@ public class Analyzer {
             resultAggregates.forEach( resultAggregate -> {
                 rrstore.saveMatchResultAggregate(resultAggregate);
             } );
+
+            // Everything including aggregation completed
+            analyzer.analysis.status = Analysis.Status.Completed;
+            rrstore.saveAnalysis(analyzer.analysis);
 
             return Optional.of(analyzer.analysis);
         });
