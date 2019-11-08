@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.ArrayList;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -73,6 +75,9 @@ import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.core.Utils;
 import com.cube.utils.Constants;
+
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
 
 /**
  * @author prasad
@@ -1023,32 +1028,39 @@ public class AnalyzeWS {
     @POST
     @Path("goldenUpdate/recordingOperationSet/update/")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateRecordingOperationSet(RecordingOperationSetSP request) {
-        request.generateId();
-        String recordingOperationSetId = request.operationSetId;
-        String service = request.service;
-        String path = request.path;
-        List<ReqRespUpdateOperation> newOperationList = request.operationsList;
-
-        LOGGER.debug(String.format("Received request for updating operation set, id: %s, service: %s, path: %s, new " +
-            "operation list: %s", recordingOperationSetId, service, path, newOperationList));
-
-        boolean b = recordingUpdate.updateRecordingOperationSet(request);
-        if(b) {
-            String response = "Success";
-            String type = MediaType.TEXT_PLAIN;
-            try {
-                response = jsonMapper
-                    .writeValueAsString(Map.of("Message" , "Successfully updated Recording Update Operation Set"
-                        , "ID" , recordingOperationSetId));
-                type = MediaType.APPLICATION_JSON;
-            } catch (JsonProcessingException e) {
-                LOGGER.error("Error while constructing json response :: " + e.getMessage());
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateRecordingOperationSet(List<RecordingOperationSetSP> requests) {
+        List<String> recordingOperationSetIds = new ArrayList<>();
+        try {
+            if(requests.isEmpty()) {
+                throw new Exception("Empty body");
             }
-            return Response.ok().entity(response).type(type).build();
-        } else {
-            LOGGER.error("error updating operation set");
-            return Response.serverError().build();
+            requests.forEach(UtilException.rethrowConsumer(request -> {
+                request.generateId();
+                String recordingOperationSetId = request.operationSetId;
+                String service = request.service;
+                String path = request.path;
+                List<ReqRespUpdateOperation> newOperationList = request.operationsList;
+
+                LOGGER.debug(String.format("Received request for updating operation set, id: %s, service: %s, path: %s, new " +
+                    "operation list: %s", recordingOperationSetId, service, path, newOperationList));
+
+                boolean b = recordingUpdate.updateRecordingOperationSet(request);
+
+                if(b) {
+                    recordingOperationSetIds.add(recordingOperationSetId);
+                } else {
+                    throw new Exception("Error updating operation set for id " +  recordingOperationSetId);
+                }
+            }));
+
+            return Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of("recordingOperationSetIds",recordingOperationSetIds)))).build();
+
+        } catch (Exception e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.UPDATE_RECORDING_OPERATION_FAILED,
+                    "Update failed. Exception message - " + e.getMessage())).build();
         }
     }
 
