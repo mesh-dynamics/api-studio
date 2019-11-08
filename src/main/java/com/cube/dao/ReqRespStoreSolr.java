@@ -160,10 +160,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         try (Jedis jedis = config.jedisPool.getResource()) {
-            String fromCache = jedis.get(key.toString());
+            String keyStr = key.toString();
+            String fromCache = jedis.get(keyStr);
             if (fromCache != null) {
-                LOGGER.info("Successfully retrieved from redis, key :: " + key.toString());
+                LOGGER.info("Successfully retrieved from redis, key :: " + keyStr);
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
+                Long ttl = jedis.ttl(keyStr);
+                if (ttl != -1) {
+                    jedis.expire(keyStr, config.REDIS_DELETE_TTL);
+                    LOGGER.info("Extending ttl for redis key :: " + keyStr);
+                }
             }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
