@@ -172,8 +172,6 @@ public interface ReqRespStore {
 
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
-    Optional<Event> getDefaultRespEvent(EventQuery eventQuery);
-
 
 	/**
 	 * @param customerId
@@ -189,6 +187,8 @@ public interface ReqRespStore {
 			, List<String> paths, Event.RunType runType);
 
     Result<Event> getEvents(EventQuery eventQuery);
+
+    Optional<Event> getSingleEvent(EventQuery eventQuery);
 
 	/**
 	 * @param replay

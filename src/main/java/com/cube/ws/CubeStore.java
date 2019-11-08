@@ -717,7 +717,7 @@ public class CubeStore {
             .withOffset(0).withLimit(1)
             .build();
 
-        Optional<Event> matchingReqEvent = rrstore.getEvents(reqQuery).getObjects().findFirst();
+        Optional<Event> matchingReqEvent = rrstore.getSingleEvent(reqQuery);
 
         //Store request event if not present.
         if (matchingReqEvent.isEmpty()) {

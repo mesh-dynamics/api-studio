@@ -253,6 +253,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             this::docToEvent, eventQuery.getOffset());
     }
 
+    @Override
+    public Optional<Event> getSingleEvent(EventQuery eventQuery) {
+        return getEvents(eventQuery).getObjects().findFirst();
+    }
+
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
                                            String collectionId) {
         List<String> traceIds = originalList.stream().map(request-> CommonUtils.getCaseInsensitiveMatches(request.hdrs,
@@ -805,7 +810,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPResponse);
         builder.withReqId(reqId);
 
-        return getEvents(builder.build()).getObjects().findFirst();
+        return getSingleEvent(builder.build());
     }
 
     // TODO: Event redesign, remove this later
@@ -850,7 +855,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPRequest);
         builder.withReqId(reqId);
 
-        return getEvents(builder.build()).getObjects().findFirst();
+        return getSingleEvent(builder.build());
     }
 
 
@@ -1957,11 +1962,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
-    private static final String RECORDREQIDF = CPREFIX + "recordReqId" + STRING_SUFFIX;
-    private static final String REPLAYREQIDF = CPREFIX + "replayReqId" + STRING_SUFFIX;
-    private static final String REQMTF = CPREFIX + "reqmt" + STRING_SUFFIX;
+    private static final String RECORDREQIDF = CPREFIX + Constants.RECORD_REQ_ID_FIELD + STRING_SUFFIX;
+    private static final String REPLAYREQIDF = CPREFIX + Constants.REPLAY_REQ_ID_FIELD + STRING_SUFFIX;
+    private static final String REQMTF = CPREFIX + Constants.REQ_MATCH_TYPE + STRING_SUFFIX;
     private static final String NUMMATCHF = CPREFIX + "numMatch" + INT_SUFFIX;
-    private static final String RESPMTF = CPREFIX + "respmt" + STRING_SUFFIX; // match type
+    private static final String RESPMTF = CPREFIX + Constants.RESP_MATCH_TYPE + STRING_SUFFIX; // match type
     private static final String RESPMATCHMETADATAF = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
     private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
@@ -1994,9 +1999,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF, id);
         res.recordReqId.ifPresent(recordReqId ->  doc.setField(RECORDREQIDF, recordReqId));
         res.replayReqId.ifPresent(replayReqId ->  doc.setField(REPLAYREQIDF, replayReqId));
-        doc.setField(REQMTF, res.reqmt.toString());
+        doc.setField(REQMTF, res.reqMatchType.toString());
         doc.setField(NUMMATCHF, res.numMatch);
-        doc.setField(RESPMTF, res.respmt.toString());
+        doc.setField(RESPMTF, res.respMatchType.toString());
         doc.setField(RESPMATCHMETADATAF, res.respMatchMetadata);
         doc.setField(DIFFF, res.diff);
         doc.setField(CUSTOMERIDF, res.customerId);

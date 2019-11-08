@@ -39,12 +39,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
             .withReqId(reqEvent.reqId)
             .withLimit(1)
             .build();
-        return getEvents(eventQuery).getObjects().findFirst();
-    }
-
-    @Override
-    public Optional<Event> getDefaultRespEvent(EventQuery eventQuery) {
-        return getEvents(eventQuery).getObjects().findFirst();
+        return getSingleEvent(eventQuery);
     }
 
     /* (non-Javadoc)

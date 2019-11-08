@@ -266,9 +266,9 @@ public class Analysis {
 			super();
 			this.recordReqId = recordReqId;
 			this.replayReqId = replayReqId;
-			this.reqmt = reqMt;
+			this.reqMatchType = reqMt;
 			this.numMatch = numMatch;
-			this.respmt = respMt;
+			this.respMatchType = respMt;
 			this.respMatchMetadata = matchMetaData;
 			this.diff = diff;
 			this.customerId = customerId;
@@ -311,9 +311,9 @@ public class Analysis {
         final public Optional<String> replayReqId;
 		final public Optional<String> recordTraceId;
 		final public Optional<String> replayTraceId;
-		final public Comparator.MatchType reqmt;
+		final public Comparator.MatchType reqMatchType;
 		final public int numMatch;
-		final public Comparator.MatchType respmt;
+		final public Comparator.MatchType respMatchType;
 		final public String respMatchMetadata;
 		final public String diff;
 		final public String customerId;

@@ -196,32 +196,9 @@ public class MockServiceHTTP {
             EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
             Result<Event> matchingEvent = rrstore.getEvents(eventQuery);
 
-            return matchingEvent.getObjects().findFirst().map(retEvent -> {
-                LOGGER.debug(new ObjectMessage(
-                    Map.of(
-                        Constants.API_PATH_FIELD, retEvent.apiPath,
-                        Constants.TRACE_ID_FIELD, retEvent.traceId,
-                        Constants.DATA, retEvent.rawPayloadString)));
-                try {
-                    FnResponse fnResponse = new FnResponse(
-                        retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
-                        Optional.of(retEvent.timestamp),
-                        FnReqResponse.RetStatus.Success, Optional.empty(),
-                        matchingEvent.numFound > 1);
-                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
-                        .build();
-                } catch (PathNotFoundException e) {
-                    LOGGER.error(new ObjectMessage(
-                        Map.of(
-                            Constants.API_PATH_FIELD, event.apiPath,
-                            Constants.TRACE_ID_FIELD, event.traceId,
-                            Constants.EXCEPTION_STACK, e.getMessage()
-                        )));
-                    return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                        buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                            "Unable to find response path in json ")).build();
-                }
-            }).orElseGet(() -> getDefaultFuncResp(event));
+            return matchingEvent.getObjects().findFirst()
+                .map(retEvent -> getFuncResp(event, matchingEvent.numFound, retEvent))
+                .orElseGet(() -> getDefaultFuncResp(event));
         } else {
             String errorReason = "Invalid event or no record/replay found.";
             LOGGER.error(new ObjectMessage(
@@ -233,6 +210,33 @@ public class MockServiceHTTP {
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.FAIL, Constants.INVALID_EVENT,
                     errorReason)).build();
+        }
+    }
+
+    private Response getFuncResp(Event event, long matchingEventsCount, Event retEvent) {
+        LOGGER.debug(new ObjectMessage(
+            Map.of(
+                Constants.API_PATH_FIELD, retEvent.apiPath,
+                Constants.TRACE_ID_FIELD, retEvent.traceId,
+                Constants.DATA, retEvent.rawPayloadString)));
+        try {
+            FnResponse fnResponse = new FnResponse(
+                retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
+                Optional.of(retEvent.timestamp),
+                FnReqResponse.RetStatus.Success, Optional.empty(),
+                matchingEventsCount > 1);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
+                .build();
+        } catch (PathNotFoundException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.API_PATH_FIELD, event.apiPath,
+                    Constants.TRACE_ID_FIELD, event.traceId,
+                    Constants.EXCEPTION_STACK, e.getMessage()
+                )));
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    "Unable to find response path in json ")).build();
         }
     }
 
@@ -251,7 +255,7 @@ public class MockServiceHTTP {
         defEventQuery.withPaths(List.of(event.apiPath));
 
         Optional<Event> defaultRespEvent = rrstore
-            .getDefaultRespEvent(defEventQuery.build());
+            .getSingleEvent(defEventQuery.build());
         if (defaultRespEvent.isPresent()) {
             FnResponse fnResponse = null;
             try {
@@ -544,7 +548,7 @@ public class MockServiceHTTP {
 
         EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1,
             considerTrace);
-        Optional<Event> respEvent = rrstore.getEvents(reqQuery).getObjects().findFirst()
+        Optional<Event> respEvent = rrstore.getSingleEvent(reqQuery)
             .flatMap(event -> rrstore.getRespEventForReqEvent(event));
 
         return respEvent.flatMap(respEventVal -> {
@@ -556,7 +560,7 @@ public class MockServiceHTTP {
                     LOGGER.info("Using default response");
 
                     EventQuery respQuery = getDefaultRespEventQuery(request);
-                    Optional<Event> defRespEvent = rrstore.getDefaultRespEvent(respQuery);
+                    Optional<Event> defRespEvent = rrstore.getSingleEvent(respQuery);
                     if (defRespEvent.isPresent()) {
                         return com.cube.dao.Response.fromEvent(defRespEvent.get(), jsonMapper);
                     }

@@ -20,6 +20,9 @@ public class Constants {
     public static final String MESSAGE = "message";
     public static final String REASON = "reason";
     public static final String EXCEPTION_STACK = "exceptionStack";
+    public static final String REQ_MATCH_TYPE = "reqMatchType";
+    public static final String RESP_MATCH_TYPE = "respMatchType";
+    public static final String INCLUDE_DIFF = "diffInclude";
 
 
     //MESSAGE_IDs
@@ -70,9 +73,13 @@ public class Constants {
     public static final String EVENT_TYPE_FIELD = "eventType";
     public static final String JSON_PATH_FIELD = "jsonPath";
     public static final String USER_ID_FIELD = "userId";
+    public static final String RECORD_REQ_ID_FIELD = "recordReqId";
+    public static final String REPLAY_REQ_ID_FIELD = "replayReqId";
     public static final String START_FIELD = "start";
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
+    public static final String LIMIT_FIELD = "limit";
+    public static final String OFFSET_FIELD = "offset";
 
 }

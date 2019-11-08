@@ -265,28 +265,36 @@ public class AnalyzeWS {
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
             TemplateKey key;
             if (Constants.REQUEST.equalsIgnoreCase(type)) {
-                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path, TemplateKey.Type.Request);
+                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+                    serviceName, path, TemplateKey.Type.Request);
             } else if (Constants.RESPONSE.equalsIgnoreCase(type)) {
-                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path,
+                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+                    serviceName, path,
                     TemplateKey.Type.Response);
             } else {
-                return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
-                    "either request or response :: " + type).build();
+                return Response.serverError().type(MediaType.TEXT_PLAIN)
+                    .entity("Invalid template type, should be " +
+                        "either request or response :: " + type).build();
             }
 
             ValidateCompareTemplate validTemplate = template.validate();
-            if(!validTemplate.isValid()) {
-                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+            if (!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                    (new JSONObject(Map.of("Message", validTemplate.getMessage()))).toString())
+                    .build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
             requestComparatorCache.invalidateKey(key);
             responseComparatorCache.invalidateKey(key);
             //Analyzer.removeKey(key);
-            return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
+            return Response.ok().type(MediaType.TEXT_PLAIN)
+                .entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
-            return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
+            return Response.serverError().type(MediaType.TEXT_PLAIN)
+                .entity("Invalid JSON String sent").build();
         } catch (IOException e) {
-            return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
+            return Response.serverError().type(MediaType.TEXT_PLAIN)
+                .entity("Error Occured " + e.getMessage()).build();
         }
     }
 
@@ -437,8 +445,8 @@ public class AnalyzeWS {
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
             Optional<String> diff  = Optional.of(matchRes.diff);
-            MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
-                matchRes.respmt, matchRes.service, matchRes.path,
+            MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
+                matchRes.respMatchType, matchRes.service, matchRes.path,
                 diff, request, replayedRequest, recordedResponse, replayedResponse);
 
             String resultJson = null;
@@ -615,8 +623,8 @@ public class AnalyzeWS {
                         .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
                 }
 
-                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
-                    matchRes.respmt, matchRes.service, matchRes.path,
+                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
+                    matchRes.respMatchType, matchRes.service, matchRes.path,
                     diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
