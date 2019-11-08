@@ -173,7 +173,7 @@ class ShareableLink extends Component {
                 }));
             });
         } else if (metaDataType == "selectedService") {
-            this.setState({service: value, [metaDataType] : value});
+            this.setState({service: value, [metaDataType] : value, selectedAPI: ""});
         } else {
             this.setState({[metaDataType] : value});
         }
@@ -647,11 +647,11 @@ class ShareableLink extends Component {
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
                     </Link>
                 </div>
-                <div >
+                <div>
                     <Breadcrumb style={{}}>
                         <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
                         <Breadcrumb.Item href="javascript:void(0);">
-                            <DropdownButton title="Services" id="dropdown-size-medium">
+                            <DropdownButton title={"SERVICE: " + selectedService} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
                                     <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
@@ -660,7 +660,7 @@ class ShareableLink extends Component {
                             </DropdownButton>
                         </Breadcrumb.Item>
                         <Breadcrumb.Item active>
-                            <DropdownButton title="API Path" id="dropdown-size-medium">
+                            <DropdownButton title={selectedAPI ? "API PATH: " + selectedAPI : "Select API Path"} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
                                     <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
