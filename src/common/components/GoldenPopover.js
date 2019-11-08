@@ -18,18 +18,18 @@ class GoldenPopover extends React.Component {
             showRule: false,
             defaultRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
-                "dt": "Default",
-                "pt": "Default",
-                "ct": "Default",
-                "em": "Default",
+                "dt": "",
+                "pt": "",
+                "ct": "",
+                "em": "",
                 "customization": null
             },
             newRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
-                "dt": "Default",
-                "pt": "Default",
-                "ct": "Default",
-                "em": "Default",
+                "dt": "",
+                "pt": "",
+                "ct": "",
+                "em": "",
                 "customization": null
             }
         };
@@ -43,17 +43,12 @@ class GoldenPopover extends React.Component {
 
     updateRule() {
         const {dispatch, serverSideDiff, jsonPath} = this.props;
-        if (serverSideDiff) {
-            this.hideGR();
-            let obj = {};
-            obj.type = "REPLACE";
-            obj.path = jsonPath.replace("<BEGIN>", "");
-            obj.newRule = this.state.newRule;
-            dispatch(cubeActions.pushToOperations(obj));
-        } else {
-            this.hideGR();
-            alert("Can't update rule for this line");
-        }
+        this.hideGR();
+        let obj = {};
+        obj.type = "REPLACE";
+        obj.path = jsonPath.replace("<BEGIN>", "");
+        obj.newRule = this.state.newRule;
+        dispatch(cubeActions.pushToOperations(obj));
     }
 
     updateGolden() {
@@ -135,8 +130,7 @@ class GoldenPopover extends React.Component {
                                     <td>Presence</td>
                                     <td>{this.state.defaultRule.pt}</td>
                                     <td>
-                                        <select className="width-100" onChange={(e) => this.setRule("pt", e)}>
-                                            <option value="Default">Default</option>
+                                        <select value={this.state.newRule.pt} className="width-100" onChange={(e) => this.setRule("pt", e)}>
                                             <option value="Required">Required</option>
                                             <option value="Optional">Optional</option>
                                         </select>
@@ -147,7 +141,7 @@ class GoldenPopover extends React.Component {
                                     <td>Data Type</td>
                                     <td>{this.state.defaultRule.dt}</td>
                                     <td>
-                                        <select className="width-100" onChange={(e) => this.setRule("dt", e)}>
+                                        <select value={this.state.newRule.dt} className="width-100" onChange={(e) => this.setRule("dt", e)}>
                                             <option value="Default">Default</option>
                                             <option value="Str">Str</option>
                                             <option value="Int">Int</option>
@@ -163,7 +157,7 @@ class GoldenPopover extends React.Component {
                                     <td>Transformation</td>
                                     <td>{this.state.defaultRule.em}</td>
                                     <td>
-                                        <select className="width-100" onChange={(e) => this.setRule("em", e)}>
+                                        <select value={this.state.newRule.em} className="width-100" onChange={(e) => this.setRule("em", e)}>
                                             <option value="Default">Default</option>
                                             <option value="Regex">Regex</option>
                                             <option value="Round">Round</option>
@@ -177,10 +171,8 @@ class GoldenPopover extends React.Component {
                                     <td>Comparision Type</td>
                                     <td>{this.state.defaultRule.ct}</td>
                                     <td>
-                                        <select className="width-100" onChange={(e) => this.setRule("ct", e)}>
-                                            <option value="Default">Default</option>
+                                        <select value={this.state.newRule.ct} className="width-100" onChange={(e) => this.setRule("ct", e)}>
                                             <option value="Equal">Equal</option>
-                                            <option value="EqualOptional">EqualOptional</option>
                                             <option value="Ignore">Ignore</option>
                                         </select>
                                     </td>
@@ -247,7 +239,7 @@ class GoldenPopover extends React.Component {
             console.log("fetchTimeline has errors!", e);
             throw e;
         }
-        this.setState({ defaultRule: newRule });
+        this.setState({ defaultRule: {...newRule}, newRule: {...newRule} });
     }
 }
 
