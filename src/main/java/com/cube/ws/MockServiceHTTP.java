@@ -278,6 +278,7 @@ public class MockServiceHTTP {
                 .build();
         }
 
+        errorReason = "Unable to find default response!";
         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
             buildErrorResponse(Constants.FAIL, Constants.EVENT_NOT_FOUND,
                 errorReason)).build();

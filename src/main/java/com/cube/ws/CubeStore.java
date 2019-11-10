@@ -749,6 +749,8 @@ public class CubeStore {
                 return Optional.empty();
             }
 
+            rrstore.commit();
+
             return Optional.of(defaultReqEvent);
         }
 
