@@ -1026,15 +1026,12 @@ public class AnalyzeWS {
      * API to update operations for a operationSetId, service and path
      */
     @POST
-    @Path("goldenUpdate/recordingOperationSet/update/")
+    @Path("goldenUpdate/recordingOperationSet/updateMultiPath/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateRecordingOperationSet(List<RecordingOperationSetSP> requests) {
         List<String> recordingOperationSetIds = new ArrayList<>();
         try {
-            if(requests.isEmpty()) {
-                throw new Exception("Empty body");
-            }
             requests.forEach(UtilException.rethrowConsumer(request -> {
                 request.generateId();
                 String recordingOperationSetId = request.operationSetId;
@@ -1063,6 +1060,44 @@ public class AnalyzeWS {
                     "Update failed. Exception message - " + e.getMessage())).build();
         }
     }
+
+
+    // Todo : This API can go away once the UI is stable with "goldenUpdate/recordingOperationSet/updateMultiPath/"
+    /**
+     * API to update operations for a operationSetId, service and path
+     */
+    @POST
+    @Path("goldenUpdate/recordingOperationSet/update/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateRecordingOperationSet(RecordingOperationSetSP request) {
+        request.generateId();
+        String recordingOperationSetId = request.operationSetId;
+        String service = request.service;
+        String path = request.path;
+        List<ReqRespUpdateOperation> newOperationList = request.operationsList;
+
+        LOGGER.debug(String.format("Received request for updating operation set, id: %s, service: %s, path: %s, new " +
+            "operation list: %s", recordingOperationSetId, service, path, newOperationList));
+
+        boolean b = recordingUpdate.updateRecordingOperationSet(request);
+        if(b) {
+            String response = "Success";
+            String type = MediaType.TEXT_PLAIN;
+            try {
+                response = jsonMapper
+                    .writeValueAsString(Map.of("Message" , "Successfully updated Recording Update Operation Set"
+                        , "ID" , recordingOperationSetId));
+                type = MediaType.APPLICATION_JSON;
+            } catch (JsonProcessingException e) {
+                LOGGER.error("Error while constructing json response :: " + e.getMessage());
+            }
+            return Response.ok().entity(response).type(type).build();
+        } else {
+            LOGGER.error("error updating operation set");
+            return Response.serverError().build();
+        }
+    }
+
 
     /**
      * API to transform a replay collection by applying an operation set to a it
