@@ -43,10 +43,7 @@ class ViewSelectedTestConfig extends React.Component {
             //this.setState({show: false, toAnalysis: true});
             const {dispatch} = this.props;
             if(this.doAnalysis) {
-                setTimeout(() => {
-                    if (!cube.analysis)
-                        dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayId, cube.selectedApp));
-                });
+                dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayId, cube.selectedApp));
                 if (cube.analysis) {
                     dispatch(cubeActions.getReport(cube.selectedTestId, replayId.replayId));
                     this.doAnalysis = false;
@@ -262,7 +259,6 @@ class ViewSelectedTestConfig extends React.Component {
         if (!cube.selectedTestId) {
             alert('select golden to replay');
         } else {
-            cubeActions.initAnalyseRes();
             this.setState({show: true});
             /*dispatch(cubeActions.startReplay(cube.selectedGolden));
             */
