@@ -62,9 +62,8 @@ public class RecordingUpdate {
         LOGGER.info(String.format("Fetching RecordingOperationSetSP for service %s, path %s with " +
                 "recordingOperationSetId %s", updateRequest.service,
             updateRequest.path, updateRequest.operationSetId));
-        Optional<RecordingOperationSetSP> storedOperationSet =
-            config.rrstore.getRecordingOperationSetSP(updateRequest.operationSetId,
-                updateRequest.service, updateRequest.path);
+        Optional<RecordingOperationSetSP> storedOperationSet = config.rrstore.getRecordingOperationSetSP(updateRequest.operationSetId,
+            updateRequest.service, updateRequest.path);
         return storedOperationSet
             // if present, update/insert the new operations
             .map(recordingOperationSet -> {
