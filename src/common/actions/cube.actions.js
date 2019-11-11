@@ -16,6 +16,7 @@ export const cubeActions = {
     getGraphDataByAppId,
     getReplayStatus,
     getAnalysis,
+    initAnalyseRes,
     getReport,
     getTimelineData,
     hideServiceGraph,
@@ -335,15 +336,20 @@ function getReplayStatus(collectionId, replayId, app) {
     function success(replayStatus, date) { return { type: cubeConstants.REPLAY_STATUS_FETCHED, data: replayStatus, date: date } }
 }
 
-function getAnalysis(collectionId, replayId) {
+function getAnalysis(collectionId, replayId, app) {
     return async dispatch => {
         try {
             let analysis = await cubeService.fetchAnalysis(collectionId, replayId);
             dispatch(success(analysis, Date.now()));
+            dispatch(cubeActions.getTimelineData(app));
         } catch (error) {
         }
     }
     function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
+}
+
+function initAnalyseRes() {
+    return {type: cubeConstants.INIT_ANALYSIS, data: null};
 }
 
 function getReport(collectionId, replayId) {

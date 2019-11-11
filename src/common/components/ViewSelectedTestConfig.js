@@ -43,10 +43,12 @@ class ViewSelectedTestConfig extends React.Component {
             //this.setState({show: false, toAnalysis: true});
             const {dispatch} = this.props;
             if(this.doAnalysis) {
-                dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayId));
+                setTimeout(() => {
+                    if (!cube.analysis)
+                        dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayId, cube.selectedApp));
+                });
                 if (cube.analysis) {
                     dispatch(cubeActions.getReport(cube.selectedTestId, replayId.replayId));
-                    dispatch(cubeActions.getTimelineData(cube.selectedApp));
                     this.doAnalysis = false;
                 }
             }
@@ -229,7 +231,7 @@ class ViewSelectedTestConfig extends React.Component {
                             {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
                         </h3>
                     </Modal.Body>
-                    <Modal.Footer className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "text-center" : "hidden"}>
+                    <Modal.Footer className={cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error")) ? "text-center" : "hidden"}>
                         <Link to="/">
                             <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
@@ -260,6 +262,7 @@ class ViewSelectedTestConfig extends React.Component {
         if (!cube.selectedTestId) {
             alert('select golden to replay');
         } else {
+            cubeActions.initAnalyseRes();
             this.setState({show: true});
             /*dispatch(cubeActions.startReplay(cube.selectedGolden));
             */
