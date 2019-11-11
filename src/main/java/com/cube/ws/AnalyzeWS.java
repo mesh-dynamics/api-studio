@@ -879,7 +879,8 @@ public class AnalyzeWS {
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
                                     @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
-                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId) {
+                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
+                                    MultivaluedMap<String, String> formParams) {
         try{
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
@@ -904,10 +905,16 @@ public class AnalyzeWS {
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
+
+            Optional<String> name = Optional.ofNullable(formParams.getFirst("name"));
+            Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
+            Optional<String> branch = Optional.ofNullable(formParams.getFirst("name"));
+            List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId));
+                Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
@@ -940,7 +947,7 @@ public class AnalyzeWS {
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId));
+                Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch, originalRec.tags);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity((new JSONObject(Map.of(

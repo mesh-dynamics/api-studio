@@ -4,6 +4,8 @@
 package com.cube.dao;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,7 +35,8 @@ public class Recording {
      */
 	public Recording(String customerId, String app, String instanceId, String collection, RecordingStatus status
         , Optional<Instant> updateTimestamp, String templateVersion, Optional<String> parentRecordingId
-        , Optional<String> rootRecordingId) {
+        , Optional<String> rootRecordingId, Optional<String> name, Optional<String> codeVersion, Optional<String> branch
+        , List<String> tags) {
 		super();
 		this.customerId = customerId;
 		this.app = app;
@@ -46,6 +49,11 @@ public class Recording {
             collection, templateVersion)));
         this.parentRecordingId = parentRecordingId;
         this.rootRecordingId = rootRecordingId.orElse(this.id);
+        this.name = name;
+        this.codeVersion = codeVersion;
+        this.branch = branch;
+        this.tags = tags;
+        this.archived = false;
     }
 
 	// for json deserialization
@@ -59,6 +67,11 @@ public class Recording {
 	    this.templateVersion = "";
 	    this.parentRecordingId = Optional.empty();
 	    this.rootRecordingId = "";
+        this.name = Optional.empty();
+        this.codeVersion = Optional.empty();
+        this.branch = Optional.empty();
+        this.tags = Collections.EMPTY_LIST;
+        this.archived = false;
     }
 
     @JsonProperty("id")
@@ -81,16 +94,29 @@ public class Recording {
     public final String rootRecordingId;
     @JsonProperty("prntRcrdngId")
     public final Optional<String> parentRecordingId;
+    @JsonProperty("name")
+    public final Optional<String> name;
+    @JsonProperty("codeVersion")
+    public final Optional<String> codeVersion;
+    @JsonProperty("branch")
+    public final Optional<String> branch;
+    @JsonProperty("tags")
+    public final List<String> tags;
+    @JsonProperty("archived")
+    public boolean archived;
+
+
 
     public String getId() {
         return this.id;
     }
 
 
-	public static Optional<Recording> startRecording(String customerId, String app, String instanceId,
-                                                     String collection, String templateVersion, ReqRespStore rrstore) {
+	public static Optional<Recording> startRecording(String customerId, String app, String instanceId, String collection,
+                                                     String templateVersion, ReqRespStore rrstore, Optional<String> name,
+                                                     Optional<String> codeVersion, Optional<String> branch, List<String> tags) {
 		Recording recording = new Recording(customerId, app, instanceId, collection, RecordingStatus.Running
-            , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty());
+            , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name, codeVersion, branch, tags);
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);
         }

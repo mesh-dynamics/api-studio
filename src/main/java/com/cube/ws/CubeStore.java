@@ -806,9 +806,12 @@ public class CubeStore {
         LOGGER.info(String.format("Starting recording for customer %s, app %s, instance %s, collection %s",
             customerid, app, instanceid, collection));
 
+        Optional<String> name = Optional.ofNullable(formParams.getFirst("name"));
+        Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
+        Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+        List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
 
-
-        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateSetVersion, rrstore)
+        Optional<Response> resp = Recording.startRecording(customerid, app, instanceid, collection, templateSetVersion, rrstore, name, codeVersion, branch, tags)
             .map(newr -> {
                 String json;
                 try {

@@ -2191,6 +2191,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RECORDINGSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
     private static final String ROOT_RECORDING_ID = "root_recording_id" + STRING_SUFFIX;
     private static final String PARENT_RECORDING_ID = "parent_recording_id" + STRING_SUFFIX;
+    private static final String GOLDEN_NAME = CPREFIX + "golden_name" + STRING_SUFFIX;
+    private static final String CODE_VERSION = CPREFIX + "code_version" + STRING_SUFFIX;
+    private static final String BRANCH = CPREFIX + "branch" + STRING_SUFFIX;
+    private static final String TAGS = CPREFIX + "tags" + STRINGSET_SUFFIX;
+    private static final String ARCHIVED = CPREFIX + "archived" + BOOLEAN_SUFFIX;
+
+
 
     private static Optional<Recording> docToRecording(SolrDocument doc) {
 
@@ -2203,10 +2210,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSION);
         Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_ID);
         Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_ID);
-        if (customerId.isPresent() && app.isPresent()
-                && instanceid.isPresent() && collection.isPresent() && status.isPresent() && templateVersion.isPresent()) {
+        Optional<String> name = getStrField(doc, GOLDEN_NAME);
+        Optional<String> codeVersion = getStrField(doc, CODE_VERSION);
+        Optional<String> branch = getStrField(doc, BRANCH);
+        List<String> tags = getStrFieldMV(doc, TAGS);
+        Optional<Boolean> archived = getBoolField(doc, ARCHIVED);
+
+        if (customerId.isPresent() && app.isPresent() && instanceid.isPresent() && collection.isPresent() &&
+            status.isPresent() && templateVersion.isPresent() && archived.isPresent()) {
             recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
-                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId));
+                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId, name,
+            codeVersion, branch, tags));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
@@ -2229,9 +2243,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
         doc.setField(TEMPLATE_VERSION, recording.templateVersion);
         doc.setField(ROOT_RECORDING_ID, recording.rootRecordingId);
+        doc.setField(ARCHIVED, recording.archived);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_ID, parentRecId));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
-
+        recording.name.ifPresent(name -> doc.setField(GOLDEN_NAME, name));
+        recording.codeVersion.ifPresent(cv -> doc.setField(CODE_VERSION, cv));
+        recording.branch.ifPresent(branch -> doc.setField(BRANCH, branch));
+        recording.tags.forEach(tag -> doc.addField(TAGS, tag));
         return doc;
     }
 
