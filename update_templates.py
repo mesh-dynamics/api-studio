@@ -45,8 +45,9 @@ def register_templates_from_file(templateset_filename, api_endpoint, customer, a
             print("Registered template json for " + customer + \
                   " :: " + app)
             print(api_endpoint)
-            print("Got Response :: " + r.text)
             response_json = r.json()
+            print("Parsed json response")
+            print("Got Response :: " + response_json["Message"])
             template_version = response_json["templateSetVersion"]
             return template_version
 
