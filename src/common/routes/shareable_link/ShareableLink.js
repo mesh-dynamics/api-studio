@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label } from 'react-bootstrap';
+import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb } from 'react-bootstrap';
 import _ from 'lodash';
+import axios from "axios";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
@@ -36,10 +37,16 @@ class ShareableLink extends Component {
             resultsFetched: 0,
             filterPath: '',
             showResponseMessageHeaders: false,
+            shownResponseMessageHeaders: false,
             showResponseMessageBody: true,
+            shownResponseMessageBody: true,
             showRequestMessageHeaders: false,
+            shownRequestMessageHeaders: false,
             showRequestMessageParams: false,
+            shownRequestMessageParams: false,
             showRequestMessageBody: false,
+            shownRequestMessageBody: false,
+            selectedService: "All",
             selectedAPI: "All",
             selectedRequestMatchType: "All",
             selectedResponseMatchType: "All",
@@ -53,10 +60,14 @@ class ShareableLink extends Component {
             apiPath: "",
             service: "",
             replayId: null,
-            recordingId: null
+            recordingId: null,
+            showOnlyFailures: false,
+            showOnlyMarkedForGolden: false
         };
         this.handleChange = this.handleChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
+        this.toggleShowOnlyFailures = this.toggleShowOnlyFailures.bind(this);
+        this.toggleShowOnlyMarkedForUpdate = this.toggleShowOnlyMarkedForUpdate.bind(this);
 
         this.inputElementRef = React.createRef();
     }
@@ -83,7 +94,9 @@ class ShareableLink extends Component {
             service: service,
             recordingId: recordingId,
             currentTemplateVer: currentTemplateVer,
-            app: app
+            app: app,
+            selectedAPI: urlParameters["apiPath"] ? urlParameters["apiPath"] : "All",
+            selectedService: urlParameters["service"] ? urlParameters["service"] : "All",
         });
         setTimeout(() => {
             const { dispatch, history, cube } = this.props;
@@ -105,13 +118,15 @@ class ShareableLink extends Component {
         if (this.state.resultsFetched === prevState.resultsFetched) {
             return;
         }
-        this.fetchReplayList();
+        //this.fetchReplayList();
     }
 
     componentWillReceiveProps(nextProps, prevState) {
         let { cube, dispatch } = nextProps;
         if (cube && (cube.goldenInProg || cube.newGoldenId)) {
             this.setState({ showNewGolden: true });
+        } else {
+            this.setState({ showNewGolden: false });
         }
     }
 
@@ -140,16 +155,50 @@ class ShareableLink extends Component {
         this.setState({ filterPath: e.target.value });
     }
 
+    toggleShowOnlyFailures(e) {
+        this.setState({showOnlyFailures : e.target.checked});
+    }
+
+    toggleShowOnlyMarkedForUpdate(e) {
+        this.setState({showOnlyMarkedForGolden : e.target.checked});
+    }
+
     toggleMessageContents(e) {
-        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked });
-        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked });
-        if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked });
-        if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked });
-        if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked });
+
+        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
+        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
+        if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
+        if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked, shownRequestMessageParams: true });
+        if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
+        
+
+        setTimeout(() => {
+            const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageParams, showRequestMessageBody } = this.state;
+
+            if(showResponseMessageHeaders === false && showResponseMessageBody === false && showRequestMessageHeaders === false &&  showRequestMessageParams === false && showRequestMessageBody === false) {
+                this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
+            }
+        });
     }
 
     handleMetaDataSelect(metaDataType, value) {
-        this.setState({[metaDataType] : value});
+        if (metaDataType == "selectedAPI") {
+            const {dispatch} = this.props;
+            this.setState({apiPath: value, [metaDataType] : value});
+            setTimeout(() => {
+                dispatch(cubeActions.setPathResultsParams({
+                    path: value,
+                    service: this.state.service,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId,
+                    currentTemplateVer: this.state.currentTemplateVer
+                }));
+            });
+        } else if (metaDataType == "selectedService") {
+            this.setState({service: value, [metaDataType] : value, selectedAPI: ""});
+        } else {
+            this.setState({[metaDataType] : value});
+        }
     }
 
     async fetchReplayList() {
@@ -157,8 +206,13 @@ class ShareableLink extends Component {
         if(!replayId) throw new Error("replayId is required");
         let response, json, { resultsFetched } = this.state;
         let user = JSON.parse(localStorage.getItem('user'));
-        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${resultsFetched}&includediff=true&path=${apiPath}`;
+        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includediff=true&path=%2A`;
         let dataList = {};
+
+        
+        let promises = [], fetchedResults = 0, layoutDataWithDiff = [], totalNumberOfRequest = 0, pageSize = 20, replayListData = [];
+
+
         try {
             response = await fetch(url, {
                 method: "get",
@@ -172,12 +226,40 @@ class ShareableLink extends Component {
                 dataList = json;
                 let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
                 this.setState({
-                    replayList: this.state.replayList.concat(dataList.res),
-                    diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData),
-                    totalRequests: dataList.numFound,
-                    resultsFetched: this.state.resultsFetched + dataList.res.length,
+                    //diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData),
                     app: dataList.app,
                     templateVersion: dataList.templateVersion,
+                });
+
+                layoutDataWithDiff.push(...diffLayoutData);
+
+                fetchedResults = dataList.res.length;
+                totalNumberOfRequest = dataList.numFound;
+                let allFetched = false;
+                let requestHeaders = {
+                    headers: {
+                        "cache-control": "no-cache",
+                        "Authorization": "Bearer " + user['access_token']
+                    }
+                };
+                while(!allFetched) {
+                    if(fetchedResults >= totalNumberOfRequest) {
+                        allFetched = true;
+                        break;
+                    }
+                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includediff=true&path=%2A`;
+                    promises.push(axios.get(url, requestHeaders));
+                    fetchedResults = fetchedResults + pageSize;
+                }
+                let self = this;
+                axios.all(promises).then(function(results) {
+                    results.forEach(function(eachResponse) {
+                        let eachDiffLayoutData = self.validateAndCreateDiffLayoutData(eachResponse.data.res);
+                        layoutDataWithDiff.push(...eachDiffLayoutData);
+                    });
+                    self.setState({
+                        diffLayoutData: layoutDataWithDiff
+                    });
                 });
             } else {
                 throw new Error("Response not ok fetchTimeline");
@@ -289,7 +371,7 @@ class ShareableLink extends Component {
             if (item.replayRequest) {
                 replayedRequestHeaders = item.replayRequest.hdrs ? item.replayRequest.hdrs : {};
                 replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
-                if (item.recordRequest.body) {
+                if (item.replayRequest.body) {
                     try {
                         if (item.replayRequest.mimeType.indexOf('json') > -1 && item.replayRequest.mimeType.indexOf('json') > -1) {
                             replayedRequestBody = JSON.parse(item.replayRequest.body);
@@ -331,31 +413,42 @@ class ShareableLink extends Component {
     }
 
     render() {
-        let { diffLayoutData, selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType } = this.state;
-        let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], resolutionTypes = [], diffOperationTypes = [];
+        let { diffLayoutData, selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType, selectedService, showOnlyFailures } = this.state;
+        let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], services = [], resolutionTypes = [], diffOperationTypes = [];
         const {cube} = this.props;
-
         diffLayoutData.filter(function (eachItem) {
-            apiPaths.push({value: eachItem.path, count: 0});
-            if (selectedAPI === "All" || selectedAPI === eachItem.path) eachItem.show = true;
+            services.push({value: eachItem.service, count: 0});
+            if (selectedService === "All" || selectedService === eachItem.service) {
+                eachItem.show = true;
+            }
             else {
                 eachItem.show = false;
             }
-            return selectedAPI === "All" || selectedAPI === eachItem.path;
+            return eachItem.show === true;
         }).filter(function (eachItem) {
+            apiPaths.push({value: eachItem.path, count: 0});
+            if (eachItem.show === true && (selectedAPI === "All" || selectedAPI === eachItem.path)) {
+                
+            }
+            else {
+                eachItem.show = false;
+            }
+            return eachItem.show === true;
+        }).filter(function (eachItem) {
+            requestMatchTypes.push({value: eachItem.reqmt, count: 0});
             if (eachItem.show === true && (selectedRequestMatchType === "All" || selectedRequestMatchType === eachItem.reqmt)) {
-                requestMatchTypes.push({value: eachItem.reqmt, count: 0});
+                
             } else {
                 eachItem.show = false;
             }
-            return eachItem.show === true && selectedRequestMatchType === "All" || selectedRequestMatchType === eachItem.reqmt;
+            return eachItem.show === true;
         }).filter(function (eachItem) {
+            responseMatchTypes.push({value: eachItem.respmt, count: 0});
             if (eachItem.show === true && (selectedResponseMatchType === "All" || selectedResponseMatchType === eachItem.respmt)) {
-                responseMatchTypes.push({value: eachItem.respmt, count: 0});
             } else {
                 eachItem.show = false;
             }
-            return eachItem.show === true && selectedResponseMatchType === "All" || selectedResponseMatchType === eachItem.respmt;
+            return eachItem.show === true;
         }).filter(function (eachItem) {
             let toFilter = false;
             if (eachItem.show === true) {
@@ -372,7 +465,7 @@ class ShareableLink extends Component {
             if (!toFilter) {
                 eachItem.show = false;
             }
-            return toFilter;
+            return eachItem.show === true;
         }).filter(function (eachItem) {
             let toFilter = false;
             if (eachItem.show === true) {
@@ -389,7 +482,7 @@ class ShareableLink extends Component {
             if (!toFilter) {
                 eachItem.show = false;
             }
-            return toFilter;
+            return eachItem.show === true;
         });
         const filterFunction = (item, index, itself) => {
             item.count = itself.reduce((counter, currentItem, currentIndex) => {
@@ -405,8 +498,12 @@ class ShareableLink extends Component {
             }
             return idx === index;
         };
+        let diffLayoutDataFiltered = diffLayoutData.filter(function(eachItem) {
+            return eachItem.show === true;
+        });
         requestMatchTypes = requestMatchTypes.filter(filterFunction);
         responseMatchTypes = responseMatchTypes.filter(filterFunction);
+        services = services.filter(filterFunction);
         apiPaths = apiPaths.filter(filterFunction);
         resolutionTypes = resolutionTypes.filter(filterFunction);
         diffOperationTypes = diffOperationTypes.filter(filterFunction);
@@ -432,6 +529,11 @@ class ShareableLink extends Component {
                 },
             }
         };
+        let serviceMenuItems = services.map((item, index) => {
+            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedService", item.value)}>
+                <Glyphicon style={{ visibility: selectedService === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
+            </MenuItem>);
+        });
         let apiPathMenuItems = apiPaths.map((item, index) => {
             return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedAPI", item.value)}>
                 <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
@@ -457,12 +559,13 @@ class ShareableLink extends Component {
                 <Glyphicon style={{ visibility: selectedDiffOperationType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
-        let jsxContent = diffLayoutData.map((item, index) => {
-            return (<div key={item.recordReqId} style={{ borderBottom: "1px solid #eee", display: item.show ? "block" : "none" }}>
+        let jsxContent = diffLayoutDataFiltered.map((item, index) => {
+            let toShow = showOnlyFailures ? item.respmt === "NoMatch" ? true : false : item.show;
+            return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
-                {item.recordedRequestHeaders != null && item.replayedRequestHeaders != null && (
+                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders != null && item.replayedRequestHeaders != null && (
                     <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -478,7 +581,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {item.recordedRequestParams != null && item.replayedRequestParams != null && (
+                {(this.state.showRequestMessageParams || this.state.shownRequestMessageParams) && item.recordedRequestParams != null && item.replayedRequestParams != null && (
                     <div style={{ display: this.state.showRequestMessageParams ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Params</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -494,7 +597,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {item.recordedRequestBody != null && item.replayedRequestBody != null && (
+                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && item.recordedRequestBody != null && item.replayedRequestBody != null && (
                     <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body (Includes Form Params)</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -510,7 +613,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
+                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
                     <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -567,18 +670,30 @@ class ShareableLink extends Component {
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
                     </Link>
                 </div>
-                <div >
+                <div>
+                    <Breadcrumb style={{}}>
+                        <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
+                        <Breadcrumb.Item href="javascript:void(0);">
+                            <DropdownButton title={"SERVICE: " + selectedService} id="dropdown-size-medium">
+                                <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
+                                    <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
+                                </MenuItem>
+                                <MenuItem divider />
+                                {serviceMenuItems}
+                            </DropdownButton>
+                        </Breadcrumb.Item>
+                        <Breadcrumb.Item active>
+                            <DropdownButton title={selectedAPI ? "API PATH: " + selectedAPI : "Select API Path"} id="dropdown-size-medium">
+                                <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
+                                    <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
+                                </MenuItem>
+                                <MenuItem divider />
+                                {apiPathMenuItems}
+                            </DropdownButton>
+                        </Breadcrumb.Item>
+                    </Breadcrumb>
                     <div style={{ marginBottom: "18px" }}>
                         <div style={{ display: "inline-block" }}>
-                            <div style={{ paddingRight: "9px", display: "inline-block" }}>
-                                <DropdownButton title="API Path" id="dropdown-size-medium">
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
-                                        <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    <MenuItem divider />
-                                    {apiPathMenuItems}
-                                </DropdownButton>
-                            </div>
                             <div style={{ paddingRight: "9px", display: "inline-block" }}>
                                 <DropdownButton title="Request Match Type" id="dropdown-size-medium">
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", "All")}>
@@ -616,19 +731,9 @@ class ShareableLink extends Component {
                                 </DropdownButton>
                             </div>
                         </div>
-                        <div style={{ display: "inline-block" }}>
-                            <FormGroup>
-                                <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders">Request Headers</Checkbox>
-                                <Checkbox inline onChange={this.toggleMessageContents} value="requestParams">Request Params</Checkbox>
-                                <Checkbox inline onChange={this.toggleMessageContents} value="requestBody">Request Body</Checkbox>
-                                <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
-                                <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
-                                <Checkbox inline >Marked for golden update</Checkbox>
-                            </FormGroup>
-                        </div>
                     </div>
                     <FormGroup>
-                        <FormControl
+                        <FormControl style={{marginBottom: "12px"}}
                             ref={this.inputElementRef}
                             type="text"
                             value={this.state.filterPath}
@@ -637,6 +742,16 @@ class ShareableLink extends Component {
                             id="filterPathInputId"
                             inputRef={ref => { this.input = ref; }}
                         />
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders">Request Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestParams">Request Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody">Request Body</Checkbox>
+                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
+                        <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                        <Checkbox inline onChange={this.toggleShowOnlyFailures}>Show requests with failures only</Checkbox>
+                        <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                        <Checkbox inline onChange={this.toggleShowOnlyMarkedForUpdate}>Marked for golden update</Checkbox>
                     </FormGroup>
                 </div>
                 <div>

@@ -243,6 +243,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 analysis: action.data
             };
+        case cubeConstants.INIT_ANALYSIS:
+            return {
+                ...state,
+                analysis: null
+            }
         case cubeConstants.REPORT_FETCHED:
             return {
                 ...state,
@@ -331,7 +336,8 @@ export function cube (state = initialState, action) {
                 ...state,
                 golden: null,
                 goldenTimeStamp: null,
-                newGoldenId: null
+                newGoldenId: null,
+                goldenInProg: false
             };
         default:
             return state
