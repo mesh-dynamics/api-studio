@@ -424,6 +424,7 @@ public interface ReqRespStore {
 	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceid);
 
+	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, boolean extendTTL);
 	/**
 	 *
 	 */
