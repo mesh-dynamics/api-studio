@@ -21,6 +21,10 @@ public class Constants {
     public static final String STORE_EVENT_FAILED = "STORE_EVENT_FAILED";
     public static final String INVALID_EVENT = "INVALID_EVENT";
     public static final String INVALID_INPUT = "INVALID_INPUT";
+    public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
+    public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
+    public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
+
 
     //EXCEPTIONS
     public static final String IO_EXCEPTION = "IO_EXCEPTION";

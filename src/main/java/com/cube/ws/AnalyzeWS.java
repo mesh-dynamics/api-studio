@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.ArrayList;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -71,6 +73,11 @@ import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.core.ValidateCompareTemplate;
+import com.cube.core.Utils;
+import com.cube.utils.Constants;
+
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
 
 /**
  * @author prasad
@@ -287,6 +294,11 @@ public class AnalyzeWS {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
         } catch (IOException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
+        }
+        catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
+                    e.getMessage()))).build();
         }
     }
 
@@ -682,7 +694,19 @@ public class AnalyzeWS {
                 "Message", "Successfully saved template set",
                 "ID", templateSetId,
                 "templateSetVersion", templateSet.version))).toString()).build();
-        } catch (Exception e) {
+        } catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
+                    e.getMessage()))).build();
+        }
+
+        catch (TemplateSet.TemplateSetMetaStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED, "Unable to save template meta: " +
+                    e.getMessage()))).build();
+        }
+
+        catch (Exception e) {
             return Response.serverError().entity((new JSONObject(Map.of(
                 "Message", "Unable to save template set",
                 "Error", e.getMessage()))).toString()).build();
@@ -1002,6 +1026,47 @@ public class AnalyzeWS {
      * API to update operations for a operationSetId, service and path
      */
     @POST
+    @Path("goldenUpdate/recordingOperationSet/updateMultiPath/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateRecordingOperationSet(List<RecordingOperationSetSP> requests) {
+        List<String> recordingOperationSetIds = new ArrayList<>();
+        try {
+            requests.forEach(UtilException.rethrowConsumer(request -> {
+                request.generateId();
+                String recordingOperationSetId = request.operationSetId;
+                String service = request.service;
+                String path = request.path;
+                List<ReqRespUpdateOperation> newOperationList = request.operationsList;
+
+                LOGGER.debug(String.format("Received request for updating operation set, id: %s, service: %s, path: %s, new " +
+                    "operation list: %s", recordingOperationSetId, service, path, newOperationList));
+
+                boolean b = recordingUpdate.updateRecordingOperationSet(request);
+
+                if(b) {
+                    recordingOperationSetIds.add(recordingOperationSetId);
+                } else {
+                    throw new Exception("Error updating operation set for id " +  recordingOperationSetId);
+                }
+            }));
+
+            return Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of("recordingOperationSetIds",recordingOperationSetIds)))).build();
+
+        } catch (Exception e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.UPDATE_RECORDING_OPERATION_FAILED,
+                    "Update failed. Exception message - " + e.getMessage())).build();
+        }
+    }
+
+
+    // Todo : This API can go away once the UI is stable with "goldenUpdate/recordingOperationSet/updateMultiPath/"
+    /**
+     * API to update operations for a operationSetId, service and path
+     */
+    @POST
     @Path("goldenUpdate/recordingOperationSet/update/")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRecordingOperationSet(RecordingOperationSetSP request) {
@@ -1032,6 +1097,7 @@ public class AnalyzeWS {
             return Response.serverError().build();
         }
     }
+
 
     /**
      * API to transform a replay collection by applying an operation set to a it
