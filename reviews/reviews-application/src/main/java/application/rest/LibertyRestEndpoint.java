@@ -184,16 +184,17 @@ public class LibertyRestEndpoint extends Application {
             randomGuassianPercentGivenStdDevAndMean = random.nextGaussian() * FAIL_PERCENT_STD_DEV + FAIL_PERCENT;
         }
         requestTimeStamp = currentRequestTimeStamp;
-
-        if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+        System.out.println("Serving Request");
+       /* if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .header(HttpHeaders.RETRY_AFTER, " :=120")
                     .build();
-        }
+        }*/
       int starsReviewer1 = -1;
       int starsReviewer2 = -1;
 
       if (ratings_enabled) {
+        System.out.println("Ratings enabled");
         JsonObject ratingsResponse = getRatings(Integer.toString(productId), user, useragent, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
         if (ratingsResponse != null) {
           if (ratingsResponse.containsKey("ratings")) {
@@ -207,8 +208,9 @@ public class LibertyRestEndpoint extends Application {
           }
         }
       } 
-
+      System.out.println("Before construcing json response");
       String jsonResStr = getJsonResponse(Integer.toString(productId), starsReviewer1, starsReviewer2);
+      System.out.println("After constructing json response");
       return Response.ok().type(MediaType.APPLICATION_JSON).entity(jsonResStr).build();
     }
 }
