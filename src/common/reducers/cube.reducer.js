@@ -243,6 +243,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 analysis: action.data
             };
+        case cubeConstants.INIT_ANALYSIS:
+            return {
+                ...state,
+                analysis: null
+            }
         case cubeConstants.REPORT_FETCHED:
             return {
                 ...state,
