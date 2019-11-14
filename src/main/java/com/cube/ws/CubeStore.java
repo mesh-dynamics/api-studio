@@ -160,7 +160,8 @@ public class CubeStore {
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s", type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
-        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app, instanceId);
+        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app, instanceId, true);
+
         if (recordOrReplay.isEmpty()) {
             // Dropping if there is no current recording.
             LOGGER.info(String.format("Dropping store for type %s, reqId %s since no current recording"
@@ -514,7 +515,7 @@ public class CubeStore {
 
         Optional<RecordOrReplay> recordOrReplay =
             rrstore.getCurrentRecordOrReplay( Optional.of(event.customerId),
-                Optional.of(event.app), Optional.of(event.instanceId));
+                Optional.of(event.app), Optional.of(event.instanceId), true);
 
         if (recordOrReplay.isEmpty()) {
             return Optional.of("No current record/replay!");

@@ -141,7 +141,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey recordReplayStoreKey;
 
     @Override
-    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key) {
+    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL) {
         Optional<RecordOrReplay> toReturn = Optional.empty();
         if (recordReplayRetrieveKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
@@ -160,10 +160,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         try (Jedis jedis = config.jedisPool.getResource()) {
-            String fromCache = jedis.get(key.toString());
+            String keyStr = key.toString();
+            String fromCache = jedis.get(keyStr);
             if (fromCache != null) {
-                LOGGER.info("Successfully retrieved from redis, key :: " + key.toString());
+                LOGGER.info("Successfully retrieved from redis, key :: " + keyStr);
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
+                Long ttl = jedis.ttl(keyStr);
+                if (ttl != -1 && extendTTL) {
+                    jedis.expire(keyStr, config.REDIS_DELETE_TTL);
+                    LOGGER.info("Extending ttl for redis key :: " + keyStr);
+                }
             }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
@@ -603,7 +609,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String ROOT_GOLDEN_SET = "root_golden_set_id" + STRING_SUFFIX;
     private static final String PARENT_GOLDEN_SET = "parent_golden_set_id" + STRING_SUFFIX;
 
-    private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) {
+    private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) throws TemplateSet.TemplateSetMetaStoreException {
         SolrInputDocument solrDoc = new SolrInputDocument();
         String id = Types.TemplateSet.toString().concat("-").concat(String.valueOf(Objects.hash(
             templateSet.customer, templateSet.app, templateSet.version)));
@@ -615,8 +621,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(APPF, templateSet.app);
         solrDoc.setField(TIMESTAMPF , templateSet.timestamp.toString());
         templateIds.forEach(templateId -> solrDoc.addField(TEMPLATE_ID, templateId));
-        saveDoc(solrDoc);
-        softcommit();
+        boolean success = saveDoc(solrDoc) && softcommit();
+        if(!success) {
+            throw new TemplateSet.TemplateSetMetaStoreException("Error saving Template Set Meta Data in Solr");
+        }
         return id;
     }
 
@@ -1753,9 +1761,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @return id of the new template just created
      */
     @Override
-    public String saveCompareTemplate(TemplateKey key, String templateAsJson) {
+    public String saveCompareTemplate(TemplateKey key, String templateAsJson) throws CompareTemplate.CompareTemplateStoreException {
         SolrInputDocument solrDoc = compareTemplateToSolrDoc(key ,templateAsJson);
         boolean success =  saveDoc(solrDoc) && softcommit();
+        if(!success) {
+            throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
+        }
         return solrDoc.getFieldValue(IDF).toString();
     }
 

@@ -70,7 +70,11 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	    return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getReplayId());
     }
 
-
+    @Override
+    public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
+                                                             Optional<String> instanceId) {
+	    return getCurrentRecordOrReplay(customerId, app, instanceId, false);
+    }
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordOrReplay(java.util.Optional, java.util.Optional, java.util.Optional)
@@ -79,7 +83,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 */
 	@Override
 	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceId) {
+			Optional<String> instanceId, boolean extendTTL) {
 
 		CollectionKey ckey = new CollectionKey(customerId.orElse(""), app.orElse(""), instanceId.orElse(""));
 
@@ -87,7 +91,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		Optional<String> ncustomerid = customerId.or(() -> Optional.of(""));
 		Optional<String> napp = app.or(() -> Optional.of(""));
 		Optional<String> ninstanceid = instanceId.or(() -> Optional.of(""));
-        Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey);
+        Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey, extendTTL);
 		//Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
 		String customerAppInstance = "Cust :: " + customerId.orElse("") + " App :: " + app.orElse("") +
             "Instance :: " + instanceId.orElse("");
@@ -130,7 +134,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	}
 
 	abstract void removeCollectionKey(CollectionKey collectionKey);
-    abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key);
+    abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL);
     abstract void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 
