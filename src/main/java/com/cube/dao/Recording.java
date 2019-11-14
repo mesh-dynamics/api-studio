@@ -10,6 +10,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kenai.jnr.x86asm.OP;
+import org.apache.zookeeper.Op;
 
 /**
  * @author prasad
@@ -35,8 +37,9 @@ public class Recording {
      */
 	public Recording(String customerId, String app, String instanceId, String collection, RecordingStatus status
         , Optional<Instant> updateTimestamp, String templateVersion, Optional<String> parentRecordingId
-        , Optional<String> rootRecordingId, Optional<String> name, Optional<String> codeVersion, Optional<String> branch
-        , List<String> tags) {
+        , Optional<String> rootRecordingId, String name, Optional<String> codeVersion, Optional<String> branch
+        , List<String> tags, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
+        , Optional<String> templateUpdOpSetId, Optional<String> comment) {
 		super();
 		this.customerId = customerId;
 		this.app = app;
@@ -53,7 +56,11 @@ public class Recording {
         this.codeVersion = codeVersion;
         this.branch = branch;
         this.tags = tags;
-        this.archived = false;
+        this.archived = archived;
+        this.gitCommitId = gitCommitId;
+        this.collectionUpdOpSetId = collectionUpdOpSetId;
+        this.templateUpdOpSetId = templateUpdOpSetId;
+        this.comment = comment;
     }
 
 	// for json deserialization
@@ -67,11 +74,15 @@ public class Recording {
 	    this.templateVersion = "";
 	    this.parentRecordingId = Optional.empty();
 	    this.rootRecordingId = "";
-        this.name = Optional.empty();
+        this.name = "";
         this.codeVersion = Optional.empty();
         this.branch = Optional.empty();
         this.tags = Collections.EMPTY_LIST;
         this.archived = false;
+        this.gitCommitId = Optional.empty();
+        this.collectionUpdOpSetId = Optional.empty();
+        this.templateUpdOpSetId = Optional.empty();
+        comment = Optional.empty();
     }
 
     @JsonProperty("id")
@@ -95,7 +106,7 @@ public class Recording {
     @JsonProperty("prntRcrdngId")
     public final Optional<String> parentRecordingId;
     @JsonProperty("name")
-    public final Optional<String> name;
+    public final String name;
     @JsonProperty("codeVersion")
     public final Optional<String> codeVersion;
     @JsonProperty("branch")
@@ -103,8 +114,15 @@ public class Recording {
     @JsonProperty("tags")
     public final List<String> tags;
     @JsonProperty("archived")
-    public boolean archived;
-
+    public final boolean archived;
+    @JsonProperty("gitCommitId")
+    public final Optional<String> gitCommitId;
+    @JsonProperty("collectionUpdOpSetId")
+    public final Optional<String> collectionUpdOpSetId;
+    @JsonProperty("templateUpdOpSetId")
+    public final Optional<String> templateUpdOpSetId;
+    @JsonProperty("comment")
+    public final Optional<String> comment;
 
 
     public String getId() {
@@ -113,10 +131,13 @@ public class Recording {
 
 
 	public static Optional<Recording> startRecording(String customerId, String app, String instanceId, String collection,
-                                                     String templateVersion, ReqRespStore rrstore, Optional<String> name,
-                                                     Optional<String> codeVersion, Optional<String> branch, List<String> tags) {
+                                                     String templateVersion, ReqRespStore rrstore, String name,
+                                                     Optional<String> codeVersion, Optional<String> branch, List<String> tags,
+                                                     boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId,
+                                                     Optional<String> templateUpdOpSetId, Optional<String> comment) {
 		Recording recording = new Recording(customerId, app, instanceId, collection, RecordingStatus.Running
-            , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name, codeVersion, branch, tags);
+            , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name, codeVersion, branch, tags
+            ,archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment);
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);
         }

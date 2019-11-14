@@ -906,15 +906,28 @@ public class AnalyzeWS {
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
 
-            Optional<String> name = Optional.ofNullable(formParams.getFirst("name"));
+            String name = formParams.getFirst("name");
+            if (name==null) {
+                throw new Exception("Name not specified for golden");
+            }
+
+            // Ensure name is unique for a customer and app
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
+            if (recWithSameName.isPresent()) {
+                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
+            }
+
             Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
-            Optional<String> branch = Optional.ofNullable(formParams.getFirst("name"));
+            Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+            Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
             List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+            Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags);
+                Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags, false, gitCommitId,
+                Optional.of(collectionUpdateOpSetId), Optional.of(templateUpdOpSetId), comment);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
@@ -947,7 +960,8 @@ public class AnalyzeWS {
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch, originalRec.tags);
+                Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch,
+                originalRec.tags, originalRec.archived, originalRec.gitCommitId, Optional.empty(), Optional.empty(), Optional.empty());
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity((new JSONObject(Map.of(
