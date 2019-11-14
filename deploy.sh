@@ -50,15 +50,17 @@ if [ -z "$1" ]; then
 set_default() {
 echo "Setting default responses for RESTWrap!"
 
+NOW=$(date +%Y-%m-%dT%H:%M:%SZ)
+
 RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/event/setDefaultResponse \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
-  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc",
-  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"NA",
-  "reqId":"NA","apiPath":"restsql/initialize","eventType":"HTTPRequest","rawPayloadString":{}},
-  "rawRespPayloadString":{"content-type":"application/json",
-  "body":{"status":"Connection pool created."},"status":200}}')"
+  -H "Host:$CUBE_HOST" \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc","instanceId":"NA","collection":"NA",
+  "traceId":"NA","runType":"Manual","timestamp":"'$NOW'","reqId":"NA","apiPath":"restsql/initialize","eventType":"HTTPRequest",
+  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"GET\",\"body\":\"\"}"},
+  "rawRespPayloadString":"{\"content - type\":\"application/json\",\"body\":{\"status\":\"Connection pool created.\"},\"status\":200}"}')"
 
 echo $RESPONSE
 
@@ -66,11 +68,12 @@ RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/event/setDefaultResponse \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
+  -H "Host:$CUBE_HOST" \
   -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc",
-  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"NA",
-  "reqId":"NA","apiPath":"restsql/update","eventType":"HTTPRequest","rawPayloadString":{}},
-  "rawRespPayloadString":{"content-type":"application/json","body":{"num_updates":1},
-  "status":200}}')"
+  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"'$NOW'",
+  "reqId":"NA","apiPath":"restsql/update","eventType":"HTTPRequest",
+  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"},
+  "rawRespPayloadString":"{\"content-type\":\"application\/json\",\"body\":{\"num_updates\":1},\"status\":200}"}')"
 
 echo $RESPONSE
 
