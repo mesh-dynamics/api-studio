@@ -326,6 +326,8 @@ spec:
             value: "false"
           - name: FAIL_PERCENT
             value: "0"
+          - name: FAIL_PERCENT_STD_DEV
+            value: "0"
 
 ---
 apiVersion: extensions/v1beta1
@@ -388,6 +390,9 @@ spec:
             value: "true"
           - name: FAIL_PERCENT
             value: "0"
+          - name: FAIL_PERCENT_STD_DEV
+            value: "0"
+            
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
