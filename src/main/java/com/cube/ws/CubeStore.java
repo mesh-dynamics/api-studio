@@ -632,7 +632,7 @@ public class CubeStore {
      * error - if an exception occurs.
      */
     @POST
-    @Path("event/setDefaultResponse")
+    @Path("/event/setDefaultResponse")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Response setDefaultRespForEvent(DefaultEvent defaultEvent) {
@@ -731,6 +731,7 @@ public class CubeStore {
                 reqEvent.service, "NA", "NA",
                 "NA", RunType.Manual, Instant.now(),
                 "NA", reqEvent.apiPath, reqEvent.eventType);
+
             //TODO:Add support for Binary payload.
             eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
             Event defaultReqEvent = eventBuilder.createEvent();
