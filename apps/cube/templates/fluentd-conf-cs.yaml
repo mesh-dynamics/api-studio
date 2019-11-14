@@ -33,7 +33,7 @@ data:
 
 
     # filter for parsing envoy proxy logs
-    <filter cube.cubews.envoy.*>
+    <filter cube.cubews.envoy.{{namespace}}>
       @type parser
       key_name log
       <parse>
@@ -43,7 +43,7 @@ data:
     </filter>
 
     # filter for parsing cubews agent logs
-    <filter cube.cubews.agent.*>
+    <filter cube.cubews.agent.{{namespace}}>
       @type parser
       key_name log
       <parse>
@@ -53,7 +53,7 @@ data:
     </filter>
 
     # send inner_json
-    <filter cube.cubews.**>
+    <filter cube.cubews.envoy.{{namespace}} cube.cubews.agent.{{namespace}}>
       @type parser
       format json
       key_name inner_json
@@ -63,7 +63,7 @@ data:
 
 
     # http output for cube dogfooding (envoy)
-    <match cube.cubews.envoy.*>
+    <match cube.cubews.envoy.{{namespace}}>
       @type http
       endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/rrbatch
       open_timeout 5
@@ -78,7 +78,7 @@ data:
     </match>
 
     # http output for cube dogfooding (agent)
-    <match cube.cubews.agent.*>
+    <match cube.cubews.agent.{{namespace}}>
       @type http
       endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/frbatch
       open_timeout 5
