@@ -879,7 +879,8 @@ public class AnalyzeWS {
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
                                     @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
-                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId) {
+                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
+                                    MultivaluedMap<String, String> formParams) {
         try{
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
@@ -904,10 +905,34 @@ public class AnalyzeWS {
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
+
+            String name = formParams.getFirst("name");
+            if (name==null) {
+                throw new Exception("Name not specified for golden");
+            }
+
+            String userId = formParams.getFirst("userId");
+            if (userId==null) {
+                throw new Exception("userId not specified for golden");
+            }
+
+            // Ensure name is unique for a customer and app
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
+            if (recWithSameName.isPresent()) {
+                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
+            }
+
+            Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
+            Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+            Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
+            List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+            Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
+
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId));
+                Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags, false, gitCommitId,
+                Optional.of(collectionUpdateOpSetId), Optional.of(templateUpdOpSetId), comment, userId);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
@@ -940,7 +965,8 @@ public class AnalyzeWS {
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId));
+                Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch,
+                originalRec.tags, originalRec.archived, originalRec.gitCommitId, Optional.empty(), Optional.empty(), Optional.empty(), originalRec.userId);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity((new JSONObject(Map.of(
