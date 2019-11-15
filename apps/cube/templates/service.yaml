@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:9ed3c5dd1785753f6565dc4bd737868e8562b077
+        image: cubeiocorp/cubews:e39a708c0714708281fef5ca3f57c1a5eeb2e922
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -69,6 +69,11 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: solr_base_url
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_BASE_URL
           - name: NEW_RELIC_LICENSE_KEY
             valueFrom:
               secretKeyRef:
@@ -168,7 +173,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:9ed3c5dd1785753f6565dc4bd737868e8562b077
+        image: cubeiocorp/cubews:e39a708c0714708281fef5ca3f57c1a5eeb2e922
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -200,6 +205,11 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: solr_base_url
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_BASE_URL
           - name: NEW_RELIC_LICENSE_KEY
             valueFrom:
               secretKeyRef:
@@ -299,7 +309,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:9ed3c5dd1785753f6565dc4bd737868e8562b077
+        image: cubeiocorp/cubews:e39a708c0714708281fef5ca3f57c1a5eeb2e922
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -331,6 +341,11 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: solr_base_url
+            valueFrom:
+              configMapKeyRef:
+                name: cubews
+                key: SOLR_BASE_URL
           - name: NEW_RELIC_LICENSE_KEY
             valueFrom:
               secretKeyRef:
@@ -429,7 +444,7 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:ee3b92c9d3cce9ff19fab3db24b71023b2570525
+        image: cubeiocorp/cubeui:a3a810372924830558c21b5e88b673fd2bc5676c
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -481,7 +496,7 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:e5312182181243248090fb0ecc8a5d7be6929583
+        image: cubeiocorp/cubeuibackend:d338796bdd75bf9607c2b1ab3e164eed9869ae09
         imagePullPolicy: IfNotPresent
         env:
         - name: SPRING_PROFILES_ACTIVE
