@@ -604,9 +604,11 @@ public class MockServiceHTTP {
                             customerId, app, instanceId, replayId);
                         rrstore.save(mockResponseToStore);
                     } catch (Event.EventBuilder.InvalidEventException e) {
-                        LOGGER.error(new ObjectMessage(Map.of("message", "Not able to store mock event", "traceId",
-                            respEventVal.traceId, "reqId", respEventVal.reqId)));
-                    } 
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Not able to store mock event",
+                                Constants.TRACE_ID_FIELD, respEventVal.traceId,
+                                Constants.REQ_ID_FIELD, respEventVal.reqId)));
+                    }
                 });
                 return builder.entity(respv.body).build();
             });
