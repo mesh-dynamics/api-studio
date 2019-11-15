@@ -63,7 +63,7 @@ RESPONSE="$(curl -X POST \
   -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc","instanceId":"NA","collection":"NA",
   "traceId":"NA","runType":"Manual","timestamp":"'$NOW'","reqId":"'$NOW'","apiPath":"restsql/initialize","eventType":"HTTPRequest",
   "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"GET\",\"body\":\"\"}"},
-  "rawRespPayloadString":"{\"content-type\":\"application/json\",\"body\":{\"status\":\"Connection pool created.\"},\"status\":200}"}')"
+  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{status:Connection pool created.}\",\"status\":200}"}')"
 
 echo $RESPONSE
 
@@ -76,7 +76,7 @@ RESPONSE="$(curl -X POST \
   "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"'$NOW'",
   "reqId":"'$NOW'","apiPath":"restsql/update","eventType":"HTTPRequest",
   "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"},
-  "rawRespPayloadString":"{\"content-type\":\"application\/json\",\"body\":{\"num_updates\":1},\"status\":200}"}')"
+  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{num_updates:1}\",\"status\":200}"}')"
 
 echo $RESPONSE
 
