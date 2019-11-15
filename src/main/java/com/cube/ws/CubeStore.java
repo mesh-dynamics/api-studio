@@ -809,16 +809,48 @@ public class CubeStore {
         LOGGER.info(String.format("Starting recording for customer %s, app %s, instance %s, collection %s",
             customerId, app, instanceId, collection));
 
+        String name = formParams.getFirst("name");
+        String userId = formParams.getFirst("userId");
 
+        if (name==null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("Name needs to be given for a golden")
+                .build();
+        }
 
-        Optional<Response> resp = Recording.startRecording(customerId, app, instanceId, collection, templateSetVersion, rrstore)
+        if (userId==null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("userId should be specified for a golden")
+                .build();
+        }
+
+        // Ensure name is unique for a customer and app
+        Optional<Recording> recWithSameName = rrstore.getRecordingByName(customerId, app, name);
+        if (recWithSameName.isPresent()) {
+            return Response.status(Response.Status.CONFLICT)
+            .entity("Golden already present for name - " + name + ". Specify unique name")
+            .build();
+        }
+
+        Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
+        Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+        Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
+        List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+        Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
+
+        Optional<Response> resp = Recording
+            .startRecording(customerId, app, instanceId, collection, templateSetVersion, rrstore,
+                name, codeVersion, branch, tags,
+                false, gitCommitId, Optional.empty(), Optional.empty(), comment, userId)
             .map(newr -> {
                 String json;
                 try {
                     json = jsonMapper.writeValueAsString(newr);
                     return Response.ok(json, MediaType.APPLICATION_JSON).build();
                 } catch (JsonProcessingException ex) {
-                    LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, collection %s", customerId, app, collection), ex);
+                    LOGGER.error(String.format(
+                        "Error in converting Recording object to Json for customer %s, app %s, collection %s",
+                        customerId, app, collection), ex);
                     return Response.serverError().build();
                 }
             });
