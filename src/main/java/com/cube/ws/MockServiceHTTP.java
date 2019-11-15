@@ -56,7 +56,6 @@ import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.DataObj;
 import com.cube.dao.Event;
-import com.cube.dao.EventBuilder;
 import com.cube.dao.EventQuery;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
@@ -328,8 +327,8 @@ public class MockServiceHTTP {
     private Event createMockResponseEvent(Event originalResponse,
                                           Optional<String> mockReqId,
                                           String customerId, String app, String instanceId,
-                                          String replayCollection) throws EventBuilder.InvalidEventException {
-        EventBuilder builder = new EventBuilder(customerId, app, originalResponse.service,
+                                          String replayCollection) throws Event.EventBuilder.InvalidEventException {
+        Event.EventBuilder builder = new Event.EventBuilder(customerId, app, originalResponse.service,
             instanceId, replayCollection, originalResponse.traceId, Event.RunType.Replay, Instant.now(),
             mockReqId.orElse("NA"),
             originalResponse.apiPath, Event.EventType.HTTPResponse);
@@ -517,7 +516,7 @@ public class MockServiceHTTP {
                             mockRequest.reqId,
                             customerid, app, instanceid, replayId);
                         rrstore.save(mockResponseToStore);
-                    } catch (EventBuilder.InvalidEventException e) {
+                    } catch (Event.EventBuilder.InvalidEventException e) {
                         LOGGER.error(new ObjectMessage(Map.of("message", "Not able to store mock event", "traceId",
                             respEventVal.traceId, "reqId", respEventVal.reqId)));
                     }
