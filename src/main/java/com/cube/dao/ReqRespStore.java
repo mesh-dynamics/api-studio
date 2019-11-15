@@ -208,7 +208,7 @@ public interface ReqRespStore {
 	 * @param templateAsJson
 	 * @return
 	 */
-	String saveCompareTemplate(TemplateKey key, String templateAsJson);
+	String saveCompareTemplate(TemplateKey key, String templateAsJson) throws CompareTemplate.CompareTemplateStoreException;
 
 	/**
 	 * Retrieve an analysis template from the database for
@@ -405,6 +405,15 @@ public interface ReqRespStore {
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
                                                                String templateSetVersion);
 
+	// Will merge in the single function while creating search API
+    /**
+     * @param customerId
+     * @param app
+     * @param name
+     * @return
+     */
+    Optional<Recording> getRecordingByName(String customerId, String app, String name);
+
 	/**
 	 * @param replayid
 	 * @param service
@@ -424,6 +433,7 @@ public interface ReqRespStore {
 	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceid);
 
+	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, boolean extendTTL);
 	/**
 	 *
 	 */

@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.ArrayList;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -71,6 +73,11 @@ import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.core.ValidateCompareTemplate;
+import com.cube.core.Utils;
+import com.cube.utils.Constants;
+
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
 
 /**
  * @author prasad
@@ -287,6 +294,11 @@ public class AnalyzeWS {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
         } catch (IOException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
+        }
+        catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
+                    e.getMessage()))).build();
         }
     }
 
@@ -682,7 +694,19 @@ public class AnalyzeWS {
                 "Message", "Successfully saved template set",
                 "ID", templateSetId,
                 "templateSetVersion", templateSet.version))).toString()).build();
-        } catch (Exception e) {
+        } catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
+                    e.getMessage()))).build();
+        }
+
+        catch (TemplateSet.TemplateSetMetaStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED, "Unable to save template meta: " +
+                    e.getMessage()))).build();
+        }
+
+        catch (Exception e) {
             return Response.serverError().entity((new JSONObject(Map.of(
                 "Message", "Unable to save template set",
                 "Error", e.getMessage()))).toString()).build();
@@ -855,7 +879,8 @@ public class AnalyzeWS {
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
                                     @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
-                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId) {
+                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
+                                    MultivaluedMap<String, String> formParams) {
         try{
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
@@ -880,10 +905,34 @@ public class AnalyzeWS {
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
+
+            String name = formParams.getFirst("name");
+            if (name==null) {
+                throw new Exception("Name not specified for golden");
+            }
+
+            String userId = formParams.getFirst("userId");
+            if (userId==null) {
+                throw new Exception("userId not specified for golden");
+            }
+
+            // Ensure name is unique for a customer and app
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
+            if (recWithSameName.isPresent()) {
+                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
+            }
+
+            Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
+            Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+            Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
+            List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+            Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
+
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId));
+                Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags, false, gitCommitId,
+                Optional.of(collectionUpdateOpSetId), Optional.of(templateUpdOpSetId), comment, userId);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
@@ -916,7 +965,8 @@ public class AnalyzeWS {
             Recording updatedRecording = new Recording(originalRec.customerId,
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId));
+                Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch,
+                originalRec.tags, originalRec.archived, originalRec.gitCommitId, Optional.empty(), Optional.empty(), Optional.empty(), originalRec.userId);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity((new JSONObject(Map.of(
@@ -1002,6 +1052,47 @@ public class AnalyzeWS {
      * API to update operations for a operationSetId, service and path
      */
     @POST
+    @Path("goldenUpdate/recordingOperationSet/updateMultiPath/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateRecordingOperationSet(List<RecordingOperationSetSP> requests) {
+        List<String> recordingOperationSetIds = new ArrayList<>();
+        try {
+            requests.forEach(UtilException.rethrowConsumer(request -> {
+                request.generateId();
+                String recordingOperationSetId = request.operationSetId;
+                String service = request.service;
+                String path = request.path;
+                List<ReqRespUpdateOperation> newOperationList = request.operationsList;
+
+                LOGGER.debug(String.format("Received request for updating operation set, id: %s, service: %s, path: %s, new " +
+                    "operation list: %s", recordingOperationSetId, service, path, newOperationList));
+
+                boolean b = recordingUpdate.updateRecordingOperationSet(request);
+
+                if(b) {
+                    recordingOperationSetIds.add(recordingOperationSetId);
+                } else {
+                    throw new Exception("Error updating operation set for id " +  recordingOperationSetId);
+                }
+            }));
+
+            return Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of("recordingOperationSetIds",recordingOperationSetIds)))).build();
+
+        } catch (Exception e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.UPDATE_RECORDING_OPERATION_FAILED,
+                    "Update failed. Exception message - " + e.getMessage())).build();
+        }
+    }
+
+
+    // Todo : This API can go away once the UI is stable with "goldenUpdate/recordingOperationSet/updateMultiPath/"
+    /**
+     * API to update operations for a operationSetId, service and path
+     */
+    @POST
     @Path("goldenUpdate/recordingOperationSet/update/")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRecordingOperationSet(RecordingOperationSetSP request) {
@@ -1032,6 +1123,7 @@ public class AnalyzeWS {
             return Response.serverError().build();
         }
     }
+
 
     /**
      * API to transform a replay collection by applying an operation set to a it

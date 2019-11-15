@@ -141,7 +141,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey recordReplayStoreKey;
 
     @Override
-    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key) {
+    Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL) {
         Optional<RecordOrReplay> toReturn = Optional.empty();
         if (recordReplayRetrieveKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
@@ -160,10 +160,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         try (Jedis jedis = config.jedisPool.getResource()) {
-            String fromCache = jedis.get(key.toString());
+            String keyStr = key.toString();
+            String fromCache = jedis.get(keyStr);
             if (fromCache != null) {
-                LOGGER.info("Successfully retrieved from redis, key :: " + key.toString());
+                LOGGER.info("Successfully retrieved from redis, key :: " + keyStr);
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
+                Long ttl = jedis.ttl(keyStr);
+                if (ttl != -1 && extendTTL) {
+                    jedis.expire(keyStr, config.REDIS_DELETE_TTL);
+                    LOGGER.info("Extending ttl for redis key :: " + keyStr);
+                }
             }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
@@ -598,7 +604,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String ROOT_GOLDEN_SET = "root_golden_set_id" + STRING_SUFFIX;
     private static final String PARENT_GOLDEN_SET = "parent_golden_set_id" + STRING_SUFFIX;
 
-    private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) {
+    private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) throws TemplateSet.TemplateSetMetaStoreException {
         SolrInputDocument solrDoc = new SolrInputDocument();
         String id = Types.TemplateSet.toString().concat("-").concat(String.valueOf(Objects.hash(
             templateSet.customer, templateSet.app, templateSet.version)));
@@ -610,8 +616,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(APPF, templateSet.app);
         solrDoc.setField(TIMESTAMPF , templateSet.timestamp.toString());
         templateIds.forEach(templateId -> solrDoc.addField(TEMPLATE_ID, templateId));
-        saveDoc(solrDoc);
-        softcommit();
+        boolean success = saveDoc(solrDoc) && softcommit();
+        if(!success) {
+            throw new TemplateSet.TemplateSetMetaStoreException("Error saving Template Set Meta Data in Solr");
+        }
         return id;
     }
 
@@ -1746,9 +1754,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @return id of the new template just created
      */
     @Override
-    public String saveCompareTemplate(TemplateKey key, String templateAsJson) {
+    public String saveCompareTemplate(TemplateKey key, String templateAsJson) throws CompareTemplate.CompareTemplateStoreException {
         SolrInputDocument solrDoc = compareTemplateToSolrDoc(key ,templateAsJson);
         boolean success =  saveDoc(solrDoc) && softcommit();
+        if(!success) {
+            throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
+        }
         return solrDoc.getFieldValue(IDF).toString();
     }
 
@@ -2183,9 +2194,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return analysis;
     }
 
+
+    // TODO Move these to constants.java once Ashoke's PR is merged.
     private static final String RECORDINGSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
-    private static final String ROOT_RECORDING_ID = "root_recording_id" + STRING_SUFFIX;
-    private static final String PARENT_RECORDING_ID = "parent_recording_id" + STRING_SUFFIX;
+    private static final String ROOT_RECORDING_IDF = "root_recording_id" + STRING_SUFFIX;
+    private static final String PARENT_RECORDING_IDF = "parent_recording_id" + STRING_SUFFIX;
+    private static final String GOLDEN_NAMEF = CPREFIX + "golden_name" + STRING_SUFFIX;
+    private static final String CODE_VERSIONF = CPREFIX + "code_version" + STRING_SUFFIX;
+    private static final String BRANCHF = CPREFIX + "branch" + STRING_SUFFIX;
+    private static final String TAGSF = CPREFIX + "tags" + STRINGSET_SUFFIX;
+    private static final String ARCHIVEDF = CPREFIX + "archived" + BOOLEAN_SUFFIX;
+    private static final String GIT_COMMIT_IDF = CPREFIX + "git_commit_id" + STRING_SUFFIX;
+    private static final String COLLECTION_UPD_OP_SET_IDF = CPREFIX + "collection_upd_op_set_id" + STRING_SUFFIX;
+    private static final String TEMPLATE_UPD_OP_SET_IDF = CPREFIX + "template_upd_op_set_id" + STRING_SUFFIX;
+    private static final String GOLDEN_COMMENTF = CPREFIX + "golden_comment" + TEXT_SUFFIX;
+
 
     private static Optional<Recording> docToRecording(SolrDocument doc) {
 
@@ -2196,12 +2219,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
         Optional<Recording> recording = Optional.empty();
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSION);
-        Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_ID);
-        Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_ID);
-        if (customerId.isPresent() && app.isPresent()
-                && instanceid.isPresent() && collection.isPresent() && status.isPresent() && templateVersion.isPresent()) {
+        Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_IDF);
+        Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_IDF);
+        Optional<String> name = getStrField(doc, GOLDEN_NAMEF);
+        Optional<String> codeVersion = getStrField(doc, CODE_VERSIONF);
+        Optional<String> branch = getStrField(doc, BRANCHF);
+        List<String> tags = getStrFieldMV(doc, TAGSF);
+        Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
+        Optional<String> gitCommitId = getStrField(doc, GIT_COMMIT_IDF);
+        Optional<String> collectionUpdOpSetId = getStrField(doc, COLLECTION_UPD_OP_SET_IDF);
+        Optional<String> templateUpdOpSetId = getStrField(doc, TEMPLATE_UPD_OP_SET_IDF);
+        Optional<String> comment = getStrField(doc, GOLDEN_COMMENTF);
+        Optional<String> userId = getStrField(doc, USERIDF);
+
+
+        if (customerId.isPresent() && app.isPresent() && instanceid.isPresent() && collection.isPresent() &&
+            status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name.isPresent() && userId.isPresent()) {
             recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
-                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId));
+                status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId, name.get(),
+            codeVersion, branch, tags, archived.get(), gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId.get()));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
@@ -2223,10 +2259,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
         doc.setField(TEMPLATE_VERSION, recording.templateVersion);
-        doc.setField(ROOT_RECORDING_ID, recording.rootRecordingId);
-        recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_ID, parentRecId));
+        doc.setField(ROOT_RECORDING_IDF, recording.rootRecordingId);
+        doc.setField(ARCHIVEDF, recording.archived);
+        doc.setField(GOLDEN_NAMEF, recording.name);
+        doc.setField(USERIDF, recording.userId);
+        recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
-
+        recording.codeVersion.ifPresent(cv -> doc.setField(CODE_VERSIONF, cv));
+        recording.branch.ifPresent(branch -> doc.setField(BRANCHF, branch));
+        recording.tags.forEach(tag -> doc.addField(TAGSF, tag));
+        recording.gitCommitId.ifPresent(gitCommitId -> doc.setField(GIT_COMMIT_IDF,gitCommitId));
+        recording.collectionUpdOpSetId.ifPresent(c -> doc.setField(COLLECTION_UPD_OP_SET_IDF, c));
+        recording.templateUpdOpSetId.ifPresent(t -> doc.setField(TEMPLATE_UPD_OP_SET_IDF, t));
+        recording.comment.ifPresent(comment -> doc.setField(GOLDEN_COMMENTF, comment));
         return doc;
     }
 
@@ -2288,6 +2333,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
+
+    @Override
+    public Optional<Recording> getRecordingByName(String customerId, String app, String name) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Recording.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        addFilter(query, GOLDEN_NAMEF, name);
+        Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
+    }
+
 
     private final static int FACETLIMIT = 100;
     private static final String REQMTFACET = "reqmt_facets";
