@@ -15,12 +15,11 @@ export const cubeActions = {
     getGraphData,
     getGraphDataByAppId,
     getReplayStatus,
+    clearReplayStatus,
     getAnalysis,
-    initAnalyseRes,
     getReport,
     getTimelineData,
     hideServiceGraph,
-    getDiffData,
     hideTestConfig,
     showTCSetup,
     showTCInfo,
@@ -248,18 +247,6 @@ function setGolden ( golden ) {
     return {type: cubeConstants.SET_GOLDEN, data: golden}
 }
 
-function getDiffData(replayId, recordReqId, replayReqId) {
-    return async dispatch => {
-        try {
-            let diffData = await cubeService.getDiffData(replayId, recordReqId, replayReqId);
-            dispatch(success(diffData, Date.now()));
-        } catch (error) {
-        }
-    };
-
-    function success(diffData, date) { return { type: cubeConstants.DIFF_SUCCESS, data: diffData, date: date }; }
-}
-
 function getTestIds (app) {
     return async dispatch => {
         dispatch(request());
@@ -325,11 +312,18 @@ function getTimelineData(app = 'Cube', userId = 'ALL', endDate = new Date()) {
     function success(timeline, date) { return { type: cubeConstants.TIMELINE_DATA_SUCCESS, data: timeline, date: date } }
 }
 
+function clearReplayStatus() {
+    return {type: cubeConstants.CLEAR_REPLAY_STATUS, data: null};
+}
+
 function getReplayStatus(collectionId, replayId, app) {
     return async dispatch => {
         try {
             let replayStatus = await cubeService.checkStatusForReplay(collectionId, replayId, app);
             dispatch(success(replayStatus, Date.now()));
+            if (replayStatus && (replayStatus.status == 'Completed' || replayStatus.status == 'Error')) {
+                dispatch(cubeActions.getAnalysis(replayStatus.collection, replayStatus.replayId, replayStatus.app));
+            }
         } catch (error) {
         }
     }
@@ -346,10 +340,6 @@ function getAnalysis(collectionId, replayId, app) {
         }
     }
     function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
-}
-
-function initAnalyseRes() {
-    return {type: cubeConstants.INIT_ANALYSIS, data: null};
 }
 
 function getReport(collectionId, replayId) {
