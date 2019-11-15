@@ -550,31 +550,31 @@ public class MockServiceHTTP {
         EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1,
             considerTrace);
         Optional<Event> respEvent = rrstore.getSingleEvent(reqQuery)
-            .flatMap(event -> rrstore.getRespEventForReqEvent(event));
+            .flatMap(event -> rrstore.getRespEventForReqEvent(event))
+            .or(() -> {
+                request.runType = Optional.of(Event.RunType.Manual);
+                LOGGER.info("Using default response");
+
+                EventQuery respQuery = getDefaultRespEventQuery(request);
+                Optional<Event> defRespEvent = rrstore.getSingleEvent(respQuery);
+                if (defRespEvent.isPresent()) {
+                    return defRespEvent;
+                }
+
+                LOGGER.error(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "No default response found for request.",
+                        Constants.CUSTOMER_ID_FIELD, request.customerId,
+                        Constants.APP_FIELD, request.app,
+                        Constants.SERVICE_FIELD, request.getService(),
+                        Constants.API_PATH_FIELD, request.apiPath)));
+
+                return Optional.empty();
+            });
 
         return respEvent.flatMap(respEventVal -> {
 
             Optional<com.cube.dao.Response> resp = com.cube.dao.Response
-                .fromEvent(respEventVal, jsonMapper)
-                .or(() -> {
-                    request.runType = Optional.of(Event.RunType.Manual);
-                    LOGGER.info("Using default response");
-
-                    EventQuery respQuery = getDefaultRespEventQuery(request);
-                    Optional<Event> defRespEvent = rrstore.getSingleEvent(respQuery);
-                    if (defRespEvent.isPresent()) {
-                        return com.cube.dao.Response.fromEvent(defRespEvent.get(), jsonMapper);
-                    }
-
-                    LOGGER.error(new ObjectMessage(
-                        Map.of(Constants.MESSAGE, "No default response found for request.",
-                            Constants.CUSTOMER_ID_FIELD, request.customerId,
-                            Constants.APP_FIELD, request.app,
-                            Constants.SERVICE_FIELD, request.getService(),
-                            Constants.API_PATH_FIELD, request.apiPath)));
-
-                    return Optional.empty();
-                });
+                .fromEvent(respEventVal, jsonMapper);
 
             return resp.map(respv -> {
                 ResponseBuilder builder = Response.status(respv.status);

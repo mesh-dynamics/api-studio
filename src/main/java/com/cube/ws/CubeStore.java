@@ -681,7 +681,7 @@ public class CubeStore {
             defaultReqEvent.app,
             defaultReqEvent.service, "NA", "NA",
             "NA", RunType.Manual, Instant.now(),
-            "NA", defaultReqEvent.apiPath,
+            defaultReqEvent.reqId, defaultReqEvent.apiPath,
             Event.EventType.getResponseType(defaultReqEvent.eventType));
         eventBuilder.setRawPayloadString(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
@@ -731,7 +731,7 @@ public class CubeStore {
             EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
                 reqEvent.service, "NA", "NA",
                 "NA", RunType.Manual, Instant.now(),
-                "NA", reqEvent.apiPath, reqEvent.eventType);
+                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType);
 
             //TODO:Add support for Binary payload.
             eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);

@@ -1172,7 +1172,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String id = event.eventType.toString().concat("-").concat(event.reqId);
+        String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
+            .concat(event.reqId);
 
         doc.setField(IDF, id);
         doc.setField(TYPEF, Types.Event.toString());
