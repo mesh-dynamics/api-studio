@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -30,7 +31,6 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import com.cube.core.Utils;
 import io.cube.agent.CommonUtils;
-import jnr.ffi.annotations.In;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -248,7 +248,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, SERVICEF, eventQuery.getServices());
         addFilter(query, COLLECTIONF, eventQuery.getCollection());
         addFilter(query, TRACEIDF, eventQuery.getTraceIds());
-        addFilter(query, RRTYPEF, eventQuery.getRRType().map(Object::toString));
+        addFilter(query, RRTYPEF, eventQuery.getRunType().map(Object::toString));
         addFilter(query, REQIDF, eventQuery.getReqIds());
         addFilter(query, PATHF, eventQuery.getPaths());
         addFilter(query, EVENTTYPEF, eventQuery.getEventTypes().stream().map(type -> type.toString()).collect(Collectors.toList()));
@@ -257,6 +257,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
+    }
+
+    @Override
+    public Optional<Event> getSingleEvent(EventQuery eventQuery) {
+        return getEvents(eventQuery).getObjects().findFirst();
     }
 
     public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
@@ -813,7 +818,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPResponse);
         builder.withReqId(reqId);
 
-        return getEvents(builder.build()).getObjects().findFirst();
+        return getSingleEvent(builder.build());
     }
 
     // TODO: Event redesign, remove this later
@@ -858,7 +863,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPRequest);
         builder.withReqId(reqId);
 
-        return getEvents(builder.build()).getObjects().findFirst();
+        return getSingleEvent(builder.build());
     }
 
 
@@ -908,27 +913,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String TYPEF = CPREFIX + "type" + STRING_SUFFIX;
 
     // field names in Solr
-    private static final String PATHF = CPREFIX + "path" + STRING_SUFFIX;
-    private static final String REQIDF = CPREFIX + "reqId" + STRING_SUFFIX;
-    private static final String METHODF = CPREFIX + "method" + STRING_SUFFIX;
-    private static final String BODYF = CPREFIX + "body" + NOTINDEXED_SUFFIX;
-    private static final String OLDBODYF = CPREFIX + "body" + TEXT_SUFFIX;
-    private static final String COLLECTIONF = CPREFIX + "collection" + STRING_SUFFIX;
-    private static final String TIMESTAMPF = CPREFIX + "timestamp" + DATE_SUFFIX;
-    private static final String RRTYPEF = CPREFIX + "runType" + STRING_SUFFIX;
-    private static final String CUSTOMERIDF = CPREFIX + "customerId" + STRING_SUFFIX;
-    private static final String USERIDF = CPREFIX + "userId" + STRING_SUFFIX;
-    private static final String APPF = CPREFIX + "app" + STRING_SUFFIX;
-    private static final String INSTANCEIDF = CPREFIX + "instanceid" + STRING_SUFFIX;
-    private static final String STATUSF = CPREFIX + "status" + INT_SUFFIX;
+    private static final String PATHF = CPREFIX + Constants.PATH_FIELD + STRING_SUFFIX;
+    private static final String REQIDF = CPREFIX + Constants.REQ_ID_FIELD + STRING_SUFFIX;
+    private static final String METHODF = CPREFIX + Constants.METHOD_FIELD + STRING_SUFFIX;
+    private static final String BODYF = CPREFIX + Constants.BODY + NOTINDEXED_SUFFIX;
+    private static final String OLDBODYF = CPREFIX + Constants.BODY + TEXT_SUFFIX;
+    private static final String COLLECTIONF = CPREFIX + Constants.COLLECTION_FIELD + STRING_SUFFIX;
+    private static final String TIMESTAMPF = CPREFIX + Constants.TIMESTAMP_FIELD + DATE_SUFFIX;
+    private static final String RRTYPEF = CPREFIX + Constants.RUN_TYPE_FIELD + STRING_SUFFIX;
+    private static final String CUSTOMERIDF = CPREFIX + Constants.CUSTOMER_ID_FIELD + STRING_SUFFIX;
+    private static final String USERIDF = CPREFIX + Constants.USER_ID_FIELD + STRING_SUFFIX;
+    private static final String APPF = CPREFIX + Constants.APP_FIELD + STRING_SUFFIX;
+    private static final String INSTANCEIDF = CPREFIX + Constants.INSTANCE_ID_FIELD + STRING_SUFFIX;
+    private static final String STATUSF = CPREFIX + Constants.STATUS + INT_SUFFIX;
     private static final String CONTENTTYPEF = CPREFIX + "contenttype" + STRING_SUFFIX;
     private static final String OPERATIONSETIDF = CPREFIX + "operationsetid" + STRING_SUFFIX;
     private static final String OPERATIONLIST = CPREFIX + "operationlist" + STRINGSET_SUFFIX;
-    private static final String TRACEIDF = CPREFIX + "traceid" + STRING_SUFFIX;
+    private static final String TRACEIDF = CPREFIX + Constants.TRACE_ID_FIELD + STRING_SUFFIX;
     private static final String PAYLOADBINF = CPREFIX + "payloadBin" + BIN_SUFFIX;
     private static final String PAYLOADSTRF = CPREFIX + "payloadStr" + NOTINDEXED_SUFFIX;
     private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
-    private static final String EVENTTYPEF = CPREFIX + "eventType" + STRING_SUFFIX;
+    private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1167,7 +1172,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
+        String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
+            .concat(event.reqId);
 
+        doc.setField(IDF, id);
         doc.setField(TYPEF, Types.Event.toString());
         doc.setField(CUSTOMERIDF, event.customerId);
         doc.setField(APPF, event.app);
@@ -1574,11 +1582,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     // field names in Solr for Replay object
     private static final String IDF = "id";
     private static final String ENDPOINTF = CPREFIX + "endpoint" + STRING_SUFFIX;
-    private static final String REQIDSF = CPREFIX + "reqId" + STRINGSET_SUFFIX;
+    private static final String REQIDSF = CPREFIX + Constants.REQ_ID_FIELD + STRINGSET_SUFFIX;
     private static final String REPLAYIDF = CPREFIX + "replayId" + STRING_SUFFIX;
     private static final String ASYNCF = CPREFIX + "async" + BOOLEAN_SUFFIX;
     private static final String REPLAYSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
-    private static final String PATHSF = CPREFIX + "path" + STRINGSET_SUFFIX;
+    private static final String PATHSF = CPREFIX + Constants.PATH_FIELD + STRINGSET_SUFFIX;
     private static final String REQCNTF = CPREFIX + "reqcnt" + INT_SUFFIX;
     private static final String REQSENTF = CPREFIX + "reqsent" + INT_SUFFIX;
     private static final String REQFAILEDF = CPREFIX + "reqfailed" + INT_SUFFIX;
@@ -1793,9 +1801,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getReplay(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Replay.ReplayStatus)
      */
     @Override
-    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceid,
+    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
                                     ReplayStatus status) {
-        return getReplay(customerId,app,instanceid,List.of(status),Optional.of(1),Optional.empty());
+        return getReplay(customerId,app,instanceId,List.of(status),Optional.of(1),Optional.empty());
     }
 
     @Override
@@ -1822,10 +1830,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceid,
+    public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
-        List<String> instanceidList = instanceid.stream().collect(Collectors.toList());
+        List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty()).objects;
     }
 
@@ -1966,14 +1974,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
-    private static final String RECORDREQIDF = CPREFIX + "recordReqId" + STRING_SUFFIX;
-    private static final String REPLAYREQIDF = CPREFIX + "replayReqId" + STRING_SUFFIX;
-    private static final String REQMTF = CPREFIX + "reqmt" + STRING_SUFFIX;
+    private static final String RECORDREQIDF = CPREFIX + Constants.RECORD_REQ_ID_FIELD + STRING_SUFFIX;
+    private static final String REPLAYREQIDF = CPREFIX + Constants.REPLAY_REQ_ID_FIELD + STRING_SUFFIX;
+    private static final String REQMTF = CPREFIX + Constants.REQ_MATCH_TYPE + STRING_SUFFIX;
     private static final String NUMMATCHF = CPREFIX + "numMatch" + INT_SUFFIX;
-    private static final String RESPMTF = CPREFIX + "respmt" + STRING_SUFFIX; // match type
+    private static final String RESPMTF = CPREFIX + Constants.RESP_MATCH_TYPE + STRING_SUFFIX; // match type
     private static final String RESPMATCHMETADATAF = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
-    private static final String SERVICEF = CPREFIX + "service" + STRING_SUFFIX;
+    private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
     private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
     private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid" + STRING_SUFFIX;
 
@@ -2003,9 +2011,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF, id);
         res.recordReqId.ifPresent(recordReqId ->  doc.setField(RECORDREQIDF, recordReqId));
         res.replayReqId.ifPresent(replayReqId ->  doc.setField(REPLAYREQIDF, replayReqId));
-        doc.setField(REQMTF, res.reqmt.toString());
+        doc.setField(REQMTF, res.reqMatchType.toString());
         doc.setField(NUMMATCHF, res.numMatch);
-        doc.setField(RESPMTF, res.respmt.toString());
+        doc.setField(RESPMTF, res.respMatchType.toString());
         doc.setField(RESPMATCHMETADATAF, res.respMatchMetadata);
         doc.setField(DIFFF, res.diff);
         doc.setField(CUSTOMERIDF, res.customerId);
@@ -2213,7 +2221,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> app = getStrField(doc, APPF);
-        Optional<String> instanceid = getStrField(doc, INSTANCEIDF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF).flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
@@ -2233,13 +2241,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> userId = getStrField(doc, USERIDF);
 
 
-        if (customerId.isPresent() && app.isPresent() && instanceid.isPresent() && collection.isPresent() &&
+        if (customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection.isPresent() &&
             status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name.isPresent() && userId.isPresent()) {
-            recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
+            recording = Optional.of(new Recording(customerId.get(), app.get(), instanceId.get(), collection.get(),
                 status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId, name.get(),
             codeVersion, branch, tags, archived.get(), gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId.get()));
         } else {
-            LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
+            LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceId.orElse("")));
         }
 
         return recording;
@@ -2291,14 +2299,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-            Optional<String> instanceid, Optional<RecordingStatus> status) {
+            Optional<String> instanceId, Optional<RecordingStatus> status) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
-        addFilter(query, INSTANCEIDF, instanceid);
+        addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
         addSort(query, TIMESTAMPF, false); // descending
 

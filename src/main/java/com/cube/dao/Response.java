@@ -8,6 +8,7 @@ import static com.cube.dao.Event.RunType.Record;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 import java.io.IOException;
@@ -93,8 +94,8 @@ public class Response extends RRBase {
         try {
             HTTPResponsePayload responsePayload = jsonMapper.readValue(event.rawPayloadString, HTTPResponsePayload.class);
             MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
-            meta.put(SERVICEFIELD, List.of(event.service));
-            meta.put(INSTANCEIDFIELD, List.of(event.instanceId));
+            meta.put(Constants.SERVICE_FIELD, List.of(event.service));
+            meta.put(Constants.INSTANCE_ID_FIELD, List.of(event.instanceId));
             meta.put(Config.DEFAULT_TRACE_FIELD, List.of(event.traceId));
 
             return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, meta,

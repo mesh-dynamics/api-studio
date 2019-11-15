@@ -40,9 +40,9 @@ public class Analyzer {
 
     private static final Logger LOGGER = LogManager.getLogger(Analyzer.class);
 
-    private Analyzer(String replayid, int reqcnt, String templateVersion, Config config) {
+    private Analyzer(String replayId, int reqcnt, String templateVersion, Config config) {
         this.config = config;
-        analysis = new Analysis(replayid, reqcnt, templateVersion);
+        analysis = new Analysis(replayId, reqcnt, templateVersion);
         this.jsonMapper = config.jsonMapper;
 
         //comparator = new TemplatedResponseComparator(TemplatedRRComparator.EQUALITYTEMPLATE, jsonMapper);
@@ -72,7 +72,7 @@ public class Analyzer {
     // TODO: Event redesign cleanup: This can be removed
     private void analyze(ReqRespStore rrstore, Stream<List<Request>> reqs, Replay replay) {
 
-        // using seed generated from replayid so that same requests get picked in replay and analyze
+        // using seed generated from replayId so that same requests get picked in replay and analyze
         long seed = replay.replayId.hashCode();
         Random random = new Random(seed);
 
@@ -92,7 +92,7 @@ public class Analyzer {
                 // find matching request in replay
                 // most fields are same as request except
                 // RRType should be Replay
-                // collection to set to replayid, since collection in replays are set to replayids
+                // collection to set to replayId, since collection in replays are set to replayids
                 Request rq = new Request(r.apiPath, r.reqId, r.queryParams, r.formParams, r.meta,
                         r.hdrs, r.method, r.body, Optional.ofNullable(analysis.replayId), r.timestamp,
                         Optional.of(Event.RunType.Replay), r.customerId, r.app);
@@ -199,7 +199,7 @@ public class Analyzer {
      */
     private void analyzeWithEvent(ReqRespStore rrstore, Stream<List<Event>> reqs, Replay replay) {
 
-        // using seed generated from replayid so that same requests get picked in replay and analyze
+        // using seed generated from replayId so that same requests get picked in replay and analyze
         long seed = replay.replayId.hashCode();
         Random random = new Random(seed);
 
@@ -491,7 +491,7 @@ public class Analyzer {
      */
     public static Optional<Analysis> analyze(String replayId, String tracefield,
                                              Config config) {
-        // String collection = Replay.getCollectionFromReplayId(replayid);
+        // String collection = Replay.getCollectionFromReplayId(replayId);
 
         ReqRespStore rrstore = config.rrstore;
 

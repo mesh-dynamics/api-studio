@@ -98,15 +98,15 @@ public class AnalyzeWS {
 
 
 	@POST
-    @Path("analyze/{replayid}")
+    @Path("analyze/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response analyze(@Context UriInfo ui, @PathParam("replayid") String replayid,
+    public Response analyze(@Context UriInfo ui, @PathParam("replayId") String replayId,
                             MultivaluedMap<String, String> formParams) {
         String tracefield = Optional.ofNullable(formParams.get("tracefield"))
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Config.DEFAULT_TRACE_FIELD);
 
-        Optional<Analysis> analysis = Analyzer.analyze(replayid, tracefield, config);
+        Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
 
         return analysis.map(av -> {
             String json;
@@ -114,7 +114,7 @@ public class AnalyzeWS {
                 json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
         }).orElse(Response.serverError().build());
@@ -122,42 +122,42 @@ public class AnalyzeWS {
 
 
 	@GET
-    @Path("status/{replayid}")
+    @Path("status/{replayId}")
     public Response status(@Context UriInfo ui,
-                           @PathParam("replayid") String replayid) {
-        Optional<Analysis> analysis = Analyzer.getStatus(replayid, rrstore);
+                           @PathParam("replayId") String replayId) {
+        Optional<Analysis> analysis = Analyzer.getStatus(replayId, rrstore);
         Response resp = analysis.map(av -> {
             String json;
             try {
                 json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Analysis not found for replayid: " + replayid).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Analysis not found for replayId: " + replayId).build());
         return resp;
     }
 
 	@GET
-    @Path("aggrresult/{replayid}")
+    @Path("aggrresult/{replayId}")
     public Response getResultAggregate(@Context UriInfo ui,
-                                       @PathParam("replayid") String replayid) {
+                                       @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
         boolean bypath = Optional.ofNullable(queryParams.getFirst("bypath"))
             .map(v -> v.equals("y")).orElse(false);
 
-        Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, bypath);
+        Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, bypath);
         Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
 
-//        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
+//        Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayId, service, bypath);
         String json;
         try {
             json = jsonMapper.writeValueAsString(res);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s", replayid), e);
+            LOGGER.error(String.format("Error in converting result aggregate object to Json for replayId %s", replayId), e);
             return Response.serverError().build();
         }
     }
@@ -271,29 +271,37 @@ public class AnalyzeWS {
             // to our class definition , otherwise send error response
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
             TemplateKey key;
-            if ("request".equalsIgnoreCase(type)) {
-                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path, TemplateKey.Type.Request);
-            } else if ("response".equalsIgnoreCase(type)) {
-                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId, serviceName, path,
+            if (Constants.REQUEST.equalsIgnoreCase(type)) {
+                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+                    serviceName, path, TemplateKey.Type.Request);
+            } else if (Constants.RESPONSE.equalsIgnoreCase(type)) {
+                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+                    serviceName, path,
                     TemplateKey.Type.Response);
             } else {
-                return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid template type, should be " +
-                    "either request or response :: " + type).build();
+                return Response.serverError().type(MediaType.TEXT_PLAIN)
+                    .entity("Invalid template type, should be " +
+                        "either request or response :: " + type).build();
             }
 
             ValidateCompareTemplate validTemplate = template.validate();
-            if(!validTemplate.isValid()) {
-                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+            if (!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                    (new JSONObject(Map.of("Message", validTemplate.getMessage()))).toString())
+                    .build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
             requestComparatorCache.invalidateKey(key);
             responseComparatorCache.invalidateKey(key);
             //Analyzer.removeKey(key);
-            return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
+            return Response.ok().type(MediaType.TEXT_PLAIN)
+                .entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
-            return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Invalid JSON String sent").build();
+            return Response.serverError().type(MediaType.TEXT_PLAIN)
+                .entity("Invalid JSON String sent").build();
         } catch (IOException e) {
-            return Response.serverError().type(MediaType.TEXT_PLAIN).entity("Error Occured " + e.getMessage()).build();
+            return Response.serverError().type(MediaType.TEXT_PLAIN)
+                .entity("Error Occured " + e.getMessage()).build();
         }
         catch (CompareTemplate.CompareTemplateStoreException e) {
             return Response.serverError().entity((
@@ -348,12 +356,12 @@ public class AnalyzeWS {
                                        TemplateKey.Type ruleType) {
 
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
-        Optional<String> apipath = Optional.ofNullable(queryParams.getFirst("apipath"));
-        Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst("jsonpath"));
+        Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
+        Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst(Constants.JSON_PATH_FIELD));
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity("{\"Error\": \"apipath is mssing\"}").build();
+                .entity("{\"Error\": \"apiPath is mssing\"}").build();
         }
         if (jsonpath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -449,8 +457,8 @@ public class AnalyzeWS {
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
             Optional<String> diff  = Optional.of(matchRes.diff);
-            MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
-                matchRes.respmt, matchRes.service, matchRes.path,
+            MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
+                matchRes.respMatchType, matchRes.service, matchRes.path,
                 diff, request, replayedRequest, recordedResponse, replayedResponse);
 
             String resultJson = null;
@@ -487,11 +495,11 @@ public class AnalyzeWS {
     public Response getTimelineResults(@Context UriInfo urlInfo, @PathParam("customer") String customer,
                                        @PathParam("app") String app) {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
-        List<String> instanceId = Optional.ofNullable(queryParams.get("instanceId")).orElse(Collections.EMPTY_LIST);
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
-        Optional<String> collection = Optional.ofNullable(queryParams.getFirst("collection"));
-        Optional<String> userId = Optional.ofNullable(queryParams.getFirst("userId"));
-        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst("endDate"));
+        List<String> instanceId = Optional.ofNullable(queryParams.get(Constants.INSTANCE_ID_FIELD)).orElse(Collections.EMPTY_LIST);
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
+        Optional<String> userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
+        Optional<String> endDate = Optional.ofNullable(queryParams.getFirst(Constants.END_DATE_FIELD));
 
         Optional<Instant> endDateTS = Optional.empty();
         // For checking correct date format
@@ -509,15 +517,15 @@ public class AnalyzeWS {
 
         boolean byPath = Optional.ofNullable(queryParams.getFirst("byPath"))
             .map(v -> v.equals("y")).orElse(false);
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt);
-        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst("numResults")).map(Integer::valueOf).or(() -> Optional.of(20));
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).map(Integer::valueOf).or(() -> Optional.of(20));
 
         Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
             List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS);
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
-            String replayid = replay.replayId;
+            String replayId = replay.replayId;
             Instant creationTimeStamp = replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
                 replay.collection , replay.templateVersion);
@@ -531,21 +539,21 @@ public class AnalyzeWS {
                     + "\" , \"templateVer\" : \"" + recording.templateVersion;
             }
 
-            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayid, service, byPath);
+            Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
             Collection<MatchResultAggregate> res = resStream.collect(Collectors.toList());
 
-//            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayid, service, bypath);
+//            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayId, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
-            jsonBuilder.append("{ \"replayid\" : \"" + replayid + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
+            jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
                 + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
             } catch (JsonProcessingException e) {
                 jsonBuilder.append("[]");
-                LOGGER.error(String.format("Error in converting result aggregate object to Json for replayid %s",
-                    replayid), e);
+                LOGGER.error(String.format("Error in converting result aggregate object to Json for replayId %s",
+                    replayId), e);
             }
             jsonBuilder.append("}");
             return jsonBuilder.toString();
@@ -566,10 +574,10 @@ public class AnalyzeWS {
     // TODO: Event redesign: This needs to be rewritten to get as event
     public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst("service"));
-        Optional<String> path = Optional.ofNullable(queryParams.getFirst("path")); // the path to drill
+        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> path = Optional.ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill
         // down on
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst("start")).flatMap(Utils::strToInt); // for
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
         // paging
         Optional<Integer> nummatches =
             Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
@@ -627,8 +635,8 @@ public class AnalyzeWS {
                         .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
                 }
 
-                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqmt, matchRes.numMatch,
-                    matchRes.respmt, matchRes.service, matchRes.path,
+                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
+                    matchRes.respMatchType, matchRes.service, matchRes.path,
                     diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
@@ -638,7 +646,7 @@ public class AnalyzeWS {
             json = jsonMapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Match results list to Json for replayid %s, app %s, " +
+            LOGGER.error(String.format("Error in converting Match results list to Json for replayId %s, app %s, " +
                     "collection %s.", replayId));
             return Response.serverError().build();
         }
@@ -672,7 +680,7 @@ public class AnalyzeWS {
             json = jsonMapper.writeValueAsString(new RespAndMatchResults(recordResponse, replayResponse, matchResult));
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting response and match results to Json for replayid %s, " +
+            LOGGER.error(String.format("Error in converting response and match results to Json for replayId %s, " +
                 "recordReqId %s, replay reqId %s", replayId, recordReqId, replayReqId));
             return Response.serverError().build();
         }

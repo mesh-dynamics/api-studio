@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -37,10 +35,8 @@ import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.ReplayDriver;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import io.cube.agent.CommonUtils;
 
 /**
  * @author prasad
@@ -60,14 +56,14 @@ public class ReplayWS {
 
 
 	@POST
-    @Path("transforms/{customerid}/{app}/{collection}/{replayid}")
+    @Path("transforms/{customerId}/{app}/{collection}/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
     public Response upsertTransforms(@Context UriInfo ui,
                                      MultivaluedMap<String, String> formParams,
-                                     @PathParam("customerid") String customerid,
+                                     @PathParam("customerId") String customerId,
                                      @PathParam("app") String app,
                                      @PathParam("collection") String collection,
-                                     @PathParam("replayid") String replayid) {
+                                     @PathParam("replayId") String replayId) {
         // {"requestTransforms" : [{"src_path_into_body: xyz, "tgt_path_into_body" : abc}*]}
         List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
 
@@ -82,26 +78,26 @@ public class ReplayWS {
                 LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
             }
             xfms = xfmsParam.get(0);
-            Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
+            Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
             if (replay.isPresent()) {
                 replay.get().updateXfmsFromJSONString(xfms);
             }
             String replayJson = jsonMapper.writeValueAsString(replay);
             return Response.ok(replayJson, MediaType.APPLICATION_JSON).build();
         } catch (Exception e) {
-            LOGGER.error(String.format("Error in updating transforms %s: %s", replayid, xfmsParam.toString()), e);
+            LOGGER.error(String.format("Error in updating transforms %s: %s", replayId, xfmsParam.toString()), e);
             return Response.serverError().build();
         }
 
     }
 
 	@GET
-	@Path("status/{customerid}/{app}/{collection}/{replayid}")
+	@Path("status/{customerId}/{app}/{collection}/{replayId}")
     public Response status(@Context UriInfo ui, @PathParam("collection") String collection,
-                           @PathParam("replayid") String replayid,
-                           @PathParam("customerid") String customerid,
+                           @PathParam("replayId") String replayId,
+                           @PathParam("customerId") String customerId,
                            @PathParam("app") String app) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayid, rrstore);
+        Optional<Replay> replay = ReplayDriver.getStatus(replayId, rrstore);
         Response resp = replay.map(r -> {
             String json;
             try {
@@ -116,20 +112,20 @@ public class ReplayWS {
                 json = jsonMapper.writeValueAsString(r);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Status not found for replayid: " + replayid).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Status not found for replayId: " + replayId).build());
 
         return resp;
     }
 
 
 	@POST
-	@Path("forcecomplete/{replayid}")
+	@Path("forcecomplete/{replayId}")
     public Response forceComplete(@Context UriInfo ui,
-                                  @PathParam("replayid") String replayid) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
+                                  @PathParam("replayId") String replayId) {
+        Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
             rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
@@ -141,15 +137,15 @@ public class ReplayWS {
                 r.status = ReplayStatus.Error;
                 json = jsonMapper.writeValueAsString(r);
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
             if (!rrstore.saveReplay(r)) {
                 return Response.serverError().build();
             }
-            //replayResultCache.stopReplay(r.customerid, r.app, r.instanceid, replayid);
+            //replayResultCache.stopReplay(r.customerId, r.app, r.instanceid, replayId);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayId: " + replayId).build());
         return resp;
     }
 
@@ -158,14 +154,14 @@ public class ReplayWS {
      * This is used only for unit testing purposes to explicitly have a replay in start mode, so that mocking
      * can be tested
      * @param ui
-     * @param replayid
+     * @param replayId
      * @return
      */
     @POST
-    @Path("forcestart/{replayid}")
+    @Path("forcestart/{replayId}")
     public Response forceStart(@Context UriInfo ui,
-                               @PathParam("replayid") String replayid) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayid, this.rrstore);
+                               @PathParam("replayId") String replayId) {
+        Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
             String json;
@@ -173,15 +169,15 @@ public class ReplayWS {
                 r.status = ReplayStatus.Running;
                 json = jsonMapper.writeValueAsString(r);
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replayid), e);
+                LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
             if (!rrstore.saveReplay(r)) {
                 return Response.serverError().build();
             }
-            //replayResultCache.startReplay(r.customerid, r.app, r.instanceid, replayid);
+            //replayResultCache.startReplay(r.customerId, r.app, r.instanceid, replayId);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayid: " + replayid).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayId: " + replayId).build());
         return resp;
     }
 
@@ -207,7 +203,7 @@ public class ReplayWS {
          LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
          }
          xfms = xfmsParam.get(0);
-         replay = Replay.getStatus(replayid, this.rrstore);
+         replay = Replay.getStatus(replayId, this.rrstore);
          if (replay.isPresent()) {
          replay.get().updateXfmsFromJSONString(xfms);
          }
@@ -279,7 +275,7 @@ public class ReplayWS {
                                         return Response.ok(json, MediaType.APPLICATION_JSON).build();
                                     }
                                 } catch (JsonProcessingException ex) {
-                                    LOGGER.error(String.format("Error in converting Replay object to Json for replayid %s", replay.replayId), ex);
+                                    LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replay.replayId), ex);
                                     return Response.serverError().build();
                                 }
                             }).orElse(Response.serverError().build());

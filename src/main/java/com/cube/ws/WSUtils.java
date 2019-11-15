@@ -18,11 +18,11 @@ import javax.ws.rs.core.Response;
  */
 public class WSUtils {
 
-    static public Optional<Response> checkActiveCollection(ReqRespStore rrstore, Optional<String> customerid,
-                                                           Optional<String> app, Optional<String> instanceid,
+    static public Optional<Response> checkActiveCollection(ReqRespStore rrstore, Optional<String> customerId,
+                                                           Optional<String> app, Optional<String> instanceId,
                                                            Optional<String> userId) {
-        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerid, app,
-            instanceid);
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app,
+            instanceId);
         Optional<String> rrcollection = recordOrReplay.flatMap(rr -> rr.getRecordingCollection());
         Optional<String> replayId = recordOrReplay.flatMap(rr -> rr.getReplayId());
         String runType = recordOrReplay.map(rr -> rr.isRecording() ? "Recording" : "Replay").orElse("None");
@@ -30,9 +30,9 @@ public class WSUtils {
         return rrcollection.map(collection -> {
             // TODO: use constant strings from Ashok's PR once its merged
             Map<String, String> respObj = Map.of("message", runType + " ongoing",
-                "customer", customerid.orElse("None"),
+                "customerId", customerId.orElse("None"),
                 "app", app.orElse("None"),
-                "instance", instanceid.orElse("None"),
+                "instance", instanceId.orElse("None"),
                 "collection", collection,
                 "replayId", replayId.orElse("None"),
                 "userId", userId.orElse("None"));

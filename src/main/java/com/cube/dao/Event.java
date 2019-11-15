@@ -96,7 +96,7 @@ public class Event {
         if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (collection == null)
             || (traceId == null) || (runType == null) ||
             (timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-            || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
+            || ((rawPayloadBinary == null) == (rawPayloadString == null || rawPayloadString.trim().isEmpty()))) {
             return false;
         }
         return true;
