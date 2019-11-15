@@ -807,9 +807,17 @@ public class CubeStore {
             customerId, app, instanceId, collection));
 
         String name = formParams.getFirst("name");
+        String userId = formParams.getFirst("userId");
+
         if (name==null) {
             return Response.status(Status.BAD_REQUEST)
-                .entity("Collection %s already active for customer %s, app %s, for instance %s. Use different name")
+                .entity("Name needs to be given for a golden")
+                .build();
+        }
+
+        if (userId==null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("userId should be specified for a golden")
                 .build();
         }
 
@@ -828,7 +836,7 @@ public class CubeStore {
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
         Optional<Response> resp = Recording.startRecording(customerId, app, instanceId, collection, templateSetVersion, rrstore, name, codeVersion, branch, tags,
-            false, gitCommitId, Optional.empty(), Optional.empty(), comment)
+            false, gitCommitId, Optional.empty(), Optional.empty(), comment, userId)
             .map(newr -> {
                 String json;
                 try {

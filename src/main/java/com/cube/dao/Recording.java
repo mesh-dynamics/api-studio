@@ -37,7 +37,7 @@ public class Recording {
         , Optional<Instant> updateTimestamp, String templateVersion, Optional<String> parentRecordingId
         , Optional<String> rootRecordingId, String name, Optional<String> codeVersion, Optional<String> branch
         , List<String> tags, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
-        , Optional<String> templateUpdOpSetId, Optional<String> comment) {
+        , Optional<String> templateUpdOpSetId, Optional<String> comment, String userId) {
 		super();
 		this.customerId = customerId;
 		this.app = app;
@@ -59,6 +59,7 @@ public class Recording {
         this.collectionUpdOpSetId = collectionUpdOpSetId;
         this.templateUpdOpSetId = templateUpdOpSetId;
         this.comment = comment;
+        this.userId = userId;
     }
 
 	// for json deserialization
@@ -80,7 +81,8 @@ public class Recording {
         this.gitCommitId = Optional.empty();
         this.collectionUpdOpSetId = Optional.empty();
         this.templateUpdOpSetId = Optional.empty();
-        comment = Optional.empty();
+        this.comment = Optional.empty();
+        this.userId = "";
     }
 
     @JsonProperty("id")
@@ -121,6 +123,9 @@ public class Recording {
     public final Optional<String> templateUpdOpSetId;
     @JsonProperty("comment")
     public final Optional<String> comment;
+    @JsonProperty("userId")
+    public final String userId;
+
 
 
     public String getId() {
@@ -132,10 +137,10 @@ public class Recording {
                                                      String templateVersion, ReqRespStore rrstore, String name,
                                                      Optional<String> codeVersion, Optional<String> branch, List<String> tags,
                                                      boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId,
-                                                     Optional<String> templateUpdOpSetId, Optional<String> comment) {
+                                                     Optional<String> templateUpdOpSetId, Optional<String> comment, String userId) {
 		Recording recording = new Recording(customerId, app, instanceId, collection, RecordingStatus.Running
             , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name, codeVersion, branch, tags
-            ,archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment);
+            ,archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId);
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);
         }

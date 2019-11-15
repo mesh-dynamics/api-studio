@@ -2230,12 +2230,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> collectionUpdOpSetId = getStrField(doc, COLLECTION_UPD_OP_SET_IDF);
         Optional<String> templateUpdOpSetId = getStrField(doc, TEMPLATE_UPD_OP_SET_IDF);
         Optional<String> comment = getStrField(doc, GOLDEN_COMMENTF);
+        Optional<String> userId = getStrField(doc, USERIDF);
+
 
         if (customerId.isPresent() && app.isPresent() && instanceid.isPresent() && collection.isPresent() &&
-            status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name.isPresent()) {
+            status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name.isPresent() && userId.isPresent()) {
             recording = Optional.of(new Recording(customerId.get(), app.get(), instanceid.get(), collection.get(),
                 status.get() ,  getTSField(doc, TIMESTAMPF), templateVersion.get(), parentRecordingId, rootRecordingId, name.get(),
-            codeVersion, branch, tags, archived.get(), gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment));
+            codeVersion, branch, tags, archived.get(), gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId.get()));
         } else {
             LOGGER.error(String.format("Not able to convert Solr result to Recording object for customerId %s, app id %s, instance id %s", customerId.orElse(""), app.orElse(""), instanceid.orElse("")));
         }
@@ -2260,6 +2262,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(ROOT_RECORDING_IDF, recording.rootRecordingId);
         doc.setField(ARCHIVEDF, recording.archived);
         doc.setField(GOLDEN_NAMEF, recording.name);
+        doc.setField(USERIDF, recording.userId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
         recording.codeVersion.ifPresent(cv -> doc.setField(CODE_VERSIONF, cv));

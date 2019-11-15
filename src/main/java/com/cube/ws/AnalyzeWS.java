@@ -911,6 +911,11 @@ public class AnalyzeWS {
                 throw new Exception("Name not specified for golden");
             }
 
+            String userId = formParams.getFirst("userId");
+            if (userId==null) {
+                throw new Exception("userId not specified for golden");
+            }
+
             // Ensure name is unique for a customer and app
             Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
             if (recWithSameName.isPresent()) {
@@ -927,7 +932,7 @@ public class AnalyzeWS {
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
                 Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags, false, gitCommitId,
-                Optional.of(collectionUpdateOpSetId), Optional.of(templateUpdOpSetId), comment);
+                Optional.of(collectionUpdateOpSetId), Optional.of(templateUpdOpSetId), comment, userId);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
@@ -961,7 +966,7 @@ public class AnalyzeWS {
                 originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
                 Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
                 Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch,
-                originalRec.tags, originalRec.archived, originalRec.gitCommitId, Optional.empty(), Optional.empty(), Optional.empty());
+                originalRec.tags, originalRec.archived, originalRec.gitCommitId, Optional.empty(), Optional.empty(), Optional.empty(), originalRec.userId);
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity((new JSONObject(Map.of(
