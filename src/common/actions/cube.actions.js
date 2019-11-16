@@ -34,7 +34,8 @@ export const cubeActions = {
     removeFromNOS,
     removeFromOperations,
     getNewTemplateVerInfo,
-    updateTemplateOperationSet
+    updateTemplateOperationSet,
+    createJiraIssue,
 };
 
 function clear() {
@@ -351,4 +352,16 @@ function getReport(collectionId, replayId) {
         }
     }
     function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }
+}
+
+function createJiraIssue() {
+    return async dispatch => {
+        try {
+            let response = await cubeService.createJiraIssue();
+            dispatch(success(response, Date.now()));
+        } catch (error) {
+        }
+    }
+    // TODO
+    function success(resp, date) { return { type: cubeConstants.REPORT_FETCHED, data: resp, date: date } }
 }

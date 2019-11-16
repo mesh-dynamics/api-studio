@@ -8,14 +8,17 @@ class GoldenPopover extends React.Component {
         super(props);
         this.showGoldenModal = this.showGoldenModal.bind(this);
         this.showRuleModal = this.showRuleModal.bind(this);
+        this.showBugModal = this.showBugModal.bind(this);
         this.updateGolden = this.updateGolden.bind(this);
         this.updateRule = this.updateRule.bind(this);
         this.setRule = this.setRule.bind(this);
         this.hideGR = this.hideGR.bind(this);
+        this.createIssue = this.createIssue.bind(this);
 
         this.state = {
             showGolden: false,
             showRule: false,
+            showBug: false,
             defaultRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
                 "dt": "",
@@ -67,6 +70,12 @@ class GoldenPopover extends React.Component {
         }
     }
 
+    createIssue() {
+        const {dispatch} = this.props;
+        console.log("create issue")
+        dispatch(cubeActions.createJiraIssue());
+    }
+
     showGoldenModal() {
         this.setState({showGolden: true});
     }
@@ -76,8 +85,12 @@ class GoldenPopover extends React.Component {
         this.setState({showRule: true});
     }
 
+    showBugModal() {
+        this.setState({showBug: true});
+    }
+
     hideGR() {
-        this.setState({showRule: false, showGolden: false});
+        this.setState({showRule: false, showGolden: false, showBug: false});
     }
 
     render() {
@@ -93,7 +106,7 @@ class GoldenPopover extends React.Component {
                     </div>
                     <div style={{width: "300px", height: "100px", background: "#ECECE7", padding: "15px"}}>
                         <div>
-                            <span className="back-grey"><i className="fas fa-bug"></i></span>&nbsp;&nbsp;
+                            <span onClick={this.showBugModal} className="back-grey"><i className="fas fa-bug"></i></span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-comments"></i></span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-code"></i></span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-share-alt"></i></span>
@@ -208,6 +221,50 @@ class GoldenPopover extends React.Component {
                         </div>
                     </div>
                 </div>
+
+                <div className={this.state.showBug ? "update-rule" : "hidden"} style={{color: "#333333"}}>
+                    <div onClick={this.hideGR} style={{width: "500px", background: "#D5D5D5", padding: "5px 20px"}}>
+                        FILE NEW BUG
+                    </div>
+                    <div style={{width: "500px", background: "#ECECE7", padding: "15px 20px", textAlign: "left"}}>
+                        
+                        <div>Path:&nbsp;<b>{this.props.jsonPath}</b></div>
+                        <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
+                        <div>Count of similar items:&nbsp;<b>105</b></div>
+
+                        <div className="table-responsive margin-top-10">
+                            <table className="table table-striped" style={{textAlign: "left"}}>
+                                <tbody>
+                                <tr>
+                                    <td>Summary</td>
+                                    <td><textarea defaultValue="shhfsfh"></textarea></td>
+                                </tr>
+                                <tr>
+                                    <td>Description</td>
+                                    <td><textarea defaultValue="dddd"></textarea></td>
+                                </tr>
+
+                                <tr>
+                                    <td>Project</td>
+                                    <td><textarea defaultValue="ppp"></textarea></td>
+                                </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="margin-top-10 margin-bottom-10">
+                            <span>Comments:</span><br/>
+                            <textarea style={{height: "50px", width: "100%"}}></textarea>
+                        </div>
+
+                        <div className="text-right margin-top-20">
+                            <span onClick={this.createIssue} className="cube-btn font-12">CREATE</span>&nbsp;&nbsp;
+                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                        </div>
+                    </div>
+                </div>
+
             </React.Fragment>
         );
     }
