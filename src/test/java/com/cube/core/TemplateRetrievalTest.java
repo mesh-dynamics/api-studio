@@ -1,17 +1,11 @@
 package com.cube.core;
 
-import com.cube.utils.Constants;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Optional;
-
-import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.ReqRespStore;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 /**
@@ -48,29 +42,6 @@ public class TemplateRetrievalTest {
             assertSame(true, false);
         }
     }
-
-    //@Test
-    public void testRequestComparatorCache() {
-        try {
-            Config config = new Config();
-            ReqRespStore rrStore = config.rrstore;
-            TemplateCache templateCache = new TemplateCache(rrStore ,config);
-            ObjectMapper objectMapper = config.jsonMapper;
-            RequestComparatorCache requestComparatorCache = new RequestComparatorCache(templateCache , objectMapper);
-            TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj" , "movieinfo"
-                    , "productpage" , "productpage" , TemplateKey.Type.Request);
-            RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
-            assertSame(comparator.getCTapp().toString() , "Equal") ;
-            assertSame(comparator.getCTcollection().toString() , "Equal") ;
-            assertSame(comparator.getCTcustomerid().toString() , "Equal") ;
-            assertSame(comparator.getCTpath().toString() , "Equal");
-            assertSame(comparator.getCTreqid().toString() , "EqualOptional");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            assertSame(true , false);
-        }
-    }
-
 
 
 }

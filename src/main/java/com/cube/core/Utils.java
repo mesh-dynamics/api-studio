@@ -3,9 +3,6 @@
  */
 package com.cube.core;
 
-import com.cube.dao.Event;
-import com.cube.utils.Constants;
-import com.cube.ws.Config;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -22,16 +19,18 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import com.cube.agent.FnReqResponse;
-import com.cube.cache.RequestComparatorCache;
-import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
+import com.cube.dao.Event;
 import com.cube.golden.TemplateSet;
-import org.json.JSONObject;
+import com.cube.utils.Constants;
+import com.cube.ws.Config;
 
 
 /**
@@ -189,16 +188,14 @@ public class Utils {
     }
 
     static public void invalidateCacheFromTemplateSet(TemplateSet templateSet,
-                                                 RequestComparatorCache requestComparatorCache,
-                                                 ResponseComparatorCache responseComparatorCache)
+                                                      ComparatorCache comparatorCache)
     {
         templateSet.templates.stream().forEach(compareTemplateVersioned -> {
             TemplateKey key =
                 new TemplateKey(templateSet.version, templateSet.customer, templateSet.app,
                     compareTemplateVersioned.service,
                     compareTemplateVersioned.prefixpath, compareTemplateVersioned.type);
-            requestComparatorCache.invalidateKey(key);
-            responseComparatorCache.invalidateKey(key);
+            comparatorCache.invalidateKey(key);
         });
     }
 
@@ -238,19 +235,13 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static CompareTemplate getRequestCompareTemplate(Config config, Event event, String templateVersion) {
+    public static CompareTemplate getRequestCompareTemplate(Config config, Event event, String templateVersion)
+        throws ComparatorCache.TemplateNotFoundException {
         TemplateKey tkey =
             new TemplateKey(templateVersion, event.customerId,
                 event.app, event.service, event.apiPath, TemplateKey.Type.Request);
 
-        CompareTemplate compareTemplate;
-        if (event.eventType.equals(Event.EventType.JavaRequest)) {
-            compareTemplate = config.requestComparatorCache.getFunctionComparator(tkey).getCompareTemplate();
-        } else{
-            compareTemplate =
-                config.requestComparatorCache.getRequestComparator(tkey, false).getCompareTemplate();
-        }
-        return compareTemplate;
+        return config.comparatorCache.getComparator(tkey, event.eventType).getCompareTemplate();
     }
 
     public static String buildSuccessResponse(String status, JSONObject data) {
