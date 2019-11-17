@@ -495,13 +495,20 @@ async function createJiraIssue(summary, description, issueTypeId, projectId) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
     let url = `${config.apiBaseUrl}/jira/issue/create`;
-    let appsList;
+    let resp;
+    // let reqBody = {
+    //     "summary": "[test] Jira API test frontend",
+    //     "description": "test1",
+    //     "issueTypeId":"10004",
+    //     "projectId": "10000",
+    // };
+
     let reqBody = {
-        "summary": "[test] Jira API test frontend",
-        "description": "test1",
-        "issueTypeId":"10004",
-        "projectId": "10000",
-    };
+        summary: summary,
+        description: description,
+        issueTypeId: issueTypeId,
+        projectId: projectId,
+    }
 
     try {
         console.log("aa")
@@ -516,7 +523,7 @@ async function createJiraIssue(summary, description, issueTypeId, projectId) {
         console.log("bb")
         if (response.ok) {
             json = await response.json();
-            appsList = json;
+            resp = json;
         } else {
             console.log("Response not ok in createJiraIssue", response);
             throw new Error("Response not ok createJiraIssue");
@@ -525,7 +532,8 @@ async function createJiraIssue(summary, description, issueTypeId, projectId) {
         console.log("createJiraIssue has errors!", e);
         throw e;
     }
-    return appsList;
+
+    return resp;
 
 }
 

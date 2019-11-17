@@ -354,10 +354,10 @@ function getReport(collectionId, replayId) {
     function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }
 }
 
-function createJiraIssue() {
+function createJiraIssue(summary, description, issueTypeId, project) {
     return async dispatch => {
         try {
-            let response = await cubeService.createJiraIssue();
+            let response = await cubeService.createJiraIssue(summary, description, issueTypeId, project);
             dispatch(success(response, Date.now()));
         } catch (error) {
         }

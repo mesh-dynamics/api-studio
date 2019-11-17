@@ -14,11 +14,13 @@ class GoldenPopover extends React.Component {
         this.setRule = this.setRule.bind(this);
         this.hideGR = this.hideGR.bind(this);
         this.createIssue = this.createIssue.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this)
 
         this.state = {
             showGolden: false,
             showRule: false,
             showBug: false,
+            showBugResponse: false,
             defaultRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
                 "dt": "",
@@ -34,7 +36,11 @@ class GoldenPopover extends React.Component {
                 "ct": "",
                 "em": "",
                 "customization": null
-            }
+            },
+            summaryInp: "test summary",
+            descriptionInp: "test desc",
+            issueTypeIdInp: 10004,
+            projectInp: 10000
         };
     }
 
@@ -73,7 +79,16 @@ class GoldenPopover extends React.Component {
     createIssue() {
         const {dispatch} = this.props;
         console.log("create issue")
-        dispatch(cubeActions.createJiraIssue());
+
+        var summary = this.state.summaryInp
+        var desc = this.state.descriptionInp
+        var project = this.state.projectInp
+        var issueTypeId = this.state.issueTypeIdInp
+        let resp = this.createJiraIssue(summary, desc, issueTypeId, project)
+        .then(r =>  {
+            this.hideGR()
+            this.setState({jiraIssueId: r.body.id, jiraIssueKey: r.body.key, showBugResponse: true})
+        })
     }
 
     showGoldenModal() {
@@ -93,10 +108,22 @@ class GoldenPopover extends React.Component {
         this.setState({showRule: false, showGolden: false, showBug: false});
     }
 
+    handleInputChange(event) {
+        const target = event.target;
+        const value = target.value;
+        const name = target.name;
+    
+        this.setState({
+            [name]: value
+        });
+    }
+
+    
+
     render() {
         return (
             <React.Fragment>
-                <div className={!this.state.showGolden && !this.state.showRule ? "text-center" : "hidden"}
+                <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse ? "text-center" : "hidden"}
                      style={{color: "#333333"}}>
                     <div style={{width: "300px", height: "100px", background: "#D5D5D5", padding: "20px"}}>
                         <div className="margin-bottom-10">STATUS</div>
@@ -237,25 +264,25 @@ class GoldenPopover extends React.Component {
                                 <tbody>
                                 <tr>
                                     <td>Summary</td>
-                                    <td><textarea defaultValue="shhfsfh"></textarea></td>
+                                    <td><input name="summaryInp" defaultValue="test api" onChange={this.handleInputChange}></input></td>
                                 </tr>
                                 <tr>
                                     <td>Description</td>
-                                    <td><textarea defaultValue="dddd"></textarea></td>
+                                    <td><textarea name="descriptionInp" defaultValue="test" onChange={this.handleInputChange}></textarea></td>
                                 </tr>
 
                                 <tr>
-                                    <td>Project</td>
-                                    <td><textarea defaultValue="ppp"></textarea></td>
+                                    <td>Project ID</td>
+                                    <td><input name="projectInp" defaultValue="10000" onChange={this.handleInputChange}></input></td>
+                                </tr>
+
+                                <tr>
+                                    <td>Issue Type ID</td>
+                                    <td><input name="issueTypeIdInp" defaultValue="10004" onChange={this.handleInputChange}></input></td>
                                 </tr>
 
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div className="margin-top-10 margin-bottom-10">
-                            <span>Comments:</span><br/>
-                            <textarea style={{height: "50px", width: "100%"}}></textarea>
                         </div>
 
                         <div className="text-right margin-top-20">
@@ -265,8 +292,65 @@ class GoldenPopover extends React.Component {
                     </div>
                 </div>
 
+                <div className={this.state.showBugResponse ? "update-golden" : "hidden"} style={{color: "#333333"}}>
+                    <div onClick={this.hideGR} style={{maxWidth: "400px", background: "#D5D5D5", padding: "5px 20px"}}>
+                        FILE NEW BUG
+                    </div>
+                    <div style={{width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left"}}>
+                        <div><b>Jira Issue ID&nbsp;</b><p>{this.state.jiraIssueId}</p></div>
+                        <div><b>Jira Issue Key&nbsp;</b><p>{this.state.jiraIssueKey}</p></div>
+                        <div className="text-center margin-top-20">
+                            <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
+                        </div>
+                    </div>
+                </div>
             </React.Fragment>
         );
+    }
+
+    async createJiraIssue(summary, description, issueTypeId, projectId) {
+        let user = JSON.parse(localStorage.getItem('user'));
+        let response, json;
+        let url = `${config.apiBaseUrl}/jira/issue/create`;
+        let resp;
+        // let reqBody = {
+        //     "summary": "[test] Jira API test frontend",
+        //     "description": "test1",
+        //     "issueTypeId":"10004",
+        //     "projectId": "10000",
+        // };
+    
+        let reqBody = {
+            summary: summary,
+            description: description,
+            issueTypeId: issueTypeId,
+            projectId: projectId,
+        }
+    
+        try {
+            console.log("aa")
+            response = await fetch(url, {
+                method: "post",
+                headers: new Headers({
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + user['access_token']
+                }),
+                body: JSON.stringify(reqBody),
+            });
+            console.log("bb")
+            if (response.ok) {
+                json = await response.json();
+                resp = json;
+            } else {
+                console.log("Response not ok in createJiraIssue", response);
+                throw new Error("Response not ok createJiraIssue");
+            }
+        } catch (e) {
+            console.log("createJiraIssue has errors!", e);
+            throw e;
+        }
+    
+        return resp;
     }
 
     async getResponseTemplate() {
