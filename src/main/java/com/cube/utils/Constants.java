@@ -39,6 +39,8 @@ public class Constants {
     public static final String IO_EXCEPTION = "IO_EXCEPTION";
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
     public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
+    public static final String GENERIC_EXCEPTION = "GENERIC_EXCEPTION";
+
 
     //JSON FETCH PATH
     public static final String CUSTOMER_ID_PATH = "/customerId";

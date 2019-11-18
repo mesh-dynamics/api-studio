@@ -114,7 +114,7 @@ public class Recording {
     @JsonProperty("tags")
     public final List<String> tags;
     @JsonProperty("archived")
-    public final boolean archived;
+    public boolean archived;
     @JsonProperty("gitCommitId")
     public final Optional<String> gitCommitId;
     @JsonProperty("collectionUpdOpSetId")
@@ -155,5 +155,13 @@ public class Recording {
 		}
 		return recording;
 	}
+
+    public static Recording softDeleteRecording(Recording recording, ReqRespStore rrstore) throws Exception {
+        recording.archived = true;
+        recording.updateTimestamp = Optional.of(Instant.now());
+        boolean b = rrstore.saveRecording(recording);
+        if(!b) throw new Exception("Cannot delete recording");
+        return recording;
+    }
 
 }

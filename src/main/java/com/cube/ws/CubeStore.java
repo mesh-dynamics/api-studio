@@ -958,6 +958,33 @@ public class CubeStore {
         return resp;
     }
 
+    @POST
+    @Path("softDelete/{recordingid}")
+    public Response softDelete(@Context UriInfo ui,
+                         @PathParam("recordingid") String recordingid) {
+        Optional<Recording> recording = rrstore.getRecording(recordingid);
+        Response resp = recording.map(r -> {
+            try {
+                Recording deletedr = Recording.softDeleteRecording(r, rrstore);
+                String json;
+                LOGGER.info(String.format("Soft Deleting recording for recordingid %s", recordingid));
+                json = jsonMapper.writeValueAsString(deletedr);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(String.format("Error in converting Recording object to Json for recordingid %s", recordingid), ex);
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Unable to parse JSON ")).build();
+            } catch (Exception e) {
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.GENERIC_EXCEPTION,
+                        e.getMessage())).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(String.format("Recording not found for recordingid %s", recordingid)).build());
+        return resp;
+    }
+
 
     /**
      * This is just a test api
