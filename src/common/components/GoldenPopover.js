@@ -15,6 +15,7 @@ class GoldenPopover extends React.Component {
         this.hideGR = this.hideGR.bind(this);
         this.createIssue = this.createIssue.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this)
+        this.handleSelectProjectChange = this.handleSelectProjectChange.bind(this)
 
         this.state = {
             showGolden: false,
@@ -121,12 +122,12 @@ class GoldenPopover extends React.Component {
         }
 
         let options = this.state.projectList.map(e => {
-            return (<option value="">{e.name}</option>)
+            return (<option value={e.id}>{e.name}</option>)
         })
 
         let jsxContent = <div>
-            <select>
-                <option value="">Select Project</option>
+            <select placeholder="Select Project" onChange={this.handleSelectProjectChange}>
+                {/* <option value="">Select Project</option> */}
                 {options}
             </select>
         </div>
@@ -148,6 +149,14 @@ class GoldenPopover extends React.Component {
         });
     }
 
+    handleSelectProjectChange(event) {
+        const target = event.target;
+        const value = target.value;
+        
+        this.setState({
+            projectInp: value
+        })
+    }
 
 
     render() {
