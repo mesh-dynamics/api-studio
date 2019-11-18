@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:9ed3c5dd1785753f6565dc4bd737868e8562b077
+        image: cubeiocorp/cubews:{{cubeio_tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -168,7 +168,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:9ed3c5dd1785753f6565dc4bd737868e8562b077
+        image: cubeiocorp/cubews:{{cubeio_tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -299,7 +299,7 @@ spec:
     spec:
       containers:
       - name: cubews
-        image: cubeiocorp/cubews:9ed3c5dd1785753f6565dc4bd737868e8562b077
+        image: cubeiocorp/cubews:{{cubeio_tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -429,7 +429,7 @@ spec:
     spec:
       containers:
       - name: cubeui
-        image: cubeiocorp/cubeui:ee3b92c9d3cce9ff19fab3db24b71023b2570525
+        image: cubeiocorp/cubeui:{{cubeui_tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -481,7 +481,7 @@ spec:
     spec:
       containers:
       - name: cubeui-backend
-        image: cubeiocorp/cubeuibackend:e5312182181243248090fb0ecc8a5d7be6929583
+        image: cubeiocorp/cubeuibackend:{{cubeui_backend_tag}}
         imagePullPolicy: IfNotPresent
         env:
         - name: SPRING_PROFILES_ACTIVE
