@@ -2092,7 +2092,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteReqResByTraceId(String traceId, String collectionName) {
-        String queryString = TRACEIDF + ":" + traceId + " AND " + COLLECTIONF +":" + collectionName;
+        String queryString = TRACEIDF + ":" + traceId + " AND " + COLLECTIONF +":" + collectionName + " AND " + TYPEF +":Event";
         return deleteDocsByQuery(queryString);
     }
 
