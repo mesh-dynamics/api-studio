@@ -72,6 +72,7 @@ public class Constants {
     public static final String PATH_FIELD = "path";
     public static final String API_PATH_FIELD = "apiPath";
     public static final String REQ_ID_FIELD = "reqId";
+    public static final String REPLAY_ID_FIELD = "replayId";
     public static final String TIMESTAMP_FIELD = "timestamp";
     public static final String TRACE_ID_FIELD = "traceId";
     public static final String EVENT_TYPE_FIELD = "eventType";

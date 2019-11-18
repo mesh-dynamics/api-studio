@@ -143,24 +143,33 @@ public class Request extends RRBase {
 
     public static Optional<Request> fromEvent(Event event, ObjectMapper jsonMapper) {
         if (event.eventType != Event.EventType.HTTPRequest) {
-            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert event to request. " +
-                    "Event is not of right type:" , "eventType"
-                , event.eventType.toString() , "reqId", event.reqId)));
+            LOGGER
+                .error(new ObjectMessage(Map.of(
+                    "reason", "Not able to convert event to request. " +
+                        "Event is not of right type:",
+                    "eventType", event.eventType.toString(),
+                    "reqId", event.reqId)));
             return Optional.empty();
         }
 
         try {
-            HTTPRequestPayload payload = jsonMapper.readValue(event.rawPayloadString, HTTPRequestPayload.class);
+            HTTPRequestPayload payload = jsonMapper
+                .readValue(event.rawPayloadString, HTTPRequestPayload.class);
             MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
             meta.put(Constants.SERVICE_FIELD, List.of(event.service));
             meta.put(Constants.INSTANCE_ID_FIELD, List.of(event.instanceId));
-            return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams, payload.formParams,
-                meta, payload.hdrs, payload.method, payload.body,
-                Optional.of(event.getCollection()), Optional.of(event.timestamp),
-                Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app)));
+            return Optional
+                .of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams,
+                    payload.formParams,
+                    meta, payload.hdrs, payload.method, payload.body,
+                    Optional.of(event.getCollection()), Optional.of(event.timestamp),
+                    Optional.of(event.runType), Optional.of(event.customerId),
+                    Optional.of(event.app)));
         } catch (IOException e) {
-            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert Event to Request",
-                "eventType", event.eventType.toString() , "reqId", event.reqId)));
+            LOGGER.error(new ObjectMessage(Map.of(
+                "reason", "Not able to convert Event to Request",
+                "eventType", event.eventType.toString(),
+                "reqId", event.reqId)));
             return Optional.empty();
         }
     }

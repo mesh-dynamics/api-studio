@@ -3,13 +3,44 @@
  */
 package com.cube.ws;
 
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
+
+import com.cube.cache.RequestComparatorCache;
+import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.TemplateKey;
+import com.cube.core.Comparator;
+import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateEntry;
+import com.cube.core.TemplateRegistries;
+import com.cube.core.Utils;
+import com.cube.core.ValidateCompareTemplate;
+import com.cube.dao.Analysis;
+import com.cube.dao.DataObj;
+import com.cube.dao.Event;
+import com.cube.dao.MatchResultAggregate;
+import com.cube.dao.Recording;
+import com.cube.dao.RecordingOperationSetSP;
+import com.cube.dao.Replay;
+import com.cube.dao.ReqRespStore;
+import com.cube.dao.Result;
+import com.cube.drivers.Analyzer;
+import com.cube.golden.RecordingUpdate;
+import com.cube.golden.ReqRespUpdateOperation;
+import com.cube.golden.SingleTemplateUpdateOperation;
+import com.cube.golden.TemplateSet;
+import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.golden.transform.TemplateSetTransformer;
+import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.utils.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cube.agent.UtilException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,8 +50,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.ArrayList;
-
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -34,50 +63,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
-
-import com.cube.cache.RequestComparatorCache;
-import com.cube.cache.ResponseComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.core.Comparator;
-import com.cube.core.CompareTemplate;
-import com.cube.core.TemplateEntry;
-import com.cube.core.TemplateRegistries;
-import com.cube.core.Utils;
-import com.cube.dao.Analysis;
-import com.cube.dao.Event;
-import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.Recording;
-import com.cube.dao.RecordingOperationSetSP;
-import com.cube.dao.Replay;
-import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStoreSolr;
-import com.cube.dao.Request;
-import com.cube.dao.Result;
-import com.cube.drivers.Analyzer;
-import com.cube.golden.RecordingUpdate;
-import com.cube.golden.ReqRespUpdateOperation;
-import com.cube.golden.SingleTemplateUpdateOperation;
-import com.cube.golden.TemplateSet;
-import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.golden.transform.TemplateSetTransformer;
-import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
-import com.cube.core.ValidateCompareTemplate;
-import com.cube.core.Utils;
-import com.cube.utils.Constants;
-
-import static com.cube.core.Utils.buildErrorResponse;
-import static com.cube.core.Utils.buildSuccessResponse;
 
 /**
  * @author prasad
@@ -445,16 +435,16 @@ public class AnalyzeWS {
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayId);
         return matchResult.map(matchRes -> {
-            Optional<Request> request = rrstore.getRequest(recordReqId).flatMap(event -> Request.fromEvent(event, jsonMapper));
-            Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId)
-                .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+            Optional<DataObj> request = rrstore.getRequest(recordReqId).map(event -> event.getPayload(config));
+            Optional<DataObj> recordedResponse = rrstore.getResponse(recordReqId)
+                .map(event -> event.getPayload(config));
 
-            Optional<com.cube.dao.Request> replayedRequest = matchRes.replayReqId
+            Optional<DataObj> replayedRequest = matchRes.replayReqId
                 .flatMap(rrstore::getRequest)
-                .flatMap(event -> Request.fromEvent(event, jsonMapper));
+                .map(event -> event.getPayload(config));
 
-            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
-                .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+            Optional<DataObj> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+                .map(event -> event.getPayload(config));
 
             Optional<String> diff  = Optional.of(matchRes.diff);
             MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
@@ -569,73 +559,171 @@ public class AnalyzeWS {
      * @param ui
      * @return the results for reqids matching a path and other constraints
      */
+    //TODO: Remove this once UI is changed to the new API model.
+//    @GET
+//    @Path("analysisResByPath/{replayId}")
+//    // TODO: Event redesign: This needs to be rewritten to get as event
+//    public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
+//        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+//        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+//        Optional<String> path = Optional.ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill
+//        // down on
+//        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
+//        // paging
+//        Optional<Integer> nummatches =
+//            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
+//        // for paging
+//        Optional<Comparator.MatchType> reqmt = Optional.ofNullable(queryParams.getFirst("reqmt"))
+//                .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+//        Optional<Comparator.MatchType> respmt = Optional.ofNullable(queryParams.getFirst("respmt"))
+//            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+//        Optional<Boolean> includeDiff = Optional.ofNullable(queryParams.getFirst("includediff")).flatMap(Utils::strToBool);
+//
+//
+//        /* using array as container for value to be updated since lambda function cannot update outer variables */
+//        Long[] numFound = {0L};
+//        String[] app = {"" , ""};
+//
+//        List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
+//
+//            Result<Analysis.ReqRespMatchResult> result = rrstore.getAnalysisMatchResults(replayId, service, path,
+//                reqmt, respmt, start, nummatches);
+//            numFound[0] = result.numFound;
+//            app[0] = replay.app;
+//            app[1] = replay.templateVersion;
+//            List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
+//            List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream).collect(Collectors.toList());
+//
+//            Map<String, Event> requestMap = new HashMap<>();
+//            if (!reqids.isEmpty()) {
+//                // empty reqId list would lead to returning of all requests, so check for it
+//                Result<Event> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
+//                    reqids, Collections.emptyList(), Event.RunType.Record);
+//                requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
+//            }
+//
+//            return res.stream().map(matchRes -> {
+//                Optional<Request> request =
+//                    matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
+//                    .flatMap(event -> Request.fromEvent(event, jsonMapper));
+//
+//                Optional<Request> recordedRequest = Optional.empty();
+//                Optional<Request> replayedRequest = Optional.empty();
+//                Optional<String> diff = Optional.empty();
+//                Optional<com.cube.dao.Response> recordResponse = Optional.empty();
+//                Optional<com.cube.dao.Response> replayResponse = Optional.empty();
+//
+//
+//                if(includeDiff.orElse(false)) {
+//                    recordedRequest = request;
+//                    replayedRequest = matchRes.replayReqId
+//                        .flatMap(rrstore::getRequest)
+//                        .flatMap(event -> Request.fromEvent(event, jsonMapper));
+//                    diff = Optional.of(matchRes.diff);
+//                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
+//                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+//                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+//                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+//                }
+//
+//                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
+//                    matchRes.respMatchType, matchRes.service, matchRes.path,
+//                    diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
+//            }).collect(Collectors.toList());
+//        }).orElse(Collections.emptyList());
+//
+//        String json;
+//        try {
+//            json = jsonMapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
+//            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+//        } catch (JsonProcessingException e) {
+//            LOGGER.error(String.format("Error in converting Match results list to Json for replayId %s, app %s, " +
+//                    "collection %s.", replayId));
+//            return Response.serverError().build();
+//        }
+//    }
+
+    /**
+     *
+     * @param ui
+     * @return the results for reqids matching a path and other constraints
+     */
     @GET
     @Path("analysisResByPath/{replayId}")
-    // TODO: Event redesign: This needs to be rewritten to get as event
-    public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
+    public Response getAnalysisResultsByPath(@Context UriInfo ui,
+        @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-        Optional<String> path = Optional.ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill
-        // down on
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
-        // paging
-        Optional<Integer> nummatches =
-            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
-        // for paging
-        Optional<Comparator.MatchType> reqmt = Optional.ofNullable(queryParams.getFirst("reqmt"))
-                .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
-        Optional<Comparator.MatchType> respmt = Optional.ofNullable(queryParams.getFirst("respmt"))
+        Optional<String> service = Optional
+            .ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> path = Optional
+            .ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill down on
+        Optional<Integer> offset = Optional.ofNullable(queryParams.getFirst(Constants.OFFSET_FIELD))
+            .flatMap(Utils::strToInt); // for paging
+        Optional<Integer> limit =
+            Optional.ofNullable(queryParams.getFirst(Constants.LIMIT_FIELD))
+                .flatMap(Utils::strToInt).or(() -> Optional.of(20)); // for paging
+        Optional<Comparator.MatchType> reqMatchType = Optional
+            .ofNullable(queryParams.getFirst(Constants.REQ_MATCH_TYPE))
             .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
-        Optional<Boolean> includeDiff = Optional.ofNullable(queryParams.getFirst("includediff")).flatMap(Utils::strToBool);
+        Optional<Comparator.MatchType> respMatchType = Optional
+            .ofNullable(queryParams.getFirst(Constants.RESP_MATCH_TYPE))
+            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+        Optional<Boolean> includeDiff = Optional
+            .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);
 
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
-        String[] app = {"" , ""};
+        String[] app = {"", ""};
 
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
-            Result<Analysis.ReqRespMatchResult> result = rrstore.getAnalysisMatchResults(replayId, service, path,
-                reqmt, respmt, start, nummatches);
+            Result<Analysis.ReqRespMatchResult> result = rrstore
+                .getAnalysisMatchResults(replayId, service, path,
+                    reqMatchType, respMatchType, offset, limit);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
-            List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
-            List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream).collect(Collectors.toList());
+            List<Analysis.ReqRespMatchResult> res = result.getObjects()
+                .collect(Collectors.toList());
+            List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
+                .collect(Collectors.toList());
 
             Map<String, Event> requestMap = new HashMap<>();
             if (!reqids.isEmpty()) {
                 // empty reqId list would lead to returning of all requests, so check for it
-                Result<Event> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
-                    reqids, Collections.emptyList(), Event.RunType.Record);
+                Result<Event> requestResult = rrstore
+                    .getRequests(replay.customerId, replay.app, replay.collection,
+                        reqids, Collections.emptyList(), Event.RunType.Record);
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
             return res.stream().map(matchRes -> {
-                Optional<Request> request =
-                    matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
-                    .flatMap(event -> Request.fromEvent(event, jsonMapper));
+                Optional<DataObj> request =
+                    matchRes.recordReqId
+                        .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
+                        .map(event -> event.getPayload(config));
 
-                Optional<Request> recordedRequest = Optional.empty();
-                Optional<Request> replayedRequest = Optional.empty();
+                Optional<DataObj> recordedRequest = Optional.empty();
+                Optional<DataObj> replayedRequest = Optional.empty();
                 Optional<String> diff = Optional.empty();
-                Optional<com.cube.dao.Response> recordResponse = Optional.empty();
-                Optional<com.cube.dao.Response> replayResponse = Optional.empty();
+                Optional<DataObj> recordResponse = Optional.empty();
+                Optional<DataObj> replayResponse = Optional.empty();
 
-
-                if(includeDiff.orElse(false)) {
+                if (includeDiff.orElse(false)) {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequest)
-                        .flatMap(event -> Request.fromEvent(event, jsonMapper));
+                        .map(event -> event.getPayload(config));
                     diff = Optional.of(matchRes.diff);
                     recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
-                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+                        .map(event -> event.getPayload(config));
                     replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
-                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
+                        .map(event -> event.getPayload(config));
                 }
 
-                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
+                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
+                    matchRes.reqMatchType, matchRes.numMatch,
                     matchRes.respMatchType, matchRes.service, matchRes.path,
                     diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
@@ -643,12 +731,22 @@ public class AnalyzeWS {
 
         String json;
         try {
-            json = jsonMapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            json = jsonMapper
+                .writeValueAsString(new MatchResults(matchResList, numFound[0], app[0], app[1]));
+            return Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(json))).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Match results list to Json for replayId %s, app %s, " +
-                    "collection %s.", replayId));
-            return Response.serverError().build();
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Error in converting Match results list to Json",
+                Constants.REPLAY_ID_FIELD, replayId,
+                Constants.APP_FIELD, app,
+                Constants.SERVICE_FIELD, service,
+                Constants.PATH_FIELD, path
+            )
+            ));
+            return Response.serverError().entity(
+                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    e.getMessage())).build();
         }
     }
 
@@ -1195,10 +1293,10 @@ public class AnalyzeWS {
                         String service,
                         String path,
                         Optional<String> diff,
-                        Optional<com.cube.dao.Request> recordRequest,
-                        Optional<com.cube.dao.Request> replayRequest,
-                        Optional<com.cube.dao.Response> recordResponse,
-                        Optional<com.cube.dao.Response> replayResponse) {
+                        Optional<DataObj> recordRequest,
+                        Optional<DataObj> replayRequest,
+                        Optional<DataObj> recordResponse,
+                        Optional<DataObj> replayResponse) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
             this.reqmt = reqmt;
@@ -1221,10 +1319,10 @@ public class AnalyzeWS {
         public final String service;
         public final String path;
         public final Optional<String> diff;
-        public final Optional<com.cube.dao.Request> recordRequest;
-        public final Optional<com.cube.dao.Request> replayRequest;
-        public final Optional<com.cube.dao.Response> recordResponse;
-        public final Optional<com.cube.dao.Response> replayResponse;
+        public final Optional<DataObj> recordRequest;
+        public final Optional<DataObj> replayRequest;
+        public final Optional<DataObj> recordResponse;
+        public final Optional<DataObj> replayResponse;
 
 
     }
