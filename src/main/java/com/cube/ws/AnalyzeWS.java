@@ -670,27 +670,38 @@ public class AnalyzeWS {
     @GET
     @Path("analysisResByReq/{replayId}")
     public Response getResultByReq(@Context UriInfo uriInfo,
-                                      @PathParam("replayId") String replayId) {
+        @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-        Optional<String> recordReqId = Optional.ofNullable(queryParams.getFirst("recordReqId"));
-        Optional<String> replayReqId = Optional.ofNullable(queryParams.getFirst("replayReqId"));
+        Optional<String> recordReqId = Optional
+            .ofNullable(queryParams.getFirst(Constants.RECORD_REQ_ID_FIELD));
+        Optional<String> replayReqId = Optional
+            .ofNullable(queryParams.getFirst(Constants.REPLAY_REQ_ID_FIELD));
 
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
-        Optional<com.cube.dao.Response> recordResponse = recordReqId.flatMap(rrstore::getResponse)
-            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
-        Optional<com.cube.dao.Response> replayResponse = replayReqId.flatMap(rrstore::getResponse)
-            .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
-
+        Optional<DataObj> recordResponse = recordReqId.flatMap(rrstore::getResponse)
+            .map(event -> event.getPayload(config));
+        Optional<DataObj> replayResponse = replayReqId.flatMap(rrstore::getResponse)
+            .map(event -> event.getPayload(config));
 
         String json;
         try {
-            json = jsonMapper.writeValueAsString(new RespAndMatchResults(recordResponse, replayResponse, matchResult));
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            json = jsonMapper.writeValueAsString(
+                new RespAndMatchResults(recordResponse, replayResponse, matchResult));
+            return Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(json))).build();
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting response and match results to Json for replayId %s, " +
-                "recordReqId %s, replay reqId %s", replayId, recordReqId, replayReqId));
-            return Response.serverError().build();
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Error in converting response and match results to Json",
+                Constants.REPLAY_ID_FIELD, replayId,
+                Constants.RECORD_REQ_ID_FIELD, recordReqId,
+                Constants.REPLAY_REQ_ID_FIELD, replayReqId
+            )
+            ));
+
+            return Response.serverError()
+                .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    e.getMessage())).build();
         }
     }
 
@@ -1254,15 +1265,15 @@ public class AnalyzeWS {
     static class RespAndMatchResults {
 
 
-        public RespAndMatchResults(Optional<com.cube.dao.Response> recordResponse, Optional<com.cube.dao.Response> replayResponse,
+        public RespAndMatchResults(Optional<DataObj> recordResponse, Optional<DataObj> replayResponse,
                                    Optional<Analysis.ReqRespMatchResult> matchResult) {
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
             this.matchResult = matchResult;
         }
 
-        public final Optional<com.cube.dao.Response> recordResponse;
-	    public final Optional<com.cube.dao.Response> replayResponse;
+        public final Optional<DataObj> recordResponse;
+	    public final Optional<DataObj> replayResponse;
 	    public final Optional<Analysis.ReqRespMatchResult> matchResult;
     }
 }
