@@ -5,7 +5,7 @@ package com.cube.ws;
 
 import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
-import com.cube.dao.EventBuilder.InvalidEventException;
+import com.cube.dao.Event.EventBuilder.InvalidEventException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -212,7 +212,7 @@ public class CubeStore {
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
-                    } catch (EventBuilder.InvalidEventException e) {
+                    } catch (Event.EventBuilder.InvalidEventException e) {
                         LOGGER.error("error converting Request to Event: " + e);
                         return Optional.of("error converting Request to Event");
                     }
@@ -244,7 +244,7 @@ public class CubeStore {
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
-                    } catch (EventBuilder.InvalidEventException e) {
+                    } catch (Event.EventBuilder.InvalidEventException e) {
                         LOGGER.error("error converting Response to Event: " + e);
                         return Optional.of("error converting Response to Event");
                     }
@@ -677,7 +677,7 @@ public class CubeStore {
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, String payload) throws InvalidEventException {
         //Store default response
-        EventBuilder eventBuilder = new EventBuilder(defaultReqEvent.customerId,
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(defaultReqEvent.customerId,
             defaultReqEvent.app,
             defaultReqEvent.service, "NA", "NA",
             "NA", RunType.Manual, Instant.now(),
@@ -728,7 +728,7 @@ public class CubeStore {
                     Constants.REQ_ID_FIELD, reqEvent.reqId,
                     Constants.API_PATH_FIELD, reqEvent.apiPath)));
 
-            EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
+            Event.EventBuilder eventBuilder = new Event.EventBuilder(reqEvent.customerId, reqEvent.app,
                 reqEvent.service, "NA", "NA",
                 "NA", RunType.Manual, Instant.now(),
                 reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType);
