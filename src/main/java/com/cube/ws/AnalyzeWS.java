@@ -553,96 +553,6 @@ public class AnalyzeWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
-
-    /**
-     *
-     * @param ui
-     * @return the results for reqids matching a path and other constraints
-     */
-    //TODO: Remove this once UI is changed to the new API model.
-//    @GET
-//    @Path("analysisResByPath/{replayId}")
-//    // TODO: Event redesign: This needs to be rewritten to get as event
-//    public Response getResultsByPath(@Context UriInfo ui, @PathParam("replayId") String replayId) {
-//        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-//        Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-//        Optional<String> path = Optional.ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill
-//        // down on
-//        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
-//        // paging
-//        Optional<Integer> nummatches =
-//            Optional.ofNullable(queryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
-//        // for paging
-//        Optional<Comparator.MatchType> reqmt = Optional.ofNullable(queryParams.getFirst("reqmt"))
-//                .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
-//        Optional<Comparator.MatchType> respmt = Optional.ofNullable(queryParams.getFirst("respmt"))
-//            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
-//        Optional<Boolean> includeDiff = Optional.ofNullable(queryParams.getFirst("includediff")).flatMap(Utils::strToBool);
-//
-//
-//        /* using array as container for value to be updated since lambda function cannot update outer variables */
-//        Long[] numFound = {0L};
-//        String[] app = {"" , ""};
-//
-//        List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
-//
-//            Result<Analysis.ReqRespMatchResult> result = rrstore.getAnalysisMatchResults(replayId, service, path,
-//                reqmt, respmt, start, nummatches);
-//            numFound[0] = result.numFound;
-//            app[0] = replay.app;
-//            app[1] = replay.templateVersion;
-//            List<Analysis.ReqRespMatchResult> res = result.getObjects().collect(Collectors.toList());
-//            List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream).collect(Collectors.toList());
-//
-//            Map<String, Event> requestMap = new HashMap<>();
-//            if (!reqids.isEmpty()) {
-//                // empty reqId list would lead to returning of all requests, so check for it
-//                Result<Event> requestResult = rrstore.getRequests(replay.customerId, replay.app, replay.collection,
-//                    reqids, Collections.emptyList(), Event.RunType.Record);
-//                requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
-//            }
-//
-//            return res.stream().map(matchRes -> {
-//                Optional<Request> request =
-//                    matchRes.recordReqId.flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
-//                    .flatMap(event -> Request.fromEvent(event, jsonMapper));
-//
-//                Optional<Request> recordedRequest = Optional.empty();
-//                Optional<Request> replayedRequest = Optional.empty();
-//                Optional<String> diff = Optional.empty();
-//                Optional<com.cube.dao.Response> recordResponse = Optional.empty();
-//                Optional<com.cube.dao.Response> replayResponse = Optional.empty();
-//
-//
-//                if(includeDiff.orElse(false)) {
-//                    recordedRequest = request;
-//                    replayedRequest = matchRes.replayReqId
-//                        .flatMap(rrstore::getRequest)
-//                        .flatMap(event -> Request.fromEvent(event, jsonMapper));
-//                    diff = Optional.of(matchRes.diff);
-//                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
-//                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
-//                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
-//                        .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
-//                }
-//
-//                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
-//                    matchRes.respMatchType, matchRes.service, matchRes.path,
-//                    diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
-//            }).collect(Collectors.toList());
-//        }).orElse(Collections.emptyList());
-//
-//        String json;
-//        try {
-//            json = jsonMapper.writeValueAsString(new MatchResults(matchResList, numFound[0] , app[0] , app[1]));
-//            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-//        } catch (JsonProcessingException e) {
-//            LOGGER.error(String.format("Error in converting Match results list to Json for replayId %s, app %s, " +
-//                    "collection %s.", replayId));
-//            return Response.serverError().build();
-//        }
-//    }
-
     /**
      *
      * @param ui
@@ -686,15 +596,15 @@ public class AnalyzeWS {
             app[1] = replay.templateVersion;
             List<Analysis.ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
-            List<String> reqids = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
+            List<String> reqIds = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
             Map<String, Event> requestMap = new HashMap<>();
-            if (!reqids.isEmpty()) {
+            if (!reqIds.isEmpty()) {
                 // empty reqId list would lead to returning of all requests, so check for it
                 Result<Event> requestResult = rrstore
                     .getRequests(replay.customerId, replay.app, replay.collection,
-                        reqids, Collections.emptyList(), Event.RunType.Record);
+                        reqIds, Collections.emptyList(), Event.RunType.Record);
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
