@@ -86,12 +86,6 @@ public class MIThriftService implements  MIRest.Iface {
         } catch (Exception e) {
             LOGGER.error("Error Occurred while fetching list of movies :: " + e.getMessage());
         }
-
-        String serialized = tSerializer.toString(listMovieResult);
-        LOGGER.info("SERIALIZED :: " + serialized);
-        ListMovieResult listMovieResult1  = new ListMovieResult();
-        tDeserializer.fromString(listMovieResult1 , serialized);
-        LOGGER.info("FROM DE-SERIALIZED :: " + tSerializer.toString(listMovieResult1));
         return listMovieResult;
     }
 
