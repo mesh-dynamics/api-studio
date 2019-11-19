@@ -282,7 +282,7 @@ spec:
     spec:
       containers:
       - name: movieinfo
-        image: cubeiocorp/sample_apps-mirest:be3a7539cc64b3fc35d5a8482262d74937a99903
+        image: cubeiocorp/sample_apps-mirest:{{movieinfo_tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -346,7 +346,7 @@ spec:
     spec:
       containers:
       - name: movieinfo
-        image: cubeiocorp/sample_apps-mirest:demo-1.0
+        image: cubeiocorp/sample_apps-mirest:{{movieinfo_tag}}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -392,7 +392,7 @@ spec:
             value: "0"
           - name: FAIL_PERCENT_STD_DEV
             value: "0"
-            
+
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
