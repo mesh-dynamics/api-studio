@@ -16,6 +16,10 @@ class GoldenPopover extends React.Component {
         this.createIssue = this.createIssue.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this)
         this.handleSelectProjectChange = this.handleSelectProjectChange.bind(this)
+        this.renderSummary = this.renderSummary.bind(this)
+        this.renderDescription = this.renderDescription.bind(this)
+        this.getDefaultSummary = this.getDefaultSummary.bind(this)
+        this.getDefaultDescription = this.getDefaultDescription.bind(this)
 
         this.state = {
             showGolden: false,
@@ -38,12 +42,12 @@ class GoldenPopover extends React.Component {
                 "em": "",
                 "customization": null
             },
-            summaryInp: "test summary",
-            descriptionInp: "test desc",
+            summaryInp: this.getDefaultSummary(this.props.cube),
+            descriptionInp: this.getDefaultDescription(this.props.cube),
             issueTypeIdInp: 10004,
             projectInp: 10000,
 
-            projectList: [1, 2, 3, 4],
+            projectList: [],
         };
     }
 
@@ -158,6 +162,36 @@ class GoldenPopover extends React.Component {
         })
     }
 
+    getDefaultSummary(cube) {
+        let summary = "Bug in " + cube.pathResultsParams.path;
+        return summary;
+    }
+
+    renderSummary() {
+        return (
+            <div>
+                <input name="summaryInp" defaultValue={this.state.summaryInp} onChange={this.handleInputChange}></input>
+            </div>
+        )
+    }
+
+    getDefaultDescription(cube) {
+    //    const {cube} = this.props;
+        let description = 
+    `Issue Details: 
+    API Path: ${cube.pathResultsParams.path} 
+    JSON Path: ${this.props.jsonPath} 
+    `
+        return description;
+    }
+
+    renderDescription() {
+        return (
+            <div>
+                <textarea name="descriptionInp" defaultValue={this.state.descriptionInp} onChange={this.handleInputChange}></textarea>
+            </div>
+        )
+    }
 
     render() {
         return (
@@ -300,21 +334,21 @@ class GoldenPopover extends React.Component {
                             <table className="table table-striped" style={{ textAlign: "left" }}>
                                 <tbody>
                                     <tr>
-                                        <td>Summary</td>
-                                        <td><input name="summaryInp" defaultValue="test api" onChange={this.handleInputChange}></input></td>
+                                        <td>Summary</td>                                                     
+                                        <td>
+                                            {this.renderSummary()}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>Description</td>
-                                        <td><textarea name="descriptionInp" defaultValue="test" onChange={this.handleInputChange}></textarea></td>
+                                        {this.renderDescription()}
                                     </tr>
 
                                     <tr>
-                                        <td>Project ID</td>
+                                        <td>Project</td>
                                         <td>
-                                            {/* <input name="projectInp" defaultValue="10000" onChange={this.handleInputChange}></input> */}
                                             {this.renderProjectList()}
-                                        </td>
-                                        
+                                        </td>                                        
                                     </tr>
 
                                     <tr>
