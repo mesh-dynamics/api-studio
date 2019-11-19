@@ -3,6 +3,8 @@ kind: VirtualService
 metadata:
   name: movieinfo
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - "{{namespace_host}}"

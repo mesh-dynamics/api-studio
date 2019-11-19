@@ -3,6 +3,8 @@ kind: VirtualService
 metadata:
   name: reviews
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - reviews
@@ -23,6 +25,8 @@ kind: VirtualService
 metadata:
   name: ratings
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - ratings
@@ -43,6 +47,8 @@ kind: VirtualService
 metadata:
   name: details
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - details
@@ -63,6 +69,8 @@ kind: VirtualService
 metadata:
   name: restwrapjdbc
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - restwrapjdbc

@@ -21,13 +21,14 @@ metadata:
   name: details
   namespace: {{namespace}}
   labels:
-    app: details
+    app: moviebook
+    component: details
 spec:
   ports:
   - port: 9080
     name: http
   selector:
-    app: details
+    component: details
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -39,7 +40,8 @@ spec:
   template:
     metadata:
       labels:
-        app: details
+        app: moviebook
+        component: details
         version: v1
         namespace: {{namespace}}
     spec:
@@ -66,13 +68,14 @@ metadata:
   name: ratings
   namespace: {{namespace}}
   labels:
-    app: ratings
+    app: moviebook
+    component: ratings
 spec:
   ports:
   - port: 9080
     name: http
   selector:
-    app: ratings
+    component: ratings
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -84,7 +87,8 @@ spec:
   template:
     metadata:
       labels:
-        app: ratings
+        app: moviebook
+        component: ratings
         version: v1
         namespace: {{namespace}}
     spec:
@@ -111,13 +115,14 @@ metadata:
   name: reviews
   namespace: {{namespace}}
   labels:
-    app: reviews
+    app: moviebook
+    component: reviews
 spec:
   ports:
   - port: 9080
     name: http
   selector:
-    app: reviews
+    component: reviews
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -129,7 +134,8 @@ spec:
   template:
     metadata:
       labels:
-        app: reviews
+        app: moviebook
+        component: reviews
         version: v1
         namespace: {{namespace}}
     spec:
@@ -157,7 +163,8 @@ spec:
   template:
     metadata:
       labels:
-        app: reviews
+        app: moviebook
+        component: reviews
         version: v2
         namespace: {{namespace}}
     spec:
@@ -185,7 +192,8 @@ spec:
   template:
     metadata:
       labels:
-        app: reviews
+        app: moviebook
+        component: reviews
         version: v3
         namespace: {{namespace}}
     spec:
@@ -212,13 +220,14 @@ metadata:
   name: productpage
   namespace: {{namespace}}
   labels:
-    app: productpage
+    app: moviebook
+    component: productpage
 spec:
   ports:
   - port: 9080
     name: http
   selector:
-    app: productpage
+    component: productpage
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -230,7 +239,8 @@ spec:
   template:
     metadata:
       labels:
-        app: productpage
+        app: moviebook
+        component: productpage
         version: v1
         namespace: {{namespace}}
     spec:
@@ -258,13 +268,14 @@ metadata:
   name: movieinfo
   namespace: {{namespace}}
   labels:
-    app: movieinfo
+    app: moviebook
+    component: movieinfo
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: movieinfo
+    component: movieinfo
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -276,7 +287,8 @@ spec:
   template:
     metadata:
       labels:
-        app: movieinfo
+        app: moviebook
+        component: movieinfo
         version: v1
         namespace: {{namespace}}
     spec:
@@ -340,7 +352,8 @@ spec:
   template:
     metadata:
       labels:
-        app: movieinfo
+        app: moviebook
+        component: movieinfo
         version: v2
         namespace: {{namespace}}
     spec:
@@ -392,13 +405,15 @@ spec:
             value: "0"
           - name: FAIL_PERCENT_STD_DEV
             value: "0"
-            
+
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: movieinfo
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   host: movieinfo
   subsets:
@@ -418,13 +433,14 @@ metadata:
   name: restwrapjdbc
   namespace: {{namespace}}
   labels:
-    app: restwrapjdbc
+    app: moviebook
+    component: restwrapjdbc
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: restwrapjdbc
+    component: restwrapjdbc
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -436,7 +452,8 @@ spec:
   template:
     metadata:
       labels:
-        app: restwrapjdbc
+        app: moviebook
+        component: restwrapjdbc
         version: v1
         namespace: {{namespace}}
     spec:
