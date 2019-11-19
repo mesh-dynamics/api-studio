@@ -145,10 +145,10 @@ public class Request extends RRBase {
         if (event.eventType != Event.EventType.HTTPRequest) {
             LOGGER
                 .error(new ObjectMessage(Map.of(
-                    "reason", "Not able to convert event to request. " +
+                    Constants.MESSAGE, "Not able to convert event to request. " +
                         "Event is not of right type:",
-                    "eventType", event.eventType.toString(),
-                    "reqId", event.reqId)));
+                    Constants.EVENT_TYPE_FIELD, event.eventType.toString(),
+                    Constants.REQ_ID_FIELD, event.reqId)));
             return Optional.empty();
         }
 
@@ -167,9 +167,9 @@ public class Request extends RRBase {
                     Optional.of(event.app)));
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(Map.of(
-                "reason", "Not able to convert Event to Request",
-                "eventType", event.eventType.toString(),
-                "reqId", event.reqId)));
+                Constants.MESSAGE, "Not able to convert Event to Request",
+                Constants.EVENT_TYPE_FIELD, event.eventType.toString(),
+                Constants.REQ_ID_FIELD, event.reqId)));
             return Optional.empty();
         }
     }
