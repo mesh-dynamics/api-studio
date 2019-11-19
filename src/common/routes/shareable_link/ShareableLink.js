@@ -11,7 +11,6 @@ import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
 import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
-import { isThisHour } from 'date-fns';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -579,7 +578,7 @@ class ShareableLink extends Component {
             let toShow = showOnlyFailures ? item.respmt === "NoMatch" ? true : false : item.show;
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
-                    {item.path + " - " + item.recordReqId + "_" + index}
+                    {item.path}
                 </div>
                 {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders != null && item.replayedRequestHeaders != null && (
                     <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
