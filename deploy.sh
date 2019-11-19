@@ -257,12 +257,12 @@ get_environment() {
 
 clean() {
 	# TODO: fix permissions issue
-	kubectl delete all --all -n $NAMESPACE
-	kubectl delete virtualservices.networking.istio.io --all -n $NAMESPACE
-	kubectl delete envoyfilters.networking.istio.io --all -n $NAMESPACE
-	kubectl delete destinationrules.networking.istio.io --all -n $NAMESPACE
-	kubectl delete gateways.networking.istio.io --all -n $NAMESPACE
-	kubectl delete serviceentries.networking.istio.io --all -n $NAMESPACE
+	kubectl delete all -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete virtualservices.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete envoyfilters.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete destinationrules.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete gateways.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete serviceentries.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
 	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
 	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
 	# TODO: check that volumeMountsindex and volumeindex are not empty, otherwise
