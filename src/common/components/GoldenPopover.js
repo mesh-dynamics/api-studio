@@ -97,8 +97,11 @@ class GoldenPopover extends React.Component {
             .then(r => {
                 this.hideGR()
                 this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, showBugResponse: true })
-            })
-        
+            }, err => {
+                console.error(err);
+            }).catch(err => {
+                console.error(err);
+            })    
     }
 
     showGoldenModal() {
@@ -170,7 +173,7 @@ class GoldenPopover extends React.Component {
     renderSummary() {
         return (
             <div>
-                <input name="summaryInp" defaultValue={this.state.summaryInp} onChange={this.handleInputChange}></input>
+                <input name="summaryInp" defaultValue={this.state.summaryInp} onChange={this.handleInputChange} style={{width:"93%", margin:"9px"}}></input>
             </div>
         )
     }
@@ -179,8 +182,9 @@ class GoldenPopover extends React.Component {
     //    const {cube} = this.props;
         let description = 
     `Issue Details: 
-    API Path: ${cube.pathResultsParams.path} 
-    JSON Path: ${this.props.jsonPath} 
+API Path: ${cube.pathResultsParams.path} 
+JSON Path: ${this.props.jsonPath}
+Analysis URL: ${window.location.href} 
     `
         return description;
     }
@@ -188,7 +192,7 @@ class GoldenPopover extends React.Component {
     renderDescription() {
         return (
             <div>
-                <textarea name="descriptionInp" defaultValue={this.state.descriptionInp} onChange={this.handleInputChange}></textarea>
+                <textarea name="descriptionInp" defaultValue={this.state.descriptionInp} onChange={this.handleInputChange} rows="10" style={{resize:"none", width:"93%", margin:"9px"}}></textarea>
             </div>
         )
     }
@@ -324,7 +328,7 @@ class GoldenPopover extends React.Component {
 
                 <div className={this.state.showBug ? "update-rule" : "hidden"} style={{ color: "#333333" }}>
                     <div onClick={this.hideGR} style={{ width: "500px", background: "#D5D5D5", padding: "5px 20px" }}>
-                        FILE NEW BUG
+                        CREATE JIRA ISSUE
                     </div>
                     <div style={{ width: "500px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
 
@@ -352,8 +356,9 @@ class GoldenPopover extends React.Component {
                                     </tr>
 
                                     <tr>
-                                        <td>Issue Type ID</td>
-                                        <td><input name="issueTypeIdInp" defaultValue="10004" onChange={this.handleInputChange}></input></td>
+                                        <td>Issue Type</td>
+                                        {/* <td><input name="issueTypeIdInp" defaultValue="Bug" onChange={this.handleInputChange} ></input></td> */}
+                                        <td><b>Bug</b></td>
                                     </tr>
 
                                 </tbody>
@@ -369,7 +374,7 @@ class GoldenPopover extends React.Component {
 
                 <div className={this.state.showBugResponse ? "update-golden" : "hidden"} style={{ color: "#333333" }}>
                     <div onClick={this.hideGR} style={{ maxWidth: "400px", background: "#D5D5D5", padding: "5px 20px" }}>
-                        FILE NEW BUG
+                        CREATE JIRA ISSUE
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div><b>Jira Issue ID&nbsp;</b><p>{this.state.jiraIssueId}</p></div>
