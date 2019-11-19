@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import io.cube.agent.Event.RunType;
 import io.cube.agent.FnReqResponse.RetStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -119,7 +120,7 @@ public class SimpleMocker implements Mocker {
                 .concat(fnKey.signature).hashCode();
 
         JsonObject payload = createPayload(null, gson, args);
-        Optional<Event> event = createEvent(fnKey, traceId, Event.RecordReplayType.Replay, prevRespTS.orElse(fnMap.get(key)), payload);
+        Optional<Event> event = createEvent(fnKey, traceId, RunType.Replay, prevRespTS.orElse(fnMap.get(key)), payload);
 
         return event.map(eve -> {
             Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);

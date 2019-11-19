@@ -3,6 +3,7 @@ package io.cube.agent;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import io.cube.agent.Event.RunType;
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
@@ -128,6 +129,12 @@ public class CommonUtils {
         return getCurrentIntent().equalsIgnoreCase(INTENT_MOCK);
     }
 
+    public static Scope startClientSpan(String operationName) {
+        Tracer tracer = GlobalTracer.get();
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
+        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT).startActive(true);
+    }
+
     public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders, String operationName) {
         // format the headers for extraction
         Tracer tracer = GlobalTracer.get();
@@ -231,13 +238,13 @@ public class CommonUtils {
         return payloadObj;
     }
 
-    public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId, Event.RecordReplayType rrType, Instant timestamp, JsonObject payload) {
+    public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId, RunType rrType, Instant timestamp, JsonObject payload) {
 
         EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
                 fnKey.service, fnKey.instanceId, "NA",
                 traceId.orElse(null), rrType, timestamp, "NA",
                 fnKey.signature, Event.EventType.JavaRequest);
-        eventBuilder.setRawPayloadString(payload.toString());
+        eventBuilder.withRawPayloadString(payload.toString());
         return eventBuilder.createEventOpt();
     }
 
@@ -245,6 +252,23 @@ public class CommonUtils {
         JsonArray argsArray = new JsonArray();
         Arrays.stream(argVals).forEach(arg -> argsArray.add(gson.toJson(arg)));
         return argsArray;
+    }
+
+    private static String fromEnv(String propertyName) throws Exception {
+        String fromEnv =  System.getenv(propertyName);
+        return Optional.ofNullable(fromEnv).orElseThrow(() -> new Exception(propertyName
+            + " not found in environment"));
+    }
+
+    public static CubeMetaInfo cubeMetaInfoFromEnv() throws Exception {
+        return new CubeMetaInfo(fromEnv("cubeCustomerId")
+            , fromEnv("cubeInstanceId"), fromEnv("cubeAppName")
+            , fromEnv("cubeServiceName"));
+    }
+
+    public static CubeTraceInfo cubeTraceInfoFromContext() {
+        return new CubeTraceInfo(getCurrentTraceId().orElse(null)
+            , getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
     }
 
 }

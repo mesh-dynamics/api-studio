@@ -6,10 +6,12 @@
 package io.cube.agent;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.time.Instant;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.time.Instant;
 
 /*
  * Created by IntelliJ IDEA.
@@ -28,15 +30,15 @@ public class Event {
 
 
     public Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
-                 RecordReplayType rrType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
-                 String rawPayloadString, DataObj payload, int payloadKey) {
+        RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
+        String rawPayloadString, DataObj payload, int payloadKey) {
         this.customerId = customerId;
         this.app = app;
         this.service = service;
         this.instanceId = instanceId;
         this.collection = collection;
         this.traceId = traceId;
-        this.rrType = rrType;
+        this.runType = runType;
         this.timestamp = timestamp;
         this.reqId = reqId;
         this.apiPath = apiPath;
@@ -57,7 +59,7 @@ public class Event {
         this.instanceId = null;
         this.collection = null;
         this.traceId = null;
-        this.rrType = RecordReplayType.Record;
+        this.runType = RunType.Manual;
         this.timestamp = null;
         this.reqId = null;
         this.apiPath = null;
@@ -69,12 +71,20 @@ public class Event {
 
     }
 
+    public static List<EventType> getRequestEventTypes() {
+        return requestEventTypes;
+    }
+
+    public String getCollection() {
+        return collection;
+    }
+
     public boolean validate() {
 
-        //Timestamp can be null for a function during mocking.
-        if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (collection == null)
-                || (traceId == null) || (rrType == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-                || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
+        if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) /*|| (collection == null)*/
+            || (traceId == null) || (runType == null) ||
+            (timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
+            || ((rawPayloadBinary == null) == (rawPayloadString == null))) {
             return false;
         }
         return true;
@@ -82,8 +92,11 @@ public class Event {
 
     @JsonIgnore
     public boolean isRequestType() {
-        return eventType == EventType.HTTPRequest || eventType == EventType.JavaRequest
-                || eventType == EventType.ThriftRequest || eventType == EventType.ProtoBufRequest;
+        return requestEventTypes.contains(eventType);
+    }
+
+    public String getReqId() {
+        return reqId;
     }
 
     public enum EventType {
@@ -94,8 +107,30 @@ public class Event {
         ThriftRequest,
         ThriftResponse,
         ProtoBufRequest,
-        ProtoBufResponse
+        ProtoBufResponse;
+
+        public static EventType getResponseType(EventType eventType) {
+            switch (eventType) {
+                case HTTPRequest:
+                case HTTPResponse:
+                    return HTTPResponse;
+                case JavaRequest:
+                case JavaResponse:
+                    return JavaRequest; // JavaRequest itself has response. Check if JavaResponse can be removed
+                case ThriftRequest:
+                case ThriftResponse:
+                    return ThriftResponse;
+                case ProtoBufRequest:
+                case ProtoBufResponse:
+                    return ProtoBufResponse;
+                default:
+                    return HTTPResponse;
+            }
+        }
     }
+
+    public static List<EventType> requestEventTypes = List.of(EventType.HTTPRequest, EventType.JavaRequest,
+        EventType.ThriftRequest, EventType.ProtoBufRequest);
 
     public final String customerId;
     public final String app;
@@ -103,15 +138,21 @@ public class Event {
     public final String instanceId;
     private String collection;
     public final String traceId;
-    public final RecordReplayType rrType;
-    public final Instant timestamp;
+    public final RunType runType;
 
-    public final String reqId; // for responses, this is the reqid of the corresponding request
+    public void setCollection(String collection) {
+        this.collection = collection;
+    }
+
+    public final Instant timestamp;
+    public final String reqId; // for responses, this is the reqId of the corresponding request
     public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
     public final EventType eventType;
 
     // Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
     // as base64. For debugging its easier if the string is readable.
+    @JsonSerialize(using = BinaryPayloadSerializer.class)
+    @JsonDeserialize(using = BinaryPayloadDeserializer.class)
     public final byte[] rawPayloadBinary;
     public final String rawPayloadString;
 
@@ -122,7 +163,7 @@ public class Event {
     public int payloadKey;
 
     /* when did the event get created - record, replay or manually added */
-    public enum RecordReplayType {
+    public enum RunType {
         Record,
         Replay,
         Manual  // manually created e.g. default requests and responses

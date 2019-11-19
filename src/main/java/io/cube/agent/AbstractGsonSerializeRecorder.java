@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import io.cube.agent.Event.RunType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -86,7 +87,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
                           Object... args) {
         try {
             JsonObject payload = createPayload(responseOrException, gson, args);
-            Optional<Event> event = createEvent(fnKey, traceId, Event.RecordReplayType.Record, Instant.now(), payload);
+            Optional<Event> event = createEvent(fnKey, traceId, RunType.Record, Instant.now(), payload);
             return event.map(ev -> record(ev)).orElseGet(() -> {
                 LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName , "trace_id" ,
                         traceId.orElse("NA"), "operation", "Record Event", "response", "Event is empty!")));
