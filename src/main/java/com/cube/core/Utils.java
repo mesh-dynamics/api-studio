@@ -8,7 +8,9 @@ import com.cube.utils.Constants;
 import com.cube.ws.Config;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -272,6 +274,16 @@ public class Utils {
         errorResponse.put(Constants.DATA, data);
 
         return errorResponse.toString();
+    }
+
+    public static Map<String,String> extractThriftParams(String thriftApiPath) {
+        String[] splitResult = thriftApiPath.split("::");
+        String methodName = splitResult[0];
+        String argsClassName = splitResult[1];
+        Map<String, String> params = new HashMap<>();
+        params.put(Constants.THRIFT_METHOD_NAME, methodName);
+        params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
+        return params;
     }
 
 }

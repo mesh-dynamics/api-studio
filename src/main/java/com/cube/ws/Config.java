@@ -76,6 +76,8 @@ public class Config {
 	public final Recorder recorder;
 	public final Mocker mocker;
 
+	public final Gson gson;
+
     public IntentResolver intentResolver = new TraceIntentResolver();
     public CommonConfig commonConfig = new CommonConfig();
 
@@ -107,7 +109,7 @@ public class Config {
             throw new Exception(msg);
         }
 
-        Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
+        gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
             .registerTypeAdapter(Pattern.class, new GsonPatternSerializer())
             .registerTypeAdapter(SolrDocumentList.class, new GsonSolrDocumentListSerializer())
             .registerTypeAdapter(SolrDocument.class, new GsonSolrDocumentSerializer())

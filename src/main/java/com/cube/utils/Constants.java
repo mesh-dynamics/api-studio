@@ -21,11 +21,13 @@ public class Constants {
     public static final String STORE_EVENT_FAILED = "STORE_EVENT_FAILED";
     public static final String INVALID_EVENT = "INVALID_EVENT";
     public static final String INVALID_INPUT = "INVALID_INPUT";
+    public static final String INVALID_HEX_PAYLOAD = "INVALID_HEX_PAYLOAD";
 
     //EXCEPTIONS
     public static final String IO_EXCEPTION = "IO_EXCEPTION";
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
     public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
+    public static final String DECODING_EXCEPTION = "DECODING_EXCPETION";
 
     //JSON FETCH PATH
     public static final String CUSTOMER_ID_PATH = "/customerId";
@@ -48,5 +50,8 @@ public class Constants {
     public static final String HDR_PATH = "/hdr";
     public static final String META_PATH = "/meta";
     public static final String BODY_PATH = "/body";
+
+    public static final String THRIFT_CLASS_NAME = "thriftClassName";
+    public static final String THRIFT_METHOD_NAME  = "thirftMethodName";
 
 }
