@@ -18,7 +18,6 @@ class ViewSelectedTestConfig extends React.Component {
             show: false,
             showCT: false,
         };
-        this.doAnalysis = true;
         this.doReplay = true;
         this.hideModalForFC = true;
         this.statusInterval;
@@ -32,26 +31,6 @@ class ViewSelectedTestConfig extends React.Component {
     componentDidMount() {
         const { dispatch } = this.props;
         dispatch(cubeActions.clear());
-    }
-
-    componentWillReceiveProps(nextProps, prevState) {
-        // do things with nextProps.someProp and prevState.cachedSomeProp
-        const {replayId} = this.state;
-        const cube = nextProps.cube;
-        if (cube.replayStatusObj && (cube.replayStatusObj.status == 'Completed' || cube.replayStatusObj.status == 'Error')) {
-            clearInterval(this.statusInterval);
-            //this.setState({show: false, toAnalysis: true});
-            const {dispatch} = this.props;
-            if(this.doAnalysis) {
-                dispatch(cubeActions.getAnalysis(cube.selectedTestId, replayId.replayId, cube.selectedApp));
-                if (cube.analysis) {
-                    dispatch(cubeActions.getReport(cube.selectedTestId, replayId.replayId));
-                    this.doAnalysis = false;
-                }
-            }
-
-        }
-
     }
 
     handleChangeForInstance(e) {
@@ -256,12 +235,11 @@ class ViewSelectedTestConfig extends React.Component {
 
     replay () {
         const {cube, dispatch} = this.props;
+        cubeActions.clearReplayStatus();
         if (!cube.selectedTestId) {
             alert('select golden to replay');
         } else {
             this.setState({show: true});
-            /*dispatch(cubeActions.startReplay(cube.selectedGolden));
-            */
             let user = JSON.parse(localStorage.getItem('user'));
             let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
             let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
@@ -286,8 +264,14 @@ class ViewSelectedTestConfig extends React.Component {
             };
             axios.post(url, searchParams, configForHTTP).then((response) => {
                 this.setState({replayId: response.data});
-                this.doAnalysis = true;
-                this.statusInterval = setInterval(checkStatus, 1000);
+                this.statusInterval = setInterval(() => {
+                    const {cube} = this.props;
+                    if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
+                        clearInterval(this.statusInterval);
+                    } else {
+                        checkStatus();
+                    }
+                }, 1000);
             }).catch((error) => {
                 if(error.response.data) {
                     if (error.response.data['replayId'] !== "None") {
