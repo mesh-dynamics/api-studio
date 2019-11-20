@@ -52,7 +52,7 @@ class GoldenPopover extends React.Component {
     }
 
     updateGolden() {
-        const {dispatch, serverSideDiff, cube} = this.props;
+        const {dispatch, serverSideDiff, cube, hideTippy} = this.props;
         if (serverSideDiff) {
             let operation = {
                 op: serverSideDiff.op.toUpperCase(),
@@ -65,6 +65,7 @@ class GoldenPopover extends React.Component {
             this.hideGR();
             alert("Can't update golden for this line");
         }
+        hideTippy();
     }
 
     showGoldenModal() {
