@@ -19,7 +19,6 @@ export const cubeService = {
     updateGoldenSet,
     getNewTemplateVerInfo,
     updateTemplateOperationSet,
-    createJiraIssue,
 };
 
 async function fetchAppsList() {
@@ -490,50 +489,3 @@ async function fetchTimelineData(app, userId, endDate) {
     }
     return timelineData;
 }
-
-async function createJiraIssue(summary, description, issueTypeId, projectId) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.apiBaseUrl}/jira/issue/create`;
-    let resp;
-    // let reqBody = {
-    //     "summary": "[test] Jira API test frontend",
-    //     "description": "test1",
-    //     "issueTypeId":"10004",
-    //     "projectId": "10000",
-    // };
-
-    let reqBody = {
-        summary: summary,
-        description: description,
-        issueTypeId: issueTypeId,
-        projectId: projectId,
-    }
-
-    try {
-        console.log("aa")
-        response = await fetch(url, {
-            method: "post",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            }),
-            body: JSON.stringify(reqBody),
-        });
-        console.log("bb")
-        if (response.ok) {
-            json = await response.json();
-            resp = json;
-        } else {
-            console.log("Response not ok in createJiraIssue", response);
-            throw new Error("Response not ok createJiraIssue");
-        }
-    } catch (e) {
-        console.log("createJiraIssue has errors!", e);
-        throw e;
-    }
-
-    return resp;
-
-}
-
