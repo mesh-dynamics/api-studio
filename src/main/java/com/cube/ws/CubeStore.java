@@ -30,6 +30,7 @@ import javax.ws.rs.core.UriInfo;
 
 import com.cube.dao.*;
 
+import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.utils.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -959,29 +960,30 @@ public class CubeStore {
     }
 
     @POST
-    @Path("softDelete/{recordingid}")
-    public Response softDelete(@Context UriInfo ui,
-                         @PathParam("recordingid") String recordingid) {
-        Optional<Recording> recording = rrstore.getRecording(recordingid);
-        Response resp = recording.map(r -> {
+    @Path("softDelete/{recordingId}")
+    public Response softDelete(@PathParam("recordingId") String recordingId) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        Response resp = recording.map(rec -> {
             try {
-                Recording deletedr = Recording.softDeleteRecording(r, rrstore);
+                Recording deletedR = Recording.softDeleteRecording(rec, rrstore);
                 String json;
-                LOGGER.info(String.format("Soft Deleting recording for recordingid %s", recordingid));
-                json = jsonMapper.writeValueAsString(deletedr);
+                LOGGER.info(new ObjectMessage(Map.of("Soft Deleting recording for recordingId", recordingId)));
+                json = jsonMapper.writeValueAsString(deletedR);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException ex) {
-                LOGGER.error(String.format("Error in converting Recording object to Json for recordingid %s", recordingid), ex);
+                LOGGER.error(new ObjectMessage(Map.of("Error in converting Recording object to Json for recordingId", recordingId,
+                    Constants.REASON, ex)));
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Unable to parse JSON ")).build();
-            } catch (Exception e) {
+            } catch (RecordingSaveFailureException re) {
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                    buildErrorResponse(Constants.ERROR, Constants.GENERIC_EXCEPTION,
-                        e.getMessage())).build();
+                    buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAVE_FAILURE_EXCEPTION,
+                        re.getMessage())).build();
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).
-            entity(String.format("Recording not found for recordingid %s", recordingid)).build());
+            entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
+                "Recording not found for recordingId" + recordingId)).build());
         return resp;
     }
 
