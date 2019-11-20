@@ -1168,7 +1168,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
 
-        EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
             instanceId.orElse(null), collection.orElse(null), traceid.orElse(null),
             runType.orElse(null), timestamp.orElse(null),
             reqId.orElse(null), path.orElse("NA" /*null*/), eType); // TODO: tmp comment
@@ -2017,7 +2017,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteReqResByTraceId(String traceId, String collectionName) {
-        String queryString = "(" + HDRTRACEF + ":" + traceId + " OR " + METATRACEID + ":" + traceId + ") AND " + COLLECTIONF +":" + collectionName;
+        String queryString = TRACEIDF + ":" + traceId + " AND " + COLLECTIONF +":" + collectionName + " AND " + TYPEF +":Event";
         return deleteDocsByQuery(queryString);
     }
 

@@ -1,30 +1,36 @@
 package com.cube.core;
 
-import com.cube.dao.Event;
-import com.cube.dao.EventBuilder;
-import com.cube.dao.Response;
-import com.cube.ws.Config;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.jupiter.api.*;
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
-import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.CompareTemplate.ExtractionMethod;
-import org.skyscreamer.jsonassert.JSONAssert;
-
-import static org.apache.commons.io.FileUtils.readFileToString;
+import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.dao.Event;
+import com.cube.dao.Event.EventBuilder;
+import com.cube.dao.Response;
+import com.cube.ws.Config;
 
 public class ResponseComparatorTest {
 

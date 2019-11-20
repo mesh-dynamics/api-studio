@@ -153,8 +153,7 @@ public class RecordingUpdate {
                 apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
 
 
-            Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
-            Instant timeStamp = Instant.now();
+            Optional<String> newReqId = generateReqIdOld(recordResponse.reqId, newCollectionName);
 
             String transformedResponseBody = replayResponse.flatMap(repResponse ->
                 updateOperationSet.flatMap(updateOpSet ->
@@ -163,7 +162,7 @@ public class RecordingUpdate {
 
             Response transformedResponse = new Response(newReqId, recordResponse.status,
                 recordResponse.meta, recordResponse.hdrs, transformedResponseBody, Optional.of(newCollectionName),
-                    Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app,
+                    recordResponse.timestamp, recordResponse.runType, recordResponse.customerId, recordResponse.app,
                 recordResponse.apiPath);
 
             LOGGER.debug("applying transformations");
@@ -204,41 +203,50 @@ public class RecordingUpdate {
         return true; // todo: false?
     }
 
-    // TODO: Event redesign: revisit this with Event apis
     public boolean createSanitizedCollection(String replayId, String newCollectionName, Recording originalRec) {
 
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
 
         //1. Create a new collection with all the Req/Responses
         results.forEach(res -> {
-           try {
-               Request recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestOld)
-                   .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-               Response recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseOld)
-                   .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
+            try {
+                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequest)
+                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
+                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponse)
+                    .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
 
-               Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
-               Instant timeStamp = Instant.now();
+                String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
 
-               Response transformedResponse = new Response(newReqId, recordResponse.status,
-                   recordResponse.meta, recordResponse.hdrs, recordResponse.body, Optional.of(newCollectionName),
-                   Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app,
-                   recordResponse.apiPath);
+                Event transformedResponse = new Event.EventBuilder(recordResponse.customerId, recordResponse.app, recordResponse.service, recordResponse.instanceId, "", recordResponse.traceId,
+                    recordResponse.runType, recordResponse.timestamp, newReqId, recordResponse.apiPath, recordResponse.eventType)
+                    .setRawPayloadBinary(recordResponse.rawPayloadBinary)
+                    .setRawPayloadString(recordResponse.rawPayloadString)
+                    .setPayloadKey(recordResponse.payloadKey)
+                    .createEvent();
 
-               LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
-               recordRequest.reqId = transformedResponse.reqId;
-               recordRequest.collection = Optional.of(newCollectionName);
+                transformedResponse.setCollection(newCollectionName);
 
-               LOGGER.debug("saving request/response with reqid: " + newReqId);
-               boolean saved = config.rrstore.save(recordRequest) && config.rrstore.save(transformedResponse);
+                LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
 
-               if(!saved) {
-                   LOGGER.debug("request/response not saved");
-                   throw new Exception ("Unable to persist new sanitized collection");
-               }
-           } catch (Exception e) {
-               LOGGER.error("Error occurred creating new collection while sanitizing :: " + e.getMessage(), e);
-           }
+                Event transformedRequest = new Event.EventBuilder(recordRequest.customerId, recordRequest.app, recordRequest.service, recordRequest.instanceId, "", recordRequest.traceId,
+                    recordRequest.runType, recordRequest.timestamp, newReqId, recordRequest.apiPath, recordRequest.eventType)
+                    .setRawPayloadBinary(recordRequest.rawPayloadBinary)
+                    .setRawPayloadString(recordRequest.rawPayloadString)
+                    .setPayloadKey(recordRequest.payloadKey)
+                    .createEvent();
+
+                transformedRequest.setCollection(newCollectionName);
+
+                LOGGER.debug("saving request/response with reqid: " + newReqId);
+                boolean saved = config.rrstore.save(transformedRequest) && config.rrstore.save(transformedResponse);
+
+                if(!saved) {
+                    LOGGER.debug("request/response not saved");
+                    throw new Exception ("Unable to persist new sanitized collection");
+                }
+            } catch (Exception e) {
+                LOGGER.error("Error occurred creating new collection while sanitizing :: " + e.getMessage(), e);
+            }
         });
 
         config.rrstore.commit();
@@ -310,8 +318,12 @@ public class RecordingUpdate {
         return matchResults.getObjects();
     }
 
-    private Optional<String> generateReqId(Optional<String> recReqId, String collectionName) {
+    private Optional<String> generateReqIdOld(Optional<String> recReqId, String collectionName) {
         return recReqId.map(
             reqId -> "gu-" + Objects.hash(reqId, collectionName));
+    }
+
+    private String generateReqId(String reqId, String collectionName) {
+        return "gu-" + Objects.hash(reqId, collectionName);
     }
 }
