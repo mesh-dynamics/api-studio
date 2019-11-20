@@ -96,7 +96,7 @@ class GoldenPopover extends React.Component {
         let resp = this.createJiraIssue(summary, desc, issueTypeId, project, apiPath, jsonPath)
             .then(r => {
                 this.hideGR()
-                this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, showBugResponse: true })
+                this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
             }, err => {
                 console.error(err);
             }).catch(err => {
@@ -143,7 +143,7 @@ class GoldenPopover extends React.Component {
     }
 
     hideGR() {
-        this.setState({ showRule: false, showGolden: false, showBug: false });
+        this.setState({ showRule: false, showGolden: false, showBug: false, showBugResponse: false });
     }
 
     handleInputChange(event) {
@@ -377,8 +377,7 @@ Analysis URL: ${window.location.href}
                         CREATE JIRA ISSUE
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
-                        <div><b>Jira Issue ID&nbsp;</b><p>{this.state.jiraIssueId}</p></div>
-                        <div><b>Jira Issue Key&nbsp;</b><p>{this.state.jiraIssueKey}</p></div>
+                        <div><b>Jira Issue&nbsp;</b><p><a href={this.state.jiraIssueURL} target="_"><p>{this.state.jiraIssueKey}</p></a></p></div>
                         <div className="text-center margin-top-20">
                             <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
                         </div>
