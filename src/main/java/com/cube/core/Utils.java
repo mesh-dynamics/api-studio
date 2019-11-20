@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
+import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.Event;
 import com.cube.golden.TemplateSet;
@@ -236,7 +237,7 @@ public class Utils {
     }
 
     public static CompareTemplate getRequestCompareTemplate(Config config, Event event, String templateVersion)
-        throws ComparatorCache.TemplateNotFoundException {
+        throws TemplateNotFoundException {
         TemplateKey tkey =
             new TemplateKey(templateVersion, event.customerId,
                 event.app, event.service, event.apiPath, TemplateKey.Type.Request);

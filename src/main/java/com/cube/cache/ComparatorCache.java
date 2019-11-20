@@ -16,6 +16,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
@@ -63,7 +64,7 @@ public class ComparatorCache {
 
         // default rules for HTTP Response
         CompareTemplate defaultHTTPResponseTemplate = new CompareTemplate();
-        defaultHTTPResponseTemplate.addRule(new TemplateEntry("/body", DataType.Default,
+        defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
             PresenceType.Required, ComparisonType.Equal));
         defaultHTTPResponseComparator = new JsonComparator(defaultHTTPResponseTemplate, jsonMapper);
 
@@ -85,14 +86,18 @@ public class ComparatorCache {
     public Comparator getComparator(TemplateKey key, EventType eventType) throws TemplateNotFoundException {
         try {
             return comparatorCache.get(key, () -> {
-                LOGGER.info("Successfully loaded into cache request comparator for key :: " + key);
-                return createComparator(key, eventType);
+                Comparator toReturn = createComparator(key, eventType);
+                LOGGER.info(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Successfully loaded into cache request comparator",
+                    "key", key
+                )));
+                return toReturn;
             });
         } catch (ExecutionException e) {
-            LOGGER.error(new ObjectMessage(Map.of(
-                "message", "Unable to find template, using default",
+            LOGGER.info(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Unable to find template, using default",
                 "key", key,
-                "reason", e.getMessage())));
+                Constants.REASON, e.getMessage())));
             switch (eventType) {
                 case HTTPRequest:
                     return defaultHTTPRequestComparator;
@@ -110,7 +115,10 @@ public class ComparatorCache {
                     throw new TemplateNotFoundException();
             }
         } catch (Throwable e) {
-            LOGGER.error("Unhandled exception occured (re-throwing) :: " + e.getMessage());
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Unhandled exception occured (re-throwing)",
+                Constants.ERROR, e.getMessage()
+            )));
             throw e;
         }
     }
@@ -144,7 +152,7 @@ public class ComparatorCache {
     }
 
 
-    public class TemplateNotFoundException extends Exception {
+    static public class TemplateNotFoundException extends Exception {
     }
 
     private class ComparatorNotImplementedException extends Exception {
@@ -160,9 +168,4 @@ public class ComparatorCache {
     private final Comparator defaultJavaRequestComparator;
     private final Comparator defaultJavaResponseComparator;
 
-
-
-    static {
-
-    }
 }
