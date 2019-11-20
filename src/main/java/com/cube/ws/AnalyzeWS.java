@@ -305,11 +305,6 @@ public class AnalyzeWS {
                 Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
                     e.getMessage()))).build();
         }
-        catch (CompareTemplate.CompareTemplateStoreException e) {
-            return Response.serverError().entity((
-                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
-                    e.getMessage()))).build();
-        }
     }
 
     /**
