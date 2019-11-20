@@ -10,10 +10,15 @@ generate_manifest() {
 	fi
 	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
+		#TODO: why not delete everything? Otherwise fluentd_patch_*.json remain
+		CUBEIO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeio.git refs/heads/master | awk '{print $1}')-master
+		CUBEUI_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui.git refs/heads/master | awk '{print $1}')-master
+		CUBEUI_BACKEND_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
+		MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
-		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE
+		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $MASTER_NAMESPACE
 	fi
@@ -25,6 +30,7 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
+	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
 	kubectl apply -f $APP_DIR/kubernetes || :
 	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
 	#Check if route exists
@@ -43,6 +49,41 @@ if [ -z "$1" ]; then
 		TEMPLATE_SCENARIO=$1
 	fi
 ./update_templates.py $TEMPLATE_SCENARIO $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $TEMPLATE_VERSION_TEMP_FILE $NAMESPACE_HOST $APP_DIR
+}
+
+set_default() {
+echo "Setting default responses for RESTWrap!"
+
+NOW=$(date +%Y-%m-%dT%H:%M:%SZ)
+
+# reqId cannot be NA as we are creating Solr doc id with reqId value. Otherwise second request
+# will override the first request here.
+
+RESPONSE="$(curl -X POST \
+  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -H "Host:$CUBE_HOST" \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc","instanceId":"NA","collection":"NA",
+  "traceId":"NA","runType":"Manual","timestamp":"'$NOW'","reqId":"'$NOW'","apiPath":"restsql/initialize","eventType":"HTTPRequest",
+  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"GET\",\"body\":\"\"}"},
+  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{status:Connection pool created.}\",\"status\":200}"}')"
+
+echo $RESPONSE
+
+RESPONSE="$(curl -X POST \
+  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -H "Host:$CUBE_HOST" \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc",
+  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"'$NOW'",
+  "reqId":"'$NOW'","apiPath":"restsql/update","eventType":"HTTPRequest",
+  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"},
+  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{num_updates:1}\",\"status\":200}"}')"
+
+echo $RESPONSE
+
 }
 
 start_record() {
@@ -68,14 +109,19 @@ start_record() {
 		read TEMPLATE_VERSION
 	fi
 
+  echo "Enter unique recording name"
+	read GOLDEN_NAME
+
+	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
+
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
-	kubectl apply -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
 
 	RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$CUBE_HOST" \
-  -H 'cache-control: no-cache')"
+  -H 'cache-control: no-cache'\
+  -d "$BODY" )"
   echo $RESPONSE
   RECORDING_ID=$(echo $RESPONSE | sed 's/^.*"id":"\([^"]*\)".*/\1/')
   echo "RECORDING_ID:" $RECORDING_ID
@@ -101,7 +147,6 @@ stop_record() {
 }
 
 replay_setup() {
-	kubectl apply -f $APP_DIR/kubernetes/fluentd-conf-cs.yaml
 	kubectl apply -f $APP_DIR/kubernetes/envoy-replay-cs.yaml
 	if ls $APP_DIR/kubernetes/mock-all-except-* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/mock-all-except-$APP_NAME.yaml
@@ -130,9 +175,9 @@ replay() {
 			TEMP_PATH="$TEMP_PATH""paths=$path&"
 		done
 		REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-		BODY="$REPLAY_PATHS&endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID&userid=$CUBE_CUSTOMER"
+		BODY="$REPLAY_PATHS&endPoint=http://$REPLAY_ENDPOINT&instanceId=$INSTANCEID&userId=$CUBE_CUSTOMER"
 	else
-		BODY="endpoint=http://$REPLAY_ENDPOINT&instanceid=$INSTANCEID&userid=$CUBE_CUSTOMER"
+		BODY="endPoint=http://$REPLAY_ENDPOINT&instanceId=$INSTANCEID&userId=$CUBE_CUSTOMER"
 	fi
 
 	if [ -e "$RECORDING_ID_TEMP_FILE" ]; then
@@ -155,7 +200,7 @@ replay() {
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'cache-control: no-cache' \
 	-H "Host: $CUBE_HOST" \
-	-d "$BODY" | sed 's/^.*"replayid":"\([^"]*\)".*/\1/')
+	-d "$BODY" | sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
 	if [ $? -eq 0 ]; then
 		echo "Replay started"
 	else
@@ -221,14 +266,17 @@ get_environment() {
 }
 
 clean() {
+	# TODO: fix permissions issue
 	kubectl delete all --all -n $NAMESPACE
 	kubectl delete virtualservices.networking.istio.io --all -n $NAMESPACE
 	kubectl delete envoyfilters.networking.istio.io --all -n $NAMESPACE
 	kubectl delete destinationrules.networking.istio.io --all -n $NAMESPACE
 	kubectl delete gateways.networking.istio.io --all -n $NAMESPACE
 	kubectl delete serviceentries.networking.istio.io --all -n $NAMESPACE
-	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-moviebook-conf-$NAMESPACE/{print NR-1}")
-	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-moviebook-conf-$NAMESPACE/{print NR-1}")
+	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
+	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
+	# TODO: check that volumeMountsindex and volumeindex are not empty, otherwise
+	# it throws an error
 	sed -e "s/add/remove/g" $APP_DIR/kubernetes/fluentd_patch.json > $APP_DIR/kubernetes/fluentd_patch_remove.json
 	sed -i -e "s:/spec/template/spec/containers/0/volumeMounts/-:/spec/template/spec/containers/0/volumeMounts/$volumeMountsindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
 	sed -i -e "s:/spec/template/spec/volumes/-:/spec/template/spec/volumes/$volumeindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
@@ -236,6 +284,12 @@ clean() {
 	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch_remove.json)" -n logging --record
 
 }
+
+update_deployment() {
+	source $APP_DIR/scripts/update_deployment.sh
+	update_deployment_app "$@"
+}
+
 main () {
 	# To debug this script, run it with TRACE=1 in the enviornment
 	# -x option will trace each command that is run
@@ -260,9 +314,11 @@ main () {
 		stop_replay) OPERATION="stopreplay"; shift; generate_manifest $1; shift; stop_replay "$@";;
 		replay_status) OPERATION="replay_status"; shift; generate_manifest $1; shift; replay_status "$@";;
 		register_matcher) OPERATION="none"; shift; generate_manifest $1; shift; register_matcher "$@";;
+		set_default) OPERATION="none"; shift; generate_manifest $1; shift; set_default "$@";;
 		analyze) OPERATION="analyze"; shift; generate_manifest $1; shift; analyze "$@";;
+		update) OPERATION="update"; shift; generate_manifest $1; shift; update_deployment "$@";;
 		clean) OPERATION="clean"; shift; generate_manifest $1; shift; clean "$@";;
-		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, analyze, clean)."
+		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, set_default, analyze, clean)."
 	esac
 }
 
