@@ -84,16 +84,14 @@ class GoldenPopover extends React.Component {
     }
 
     createIssue() {
-        const { dispatch, cube } = this.props;
-        console.log("create issue")
-
+        const { cube } = this.props;
         let summary = this.state.summaryInput
-        let desc = this.state.descriptionInput
+        let description = this.state.descriptionInput
         let project = this.state.projectInput
         let issueTypeId = this.state.issueTypeIdInput
         let apiPath = cube.pathResultsParams.path;
         let jsonPath = this.props.jsonPath;
-        let resp = this.createJiraIssue(summary, desc, issueTypeId, project, apiPath, jsonPath)
+        let resp = this.createJiraIssue(summary, description, issueTypeId, project, apiPath, jsonPath)
             .then(r => {
                 this.hideGR()
                 this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
@@ -114,17 +112,19 @@ class GoldenPopover extends React.Component {
     }
 
     showBugModal() {
-        const { cube } = this.props;
-        console.log(this.props);
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
             this.setState({projectList: r.values});
+        }, err => {
+            console.error(err);
+        }).catch(err => {
+            console.error(err);
         });
     }
 
     renderProjectList() {
-        if(!this.state.projectList) {
+        if(!this.state.projectList.length) {
             return ""
         }
 
@@ -146,21 +146,14 @@ class GoldenPopover extends React.Component {
     }
 
     handleInputChange(event) {
-        const target = event.target;
-        const value = target.value;
-        const name = target.name;
-
         this.setState({
-            [name]: value
+            [event.target.name]: event.target.value
         });
     }
 
     handleSelectProjectChange(event) {
-        const target = event.target;
-        const value = target.value;
-        
         this.setState({
-            projectInp: value
+            projectInput: event.target.value
         })
     }
 
@@ -356,7 +349,6 @@ Analysis URL: ${window.location.href}
 
                                     <tr>
                                         <td>Issue Type</td>
-                                        {/* <td><input name="issueTypeIdInp" defaultValue="Bug" onChange={this.handleInputChange} ></input></td> */}
                                         <td><b>Bug</b></td>
                                     </tr>
 
