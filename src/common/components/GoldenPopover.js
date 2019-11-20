@@ -91,15 +91,16 @@ class GoldenPopover extends React.Component {
         let issueTypeId = this.state.issueTypeIdInput
         let apiPath = cube.pathResultsParams.path;
         let jsonPath = this.props.jsonPath;
-        let resp = this.createJiraIssue(summary, description, issueTypeId, project, apiPath, jsonPath)
+        this.createJiraIssue(summary, description, issueTypeId, project, apiPath, jsonPath)
             .then(r => {
-                this.hideGR()
-                this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
-            }, err => {
+                    this.hideGR()
+                    this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
+                }, err => {
+                    console.error(err);
+                })
+            .catch(err => {
                 console.error(err);
-            }).catch(err => {
-                console.error(err);
-            })    
+            });
     }
 
     showGoldenModal() {
@@ -171,7 +172,6 @@ class GoldenPopover extends React.Component {
     }
 
     getDefaultDescription(cube) {
-    //    const {cube} = this.props;
         let description = 
     `Issue Details: 
 API Path: ${cube.pathResultsParams.path} 
@@ -413,12 +413,6 @@ Analysis URL: ${window.location.href}
         let response, json;
         let url = `${config.apiBaseUrl}/jira/issue/create`;
         let resp;
-        // let reqBody = {
-        //     "summary": "[test] Jira API test frontend",
-        //     "description": "test1",
-        //     "issueTypeId":"10004",
-        //     "projectId": "10000",
-        // };
 
         let reqBody = {
             summary: summary,
