@@ -877,8 +877,9 @@ public class AnalyzeWS {
      * @param templateUpdOpSetId Template update operation set id
      * @return Appropriate response
      */
-    @GET
+    @POST
     @Path("updateGoldenSet/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
+    @Consumes("application/x-www-form-urlencoded")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
