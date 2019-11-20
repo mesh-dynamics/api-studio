@@ -42,10 +42,10 @@ class GoldenPopover extends React.Component {
                 "em": "",
                 "customization": null
             },
-            summaryInp: this.getDefaultSummary(this.props.cube),
-            descriptionInp: this.getDefaultDescription(this.props.cube),
-            issueTypeIdInp: 10004,
-            projectInp: 10000,
+            summaryInput: this.getDefaultSummary(this.props.cube),
+            descriptionInput: this.getDefaultDescription(this.props.cube),
+            issueTypeIdInput: 10004,
+            projectInput: 10000,
 
             projectList: [],
         };
@@ -87,10 +87,10 @@ class GoldenPopover extends React.Component {
         const { dispatch, cube } = this.props;
         console.log("create issue")
 
-        let summary = this.state.summaryInp
-        let desc = this.state.descriptionInp
-        let project = this.state.projectInp
-        let issueTypeId = this.state.issueTypeIdInp
+        let summary = this.state.summaryInput
+        let desc = this.state.descriptionInput
+        let project = this.state.projectInput
+        let issueTypeId = this.state.issueTypeIdInput
         let apiPath = cube.pathResultsParams.path;
         let jsonPath = this.props.jsonPath;
         let resp = this.createJiraIssue(summary, desc, issueTypeId, project, apiPath, jsonPath)
@@ -134,7 +134,6 @@ class GoldenPopover extends React.Component {
 
         let jsxContent = <div>
             <select placeholder="Select Project" onChange={this.handleSelectProjectChange}>
-                {/* <option value="">Select Project</option> */}
                 {options}
             </select>
         </div>
@@ -173,7 +172,7 @@ class GoldenPopover extends React.Component {
     renderSummary() {
         return (
             <div>
-                <input name="summaryInp" defaultValue={this.state.summaryInp} onChange={this.handleInputChange} style={{width:"93%", margin:"9px"}}></input>
+                <input name="summaryInput" defaultValue={this.state.summaryInput} onChange={this.handleInputChange} style={{width:"93%", margin:"9px"}}></input>
             </div>
         )
     }
@@ -192,7 +191,7 @@ Analysis URL: ${window.location.href}
     renderDescription() {
         return (
             <div>
-                <textarea name="descriptionInp" defaultValue={this.state.descriptionInp} onChange={this.handleInputChange} rows="10" style={{resize:"none", width:"93%", margin:"9px"}}></textarea>
+                <textarea name="descriptionInput" defaultValue={this.state.descriptionInput} onChange={this.handleInputChange} rows="10" style={{resize:"none", width:"93%", margin:"9px"}}></textarea>
             </div>
         )
     }
