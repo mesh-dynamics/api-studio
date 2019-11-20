@@ -6,6 +6,46 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.cube.agent.UtilException;
+import redis.clients.jedis.Jedis;
+
 import com.cube.cache.RequestComparatorCache;
 import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateKey;
@@ -33,41 +73,6 @@ import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.utils.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cube.agent.UtilException;
-import java.io.IOException;
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
-import org.json.JSONObject;
-import redis.clients.jedis.Jedis;
 
 /**
  * @author prasad
@@ -114,7 +119,7 @@ public class AnalyzeWS {
 	@GET
     @Path("status/{replayId}")
     public Response status(@Context UriInfo ui,
-                           @PathParam("replayId") String replayId) {
+        @PathParam("replayId") String replayId) {
         Optional<Analysis> analysis = Analyzer.getStatus(replayId, rrstore);
         Response resp = analysis.map(av -> {
             String json;
@@ -122,10 +127,13 @@ public class AnalyzeWS {
                 json = jsonMapper.writeValueAsString(av);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
+                LOGGER.error(String
+                    .format("Error in converting Analysis object to Json for replayId %s",
+                        replayId), e);
                 return Response.serverError().build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Analysis not found for replayId: " + replayId).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity("Analysis not found for replayId: " + replayId).build());
         return resp;
     }
 
