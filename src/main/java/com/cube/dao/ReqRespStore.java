@@ -3,7 +3,6 @@
  */
 package com.cube.dao;
 
-import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -27,12 +26,12 @@ import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -41,7 +40,7 @@ import com.cube.golden.TemplateUpdateOperationSet;
 public interface ReqRespStore {
 
 
-    Optional<TemplateSet> getTemplateSet(String customerid, String app, String version);
+    Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
 
 
     public class ReqResp {
@@ -112,25 +111,6 @@ public interface ReqRespStore {
 
     boolean save(Event event);
 
-    /**
-	 * @param queryrequest
-	 * @param mspec - the matching specification
-	 * @param nummatches - max number of matches
-	 * @return the requests matching queryrequest based on the matching spec
-	 */
-    // TODO: Event redesign: This needs to be rewritten to get as event
-	Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches);
-
-    /**
-     * @param queryrequest
-     * @param mspec - the matching specification
-     * @param nummatches - max number of matches
-     * @param start - skip the first "start" number of matches (for paging)
-     * @return the requests matching queryrequest based on the matching spec
-     */
-    // TODO: Event redesign: This needs to be rewritten to get as event
-    Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches,
-                                Optional<Integer> start);
 
     /**
 	 * @param reqId
@@ -161,20 +141,12 @@ public interface ReqRespStore {
     // TODO: Event redesign: This needs to be rewritten to get as event
 	Map<String, Response> getResponses(List<Request> requests);
 
-	/**
-	 * @param queryrequest
-	 * @return the response corresponding to the request matching in the db
-	 * to find the matching request, the reqId field of queryrequest is ignored
-	 */
-    // TODO: Event redesign cleanup: This can be removed
-	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
-
 
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
 	 * @param collection
 	 * @param reqids
@@ -183,10 +155,12 @@ public interface ReqRespStore {
 	 * @return
 	 */
     // TODO: Event redesign: This needs to be rewritten to get as event
-    Result<Event> getRequests(String customerid, String app, String collection, List<String> reqids
+    Result<Event> getRequests(String customerId, String app, String collection, List<String> reqids
 			, List<String> paths, Event.RunType runType);
 
     Result<Event> getEvents(EventQuery eventQuery);
+
+    Optional<Event> getSingleEvent(EventQuery eventQuery);
 
 	/**
 	 * @param replay
@@ -195,10 +169,10 @@ public interface ReqRespStore {
 	boolean saveReplay(Replay replay);
 
 	/**
-	 * @param replayid
+	 * @param replayId
 	 * @return
 	 */
-	Optional<Replay> getReplay(String replayid);
+	Optional<Replay> getReplay(String replayId);
 
 
 	/**
@@ -208,7 +182,7 @@ public interface ReqRespStore {
 	 * @param templateAsJson
 	 * @return
 	 */
-	String saveCompareTemplate(TemplateKey key, String templateAsJson);
+	String saveCompareTemplate(TemplateKey key, String templateAsJson) throws CompareTemplate.CompareTemplateStoreException;
 
 	/**
 	 * Retrieve an analysis template from the database for
@@ -238,26 +212,26 @@ public interface ReqRespStore {
 
     /**
      *
-     * @param customerid
+     * @param customerId
      * @param app
-     * @param instanceid
+     * @param instanceId
      * @param status
      * @param collection
      * @param numOfResults
      * @return
      */
-	Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app, Optional<String> instanceid,
+	Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
                              List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
 
 	/**
-     * @param customerid
+     * @param customerId
      * @param app
-     * @param instanceid
+     * @param instanceId
      * @param status
      * @return
      */
-    Stream<Replay> getReplay(Optional<String> customerid, Optional<String> app,
-                             Optional<String> instanceid, ReplayStatus status);
+    Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app,
+                             Optional<String> instanceId, ReplayStatus status);
 
 	static void main(String[] args) throws IOException{
 
@@ -342,32 +316,32 @@ public interface ReqRespStore {
 
 
     /**
-	 * @param replayid
+	 * @param replayId
 	 * @return
 	 */
-	Optional<Analysis> getAnalysis(String replayid);
+	Optional<Analysis> getAnalysis(String replayId);
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
-	 * @param instanceid
+	 * @param instanceId
 	 * @param status
 	 * @return
 	 */
-	Stream<Recording> getRecording(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid, Optional<RecordingStatus> status);
+	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
+			Optional<String> instanceId, Optional<RecordingStatus> status);
 
     Optional<Recording> getRecording(String recordingId);
 
 
 	/**
-	 * @param customerid
+	 * @param customerId
 	 * @param app
-	 * @param instanceid
+	 * @param instanceId
 	 * @return
 	 */
-	Optional<String> getCurrentCollection(Optional<String> customerid, Optional<String> app,
-			Optional<String> instanceid);
+	Optional<String> getCurrentCollection(Optional<String> customerId, Optional<String> app,
+			Optional<String> instanceId);
 
     /**
      *
@@ -383,11 +357,11 @@ public interface ReqRespStore {
 	/**
 	 * @param customerId
 	 * @param app
-	 * @param instanceid
+	 * @param instanceId
 	 * @return For both record and replay, return the collection of the record stage
 	 */
 	Optional<String> getCurrentRecordingCollection(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceid);
+			Optional<String> instanceId);
 
 
 	/**
@@ -405,25 +379,35 @@ public interface ReqRespStore {
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
                                                                String templateSetVersion);
 
+	// Will merge in the single function while creating search API
+    /**
+     * @param customerId
+     * @param app
+     * @param name
+     * @return
+     */
+    Optional<Recording> getRecordingByName(String customerId, String app, String name);
+
 	/**
-	 * @param replayid
+	 * @param replayId
 	 * @param service
 	 * @return If service is empty, return aggregate results for all services. If
 	 * service is non-empty, return results for all paths in the service if bypath is true
 	 * This also returns the rollups (service, path), (service) ()
 	 */
-	Collection<MatchResultAggregate> computeResultAggregate(String replayid, Optional<String> service,
+	Collection<MatchResultAggregate> computeResultAggregate(String replayId, Optional<String> service,
                                                             boolean bypath);
 
 	/**
 	 * @param customerId
 	 * @param app
-	 * @param instanceid
+	 * @param instanceId
 	 * @return
 	 */
 	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceid);
+			Optional<String> instanceId);
 
+	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, boolean extendTTL);
 	/**
 	 *
 	 */
@@ -433,7 +417,7 @@ public interface ReqRespStore {
 
         @JsonIgnore
 		public Optional<String> getCollection() {
-			// Note that replayid is the collection for replay requests/responses
+			// Note that replayId is the collection for replay requests/responses
 			// replay.collection refers to the original collection
 			// return replay collection if non empty, else return recording collection
 			return replay.map(replay -> replay.replayId)
@@ -661,14 +645,14 @@ public interface ReqRespStore {
 
     Optional<TemplateSet> getLatestTemplateSet(String customer, String app);
 
-    public void invalidateCurrentCollectionCache(String customerid, String app,
-                                                 String instanceid);
+    public void invalidateCurrentCollectionCache(String customerId, String app,
+                                                 String instanceId);
 
 /*    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
 
     Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception;
 
-    Stream<GoldenSet> getGoldenSetStream(Optional<String> customer, Optional<String> app, Optional<String> instanceid);
+    Stream<GoldenSet> getGoldenSetStream(Optional<String> customer, Optional<String> app, Optional<String> instanceId);
 
     Stream<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId);*/
 

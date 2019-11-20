@@ -262,9 +262,12 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
     @Override
     protected Object wrapLogEvent(LogEvent event) {
         Object result = super.wrapLogEvent(event);
+        return new AbstractJacksonLayout.LogEventWithAdditionalFields(result, Map.of("traceId",
+            CommonUtils.getCurrentTraceId().orElse("N/A") , "timestamp" , simpleDateFormat.format(new Date())));
+        /*
         return new LogEventWithExtras(result, Map.of("traceId",
             CommonUtils.getCurrentTraceId().orElse("N/A") , "timestamp" , simpleDateFormat.format(new Date())));
-
+        */
     }
 
     public static class LogEventWithExtras {

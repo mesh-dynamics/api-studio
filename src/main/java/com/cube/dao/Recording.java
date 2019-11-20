@@ -3,7 +3,10 @@
  */
 package com.cube.dao;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,7 +36,10 @@ public class Recording {
      */
 	public Recording(String customerId, String app, String instanceId, String collection, RecordingStatus status
         , Optional<Instant> updateTimestamp, String templateVersion, Optional<String> parentRecordingId
-        , Optional<String> rootRecordingId) {
+        , Optional<String> rootRecordingId, String name, Optional<String> codeVersion, Optional<String> branch
+        , List<String> tags, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
+        , Optional<String> templateUpdOpSetId, Optional<String> comment, String userId, Optional<String> generatedClassJarPath) {
+
 		super();
 		this.customerId = customerId;
 		this.app = app;
@@ -46,6 +52,24 @@ public class Recording {
             collection, templateVersion)));
         this.parentRecordingId = parentRecordingId;
         this.rootRecordingId = rootRecordingId.orElse(this.id);
+        this.name = name;
+        this.codeVersion = codeVersion;
+        this.branch = branch;
+        this.tags = tags;
+        this.archived = archived;
+        this.gitCommitId = gitCommitId;
+        this.collectionUpdOpSetId = collectionUpdOpSetId;
+        this.templateUpdOpSetId = templateUpdOpSetId;
+        this.comment = comment;
+        this.userId = userId;
+        this.generatedClassJarPath = generatedClassJarPath;
+        generatedClassJarPath.ifPresent(jarPath -> {
+        	try {
+
+			} catch (Exception e) {
+
+			}
+		});
     }
 
 	// for json deserialization
@@ -59,6 +83,17 @@ public class Recording {
 	    this.templateVersion = "";
 	    this.parentRecordingId = Optional.empty();
 	    this.rootRecordingId = "";
+        this.name = "";
+        this.codeVersion = Optional.empty();
+        this.branch = Optional.empty();
+        this.tags = Collections.EMPTY_LIST;
+        this.archived = false;
+        this.gitCommitId = Optional.empty();
+        this.collectionUpdOpSetId = Optional.empty();
+        this.templateUpdOpSetId = Optional.empty();
+        this.comment = Optional.empty();
+        this.userId = "";
+	    this.generatedClassJarPath = Optional.empty();
     }
 
     @JsonProperty("id")
@@ -81,16 +116,43 @@ public class Recording {
     public final String rootRecordingId;
     @JsonProperty("prntRcrdngId")
     public final Optional<String> parentRecordingId;
+    @JsonProperty("name")
+    public final String name;
+    @JsonProperty("codeVersion")
+    public final Optional<String> codeVersion;
+    @JsonProperty("branch")
+    public final Optional<String> branch;
+    @JsonProperty("tags")
+    public final List<String> tags;
+    @JsonProperty("archived")
+    public final boolean archived;
+    @JsonProperty("gitCommitId")
+    public final Optional<String> gitCommitId;
+    @JsonProperty("collectionUpdOpSetId")
+    public final Optional<String> collectionUpdOpSetId;
+    @JsonProperty("templateUpdOpSetId")
+    public final Optional<String> templateUpdOpSetId;
+    @JsonProperty("comment")
+    public final Optional<String> comment;
+    @JsonProperty("userId")
+    public final String userId;
+    @JsonIgnore
+	public final Optional<String> generatedClassJarPath;
+
 
     public String getId() {
         return this.id;
     }
 
 
-	public static Optional<Recording> startRecording(String customerId, String app, String instanceId,
-                                                     String collection, String templateVersion, ReqRespStore rrstore) {
+	public static Optional<Recording> startRecording(String customerId, String app, String instanceId, String collection,
+                                                     String templateVersion, ReqRespStore rrstore, String name,
+                                                     Optional<String> codeVersion, Optional<String> branch, List<String> tags,
+                                                     boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId,
+                                                     Optional<String> templateUpdOpSetId, Optional<String> comment, String userId) {
 		Recording recording = new Recording(customerId, app, instanceId, collection, RecordingStatus.Running
-            , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty());
+            , Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name, codeVersion, branch, tags
+            ,archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId, Optional.empty());
 		if (rrstore.saveRecording(recording)) {
                 return Optional.of(recording);
         }

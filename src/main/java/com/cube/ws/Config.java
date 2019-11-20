@@ -30,9 +30,8 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.ReplayResultCache;
-import com.cube.cache.RequestComparatorCache;
-import com.cube.cache.ResponseComparatorCache;
 import com.cube.cache.TemplateCache;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
@@ -61,9 +60,7 @@ public class Config {
 	// Adding a compare template cache
     public final TemplateCache templateCache;
 
-    public final RequestComparatorCache requestComparatorCache;
-
-    public final ResponseComparatorCache responseComparatorCache;
+    public final ComparatorCache comparatorCache;
 
     public final ReplayResultCache replayResultCache;
 
@@ -100,8 +97,7 @@ public class Config {
             solr = new HttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
             templateCache = new TemplateCache(rrstore , this);
-            requestComparatorCache = new RequestComparatorCache(templateCache , jsonMapper);
-            responseComparatorCache = new ResponseComparatorCache(templateCache , jsonMapper);
+            comparatorCache = new ComparatorCache(templateCache, jsonMapper);
             replayResultCache = new ReplayResultCache(rrstore, this);
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);

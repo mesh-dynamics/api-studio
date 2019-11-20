@@ -1,28 +1,36 @@
 package com.cube.core;
 
-import com.cube.dao.Response;
-import com.cube.ws.Config;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.jupiter.api.*;
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
-import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.CompareTemplate.ExtractionMethod;
-import org.skyscreamer.jsonassert.JSONAssert;
-
-import static org.apache.commons.io.FileUtils.readFileToString;
+import com.cube.core.CompareTemplate.PresenceType;
+import com.cube.dao.Event;
+import com.cube.dao.Event.EventBuilder;
+import com.cube.dao.Response;
+import com.cube.ws.Config;
 
 public class ResponseComparatorTest {
 
@@ -77,13 +85,13 @@ public class ResponseComparatorTest {
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for  .
      * @throws JsonProcessingException
      * @throws JSONException
      */
     @Test
     @DisplayName("Exact Match Test")
-    final void exactMatchTest() throws IOException, JSONException {
+    final void exactMatchTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -95,13 +103,13 @@ public class ResponseComparatorTest {
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for  .
      * @throws JsonProcessingException
      * @throws JSONException
      */
     @Test
     @DisplayName("Header template test: Positive")
-    final void headerTemplatePositiveTest() throws IOException, JSONException {
+    final void headerTemplatePositiveTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -111,13 +119,13 @@ public class ResponseComparatorTest {
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for  .
      * @throws JsonProcessingException
      * @throws JSONException
      */
     @Test
     @DisplayName("Header template test: Negative")
-    final void headerTemplateNegativeTest() throws IOException, JSONException {
+    final void headerTemplateNegativeTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -128,13 +136,13 @@ public class ResponseComparatorTest {
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for  .
      * @throws JsonProcessingException
      * @throws JSONException
      */
     @Test
     @DisplayName("Same Response body test: Positive")
-    final void sameResponseBodyPositiveTest() throws IOException, JSONException {
+    final void sameResponseBodyPositiveTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("sameResponseBodyPositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -144,13 +152,13 @@ public class ResponseComparatorTest {
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for  .
      * @throws JsonProcessingException
      * @throws JSONException
      */
     @Test
     @DisplayName("Same Response body test: Negative")
-    final void sameResponseBodyNegativeTest() throws IOException, JSONException {
+    final void sameResponseBodyNegativeTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("sameResponseBodyNegative");
         String res1 = testData.get("res1").toString();
         Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
@@ -165,13 +173,13 @@ public class ResponseComparatorTest {
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for  .
      * @throws JsonProcessingException
      * @throws JSONException
      */
     @Test
     @DisplayName("Different response Body test")
-    final void differentResponseBodyTest() throws IOException, JSONException {
+    final void differentResponseBodyTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("differentResponseBody");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -180,7 +188,7 @@ public class ResponseComparatorTest {
         compareTest(testData, response1, response2);
     }
 
-    private void compareTest(JSONObject testData, Response response1, Response response2) throws JsonProcessingException, JSONException{
+    private void compareTest(JSONObject testData, Response response1, Response response2) throws JsonProcessingException, JSONException, EventBuilder.InvalidEventException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
         System.out.println(mapper.writeValueAsString(response1));
@@ -200,15 +208,18 @@ public class ResponseComparatorTest {
             template.addRule(rule);
         }
 
-        TemplatedResponseComparator comparator = new TemplatedResponseComparator(template, mapper);
-        Match m = comparator.compare(response1, response2);
+        Comparator comparator = new JsonComparator(template, mapper);
+        Event event1 = response1.toEvent(config, "/dummyApiPath");
+        Event event2 = response2.toEvent(config, "/dummyApiPath");
+        Match m = comparator.compare(event1.getPayload(config),
+            event2.getPayload(config));
 
         String mjson = config.jsonMapper.writeValueAsString(m);
         JSONAssert.assertEquals(expected, mjson, false);
     }
 
     /**
-     * Test method for {@link com.cube.core.TemplatedResponseComparator#compare(Response, Response)} .
+     * Test method for .
      * @throws JsonProcessingException
      * @throws JSONException
      */

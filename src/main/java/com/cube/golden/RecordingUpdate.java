@@ -1,20 +1,30 @@
 package com.cube.golden;
 
 
-import com.cube.cache.TemplateKey;
-import com.cube.core.RequestComparator;
-import com.cube.dao.*;
-import com.cube.ws.Config;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cube.cache.TemplateKey;
+import com.cube.core.Comparator;
+import com.cube.dao.Analysis;
+import com.cube.dao.Event;
+import com.cube.dao.Recording;
+import com.cube.dao.RecordingOperationSetMeta;
+import com.cube.dao.RecordingOperationSetSP;
+import com.cube.dao.Request;
+import com.cube.dao.Response;
+import com.cube.dao.Result;
+import com.cube.ws.Config;
 
 public class RecordingUpdate {
 
@@ -62,9 +72,8 @@ public class RecordingUpdate {
         LOGGER.info(String.format("Fetching RecordingOperationSetSP for service %s, path %s with " +
                 "recordingOperationSetId %s", updateRequest.service,
             updateRequest.path, updateRequest.operationSetId));
-        Optional<RecordingOperationSetSP> storedOperationSet =
-            config.rrstore.getRecordingOperationSetSP(updateRequest.operationSetId,
-                updateRequest.service, updateRequest.path);
+        Optional<RecordingOperationSetSP> storedOperationSet = config.rrstore.getRecordingOperationSetSP(updateRequest.operationSetId,
+            updateRequest.service, updateRequest.path);
         return storedOperationSet
             // if present, update/insert the new operations
             .map(recordingOperationSet -> {
@@ -144,8 +153,7 @@ public class RecordingUpdate {
                 apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
 
 
-            Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
-            Instant timeStamp = Instant.now();
+            Optional<String> newReqId = generateReqIdOld(recordResponse.reqId, newCollectionName);
 
             String transformedResponseBody = replayResponse.flatMap(repResponse ->
                 updateOperationSet.flatMap(updateOpSet ->
@@ -154,7 +162,7 @@ public class RecordingUpdate {
 
             Response transformedResponse = new Response(newReqId, recordResponse.status,
                 recordResponse.meta, recordResponse.hdrs, transformedResponseBody, Optional.of(newCollectionName),
-                    Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app,
+                    recordResponse.timestamp, recordResponse.runType, recordResponse.customerId, recordResponse.app,
                 recordResponse.apiPath);
 
             LOGGER.debug("applying transformations");
@@ -164,7 +172,7 @@ public class RecordingUpdate {
             TemplateKey key = new TemplateKey(originalRec.templateVersion, originalRec.customerId,
                 originalRec.app, recordRequest.getService().orElse("NA"), recordRequest.apiPath,
                 TemplateKey.Type.Request);
-            RequestComparator comparator = config.requestComparatorCache.getRequestComparator(key , true);
+            Comparator comparator = config.comparatorCache.getComparator(key , Event.EventType.HTTPRequest);
 
 
             LOGGER.debug("saving request/response with reqId: " + transformedResponse.reqId);
@@ -195,41 +203,50 @@ public class RecordingUpdate {
         return true; // todo: false?
     }
 
-    // TODO: Event redesign: revisit this with Event apis
     public boolean createSanitizedCollection(String replayId, String newCollectionName, Recording originalRec) {
 
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
 
         //1. Create a new collection with all the Req/Responses
         results.forEach(res -> {
-           try {
-               Request recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestOld)
-                   .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-               Response recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseOld)
-                   .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
+            try {
+                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequest)
+                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
+                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponse)
+                    .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
 
-               Optional<String> newReqId = generateReqId(recordResponse.reqId, newCollectionName);
-               Instant timeStamp = Instant.now();
+                String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
 
-               Response transformedResponse = new Response(newReqId, recordResponse.status,
-                   recordResponse.meta, recordResponse.hdrs, recordResponse.body, Optional.of(newCollectionName),
-                   Optional.of(timeStamp), recordResponse.runType, recordResponse.customerId, recordResponse.app,
-                   recordResponse.apiPath);
+                Event transformedResponse = new Event.EventBuilder(recordResponse.customerId, recordResponse.app, recordResponse.service, recordResponse.instanceId, "", recordResponse.traceId,
+                    recordResponse.runType, recordResponse.timestamp, newReqId, recordResponse.apiPath, recordResponse.eventType)
+                    .setRawPayloadBinary(recordResponse.rawPayloadBinary)
+                    .setRawPayloadString(recordResponse.rawPayloadString)
+                    .setPayloadKey(recordResponse.payloadKey)
+                    .createEvent();
 
-               LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
-               recordRequest.reqId = transformedResponse.reqId;
-               recordRequest.collection = Optional.of(newCollectionName);
+                transformedResponse.setCollection(newCollectionName);
 
-               LOGGER.debug("saving request/response with reqid: " + newReqId);
-               boolean saved = config.rrstore.save(recordRequest) && config.rrstore.save(transformedResponse);
+                LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
 
-               if(!saved) {
-                   LOGGER.debug("request/response not saved");
-                   throw new Exception ("Unable to persist new sanitized collection");
-               }
-           } catch (Exception e) {
-               LOGGER.error("Error occurred creating new collection while sanitizing :: " + e.getMessage(), e);
-           }
+                Event transformedRequest = new Event.EventBuilder(recordRequest.customerId, recordRequest.app, recordRequest.service, recordRequest.instanceId, "", recordRequest.traceId,
+                    recordRequest.runType, recordRequest.timestamp, newReqId, recordRequest.apiPath, recordRequest.eventType)
+                    .setRawPayloadBinary(recordRequest.rawPayloadBinary)
+                    .setRawPayloadString(recordRequest.rawPayloadString)
+                    .setPayloadKey(recordRequest.payloadKey)
+                    .createEvent();
+
+                transformedRequest.setCollection(newCollectionName);
+
+                LOGGER.debug("saving request/response with reqid: " + newReqId);
+                boolean saved = config.rrstore.save(transformedRequest) && config.rrstore.save(transformedResponse);
+
+                if(!saved) {
+                    LOGGER.debug("request/response not saved");
+                    throw new Exception ("Unable to persist new sanitized collection");
+                }
+            } catch (Exception e) {
+                LOGGER.error("Error occurred creating new collection while sanitizing :: " + e.getMessage(), e);
+            }
         });
 
         config.rrstore.commit();
@@ -301,8 +318,12 @@ public class RecordingUpdate {
         return matchResults.getObjects();
     }
 
-    private Optional<String> generateReqId(Optional<String> recReqId, String collectionName) {
+    private Optional<String> generateReqIdOld(Optional<String> recReqId, String collectionName) {
         return recReqId.map(
             reqId -> "gu-" + Objects.hash(reqId, collectionName));
+    }
+
+    private String generateReqId(String reqId, String collectionName) {
+        return "gu-" + Objects.hash(reqId, collectionName);
     }
 }

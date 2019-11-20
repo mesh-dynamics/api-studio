@@ -4,14 +4,12 @@
 package com.cube.dao;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.MoreObjects;
 
-import com.cube.core.RequestComparator;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 
@@ -25,11 +23,6 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 
     @Override
-    public Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches) {
-        return getRequests(queryrequest, mspec, nummatches, Optional.empty());
-    }
-
-    @Override
     public Optional<Event> getRespEventForReqEvent(Event reqEvent){
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
             Event.EventType.getResponseType(reqEvent.eventType));
@@ -39,7 +32,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
             .withReqId(reqEvent.reqId)
             .withLimit(1)
             .build();
-        return getEvents(eventQuery).getObjects().findFirst();
+        return getSingleEvent(eventQuery);
     }
 
     /* (non-Javadoc)
@@ -70,7 +63,11 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	    return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getReplayId());
     }
 
-
+    @Override
+    public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
+                                                             Optional<String> instanceId) {
+	    return getCurrentRecordOrReplay(customerId, app, instanceId, false);
+    }
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordOrReplay(java.util.Optional, java.util.Optional, java.util.Optional)
@@ -79,7 +76,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 */
 	@Override
 	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceId) {
+			Optional<String> instanceId, boolean extendTTL) {
 
 		CollectionKey ckey = new CollectionKey(customerId.orElse(""), app.orElse(""), instanceId.orElse(""));
 
@@ -87,7 +84,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		Optional<String> ncustomerid = customerId.or(() -> Optional.of(""));
 		Optional<String> napp = app.or(() -> Optional.of(""));
 		Optional<String> ninstanceid = instanceId.or(() -> Optional.of(""));
-        Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey);
+        Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey, extendTTL);
 		//Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
 		String customerAppInstance = "Cust :: " + customerId.orElse("") + " App :: " + app.orElse("") +
             "Instance :: " + instanceId.orElse("");
@@ -130,7 +127,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	}
 
 	abstract void removeCollectionKey(CollectionKey collectionKey);
-    abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key);
+    abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL);
     abstract void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 

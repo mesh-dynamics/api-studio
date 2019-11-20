@@ -82,11 +82,11 @@ public class RRBase {
 	 */
 	@JsonIgnore
 	public Optional<String> getService() {
-		return getMetaField(SERVICEFIELD);
+		return getMetaField(Constants.SERVICE_FIELD);
 	}
 
 	public void setService(String serviceid) {
-		setMetaField(SERVICEFIELD, serviceid);
+		setMetaField(Constants.SERVICE_FIELD, serviceid);
 	}
 
 	@JsonIgnore
@@ -100,7 +100,7 @@ public class RRBase {
 	 */
 	@JsonIgnore
 	public Optional<String> getInstance() {
-		return getMetaField(INSTANCEIDFIELD);
+		return getMetaField(Constants.INSTANCE_ID_FIELD);
 	}
 
 
@@ -132,7 +132,7 @@ public class RRBase {
 									   Comparator bodyComparator,
 									   boolean needDiff) {
 		Comparator.Match match = new Comparator.Match(Comparator.MatchType.ExactMatch, "", new ArrayList<Comparator.Diff>());
-		template.getRule("/reqId").checkMatchStr(reqId, rhs.reqId, match, needDiff);
+		template.getRule(Constants.REQ_ID_PATH).checkMatchStr(reqId, rhs.reqId, match, needDiff);
 		metaFieldTemplate.checkMatch(meta, rhs.meta, match, needDiff);
 		hdrFieldTemplate.checkMatch(hdrs, rhs.hdrs, match, needDiff);
 		if ((getMimeType().equalsIgnoreCase(APPLICATION_JSON) || (bodyComparator instanceof JsonComparator))
@@ -140,13 +140,13 @@ public class RRBase {
 			match.merge(bodyComparator.compare(body, rhs.body), needDiff, Constants.BODY_PATH);
 		} else {
 			// treat as simple string
-			template.getRule("/body").checkMatchStr(body, rhs.body, match, needDiff);
+			template.getRule(Constants.BODY_PATH).checkMatchStr(body, rhs.body, match, needDiff);
 		}
-		template.getRule("/collection").checkMatchStr(collection, rhs.collection, match, needDiff);
-		template.getRule("/timestamp").checkMatchStr(timestamp.toString(), rhs.timestamp.toString(), match, needDiff);
-		template.getRule("/runType").checkMatchStr(runType.toString(), rhs.runType.toString(), match, needDiff);
-		template.getRule("/customerId").checkMatchStr(customerId, rhs.customerId, match, needDiff);
-		template.getRule("/app").checkMatchStr(app, rhs.app, match, needDiff);
+		template.getRule(Constants.COLLECTION_PATH).checkMatchStr(collection, rhs.collection, match, needDiff);
+		template.getRule(Constants.TIMESTAMP_PATH).checkMatchStr(timestamp.toString(), rhs.timestamp.toString(), match, needDiff);
+		template.getRule(Constants.RUN_TYPE_PATH).checkMatchStr(runType.toString(), rhs.runType.toString(), match, needDiff);
+		template.getRule(Constants.CUSTOMER_ID_PATH).checkMatchStr(customerId, rhs.customerId, match, needDiff);
+		template.getRule(Constants.APP_PATH).checkMatchStr(app, rhs.app, match, needDiff);
 		return match;
 	}
 
@@ -169,8 +169,6 @@ public class RRBase {
 	public final Optional<String> customerId;
 	public final Optional<String> app;
 
-	public static final String SERVICEFIELD = "service";
-	public static final String INSTANCEIDFIELD = "instanceid";
 	public static final String HDRPATHFIELD = "_path";
 	public static final String METAPATHFIELD = "apiPath"; // Used for responses
 
