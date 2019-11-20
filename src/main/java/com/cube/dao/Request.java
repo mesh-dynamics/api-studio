@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import static com.cube.dao.Event.RunType.Record;
 
+import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -44,12 +45,12 @@ public class Request extends RRBase {
 	public Request(String apiPath, Optional<String> reqId,
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
-			MultivaluedMap<String, String> meta, 
-			MultivaluedMap<String, String> hdrs, 
-			String method, 
+			MultivaluedMap<String, String> meta,
+			MultivaluedMap<String, String> hdrs,
+			String method,
 			String body,
 			Optional<String> collection,
-			Optional<Instant> timestamp, 
+			Optional<Instant> timestamp,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
@@ -58,9 +59,9 @@ public class Request extends RRBase {
 		this.formParams = formParams != null ? formParams : emptyMap();
 		this.method = method;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * @param apiPath
 	 * @param queryParams
@@ -69,32 +70,32 @@ public class Request extends RRBase {
 	public Request(String apiPath, Optional<String> id,
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
-			MultivaluedMap<String, String> hdrs, 
+			MultivaluedMap<String, String> hdrs,
 			String service,
 			String method,
 			String body,
-			Optional<String> collection, 
+			Optional<String> collection,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
 		this(apiPath, id, queryParams, formParams, emptyMap(),
 				hdrs, method, body, collection, Optional.empty(), runType, customerId, app);
-		meta.add(RRBase.SERVICEFIELD, service);
+		meta.add(Constants.SERVICE_FIELD, service);
 	}
 
-	public Request(Optional<String> serviceid, 
+	public Request(Optional<String> serviceid,
 			String path,
 			String method,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
-		this(path, Optional.empty(), emptyMap(), emptyMap(), emptyMap(), 
+		this(path, Optional.empty(), emptyMap(), emptyMap(), emptyMap(),
 				emptyMap(), method, "", Optional.empty(), Optional.empty(), runType, customerId, app);
 		serviceid.ifPresent(s -> setService(s));
 	}
-	
-	
-	
+
+
+
 	/**
 	 * For jackson json ser/deserialization
 	 */
@@ -106,7 +107,7 @@ public class Request extends RRBase {
 		this.method = "";
 	}
 
-	static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
+	static final TypeReference<MultivaluedHashMap<String, String>> typeRef
 	  = new TypeReference<MultivaluedHashMap<String, String>>() {};
 
     @JsonDeserialize(as=MultivaluedHashMap.class)
@@ -120,14 +121,14 @@ public class Request extends RRBase {
 	}
 
     public Event toEvent(RequestComparator comparator, Config config)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
+        throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
         HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, queryParams, formParams,
             method, body);
         String payloadStr;
         payloadStr = config.jsonMapper.writeValueAsString(payload);
 
-        EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
             reqId.orElse(
@@ -151,8 +152,8 @@ public class Request extends RRBase {
         try {
             HTTPRequestPayload payload = jsonMapper.readValue(event.rawPayloadString, HTTPRequestPayload.class);
             MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
-            meta.put(SERVICEFIELD, List.of(event.service));
-            meta.put(INSTANCEIDFIELD, List.of(event.instanceId));
+            meta.put(Constants.SERVICE_FIELD, List.of(event.service));
+            meta.put(Constants.INSTANCE_ID_FIELD, List.of(event.instanceId));
             return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams, payload.formParams,
                 meta, payload.hdrs, payload.method, payload.body,
                 Optional.of(event.getCollection()), Optional.of(event.timestamp),
@@ -169,10 +170,10 @@ public class Request extends RRBase {
 
 		// diff not needed, so pass false
 		Comparator.Match match = super.compare(rhs, template, metaFieldtemplate, hdrFieldTemplate, bodyComparator, false);
-		template.getRule("/apiPath").checkMatchStr(apiPath, rhs.apiPath, match, false);
+		template.getRule(Constants.API_PATH_PATH).checkMatchStr(apiPath, rhs.apiPath, match, false);
 		qparamFieldTemplate.checkMatch(queryParams, rhs.queryParams, match, false);
 		fparamFieldTemplate.checkMatch(formParams, rhs.formParams, match, false);
-		template.getRule("/method").checkMatchStr(method, rhs.method, match, false);
+		template.getRule(Constants.METHOD_PATH).checkMatchStr(method, rhs.method, match, false);
 
 		return match.mt;
 	}

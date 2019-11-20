@@ -1,7 +1,10 @@
 package com.cube.ws;
 
-import static com.cube.dao.RRBase.*;
+import static com.cube.core.Utils.buildErrorResponse;
 
+import com.cube.dao.DataObj.PathNotFoundException;
+import com.cube.dao.Event.EventType;
+import com.cube.dao.Event.RunType;
 import com.cube.utils.Constants;
 import java.time.Instant;
 import java.util.Arrays;
@@ -54,9 +57,7 @@ import com.cube.core.TemplateEntry;
 import com.cube.core.TemplatedRequestComparator;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
-import com.cube.dao.DataObj;
 import com.cube.dao.Event;
-import com.cube.dao.EventBuilder;
 import com.cube.dao.EventQuery;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
@@ -79,16 +80,16 @@ public class MockServiceHTTP {
     }
 
 	@GET
-    @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     public Response get(@Context UriInfo ui, @PathParam("var") String path,
                         @Context HttpHeaders headers,
-                        @PathParam("customerid") String customerid,
+                        @PathParam("customerId") String customerId,
                         @PathParam("app") String app,
-                        @PathParam("instanceid") String instanceid,
+                        @PathParam("instanceId") String instanceId,
                         @PathParam("service") String service,
                         String body) {
-        LOGGER.debug(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s", customerid, app, path, ui.toString()));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service,
+        LOGGER.debug(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s", customerId, app, path, ui.toString()));
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
             HttpMethod.GET, body, headers);
     }
 
@@ -96,34 +97,34 @@ public class MockServiceHTTP {
 	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
 	@POST
-    @Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     public Response postForms(@Context UriInfo ui,
                               @Context HttpHeaders headers,
                               @PathParam("var") String path,
-                              @PathParam("customerid") String customerid,
+                              @PathParam("customerId") String customerId,
                               @PathParam("app") String app,
-                              @PathParam("instanceid") String instanceid,
+                              @PathParam("instanceId") String instanceId,
                               @PathParam("service") String service,
                               String body) {
-        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerid, app, path,
+        LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerid, app, instanceid, service, HttpMethod.POST, body, headers);
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers);
     }
 
     // TODO: Event redesign - remove commented code once stable
     /*
 	@POST
-	@Path("{customerid}/{app}/{instanceid}/{service}/{var:.+}")
+	@Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response postJson(@Context UriInfo ui,
                              @PathParam("var") String path,
-                             @PathParam("customerid") String customerid,
+                             @PathParam("customerId") String customerId,
                              @PathParam("app") String app,
-                             @PathParam("instanceid") String instanceid,
+                             @PathParam("instanceId") String instanceId,
                              @PathParam("service") String service,
                              @Context HttpHeaders headers,
                              String body) {
-        LOGGER.info(String.format("customerid: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerid, app, path, ui.toString(), headers.toString(), body));
+        LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, headers: %s, body: %s", customerId, app, path, ui.toString(), headers.toString(), body));
         JSONObject obj = new JSONObject(body);
         MultivaluedMap<String, String> mmap = new MultivaluedHashMap<>();
         for (String key : obj.keySet()) {
@@ -131,7 +132,7 @@ public class MockServiceHTTP {
             l.add(obj.get(key).toString());
             mmap.put(key, l);
         }
-        return getResp(ui, path, mmap, customerid, app, instanceid, service, headers);
+        return getResp(ui, path, mmap, customerId, app, instanceId, service, headers);
     }
     */
 
@@ -154,13 +155,17 @@ public class MockServiceHTTP {
                 return true;
             } else {
                 LOGGER
-                    .error(new ObjectMessage(Map.of("reason", "Collection not found", "customerId",
-                        event.customerId, "app", event.app, "instanceId", event.instanceId,
-                        "trace_id", event.traceId)));
+                    .error(new ObjectMessage(Map.of(
+                        Constants.REASON, "Collection not found",
+                        Constants.CUSTOMER_ID_FIELD, event.customerId,
+                        Constants.APP_FIELD, event.app,
+                        Constants.INSTANCE_ID_FIELD, event.instanceId,
+                        Constants.TRACE_ID_FIELD, event.traceId)));
                 return false;
             }
         } else {
-            LOGGER.error(new ObjectMessage(Map.of("reason",
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.REASON,
                 "Invalid event - either event is null, or some required field missing, or both binary "
                     +
                     "and string payloads set")));
@@ -170,7 +175,7 @@ public class MockServiceHTTP {
 
     private Response errorResponse(String errorReason) {
         return Response.serverError().type(MediaType.APPLICATION_JSON).
-            entity((new JSONObject(Map.of("reason", errorReason))).toString()).build();
+            entity((new JSONObject(Map.of(Constants.REASON, errorReason))).toString()).build();
     }
 
     private EventQuery buildFunctionEventQuery(Event event, int offset, int limit, boolean isSortOrderAsc) {
@@ -188,32 +193,94 @@ public class MockServiceHTTP {
     public Response mockFunction(Event event) {
         if (setFunctionPayloadKeyAndCollection(event)) {
             EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
-            Result<Event> matchingEvent =  rrstore.getEvents(eventQuery);
+            Result<Event> matchingEvent = rrstore.getEvents(eventQuery);
 
-            return matchingEvent.getObjects().findFirst().map(retEvent -> {
-                LOGGER.debug(new ObjectMessage(Map.of("state" , "After Mock" , "func_signature" , retEvent.apiPath ,
-                    "trace_id" , retEvent.traceId , "ret_val" , retEvent.rawPayloadString)));
-                try {
-                    FnResponse fnResponse = new FnResponse(retEvent.parsePayLoad(config).getValAsString("/response"), Optional.of(retEvent.timestamp),
-                        FnReqResponse.RetStatus.Success, Optional.empty(), matchingEvent.numFound>1);
-
-                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse).build();
-                } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.error(new ObjectMessage(Map.of("func_signature", event.apiPath,
-                        "trace_id", event.traceId)) , e);
-                    return errorResponse("Unable to find response path in json " + e.getMessage());
-                }
-            }).orElseGet(() -> {
-                String errorReason = "Unable to find matching request";
-                LOGGER.error(new ObjectMessage(Map.of("func_signature" , event.apiPath , "trace_id"
-                , event.traceId , "reason" , errorReason)));
-                return errorResponse(errorReason);});
+            return matchingEvent.getObjects().findFirst()
+                .map(retEvent -> getFuncResp(event, matchingEvent.numFound, retEvent))
+                .orElseGet(() -> getDefaultFuncResp(event));
         } else {
             String errorReason = "Invalid event or no record/replay found.";
-            LOGGER.error(new ObjectMessage(Map.of("func_signature" , event.apiPath , "trace_id"
-                , event.traceId , "reason" , errorReason)));
-            return errorResponse(errorReason);
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.API_PATH_FIELD, event.apiPath,
+                    Constants.TRACE_ID_FIELD, event.traceId,
+                    Constants.REASON, errorReason
+                )));
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_EVENT,
+                    errorReason)).build();
         }
+    }
+
+    private Response getFuncResp(Event event, long matchingEventsCount, Event retEvent) {
+        LOGGER.debug(new ObjectMessage(
+            Map.of(
+                Constants.API_PATH_FIELD, retEvent.apiPath,
+                Constants.TRACE_ID_FIELD, retEvent.traceId,
+                Constants.DATA, retEvent.rawPayloadString)));
+        try {
+            FnResponse fnResponse = new FnResponse(
+                retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
+                Optional.of(retEvent.timestamp),
+                FnReqResponse.RetStatus.Success, Optional.empty(),
+                matchingEventsCount > 1);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
+                .build();
+        } catch (PathNotFoundException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.API_PATH_FIELD, event.apiPath,
+                    Constants.TRACE_ID_FIELD, event.traceId,
+                    Constants.EXCEPTION_STACK, e.getMessage()
+                )));
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    "Unable to find response path in json ")).build();
+        }
+    }
+
+    private Response getDefaultFuncResp(Event event) {
+        String errorReason = "Unable to find matching request, looking for default response";
+        LOGGER.error(new ObjectMessage(
+            Map.of(
+                Constants.API_PATH_FIELD, event.apiPath,
+                Constants.TRACE_ID_FIELD, event.traceId,
+                Constants.REASON, errorReason)));
+
+        EventQuery.Builder defEventQuery = new EventQuery.Builder(event.customerId,
+            event.app, event.eventType);
+        defEventQuery.withService(event.service);
+        defEventQuery.withRunType(RunType.Manual);
+        defEventQuery.withPaths(List.of(event.apiPath));
+
+        Optional<Event> defaultRespEvent = rrstore
+            .getSingleEvent(defEventQuery.build());
+        if (defaultRespEvent.isPresent()) {
+            FnResponse fnResponse = null;
+            try {
+                fnResponse = new FnResponse(
+                    defaultRespEvent.get().parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
+                    Optional.of(defaultRespEvent.get().timestamp),
+                    FnReqResponse.RetStatus.Success, Optional.empty(),
+                    false);
+            } catch (PathNotFoundException e) {
+                LOGGER.error(new ObjectMessage(
+                    Map.of(
+                        Constants.API_PATH_FIELD, event.apiPath,
+                        Constants.EXCEPTION_STACK, e.getMessage()
+                    )));
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Unable to find response path in json ")).build();
+            }
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
+                .build();
+        }
+
+        errorReason = "Unable to find default response!";
+        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+            buildErrorResponse(Constants.FAIL, Constants.EVENT_NOT_FOUND,
+                errorReason)).build();
     }
 
     @POST
@@ -252,12 +319,12 @@ public class MockServiceHTTP {
                 ).orElseGet(() -> {
                         String errorReason = "Unable to find matching request";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , traceIdString , "reason" , errorReason)));
+                            , traceIdString , Constants.REASON , errorReason)));
                         return errorResponse(errorReason);}))
                 .orElseGet(() -> {
                         String errorReason = "Unable to locate collection for given customer, app, instance combo";
                         LOGGER.error(new ObjectMessage(Map.of("func_name" , fnReqResponse.name , "trace_id"
-                            , traceIdString , "reason" , errorReason)));
+                            , traceIdString , Constants.REASON , errorReason)));
                         return errorResponse(errorReason);});
         } catch (Exception e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).
@@ -328,8 +395,8 @@ public class MockServiceHTTP {
     private Event createMockResponseEvent(Event originalResponse,
                                           Optional<String> mockReqId,
                                           String customerId, String app, String instanceId,
-                                          String replayCollection) throws EventBuilder.InvalidEventException {
-        EventBuilder builder = new EventBuilder(customerId, app, originalResponse.service,
+                                          String replayCollection) throws Event.EventBuilder.InvalidEventException {
+        Event.EventBuilder builder = new Event.EventBuilder(customerId, app, originalResponse.service,
             instanceId, replayCollection, originalResponse.traceId, Event.RunType.Replay, Instant.now(),
             mockReqId.orElse("NA"),
             originalResponse.apiPath, Event.EventType.HTTPResponse);
@@ -339,7 +406,7 @@ public class MockServiceHTTP {
 
     // TODO: Event redesign cleanup: This can be removed
     private Response getRespOld(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-			String customerid, String app, String instanceid,
+			String customerId, String app, String instanceId,
 			String service, HttpHeaders headers) {
 
 		LOGGER.info(String.format("Mocking request for %s", path));
@@ -348,24 +415,24 @@ public class MockServiceHTTP {
 		// first store the original request as a part of the replay
 		// this is optional as there might not be any running replay which is a rare case
 		// otherwise we'll always be able to construct a new request from the parameters
-		Optional<Request> mockRequest = createRequestMock(path, formParams, customerid, app, instanceid,
+		Optional<Request> mockRequest = createRequestMock(path, formParams, customerId, app, instanceId,
 				service, headers, queryParams);
 		mockRequest.ifPresent(mRequest -> rrstore.save(mRequest));
 
 	    // pathParams are not used in our case, since we are matching full path
 	    // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(customerid, app, instanceid);
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(customerId, app, instanceId);
         Optional<String> collection = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
-	    Request r = new Request(path, Optional.empty(), queryParams, formParams,
-	    		headers.getRequestHeaders(), service, "", "", collection,
-                Optional.of(Event.RunType.Record),
-	    		Optional.of(customerid),
-	    		Optional.of(app));
+        Request r = new Request(path, Optional.empty(), queryParams, formParams,
+            headers.getRequestHeaders(), service, "", "", collection,
+            Optional.of(Event.RunType.Record),
+            Optional.of(customerId),
+            Optional.of(app));
 
         Optional<String> templateVersion =
             recordOrReplay.flatMap(rr -> rr.replay.flatMap(replay -> Optional.of(replay.templateVersion)));
 
-	    TemplateKey key = new TemplateKey(templateVersion.get(), customerid, app, service, path, TemplateKey.Type.Request);
+	    TemplateKey key = new TemplateKey(templateVersion.get(), customerId, app, service, path, TemplateKey.Type.Request);
 		RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
 
 		Optional<com.cube.dao.Response> resp =  rrstore.getRespForReq(r, comparator)
@@ -387,26 +454,26 @@ public class MockServiceHTTP {
 			}));
 		    // Increment match counter in cache
             // TODO commenting out call to cache
-            //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+            //replayResultCache.incrementReqMatchCounter(customerId, app, service, path, instanceId);
 			// store a req-resp analysis match result for the mock request (during replay)
 			// and the matched recording request
 			mockRequest.ifPresent(mRequest -> respv.reqId.ifPresent(recordReqId -> {
 				Analysis.ReqRespMatchResult matchResult =
                     new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mRequest.reqId,
                         Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
-                        "", customerid, app, service, path, mRequest.collection.get(),
+                        "", customerId, app, service, path, mRequest.collection.get(),
                         CommonUtils.getTraceId(respv.meta),
                         CommonUtils.getTraceId(mRequest.hdrs));
 				rrstore.saveResult(matchResult);
 				com.cube.dao.Response mockResponseToStore = createMockResponse(respv , mRequest.reqId,
-                    customerid, app, instanceid);
+                    customerId, app, instanceId);
 				rrstore.save(mockResponseToStore);
 			}));
 		    return builder.entity(respv.body).build();
 	    }).orElseGet(() -> {
 				// Increment not match counter in cache
 				// TODO commenting out call to cache
-                //replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+                //replayResultCache.incrementReqNotMatchCounter(customerId, app, service, path, instanceId);
 				//TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
 				//a recorded request, here in the mock we have a replay request which did not match
 				//with any recorded request, but still to properly calculate no match counts for
@@ -417,7 +484,7 @@ public class MockServiceHTTP {
 					Analysis.ReqRespMatchResult matchResult =
                         new Analysis.ReqRespMatchResult(Optional.empty(), mRequest.reqId,
                             Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
-                            customerid, app, service, path, mRequest.collection.get(), Optional.empty(),
+                            customerId, app, service, path, mRequest.collection.get(), Optional.empty(),
                             CommonUtils.getTraceId(mRequest.hdrs));
 					rrstore.saveResult(matchResult);
 				});
@@ -427,8 +494,8 @@ public class MockServiceHTTP {
 	}
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
-                             String customerid, String app, String instanceid,
-                             String service, String method, String body, HttpHeaders headers) {
+        String customerId, String app, String instanceId,
+        String service, String method, String body, HttpHeaders headers) {
 
         LOGGER.info(String.format("Mocking request for %s", path));
 
@@ -436,11 +503,14 @@ public class MockServiceHTTP {
 
         // pathParams are not used in our case, since we are matching full path
         // MultivaluedMap<String, String> pathParams = ui.getPathParameters();
-        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(customerid),
-            Optional.of(app),
-            Optional.of(instanceid));
-        Optional<String> collectionOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
-        Optional<String> replayIdOpt = recordOrReplay.flatMap(ReqRespStore.RecordOrReplay::getCollection);
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore
+            .getCurrentRecordOrReplay(Optional.of(customerId),
+                Optional.of(app),
+                Optional.of(instanceId));
+        Optional<String> collectionOpt = recordOrReplay
+            .flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
+        Optional<String> replayIdOpt = recordOrReplay
+            .flatMap(ReqRespStore.RecordOrReplay::getCollection);
         boolean considerTrace = Utils.strToBool(headers.getRequestHeaders()
             .getFirst("cube-consider-trace")).orElse(true);
 
@@ -454,18 +524,18 @@ public class MockServiceHTTP {
         Request request = new Request(path, Optional.empty(), queryParams, formParams,
             headers.getRequestHeaders(), service, method, body, collectionOpt,
             Optional.of(Event.RunType.Record),
-            Optional.of(customerid),
+            Optional.of(customerId),
             Optional.of(app));
 
         String templateVersion = recordOrReplay.get().getTemplateVersion();
 
-        TemplateKey key = new TemplateKey(templateVersion, customerid, app, service, path, TemplateKey.Type.Request);
-        RequestComparator comparator = requestComparatorCache.getRequestComparator(key , true);
-
+        TemplateKey key = new TemplateKey(templateVersion, customerId, app, service, path,
+            TemplateKey.Type.Request);
+        RequestComparator comparator = requestComparatorCache.getRequestComparator(key, true);
 
         // first store the original request as a part of the replay
-        Request mockRequest = createRequestMockNew(path, formParams, customerid, app, instanceid,
-        service, method, body, headers, queryParams, replayId);
+        Request mockRequest = createRequestMockNew(path, formParams, customerId, app, instanceId,
+            service, method, body, headers, queryParams, replayId);
         Event mockRequestEvent;
         try {
             mockRequestEvent = mockRequest.toEvent(comparator, config);
@@ -476,19 +546,34 @@ public class MockServiceHTTP {
             return notFound();
         }
 
-        EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1, considerTrace);
-        Optional<Event> respEvent = rrstore.getEvents(reqQuery).getObjects().findFirst()
-            .flatMap(event -> rrstore.getRespEventForReqEvent(event));
+        EventQuery reqQuery = getRequestEventQuery(request, mockRequestEvent.payloadKey, 1,
+            considerTrace);
+        Optional<Event> respEvent = rrstore.getSingleEvent(reqQuery)
+            .flatMap(event -> rrstore.getRespEventForReqEvent(event))
+            .or(() -> {
+                request.runType = Optional.of(Event.RunType.Manual);
+                LOGGER.info("Using default response");
+
+                EventQuery respQuery = getDefaultRespEventQuery(request);
+                Optional<Event> defRespEvent = rrstore.getSingleEvent(respQuery);
+                if (defRespEvent.isPresent()) {
+                    return defRespEvent;
+                }
+
+                LOGGER.error(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "No default response found for request.",
+                        Constants.CUSTOMER_ID_FIELD, request.customerId,
+                        Constants.APP_FIELD, request.app,
+                        Constants.SERVICE_FIELD, request.getService(),
+                        Constants.API_PATH_FIELD, request.apiPath)));
+
+                return Optional.empty();
+            });
 
         return respEvent.flatMap(respEventVal -> {
 
-            Optional<com.cube.dao.Response> resp =  com.cube.dao.Response.fromEvent(respEventVal, jsonMapper)
-                .or(() -> {
-                    request.runType = Optional.of(Event.RunType.Manual);
-                    LOGGER.info("Using default response");
-                    return getDefaultResponse(request);
-                });
-
+            Optional<com.cube.dao.Response> resp = com.cube.dao.Response
+                .fromEvent(respEventVal, jsonMapper);
 
             return resp.map(respv -> {
                 ResponseBuilder builder = Response.status(respv.status);
@@ -496,30 +581,33 @@ public class MockServiceHTTP {
                     // System.out.println(String.format("key=%s, val=%s", fieldName, val));
                     // looks like setting some headers causes a problem, so skip them
                     // TODO: check if this is a comprehensive list
-                    if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":"))
+                    if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
                         builder.header(fieldName, val);
+                    }
                 }));
                 // Increment match counter in cache
                 // TODO commenting out call to cache
-                //replayResultCache.incrementReqMatchCounter(customerid, app, service, path, instanceid);
+                //replayResultCache.incrementReqMatchCounter(customerId, app, service, path, instanceId);
                 // store a req-resp analysis match result for the mock request (during replay)
                 // and the matched recording request
                 respv.reqId.ifPresent(recordReqId -> {
                     Analysis.ReqRespMatchResult matchResult =
                         new Analysis.ReqRespMatchResult(Optional.of(recordReqId), mockRequest.reqId,
                             Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
-                            "", customerid, app, service, path, mockRequest.collection.get(),
+                            "", customerId, app, service, path, mockRequest.collection.get(),
                             CommonUtils.getTraceId(respv.meta),
                             CommonUtils.getTraceId(mockRequest.hdrs));
                     rrstore.saveResult(matchResult);
                     try {
                         Event mockResponseToStore = createMockResponseEvent(respEventVal,
                             mockRequest.reqId,
-                            customerid, app, instanceid, replayId);
+                            customerId, app, instanceId, replayId);
                         rrstore.save(mockResponseToStore);
-                    } catch (EventBuilder.InvalidEventException e) {
-                        LOGGER.error(new ObjectMessage(Map.of("message", "Not able to store mock event", "traceId",
-                            respEventVal.traceId, "reqId", respEventVal.reqId)));
+                    } catch (Event.EventBuilder.InvalidEventException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Not able to store mock event",
+                                Constants.TRACE_ID_FIELD, respEventVal.traceId,
+                                Constants.REQ_ID_FIELD, respEventVal.reqId)));
                     }
                 });
                 return builder.entity(respv.body).build();
@@ -527,7 +615,7 @@ public class MockServiceHTTP {
         }).orElseGet(() -> {
             // Increment not match counter in cache
             // TODO commenting out call to cache
-            //replayResultCache.incrementReqNotMatchCounter(customerid, app, service, path, instanceid);
+            //replayResultCache.incrementReqNotMatchCounter(customerId, app, service, path, instanceId);
             //TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
             //a recorded request, here in the mock we have a replay request which did not match
             //with any recorded request, but still to properly calculate no match counts for
@@ -538,16 +626,27 @@ public class MockServiceHTTP {
             Analysis.ReqRespMatchResult matchResult =
                 new Analysis.ReqRespMatchResult(Optional.empty(), mockRequest.reqId,
                     Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
-                    customerid, app, service, path, mockRequest.collection.get(), Optional.empty(),
+                    customerId, app, service, path, mockRequest.collection.get(), Optional.empty(),
                     CommonUtils.getTraceId(mockRequest.hdrs));
             rrstore.saveResult(matchResult);
-            return	Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
+            return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
         });
 
     }
 
+    private EventQuery getDefaultRespEventQuery(Request request) {
+        EventQuery.Builder eventQuery = new EventQuery.Builder(
+            request.customerId.orElse("NA"),
+            request.app.orElse("NA"), EventType.HTTPResponse);
+        eventQuery.withService(request.getService().orElse("NA"));
+        eventQuery.withPaths(List.of(request.apiPath));
+        eventQuery.withRunType(RunType.Manual);
+
+        return eventQuery.build();
+    }
+
     public static EventQuery getRequestEventQuery(Request request, int payloadKey, int limit, boolean considerTrace) {
-        // eventually we will clean up code and make customerid and app non-optional in Request
+        // eventually we will clean up code and make customerId and app non-optional in Request
         String customerId = request.customerId.orElse("NA");
         String app = request.app.orElse("NA");
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
@@ -611,7 +710,7 @@ public class MockServiceHTTP {
 			.withMreqid(ComparisonType.EqualOptional)
 			.withMcollection(ComparisonType.Equal)
 			.withMmeta(ComparisonType.Equal)
-			.withMetafields(Collections.singletonList(SERVICEFIELD))
+			.withMetafields(Collections.singletonList(Constants.SERVICE_FIELD))
 			.withMhdrs(ComparisonType.EqualOptional)
 			.withHdrfields(Collections.singletonList(tracefield))
 			.build();
@@ -627,7 +726,7 @@ public class MockServiceHTTP {
         reqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(Constants.REQ_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
         reqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
-        reqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+        reqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + Constants.SERVICE_FIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		reqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH+"/"+tracefield, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
@@ -642,7 +741,7 @@ public class MockServiceHTTP {
 			.withMapp(ComparisonType.Equal)
 			.withMcollection(ComparisonType.EqualOptional)
 			.withMmeta(ComparisonType.Equal)
-			.withMetafields(Collections.singletonList(SERVICEFIELD))
+			.withMetafields(Collections.singletonList(Constants.SERVICE_FIELD))
 			.build();
 
 
@@ -654,7 +753,7 @@ public class MockServiceHTTP {
 		defaultReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 		defaultReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.EqualOptional));
-		defaultReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + SERVICEFIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
+		defaultReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + Constants.SERVICE_FIELD, CompareTemplate.DataType.Str, PresenceType.Optional, ComparisonType.Equal));
 
 		// comment below line if earlier ReqMatchSpec is to be used
 		mspecForDefault = new TemplatedRequestComparator(defaultReqTemplate, jsonMapper);

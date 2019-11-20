@@ -237,7 +237,7 @@ public class EventQuery {
         return traceIds;
     }
 
-    public Optional<Event.RunType> getRRType() { return runType; }
+    public Optional<Event.RunType> getRunType() { return runType; }
 
     public List<String> getReqIds() {
         return reqIds;
