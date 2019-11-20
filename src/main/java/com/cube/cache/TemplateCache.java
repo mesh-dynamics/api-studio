@@ -102,16 +102,10 @@ public class TemplateCache {
             }
     }
 
-
-    /*private Integer createKey(String customerId, String appId, String serviceId, String path){
-        int prime = 31;
-        int result = 1;
-        result = result*prime + customerId.hashCode();
-        result = result*prime + appId.hashCode();
-        result = result*prime + serviceId.hashCode();
-        result = result*prime + path.hashCode();
-        return result;
-    }*/
-
+    public void invalidateAll() {
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            jedis.flushAll();
+        }
+    }
 
 }

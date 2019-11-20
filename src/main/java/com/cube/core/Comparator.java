@@ -37,7 +37,9 @@ public interface Comparator {
 
 	Match compare(DataObj lhs, DataObj rhs);
 
-	public enum MatchType {
+    CompareTemplate getCompareTemplate();
+
+    public enum MatchType {
 		Default,
 		ExactMatch,
 		FuzzyMatch,

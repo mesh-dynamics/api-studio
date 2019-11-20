@@ -3,13 +3,13 @@
  */
 package com.cube.ws;
 
-import com.cube.utils.Constants;
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
+
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.ArrayList;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -35,25 +34,25 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.json.JSONObject;
+import io.cube.agent.UtilException;
 import redis.clients.jedis.Jedis;
 
-import com.cube.cache.RequestComparatorCache;
-import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
+import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
@@ -61,7 +60,6 @@ import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStoreSolr;
 import com.cube.dao.Request;
 import com.cube.dao.Result;
 import com.cube.drivers.Analyzer;
@@ -72,12 +70,7 @@ import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
-import com.cube.core.ValidateCompareTemplate;
-import com.cube.core.Utils;
 import com.cube.utils.Constants;
-
-import static com.cube.core.Utils.buildErrorResponse;
-import static com.cube.core.Utils.buildSuccessResponse;
 
 /**
  * @author prasad
@@ -106,18 +99,25 @@ public class AnalyzeWS {
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Config.DEFAULT_TRACE_FIELD);
 
-        Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
+        try {
+            Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
 
-        return analysis.map(av -> {
-            String json;
-            try {
-                json = jsonMapper.writeValueAsString(av);
-                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-            } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
-                return Response.serverError().build();
-            }
-        }).orElse(Response.serverError().build());
+            return analysis.map(av -> {
+                String json;
+                try {
+                    json = jsonMapper.writeValueAsString(av);
+                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                } catch (JsonProcessingException e) {
+                    LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayId), e);
+                    return Response.serverError().build();
+                }
+            }).orElse(Response.serverError().build());
+        } catch (ComparatorCache.TemplateNotFoundException e) {
+            return Response.serverError().entity((
+                buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_NOT_FOUND,
+                    "Cannot analyze since template does not exist : " +
+                    e.getMessage()))).build();
+        }
     }
 
 
@@ -228,7 +228,7 @@ public class AnalyzeWS {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
 
-            Utils.invalidateCacheFromTemplateSet(templateSet, requestComparatorCache, responseComparatorCache);
+            Utils.invalidateCacheFromTemplateSet(templateSet, comparatorCache);
             rrstore.saveTemplateSet(templateSet);
 
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(String.format(
@@ -291,11 +291,8 @@ public class AnalyzeWS {
                     .build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
-            requestComparatorCache.invalidateKey(key);
-            responseComparatorCache.invalidateKey(key);
-            //Analyzer.removeKey(key);
-            return Response.ok().type(MediaType.TEXT_PLAIN)
-                .entity("Json String successfully stored in Solr").build();
+            comparatorCache.invalidateKey(key);
+            return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN)
                 .entity("Invalid JSON String sent").build();
@@ -729,8 +726,7 @@ public class AnalyzeWS {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        requestComparatorCache.invalidateAll();
-        responseComparatorCache.invalidateAll();
+        comparatorCache.invalidateAll();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();
@@ -1172,8 +1168,7 @@ public class AnalyzeWS {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-		this.requestComparatorCache = config.requestComparatorCache;
-		this.responseComparatorCache = config.responseComparatorCache;
+		this.comparatorCache = config.comparatorCache;
 		this.recordingUpdate = new RecordingUpdate(config);
 	}
 
@@ -1183,8 +1178,7 @@ public class AnalyzeWS {
 	Config config;
     private final RecordingUpdate recordingUpdate;
     // Template cache to retrieve analysis templates from solr
-	final RequestComparatorCache requestComparatorCache;
-	final ResponseComparatorCache responseComparatorCache;
+    final ComparatorCache comparatorCache;
 
     /**
      * some fields from ReqRespMatchResult and some from Request to be returned by some api calls

@@ -3,13 +3,18 @@
  */
 package com.cube.ws;
 
-import com.cube.dao.Event.EventType;
-import com.cube.dao.Event.RunType;
-import com.cube.dao.Event.EventBuilder.InvalidEventException;
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
+import static com.cube.dao.RRBase.METAPATHFIELD;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -28,12 +33,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import com.cube.dao.*;
-
-import com.cube.utils.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -47,19 +48,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
 
-import static com.cube.core.Utils.buildErrorResponse;
-import static com.cube.core.Utils.buildSuccessResponse;
-import static com.cube.dao.RRBase.*;
 import com.cube.agent.FnReqResponse;
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
-import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
-import com.cube.core.ResponseComparator;
-import com.cube.core.TemplateEntry;
-import com.cube.core.TemplatedRequestComparator;
+import com.cube.core.Comparator;
 import com.cube.core.Utils;
+import com.cube.dao.DefaultEvent;
+import com.cube.dao.Event;
+import com.cube.dao.Event.EventBuilder.InvalidEventException;
+import com.cube.dao.Event.EventType;
+import com.cube.dao.Event.RunType;
+import com.cube.dao.EventQuery;
+import com.cube.dao.RRBase;
+import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
+import com.cube.dao.Request;
+import com.cube.dao.Result;
+import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -123,7 +130,6 @@ public class CubeStore {
 
     }
 
-    // TODO: Event redesign cleanup: This can be removed
     private Optional<String> storeSingleReqResp(ReqRespStore.ReqResp rr, String path, MultivaluedMap<String, String> queryParams) {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
@@ -202,8 +208,16 @@ public class CubeStore {
                         new TemplateKey(templateVersion, customerId.get(),
                             app.get(), service.get(), path, TemplateKey.Type.Request);
 
-                    RequestComparator requestComparator =
-                        config.requestComparatorCache.getRequestComparator(tkey, false);
+                    Comparator requestComparator = null;
+                    try {
+                        requestComparator = config.comparatorCache.getComparator(tkey, Event.EventType.HTTPRequest);
+                    } catch (ComparatorCache.TemplateNotFoundException e) {
+                        LOGGER.error(new ObjectMessage(Map.of(
+                            "message", "Compare template not found",
+                            "key", tkey
+                        )));
+                        return Optional.of("Compare template not found for " + tkey);
+                    }
 
                     Event requestEvent = null;
                     try {
@@ -455,6 +469,10 @@ public class CubeStore {
         return err.map(e -> {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Dropping store for event.",
+                    Constants.EVENT_TYPE_FIELD, event.eventType,
+                    Constants.COLLECTION_FIELD, event.getCollection(),
+                    Constants.REQ_ID_FIELD, event.reqId,
+                    Constants.API_PATH_FIELD, event.apiPath,
                     Constants.REASON, e)));
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }).orElseGet(() -> {
@@ -531,8 +549,12 @@ public class CubeStore {
         if (event.isRequestType()) {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
-            event.parseAndSetKey(config,
-                Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
+            try {
+                event.parseAndSetKey(config,
+                    Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
+            } catch (ComparatorCache.TemplateNotFoundException e) {
+                return Optional.of("Compare template not found");
+            }
         }
 
         boolean saveResult = rrstore.save(event);
@@ -585,36 +607,6 @@ public class CubeStore {
                 }
             }
         ).orElse(Response.serverError().entity("Content type not specified").build());
-    }
-
-
-	@POST
-	@Path("/setdefault/{customerId}/{app}/{service}/{method}/{var:.+}")
-	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
-    public Response setDefault(@Context UriInfo ui,
-                               @PathParam("var") String path,
-                               MultivaluedMap<String, String> formParams,
-                               @PathParam("customerId") String customerId,
-                               @PathParam("app") String app,
-                               @PathParam("service") String service,
-                               @PathParam("method") String method) {
-        String respbody = Optional.ofNullable(formParams.getFirst(Constants.BODY)).orElse("");
-        Optional<String> contenttype = Optional.ofNullable(formParams.getFirst(Constants.CONTENT_TYPE));
-        int status = Status.OK.getStatusCode();
-        Optional<String> sparam = Optional.ofNullable(formParams.getFirst(Constants.STATUS));
-        if (sparam.isPresent()) {
-            Optional<Integer> sval = Utils.strToInt(sparam.get());
-            if (sval.isEmpty()) {
-                return Response.status(Status.BAD_REQUEST).entity("Status parameter is not an integer").build();
-            } else {
-                status = sval.get();
-            }
-        }
-
-        if (saveDefaultResponse(customerId, app, service, path, method, respbody, status, contenttype)) {
-            return Response.ok().build();
-        }
-        return Response.serverError().entity("Not able to store default response").build();
     }
 
 
@@ -685,13 +677,12 @@ public class CubeStore {
             Event.EventType.getResponseType(defaultReqEvent.eventType));
         eventBuilder.setRawPayloadString(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
-        defaultRespEvent.parseAndSetKey(config,
-            Utils.getRequestCompareTemplate(config, defaultRespEvent, Constants.DEFAULT_TEMPLATE_VER));
+        // parseAndSetKey is needed only for requests
 
         //We cannot use storeEvent API as it checks for an active record/replay.
         //This API is standalone and should work without an active record/replay.
         if (!rrstore.save(defaultRespEvent)) {
-            LOGGER.debug(new ObjectMessage(
+            LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Storing Response Event failed.",
                     Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
                     Constants.REQ_ID_FIELD, defaultReqEvent.reqId,
@@ -736,8 +727,17 @@ public class CubeStore {
             //TODO:Add support for Binary payload.
             eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
             Event defaultReqEvent = eventBuilder.createEvent();
-            defaultReqEvent.parseAndSetKey(config, Utils.
-                getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+            try {
+                defaultReqEvent.parseAndSetKey(config, Utils.
+                    getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+            } catch (ComparatorCache.TemplateNotFoundException e) {
+                LOGGER.error(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "Compare template not found.",
+                        Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
+                        Constants.REQ_ID_FIELD, defaultReqEvent.reqId,
+                        Constants.API_PATH_FIELD, defaultReqEvent.apiPath)));
+                return Optional.empty();
+            }
 
             //We cannot use storeEvent API as it checks for a running record/replay.
             //This API is standalone and should work without an active record/replay.
@@ -758,21 +758,6 @@ public class CubeStore {
 
         return matchingReqEvent;
     }
-
-    /* here the body is the full json response */
-	@POST
-	@Path("/setdefault/{method}/{var:.+}")
-	@Consumes({MediaType.APPLICATION_JSON})
-    public Response setDefaultFullResp(@Context UriInfo ui, @PathParam("var") String path,
-                                       com.cube.dao.Response resp,
-                                       @PathParam("method") String method) {
-        if (saveDefaultResponse(path, method, resp)) {
-            return Response.ok().build();
-        }
-        return Response.serverError().entity("Not able to store default response").build();
-    }
-
-
 
 	@POST
 	@Path("start/{customerId}/{app}/{instanceId}/{collection}/{templateSetVersion}")
@@ -970,7 +955,7 @@ public class CubeStore {
         try {
             TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", TemplateKey.Type.Response);
-            ResponseComparator comparator = this.config.responseComparatorCache.getResponseComparator(key);
+            Comparator comparator = this.config.comparatorCache.getComparator(key, Event.EventType.HTTPResponse);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());
         } catch (Exception e) {
             LOGGER.error("Error occured :: " + e.getMessage() + " "
@@ -980,55 +965,6 @@ public class CubeStore {
     }
 
 
-    /**
-     *
-     * @param ui
-     * @return the requests corresponding to a path
-     */
-    @GET
-    @Path("requests")
-    // TODO: Event redesign cleanup: This can be removed
-    public Response requests(@Context UriInfo ui) {
-        MultivaluedMap<String, String> uriQueryParams = ui.getQueryParameters();
-        Optional<String> customerId = Optional.ofNullable(uriQueryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
-        Optional<String> app = Optional.ofNullable(uriQueryParams.getFirst(Constants.APP_FIELD));
-        Optional<String> collection = Optional.ofNullable(uriQueryParams.getFirst(Constants.COLLECTION_FIELD));
-        String service = Optional.ofNullable(uriQueryParams.getFirst(Constants.SERVICE_FIELD)).orElse("*");
-        String path = Optional.ofNullable(uriQueryParams.getFirst(Constants.PATH_FIELD)).orElse("*"); // the path to drill down on
-        Optional<String> pattern = Optional.ofNullable(uriQueryParams.getFirst("pattern")); // the url should match
-        // this pattern
-        Optional<Integer> start = Optional.ofNullable(uriQueryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt); // for
-        // paging
-        Optional<Integer> nummatches =
-            Optional.ofNullable(uriQueryParams.getFirst("nummatches")).flatMap(Utils::strToInt).or(() -> Optional.of(20)); //
-        // for paging
-
-        MultivaluedMap<String, String> emptyMap = new MultivaluedHashMap<>();
-
-        MultivaluedMap<String, String> queryParams = emptyMap;
-        MultivaluedMap<String, String> formParams = emptyMap;
-        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
-        pattern.ifPresent(p -> hdrs.add(HDRPATHFIELD, p));
-
-        Request queryRequest = new Request(path, Optional.empty(), queryParams, formParams, hdrs, service, "", "",
-            collection,
-            Optional.of(Event.RunType.Record), customerId, app);
-
-        List<Request> requests =
-            rrstore.getRequests(queryRequest, mspecForDrillDownQuery, nummatches, start)
-                .collect(Collectors.toList());
-
-        String json;
-        try {
-            json = jsonMapper.writeValueAsString(requests);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Request list to Json for customer %s, app %s, " +
-                    "collection %s.",
-                customerId.orElse(""), app.orElse(""), collection.orElse("")), e);
-            return Response.serverError().build();
-        }
-    }
 
 
     /**
@@ -1088,53 +1024,5 @@ public class CubeStore {
 			return rrstore.getCurrentCollection(customerId, app, instanceId);
 		});
 	}
-
-    // TODO: Event redesign : This needs to be rewritten to store as event
-    private boolean saveDefaultResponse(String customerId, String app,
-			String serviceid, String path, String method, String respbody, int status, Optional<String> contenttype) {
-		com.cube.dao.Response resp = new com.cube.dao.Response(Optional.empty(), status,
-				respbody, Optional.empty(), Optional.ofNullable(customerId), Optional.ofNullable(app), contenttype, path);
-		resp.setService(serviceid);
-		return saveDefaultResponse(path, method, resp);
-	}
-
-    // TODO: Event redesign: This needs to be rewritten to store as event
-	private boolean saveDefaultResponse(String path, String method, com.cube.dao.Response resp) {
-		Request req = new Request(resp.getService(), path, method, Optional.of(Event.RunType.Manual), resp.customerId,
-				resp.app);
-
-		// check if default response has been saved earlier
-		rrstore.getRequests(req, MockServiceHTTP.mspecForDefault, Optional.of(1))
-			.findFirst().ifPresentOrElse(oldreq -> {
-			// set the id to the same value, so that this becomes an update operation
-			req.reqId = oldreq.reqId;
-		}, () -> {
-			// otherwise generate a new random uuid
-			req.reqId = Optional.of(UUID.randomUUID().toString());
-		});
-		if (rrstore.save(req)) {
-			resp.reqId = req.reqId;
-			return rrstore.save(resp) && rrstore.commit();
-		}
-		return false;
-	}
-
-    private CompareTemplate drilldownQueryReqTemplate = new CompareTemplate();
-    static RequestComparator mspecForDrillDownQuery;
-
-    {
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.PATH_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.RUN_TYPE_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.CUSTOMER_ID_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.APP_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.COLLECTION_PATH, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.META_PATH + "/" + Constants.SERVICE_FIELD, CompareTemplate.DataType.Str, CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-        drilldownQueryReqTemplate.addRule(new TemplateEntry(Constants.HDR_PATH + "/" + HDRPATHFIELD,
-            CompareTemplate.DataType.Str,
-            CompareTemplate.PresenceType.Optional, CompareTemplate.ComparisonType.Equal));
-
-        // comment below line if earlier ReqMatchSpec is to be used
-        mspecForDrillDownQuery = new TemplatedRequestComparator(drilldownQueryReqTemplate, jsonMapper);
-    }
 
 }

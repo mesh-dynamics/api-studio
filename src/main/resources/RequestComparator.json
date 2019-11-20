@@ -3,17 +3,9 @@
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
-            { "path": "/reqId",         "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/body/query",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/collection",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/runType",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/customerId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/apiPath",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/timestamp",     "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": "ExactMatch"
     },
@@ -28,7 +20,6 @@
             { "path": "/app",           "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
             { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/apiPath",          "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": "FuzzyMatch"
     },
@@ -70,10 +61,11 @@
         "req1": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "req2": "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "rules": [
-            { "path": "/hdr/accept",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/meta/method",       "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/queryParams/filmId",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/formParams/filmName",  "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+            { "path": "/hdrs/accept",        "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/queryParams/filmId",    "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
+            "EqualOptional",  "customization": "" },
+            { "path": "/formParams/filmName",  "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
+            "EqualOptional",  "customization": "" }
         ],
         "output": "FuzzyMatch"
     },

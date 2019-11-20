@@ -322,7 +322,7 @@ public class JsonComparator implements Comparator {
 		//return !template.getRules().isEmpty();
 	}
 
-
+    @Override
 	public CompareTemplate getCompareTemplate() {
 	    return template;
     }
