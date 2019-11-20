@@ -34,7 +34,7 @@ public class Constants {
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
     public static final String RECORDING_NOT_FOUND = "RECORDING_NOT_FOUND";
-
+    public static final String TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND";
 
 
     //EXCEPTIONS

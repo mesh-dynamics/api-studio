@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
 import com.cube.ws.Config;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,12 +44,12 @@ public class Request extends RRBase {
 	public Request(String apiPath, Optional<String> reqId,
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
-			MultivaluedMap<String, String> meta, 
-			MultivaluedMap<String, String> hdrs, 
-			String method, 
+			MultivaluedMap<String, String> meta,
+			MultivaluedMap<String, String> hdrs,
+			String method,
 			String body,
 			Optional<String> collection,
-			Optional<Instant> timestamp, 
+			Optional<Instant> timestamp,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
@@ -59,9 +58,9 @@ public class Request extends RRBase {
 		this.formParams = formParams != null ? formParams : emptyMap();
 		this.method = method;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * @param apiPath
 	 * @param queryParams
@@ -70,11 +69,11 @@ public class Request extends RRBase {
 	public Request(String apiPath, Optional<String> id,
 			MultivaluedMap<String, String> queryParams,
 			MultivaluedMap<String, String> formParams,
-			MultivaluedMap<String, String> hdrs, 
+			MultivaluedMap<String, String> hdrs,
 			String service,
 			String method,
 			String body,
-			Optional<String> collection, 
+			Optional<String> collection,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
@@ -83,19 +82,19 @@ public class Request extends RRBase {
 		meta.add(Constants.SERVICE_FIELD, service);
 	}
 
-	public Request(Optional<String> serviceid, 
+	public Request(Optional<String> serviceid,
 			String path,
 			String method,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app) {
-		this(path, Optional.empty(), emptyMap(), emptyMap(), emptyMap(), 
+		this(path, Optional.empty(), emptyMap(), emptyMap(), emptyMap(),
 				emptyMap(), method, "", Optional.empty(), Optional.empty(), runType, customerId, app);
 		serviceid.ifPresent(s -> setService(s));
 	}
-	
-	
-	
+
+
+
 	/**
 	 * For jackson json ser/deserialization
 	 */
@@ -107,7 +106,7 @@ public class Request extends RRBase {
 		this.method = "";
 	}
 
-	static final TypeReference<MultivaluedHashMap<String, String>> typeRef 
+	static final TypeReference<MultivaluedHashMap<String, String>> typeRef
 	  = new TypeReference<MultivaluedHashMap<String, String>>() {};
 
     @JsonDeserialize(as=MultivaluedHashMap.class)
@@ -120,15 +119,15 @@ public class Request extends RRBase {
 		return new MultivaluedHashMap<String, String>();
 	}
 
-    public Event toEvent(RequestComparator comparator, Config config)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
+    public Event toEvent(Comparator comparator, Config config)
+        throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
         HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, queryParams, formParams,
             method, body);
         String payloadStr;
         payloadStr = config.jsonMapper.writeValueAsString(payload);
 
-        EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getTraceId().orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
             reqId.orElse(

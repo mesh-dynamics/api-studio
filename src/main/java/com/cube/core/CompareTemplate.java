@@ -3,12 +3,18 @@
  */
 package com.cube.core;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import static com.cube.core.Comparator.Resolution.*;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,8 +22,7 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 
-import static com.cube.core.Comparator.Resolution.*;
-import com.cube.core.RequestComparator.PathCT;
+import io.cube.agent.CommonUtils;
 
 /**
  * @author prasad
@@ -127,10 +132,6 @@ public class CompareTemplate {
 		return rules.values();
 	}
 
-
-	List<PathCT> getPathCTs() {
-		return getRules().stream().map(rule -> new PathCT(rule.path, rule.ct)).collect(Collectors.toList());
-	}
 
 	@JsonSetter("rules")
 	public void setRules(Collection<TemplateEntry> rules) {
