@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
 import com.cube.ws.Config;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,7 +119,7 @@ public class Request extends RRBase {
 		return new MultivaluedHashMap<String, String>();
 	}
 
-    public Event toEvent(RequestComparator comparator, Config config)
+    public Event toEvent(Comparator comparator, Config config)
         throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
         HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, queryParams, formParams,

@@ -3,7 +3,6 @@
  */
 package com.cube.dao;
 
-import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -27,12 +26,12 @@ import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
-import com.cube.core.RequestComparator;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -112,25 +111,6 @@ public interface ReqRespStore {
 
     boolean save(Event event);
 
-    /**
-	 * @param queryrequest
-	 * @param mspec - the matching specification
-	 * @param nummatches - max number of matches
-	 * @return the requests matching queryrequest based on the matching spec
-	 */
-    // TODO: Event redesign: This needs to be rewritten to get as event
-	Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches);
-
-    /**
-     * @param queryrequest
-     * @param mspec - the matching specification
-     * @param nummatches - max number of matches
-     * @param start - skip the first "start" number of matches (for paging)
-     * @return the requests matching queryrequest based on the matching spec
-     */
-    // TODO: Event redesign: This needs to be rewritten to get as event
-    Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches,
-                                Optional<Integer> start);
 
     /**
 	 * @param reqId
@@ -160,14 +140,6 @@ public interface ReqRespStore {
 	 */
     // TODO: Event redesign: This needs to be rewritten to get as event
 	Map<String, Response> getResponses(List<Request> requests);
-
-	/**
-	 * @param queryrequest
-	 * @return the response corresponding to the request matching in the db
-	 * to find the matching request, the reqId field of queryrequest is ignored
-	 */
-    // TODO: Event redesign cleanup: This can be removed
-	Optional<Response> getRespForReq(Request queryrequest, RequestComparator mspec);
 
 
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);

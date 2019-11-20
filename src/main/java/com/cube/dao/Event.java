@@ -87,6 +87,10 @@ public class Event {
         return requestEventTypes;
     }
 
+    public static boolean isReqType(EventType eventType) {
+        return requestEventTypes.contains(eventType);
+    }
+
     public String getCollection() {
         return collection;
     }

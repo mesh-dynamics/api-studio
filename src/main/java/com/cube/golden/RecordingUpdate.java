@@ -1,20 +1,30 @@
 package com.cube.golden;
 
 
-import com.cube.cache.TemplateKey;
-import com.cube.core.RequestComparator;
-import com.cube.dao.*;
-import com.cube.ws.Config;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cube.cache.TemplateKey;
+import com.cube.core.Comparator;
+import com.cube.dao.Analysis;
+import com.cube.dao.Event;
+import com.cube.dao.Recording;
+import com.cube.dao.RecordingOperationSetMeta;
+import com.cube.dao.RecordingOperationSetSP;
+import com.cube.dao.Request;
+import com.cube.dao.Response;
+import com.cube.dao.Result;
+import com.cube.ws.Config;
 
 public class RecordingUpdate {
 
@@ -162,7 +172,7 @@ public class RecordingUpdate {
             TemplateKey key = new TemplateKey(originalRec.templateVersion, originalRec.customerId,
                 originalRec.app, recordRequest.getService().orElse("NA"), recordRequest.apiPath,
                 TemplateKey.Type.Request);
-            RequestComparator comparator = config.requestComparatorCache.getRequestComparator(key , true);
+            Comparator comparator = config.comparatorCache.getComparator(key , Event.EventType.HTTPRequest);
 
 
             LOGGER.debug("saving request/response with reqId: " + transformedResponse.reqId);
