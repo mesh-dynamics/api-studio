@@ -28,13 +28,17 @@ def init_files(base_dir, template_dir, namespace, cube_application, cube_custome
     cube_instance=sys.argv[10]
     springboot_profile=sys.argv[11]
     solr_core=sys.argv[12]
+    cubeio_tag=sys.argv[13]
+    cubeui_tag=sys.argv[14]
+    cubeui_backend_tag=sys.argv[15]
+    movieinfo_tag=sys.argv[16]
     env = Environment(loader=FileSystemLoader(template_dir))
     for file in os.listdir(template_dir):
         if file.endswith(".yaml") or file.endswith(".json"):
             template = env.get_template(file)
             outfile = base_dir + "/kubernetes/" + file
             with open(outfile, "w") as out:
-                output_from_template = template.render(namespace=namespace, namespace_host=namespace_host, cube_application=cube_application, customer=cube_customer, record_host=host, cube_host=cube_host, staging_host=staging_host, cube_instance=cube_instance, springboot_profile=springboot_profile, solr_core=solr_core)
+                output_from_template = template.render(namespace=namespace, namespace_host=namespace_host, cube_application=cube_application, customer=cube_customer, record_host=host, cube_host=cube_host, staging_host=staging_host, cube_instance=cube_instance, springboot_profile=springboot_profile, solr_core=solr_core, cubeio_tag=cubeio_tag, cubeui_tag=cubeui_tag, cubeui_backend_tag=cubeui_backend_tag, movieinfo_tag=movieinfo_tag)
                 out.write(output_from_template)
                 out.close()
 

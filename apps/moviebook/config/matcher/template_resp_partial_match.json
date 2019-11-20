@@ -240,6 +240,14 @@
     {
       "rules":[
         {
+          "path":"/body",
+          "dt":"Default",
+          "pt":"Required",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
           "path":"/body/payment_updates",
           "dt":"Int",
           "pt":"Required",
@@ -272,6 +280,14 @@
     {
       "rules":[
         {
+          "path":"/body",
+          "dt":"Default",
+          "pt":"Required",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
           "path":"/body/0/store_id",
           "dt":"Int",
           "pt":"Optional",
@@ -295,6 +311,14 @@
     },
     {
       "rules":[
+        {
+          "path":"/body",
+          "dt":"Default",
+          "pt":"Required",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
         {
           "path":"/body/rent",
           "dt":"Float",
@@ -328,9 +352,9 @@
     {
       "rules":[
         {
-          "path":"/body/0/display_actors/*",
-          "dt":"Str",
-          "pt":"Optional",
+          "path":"/body",
+          "dt":"Default",
+          "pt":"Required",
           "ct":"Equal",
           "em":"Default",
           "customization":null
