@@ -109,13 +109,19 @@ start_record() {
 		read TEMPLATE_VERSION
 	fi
 
+  echo "Enter unique recording name"
+	read GOLDEN_NAME
+
+	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
+
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 
 	RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$CUBE_HOST" \
-  -H 'cache-control: no-cache')"
+  -H 'cache-control: no-cache'\
+  -d "$BODY" )"
   echo $RESPONSE
   RECORDING_ID=$(echo $RESPONSE | sed 's/^.*"id":"\([^"]*\)".*/\1/')
   echo "RECORDING_ID:" $RECORDING_ID
