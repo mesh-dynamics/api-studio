@@ -31,6 +31,15 @@ public class TemplateKey {
         Response
     }
 
+    private TemplateKey() {
+        this.customerId = "";
+        this.appId = "";
+        this.serviceId = "";
+        this.path = "";
+        this.reqOrResp = Type.Request;
+        this.version = "";
+    }
+
     public TemplateKey(String version, String customerId, String appId, String serviceId, String path, Type reqOrResp) {
         this.customerId = customerId;
         this.appId = appId;
