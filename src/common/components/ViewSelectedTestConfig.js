@@ -32,7 +32,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { dispatch } = this.props;
         dispatch(cubeActions.clear());
     }
-
+  
     handleChangeForInstance(e) {
         const { dispatch } = this.props;
         if (e && e.target.value) {

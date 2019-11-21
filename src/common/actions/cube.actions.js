@@ -17,6 +17,7 @@ export const cubeActions = {
     getReplayStatus,
     clearReplayStatus,
     getAnalysis,
+    initAnalyseRes,
     getReport,
     getTimelineData,
     hideServiceGraph,
@@ -340,6 +341,10 @@ function getAnalysis(collectionId, replayId, app) {
         }
     }
     function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
+}
+
+function initAnalyseRes() {
+    return {type: cubeConstants.INIT_ANALYSIS, data: null};
 }
 
 function getReport(collectionId, replayId) {
