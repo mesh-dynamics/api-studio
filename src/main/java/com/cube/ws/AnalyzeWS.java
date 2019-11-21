@@ -32,6 +32,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
@@ -120,22 +121,29 @@ public class AnalyzeWS {
     @Path("status/{replayId}")
     public Response status(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
-        Optional<Analysis> analysis = Analyzer.getStatus(replayId, rrstore);
-        Response resp = analysis.map(av -> {
-            String json;
-            try {
-                json = jsonMapper.writeValueAsString(av);
-                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-            } catch (JsonProcessingException e) {
-                LOGGER.error(String
-                    .format("Error in converting Analysis object to Json for replayId %s",
-                        replayId), e);
-                return Response.serverError().build();
-            }
-        }).orElse(Response.status(Response.Status.NOT_FOUND)
-            .entity("Analysis not found for replayId: " + replayId).build());
-        return resp;
-    }
+		Optional<Analysis> analysis = Analyzer.getStatus(replayId, rrstore);
+		Response resp = analysis.map(av -> {
+			String json;
+			try {
+				json = jsonMapper.writeValueAsString(av);
+				return Response.ok().type(MediaType.APPLICATION_JSON)
+					.entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(json))).build();
+			} catch (JsonProcessingException e) {
+				LOGGER.error(new ObjectMessage(Map.of(
+					Constants.MESSAGE, "Error in converting Analysis object to Json "
+						+ e.getMessage(),
+					Constants.REPLAY_ID_FIELD, replayId
+				)));
+				return Response.serverError().entity(
+					buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+						e.getMessage())).build();
+			}
+		}).orElse(
+			Response.status(Status.NOT_FOUND).entity(
+				buildErrorResponse(Constants.FAIL, Constants.ANALYSIS_NOT_FOUND,
+					"Analysis not found for replayId: " + replayId)).build());
+		return resp;
+	}
 
 	@GET
     @Path("aggrresult/{replayId}")
@@ -575,10 +583,10 @@ public class AnalyzeWS {
             .ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
         Optional<String> path = Optional
             .ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill down on
-        Optional<Integer> offset = Optional.ofNullable(queryParams.getFirst(Constants.OFFSET_FIELD))
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
             .flatMap(Utils::strToInt); // for paging
-        Optional<Integer> limit =
-            Optional.ofNullable(queryParams.getFirst(Constants.LIMIT_FIELD))
+        Optional<Integer> numResults =
+            Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD))
                 .flatMap(Utils::strToInt).or(() -> Optional.of(20)); // for paging
         Optional<Comparator.MatchType> reqMatchType = Optional
             .ofNullable(queryParams.getFirst(Constants.REQ_MATCH_TYPE))
@@ -598,7 +606,7 @@ public class AnalyzeWS {
 
             Result<Analysis.ReqRespMatchResult> result = rrstore
                 .getAnalysisMatchResults(replayId, service, path,
-                    reqMatchType, respMatchType, offset, limit);
+                    reqMatchType, respMatchType, start, numResults);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;

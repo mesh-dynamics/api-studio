@@ -33,6 +33,7 @@ public class Constants {
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
+    public static final String ANALYSIS_NOT_FOUND = "ANALYSIS_NOT_FOUND";
 
 
     //EXCEPTIONS
@@ -84,7 +85,5 @@ public class Constants {
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
-    public static final String LIMIT_FIELD = "limit";
-    public static final String OFFSET_FIELD = "offset";
 
 }
