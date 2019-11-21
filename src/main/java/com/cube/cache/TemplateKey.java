@@ -31,6 +31,9 @@ public class TemplateKey {
         Response
     }
 
+    /**
+     * This constructor is only for jackson json deserialization
+     **/
     private TemplateKey() {
         this.customerId = "";
         this.appId = "";
