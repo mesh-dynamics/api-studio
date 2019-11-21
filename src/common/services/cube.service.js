@@ -52,15 +52,20 @@ async function fetchAppsList() {
 async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId) {
     let response, json;
     let user = JSON.parse(localStorage.getItem('user'));
+    let formData = new FormData();
+    formData.append('name', (recordingId + '_' + Date.now()));
+    formData.append('userId', user.username);
     let url = `${config.analyzeBaseUrl}/updateGoldenSet/${recordingId}/${replayId}/${collectionUpdOpSetId}/${templateVer}`;
     let updateRes;
     try {
         response = await fetch(url, {
-            method: "get",
+            method: "post",
             headers:{
                 'Access-Control-Allow-Origin': '*',
+                "Content-Type": "application/x-www-form-urlencoded",
                 "Authorization": "Bearer " + user['access_token']
-            }
+            },
+            body: formData
         });
         if (response.ok) {
             json = await response.json();
