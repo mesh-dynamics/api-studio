@@ -88,9 +88,9 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["runType"] = "Record"
-                  meta["customerid"] = "{{customer}}"
+                  meta["customerId"] = "{{customer}}"
                   meta["app"] = "{{cube_application}}"
-                  meta["instanceid"] = "{{cube_instanceid}}"
+                  meta["instanceId"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
                   if (crequestid) then meta["c-request-id"] = crequestid end
                   if (xrequestid) then meta["x-request-id"] = xrequestid end
@@ -116,9 +116,9 @@ spec:
                   meta["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
                   -- meta["collection"] = "testc1"
                   meta["runType"] = "Record"
-                  meta["customerid"] = "{{customer}}"
+                  meta["customerId"] = "{{customer}}"
                   meta["app"] = "{{cube_application}}"
-                  meta["instanceid"] = "{{cube_instanceid}}"
+                  meta["instanceId"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
                   request_handle:headers():remove("baggage-intent")
                   request_handle:headers():add("baggage-intent", "record")

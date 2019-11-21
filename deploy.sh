@@ -11,10 +11,14 @@ generate_manifest() {
 	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
 		#TODO: why not delete everything? Otherwise fluentd_patch_*.json remain
+		CUBEIO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeio.git refs/heads/master | awk '{print $1}')-master
+		CUBEUI_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui.git refs/heads/master | awk '{print $1}')-master
+		CUBEUI_BACKEND_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
+		MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
-		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE
+		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $MASTER_NAMESPACE
 	fi
@@ -47,6 +51,41 @@ if [ -z "$1" ]; then
 ./update_templates.py $TEMPLATE_SCENARIO $GATEWAY_URL $CUBE_CUSTOMER $CUBE_APP $TEMPLATE_VERSION_TEMP_FILE $NAMESPACE_HOST $APP_DIR
 }
 
+set_default() {
+echo "Setting default responses for RESTWrap!"
+
+NOW=$(date +%Y-%m-%dT%H:%M:%SZ)
+
+# reqId cannot be NA as we are creating Solr doc id with reqId value. Otherwise second request
+# will override the first request here.
+
+RESPONSE="$(curl -X POST \
+  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -H "Host:$CUBE_HOST" \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc","instanceId":"NA","collection":"NA",
+  "traceId":"NA","runType":"Manual","timestamp":"'$NOW'","reqId":"'$NOW'","apiPath":"restsql/initialize","eventType":"HTTPRequest",
+  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"GET\",\"body\":\"\"}"},
+  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{status:Connection pool created.}\",\"status\":200}"}')"
+
+echo $RESPONSE
+
+RESPONSE="$(curl -X POST \
+  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -H "Host:$CUBE_HOST" \
+  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc",
+  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"'$NOW'",
+  "reqId":"'$NOW'","apiPath":"restsql/update","eventType":"HTTPRequest",
+  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"},
+  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{num_updates:1}\",\"status\":200}"}')"
+
+echo $RESPONSE
+
+}
+
 start_record() {
 	if [ -z "$1" ]; then
 		echo "Enter collection name"
@@ -70,13 +109,19 @@ start_record() {
 		read TEMPLATE_VERSION
 	fi
 
+  echo "Enter unique recording name"
+	read GOLDEN_NAME
+
+	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
+
 	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 
 	RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Host:$CUBE_HOST" \
-  -H 'cache-control: no-cache')"
+  -H 'cache-control: no-cache'\
+  -d "$BODY" )"
   echo $RESPONSE
   RECORDING_ID=$(echo $RESPONSE | sed 's/^.*"id":"\([^"]*\)".*/\1/')
   echo "RECORDING_ID:" $RECORDING_ID
@@ -269,10 +314,11 @@ main () {
 		stop_replay) OPERATION="stopreplay"; shift; generate_manifest $1; shift; stop_replay "$@";;
 		replay_status) OPERATION="replay_status"; shift; generate_manifest $1; shift; replay_status "$@";;
 		register_matcher) OPERATION="none"; shift; generate_manifest $1; shift; register_matcher "$@";;
+		set_default) OPERATION="none"; shift; generate_manifest $1; shift; set_default "$@";;
 		analyze) OPERATION="analyze"; shift; generate_manifest $1; shift; analyze "$@";;
 		update) OPERATION="update"; shift; generate_manifest $1; shift; update_deployment "$@";;
 		clean) OPERATION="clean"; shift; generate_manifest $1; shift; clean "$@";;
-		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, analyze, update, clean)."
+		*) echo "This script expect one of these system argument(init, record, stop_record, setup_replay, replay, stop_replay, register_matcher, set_default, analyze, clean)."
 	esac
 }
 
