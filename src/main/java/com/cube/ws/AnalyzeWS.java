@@ -877,8 +877,9 @@ public class AnalyzeWS {
      * @param templateUpdOpSetId Template update operation set id
      * @return Appropriate response
      */
-    @GET
+    @POST
     @Path("updateGoldenSet/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
+    @Consumes("application/x-www-form-urlencoded")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
@@ -921,7 +922,7 @@ public class AnalyzeWS {
             }
 
             // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
             if (recWithSameName.isPresent()) {
                 throw new Exception("Golden already present for name - " + name + " .Specify unique name");
             }
