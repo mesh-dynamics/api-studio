@@ -922,7 +922,7 @@ public class AnalyzeWS {
             }
 
             // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
             if (recWithSameName.isPresent()) {
                 throw new Exception("Golden already present for name - " + name + " .Specify unique name");
             }
