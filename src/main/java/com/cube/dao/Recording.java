@@ -156,12 +156,12 @@ public class Recording {
 		return recording;
 	}
 
-    public static Recording softDeleteRecording(Recording recording, ReqRespStore rrstore) throws RecordingSaveFailureException {
-        recording.archived = true;
-        recording.updateTimestamp = Optional.of(Instant.now());
-        boolean success = rrstore.saveRecording(recording);
+    public Recording softDeleteRecording( ReqRespStore rrstore) throws RecordingSaveFailureException {
+        this.archived = true;
+	    this.updateTimestamp = Optional.of(Instant.now());
+        boolean success = rrstore.saveRecording(this);
         if(!success) throw new RecordingSaveFailureException("Cannot delete recording");
-        return recording;
+        return this;
     }
 
     public static class RecordingSaveFailureException extends Exception {

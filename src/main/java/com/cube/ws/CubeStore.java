@@ -951,13 +951,13 @@ public class CubeStore {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
             try {
-                Recording deletedR = Recording.softDeleteRecording(rec, rrstore);
+                Recording deletedR = rec.softDeleteRecording(rrstore);
                 String json;
-                LOGGER.info(new ObjectMessage(Map.of("Soft Deleting recording for recordingId", recordingId)));
+                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId", recordingId)));
                 json = jsonMapper.writeValueAsString(deletedR);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException ex) {
-                LOGGER.error(new ObjectMessage(Map.of("Error in converting Recording object to Json for recordingId", recordingId,
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Error in converting Recording object to Json for recordingId", "RecordingId", recordingId,
                     Constants.REASON, ex)));
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
