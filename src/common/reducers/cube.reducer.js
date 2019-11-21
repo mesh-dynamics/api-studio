@@ -258,6 +258,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 timelineData: action.data
             };
+        case cubeConstants.CLEAR_REPLAY_STATUS:
+            return {
+                ...state,
+                replayStatusObj: null
+            };
         case cubeConstants.CLEAR_PREVIOUS_DATA:
             return {
                 ...state,

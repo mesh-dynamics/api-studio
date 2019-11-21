@@ -217,7 +217,7 @@ class GoldenPopover extends React.Component {
         let {cube, jsonPath} = this.props;
         jsonPath = jsonPath.replace("<BEGIN>", "");
         let response, json;
-        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}?apipath=${cube.pathResultsParams.path}&jsonpath=${jsonPath}`;
+        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
 
         let newRule = {};
         try {
