@@ -53,6 +53,7 @@ import com.cube.dao.EventQuery;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Request;
 import com.cube.dao.Result;
+import com.cube.exception.DataObjException;
 import com.cube.utils.Constants;
 
 /**
@@ -227,7 +228,7 @@ public class MockServiceHTTP {
                 matchingEventsCount > 1);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                 .build();
-        } catch (PathNotFoundException e) {
+        } catch (PathNotFoundException | DataObjException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(
                     Constants.API_PATH_FIELD, event.apiPath,
@@ -264,7 +265,7 @@ public class MockServiceHTTP {
                     Optional.of(defaultRespEvent.get().timestamp),
                     FnReqResponse.RetStatus.Success, Optional.empty(),
                     false);
-            } catch (PathNotFoundException e) {
+            } catch (PathNotFoundException | DataObjException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(
                         Constants.API_PATH_FIELD, event.apiPath,

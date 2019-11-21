@@ -8,6 +8,7 @@ import static com.cube.dao.Event.RunType.Record;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
+import com.cube.exception.DataObjException;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -122,9 +123,13 @@ public class Response extends RRBase {
             reqId.orElse("NA"), apiPath, Event.EventType.HTTPResponse);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
-        event.parsePayLoad(config);
+		try {
+			event.parsePayLoad(config);
+		} catch (DataObjException e) {
+			e.printStackTrace();
+		}
 
-        return event;
+		return event;
     }
 
 

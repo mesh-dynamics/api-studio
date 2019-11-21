@@ -9,6 +9,7 @@ import static com.cube.dao.RRBase.METAPATHFIELD;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -550,8 +551,13 @@ public class CubeStore {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
             try {
+                URLClassLoader classLoader = null;
+                if (event.eventType.equals(EventType.ThriftRequest)) {
+                    classLoader = recordOrReplay.map(RecordOrReplay::getClassLoader).orElse(null);
+                }
+
                 event.parseAndSetKey(config,
-                    Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
+                    Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()) , classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 return Optional.of("Compare template not found");
             }

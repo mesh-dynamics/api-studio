@@ -268,11 +268,11 @@ public class Utils {
         return errorResponse.toString();
     }
 
-    public static Map<String,String> extractThriftParams(String thriftApiPath) {
+    public static Map<String,Object> extractThriftParams(String thriftApiPath) {
         String[] splitResult = thriftApiPath.split("::");
         String methodName = splitResult[0];
         String argsClassName = splitResult[1];
-        Map<String, String> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put(Constants.THRIFT_METHOD_NAME, methodName);
         params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
         return params;

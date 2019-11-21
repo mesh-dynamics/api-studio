@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
@@ -447,6 +448,13 @@ public interface ReqRespStore {
                 .orElseGet(() -> recording.map(recording1 -> recording1.templateVersion).orElse(
                     Constants.DEFAULT_TEMPLATE_VER));
         }
+
+        @JsonIgnore
+        public URLClassLoader getClassLoader() {
+        	// TODO add replay logic as well
+        	return recording.map(rec -> rec.generatedClassLoader).orElse(null);
+        }
+
 
 		// for json de-serialization
 		public RecordOrReplay() {

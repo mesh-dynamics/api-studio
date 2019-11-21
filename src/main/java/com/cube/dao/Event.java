@@ -8,6 +8,7 @@ package com.cube.dao;
 
 import static com.cube.dao.Event.RunType.Record;
 
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -120,8 +121,12 @@ public class Event {
     }
 
     public void parseAndSetKey(Config config, CompareTemplate template) {
+        parseAndSetKey(config,template,null);
+    }
+
+    public void parseAndSetKey(Config config, CompareTemplate template, URLClassLoader classLoader) {
         try {
-            parsePayLoad(config);
+            parsePayLoad(config, classLoader);
             List<String> keyVals = new ArrayList<>();
             payload.collectKeyVals(path -> template.getRule(path).getCompareType()
                 == CompareTemplate.ComparisonType.Equal, keyVals);
@@ -133,19 +138,25 @@ public class Event {
         } catch (DataObjException e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to parse payload and set key",
-                    Constants.REQ_ID, this.reqId, Constants.EVENT_TYPE, eventType)), e);
+                    Constants.REQ_ID_FIELD, this.reqId, Constants.EVENT_TYPE_FIELD, eventType)), e);
         }
     }
 
     public DataObj parsePayLoad(Config config) throws DataObjException {
+        return parsePayLoad(config, null);
+    }
+
+    public DataObj parsePayLoad(Config config, URLClassLoader classLoader) throws DataObjException {
         // parse if not already parsed
         if (payload == null) {
-            Map<String, String> params = null;
-            if ( (Objects.equals(this.eventType, EventType.ThriftRequest) ||
+            Map<String, Object> params = null;
+            if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
                 Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
-                    params = Utils.extractThriftParams(this.apiPath);
+                params = Utils.extractThriftParams(this.apiPath);
             }
-            payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config, params);
+            params.put(Constants.CLASS_LOADER, classLoader);
+            payload = DataObjFactory
+                .build(eventType, rawPayloadBinary, rawPayloadString, config, params);
         }
 
         return payload;
@@ -161,12 +172,20 @@ public class Event {
     }
 
     public String getPayloadAsString(Config config) {
-        parsePayLoad(config);
+        try {
+            parsePayLoad(config);
+        } catch (DataObjException e) {
+            e.printStackTrace();
+        }
         return payload.toString();
     }
 
     public DataObj getPayload(Config config) {
-        parsePayLoad(config);
+        try {
+            parsePayLoad(config);
+        } catch (DataObjException e) {
+            e.printStackTrace();
+        }
         return payload;
     }
 

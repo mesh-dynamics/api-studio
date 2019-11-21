@@ -24,13 +24,14 @@ public class Constants {
     public static final String RESP_MATCH_TYPE = "respMatchType";
     public static final String INCLUDE_DIFF = "diffInclude";
 
+    //MESSAGE KEYS
+    public static final String CLASS_NAME = "className";
 
     //MESSAGE_IDs
     public static final String EVENT_NOT_FOUND = "EVENT_NOT_FOUND";
     public static final String STORE_EVENT_FAILED = "STORE_EVENT_FAILED";
     public static final String INVALID_EVENT = "INVALID_EVENT";
     public static final String INVALID_INPUT = "INVALID_INPUT";
-
     public static final String INVALID_HEX_PAYLOAD = "INVALID_HEX_PAYLOAD";
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
@@ -67,10 +68,8 @@ public class Constants {
 
     public static final String THRIFT_CLASS_NAME = "thriftClassName";
     public static final String THRIFT_METHOD_NAME  = "thirftMethodName";
-    public static final String CLASS_NAME = "CLASS_NAME";
+    public static final String CLASS_LOADER = "classLoader";
 
-    public static final String REQ_ID = "REQ_ID";
-    public static final String EVENT_TYPE = "EVENT_TYPE";
 
     //COMMON STRINGS
     public static final String CUSTOMER_ID_FIELD = "customerId";
@@ -95,5 +94,7 @@ public class Constants {
     public static final String METHOD_FIELD = "method";
     public static final String LIMIT_FIELD = "limit";
     public static final String OFFSET_FIELD = "offset";
+    public static final String JAR_PATH_FIELD = "jarPath";
+
 
 }

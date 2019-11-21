@@ -8,6 +8,7 @@ package com.cube.dao;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URLClassLoader;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
@@ -35,7 +36,7 @@ public class DataObjFactory {
     public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
-        Config config, Map<String, String> params) throws DataObjException {
+        Config config, Map<String, Object> params) throws DataObjException {
 
         switch (type) {
             case HTTPRequest:
@@ -58,7 +59,8 @@ public class DataObjFactory {
 
                 TDeserializer deserializer = new TDeserializer();
                 try {
-                    Class<?> clazz = Class.forName(params.get(Constants.THRIFT_CLASS_NAME));
+                    ClassLoader loader = (URLClassLoader) params.get(Constants.CLASS_LOADER);
+                    Class<?> clazz = loader.loadClass((String)params.get(Constants.THRIFT_CLASS_NAME));
                     Constructor<?> constructor = clazz.getConstructor();
                     Object obj1 = constructor.newInstance();
                     deserializer.deserialize((TBase) obj1, payloadBin);
