@@ -32,13 +32,13 @@ public class Event {
 	private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
 
-    public Event(String customerId, String app, String service, String instanceId,
-        String collection, String traceId, RunType runType, Instant timestamp, String reqId,
-        String apiPath, EventType eventType, byte[] rawPayloadBinary, String rawPayloadString,
-        DataObj payload, int payloadKey) {
-        this.customerId = customerId;
-        this.app = app;
-        this.service = service;
+	public Event(String customerId, String app, String service, String instanceId,
+		String collection, String traceId, RunType runType, Instant timestamp, String reqId,
+		String apiPath, EventType eventType, byte[] rawPayloadBinary, String rawPayloadString,
+		DataObj payload, int payloadKey) {
+		this.customerId = customerId;
+		this.app = app;
+		this.service = service;
 		this.instanceId = instanceId;
 		this.collection = collection;
 		this.traceId = traceId;
@@ -83,16 +83,16 @@ public class Event {
 		return collection;
 	}
 
-    public boolean validate() {
+	public boolean validate() {
 
-        if ((customerId == null) || (app == null) || (service == null) || (instanceId
-            == null) /*|| (collection == null)*/ || (traceId == null) || (runType == null) || (
-            timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null) || (
-            (rawPayloadBinary == null) == (rawPayloadString == null))) {
-            return false;
-        }
-        return true;
-    }
+		if ((customerId == null) || (app == null) || (service == null) || (instanceId
+			== null) /*|| (collection == null)*/ || (traceId == null) || (runType == null) || (
+			timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null) || (
+			(rawPayloadBinary == null) == (rawPayloadString == null))) {
+			return false;
+		}
+		return true;
+	}
 
 	@JsonIgnore
 	public boolean isRequestType() {
@@ -133,9 +133,9 @@ public class Event {
 		}
 	}
 
-    public static List<EventType> requestEventTypes = List
-        .of(EventType.HTTPRequest, EventType.JavaRequest, EventType.ThriftRequest,
-            EventType.ProtoBufRequest);
+	public static List<EventType> requestEventTypes = List
+		.of(EventType.HTTPRequest, EventType.JavaRequest, EventType.ThriftRequest,
+			EventType.ProtoBufRequest);
 
 	public final String customerId;
 	public final String app;
