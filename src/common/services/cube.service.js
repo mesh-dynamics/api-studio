@@ -52,9 +52,9 @@ async function fetchAppsList() {
 async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId) {
     let response, json;
     let user = JSON.parse(localStorage.getItem('user'));
-    let formData = new FormData();
-    formData.append('name', (recordingId + '_' + Date.now()));
-    formData.append('userId', user.username);
+    let searchParams = new URLSearchParams();
+    searchParams.set('name', (recordingId + '_' + Date.now()));
+    searchParams.set('userId', user.username);
     let url = `${config.analyzeBaseUrl}/updateGoldenSet/${recordingId}/${replayId}/${collectionUpdOpSetId}/${templateVer}`;
     let updateRes;
     try {
@@ -65,7 +65,7 @@ async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, reco
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Authorization": "Bearer " + user['access_token']
             },
-            body: formData
+            body: searchParams
         });
         if (response.ok) {
             json = await response.json();
