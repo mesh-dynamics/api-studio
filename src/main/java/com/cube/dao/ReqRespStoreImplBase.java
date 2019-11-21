@@ -4,14 +4,12 @@
 package com.cube.dao;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.MoreObjects;
 
-import com.cube.core.RequestComparator;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 
@@ -25,11 +23,6 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 
     @Override
-    public Stream<Request> getRequests(Request queryrequest, RequestComparator mspec, Optional<Integer> nummatches) {
-        return getRequests(queryrequest, mspec, nummatches, Optional.empty());
-    }
-
-    @Override
     public Optional<Event> getRespEventForReqEvent(Event reqEvent){
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
             Event.EventType.getResponseType(reqEvent.eventType));
@@ -39,7 +32,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
             .withReqId(reqEvent.reqId)
             .withLimit(1)
             .build();
-        return getEvents(eventQuery).getObjects().findFirst();
+        return getSingleEvent(eventQuery);
     }
 
     /* (non-Javadoc)

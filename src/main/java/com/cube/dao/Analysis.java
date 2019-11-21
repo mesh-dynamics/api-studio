@@ -267,9 +267,9 @@ public class Analysis {
 			super();
 			this.recordReqId = recordReqId;
 			this.replayReqId = replayReqId;
-			this.reqmt = reqMt;
+			this.reqMatchType = reqMt;
 			this.numMatch = numMatch;
-			this.respmt = respMt;
+			this.respMatchType = respMt;
 			this.respMatchMetadata = matchMetaData;
 			this.diff = diff;
 			this.customerId = customerId;
@@ -298,13 +298,13 @@ public class Analysis {
                     rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
 		}
 
-        public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayid,
+        public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayId,
                                   ObjectMapper jsonmapper) {
             this(Optional.of(rm.recordReq.reqId), rm.replayReq.map(req -> req.reqId), reqmt, size,
                 rm.match,
                 rm.recordReq.customerId, rm.recordReq.app,
                 rm.recordReq.service, rm.recordReq.apiPath,
-                replayid, jsonmapper, Optional.of(rm.recordReq.traceId),
+                replayId, jsonmapper, Optional.of(rm.recordReq.traceId),
                 rm.replayReq.map(replayreq -> replayreq.traceId)) ;
         }
 
@@ -312,9 +312,9 @@ public class Analysis {
         final public Optional<String> replayReqId;
 		final public Optional<String> recordTraceId;
 		final public Optional<String> replayTraceId;
-		final public Comparator.MatchType reqmt;
+		final public Comparator.MatchType reqMatchType;
 		final public int numMatch;
-		final public Comparator.MatchType respmt;
+		final public Comparator.MatchType respMatchType;
 		final public String respMatchMetadata;
 		final public String diff;
 		final public String customerId;

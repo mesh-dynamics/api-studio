@@ -5,7 +5,11 @@ public class Constants {
     public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
-    //API RESPONSE STRINGS
+    //API STRINGS
+    public static final String REQUEST = "request";
+    public static final String RESPONSE = "response";
+    public static final String CONTENT_TYPE = "content-type";
+    public static final String BODY = "body";
     public static final String STATUS = "status";
     public static final String SUCCESS = "success";
     public static final String FAIL = "fail";
@@ -14,6 +18,11 @@ public class Constants {
     public static final String RESPONSE_OBJ = "responseObj";
     public static final String MESSAGE_ID = "messageId";
     public static final String MESSAGE = "message";
+    public static final String REASON = "reason";
+    public static final String EXCEPTION_STACK = "exceptionStack";
+    public static final String REQ_MATCH_TYPE = "reqMatchType";
+    public static final String RESP_MATCH_TYPE = "respMatchType";
+    public static final String INCLUDE_DIFF = "diffInclude";
 
 
     //MESSAGE_IDs
@@ -24,6 +33,7 @@ public class Constants {
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
+    public static final String TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND";
 
 
     //EXCEPTIONS
@@ -52,5 +62,29 @@ public class Constants {
     public static final String HDR_PATH = "/hdr";
     public static final String META_PATH = "/meta";
     public static final String BODY_PATH = "/body";
+
+    //COMMON STRINGS
+    public static final String CUSTOMER_ID_FIELD = "customerId";
+    public static final String APP_FIELD = "app";
+    public static final String SERVICE_FIELD = "service";
+    public static final String INSTANCE_ID_FIELD = "instanceId";
+    public static final String COLLECTION_FIELD = "collection";
+    public static final String RUN_TYPE_FIELD = "runType";
+    public static final String PATH_FIELD = "path";
+    public static final String API_PATH_FIELD = "apiPath";
+    public static final String REQ_ID_FIELD = "reqId";
+    public static final String TIMESTAMP_FIELD = "timestamp";
+    public static final String TRACE_ID_FIELD = "traceId";
+    public static final String EVENT_TYPE_FIELD = "eventType";
+    public static final String JSON_PATH_FIELD = "jsonPath";
+    public static final String USER_ID_FIELD = "userId";
+    public static final String RECORD_REQ_ID_FIELD = "recordReqId";
+    public static final String REPLAY_REQ_ID_FIELD = "replayReqId";
+    public static final String START_FIELD = "start";
+    public static final String END_DATE_FIELD = "endDate";
+    public static final String NUM_RESULTS_FIELD = "numResults";
+    public static final String METHOD_FIELD = "method";
+    public static final String LIMIT_FIELD = "limit";
+    public static final String OFFSET_FIELD = "offset";
 
 }

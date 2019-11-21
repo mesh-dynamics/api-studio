@@ -8,6 +8,7 @@ import static com.cube.dao.Event.RunType.Record;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 import java.io.IOException;
@@ -38,17 +39,17 @@ public class Response extends RRBase {
 	 * @param body
 	 */
 	public Response(Optional<String> reqId, int status,
-			MultivaluedMap<String, String> meta, 
+			MultivaluedMap<String, String> meta,
 			MultivaluedMap<String, String> hdrs, String body,
 			Optional<String> collection,
-			Optional<Instant> timestamp, 
+			Optional<Instant> timestamp,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app, String apiPath) {
 		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app, apiPath);
 		this.status = status;
 	}
-	
+
 	public Response(Optional<String> reqId, int status,
 			String body,
 			Optional<String> collection,
@@ -59,9 +60,9 @@ public class Response extends RRBase {
 				customerId, app, apiPath);
 		contenttype.ifPresent(ct -> hdrs.add(HttpHeaders.CONTENT_TYPE, ct));
 	}
-	
+
 	/**
-	 * 
+	 *
 	 */
 	@SuppressWarnings("unused")
 	private Response() {
@@ -69,9 +70,9 @@ public class Response extends RRBase {
 		this.status = Status.OK.getStatusCode();
 	}
 
-	
+
 	public final int status;
-	
+
 	private static final MultivaluedHashMap<String, String> emptyMap() {
 		return new MultivaluedHashMap<String, String>();
 	}
@@ -93,8 +94,8 @@ public class Response extends RRBase {
         try {
             HTTPResponsePayload responsePayload = jsonMapper.readValue(event.rawPayloadString, HTTPResponsePayload.class);
             MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
-            meta.put(SERVICEFIELD, List.of(event.service));
-            meta.put(INSTANCEIDFIELD, List.of(event.instanceId));
+            meta.put(Constants.SERVICE_FIELD, List.of(event.service));
+            meta.put(Constants.INSTANCE_ID_FIELD, List.of(event.instanceId));
             meta.put(Config.DEFAULT_TRACE_FIELD, List.of(event.traceId));
 
             return Optional.of(new Response(Optional.of(event.reqId), responsePayload.status, meta,
@@ -109,13 +110,13 @@ public class Response extends RRBase {
     }
 
     public Event toEvent(Config config, String apiPath)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
+        throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
         HTTPResponsePayload payload = new HTTPResponsePayload(hdrs, status, body);
         String payloadStr;
         payloadStr = config.jsonMapper.writeValueAsString(payload);
 
-        EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getMetaField(Config.DEFAULT_TRACE_FIELD).orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
             reqId.orElse("NA"), apiPath, Event.EventType.HTTPResponse);
