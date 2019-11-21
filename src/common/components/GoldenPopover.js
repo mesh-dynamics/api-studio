@@ -44,7 +44,7 @@ class GoldenPopover extends React.Component {
             },
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
-            issueTypeIdInput: 10004,
+            issueTypeId: 10004,
             projectInput: 10000,
 
             projectList: [],
@@ -87,11 +87,13 @@ class GoldenPopover extends React.Component {
         const { cube } = this.props;
         let summary = this.state.summaryInput
         let description = this.state.descriptionInput
-        let project = this.state.projectInput
-        let issueTypeId = this.state.issueTypeIdInput
+        let projectId = this.state.projectInput
+        let issueTypeId = this.state.issueTypeId
         let apiPath = cube.pathResultsParams.path;
         let jsonPath = this.props.jsonPath;
-        this.createJiraIssue(summary, description, issueTypeId, project, apiPath, jsonPath)
+        let replayId = cube.pathResultsParams.replayId;
+        let requestId  = ""; // TODO
+        this.createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath)
             .then(r => {
                     this.hideGR()
                     this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
@@ -408,7 +410,7 @@ Analysis URL: ${window.location.href}
         this.setState({ defaultRule: { ...newRule }, newRule: { ...newRule } });
     }
 
-    async createJiraIssue(summary, description, issueTypeId, projectId, apiPath, jsonPath) {
+    async createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath) {
         let user = JSON.parse(localStorage.getItem('user'));
         let response, json;
         let url = `${config.apiBaseUrl}/jira/issue/create`;
@@ -419,7 +421,9 @@ Analysis URL: ${window.location.href}
             description: description,
             issueTypeId: issueTypeId,
             projectId: projectId,
+            replayId: replayId,
             apiPath: apiPath,
+            requestId : requestId,
             jsonPath: jsonPath,
         }
 
