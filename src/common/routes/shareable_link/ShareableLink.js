@@ -689,7 +689,8 @@ class ShareableLink extends Component {
                     <Breadcrumb style={{}}>
                         <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
                         <Breadcrumb.Item href="javascript:void(0);">
-                            <DropdownButton title={"SERVICE: " + selectedService} id="dropdown-size-medium">
+                            <strong>Service:&nbsp;</strong>
+                            <DropdownButton title={selectedService} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
                                     <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
@@ -698,7 +699,8 @@ class ShareableLink extends Component {
                             </DropdownButton>
                         </Breadcrumb.Item>
                         <Breadcrumb.Item active>
-                            <DropdownButton title={selectedAPI ? "API PATH: " + selectedAPI : "Select API Path"} id="dropdown-size-medium">
+                            <strong>API Path:&nbsp;</strong>
+                            <DropdownButton title={selectedAPI ? selectedAPI : "Select API Path"} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
                                     <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
