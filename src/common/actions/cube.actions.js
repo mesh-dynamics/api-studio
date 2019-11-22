@@ -34,7 +34,7 @@ export const cubeActions = {
     removeFromNOS,
     removeFromOperations,
     getNewTemplateVerInfo,
-    updateTemplateOperationSet,
+    updateTemplateOperationSet
 };
 
 function clear() {
