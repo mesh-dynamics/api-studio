@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb } from 'react-bootstrap';
+import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button } from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
 
@@ -31,10 +31,6 @@ class ShareableLink extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            replayList: [],
-            diffLayoutData: [],
-            totalRequests: 0,
-            resultsFetched: 0,
             filterPath: '',
             showResponseMessageHeaders: false,
             shownResponseMessageHeaders: false,
@@ -62,14 +58,21 @@ class ShareableLink extends Component {
             replayId: null,
             recordingId: null,
             showOnlyFailures: false,
-            showOnlyMarkedForGolden: false
+            showOnlyMarkedForGolden: false,
+            currentPageNumber: 1,
+            fetchComplete: false,
+            fetchedResults: 0
         };
         this.handleChange = this.handleChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.toggleShowOnlyFailures = this.toggleShowOnlyFailures.bind(this);
         this.toggleShowOnlyMarkedForUpdate = this.toggleShowOnlyMarkedForUpdate.bind(this);
+        this.changePageNumber = this.changePageNumber.bind(this);
 
         this.inputElementRef = React.createRef();
+        this.pageSize = 5;
+        this.pages = 0;
+        this.layoutDataWithDiff = []
     }
 
     componentDidMount() {
@@ -115,10 +118,6 @@ class ShareableLink extends Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (this.state.resultsFetched === prevState.resultsFetched) {
-            return;
-        }
-        //this.fetchReplayList();
     }
 
     componentWillReceiveProps(nextProps, prevState) {
@@ -153,6 +152,10 @@ class ShareableLink extends Component {
 
     handleChange(e) {
         this.setState({ filterPath: e.target.value });
+    }
+
+    changePageNumber(e) {
+        this.setState({ currentPageNumber: +e.target.innerHTML.trim()});
     }
 
     toggleShowOnlyFailures(e) {
@@ -204,13 +207,13 @@ class ShareableLink extends Component {
     async fetchReplayList() {
         const {apiPath, replayId} = this.state;
         if(!replayId) throw new Error("replayId is required");
-        let response, json, { resultsFetched } = this.state;
+        let response, json;
         let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includediff=true&path=%2A`;
         let dataList = {};
 
         
-        let promises = [], fetchedResults = 0, layoutDataWithDiff = [], totalNumberOfRequest = 0, pageSize = 20, replayListData = [];
+        let promises = [], fetchedResults = 0, totalNumberOfRequest = 0, resultSize = 20, replayListData = [];
 
 
         try {
@@ -225,17 +228,16 @@ class ShareableLink extends Component {
                 json = await response.json();
                 dataList = json;
                 let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
-                this.setState({
-                    //diffLayoutData: this.state.diffLayoutData.concat(diffLayoutData),
-                    app: dataList.app,
-                    templateVersion: dataList.templateVersion,
-                });
-
-                layoutDataWithDiff.push(...diffLayoutData);
+                this.layoutDataWithDiff.push(...diffLayoutData);
 
                 fetchedResults = dataList.res.length;
                 totalNumberOfRequest = dataList.numFound;
                 let allFetched = false;
+                this.setState({
+                    app: dataList.app,
+                    templateVersion: dataList.templateVersion,
+                    fetchedResults: fetchedResults
+                });
                 let requestHeaders = {
                     headers: {
                         "cache-control": "no-cache",
@@ -249,16 +251,15 @@ class ShareableLink extends Component {
                     }
                     url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includediff=true&path=%2A`;
                     promises.push(axios.get(url, requestHeaders));
-                    fetchedResults = fetchedResults + pageSize;
+                    fetchedResults = fetchedResults + resultSize;
                 }
-                let self = this;
-                axios.all(promises).then(function(results) {
-                    results.forEach(function(eachResponse) {
-                        let eachDiffLayoutData = self.validateAndCreateDiffLayoutData(eachResponse.data.res);
-                        layoutDataWithDiff.push(...eachDiffLayoutData);
+                axios.all(promises).then((results) => {
+                    results.forEach((eachResponse) => {
+                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.res);
+                        this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
-                    self.setState({
-                        diffLayoutData: layoutDataWithDiff
+                    this.setState({
+                        fetchComplete: true
                     });
                 });
             } else {
@@ -413,10 +414,10 @@ class ShareableLink extends Component {
     }
 
     render() {
-        let { diffLayoutData, selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType, selectedService, showOnlyFailures } = this.state;
+        let { selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType, selectedService, showOnlyFailures, currentPageNumber, fetchedResults } = this.state;
         let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], services = [], resolutionTypes = [], diffOperationTypes = [];
         const {cube} = this.props;
-        diffLayoutData.filter(function (eachItem) {
+        this.layoutDataWithDiff.filter(function (eachItem) {
             services.push({value: eachItem.service, count: 0});
             if (selectedService === "All" || selectedService === eachItem.service) {
                 eachItem.show = true;
@@ -498,9 +499,17 @@ class ShareableLink extends Component {
             }
             return idx === index;
         };
-        let diffLayoutDataFiltered = diffLayoutData.filter(function(eachItem) {
+        let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function(eachItem) {
             return eachItem.show === true;
         });
+        let pagedDiffLayoutData = [];
+        this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
+        if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
+            let startCount = (currentPageNumber - 1 ) * (this.pageSize);
+            for(let i = startCount; i < this.pageSize + startCount; i++) {
+                diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
+            }
+        }
         requestMatchTypes = requestMatchTypes.filter(filterFunction);
         responseMatchTypes = responseMatchTypes.filter(filterFunction);
         services = services.filter(filterFunction);
@@ -559,7 +568,13 @@ class ShareableLink extends Component {
                 <Glyphicon style={{ visibility: selectedDiffOperationType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
-        let jsxContent = diffLayoutDataFiltered.map((item, index) => {
+        let pageButtons = [];
+        for(let idx = 1; idx <= this.pages; idx++) {
+            pageButtons.push(
+                <Button onClick={this.changePageNumber} bsStyle={currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
+            );
+        }
+        let jsxContent = pagedDiffLayoutData.map((item, index) => {
             let toShow = showOnlyFailures ? item.respmt === "NoMatch" ? true : false : item.show;
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
@@ -674,8 +689,7 @@ class ShareableLink extends Component {
                     <Breadcrumb style={{}}>
                         <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
                         <Breadcrumb.Item href="javascript:void(0);">
-                            <b>Service:&nbsp;</b>
-                            <DropdownButton title={selectedService} id="dropdown-size-medium">
+                            <DropdownButton title={"SERVICE: " + selectedService} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
                                     <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
@@ -684,8 +698,7 @@ class ShareableLink extends Component {
                             </DropdownButton>
                         </Breadcrumb.Item>
                         <Breadcrumb.Item active>
-                            <b>API Path:&nbsp;</b>
-                            <DropdownButton title={selectedAPI ? selectedAPI : "Select API Path"} id="dropdown-size-medium">
+                            <DropdownButton title={selectedAPI ? "API PATH: " + selectedAPI : "Select API Path"} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
                                     <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
@@ -755,6 +768,9 @@ class ShareableLink extends Component {
                         <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         <Checkbox inline onChange={this.toggleShowOnlyMarkedForUpdate}>Marked for golden update</Checkbox>
                     </FormGroup>
+                    <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
+                        <div style={{textAlign: "left"}}>{pageButtons}</div>
+                    </ButtonGroup>
                 </div>
                 <div>
                     {jsxContent}

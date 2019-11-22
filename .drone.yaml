@@ -2,115 +2,73 @@ kind: pipeline
 name: default
 
 steps:
-  - name: docker_build_master
+  - name: docker_build
     image: plugins/docker
     settings:
       username: cubeiocorp
       password: 'S9qe2fJ8*vtk'
       repo: cubeiocorp/cubeui
-      tags: ${DRONE_COMMIT}
+      tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
     resources:
       requests:
         cpu: 0.1
         memory: "1500Mi"
       limits:
+        cpu: 1
         memory: "1500Mi"
     when:
       branch:
       - master
+      - staging
+      - develop
       event:
         exclude:
         - pull_request
 
-  # - name: docker_build
-  #   image: plugins/docker
-  #   settings:
-  #     username: cubeiocorp
-  #     password: 'S9qe2fJ8*vtk'
-  #     repo: cubeiocorp/cubeui
-  #     tags: ${DRONE_COMMIT}
-  #   resources:
-  #     requests:
-  #       cpu: 0.1
-  #       memory: "1500Mi"
-  #     limits:
-  #       memory: "1500Mi"
-  #   when:
-  #     branch:
-  #     - ui-redesign
-  #     event:
-  #       exclude:
-  #       - pull_request
-  #
-  # - name: Test_build
-  #   image: plugins/docker
-  #   settings:
-  #     username: cubeiocorp
-  #     password: 'S9qe2fJ8*vtk'
-  #     repo: cubeiocorp/cubeui
-  #     tags: ${DRONE_COMMIT}
-  #     dry_run: true
-  #   resources:
-  #     requests:
-  #       cpu: 0.1
-  #       memory: "1500Mi"
-  #     limits:
-  #       memory: "1500Mi"
-  #   when:
-  #     branch:
-  #     - master
-  #     event:
-  #       include:
-  #       - pull_request
-
-  - name: Test_build_master
-    image: plugins/docker
-    settings:
-      username: cubeiocorp
-      password: 'S9qe2fJ8*vtk'
-      repo: cubeiocorp/cubeui
-      tags: ${DRONE_COMMIT}
-      dry_run: true
-    resources:
-      requests:
-        cpu: 0.1
-        memory: "1500Mi"
-      limits:
-        memory: "1500Mi"
-    when:
-      branch:
-      - master
-      event:
-        include:
-        - pull_request
-
-  - name: deploy_staging
+  - name: deploy_cubeui_cube_dev
     image: quay.io/honestbee/drone-kubernetes
     settings:
       kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
-      namespace: staging
-      deployment: cubeui-v1
-      repo: cubeiocorp/cubeui
-      container: cubeui
-      tag: ${DRONE_COMMIT}
-    when:
-      branch:
-      - master
-      event:
-        exclude:
-        - pull_request
-
-  - name: deploy_demo
-    image: quay.io/honestbee/drone-kubernetes
-    settings:
-      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRyb25lLXRva2VuLXRrOGpkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRyb25lIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZWYwNTc4M2MtYTZlMi0xMWU5LTk1NmUtMDI5MDZkOGM2NGY4Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6ZHJvbmUifQ.AtzAPDP1AABU_MrCZbiYcOFq0_55x6psANYJItALdmtXp5mpk-I1_p2SEdt1xsqNipRBH7tNvFoGT1cGqJH5WFf6jA9NFxwJLo3mpX8fcHf_oHKiajcVlCkUUiESEXwX1eUdhKVs6fYm-vD3PqnMWZ_ZJrGZwQ4J7qgq5WPRQqAcV0-R7DDbQC6kVuTxEMC3OCwDj4cIGORarNCaKjQcJGdKrt9nKXFSHqByXSch7JI2bGQ8-ujxfo1vwyfwclac4whtp-zSzlX1vZOH3lkb-YOrYiPIY-IzMqemXGzcH4oG2IRNyvQSTzPD4MS8b75A2T7L1docaTtla2oYgxvrNA
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tbmxuanYiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjQ4N2VkNmJiLTRjOWItMTFlOS04ZmM2LTAyNjRlYjM2ZjlhMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.nHnEKdEj73HH2gCzgaC9-yHf5XfrwnsyvEUtwI4KxKETjvWx87_kkco26zwk7VHzmLC8pQRQsBph90cIzITLdHcsZqcpG-VQtcECnJO4NjHbaXSFKO8T7_m274Qyifo-7uXMg0iSjmkicXg6kZtbDYZNH3IHUsCzOutu3lrFSulSqvHaGSyzPmJGP8JE-HlzWj5t6RkzPKIMMeGQ1hounbFW4Z7d1g2ffL4tkEUJJECLQmQ9pMtLtikfDIC_Ioyml2Hd-iQ26qOnRs-ZZpzmNqlqJ7fjRewPb03ctwwbjBs4OUAp7mQ-ou7ipB4_TMBbv1sMDb90J6GNQmsKyGnVbA
       namespace: cube
       deployment: cubeui-v1
       repo: cubeiocorp/cubeui
       container: cubeui
-      tag: ${DRONE_COMMIT}
+      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
+    when:
+      branch:
+      - develop
+      event:
+        exclude:
+        - pull_request
+
+  - name: deploy_cubeui_cube_staging
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cluster-prod-k8s-loca-4kne7o-1269526097.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tNnF3ODgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjU2ODJkNGQwLTk4YzctMTFlOS05ZTk5LTAyZWJkOThmMjllMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.VhuG5s3zodhV7p0UnXxmXL8TjnkT0blkBCog42RWiiMIzohZqoRe2v_RWhtb1kViRQ_8-0wV0NJqv3PLBn7YcigJwujApN2WfRFfeX8Iu_RCNJDrFJVAv_cgdyFltS04zFJ5NPZjwGDi2lKxvVdwcq5xmuS9ni5cw77AcCiKB2RHHz-dcfM66EjbexEFgDruBWPCR1nEl73bKgbtiqSQfXuMbWev7yNpRpMvhoP0Krt_F6BNZVOoOxIr7ZBzEkB5-vfvdnFU0l0Ye7aosGe7KXpRpEtdoE8tQF2t3hIFbZXCuH7a7cT7wswS65uDDBDlkoFxjZJu95qn7M5i0mOi5g
+      namespace: cube
+      deployment: cubeui-v1
+      repo: cubeiocorp/cubeui
+      container: cubeui
+      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
+    when:
+      branch:
+      - staging
+      event:
+        exclude:
+        - pull_request
+
+  - name: deploy_cubeui_cube_demo
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cluster-prod-v2-k8s-l-iipk0l-2142764081.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tOGo1eGsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImJiMDQ5YmFmLWM4MTItMTFlOS1iNTRmLTBhN2UwYjg0ZjJjOCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.gqbZfAl2ye-qcemLnb4r7G1_N5kR257LY2agGvTylYdFacMQzlAwKgAn50SFVAvNG5Vtbf7UYFEg53UcKLuMt1j5icP9H-VlbUySdTzuSDTlwyMur-O-ADILf7LBic2nD2g-xv5u0nSXpFzY0kIIp4X9U0ob5VyotHIvmThmnrLDZcl2znzeq0F423i4TyZYnLSLLS9Hxz44UUtKclmEzK4DAGoCmropR8HQkamtMGwNn26uoSCLVOlk-PHLv02x8vW7QNGS8iWwdEl2KkeIUdLV9y-0c8BnbZAKQtMdDuWqWHM4jDTiq9nXrd1SDjYCj2XsGn6grTjWUhqHlU-gqg
+      namespace: cube
+      deployment: cubeui-v1
+      repo: cubeiocorp/cubeui
+      container: cubeui
+      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
     when:
       branch:
       - master
@@ -121,5 +79,6 @@ steps:
 trigger:
   branch:
   - master
-  # - ui-redesign
+  - staging
+  - develop
 
