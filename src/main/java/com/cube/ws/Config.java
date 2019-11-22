@@ -84,7 +84,8 @@ public class Config {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
             String solrBaseUrl = fromEnvOrProperties("solr_base_url" , "http://18.222.86.142:8983/solr/");
-            String solrCore = fromEnvOrProperties("solr_core" , "cube");
+//            String solrCore = fromEnvOrProperties("solr_core" , "cube");
+            String solrCore = "cubeprod";
             solrurl = Utils.appendUrlPath(solrBaseUrl , solrCore);
         } catch(Exception eta){
             LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
