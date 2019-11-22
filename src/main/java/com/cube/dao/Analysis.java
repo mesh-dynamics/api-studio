@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.core.Comparator;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.ws.Config;
 
 
@@ -201,20 +202,42 @@ public class Analysis {
         }
 
         public Optional<String> getRecordedResponseBody(Config config) {
-            return recordResp.map(response -> response.getPayloadAsString(config));
+            return recordResp.map(response -> {
+	            try {
+		            return response.getPayloadAsString(config);
+	            } catch (DataObjCreationException e) {
+		            return null;
+	            }
+            });
         }
 
         public Optional<String> getReplayResponseBody(Config config) {
-            return replayResp.map(response -> response.getPayloadAsString(config));
+            return replayResp.map(response -> {
+	            try {
+		            return response.getPayloadAsString(config);
+	            } catch (DataObjCreationException e) {
+		            return null;
+	            }
+            });
         }
 
         public Optional<String> getReplayReq(Config config) {
-            return replayReq.map(request -> request.getPayloadAsString(config));
+            return replayReq.map(request -> {
+	            try {
+		            return request.getPayloadAsString(config);
+	            } catch (DataObjCreationException e) {
+		            return null;
+	            }
+            });
         }
 
 
         public Optional<String> getRecordReq(Config config) {
-            return Optional.of(recordReq.getPayloadAsString(config));
+	        try {
+		        return Optional.of(recordReq.getPayloadAsString(config));
+	        } catch (DataObjCreationException e) {
+		        return Optional.empty();
+	        }
         }
     }
 

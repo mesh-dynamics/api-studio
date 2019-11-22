@@ -21,6 +21,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
 
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.exception.DataObjException;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -36,7 +37,7 @@ public class DataObjFactory {
     public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
-        Config config, Map<String, Object> params) throws DataObjException {
+        Config config, Map<String, Object> params) throws  DataObjCreationException {
 
         switch (type) {
             case HTTPRequest:
@@ -60,7 +61,8 @@ public class DataObjFactory {
                 TDeserializer deserializer = new TDeserializer();
                 try {
                     ClassLoader loader = (URLClassLoader) params.get(Constants.CLASS_LOADER);
-                    Class<?> clazz = loader.loadClass((String)params.get(Constants.THRIFT_CLASS_NAME));
+                    Class<?> clazz = loader
+                        .loadClass((String) params.get(Constants.THRIFT_CLASS_NAME));
                     Constructor<?> constructor = clazz.getConstructor();
                     Object obj1 = constructor.newInstance();
                     deserializer.deserialize((TBase) obj1, payloadBin);
@@ -71,21 +73,24 @@ public class DataObjFactory {
                 } catch (InstantiationException | IllegalAccessException
                     | InvocationTargetException | ClassNotFoundException | NoSuchMethodException e) {
                     LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-                        , "Unable to instantiate class", Constants.CLASS_NAME,
+                        , "Unable to instantiate class while deserializing thirft object",
+                        Constants.CLASS_NAME,
                         params.get(Constants.THRIFT_CLASS_NAME))), e);
-                    throw new DataObjException(
-                        "Unable to instantiate class" + payloadStr, e);
+                    throw new DataObjCreationException(
+                        "Unable to instantiate class (while deseriliazing thrift event) "
+                            + payloadStr, e);
                 } catch (TException e) {
                     LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
                         , "Thrift Deserialization Error Occured While forming payload")), e);
-                    throw new DataObjException(
-                        "Unable to create DataObj for Thrift Event Type " + payloadStr, e);
+                    throw new DataObjCreationException(
+                        "Unable to create DataObj for Thrift Event " + payloadStr, e);
                 }
 
             case ProtoBufRequest:
             case ProtoBufResponse:
             default:
-                throw new NotImplementedException("Thrift and Protobuf not implemented");
+                throw new DataObjCreationException(
+                    new NotImplementedException("Protobuf not implemented"));
         }
 
         //return null;

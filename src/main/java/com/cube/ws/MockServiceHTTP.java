@@ -45,6 +45,7 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventType;
@@ -146,12 +147,12 @@ public class MockServiceHTTP {
                 try {
                     event.parseAndSetKey(config, Utils
                         .getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
-                } catch (ComparatorCache.TemplateNotFoundException e) {
+                } catch (ComparatorCache.TemplateNotFoundException | DataObjCreationException e) {
                     LOGGER.error(new ObjectMessage(
                         Map.of("message", "Compare template not found.",
                             "type", event.eventType,
                             "reqId", event.reqId,
-                            "path", event.apiPath)));
+                            "path", event.apiPath)), e);
                     return false;
                 }
                 return true;
@@ -228,13 +229,11 @@ public class MockServiceHTTP {
                 matchingEventsCount > 1);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                 .build();
-        } catch (PathNotFoundException | DataObjException e) {
+        } catch (PathNotFoundException | DataObjCreationException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(
                     Constants.API_PATH_FIELD, event.apiPath,
-                    Constants.TRACE_ID_FIELD, event.traceId,
-                    Constants.EXCEPTION_STACK, e.getMessage()
-                )));
+                    Constants.TRACE_ID_FIELD, event.traceId)) , e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     "Unable to find response path in json ")).build();
@@ -261,16 +260,14 @@ public class MockServiceHTTP {
             FnResponse fnResponse = null;
             try {
                 fnResponse = new FnResponse(
-                    defaultRespEvent.get().parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
+                    defaultRespEvent.get().parsePayLoad(config)
+                        .getValAsString(Constants.FN_RESPONSE_PATH),
                     Optional.of(defaultRespEvent.get().timestamp),
                     FnReqResponse.RetStatus.Success, Optional.empty(),
                     false);
-            } catch (PathNotFoundException | DataObjException e) {
+            } catch (PathNotFoundException | DataObjCreationException e) {
                 LOGGER.error(new ObjectMessage(
-                    Map.of(
-                        Constants.API_PATH_FIELD, event.apiPath,
-                        Constants.EXCEPTION_STACK, e.getMessage()
-                    )));
+                    Map.of(Constants.API_PATH_FIELD, event.apiPath)), e);
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Unable to find response path in json ")).build();

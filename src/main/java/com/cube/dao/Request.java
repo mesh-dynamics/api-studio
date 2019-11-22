@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import static com.cube.dao.Event.RunType.Record;
 
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
@@ -120,7 +121,7 @@ public class Request extends RRBase {
 	}
 
     public Event toEvent(Comparator comparator, Config config)
-        throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
+        throws JsonProcessingException, Event.EventBuilder.InvalidEventException, DataObjCreationException {
 
         HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, queryParams, formParams,
             method, body);

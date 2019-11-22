@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -25,9 +24,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import io.cube.agent.UtilException;
+
 import com.cube.core.CompareTemplate;
 import com.cube.core.Utils;
-import com.cube.exception.DataObjException;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.serialize.BinaryPayloadDeserializer;
 import com.cube.serialize.BinaryPayloadSerializer;
 import com.cube.utils.Constants;
@@ -115,46 +116,41 @@ public class Event {
     }
 
     public void parseAndSetKeyAndCollection(Config config, String collection,
-                                                        CompareTemplate template) {
+                                                        CompareTemplate template) throws DataObjCreationException {
         this.collection = collection;
         parseAndSetKey(config, template);
     }
 
-    public void parseAndSetKey(Config config, CompareTemplate template) {
+    public void parseAndSetKey(Config config, CompareTemplate template) throws DataObjCreationException {
         parseAndSetKey(config,template,null);
     }
 
-    public void parseAndSetKey(Config config, CompareTemplate template, URLClassLoader classLoader) {
-        try {
-            parsePayLoad(config, classLoader);
-            List<String> keyVals = new ArrayList<>();
-            payload.collectKeyVals(path -> template.getRule(path).getCompareType()
-                == CompareTemplate.ComparisonType.Equal, keyVals);
-            LOGGER.info(new ObjectMessage(
-                Map.of("message", "Generating event key from vals", "vals", keyVals.toString())));
-            payloadKey = Objects.hash(keyVals);
-            LOGGER.info(
-                new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
-        } catch (DataObjException e) {
-            LOGGER.error(
-                new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to parse payload and set key",
-                    Constants.REQ_ID_FIELD, this.reqId, Constants.EVENT_TYPE_FIELD, eventType)), e);
-        }
+    public void parseAndSetKey(Config config, CompareTemplate template, URLClassLoader classLoader)
+        throws DataObjCreationException {
+        parsePayLoad(config, classLoader);
+        List<String> keyVals = new ArrayList<>();
+        payload.collectKeyVals(path -> template.getRule(path).getCompareType()
+            == CompareTemplate.ComparisonType.Equal, keyVals);
+        LOGGER.info(new ObjectMessage(
+            Map.of("message", "Generating event key from vals", "vals", keyVals.toString())));
+        payloadKey = Objects.hash(keyVals);
+        LOGGER.info(
+            new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
     }
 
-    public DataObj parsePayLoad(Config config) throws DataObjException {
+    public DataObj parsePayLoad(Config config) throws DataObjCreationException {
         return parsePayLoad(config, null);
     }
 
-    public DataObj parsePayLoad(Config config, URLClassLoader classLoader) throws DataObjException {
+    public DataObj parsePayLoad(Config config, URLClassLoader classLoader) throws DataObjCreationException {
         // parse if not already parsed
         if (payload == null) {
             Map<String, Object> params = null;
             if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
                 Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
                 params = Utils.extractThriftParams(this.apiPath);
+                params.put(Constants.CLASS_LOADER, classLoader);
             }
-            params.put(Constants.CLASS_LOADER, classLoader);
             payload = DataObjFactory
                 .build(eventType, rawPayloadBinary, rawPayloadString, config, params);
         }
@@ -171,21 +167,14 @@ public class Event {
         return reqId;
     }
 
-    public String getPayloadAsString(Config config) {
-        try {
-            parsePayLoad(config);
-        } catch (DataObjException e) {
-            e.printStackTrace();
-        }
+    public String getPayloadAsString(Config config) throws DataObjCreationException {
+        if (this.rawPayloadString != null) return rawPayloadString;
+        parsePayLoad(config);
         return payload.toString();
     }
 
-    public DataObj getPayload(Config config) {
-        try {
-            parsePayLoad(config);
-        } catch (DataObjException e) {
-            e.printStackTrace();
-        }
+    public DataObj getPayload(Config config) throws DataObjCreationException {
+        parsePayLoad(config);
         return payload;
     }
 

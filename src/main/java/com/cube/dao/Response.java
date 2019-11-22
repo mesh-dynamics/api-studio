@@ -8,6 +8,7 @@ import static com.cube.dao.Event.RunType.Record;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.exception.DataObjException;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -15,6 +16,7 @@ import com.cube.ws.Config;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -24,6 +26,7 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -125,8 +128,10 @@ public class Response extends RRBase {
         Event event = eventBuilder.createEvent();
 		try {
 			event.parsePayLoad(config);
-		} catch (DataObjException e) {
-			e.printStackTrace();
+		} catch (DataObjCreationException e) {
+			LOGGER.error(new ObjectMessage(
+				Map.of(Constants.EVENT_TYPE_FIELD, event.eventType,
+					Constants.REQ_ID_FIELD, event.reqId)), e);
 		}
 
 		return event;

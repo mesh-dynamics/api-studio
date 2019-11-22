@@ -31,6 +31,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
@@ -62,6 +63,7 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.exception.DataObjException;
@@ -1184,9 +1186,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         event.ifPresent(e -> {
             try {
                 e.parsePayLoad(config);
-            } catch (DataObjException ex) {
-                // TODO handle exception               
-                 // ex.printStackTrace();
+            } catch (DataObjCreationException ex) {
+                LOGGER.error(new ObjectMessage(
+                    Map.of(Constants.EVENT_TYPE_FIELD, eventType.orElse("NA"),
+                        Constants.REQ_ID_FIELD, reqId.orElse("NA"))), ex);
             }
         });
 

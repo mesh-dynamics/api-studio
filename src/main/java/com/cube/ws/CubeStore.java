@@ -54,6 +54,7 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.DefaultEvent;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder.InvalidEventException;
@@ -230,6 +231,8 @@ public class CubeStore {
                     } catch (Event.EventBuilder.InvalidEventException e) {
                         LOGGER.error("error converting Request to Event: " + e);
                         return Optional.of("error converting Request to Event");
+                    } catch (DataObjCreationException e) {
+                        return Optional.of("Error in Parsing Payload " + e.getMessage());
                     }
 
                     if (!rrstore.save(requestEvent))
@@ -560,6 +563,8 @@ public class CubeStore {
                     Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()) , classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 return Optional.of("Compare template not found");
+            } catch (DataObjCreationException e) {
+                return Optional.of("Error while parsing payload and setting payload key");
             }
         }
 
@@ -736,12 +741,11 @@ public class CubeStore {
             try {
                 defaultReqEvent.parseAndSetKey(config, Utils.
                     getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
-            } catch (ComparatorCache.TemplateNotFoundException e) {
+            } catch (ComparatorCache.TemplateNotFoundException | DataObjCreationException e) {
                 LOGGER.error(new ObjectMessage(
-                    Map.of(Constants.MESSAGE, "Compare template not found.",
-                        Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
+                    Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
                         Constants.REQ_ID_FIELD, defaultReqEvent.reqId,
-                        Constants.API_PATH_FIELD, defaultReqEvent.apiPath)));
+                        Constants.API_PATH_FIELD, defaultReqEvent.apiPath)) , e);
                 return Optional.empty();
             }
 

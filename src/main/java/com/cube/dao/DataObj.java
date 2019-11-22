@@ -37,4 +37,14 @@ public interface DataObj {
     class PathNotFoundException extends Exception{
 
     }
+
+    class DataObjCreationException extends Exception {
+        public DataObjCreationException(String msg, Throwable e) {
+            super (msg,e);
+        }
+
+        public DataObjCreationException(Throwable e) {
+            super(e);
+        }
+    }
 }
