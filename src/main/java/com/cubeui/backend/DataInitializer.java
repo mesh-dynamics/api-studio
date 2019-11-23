@@ -52,7 +52,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private AppUserRepository appUserRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository, InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository) {
+    private JiraUserCredentialsRepository jiraUserCredentialsRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository, InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository, JiraUserCredentialsRepository jiraUserCredentialsRepository) {
         this.userService = userService;
         this.customerService = customerService;
 
@@ -70,6 +72,7 @@ public class DataInitializer implements CommandLineRunner {
         this.userRepository = userRepository;
         this.instanceUserRepository = instanceUserRepository;
         this.appUserRepository = appUserRepository;
+        this.jiraUserCredentialsRepository = jiraUserCredentialsRepository;
     }
 
     @Override
@@ -1305,11 +1308,11 @@ public class DataInitializer implements CommandLineRunner {
             this.instanceRepository.save(instance);
         }
         // MovieInfo App
-        // RestWrapJDBC
+        // Postgres
         if(!testVirtualizedServiceRepository.existsById(143L)) {
             TestVirtualizedService testVirtualizedService = new TestVirtualizedService();
             testVirtualizedService.setId(143L);
-            testVirtualizedService.setService(serviceRepository.findById(14L).get());
+            testVirtualizedService.setService(serviceRepository.findById(15L).get());
             testVirtualizedService.setTestConfig(testConfigRepository.findById(99L).get());
             testVirtualizedServiceRepository.save(testVirtualizedService);
         }
@@ -1526,6 +1529,26 @@ public class DataInitializer implements CommandLineRunner {
             appUser.setApp(appRepository.findById(4L).get());
             appUser.setUser(userRepository.findById(160L).get());
             appUserRepository.save(appUser);
+        }
+
+        // Intermediate services
+        // RestWrapJDBC
+        if(!testIntermediateServiceRepository.existsById(169L)) {
+            TestIntermediateService intermediateService = new TestIntermediateService();
+            intermediateService.setId(169L);
+            intermediateService.setService(serviceRepository.findById(14L).get());
+            intermediateService.setTestConfig(testConfigRepository.findById(99L).get());
+            testIntermediateServiceRepository.save(intermediateService);
+        }
+
+        // Jira User Credentials
+        if(!jiraUserCredentialsRepository.existsById(170L)) {
+            JiraUserCredentials jiraUserCredentials = new JiraUserCredentials();
+            jiraUserCredentials.setUser(userRepository.getOne(2L));
+            jiraUserCredentials.setUserName("siddhant.mutha@cubecorp.io");
+            jiraUserCredentials.setAPIKey("fAODfwU3eTmrEDSdz7gM26C4");
+            jiraUserCredentials.setJiraBaseURL("https://cubeio.atlassian.net");
+            jiraUserCredentialsRepository.save(jiraUserCredentials);
         }
     }
 }
