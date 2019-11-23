@@ -33,6 +33,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.cube.dao.Recording.RecordingSaveFailureException;
+import com.cube.utils.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -940,6 +942,34 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).
             entity(String.format("Status not found for recordingid %s", recordingid)).build());
+        return resp;
+    }
+
+    @POST
+    @Path("softDelete/{recordingId}")
+    public Response softDelete(@PathParam("recordingId") String recordingId) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        Response resp = recording.map(rec -> {
+            try {
+                Recording deletedR = rec.softDeleteRecording(rrstore);
+                String json;
+                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId", recordingId)));
+                json = jsonMapper.writeValueAsString(deletedR);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Error in converting Recording object to Json for recordingId", "RecordingId", recordingId,
+                    Constants.REASON, ex)));
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Unable to parse JSON ")).build();
+            } catch (RecordingSaveFailureException re) {
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAVE_FAILURE_EXCEPTION,
+                        re.getMessage())).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
+                "Recording not found for recordingId" + recordingId)).build());
         return resp;
     }
 
