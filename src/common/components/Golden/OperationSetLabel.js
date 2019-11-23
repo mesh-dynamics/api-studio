@@ -32,6 +32,16 @@ class OperationSetLabel extends React.Component {
         return false;
     }
 
+    findInJiraBugs(){
+        const {cube, jsonPath} = this.props;
+        for (const op of cube.jiraBugs) {
+            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     removeFromOS = () => {
         const {cube, jsonPath, dispatch} = this.props;
         for (let i =  0; i < cube.newOperationSet.length; i++) {
@@ -54,6 +64,10 @@ class OperationSetLabel extends React.Component {
         return;
     };
 
+    removeFromJiraBugs = () => {
+        // To Be Implemented
+    }
+
     render() {
         const tippyContent = (
             <div>
@@ -68,10 +82,15 @@ class OperationSetLabel extends React.Component {
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
                     <span onDoubleClick={this.removeFromOperations} className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
                 </Tippy>
+                <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
+                    <span onDoubleClick={this.removeFromJiraBugs} className={this.findInJiraBugs() ? '' : "hidden"}><i className="fas fa-bug"></i></span>
+                </Tippy>
             </span>
         ) : "";
     }
 }
+
+{/* <span onDoubleClick={this.removeFromOperations} className={this.findJiraBugs() ? '' : 'hidden'}><Glyphicon glyph="bookmark" /></span> */}
 
 function mapStateToProps(state) {
     const cube = state.cube;

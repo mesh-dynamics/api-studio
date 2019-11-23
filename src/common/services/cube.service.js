@@ -19,6 +19,7 @@ export const cubeService = {
     updateGoldenSet,
     getNewTemplateVerInfo,
     updateTemplateOperationSet,
+    fetchJiraBugData,
 };
 
 async function fetchAppsList() {
@@ -488,4 +489,29 @@ async function fetchTimelineData(app, userId, endDate) {
         throw e;
     }
     return timelineData;
+}
+
+async function fetchJiraBugData(replayId, apiPath) {  
+    let user = JSON.parse(localStorage.getItem('user'));
+    let response, json, data;
+    let url = `${config.apiBaseUrl}/jira/issue/getdetails?replayId=${replayId}&apiPath=${apiPath}`;
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            }),
+        });
+        if (response.ok) {
+            data = await response.json();
+        } else {
+            throw new Error("Could not get list of Jira Bugs");
+        }
+    } catch (error) {
+        console.log("Error fetching Jira Bugs", error);
+        throw error;
+    }
+
+    return data;   
 }

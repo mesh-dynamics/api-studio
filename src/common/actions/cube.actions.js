@@ -34,7 +34,8 @@ export const cubeActions = {
     removeFromNOS,
     removeFromOperations,
     getNewTemplateVerInfo,
-    updateTemplateOperationSet
+    updateTemplateOperationSet,
+    getJiraBugs
 };
 
 function clear() {
@@ -247,6 +248,10 @@ function setGolden ( golden ) {
     return {type: cubeConstants.SET_GOLDEN, data: golden}
 }
 
+function setJiraBugs( jiraBugs ) {
+    return {type: cubeConstants.SET_JIRA_BUGS, data: jiraBugs}
+}
+
 function getTestIds (app) {
     return async dispatch => {
         dispatch(request());
@@ -351,4 +356,15 @@ function getReport(collectionId, replayId) {
         }
     }
     function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }
+}
+
+function getJiraBugs(replayId, apiPath) {
+    return async dispatch => {
+        try {
+            let jiraBugs =  await cubeService.fetchJiraBugData(replayId, apiPath);
+            dispatch(setJiraBugs(jiraBugs));
+        } catch (error) {
+            console.log("Error caught in fetch", error);
+        }
+    }
 }

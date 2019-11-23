@@ -113,6 +113,7 @@ class ShareableLink extends Component {
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            dispatch(cubeActions.getJiraBugs(replayId, apiPath));
             this.fetchReplayList();
         });
     }
