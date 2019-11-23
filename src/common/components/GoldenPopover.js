@@ -166,6 +166,16 @@ class GoldenPopover extends React.Component {
         return summary;
     }
 
+    findInJiraBugs(){
+        const {cube, jsonPath} = this.props;
+        for (const op of cube.jiraBugs) {
+            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     renderSummary() {
         return (
             <div>
@@ -205,7 +215,16 @@ Analysis URL: ${window.location.href}
                     </div>
                     <div style={{ width: "300px", height: "100px", background: "#ECECE7", padding: "15px" }}>
                         <div>
-                            <span onClick={this.showBugModal} className="back-grey"><i className="fas fa-bug"></i></span>&nbsp;&nbsp;
+                            <span onClick={this.showBugModal} className="back-grey">
+                                <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : ''}}></i>
+                                {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
+                                    "color": "green",
+                                    "font-size": ".65em", 
+                                    "position": "absolute",
+                                    "margin-left": "-6px",
+                                    "margin-top": "-3px"
+                                }} aria-hidden="true"></i>}
+                            </span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-comments"></i></span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-code"></i></span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-share-alt"></i></span>

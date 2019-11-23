@@ -61,6 +61,7 @@ const initialState = {
     collectionUpdateOperationSetId: null,
     newGoldenId: null,
     goldenInProg: false,
+    jiraBugs: [],
 };
 
 export function cube (state = initialState, action) {
@@ -343,6 +344,11 @@ export function cube (state = initialState, action) {
                 goldenTimeStamp: null,
                 newGoldenId: null,
                 goldenInProg: false
+            };
+        case cubeConstants.SET_JIRA_BUGS:
+            return {
+                ...state,
+                jiraBugs: action.data,
             };
         default:
             return state
