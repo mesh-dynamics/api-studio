@@ -1,4 +1,5 @@
 import React from "react";
+import _ from 'lodash';
 import { connect } from "react-redux";
 import { cubeActions } from "../actions";
 import config from "../config";
@@ -20,6 +21,8 @@ class GoldenPopover extends React.Component {
         this.renderDescription = this.renderDescription.bind(this)
         this.getDefaultSummary = this.getDefaultSummary.bind(this)
         this.getDefaultDescription = this.getDefaultDescription.bind(this)
+        this.openJiraLink = this.openJiraLink.bind(this)
+        this.refreshList = this.refreshList.bind(this)
 
         this.state = {
             showGolden: false,
@@ -98,6 +101,7 @@ class GoldenPopover extends React.Component {
             .then(r => {
                     this.hideGR()
                     this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
+                    this.refreshList();
                 }, err => {
                     console.error(err);
                 })
@@ -126,6 +130,27 @@ class GoldenPopover extends React.Component {
             console.error(err);
         });
     }
+    
+    openJiraLink() {
+        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const { issueKey, jiraIssueURL } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
+        
+        window.open(jiraIssueURL)
+    }
+    
+    refreshList() {
+        let urlParameters = _.chain(window.location.search)
+            .replace('?', '')
+            .split('&')
+            .map(_.partial(_.split, _, '=', 2))
+            .fromPairs()
+            .value();
+        const apiPath = urlParameters["apiPath"] ? urlParameters["apiPath"]  : "%2A",
+            replayId = urlParameters["replayId"];
+
+        this.props.dispatch(cubeActions.getJiraBugs(replayId, apiPath))
+    }
+
 
     renderProjectList() {
         if(!this.state.projectList.length) {
@@ -215,7 +240,7 @@ Analysis URL: ${window.location.href}
                     </div>
                     <div style={{ width: "300px", height: "100px", background: "#ECECE7", padding: "15px" }}>
                         <div>
-                            <span onClick={this.showBugModal} className="back-grey">
+                            <span onClick={this.findInJiraBugs() ? this.openJiraLink : this.showBugModal} className="back-grey">
                                 <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : ''}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
