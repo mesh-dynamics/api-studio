@@ -454,8 +454,8 @@ class ShareableLink extends Component {
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
                     if (selectedResolutionType === "All" || selectedResolutionType === eachJsonPathParsedDiff.resolution) {
-                        resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
                         toFilter = true;
                     }
                 }
@@ -471,8 +471,8 @@ class ShareableLink extends Component {
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
                     if (selectedDiffOperationType === "All" || selectedDiffOperationType === eachJsonPathParsedDiff.op) {
-                        diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
                         toFilter = true;
                     }
                 }
@@ -549,7 +549,7 @@ class ShareableLink extends Component {
             </MenuItem>);
         });
         let requestMatchTypeMenuItems = requestMatchTypes.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item)}>
+            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item.value)}>
                 <Glyphicon style={{ visibility: selectedRequestMatchType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
