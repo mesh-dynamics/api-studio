@@ -648,12 +648,4 @@ public interface ReqRespStore {
     public void invalidateCurrentCollectionCache(String customerId, String app,
                                                  String instanceId);
 
-/*    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
-
-    Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception;
-
-    Stream<GoldenSet> getGoldenSetStream(Optional<String> customer, Optional<String> app, Optional<String> instanceId);
-
-    Stream<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId);*/
-
 }

@@ -22,7 +22,9 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.ws.Config;
 
 /*
@@ -149,6 +151,44 @@ public class Event {
         parsePayLoad(config);
         return payload;
     }
+
+    /**
+     * Create a new event with transformed payload. While transforming request events, need
+     * to send the comparator so that payloadKey can be calculated
+     * @param rhs
+     * @param operationList
+     * @param config
+     * @param newCollection
+     * @param newReqId
+     * @return
+     * @throws EventBuilder.InvalidEventException
+     */
+    public Event applyTransform(Optional<Event> rhs, List<ReqRespUpdateOperation> operationList, Config config,
+                                String newCollection, String newReqId, Optional<Comparator> comparator) throws EventBuilder.InvalidEventException {
+        // parse if not already parsed
+        parsePayLoad(config);
+        Optional<RawPayload> newPayload = rhs.map(rhsEvent -> {
+            DataObj tranformedDataObj = payload.applyTransform(rhsEvent.getPayload(config), operationList);
+            DataObjFactory.wrapIfNeeded(tranformedDataObj, eventType);
+            return tranformedDataObj.toRawPayload();
+        });
+
+        // payload doesn't change if rhs is empty
+        byte[] newRawPayloadBinary = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadBinary)
+            .orElse(rawPayloadBinary);
+        String newRawPayloadString = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadString)
+            .orElse(rawPayloadString);
+
+        Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection, traceId,
+            runType, timestamp, newReqId, apiPath, eventType)
+            .setRawPayloadBinary(newRawPayloadBinary)
+            .setRawPayloadString(newRawPayloadString)
+            .createEvent();
+        // set key for request events
+        comparator.ifPresent(comparatorVal -> toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate()));
+        return toReturn;
+    }
+
 
     public enum EventType {
         HTTPRequest,
@@ -299,6 +339,16 @@ public class Event {
 
         public static class InvalidEventException extends Exception {
 
+        }
+    }
+
+    public static class RawPayload {
+        public final byte[] rawPayloadBinary;
+        public final String rawPayloadString;
+
+        public RawPayload(byte[] rawPayloadBinary, String rawPayloadString) {
+            this.rawPayloadBinary = rawPayloadBinary;
+            this.rawPayloadString = rawPayloadString;
         }
     }
 

@@ -589,9 +589,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
     private static final String TEMPLATE_VERSION = "version" + STRING_SUFFIX;
-    private static final String TEMPLATE_SET = "template_set_id" + STRING_SUFFIX;
-    private static final String ROOT_GOLDEN_SET = "root_golden_set_id" + STRING_SUFFIX;
-    private static final String PARENT_GOLDEN_SET = "parent_golden_set_id" + STRING_SUFFIX;
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) throws TemplateSet.TemplateSetMetaStoreException {
         SolrInputDocument solrDoc = new SolrInputDocument();
@@ -661,84 +658,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         return Optional.empty();
     }
-
-/*    @Override
-    public String createGoldenSet(String collection, String templateSetId, Optional<String> parentGoldenSetIdOpt, Optional<String> rootGoldenSetIdOpt) {
-        SolrInputDocument inputDoc = new SolrInputDocument();
-        String id = Types.GoldenSet.toString().concat("-")
-            .concat(String.valueOf(Objects.hash(collection, templateSetId)));
-        inputDoc.setField(TYPEF, Types.GoldenSet.toString());
-        inputDoc.setField(IDF, id);
-        inputDoc.setField(COLLECTIONF, collection);
-        inputDoc.setField(TEMPLATE_SET, templateSetId);
-        parentGoldenSetIdOpt.ifPresent(parentGoldenSetId -> inputDoc.setField(PARENT_GOLDEN_SET, parentGoldenSetId));
-        inputDoc.setField(ROOT_GOLDEN_SET, rootGoldenSetIdOpt.orElse(id));
-        inputDoc.setField(TIMESTAMPF , Instant.now());
-        saveDoc(inputDoc);
-        softcommit();
-        return id;
-    }
-
-    private GoldenSet solrDocToGoldenSet(SolrDocument doc) throws Exception {
-        Optional<String> id = getStrField(doc, IDF);
-        Optional<String> collectionOpt = getStrField(doc, COLLECTIONF);
-        Optional<String> templateSetOpt = getStrField(doc, TEMPLATE_SET);
-        Optional<Instant> creationTimestamp = getTSField(doc, TIMESTAMPF);
-        Optional<String> parentGoldenSetId = getStrField(doc, PARENT_GOLDEN_SET);
-        Optional<String> rootGoldenSetId = getStrField(doc, ROOT_GOLDEN_SET);
-        Optional<String> customerOpt = getStrField(doc, CUSTOMERIDF);
-        Optional<String> appOpt = getStrField(doc, APPF);
-        Optional<String> instance = getStrField(doc, INSTANCEIDF);
-
-        String customer = customerOpt.orElseThrow(() -> new Exception("Customer field empty"));
-        String app = appOpt.orElseThrow(() -> new Exception("App field empty"));
-        String collection = collectionOpt.orElseThrow(() -> new Exception("Collection field empty"));
-        String templateSetVersion = templateSetOpt.orElseThrow(() -> new Exception("Template Set Version not specified"));
-        return new GoldenSet(customer, app, instance, collection, templateSetVersion,
-            rootGoldenSetId, parentGoldenSetId, creationTimestamp);
-
-    }
-
-    @Override
-    public Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception {
-        SolrQuery query = new SolrQuery("*:*");
-        addFilter(query, IDF, goldenSetId);
-        addFilter(query, TYPEF, Types.GoldenSet.toString());
-        return SolrIterator.getStream(solr , query, Optional.of(1)).findFirst().map(com.cube.core.UtilException
-                .rethrowFunction(this::solrDocToGoldenSet));
-    }
-
-    public Stream<GoldenSet> getGoldenSetStream(SolrQuery query) {
-        return SolrIterator.getStream(solr, query, Optional.of(20))
-            .flatMap(doc -> {
-                try {
-                    return Stream.of(solrDocToGoldenSet(doc));
-                } catch (Exception e) {
-                    LOGGER.error("Error while converting solr doc to golden set object :: " + e.getMessage());
-                    return Stream.empty();
-                }
-            });
-    }
-
-
-    @Override
-    public Stream<GoldenSet> getGoldenSetStream(Optional<String> customer,
-                                                Optional<String> app, Optional<String> instanceid) {
-        SolrQuery query = new SolrQuery("*:*");
-        addFilter(query, CUSTOMERIDF, customer);
-        addFilter(query, APPF, app);
-        addFilter(query, INSTANCEIDF, instanceid);
-        addFilter(query, TYPEF, Types.GoldenSet.toString());
-        return getGoldenSetStream(query);
-    }
-
-    @Override
-    public Stream<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId) {
-        SolrQuery query = new SolrQuery("*:*");
-        addFilter(query, TYPEF, Types.GoldenSet.toString());
-        addFilter(query, ROOT_GOLDEN_SET, rootGoldentSetId);
-        return getGoldenSetStream(query);
-    }*/
 
     private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc) {
         Optional<String> version = getStrField(doc, TEMPLATE_VERSION);
