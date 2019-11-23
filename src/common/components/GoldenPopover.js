@@ -133,7 +133,7 @@ class GoldenPopover extends React.Component {
     
     openJiraLink() {
         const { cube: { jiraBugs }, jsonPath } = this.props;
-        const { issueKey, jiraIssueURL } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
+        const { jiraIssueURL } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
         
         window.open(jiraIssueURL)
     }
