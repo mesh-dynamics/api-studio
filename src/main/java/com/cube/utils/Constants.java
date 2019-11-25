@@ -33,6 +33,7 @@ public class Constants {
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
+    public static final String RECORDING_NOT_FOUND = "RECORDING_NOT_FOUND";
     public static final String TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND";
 
 
@@ -41,6 +42,9 @@ public class Constants {
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
     public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
     public static final String BAD_VALUE_EXCEPTION = "BAD_VALUE_EXCEPTION";
+    public static final String GENERIC_EXCEPTION = "GENERIC_EXCEPTION";
+    public static final String RECORDING_SAVE_FAILURE_EXCEPTION = "RECORDING_SAVE_FAILURE_EXCEPTION";
+
 
     //JSON FETCH PATH
     public static final String CUSTOMER_ID_PATH = "/customerId";
