@@ -940,8 +940,7 @@ public class CubeStore {
             .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
 
 
-        List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-            Optional.empty(), Optional.empty(), Collections.emptyList(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()).collect(Collectors.toList());
+        List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status).collect(Collectors.toList());
 
         String json;
         try {

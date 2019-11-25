@@ -2251,6 +2251,24 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
+    public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
+        Optional<String> instanceId, Optional<RecordingStatus> status) {
+
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Recording.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        addFilter(query, INSTANCEIDF, instanceId);
+        addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
+        addSort(query, TIMESTAMPF, false); // descending
+
+        //Optional<Integer> maxresults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
+    }
+
+
+    @Override
     public Optional<Recording> getRecording(String recordingId) {
         SolrQuery query = new SolrQuery("*:*");
         query.addField("*");

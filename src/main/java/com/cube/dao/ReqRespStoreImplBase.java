@@ -97,8 +97,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
         }).or(() -> {
 			// not cached, read from underlying store
             // check if there is a recording going on
-			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-				Optional.empty(), Optional.empty(), Collections.emptyList(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty())
+			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running))
 					.findFirst()
 					.map(recording -> RecordOrReplay.createFromRecording(recording))
 					.or(() -> { // no ongoing recording, check replay
