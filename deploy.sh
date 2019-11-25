@@ -52,35 +52,31 @@ if [ -z "$1" ]; then
 }
 
 set_default() {
-echo "Setting default responses for RESTWrap!"
+echo "Setting default responses!"
 
-NOW=$(date +%Y-%m-%dT%H:%M:%SZ)
+	if [ -z "$1" ]; then
+		echo "Enter default response file"
+		read FILE_NAME
+	else
+		FILE_NAME=$1
+	fi
 
-# reqId cannot be NA as we are creating Solr doc id with reqId value. Otherwise second request
-# will override the first request here.
+    FILE_PATH=$APP_DIR/default_responses/$FILE_NAME
+    echo "Checking the file path : $FILE_PATH"
+
+    if [ -f $FILE_PATH ]; then
+        FILE_DATA=`jq '.' $FILE_PATH`
+    else
+        echo "File not found : $FILE_PATH"
+        exit 1
+    fi
 
 RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/event/setDefaultResponse \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -H "Host:$CUBE_HOST" \
-  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc","instanceId":"NA","collection":"NA",
-  "traceId":"NA","runType":"Manual","timestamp":"'$NOW'","reqId":"'$NOW'","apiPath":"restsql/initialize","eventType":"HTTPRequest",
-  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"GET\",\"body\":\"\"}"},
-  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{status:Connection pool created.}\",\"status\":200}"}')"
-
-echo $RESPONSE
-
-RESPONSE="$(curl -X POST \
-  http://$GATEWAY_URL/cs/event/setDefaultResponse \
-  -H 'Content-Type: application/json' \
-  -H 'cache-control: no-cache' \
-  -H "Host:$CUBE_HOST" \
-  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc",
-  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"'$NOW'",
-  "reqId":"'$NOW'","apiPath":"restsql/update","eventType":"HTTPRequest",
-  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"},
-  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{num_updates:1}\",\"status\":200}"}')"
+  -d "$FILE_DATA")"
 
 echo $RESPONSE
 

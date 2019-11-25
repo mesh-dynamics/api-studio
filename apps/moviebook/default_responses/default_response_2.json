@@ -1,0 +1,17 @@
+{
+  "event": {
+    "customerId": "CubeCorp",
+    "app": "MovieInfo",
+    "service": "restwrapjdbc",
+    "instanceId": "NA",
+    "collection": "NA",
+    "traceId": "NA",
+    "runType": "Manual",
+    "timestamp": "2019-11-20T14:40:36Z",
+    "reqId": "req-2019-11-20T14:40:36Z",
+    "apiPath": "restsql/update",
+    "eventType": "HTTPRequest",
+    "rawPayloadString": "{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"
+  },
+  "rawRespPayloadString": "{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{num_updates:1}\",\"status\":200}"
+}
