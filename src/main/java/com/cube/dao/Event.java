@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -21,6 +24,8 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.cube.core.CompareTemplate;
+import com.cube.dao.DataObj.PathNotFoundException;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 /*
@@ -142,6 +147,31 @@ public class Event {
     public DataObj getPayload(Config config) {
         parsePayLoad(config);
         return payload;
+    }
+
+    public String getPayloadAsJsonString(EventType eventType, Config config) {
+        switch (eventType) {
+            case HTTPRequest:
+            case HTTPResponse:
+                return rawPayloadString;
+            case JavaRequest:
+            case JavaResponse:
+                JsonObj obj = new JsonObj(rawPayloadString, config.jsonMapper);
+                try {
+                    return obj.getValAsString(Constants.FN_RESPONSE_PATH);
+                } catch (PathNotFoundException e) {
+                    LOGGER.error(new ObjectMessage(
+                        Map.of(
+                            Constants.MESSAGE, "Response path not found in JSON"
+                        )));
+                }
+            case ThriftRequest:
+            case ThriftResponse:
+            case ProtoBufRequest:
+            case ProtoBufResponse:
+            default:
+                throw new NotImplementedException("Thrift and Protobuf not implemented");
+        }
     }
 
     public enum EventType {

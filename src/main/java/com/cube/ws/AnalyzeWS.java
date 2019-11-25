@@ -40,6 +40,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,7 +59,6 @@ import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
-import com.cube.dao.DataObj;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
@@ -446,38 +447,50 @@ public class AnalyzeWS {
 
     @GET
     @Path("analysisResNoTrace/{replayId}/{recordReqId}")
-    public Response getAnalysisResultWithoutTrace(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,
-                                      @PathParam("replayId") String replayId) {
-        Optional<Analysis.ReqRespMatchResult> matchResult =
-            rrstore.getAnalysisMatchResult(recordReqId, replayId);
-        return matchResult.map(matchRes -> {
-            Optional<DataObj> request = rrstore.getRequest(recordReqId).map(event -> event.getPayload(config));
-            Optional<DataObj> recordedResponse = rrstore.getResponse(recordReqId)
-                .map(event -> event.getPayload(config));
+    public Response getAnalysisResultWithoutTrace(@Context UriInfo urlInfo,
+	    @PathParam("recordReqId") String recordReqId,
+	    @PathParam("replayId") String replayId) {
+	    Optional<Analysis.ReqRespMatchResult> matchResult =
+		    rrstore.getAnalysisMatchResult(recordReqId, replayId);
+	    return matchResult.map(matchRes -> {
+		    Optional<String> request = rrstore.getRequest(recordReqId)
+			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+		    Optional<String> recordedResponse = rrstore.getResponse(recordReqId)
+			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
 
-            Optional<DataObj> replayedRequest = matchRes.replayReqId
-                .flatMap(rrstore::getRequest)
-                .map(event -> event.getPayload(config));
+		    Optional<String> replayedRequest = matchRes.replayReqId
+			    .flatMap(rrstore::getRequest)
+			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
 
-            Optional<DataObj> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
-                .map(event -> event.getPayload(config));
+		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
 
-            Optional<String> diff  = Optional.of(matchRes.diff);
-            MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId, matchRes.reqMatchType, matchRes.numMatch,
-                matchRes.respMatchType, matchRes.service, matchRes.path,
-                diff, request, replayedRequest, recordedResponse, replayedResponse);
+		    Optional<String> diff = Optional.of(matchRes.diff);
+		    MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
+			    matchRes.reqMatchType, matchRes.numMatch,
+			    matchRes.respMatchType, matchRes.service, matchRes.path,
+			    diff, request, replayedRequest, recordedResponse, replayedResponse);
 
-            String resultJson = null;
-            try {
-                resultJson = jsonMapper.writeValueAsString(matchResFinal);
-            } catch (JsonProcessingException e) {
-                return Response.serverError()
-                    .entity( (new JSONObject(Map.of("msg"
-                        , "Json Processing Exception" , "error" , e.getMessage()))).toString()).build();
-            }
-            return Response.ok().type(MediaType.
-                APPLICATION_JSON).entity(resultJson).build();
-        }).orElse(Response.serverError().entity((new JSONObject(Map.of("msg" , "No Analysis Match Result Found"))).toString()).build());
+		    String resultJson = null;
+		    try {
+			    resultJson = jsonMapper.writeValueAsString(matchResFinal);
+		    } catch (JsonProcessingException e) {
+			    return Response.serverError()
+				    .entity((new JSONObject(Map.of(
+				    	Constants.MESSAGE, "Json Processing Exception",
+					    Constants.REASON, e.getMessage(),
+					    Constants.RECORD_REQ_ID_FIELD, recordReqId,
+					    Constants.REPLAY_ID_FIELD, replayId
+					    ))).toString())
+				    .build();
+		    }
+		    return Response.ok().type(MediaType.
+			    APPLICATION_JSON).entity(resultJson).build();
+	    }).orElse(Response.serverError()
+		    .entity((new JSONObject(Map.of(
+		    	Constants.MESSAGE, "No Analysis Match Result Found"
+		    ))).toString())
+		    .build());
     }
 
 
@@ -625,27 +638,27 @@ public class AnalyzeWS {
             }
 
             return res.stream().map(matchRes -> {
-                Optional<DataObj> request =
+                Optional<String> request =
                     matchRes.recordReqId
                         .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
-                        .map(event -> event.getPayload(config));
+                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
 
-                Optional<DataObj> recordedRequest = Optional.empty();
-                Optional<DataObj> replayedRequest = Optional.empty();
+                Optional<String> recordedRequest = Optional.empty();
+                Optional<String> replayedRequest = Optional.empty();
                 Optional<String> diff = Optional.empty();
-                Optional<DataObj> recordResponse = Optional.empty();
-                Optional<DataObj> replayResponse = Optional.empty();
+                Optional<String> recordResponse = Optional.empty();
+                Optional<String> replayResponse = Optional.empty();
 
                 if (includeDiff.orElse(false)) {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequest)
-                        .map(event -> event.getPayload(config));
+                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
                     diff = Optional.of(matchRes.diff);
                     recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
-                        .map(event -> event.getPayload(config));
+                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
                     replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
-                        .map(event -> event.getPayload(config));
+                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
                 }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
@@ -695,10 +708,10 @@ public class AnalyzeWS {
 
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
-        Optional<DataObj> recordResponse = recordReqId.flatMap(rrstore::getResponse)
-            .map(event -> event.getPayload(config));
-        Optional<DataObj> replayResponse = replayReqId.flatMap(rrstore::getResponse)
-            .map(event -> event.getPayload(config));
+        Optional<String> recordResponse = recordReqId.flatMap(rrstore::getResponse)
+            .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+        Optional<String> replayResponse = replayReqId.flatMap(rrstore::getResponse)
+            .map(event -> event.getPayloadAsJsonString(event.eventType, config));
 
         String json;
         try {
@@ -1154,7 +1167,8 @@ public class AnalyzeWS {
             String type = MediaType.TEXT_PLAIN;
             try {
                 response = jsonMapper
-                    .writeValueAsString(Map.of("Message" , "Successfully updated Recording Update Operation Set"
+                    .writeValueAsString(Map.of(
+                    	Constants.MESSAGE , "Successfully updated Recording Update Operation Set"
                         , "ID" , recordingOperationSetId));
                 type = MediaType.APPLICATION_JSON;
             } catch (JsonProcessingException e) {
@@ -1230,10 +1244,10 @@ public class AnalyzeWS {
                         String service,
                         String path,
                         Optional<String> diff,
-                        Optional<DataObj> recordRequest,
-                        Optional<DataObj> replayRequest,
-                        Optional<DataObj> recordResponse,
-                        Optional<DataObj> replayResponse) {
+                        Optional<String> recordRequest,
+                        Optional<String> replayRequest,
+                        Optional<String> recordResponse,
+                        Optional<String> replayResponse) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
             this.reqmt = reqmt;
@@ -1255,13 +1269,44 @@ public class AnalyzeWS {
         public final Comparator.MatchType respmt;
         public final String service;
         public final String path;
+	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
+	    //Hence getMethods() are used to fetch the value.
+        @JsonIgnore
         public final Optional<String> diff;
-        public final Optional<DataObj> recordRequest;
-        public final Optional<DataObj> replayRequest;
-        public final Optional<DataObj> recordResponse;
-        public final Optional<DataObj> replayResponse;
+        @JsonIgnore
+        public final Optional<String> recordRequest;
+        @JsonIgnore
+        public final Optional<String> replayRequest;
+        @JsonIgnore
+        public final Optional<String> recordResponse;
+        @JsonIgnore
+        public final Optional<String> replayResponse;
 
+	    //JsonRawValue is to avoid Jackson escaping the String while using writeValueAsString
+	    @JsonRawValue
+	    public String getDiff() {
+		    return diff.orElse(null);
+	    }
 
+	    @JsonRawValue
+	    public String getRecordRequest() {
+		    return recordRequest.orElse(null);
+	    }
+
+	    @JsonRawValue
+	    public String getReplayRequest() {
+		    return replayRequest.orElse(null);
+	    }
+
+	    @JsonRawValue
+	    public String getRecordResponse() {
+		    return recordResponse.orElse(null);
+	    }
+
+	    @JsonRawValue
+	    public String getReplayResponse() {
+		    return replayResponse.orElse(null);
+	    }
     }
 
     static class MatchResults {
@@ -1281,15 +1326,30 @@ public class AnalyzeWS {
     static class RespAndMatchResults {
 
 
-        public RespAndMatchResults(Optional<DataObj> recordResponse, Optional<DataObj> replayResponse,
+        public RespAndMatchResults(Optional<String> recordResponse, Optional<String> replayResponse,
                                    Optional<Analysis.ReqRespMatchResult> matchResult) {
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
             this.matchResult = matchResult;
         }
 
-        public final Optional<DataObj> recordResponse;
-	    public final Optional<DataObj> replayResponse;
+        //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
+	    //Hence getMethods() are used to fetch the value.
+        @JsonIgnore
+        public final Optional<String> recordResponse;
+        @JsonIgnore
+	    public final Optional<String> replayResponse;
 	    public final Optional<Analysis.ReqRespMatchResult> matchResult;
+
+	    //JsonRawValue is to avoid Jackson escaping the String while using writeValueAsString
+	    @JsonRawValue
+	    public String getRecordResponse() {
+		    return recordResponse.orElse(null);
+	    }
+
+	    @JsonRawValue
+	    public String getReplayResponse() {
+		    return replayResponse.orElse(null);
+	    }
     }
 }

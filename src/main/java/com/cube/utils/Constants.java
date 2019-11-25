@@ -22,7 +22,7 @@ public class Constants {
     public static final String EXCEPTION_STACK = "exceptionStack";
     public static final String REQ_MATCH_TYPE = "reqMatchType";
     public static final String RESP_MATCH_TYPE = "respMatchType";
-    public static final String INCLUDE_DIFF = "diffInclude";
+    public static final String INCLUDE_DIFF = "includeDiff";
 
 
     //MESSAGE_IDs
