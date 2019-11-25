@@ -3,7 +3,6 @@
  */
 package com.cube.dao;
 
-import com.cube.utils.Constants;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -29,9 +28,6 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.cube.core.Utils;
-import io.cube.agent.CommonUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -49,6 +45,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
@@ -62,8 +59,7 @@ import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
-import com.cube.core.RequestComparator;
-import com.cube.core.RequestComparator.PathCT;
+import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
@@ -71,6 +67,7 @@ import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 /**
@@ -109,19 +106,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDoc(doc);
     }
 
-    /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getRequest()
-     * qr - query request
-     */
-    @Override
-    public Stream<Request> getRequests(Request qr, RequestComparator mspec, Optional<Integer> nummatches,
-                                       Optional<Integer> start) {
-
-        final SolrQuery query = reqMatchSpecToSolrQuery(qr, mspec);
-
-        return SolrIterator.getStream(solr, query, nummatches, start).flatMap(doc -> docToRequest(doc).stream());
-
-    }
 
     @Override
     void removeCollectionKey(ReqRespStoreImplBase.CollectionKey collectionKey) {
@@ -885,16 +869,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     }
 
-    /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getRespForReq(com.cube.dao.ReqRespStore.Request)
-     */
-    @Override
-    public Optional<Response> getRespForReq(Request qr, RequestComparator mspec) {
-        //TODO: Event redesign: this is reading from old style Response (used for default response). Change this
-        // Find request, without considering request id
-        Optional<Request> req = getRequests(qr, mspec, Optional.of(1)).findFirst();
-        return req.flatMap(reqv -> reqv.reqId).flatMap(this::getResponseOld);
-    }
 
     /**
      * @param solr
@@ -1116,27 +1090,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
-    private static void addMatch(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap,
-                                 List<PathCT> pathCTS) {
-        Optional<PathCT> rootpct = Optional.empty();
-
-        for (PathCT pct : pathCTS) {
-            if (pct.path.equals('/') || pct.path.isBlank()) {
-                // if path is empty, it means the rule is at rule level, so should be applied to it descendents
-                // this is the rule at the root level
-                rootpct = Optional.of(pct);
-            } else {
-                addToQuery(query, qstr, fieldname, fvalmap, pct.ct, StringUtils.removeStart(pct.path, "/"));
-            }
-        }
-        // check for inheritance of paths not covered in pathCTs
-        rootpct.ifPresent(rootpctv -> fvalmap.keySet().forEach(k -> {
-            // check that no rule is already defined on path /k
-            if (pathCTS.stream().filter(pct -> pct.path.equals("/" + k)).findFirst().isEmpty()) {
-               addToQuery(query, qstr, fieldname, fvalmap, rootpctv.ct, k);
-            }
-        }));
-    }
 
     private static void setRRFields(Types type, RRBase rr, SolrInputDocument doc) {
 
@@ -1215,7 +1168,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
 
-        EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
             instanceId.orElse(null), collection.orElse(null), traceid.orElse(null),
             runType.orElse(null), timestamp.orElse(null),
             reqId.orElse(null), path.orElse("NA" /*null*/), eType); // TODO: tmp comment
@@ -1837,34 +1790,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty()).objects;
     }
 
-    // Some useful functions
-    private static SolrQuery reqMatchSpecToSolrQuery(Request qr, RequestComparator spec) {
-        final SolrQuery query = new SolrQuery("*:*");
-        final StringBuffer qstr = new StringBuffer("*:*");
-        query.addField("*");
-
-        addMatch(spec.getCTreqid(), query, qstr, REQIDF, qr.reqId);
-        addMatch(query, qstr, META, qr.meta, spec.getCTMeta());
-        addMatch(query, qstr, HDR, qr.hdrs, spec.getCTHdrs());
-        addMatch(spec.getCTbody(), query, qstr, BODYF, qr.body);
-        addMatch(spec.getCTcollection(), query, qstr, COLLECTIONF, qr.collection);
-        addMatch(spec.getCTtimestamp(), query, qstr, TIMESTAMPF, qr.timestamp.toString());
-        addMatch(spec.getCTrrtype(), query, qstr, RRTYPEF, qr.runType.map(Enum::toString));
-        addMatch(spec.getCTcustomerid(), query, qstr, CUSTOMERIDF, qr.customerId);
-        addMatch(spec.getCTapp(), query, qstr, APPF, qr.app);
-        //addMatch(spec.getCTcontenttype, query, qstr, CONTENTTYPEF, qr.hdrs.getHeaderString(HttpHeaders.CONTENT_TYPE));
-
-        addMatch(spec.getCTpath(), query, qstr, PATHF, qr.apiPath);
-        addMatch(query, qstr, QPARAMS, qr.queryParams, spec.getCTQparams());
-        addMatch(query, qstr, FPARAMS, qr.formParams, spec.getCTFparams());
-        addMatch(spec.getCTmethod(), query, qstr, METHODF, qr.method);
-
-        addFilter(query, TYPEF, Types.Request.toString());
-
-        query.setQuery(qstr.toString());
-        return query;
-    }
-
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
 
 
@@ -2092,7 +2017,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteReqResByTraceId(String traceId, String collectionName) {
-        String queryString = "(" + HDRTRACEF + ":" + traceId + " OR " + METATRACEID + ":" + traceId + ") AND " + COLLECTIONF +":" + collectionName;
+        String queryString = TRACEIDF + ":" + traceId + " AND " + COLLECTIONF +":" + collectionName + " AND " + TYPEF +":Event";
         return deleteDocsByQuery(queryString);
     }
 

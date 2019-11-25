@@ -13,8 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import javax.ws.rs.core.MediaType;
+import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import io.cube.agent.UtilException;
 
 import com.cube.core.CompareTemplate;
 import com.cube.dao.DataObj.PathNotFoundException;
@@ -44,7 +45,7 @@ public class Event {
     private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
 
-    public Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
+    private Event(String customerId, String app, String service, String instanceId, String collection, String traceId,
                  RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType, byte[] rawPayloadBinary,
                  String rawPayloadString, DataObj payload, int payloadKey) {
         this.customerId = customerId;
@@ -88,6 +89,10 @@ public class Event {
 
     public static List<EventType> getRequestEventTypes() {
         return requestEventTypes;
+    }
+
+    public static boolean isReqType(EventType eventType) {
+        return requestEventTypes.contains(eventType);
     }
 
     public String getCollection() {
@@ -242,4 +247,88 @@ public class Event {
 		Replay,
 		Manual  // manually created e.g. default requests and responses
 	}
+
+    public static class EventBuilder {
+
+        private static final Logger LOGGER = LogManager.getLogger(Event.class);
+
+        private final String customerId;
+        private final String app;
+        private final String service;
+        private final String instanceId;
+        private final String collection;
+        private final String traceId;
+        private final Event.RunType runType;
+        private final Instant timestamp;
+        private final String reqId;
+        private final String apiPath;
+        private final Event.EventType eventType;
+        private byte[] rawPayloadBinary;
+        private String rawPayloadString;
+        private DataObj payload;
+        private int payloadKey = 0;
+
+        public EventBuilder(String customerId, String app, String service, String instanceId, String collection, String traceId,
+                            Event.RunType runType, Instant timestamp, String reqId, String apiPath, Event.EventType eventType) {
+            this.customerId = customerId;
+            this.app = app;
+            this.service = service;
+            this.instanceId = instanceId;
+            this.collection = collection;
+            this.traceId = traceId;
+            this.runType = runType;
+            this.timestamp = timestamp;
+            this.reqId = reqId;
+            this.apiPath = apiPath;
+            this.eventType = eventType;
+        }
+
+
+        public EventBuilder setRawPayloadBinary(byte[] rawPayloadBinary) {
+            this.rawPayloadBinary = rawPayloadBinary;
+            return this;
+        }
+
+        public EventBuilder setRawPayloadString(String rawPayloadString) {
+            this.rawPayloadString = rawPayloadString;
+            return this;
+        }
+
+        public EventBuilder setPayload(DataObj payload) {
+            this.payload = payload;
+            return this;
+        }
+
+        public EventBuilder setPayloadKey(int payloadKey) {
+            this.payloadKey = payloadKey;
+            return this;
+        }
+
+        public Event createEvent() throws com.cube.dao.Event.EventBuilder.InvalidEventException {
+            Event event = new Event(customerId, app, service, instanceId, collection, traceId, runType, timestamp, reqId, apiPath,
+                eventType,
+                rawPayloadBinary, rawPayloadString, payload, payloadKey);
+            if (event.validate()) {
+                return event;
+            } else {
+                throw new com.cube.dao.Event.EventBuilder.InvalidEventException();
+            }
+        }
+
+        public Optional<Event> createEventOpt() {
+            try {
+                return Optional.of(createEvent());
+            } catch (com.cube.dao.Event.EventBuilder.InvalidEventException e) {
+                LOGGER.error("Exception in creating an Event", e.getMessage(),
+                    UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+            }
+            return Optional.empty();
+        }
+
+
+        public static class InvalidEventException extends Exception {
+
+        }
+    }
+
 }

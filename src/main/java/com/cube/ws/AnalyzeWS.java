@@ -49,8 +49,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.UtilException;
 import redis.clients.jedis.Jedis;
 
-import com.cube.cache.RequestComparatorCache;
-import com.cube.cache.ResponseComparatorCache;
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
@@ -103,18 +102,25 @@ public class AnalyzeWS {
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Config.DEFAULT_TRACE_FIELD);
 
-        Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
+        try {
+            Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
 
-        return analysis.map(av -> {
-            String json;
-            try {
-                json = jsonMapper.writeValueAsString(av);
-                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-            } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayId %s", replayId), e);
-                return Response.serverError().build();
-            }
-        }).orElse(Response.serverError().build());
+            return analysis.map(av -> {
+                String json;
+                try {
+                    json = jsonMapper.writeValueAsString(av);
+                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                } catch (JsonProcessingException e) {
+                    LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayId), e);
+                    return Response.serverError().build();
+                }
+            }).orElse(Response.serverError().build());
+        } catch (ComparatorCache.TemplateNotFoundException e) {
+            return Response.serverError().entity((
+                buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_NOT_FOUND,
+                    "Cannot analyze since template does not exist : " +
+                    e.getMessage()))).build();
+        }
     }
 
 
@@ -235,7 +241,7 @@ public class AnalyzeWS {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
 
-            Utils.invalidateCacheFromTemplateSet(templateSet, requestComparatorCache, responseComparatorCache);
+            Utils.invalidateCacheFromTemplateSet(templateSet, comparatorCache);
             rrstore.saveTemplateSet(templateSet);
 
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(String.format(
@@ -298,11 +304,8 @@ public class AnalyzeWS {
                     .build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
-            requestComparatorCache.invalidateKey(key);
-            responseComparatorCache.invalidateKey(key);
-            //Analyzer.removeKey(key);
-            return Response.ok().type(MediaType.TEXT_PLAIN)
-                .entity("Json String successfully stored in Solr").build();
+            comparatorCache.invalidateKey(key);
+            return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN)
                 .entity("Invalid JSON String sent").build();
@@ -772,8 +775,7 @@ public class AnalyzeWS {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        requestComparatorCache.invalidateAll();
-        responseComparatorCache.invalidateAll();
+        comparatorCache.invalidateAll();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();
@@ -929,8 +931,9 @@ public class AnalyzeWS {
      * @param templateUpdOpSetId Template update operation set id
      * @return Appropriate response
      */
-    @GET
+    @POST
     @Path("updateGoldenSet/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
+    @Consumes("application/x-www-form-urlencoded")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
                                     @PathParam("replayId") String replayId,
@@ -973,7 +976,7 @@ public class AnalyzeWS {
             }
 
             // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, originalRec.name);
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
             if (recWithSameName.isPresent()) {
                 throw new Exception("Golden already present for name - " + name + " .Specify unique name");
             }
@@ -1216,8 +1219,7 @@ public class AnalyzeWS {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-		this.requestComparatorCache = config.requestComparatorCache;
-		this.responseComparatorCache = config.responseComparatorCache;
+		this.comparatorCache = config.comparatorCache;
 		this.recordingUpdate = new RecordingUpdate(config);
 	}
 
@@ -1227,8 +1229,7 @@ public class AnalyzeWS {
 	Config config;
     private final RecordingUpdate recordingUpdate;
     // Template cache to retrieve analysis templates from solr
-	final RequestComparatorCache requestComparatorCache;
-	final ResponseComparatorCache responseComparatorCache;
+    final ComparatorCache comparatorCache;
 
     /**
      * some fields from ReqRespMatchResult and some from Request to be returned by some api calls

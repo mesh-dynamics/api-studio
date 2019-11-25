@@ -7,6 +7,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 
+import com.cube.dao.Event;
 import com.cube.dao.Recording;
 
 /**
@@ -14,11 +15,11 @@ import com.cube.dao.Recording;
  */
 public class TemplateKey {
 
-    private String customerId;
-    private String appId;
-    private String serviceId;
-    private String path;
-    private String version; // this is the version of the TemplateSet
+    private final String customerId;
+    private final String appId;
+    private final String serviceId;
+    private final String path;
+    private final String version; // this is the version of the TemplateSet
     private Type reqOrResp;
 
     public Type getReqOrResp() {
@@ -30,21 +31,25 @@ public class TemplateKey {
         Response
     }
 
-    public TemplateKey(String version, String customerId, String appId, String serviceId, String path , Type reqOrResp) {
-        this(customerId,appId,serviceId,path,reqOrResp);
-        this.version = version;
+    /**
+     * This constructor is only for jackson json deserialization
+     **/
+    private TemplateKey() {
+        this.customerId = "";
+        this.appId = "";
+        this.serviceId = "";
+        this.path = "";
+        this.reqOrResp = Type.Request;
+        this.version = "";
     }
 
-    private TemplateKey(String customerId, String appId, String serviceId, String path , Type reqOrResp) {
+    public TemplateKey(String version, String customerId, String appId, String serviceId, String path, Type reqOrResp) {
         this.customerId = customerId;
         this.appId = appId;
         this.serviceId = serviceId;
         this.path = path;
         this.reqOrResp = reqOrResp;
-    }
-
-    public TemplateKey() {
-
+        this.version = version;
     }
 
     @Override

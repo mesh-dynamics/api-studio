@@ -39,17 +39,17 @@ public class Response extends RRBase {
 	 * @param body
 	 */
 	public Response(Optional<String> reqId, int status,
-			MultivaluedMap<String, String> meta, 
+			MultivaluedMap<String, String> meta,
 			MultivaluedMap<String, String> hdrs, String body,
 			Optional<String> collection,
-			Optional<Instant> timestamp, 
+			Optional<Instant> timestamp,
 			Optional<Event.RunType> runType,
 			Optional<String> customerId,
 			Optional<String> app, String apiPath) {
 		super(reqId, meta, hdrs, body, collection, timestamp, runType, customerId, app, apiPath);
 		this.status = status;
 	}
-	
+
 	public Response(Optional<String> reqId, int status,
 			String body,
 			Optional<String> collection,
@@ -60,9 +60,9 @@ public class Response extends RRBase {
 				customerId, app, apiPath);
 		contenttype.ifPresent(ct -> hdrs.add(HttpHeaders.CONTENT_TYPE, ct));
 	}
-	
+
 	/**
-	 * 
+	 *
 	 */
 	@SuppressWarnings("unused")
 	private Response() {
@@ -70,9 +70,9 @@ public class Response extends RRBase {
 		this.status = Status.OK.getStatusCode();
 	}
 
-	
+
 	public final int status;
-	
+
 	private static final MultivaluedHashMap<String, String> emptyMap() {
 		return new MultivaluedHashMap<String, String>();
 	}
@@ -110,13 +110,13 @@ public class Response extends RRBase {
     }
 
     public Event toEvent(Config config, String apiPath)
-        throws JsonProcessingException, EventBuilder.InvalidEventException {
+        throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
         HTTPResponsePayload payload = new HTTPResponsePayload(hdrs, status, body);
         String payloadStr;
         payloadStr = config.jsonMapper.writeValueAsString(payload);
 
-        EventBuilder eventBuilder = new EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
+        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse("NA"), app.orElse("NA"),
             getService().orElse("NA"), getInstance().orElse("NA"), collection.orElse("NA"),
             getMetaField(Config.DEFAULT_TRACE_FIELD).orElse("NA"), runType.orElse(Record), timestamp.orElse(Instant.now()),
             reqId.orElse("NA"), apiPath, Event.EventType.HTTPResponse);
