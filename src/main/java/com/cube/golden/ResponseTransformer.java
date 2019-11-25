@@ -99,6 +99,7 @@ public class ResponseTransformer {
         //String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
         switch (newop.operationType) {
             // todo: check existence of value at path
+
             case ADD:
                 // This case gets dealt in REPLACE
             case REPLACE:

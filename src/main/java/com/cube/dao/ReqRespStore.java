@@ -329,7 +329,34 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceId, Optional<RecordingStatus> status);
+		Optional<String> instanceId, Optional<RecordingStatus> status);
+
+
+	/**
+	 * @param customerId
+	 * @param app
+	 * @param instanceId
+	 * @param status
+	 * @param collection
+	 * @param templateVersion
+	 * @param name
+	 * @param parentRecordingId
+	 * @param rootRecordingId
+	 * @param codeVersion
+	 * @param branch
+	 * @param tags
+	 * @param archived
+	 * @param gitCommitId
+	 * @param collectionUpdOpSetId
+	 * @param templateUpdOpSetId
+	 * @param userId
+	 * @return
+	 */
+	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
+		Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
+		Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
+		Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId);
+
 
     Optional<Recording> getRecording(String recordingId);
 
@@ -379,7 +406,7 @@ public interface ReqRespStore {
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
                                                                String templateSetVersion);
 
-	// Will merge in the single function while creating search API
+
     /**
      * @param customerId
      * @param app
