@@ -57,7 +57,15 @@ echo "Setting default responses!"
 		FILE_NAME=$1
 	fi
 
-	FILE_DATA=`jq '.' $FILE_NAME`
+    FILE_PATH=$APP_DIR/default_responses/$FILE_NAME
+    echo "Checking the file path : $FILE_PATH"
+
+    if [ -f $FILE_PATH ]; then
+        FILE_DATA=`jq '.' $FILE_PATH`
+    else
+        echo "File not found : $FILE_PATH"
+        exit 1
+    fi
 
 RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/event/setDefaultResponse \
