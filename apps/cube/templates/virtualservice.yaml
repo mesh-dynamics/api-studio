@@ -4,6 +4,8 @@ kind: VirtualService
 metadata:
   name: cube
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   hosts:
   - "{{namespace_host}}"

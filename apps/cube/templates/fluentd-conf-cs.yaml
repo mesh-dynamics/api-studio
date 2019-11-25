@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: fluentd-cube-conf-{{namespace}}
   namespace: logging
+  labels:
+    app: cube
 data:
   fluent-cube-{{namespace}}.conf: |-
     # tail cubews (envoy) logs

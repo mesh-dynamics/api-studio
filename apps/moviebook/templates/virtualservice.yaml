@@ -3,6 +3,8 @@ kind: VirtualService
 metadata:
   name: bookinfo
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - "{{namespace_host}}"
@@ -30,6 +32,8 @@ kind: VirtualService
 metadata:
   name: restwrapjdbc
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - "{{namespace_host}}"

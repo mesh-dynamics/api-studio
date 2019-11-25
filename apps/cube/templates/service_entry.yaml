@@ -4,6 +4,8 @@ kind: ServiceEntry
 metadata:
   name: aws-solr
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   hosts:
   - 18.222.86.142
@@ -19,6 +21,8 @@ kind: ServiceEntry
 metadata:
   name: cubeservicestaging
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   hosts:
   - {{staging_host}}
@@ -35,6 +39,8 @@ kind: ServiceEntry
 metadata:
   name: cubeservicedoogfooding
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   hosts:
   - {{cube_host}}
@@ -51,6 +57,8 @@ kind: ServiceEntry
 metadata:
   name: aws-rds-cubedb
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   hosts:
   - cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com
