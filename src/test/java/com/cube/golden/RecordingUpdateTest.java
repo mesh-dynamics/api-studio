@@ -110,8 +110,8 @@ class RecordingUpdateTest {
         reqRespMatchResultStream.forEach(res -> {
 
             // get record and replay responses using IDs
-            Optional<Response> recordResponse = res.recordreqid.flatMap(rrStore::getResponse);
-            Optional<Response> replayResponse = res.replayreqid.flatMap(rrStore::getResponse);
+            Optional<Response> recordResponse = res.recordreqid.flatMap(rrStore::getResponseEvent);
+            Optional<Response> replayResponse = res.replayreqid.flatMap(rrStore::getResponseEvent);
 
             // apply the transformation operations
             Response transformedResponse = recordingUpdate.transform(newCollectionName, operationSet,

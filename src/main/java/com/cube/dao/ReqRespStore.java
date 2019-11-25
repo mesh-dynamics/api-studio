@@ -116,30 +116,13 @@ public interface ReqRespStore {
 	 * @param reqId
 	 * @return the matching response on the reqId
 	 */
-    Optional<Event> getResponse(String reqId);
-
-    // TODO: Event redesign: Remove this
-    Optional<Response> getResponseOld(String reqId);
+    Optional<Event> getResponseEvent(String reqId);
 
     /**
      * @param reqId
      * @return the matching request on the reqId
      */
-    Optional<Event> getRequest(String reqId);
-
-    /**
-     * @param reqId
-     * @return the matching response on the reqId
-     */
-    // TODO: Event redesign: Remove this
-    Optional<Request> getRequestOld(String reqId);
-
-	/**
-	 * @param requests
-	 * @return
-	 */
-    // TODO: Event redesign: This needs to be rewritten to get as event
-	Map<String, Response> getResponses(List<Request> requests);
+    Optional<Event> getRequestEvent(String reqId);
 
 
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);
@@ -674,13 +657,5 @@ public interface ReqRespStore {
 
     public void invalidateCurrentCollectionCache(String customerId, String app,
                                                  String instanceId);
-
-/*    String createGoldenSet(String collection, String templateSetId , Optional<String> parentGoldenSet, Optional<String> rootGoldenSet);
-
-    Optional<GoldenSet> getGoldenSet(String goldenSetId) throws Exception;
-
-    Stream<GoldenSet> getGoldenSetStream(Optional<String> customer, Optional<String> app, Optional<String> instanceId);
-
-    Stream<GoldenSet> getAllDerivedGoldenSets(String rootGoldentSetId);*/
 
 }

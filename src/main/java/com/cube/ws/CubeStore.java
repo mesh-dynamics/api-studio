@@ -953,25 +953,6 @@ public class CubeStore {
         }
     }
 
-    /*@GET
-    @Path("goldenSet/get")
-    public Response getGoldenSetList(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst("instanceId"));
-        Optional<String> customerId = Optional.ofNullable(queryParams.getFirst("customerId"));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-        List<GoldenSet> recordings = rrstore.getGoldenSetStream(customerId, app, instanceId).collect(Collectors.toList());
-        String json;
-        try {
-            json = jsonMapper.writeValueAsString(recordings);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Golden Set object to Json for customer %s, app %s, instance %s.",
-                customerId.orElse(""), app.orElse(""), instanceId.orElse("")), e);
-            return Response.serverError().build();
-        }
-    }*/
-
     @GET
 	@Path("currentcollection")
     public Response currentcollection(@Context UriInfo ui) {

@@ -18,7 +18,7 @@ import com.flipkart.zjsonpatch.JsonPatch;
 
 import com.cube.dao.RRBase;
 
-public class ResponseTransformer {
+public class gitResponseTransformer {
 
     private final ObjectMapper jsonMapper;
     private static final Logger LOGGER = LogManager.getLogger(ResponseTransformer.class);

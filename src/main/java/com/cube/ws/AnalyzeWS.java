@@ -442,15 +442,15 @@ public class AnalyzeWS {
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayId);
         return matchResult.map(matchRes -> {
-            Optional<Request> request = rrstore.getRequest(recordReqId).flatMap(event -> Request.fromEvent(event, jsonMapper));
-            Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponse(recordReqId)
+            Optional<Request> request = rrstore.getRequestEvent(recordReqId).flatMap(event -> Request.fromEvent(event, jsonMapper));
+            Optional<com.cube.dao.Response> recordedResponse = rrstore.getResponseEvent(recordReqId)
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
             Optional<com.cube.dao.Request> replayedRequest = matchRes.replayReqId
-                .flatMap(rrstore::getRequest)
+                .flatMap(rrstore::getRequestEvent)
                 .flatMap(event -> Request.fromEvent(event, jsonMapper));
 
-            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+            Optional<com.cube.dao.Response> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
                 .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
             Optional<String> diff  = Optional.of(matchRes.diff);
@@ -623,12 +623,12 @@ public class AnalyzeWS {
                 if(includeDiff.orElse(false)) {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
-                        .flatMap(rrstore::getRequest)
+                        .flatMap(rrstore::getRequestEvent)
                         .flatMap(event -> Request.fromEvent(event, jsonMapper));
                     diff = Optional.of(matchRes.diff);
-                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponse)
+                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponseEvent)
                         .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
-                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponse)
+                    replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
                         .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
                 }
 
@@ -666,9 +666,9 @@ public class AnalyzeWS {
 
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
-        Optional<com.cube.dao.Response> recordResponse = recordReqId.flatMap(rrstore::getResponse)
+        Optional<com.cube.dao.Response> recordResponse = recordReqId.flatMap(rrstore::getResponseEvent)
             .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
-        Optional<com.cube.dao.Response> replayResponse = replayReqId.flatMap(rrstore::getResponse)
+        Optional<com.cube.dao.Response> replayResponse = replayReqId.flatMap(rrstore::getResponseEvent)
             .flatMap(event -> com.cube.dao.Response.fromEvent(event, jsonMapper));
 
 
@@ -830,43 +830,6 @@ public class AnalyzeWS {
         }
     }
 
-    /**
-     * Create a new golden set given a collection and template set id
-     * @param collection Collection name/id
-     * @param templateSetId Template set id
-     * @return Appropriate response
-     */
-/*    @GET
-    @Path("createGoldenSet/{collection}/{templateSetId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response createGoldenSet(@PathParam("collection") String collection,
-                                    @PathParam("templateSetId") String templateSetId) {
-        try {
-            String goldenSetId = rrstore.createGoldenSet(collection, templateSetId, Optional.empty(), Optional.empty());
-            return Response.ok().entity("{\"Message\" :  \"Golden set successfully created\" , \"ID\" : \"" +
-                goldenSetId + "\"}").build();
-        } catch (Exception e) {
-            LOGGER.error("Error while creating golden set :: "  + e.getMessage());
-            return Response.serverError().entity("{\"Message\" :  \"Error while creating golden set\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
-        }
-    }
-
-    @GET
-    @Path("goldenSet/getAll/{rootGoldenSetId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchAllGoldenSetsWithRoot(@PathParam("rootGoldenSetId") String rootGoldenSetId) {
-        try {
-            List<GoldenSet> goldenSetList = rrstore.getAllDerivedGoldenSets(rootGoldenSetId).collect(Collectors.toList());
-            String asJson = jsonMapper.writeValueAsString(goldenSetList);
-            return Response.ok().entity(asJson).build();
-        } catch (Exception e) {
-            LOGGER.error("Error while retrieving golden sets for root :: "  + rootGoldenSetId + " :: " + e.getMessage());
-            return Response.serverError().entity("{\"Message\" :  \"Error while retrieving golden sets with given root\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
-        }
-    }*/
-
 
     /**
      * Update an existing recording with the specified template update and collection
@@ -886,9 +849,27 @@ public class AnalyzeWS {
                                     @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
                                     @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
                                     MultivaluedMap<String, String> formParams) {
-        try{
+        try {
+
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
+
+            String name = formParams.getFirst("name");
+            if (name==null) {
+                throw new Exception("Name not specified for golden");
+            }
+
+            String userId = formParams.getFirst("userId");
+            if (userId==null) {
+                throw new Exception("userId not specified for golden");
+            }
+
+            // Ensure name is unique for a customer and app
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
+            if (recWithSameName.isPresent()) {
+                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
+            }
+
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
                 .templateVersion).orElseThrow(() ->
                 new Exception("Unable to find template set mentioned in the specified golden set"));
@@ -911,21 +892,6 @@ public class AnalyzeWS {
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
 
-            String name = formParams.getFirst("name");
-            if (name==null) {
-                throw new Exception("Name not specified for golden");
-            }
-
-            String userId = formParams.getFirst("userId");
-            if (userId==null) {
-                throw new Exception("userId not specified for golden");
-            }
-
-            // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
-            if (recWithSameName.isPresent()) {
-                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
-            }
 
             Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
             Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
