@@ -161,9 +161,8 @@ public class Event {
                 return rawPayloadString;
             case JavaRequest:
             case JavaResponse:
-                JsonObj obj = new JsonObj(rawPayloadString, config.jsonMapper);
                 try {
-                    return obj.getValAsString(Constants.FN_RESPONSE_PATH);
+                    return getPayload(config).getValAsString(Constants.FN_RESPONSE_PATH);
                 } catch (PathNotFoundException e) {
                     LOGGER.error(new ObjectMessage(
                         Map.of(
