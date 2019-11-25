@@ -712,81 +712,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getResponse(java.lang.String)
+     * @see com.cube.dao.ReqRespStore#getResponseEvent(java.lang.String)
      */
     @Override
-    public Optional<Event> getResponse(String reqId) {
+    public Optional<Event> getResponseEvent(String reqId) {
 
-        // TODO: Event redesign - change this include all event types
-        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPResponse);
-        builder.withReqId(reqId);
-
-        return getSingleEvent(builder.build());
-    }
-
-    // TODO: Event redesign, remove this later
-    @Override
-    public Optional<Response> getResponseOld(String reqId) {
-        final SolrQuery query = new SolrQuery("*:*");
-        query.addField("*");
-        //query.setRows(1);
-
-        addFilter(query, TYPEF, Types.Response.toString());
-        addFilter(query, REQIDF, reqId);
-
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToResponse(doc));
-
-    }
-
-
-    @Override
-    public Map<String, Response> getResponses(List<Request> requests) {
-        final SolrQuery query = new SolrQuery("*:*");
-        query.addField("*");
-        // adding filter for type response
-        addFilter(query , TYPEF , Types.Response.toString());
-        // adding filter for request id's against which we want to find repsonses
-        addFilter(query, REQIDF ,
-                requests.stream().map(request -> request.reqId).filter(Optional::isPresent).map(Optional::get)
-                        .collect(Collectors.joining(" OR " , "(" , ")")), false );
-        Optional<Integer> maxResults = Optional.of(requests.size());
-        Map<String, Response> result = new HashMap<>();
-        SolrIterator.getStream(solr , query , maxResults).forEach(doc -> {
-            docToResponse(doc).ifPresent(response ->
-                    response.reqId.ifPresent(reqId -> result.put(reqId , response)));
-        });
-        return result;
-    }
-
-    @Override
-    public Optional<Event> getRequest(String reqId) {
-
-        // TODO: Event redesign - change this include all request event types
-        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.EventType.HTTPRequest);
+        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.RESPONSE_EVENT_TYPES);
         builder.withReqId(reqId);
 
         return getSingleEvent(builder.build());
     }
 
 
-    /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getRequestOld(java.lang.String)
-     */
     @Override
-    public Optional<Request> getRequestOld(String reqId) {
+    public Optional<Event> getRequestEvent(String reqId) {
 
-        final SolrQuery query = new SolrQuery("*:*");
-        query.addField("*");
-        //query.setRows(1);
+        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.REQUEST_EVENT_TYPES);
+        builder.withReqId(reqId);
 
-        addFilter(query, TYPEF, Types.Request.toString());
-        addFilter(query, REQIDF, reqId);
-
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRequest(doc));
-
+        return getSingleEvent(builder.build());
     }
+
 
 
     /**

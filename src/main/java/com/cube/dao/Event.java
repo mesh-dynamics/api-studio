@@ -86,11 +86,11 @@ public class Event {
     }
 
     public static List<EventType> getRequestEventTypes() {
-        return requestEventTypes;
+        return REQUEST_EVENT_TYPES;
     }
 
     public static boolean isReqType(EventType eventType) {
-        return requestEventTypes.contains(eventType);
+        return REQUEST_EVENT_TYPES.contains(eventType);
     }
 
     public String getCollection() {
@@ -135,7 +135,7 @@ public class Event {
 
     @JsonIgnore
     public boolean isRequestType() {
-        return requestEventTypes.contains(eventType);
+        return REQUEST_EVENT_TYPES.contains(eventType);
     }
 
     public String getReqId() {
@@ -168,9 +168,9 @@ public class Event {
         // parse if not already parsed
         parsePayLoad(config);
         Optional<RawPayload> newPayload = rhs.map(rhsEvent -> {
-            DataObj tranformedDataObj = payload.applyTransform(rhsEvent.getPayload(config), operationList);
-            DataObjFactory.wrapIfNeeded(tranformedDataObj, eventType);
-            return tranformedDataObj.toRawPayload();
+            DataObj transformedDataObj = payload.applyTransform(rhsEvent.getPayload(config), operationList);
+            DataObjFactory.wrapIfNeeded(transformedDataObj, eventType);
+            return transformedDataObj.toRawPayload();
         });
 
         // payload doesn't change if rhs is empty
@@ -220,8 +220,13 @@ public class Event {
         }
     }
 
-    public static List<EventType> requestEventTypes = List.of(EventType.HTTPRequest, EventType.JavaRequest,
+    public static final List<EventType> REQUEST_EVENT_TYPES = List.of(EventType.HTTPRequest, EventType.JavaRequest,
         EventType.ThriftRequest, EventType.ProtoBufRequest);
+    // currently JavaRequest stores the response as well
+    // TODO: change JavaRequest to JavaResponse in list below once we separate the two
+    public static final List<EventType> RESPONSE_EVENT_TYPES = List.of(EventType.HTTPResponse, EventType.JavaRequest,
+        EventType.ThriftResponse, EventType.ProtoBufResponse);
+
 
     public final String customerId;
     public final String app;

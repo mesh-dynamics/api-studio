@@ -1,7 +1,6 @@
 package com.cube.golden;
 
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,8 +15,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import io.cube.agent.UtilException;
-
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.dao.Analysis;
@@ -25,8 +22,6 @@ import com.cube.dao.Event;
 import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetMeta;
 import com.cube.dao.RecordingOperationSetSP;
-import com.cube.dao.Request;
-import com.cube.dao.Response;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -142,13 +137,13 @@ public class RecordingUpdate {
             try {
                 LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
                     res.recordReqId.get(), res.replayReqId.get()));
-                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequest)
+                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponse)
+                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
 
-                Optional<Event> replayRequest = res.replayReqId.flatMap(config.rrstore::getRequest);
-                Optional<Event> replayResponse = res.replayReqId.flatMap(config.rrstore::getResponse);
+                Optional<Event> replayRequest = res.replayReqId.flatMap(config.rrstore::getRequestEvent);
+                Optional<Event> replayResponse = res.replayReqId.flatMap(config.rrstore::getResponseEvent);
 
                 Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
                     apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
@@ -210,9 +205,9 @@ public class RecordingUpdate {
         //1. Create a new collection with all the Req/Responses
         results.forEach(res -> {
             try {
-                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequest)
+                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
-                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponse)
+                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded response :: " + res.recordReqId.get()));
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);

@@ -1,9 +1,12 @@
 package com.cube.golden;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +14,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.flipkart.zjsonpatch.JsonPatch;
+
+import com.cube.utils.Constants;
 
 public class JsonTransformer {
 
@@ -29,11 +34,17 @@ public class JsonTransformer {
         JsonNode patch =
             preProcessUpdates(lhsRoot, rhsRoot, operationList);
 
-        LOGGER.debug("PRE APPLYING PATCH :: " + lhsRoot);
-        LOGGER.debug(patch);
+        LOGGER.debug(new ObjectMessage(Map.of(
+            Constants.MESSAGE, "PRE APPLYING PATCH",
+            Constants.DATA, lhsRoot,
+            "patch", patch
+        )));
         JsonNode transformedRoot = JsonPatch.apply(patch, lhsRoot);
         String transformedRespBody = transformedRoot.toString();
-        LOGGER.debug("POST APPLYING PATCH :: " + transformedRespBody);
+        LOGGER.debug(new ObjectMessage(Map.of(
+            Constants.MESSAGE, "POST APPLYING PATCH",
+            Constants.DATA, transformedRespBody
+        )));
         return  transformedRoot;
     }
 
@@ -45,19 +56,23 @@ public class JsonTransformer {
         // how: populate the operations with the right value (and path?)
         // return: list of JsonNode objects to be used by the patch library
 
-        LOGGER.debug("pre-processing operations");
+
+        LOGGER.debug(new ObjectMessage(Map.of(
+            Constants.MESSAGE, "pre-processing operations"
+        )));
 
         // create the patch as an array of JsonNodes
         ArrayNode patch = new ArrayNode(new JsonNodeFactory(false));
         updates.stream()
             .map(operation -> processOperation(lhsRoot, rhsRoot, operation))
+            .flatMap(Optional::stream)
             .forEach(patch::add);
         return patch;
     }
 
 
-    private JsonNode processOperation(JsonNode recRoot, JsonNode repRoot,
-                                      ReqRespUpdateOperation operation) {
+    private Optional<JsonNode> processOperation(JsonNode recRoot, JsonNode repRoot,
+                                                ReqRespUpdateOperation operation) {
         switch (operation.operationType) {
             // todo: check existence of value at path
             case ADD:
@@ -73,8 +88,10 @@ public class JsonTransformer {
                 JsonNode lval = (recRoot != null)? recRoot.at(operation.jsonpath) : MissingNode.getInstance();
                 JsonNode rval = (repRoot != null)? repRoot.at(operation.jsonpath) : MissingNode.getInstance();
                 JsonNode val = rval;
-                // ?? todo: what if both not present, no-op? error?
                 if (rval.isMissingNode()) { // (not the same as isNull)
+                    if (lval.isMissingNode()) {
+                        return Optional.empty();
+                    }
                     // change operation type to remove
                     operation.operationType = OperationType.REMOVE;
                     val = null; // no need to specify value in remove
@@ -91,7 +108,7 @@ public class JsonTransformer {
                 // nothing to be done for 'remove'; perhaps validate the path?
                 break;
         }
-        return jsonMapper.valueToTree(operation);
+        return Optional.of(jsonMapper.valueToTree(operation));
     }
 
 

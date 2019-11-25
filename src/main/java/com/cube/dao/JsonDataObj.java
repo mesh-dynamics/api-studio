@@ -187,6 +187,7 @@ public class JsonDataObj implements DataObj {
 
                     String newVal = val.toString();
                     valParentObj.set(fieldName, new TextNode(newVal));
+                    return true;
                 }
             }
         }
