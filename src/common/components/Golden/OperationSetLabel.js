@@ -14,7 +14,10 @@ class OperationSetLabel extends React.Component {
 
     findInOperationSet() {
         const {cube, jsonPath} = this.props;
-        for (const op of cube.newOperationSet) {
+        let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
+        if (indexMOS == -1)
+            return false;
+        for (const op of cube.multiOperationsSet[indexMOS].operationSet) {
             if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
                 return true;
             }
@@ -24,8 +27,25 @@ class OperationSetLabel extends React.Component {
 
     findInOperations() {
         const {cube, jsonPath} = this.props;
-        for (const op of cube.operations) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+        for (let key in cube.templateOperationSetObject) {
+            if (cube.templateOperationSetObject.hasOwnProperty(key) && cube.templateOperationSetObject[key].operations) {
+                const keyObj = JSON.parse(key);
+                if (keyObj['path'] == cube.pathResultsParams.path) {
+                    for (const op of cube.templateOperationSetObject[key].operations) {
+                        if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    findInJiraBugs(){
+        const {cube, jsonPath} = this.props;
+        for (const op of cube.jiraBugs) {
+            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
                 return true;
             }
         }
@@ -54,6 +74,10 @@ class OperationSetLabel extends React.Component {
         return;
     };
 
+    removeFromJiraBugs = () => {
+        // To Be Implemented
+    }
+
     render() {
         const tippyContent = (
             <div>
@@ -68,10 +92,15 @@ class OperationSetLabel extends React.Component {
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
                     <span onDoubleClick={this.removeFromOperations} className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
                 </Tippy>
+                <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
+                    <span onDoubleClick={this.removeFromJiraBugs} className={this.findInJiraBugs() ? '' : "hidden"}><i className="fas fa-bug"></i></span>
+                </Tippy>
             </span>
         ) : "";
     }
 }
+
+{/* <span onDoubleClick={this.removeFromOperations} className={this.findJiraBugs() ? '' : 'hidden'}><Glyphicon glyph="bookmark" /></span> */}
 
 function mapStateToProps(state) {
     const cube = state.cube;

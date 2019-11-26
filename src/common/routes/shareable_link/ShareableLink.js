@@ -113,6 +113,7 @@ class ShareableLink extends Component {
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            dispatch(cubeActions.getJiraBugs(replayId, apiPath));
             this.fetchReplayList();
         });
     }
@@ -800,36 +801,33 @@ class ShareableLink extends Component {
 
     updateGolden = () => {
         const { cube, dispatch } = this.props;
+
         let user = JSON.parse(localStorage.getItem('user'));
-        let gObj = {
-            "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
-            "service": this.state.service,
-            "path": this.state.apiPath,
-            "operationSet": cube.newOperationSet,
-            "customer": user.customer_name,
-            "app": this.state.app
+
+        const headers = {
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*',
+            "Authorization": "Bearer " + user['access_token']
         };
 
-        let keyObjForRule = {
-            customerId: user.customer_name,
-            appId: this.state.app,
-            serviceId: this.state.service,
-            path: this.state.apiPath,
-            version: this.state.currentTemplateVer,
-            reqOrResp: "Response"
-        };
+        const post1 = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/updateTemplateOperationSet/${cube.newTemplateVerInfo['ID']}`,
+            data: cube.templateOperationSetObject,
+            headers: headers
+        });
 
-        const rObj = {};
-        const rObjKey = JSON.stringify(keyObjForRule);
-        for (const op of cube.operations) {
-
-        }
-        rObj[rObjKey] = { operations: cube.operations };
-
-        dispatch(cubeActions.updateRecordingOperationSet(gObj, this.state.replayId,
-            cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'],
-            this.state.recordingId, this.state.app));
-        dispatch(cubeActions.updateTemplateOperationSet(cube.newTemplateVerInfo['ID'], rObj));
+        const post2 = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
+            data: cube.multiOperationsSet,
+            headers: headers
+        });
+        const _self = this;
+        axios.all([post1, post2]).then(axios.spread(function (r1, r2) {
+            dispatch(cubeActions.updateRecordingOperationSet());
+            dispatch(cubeActions.updateGoldenSet(_self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
+        }));
     };
 }
 

@@ -21,7 +21,9 @@ const initialState = {
     hideTestConfigSetup: true,
     hideTestConfigView: true,
     newOperationSet:[],
+    multiOperationsSet: [],
     operations:[],
+    templateOperationSetObject: {},
     newTemplateVerInfo: null,
 
     testConfigList: [],
@@ -61,6 +63,7 @@ const initialState = {
     collectionUpdateOperationSetId: null,
     newGoldenId: null,
     goldenInProg: false,
+    jiraBugs: [],
 };
 
 export function cube (state = initialState, action) {
@@ -281,6 +284,8 @@ export function cube (state = initialState, action) {
                 newGoldenId: null,
                 newOperationSet:[],
                 operations:[],
+                templateOperationSetObject: {},
+                multiOperationsSet: []
             };
         case cubeConstants.DIFF_SUCCESS:
             return {
@@ -293,14 +298,30 @@ export function cube (state = initialState, action) {
                 pathResultsParams: action.data
             };
         case cubeConstants.PUSH_TO_OS:
+            let mos = state.multiOperationsSet;
+            mos[action.data.ind].operationSet.push(action.data.os);
             return {
                 ...state,
-                newOperationSet: state.newOperationSet.concat(action.data)
+                multiOperationsSet: mos
+            };
+        case cubeConstants.PUSH_TO_MOS:
+            return {
+                ...state,
+                multiOperationsSet: state.multiOperationsSet.concat(action.data)
             };
         case cubeConstants.PUSH_TO_OPERATIONS:
+            let tempp = state.templateOperationSetObject;
+            tempp[action.data.key].operations.push(action.data.op);
             return {
                 ...state,
-                operations: state.operations.concat(action.data)
+                templateOperationSetObject: tempp
+            };
+        case cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS:
+            let temp = state.templateOperationSetObject;
+            temp[action.data.key] = {operations: [action.data.op]};
+            return {
+                ...state,
+                templateOperationSetObject: temp
             };
         case cubeConstants.REMOVE_FROM_OPERATIONSETS:
             state.newOperationSet.splice(action.data, 1);
@@ -343,6 +364,11 @@ export function cube (state = initialState, action) {
                 goldenTimeStamp: null,
                 newGoldenId: null,
                 goldenInProg: false
+            };
+        case cubeConstants.SET_JIRA_BUGS:
+            return {
+                ...state,
+                jiraBugs: action.data,
             };
         default:
             return state

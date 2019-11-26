@@ -19,6 +19,7 @@ class OperationSet extends React.Component {
         };
         this.inputElementRef = this.props.inputElementRef;
         this.filterPath = this.filterPath.bind(this);
+        this.handleTippyHideOnUpdateClick = this.handleTippyHideOnUpdateClick.bind(this);
     }
 
     handleClose() {
@@ -41,6 +42,16 @@ class OperationSet extends React.Component {
         this.setState({popover: true});
     }
 
+    handleTippyHideOnUpdateClick(){
+        const thirdChildIndex = 2;
+        const ref = this.props.elementRef.current;
+    
+        if (ref) {
+          ref.removeChild(ref.childNodes[thirdChildIndex]);
+          this.setState({ show: false, popover: false });
+        }
+    }
+
     filterPath() {
         let inputElement = document.getElementById("filterPathInputId");
         inputElement.value = this.props.jsonPath.replace("<BEGIN>", "");
@@ -58,7 +69,7 @@ class OperationSet extends React.Component {
                 <Tippy arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true} onHide={this.handleTippyHide} onShow={this.handleTippyShow} maxWidth={700}
                 content={
                         <div style={{padding: 0, width: "auto", maxWidth: "700px", maxHeight:"500px", fontSize: "14px"}} className="grey" id={`tooltip-${this.props.jsonPath}`}>
-                            <GoldenPopover {...props} />
+                            <GoldenPopover {...props} hideTippy={this.handleTippyHideOnUpdateClick} />
                         </div>
                     }>
                         <span style={{ paddingRight: "3px", cursor: "pointer" }}><Glyphicon glyph="plus" /></span>

@@ -17,7 +17,6 @@ export const cubeActions = {
     getReplayStatus,
     clearReplayStatus,
     getAnalysis,
-    initAnalyseRes,
     getReport,
     getTimelineData,
     hideServiceGraph,
@@ -31,11 +30,13 @@ export const cubeActions = {
     updateRecordingOperationSet,
     updateGoldenSet,
     pushToOperationSet,
+    pushToMOS,
     pushToOperations,
+    pushNewOperationKeyToOperations,
     removeFromNOS,
     removeFromOperations,
     getNewTemplateVerInfo,
-    updateTemplateOperationSet
+    getJiraBugs
 };
 
 function clear() {
@@ -69,16 +70,24 @@ function getApps () {
     function failure(message, date) { return { type: cubeConstants.APPS_FAILURE, err: message, date: date }; }
 }
 
-function pushToOperationSet(os) {
-    return {type: cubeConstants.PUSH_TO_OS, data: os};
+function pushToOperationSet(os, index) {
+    return {type: cubeConstants.PUSH_TO_OS, data: {os: os, ind: index}};
+}
+
+function pushToMOS(obj) {
+    return {type: cubeConstants.PUSH_TO_MOS, data: obj};
 }
 
 function clearGolden() {
     return {type: cubeConstants.CLEAR_GOLDEN, data: null};
 }
 
-function pushToOperations(o) {
-    return {type: cubeConstants.PUSH_TO_OPERATIONS, data: o};
+function pushToOperations(o, key) {
+    return {type: cubeConstants.PUSH_TO_OPERATIONS, data: {op: o, key: key}};
+}
+
+function pushNewOperationKeyToOperations(o, key) {
+    return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: o, key: key}};
 }
 
 function removeFromNOS(index) {
@@ -89,19 +98,6 @@ function removeFromOperations(index) {
     return {type: cubeConstants.REMOVE_FROM_OPERATIONS, data: index};
 }
 
-function updateTemplateOperationSet(templateVer, body) {
-    return async dispatch => {
-        try {
-            let updateTOS = await cubeService.updateTemplateOperationSet(templateVer, body);
-            dispatch(success(updateTOS, Date.now()));
-        } catch (error) {
-            console.error("Failed to getCollectionUpdateOperationSet", Date.now());
-        }
-    }
-
-    function success(updateTOS, date) { return { type: cubeConstants.UPDATE_TOS_SUCCESS, data: updateTOS, date: date }; }
-    function failure(message, date) { return { type: cubeConstants.COLLECTION_UOS_FAILURE, err: message, date: date }; }
-}
 
 function getCollectionUpdateOperationSet(app) {
     return async dispatch => {
@@ -131,17 +127,8 @@ function getNewTemplateVerInfo(app, currentTemplateVer) {
     function failure(message, date) { return { type: cubeConstants.TEMPLATE_VER_FAILURE, err: message, date: date }; }
 }
 
-function updateRecordingOperationSet(rosData, replayId, collectionUpdOpSetId, templateVer, recordingId, app) {
-    return async dispatch => {
-        dispatch(request());
-        try {
-            let updateRes = await cubeService.updateRecordingOperationSet(rosData);
-            dispatch(cubeActions.updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId, app));
-        } catch (error) {
-            console.error("Failed to updateRecordingOperationSet", Date.now());
-        }
-    }
-    function request() { return { type: cubeConstants.GOLDEN_REQUEST }; }
+function updateRecordingOperationSet() {
+    return { type: cubeConstants.GOLDEN_REQUEST };
 }
 
 function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId, app) {
@@ -248,6 +235,10 @@ function setGolden ( golden ) {
     return {type: cubeConstants.SET_GOLDEN, data: golden}
 }
 
+function setJiraBugs( jiraBugs ) {
+    return {type: cubeConstants.SET_JIRA_BUGS, data: jiraBugs}
+}
+
 function getTestIds (app) {
     return async dispatch => {
         dispatch(request());
@@ -343,10 +334,6 @@ function getAnalysis(collectionId, replayId, app) {
     function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
 }
 
-function initAnalyseRes() {
-    return {type: cubeConstants.INIT_ANALYSIS, data: null};
-}
-
 function getReport(collectionId, replayId) {
     return async dispatch => {
         try {
@@ -356,4 +343,15 @@ function getReport(collectionId, replayId) {
         }
     }
     function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }
+}
+
+function getJiraBugs(replayId, apiPath) {
+    return async dispatch => {
+        try {
+            let jiraBugs =  await cubeService.fetchJiraBugData(replayId, apiPath);
+            dispatch(setJiraBugs(jiraBugs));
+        } catch (error) {
+            console.log("Error caught in fetch", error);
+        }
+    }
 }
