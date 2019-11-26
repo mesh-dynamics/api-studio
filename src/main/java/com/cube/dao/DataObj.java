@@ -7,10 +7,12 @@
 package com.cube.dao;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
+import com.cube.golden.ReqRespUpdateOperation;
 
 /*
  * Created by IntelliJ IDEA.
@@ -24,8 +26,6 @@ public interface DataObj {
 
     DataObj getVal(String path);
 
-    //Optional<String> getValAsString(String path);
-
     String getValAsString(String path) throws PathNotFoundException;
 
     String serialize();
@@ -33,6 +33,12 @@ public interface DataObj {
     void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
 
     MatchType compare(DataObj rhs, CompareTemplate template);
+
+    DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
+
+    Event.RawPayload toRawPayload();
+
+    boolean wrapAsString(String path, String mimetype);
 
     class PathNotFoundException extends Exception{
 

@@ -229,7 +229,7 @@ public class MockServiceHTTP {
                 matchingEventsCount > 1);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                 .build();
-        } catch (PathNotFoundException | DataObjCreationException e) {
+        } catch (PathNotFoundException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(
                     Constants.API_PATH_FIELD, event.apiPath,
@@ -265,7 +265,7 @@ public class MockServiceHTTP {
                     Optional.of(defaultRespEvent.get().timestamp),
                     FnReqResponse.RetStatus.Success, Optional.empty(),
                     false);
-            } catch (PathNotFoundException | DataObjCreationException e) {
+            } catch (PathNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.API_PATH_FIELD, event.apiPath)), e);
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(

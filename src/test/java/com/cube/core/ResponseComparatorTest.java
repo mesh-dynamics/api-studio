@@ -99,8 +99,8 @@ public class ResponseComparatorTest {
         String res2 = testData.get("res2").toString();
         Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
         Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
-//        Optional<Response> response1 = config.rrstore.getResponse(res1);
-//        Optional<Response> response2 = config.rrstore.getResponse(res2);
+//        Optional<Response> response1 = config.rrstore.getResponseEvent(res1);
+//        Optional<Response> response2 = config.rrstore.getResponseEvent(res2);
         compareTest(testData, response1, response2);
     }
 
@@ -247,7 +247,7 @@ public class ResponseComparatorTest {
 //            "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
 //        };
 //        for (String id: idList){
-//            Optional<Response> response = config.rrstore.getResponse(id);
+//            Optional<Response> response = config.rrstore.getResponseEvent(id);
 //            System.out.println(response.get().body);
 //        }
 //    }

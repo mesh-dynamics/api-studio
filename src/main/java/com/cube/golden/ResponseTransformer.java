@@ -99,10 +99,9 @@ public class ResponseTransformer {
         //String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
         switch (newop.operationType) {
             // todo: check existence of value at path
+
             case ADD:
-                // get the value to be added from the replay body
-                newop.value = repRoot.at(newop.jsonpath);
-                break;
+                // This case gets dealt in REPLACE
             case REPLACE:
                 // there could be cases where the operation has been specified as 'replace', but all the response
                 // bodies in the api path might not have both values present.

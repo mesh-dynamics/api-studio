@@ -21,8 +21,6 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
 
-import com.cube.dao.DataObj.DataObjCreationException;
-import com.cube.exception.DataObjException;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -37,12 +35,12 @@ public class DataObjFactory {
     public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
-        Config config, Map<String, Object> params) throws  DataObjCreationException {
+        Config config, Map<String, Object> params)  {
 
         switch (type) {
             case HTTPRequest:
             case HTTPResponse:
-                JsonObj obj = new JsonObj(payloadStr, config.jsonMapper);
+                JsonDataObj obj = new JsonDataObj(payloadStr, config.jsonMapper);
                 String mimeType = MediaType.TEXT_PLAIN;
                 try {
                     mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
@@ -50,14 +48,13 @@ public class DataObjFactory {
                     LOGGER.info("Content-type not found, using default of TEXT_PLAIN for payload: "
                         + payloadStr);
                 }
-                obj.unwrapAsJson("/body", mimeType);
+                obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
                 return obj;
             case JavaRequest:
             case JavaResponse:
-                return new JsonObj(payloadStr, config.jsonMapper);
+                return new JsonDataObj(payloadStr, config.jsonMapper);
             case ThriftRequest:
             case ThriftResponse:
-
                 TDeserializer deserializer = new TDeserializer();
                 try {
                     ClassLoader loader = (URLClassLoader) params.get(Constants.CLASS_LOADER);
@@ -67,7 +64,7 @@ public class DataObjFactory {
                     Object obj1 = constructor.newInstance();
                     deserializer.deserialize((TBase) obj1, payloadBin);
                     String jsonSerialized = config.gson.toJson(obj1);
-                    JsonObj jsonObj = new JsonObj(jsonSerialized, config.jsonMapper);
+                    JsonDataObj jsonObj = new JsonDataObj(jsonSerialized, config.jsonMapper);
                     jsonObj.unwrapAsJson("/", MediaType.APPLICATION_JSON);
                     return jsonObj;
                 } catch (InstantiationException | IllegalAccessException
@@ -76,25 +73,45 @@ public class DataObjFactory {
                         , "Unable to instantiate class while deserializing thirft object",
                         Constants.CLASS_NAME,
                         params.get(Constants.THRIFT_CLASS_NAME))), e);
-                    throw new DataObjCreationException(
-                        "Unable to instantiate class (while deseriliazing thrift event) "
-                            + payloadStr, e);
                 } catch (TException e) {
                     LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
                         , "Thrift Deserialization Error Occured While forming payload")), e);
-                    throw new DataObjCreationException(
-                        "Unable to create DataObj for Thrift Event " + payloadStr, e);
                 }
 
             case ProtoBufRequest:
             case ProtoBufResponse:
             default:
-                throw new DataObjCreationException(
-                    new NotImplementedException("Protobuf not implemented"));
+                throw new NotImplementedException("Protobuf not implemented");
         }
 
         //return null;
 
     }
 
+    // inverse of the build function
+    public static void wrapIfNeeded(DataObj dataObj, Event.EventType eventType) {
+        switch (eventType) {
+            case HTTPRequest:
+            case HTTPResponse:
+                String mimeType = MediaType.TEXT_PLAIN;
+                try {
+                    mimeType = dataObj.getValAsString(HTTP_CONTENT_TYPE_PATH);
+                } catch (DataObj.PathNotFoundException e) {
+                    LOGGER.info(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Content-type not found, using default of TEXT_PLAIN"
+                    )));
+                }
+                dataObj.wrapAsString(Constants.BODY_PATH, mimeType);
+                return;
+            case JavaRequest:
+            case JavaResponse:
+                return;
+            case ThriftRequest:
+            case ThriftResponse:
+            case ProtoBufRequest:
+            case ProtoBufResponse:
+            default:
+                throw new NotImplementedException("Thrift and Protobuf not implemented");
+        }
+    }
 }

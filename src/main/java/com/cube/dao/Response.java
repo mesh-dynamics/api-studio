@@ -126,13 +126,7 @@ public class Response extends RRBase {
             reqId.orElse("NA"), apiPath, Event.EventType.HTTPResponse);
         eventBuilder.setRawPayloadString(payloadStr);
         Event event = eventBuilder.createEvent();
-		try {
-			event.parsePayLoad(config);
-		} catch (DataObjCreationException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.EVENT_TYPE_FIELD, event.eventType,
-					Constants.REQ_ID_FIELD, event.reqId)), e);
-		}
+        event.parsePayLoad(config);
 
 		return event;
     }

@@ -26,9 +26,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.cube.agent.UtilException;
 
+import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.Utils;
 import com.cube.dao.DataObj.DataObjCreationException;
+import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.serialize.BinaryPayloadDeserializer;
 import com.cube.serialize.BinaryPayloadSerializer;
 import com.cube.utils.Constants;
@@ -93,11 +95,11 @@ public class Event {
     }
 
     public static List<EventType> getRequestEventTypes() {
-        return requestEventTypes;
+        return REQUEST_EVENT_TYPES;
     }
 
     public static boolean isReqType(EventType eventType) {
-        return requestEventTypes.contains(eventType);
+        return REQUEST_EVENT_TYPES.contains(eventType);
     }
 
     public String getCollection() {
@@ -138,11 +140,11 @@ public class Event {
             new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
     }
 
-    public DataObj parsePayLoad(Config config) throws DataObjCreationException {
+    public DataObj parsePayLoad(Config config) {
         return parsePayLoad(config, null);
     }
 
-    public DataObj parsePayLoad(Config config, URLClassLoader classLoader) throws DataObjCreationException {
+    public DataObj parsePayLoad(Config config, URLClassLoader classLoader) {
         // parse if not already parsed
         if (payload == null) {
             Map<String, Object> params = null;
@@ -160,23 +162,68 @@ public class Event {
 
     @JsonIgnore
     public boolean isRequestType() {
-        return requestEventTypes.contains(eventType);
+        return REQUEST_EVENT_TYPES.contains(eventType);
     }
 
     public String getReqId() {
         return reqId;
     }
 
-    public String getPayloadAsString(Config config) throws DataObjCreationException {
+    public String getPayloadAsString(Config config) {
         if (this.rawPayloadString != null) return rawPayloadString;
         parsePayLoad(config);
         return payload.toString();
     }
 
-    public DataObj getPayload(Config config) throws DataObjCreationException {
+    public DataObj getPayload(Config config) {
         parsePayLoad(config);
         return payload;
     }
+
+    /**
+     * Create a new event with transformed payload. While transforming request events, need
+     * to send the comparator so that payloadKey can be calculated
+     * @param rhs
+     * @param operationList
+     * @param config
+     * @param newCollection
+     * @param newReqId
+     * @return
+     * @throws EventBuilder.InvalidEventException
+     */
+    public Event applyTransform(Optional<Event> rhs, List<ReqRespUpdateOperation> operationList, Config config,
+                                String newCollection, String newReqId, Optional<Comparator> comparator)
+        throws EventBuilder.InvalidEventException, DataObjCreationException {
+        // parse if not already parsed
+        parsePayLoad(config);
+        Optional<RawPayload> newPayload = rhs.map(rhsEvent -> {
+            DataObj transformedDataObj = payload.applyTransform(rhsEvent.getPayload(config), operationList);
+            DataObjFactory.wrapIfNeeded(transformedDataObj, eventType);
+            return transformedDataObj.toRawPayload();
+        });
+
+        // payload doesn't change if rhs is empty
+        byte[] newRawPayloadBinary = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadBinary)
+            .orElse(rawPayloadBinary);
+        String newRawPayloadString = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadString)
+            .orElse(rawPayloadString);
+
+        Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection, traceId,
+            runType, timestamp, newReqId, apiPath, eventType)
+            .setRawPayloadBinary(newRawPayloadBinary)
+            .setRawPayloadString(newRawPayloadString)
+            .createEvent();
+        // set key for request events
+        comparator.ifPresent(comparatorVal -> {
+            try {
+                toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate());
+            } catch (DataObjCreationException e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error Occured while setting payload key", Constants.REQ_ID_FIELD , this.reqId)), e);
+            }
+        });
+        return toReturn;
+    }
+
 
     public enum EventType {
         HTTPRequest,
@@ -208,8 +255,13 @@ public class Event {
         }
     }
 
-    public static List<EventType> requestEventTypes = List.of(EventType.HTTPRequest, EventType.JavaRequest,
+    public static final List<EventType> REQUEST_EVENT_TYPES = List.of(EventType.HTTPRequest, EventType.JavaRequest,
         EventType.ThriftRequest, EventType.ProtoBufRequest);
+    // currently JavaRequest stores the response as well
+    // TODO: change JavaRequest to JavaResponse in list below once we separate the two
+    public static final List<EventType> RESPONSE_EVENT_TYPES = List.of(EventType.HTTPResponse, EventType.JavaRequest,
+        EventType.ThriftResponse, EventType.ProtoBufResponse);
+
 
     public final String customerId;
     public final String app;
@@ -329,6 +381,16 @@ public class Event {
 
         public static class InvalidEventException extends Exception {
 
+        }
+    }
+
+    public static class RawPayload {
+        public final byte[] rawPayloadBinary;
+        public final String rawPayloadString;
+
+        public RawPayload(byte[] rawPayloadBinary, String rawPayloadString) {
+            this.rawPayloadBinary = rawPayloadBinary;
+            this.rawPayloadString = rawPayloadString;
         }
     }
 
