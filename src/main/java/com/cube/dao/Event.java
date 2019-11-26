@@ -15,13 +15,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.cube.agent.UtilException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.cube.agent.UtilException;
+import com.cube.dao.DataObj.PathNotFoundException;
+import com.cube.utils.Constants;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -152,6 +155,30 @@ public class Event {
         return payload;
     }
 
+    public String getPayloadAsJsonString(EventType eventType, Config config) {
+        switch (eventType) {
+            case HTTPRequest:
+            case HTTPResponse:
+                return rawPayloadString;
+            case JavaRequest:
+            case JavaResponse:
+                try {
+                    return getPayload(config).getValAsString(Constants.FN_RESPONSE_PATH);
+                } catch (PathNotFoundException e) {
+                    LOGGER.error(new ObjectMessage(
+                        Map.of(
+                            Constants.MESSAGE, "Response path not found in JSON"
+                        )));
+                }
+            case ThriftRequest:
+            case ThriftResponse:
+            case ProtoBufRequest:
+            case ProtoBufResponse:
+            default:
+                throw new NotImplementedException("Thrift and Protobuf not implemented");
+        }
+    }
+
     /**
      * Create a new event with transformed payload. While transforming request events, need
      * to send the comparator so that payloadKey can be calculated
@@ -188,7 +215,6 @@ public class Event {
         comparator.ifPresent(comparatorVal -> toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate()));
         return toReturn;
     }
-
 
     public enum EventType {
         HTTPRequest,
