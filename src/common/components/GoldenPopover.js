@@ -48,9 +48,10 @@ class GoldenPopover extends React.Component {
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
             issueTypeId: 10004,
-            projectInput: 10000,
-
+            projectInput: 10000, // TODO: Change this default
             projectList: [],
+            jiraErrorMessage: null,
+            showJiraError: false,
         };
     }
 
@@ -102,11 +103,9 @@ class GoldenPopover extends React.Component {
                     this.hideGR()
                     this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
                     this.refreshList();
-                }, err => {
-                    console.error(err);
                 })
-            .catch(err => {
-                console.error(err);
+            .catch(e => {
+                this.setState({ showJiraError: true, jiraErrorMessage: e.message, showBug: false })
             });
     }
 
@@ -123,6 +122,7 @@ class GoldenPopover extends React.Component {
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
+            // TODO: Set default project variable
             this.setState({projectList: r.values});
         }, err => {
             console.error(err);
@@ -171,7 +171,14 @@ class GoldenPopover extends React.Component {
     }
 
     hideGR() {
-        this.setState({ showRule: false, showGolden: false, showBug: false, showBugResponse: false });
+        this.setState({ 
+            showRule: false, 
+            showGolden: false, 
+            showBug: false, 
+            showBugResponse: false, 
+            jiraErrorMessage: null, 
+            showJiraError: false 
+        });
     }
 
     handleInputChange(event) {
@@ -211,11 +218,11 @@ class GoldenPopover extends React.Component {
 
     getDefaultDescription(cube) {
         let description = 
-    `Issue Details: 
-API Path: ${cube.pathResultsParams.path} 
-JSON Path: ${this.props.jsonPath}
-Analysis URL: ${window.location.href} 
-    `
+            `Issue Details: 
+                API Path: ${cube.pathResultsParams.path} 
+                JSON Path: ${this.props.jsonPath}
+                Analysis URL: ${window.location.href} 
+            `
         return description;
     }
 
@@ -230,7 +237,7 @@ Analysis URL: ${window.location.href}
     render() {
         return (
             <React.Fragment>
-                <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse ? "text-center" : "hidden"}
+                <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse && !this.state.showJiraError ? "text-center" : "hidden"}
                     style={{ color: "#333333" }}>
                     <div style={{ width: "300px", height: "100px", background: "#D5D5D5", padding: "20px" }}>
                         <div className="margin-bottom-10">STATUS</div>
@@ -241,13 +248,13 @@ Analysis URL: ${window.location.href}
                     <div style={{ width: "300px", height: "100px", background: "#ECECE7", padding: "15px" }}>
                         <div>
                             <span onClick={this.findInJiraBugs() ? this.openJiraLink : this.showBugModal} className="back-grey">
-                                <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : ''}}></i>
+                                <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : '', cursor: "pointer"}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
-                                    "font-size": ".65em", 
+                                    "fontSize": ".65em", 
                                     "position": "absolute",
-                                    "margin-left": "-6px",
-                                    "margin-top": "-3px"
+                                    "marginLeft": "-6px",
+                                    "marginTop": "-3px"
                                 }} aria-hidden="true"></i>}
                             </span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-comments"></i></span>&nbsp;&nbsp;
@@ -409,7 +416,6 @@ Analysis URL: ${window.location.href}
                         </div>
                     </div>
                 </div>
-
                 <div className={this.state.showBugResponse ? "update-golden" : "hidden"} style={{ color: "#333333" }}>
                     <div onClick={this.hideGR} style={{ maxWidth: "400px", background: "#D5D5D5", padding: "5px 20px" }}>
                         CREATE JIRA ISSUE
@@ -421,10 +427,19 @@ Analysis URL: ${window.location.href}
                         </div>
                     </div>
                 </div>
+                <div className={this.state.showJiraError ? "update-golden" : "hidden"} style={{ color: "#333333", padding: "10px 5px" }}>
+                    <div>
+                        <b>Jira API Error&nbsp;</b>
+                        <p>{this.state.jiraErrorMessage}</p>
+                        <div className="text-center">
+                            <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
+                        </div>
+                    </div>
+                </div>
             </React.Fragment>
         );
     }
-
+    
     async getResponseTemplate() {
         let user = JSON.parse(localStorage.getItem('user'));
         let { cube, jsonPath } = this.props;
@@ -481,16 +496,16 @@ Analysis URL: ${window.location.href}
                 }),
                 body: JSON.stringify(reqBody),
             });
+            json = await response.json();
             if (response.ok) {
-                json = await response.json();
                 resp = json;
             } else {
                 console.log("Response not ok in createJiraIssue", response);
                 throw new Error("Response not ok createJiraIssue");
             }
         } catch (e) {
-            console.log("createJiraIssue has errors!", e);
-            throw e;
+            console.log("createJiraIssue has errors! ", e.message);
+            throw new Error(json.message);
         }
 
         return resp;
