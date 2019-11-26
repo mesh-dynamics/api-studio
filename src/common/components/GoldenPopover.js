@@ -60,14 +60,45 @@ class GoldenPopover extends React.Component {
         this.setState({ newRule: newRule });
     }
 
+    getKeyFromTOS = () => {
+        const {cube} = this.props;
+        for (let key in cube.templateOperationSetObject) {
+            if (cube.templateOperationSetObject.hasOwnProperty(key)) {
+                const keyObj = JSON.parse(key);
+                if (keyObj['path'] == cube.pathResultsParams.path) {
+                    return key;
+                }
+            }
+        }
+
+        return "";
+    }
+
     updateRule() {
-        const { dispatch, serverSideDiff, jsonPath } = this.props;
+        const {dispatch, jsonPath, cube} = this.props;
         this.hideGR();
-        let obj = {};
-        obj.type = "REPLACE";
-        obj.path = jsonPath.replace("<BEGIN>", "");
-        obj.newRule = this.state.newRule;
-        dispatch(cubeActions.pushToOperations(obj));
+
+        let operationsObj = {};
+        operationsObj.type = "REPLACE";
+        operationsObj.path = jsonPath.replace("<BEGIN>", "");
+        operationsObj.newRule = this.state.newRule;
+
+        let key = this.getKeyFromTOS();
+        if (!key) {
+            let user = JSON.parse(localStorage.getItem('user'));
+            let keyObj = {
+                customerId: user.customer_name,
+                appId: cube.selectedApp,
+                serviceId: cube.pathResultsParams.service,
+                path: cube.pathResultsParams.path,
+                version: cube.pathResultsParams.currentTemplateVer,
+                reqOrResp: "Response"
+            };
+            key = JSON.stringify(keyObj);
+            dispatch(cubeActions.pushNewOperationKeyToOperations(operationsObj, key));
+        } else {
+            dispatch(cubeActions.pushToOperations(operationsObj, key));
+        }
     }
 
     updateGolden() {
@@ -79,7 +110,21 @@ class GoldenPopover extends React.Component {
                 value: serverSideDiff.value
             };
             this.hideGR();
-            dispatch(cubeActions.pushToOperationSet(operation));
+            let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
+            if (indexMOS != -1) {
+                dispatch(cubeActions.pushToOperationSet(operation, indexMOS));
+            } else {
+                let user = JSON.parse(localStorage.getItem('user'));
+                dispatch(cubeActions.pushToMOS({
+                    "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
+                    "service": cube.pathResultsParams.service,
+                    "path": cube.pathResultsParams.path,
+                    "operationSet": [operation],
+                    "customer": user.customer_name,
+                    "app": cube.selectedApp
+                }));
+            }
+            //
         } else {
             this.hideGR();
             alert("Can't update golden for this line");
@@ -430,7 +475,7 @@ Analysis URL: ${window.location.href}
         let { cube, jsonPath } = this.props;
         jsonPath = jsonPath.replace("<BEGIN>", "");
         let response, json;
-        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}?apipath=${cube.pathResultsParams.path}&jsonpath=${jsonPath}`;
+        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
 
         let newRule = {};
         try {
