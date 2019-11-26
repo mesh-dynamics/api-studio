@@ -468,7 +468,13 @@ class GoldenPopover extends React.Component {
                         CREATE JIRA ISSUE
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
-                        <div><b>Jira Issue&nbsp;</b><p><a href={this.state.jiraIssueURL} target="_"><p>{this.state.jiraIssueKey}</p></a></p></div>
+                        <div><b>Jira Issue&nbsp;</b>
+                            <p>
+                                <a style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
+                                    <p>{this.state.jiraIssueKey}</p>
+                                </a>
+                            </p>
+                        </div>
                         <div className="text-center margin-top-20">
                             <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
                         </div>
