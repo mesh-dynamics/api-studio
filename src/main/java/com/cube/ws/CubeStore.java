@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +70,7 @@ import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Request;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
+import com.cube.ws.WSUtils.BadValueException;
 
 /**
  * @author prasad
@@ -846,7 +848,65 @@ public class CubeStore {
     }
 
 
-	@GET
+    @GET
+    @Path("searchRecording")
+    @Consumes("application/x-www-form-urlencoded")
+    public Response searchRecording(MultivaluedMap<String, String> formParams) {
+        Optional<String> customerId = Optional.ofNullable(formParams.getFirst(Constants.CUSTOMER_ID_FIELD));
+        Optional<String> app = Optional.ofNullable(formParams.getFirst(Constants.APP_FIELD));
+        Optional<String> instanceId = Optional.ofNullable(formParams.getFirst(Constants.INSTANCE_ID_FIELD));
+        Optional<RecordingStatus> status = Optional.ofNullable(formParams.getFirst(Constants.STATUS))
+            .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
+        Optional<String> collection = Optional.ofNullable(formParams.getFirst(Constants.COLLECTION_FIELD));
+        Optional<String> templateVersion = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_VERSION_FIELD));
+        Optional<String> parentRecordingId = Optional.ofNullable(formParams.getFirst(Constants.PARENT_RECORDING_FIELD));
+        Optional<String> rootRecordingId = Optional.ofNullable(formParams.getFirst(Constants.ROOT_RECORDING_FIELD));
+        Optional<String> name = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_NAME_FIELD));
+        Optional<String> userId = Optional.ofNullable(formParams.getFirst(Constants.USER_ID_FIELD));
+        Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst(Constants.CODE_VERSION_FIELD));
+        Optional<String> branch = Optional.ofNullable(formParams.getFirst(Constants.BRANCH_FIELD));
+        Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst(Constants.GIT_COMMIT_ID_FIELD));
+        List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
+        Optional<String> collectionUpdOpSetId = Optional.ofNullable(formParams.getFirst(Constants.COLLECTION_UPD_OP_SET_ID_FIELD));
+        Optional<String> templateUpdOpSetId = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_UPD_OP_SET_ID_FIELD));
+        String archivedString = formParams.getFirst(Constants.ARCHIVED_FIELD);
+        Optional<Boolean> archived = Optional.empty();
+
+        try {
+
+            if(archivedString!=null) {
+                if (archivedString.equalsIgnoreCase("true") || archivedString
+                    .equalsIgnoreCase("false")) {
+                    archived = Optional.of(Boolean.valueOf(archivedString));
+                } else {
+                    throw new BadValueException(
+                        "Only \"true\" or \"false\" value allowed for archived(boolean) fields");
+                }
+            }
+
+            List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId).collect(Collectors.toList());
+
+            String json;
+            json = jsonMapper.writeValueAsString(recordings);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+        } catch (JsonProcessingException je) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Error in converting Recording object to Json for recordingId", Constants.REASON, je)));
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    "Unable to parse JSON ")).build();
+
+        } catch (BadValueException bve) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.BAD_VALUE_EXCEPTION,
+                    bve.getMessage())).build();
+        }
+    }
+
+
+
+    @GET
 	@Path("status/{customerId}/{app}/{collection}/{templateSetVersion}")
     public Response status(@Context UriInfo ui,
                            @PathParam("collection") String collection,
@@ -879,8 +939,8 @@ public class CubeStore {
         Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst(Constants.STATUS))
             .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
 
-        List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status)
-            .collect(Collectors.toList());
+
+        List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status).collect(Collectors.toList());
 
         String json;
         try {
@@ -892,25 +952,6 @@ public class CubeStore {
             return Response.serverError().build();
         }
     }
-
-    /*@GET
-    @Path("goldenSet/get")
-    public Response getGoldenSetList(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst("instanceId"));
-        Optional<String> customerId = Optional.ofNullable(queryParams.getFirst("customerId"));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst("app"));
-        List<GoldenSet> recordings = rrstore.getGoldenSetStream(customerId, app, instanceId).collect(Collectors.toList());
-        String json;
-        try {
-            json = jsonMapper.writeValueAsString(recordings);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Golden Set object to Json for customer %s, app %s, instance %s.",
-                customerId.orElse(""), app.orElse(""), instanceId.orElse("")), e);
-            return Response.serverError().build();
-        }
-    }*/
 
     @GET
 	@Path("currentcollection")

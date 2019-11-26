@@ -21,11 +21,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
 
-import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.dao.DataObj;
-import com.cube.dao.JsonObj;
+import com.cube.dao.JsonDataObj;
 import com.cube.ws.Config;
 
 /**
@@ -135,9 +134,9 @@ public class JsonComparator implements Comparator {
 
     @Override
     public Match compare(DataObj lhs, DataObj rhs) {
-        if ((lhs instanceof JsonObj) && (rhs instanceof JsonObj)) {
-            JsonObj lhsObj = (JsonObj) lhs;
-            JsonObj rhsObj = (JsonObj) rhs;
+        if ((lhs instanceof JsonDataObj) && (rhs instanceof JsonDataObj)) {
+            JsonDataObj lhsObj = (JsonDataObj) lhs;
+            JsonDataObj rhsObj = (JsonDataObj) rhs;
             return compare(lhsObj.getRoot(), rhsObj.getRoot());
         } else {
             ObjectMessage objectMessage = new ObjectMessage(Map.of("message", "Payload not of json type in JsonComparator", "lhs",

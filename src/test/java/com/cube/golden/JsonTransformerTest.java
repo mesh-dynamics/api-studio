@@ -2,18 +2,21 @@ package com.cube.golden;
 
 import com.cube.dao.Response;
 import com.cube.ws.Config;
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-class ResponseTransformerTest {
+import com.fasterxml.jackson.databind.JsonNode;
+
+class JsonTransformerTest {
 
     @Test
-    void transformResponse() {
+    void transformResponse() throws IOException {
         Config config = null;
         try {
             config = new Config();
@@ -21,7 +24,7 @@ class ResponseTransformerTest {
             e.printStackTrace();
         }
 
-        ResponseTransformer responseTransformer = new ResponseTransformer(config.jsonMapper);
+        JsonTransformer jsonTransformer = new JsonTransformer(config.jsonMapper);
 
         // response from golden collection
         String body1 = "[{\"actors_lastnames\":[\"SWANK\",\"HOPKINS\",\"SINATRA\",\"MANSFIELD\",\"ZELLWEGER\"]," +
@@ -50,9 +53,11 @@ class ResponseTransformerTest {
         );
 
         // transform the response by applying the update operations
-        Optional<String> transformedResponseToBeStored = responseTransformer.transformResponse(recordResponse.body,
-            replayResponse.body,
-            operationsList);
+        JsonNode recRoot = config.jsonMapper.readTree(recordResponse.body);
+        JsonNode replayRoot = config.jsonMapper.readTree(replayResponse.body);
+
+        JsonNode transformedResponseToBeStored = jsonTransformer.transformResponse(recRoot,
+            replayRoot, operationsList);
         String bodyExpected = "[{\"display_actors\":[\"NATALIE HOPKINS\",\"GROUCHO SINATRA\",\"ED MANSFIELD\",\"JOE" +
             " " +
             "SWANK\"],\"film_id\":552,\"title\":\"MAJESTIC FLOATS\",\"actors_firstnames\":[\"JOE\",\"NATALIE\"," +
@@ -61,6 +66,6 @@ class ResponseTransformerTest {
             "\"reviewer\":\"Reviewer1\",\"text\":\"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"},{\"rating\":{\"color\":\"black\",\"stars\":4},\"reviewer\":\"Reviewer2\",\"text\":\"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"}],\"id\":\"552\"}}]";
 
         // compare output with expected
-        JSONAssert.assertEquals(bodyExpected, transformedResponseToBeStored.get(), false);
+        JSONAssert.assertEquals(bodyExpected, transformedResponseToBeStored.toString(), false);
     }
 }

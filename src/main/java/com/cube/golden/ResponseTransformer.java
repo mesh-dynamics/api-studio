@@ -18,7 +18,7 @@ import com.flipkart.zjsonpatch.JsonPatch;
 
 import com.cube.dao.RRBase;
 
-public class ResponseTransformer {
+public class gitResponseTransformer {
 
     private final ObjectMapper jsonMapper;
     private static final Logger LOGGER = LogManager.getLogger(ResponseTransformer.class);
@@ -99,6 +99,7 @@ public class ResponseTransformer {
         //String jsonpath = StringUtils.removeStart(operation.jsonpath, RRBase.BODYPATH);
         switch (newop.operationType) {
             // todo: check existence of value at path
+
             case ADD:
                 // This case gets dealt in REPLACE
             case REPLACE:
