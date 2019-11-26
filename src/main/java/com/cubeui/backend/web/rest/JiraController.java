@@ -54,11 +54,12 @@ public class JiraController {
       }
 
       Map respBody = response.getBody();
+      String issueKey = respBody.get("key").toString();
+      // form issue url
+      String issueUrl = String.format("%s/browse/%s", jiraUserCredentials.getJiraBaseURL(), issueKey);
+      respBody.put("url", issueUrl);
       // store issue details in db
       storeIssueDetails(createIssueRequest, jiraUserCredentials, respBody);
-      // form issue url
-      String issueKey = respBody.get("key").toString();
-      respBody.put("url", String.format("%s/browse/%s", jiraUserCredentials.getJiraBaseURL(), issueKey));
       return ResponseEntity.ok(respBody);
     }).orElse(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
         "error", "Jira user credentials not found"
@@ -72,15 +73,16 @@ public class JiraController {
 
     String issueId = String.valueOf(respBody.get("id"));
     String issueKey = String.valueOf(respBody.get("key"));
+    String issueUrl = String.valueOf(respBody.get("url"));
     jiraIssueDetails.setIssueId(issueId);
     jiraIssueDetails.setIssueKey(issueKey);
+    jiraIssueDetails.setIssueUrl(issueUrl);
 
     jiraIssueDetails.setUser(jiraUserCredentials.getUser());
     jiraIssueDetails.setReplayId(createIssueRequest.getReplayId());
     jiraIssueDetails.setApiPath(createIssueRequest.getApiPath());
     jiraIssueDetails.setRequestId(createIssueRequest.getRequestId());
     jiraIssueDetails.setJsonPath(createIssueRequest.getJsonPath());
-
     jiraIssueDetailsRepository.save(jiraIssueDetails);
   }
 

@@ -2,8 +2,10 @@ package com.cubeui.backend.domain.DTO;
 
 import javax.validation.constraints.NotEmpty;
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
+@ToString
 public class JiraCreateIssueDTO {
   @NotEmpty
   private String summary;

@@ -19,11 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import lombok.extern.java.Log;
 import org.apache.tomcat.util.codec.binary.Base64;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -31,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 @Transactional
+@Log
 public class JiraAPIService {
 
     //@Value("${jira.baseUrl}")
@@ -95,6 +94,7 @@ public class JiraAPIService {
         // make api call
         // get req id and store in db
 
+        log.info("Create Jira Issue for " + createIssueRequest.toString());
         String payload = null;
         try {
             payload = buildPayload(createIssueRequest);
@@ -119,10 +119,16 @@ public class JiraAPIService {
         HttpEntity<String> entity = null;
         entity = new HttpEntity<String>(payload, headers);
 
-        ResponseEntity<Map> result = restTemplate
-            .exchange(jiraUrl, HttpMethod.POST, entity, Map.class);
+        try {
+            ResponseEntity<Map> result = restTemplate
+                    .exchange(jiraUrl, HttpMethod.POST, entity, Map.class);
+            log.info("Response: " + result);
+            return result;
+        } catch (HttpClientErrorException e) {
+            log.info("Jira Service Exception" + e.getResponseBodyAsString());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getResponseBodyAsString()));
+        }
 
-        return result;
     }
 
     //api to get issue details

@@ -58,4 +58,9 @@ public class JiraIssueDetails {
   @Column
   @NotNull
   String issueKey;
+
+  @Column
+  @NotNull
+  String issueUrl;
+
 }
