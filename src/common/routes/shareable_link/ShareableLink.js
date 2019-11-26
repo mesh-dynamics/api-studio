@@ -228,15 +228,15 @@ class ShareableLink extends Component {
             if (response.ok) {
                 json = await response.json();
                 dataList = json;
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
+                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
                 this.layoutDataWithDiff.push(...diffLayoutData);
 
-                fetchedResults = dataList.res.length;
-                totalNumberOfRequest = dataList.numFound;
+                fetchedResults = dataList.data.res.length;
+                totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
                 this.setState({
-                    app: dataList.app,
-                    templateVersion: dataList.templateVersion,
+                    app: dataList.data.app,
+                    templateVersion: dataList.data.templateVersion,
                     fetchedResults: fetchedResults
                 });
                 let requestHeaders = {
@@ -256,7 +256,7 @@ class ShareableLink extends Component {
                 }
                 axios.all(promises).then((results) => {
                     results.forEach((eachResponse) => {
-                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.res);
+                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
                     this.setState({
@@ -346,7 +346,9 @@ class ShareableLink extends Component {
                     service: item.service,
                     app: this.state.app,
                     templateVersion: this.state.templateVersion,
-                    apiPath: item.path
+                    apiPath: item.path,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId
                 }
             });
             if (item.recordRequest) {
