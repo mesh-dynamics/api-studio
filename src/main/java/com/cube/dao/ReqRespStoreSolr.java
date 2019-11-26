@@ -1998,18 +1998,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     // TODO Move these to constants.java once Ashoke's PR is merged.
-    private static final String RECORDINGSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
-    private static final String ROOT_RECORDING_IDF = "root_recording_id" + STRING_SUFFIX;
-    private static final String PARENT_RECORDING_IDF = "parent_recording_id" + STRING_SUFFIX;
-    private static final String GOLDEN_NAMEF = CPREFIX + "golden_name" + STRING_SUFFIX;
-    private static final String CODE_VERSIONF = CPREFIX + "code_version" + STRING_SUFFIX;
-    private static final String BRANCHF = CPREFIX + "branch" + STRING_SUFFIX;
-    private static final String TAGSF = CPREFIX + "tags" + STRINGSET_SUFFIX;
-    private static final String ARCHIVEDF = CPREFIX + "archived" + BOOLEAN_SUFFIX;
-    private static final String GIT_COMMIT_IDF = CPREFIX + "git_commit_id" + STRING_SUFFIX;
-    private static final String COLLECTION_UPD_OP_SET_IDF = CPREFIX + "collection_upd_op_set_id" + STRING_SUFFIX;
-    private static final String TEMPLATE_UPD_OP_SET_IDF = CPREFIX + "template_upd_op_set_id" + STRING_SUFFIX;
-    private static final String GOLDEN_COMMENTF = CPREFIX + "golden_comment" + TEXT_SUFFIX;
+    private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
+    private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
+    private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
+    private static final String GOLDEN_NAMEF = CPREFIX + Constants.GOLDEN_NAME_FIELD + STRING_SUFFIX;
+    private static final String CODE_VERSIONF = CPREFIX + Constants.CODE_VERSION_FIELD + STRING_SUFFIX;
+    private static final String BRANCHF = CPREFIX + Constants.BRANCH_FIELD + STRING_SUFFIX;
+    private static final String TAGSF = CPREFIX + Constants.TAGS_FIELD + STRINGSET_SUFFIX;
+    private static final String ARCHIVEDF = CPREFIX + Constants.ARCHIVED_FIELD + BOOLEAN_SUFFIX;
+    private static final String GIT_COMMIT_IDF = CPREFIX + Constants.GIT_COMMIT_ID_FIELD + STRING_SUFFIX;
+    private static final String COLLECTION_UPD_OP_SET_IDF = CPREFIX + Constants.COLLECTION_UPD_OP_SET_ID_FIELD + STRING_SUFFIX;
+    private static final String TEMPLATE_UPD_OP_SET_IDF = CPREFIX + Constants.TEMPLATE_UPD_OP_SET_ID_FIELD + STRING_SUFFIX;
+    private static final String GOLDEN_COMMENTF = CPREFIX + Constants.GOLDEN_COMMENT_FIELD + TEXT_SUFFIX;
     private static final String GENERATED_CLASS_JAR_PATH = "generated_class_jar_path" + STRING_SUFFIX;
 
     private static Optional<Recording> docToRecording(SolrDocument doc) {

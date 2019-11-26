@@ -27,7 +27,6 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder;
 import com.cube.dao.Response;
@@ -93,7 +92,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Exact Match Test")
     final void exactMatchTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -112,7 +111,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Positive")
     final void headerTemplatePositiveTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -129,7 +128,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Negative")
     final void headerTemplateNegativeTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -147,7 +146,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Same Response body test: Positive")
     final void sameResponseBodyPositiveTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("sameResponseBodyPositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -164,7 +163,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Same Response body test: Negative")
     final void sameResponseBodyNegativeTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("sameResponseBodyNegative");
         String res1 = testData.get("res1").toString();
         Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
@@ -186,7 +185,7 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Different response Body test")
     final void differentResponseBodyTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("differentResponseBody");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -196,7 +195,7 @@ public class ResponseComparatorTest {
     }
 
     private void compareTest(JSONObject testData, Response response1, Response response2)
-        throws JsonProcessingException, JSONException, EventBuilder.InvalidEventException, DataObjCreationException {
+        throws JsonProcessingException, JSONException, EventBuilder.InvalidEventException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
         System.out.println(mapper.writeValueAsString(response1));

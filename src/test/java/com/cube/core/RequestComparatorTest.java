@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import com.cube.dao.DataObj;
-import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder.InvalidEventException;
 import com.cube.dao.Request;
@@ -90,7 +89,7 @@ public class RequestComparatorTest {
     @Test
     @DisplayName("Exact Match Test")
     final void exactMatchTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("exactMatch");
         matchTest(testData);
     }
@@ -103,7 +102,7 @@ public class RequestComparatorTest {
     @Test
     @DisplayName("DataType NoMatch Test")
     final void dataTypeNoMatchTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("dataTypeNoMatch");
         matchTest(testData);
     }
@@ -116,13 +115,13 @@ public class RequestComparatorTest {
     @Test
     @DisplayName("Path NoMatch Test")
     final void pathNotFoundTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("pathNotFound");
         matchTest(testData);
     }
 
     private void matchTest(JSONObject testData)
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
@@ -138,7 +137,7 @@ public class RequestComparatorTest {
     @Test
     @DisplayName("Multimap FuzzyMatch Test")
     final void multimapFuzzyMatchTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("multimapFuzzyMatch");
         multimapMatchTest(testData);
     }
@@ -151,13 +150,13 @@ public class RequestComparatorTest {
     @Test
     @DisplayName("Multimap NoMatch Test")
     final void multimapNoMatchTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("multimapNoMatch");
         multimapMatchTest(testData);
     }
 
     private void multimapMatchTest(JSONObject testData)
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
@@ -182,7 +181,7 @@ public class RequestComparatorTest {
     //@Test
     @DisplayName("Root Param Fuzzy Match Test")
     final void rootParaFuzzyoMatchTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("rootParamFuzzyMatch");
         rootParamMatchTest(testData);
     }
@@ -195,13 +194,13 @@ public class RequestComparatorTest {
     @Test
     @DisplayName("Root Param No Match Test")
     final void rootParamNoMatchTest()
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("rootParamNoMatch");
         rootParamMatchTest(testData);
     }
 
     private void rootParamMatchTest(JSONObject testData)
-        throws IOException, JSONException, InvalidEventException, DataObjCreationException {
+        throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
         Optional<String> temp = Optional.of("K");
@@ -245,12 +244,12 @@ public class RequestComparatorTest {
 
 
     private void compareTest(JSONObject testData, Request response1, Request response2)
-        throws JsonProcessingException, JSONException, InvalidEventException, DataObjCreationException {
+        throws JsonProcessingException, JSONException, InvalidEventException {
         compareTest(testData, response1, response2, Optional.empty());
     }
 
     private void compareTest(JSONObject testData, Request response1, Request response2, Optional<String> rulePath)
-        throws JsonProcessingException, JSONException, InvalidEventException, DataObjCreationException {
+        throws JsonProcessingException, JSONException, InvalidEventException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
         System.out.println(mapper.writeValueAsString(response1));

@@ -192,7 +192,7 @@ public class Event {
      */
     public Event applyTransform(Optional<Event> rhs, List<ReqRespUpdateOperation> operationList, Config config,
                                 String newCollection, String newReqId, Optional<Comparator> comparator)
-        throws EventBuilder.InvalidEventException, DataObjCreationException {
+        throws EventBuilder.InvalidEventException {
         // parse if not already parsed
         parsePayLoad(config);
         Optional<RawPayload> newPayload = rhs.map(rhsEvent -> {

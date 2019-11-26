@@ -121,7 +121,7 @@ public class Request extends RRBase {
 	}
 
     public Event toEvent(Comparator comparator, Config config)
-        throws JsonProcessingException, Event.EventBuilder.InvalidEventException, DataObjCreationException {
+        throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
         HTTPRequestPayload payload = new HTTPRequestPayload(hdrs, queryParams, formParams,
             method, body);
