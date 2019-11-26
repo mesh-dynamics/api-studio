@@ -9,6 +9,7 @@ package com.cube.dao;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -24,25 +25,29 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.cube.agent.UtilException;
 
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.golden.ReqRespUpdateOperation;
+import com.cube.golden.JsonTransformer;
+import com.cube.utils.Constants;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-09-03
  */
-public class JsonObj implements DataObj {
+public class JsonDataObj implements DataObj {
 
-    private static final Logger LOGGER = LogManager.getLogger(JsonObj.class);
+    private static final Logger LOGGER = LogManager.getLogger(JsonDataObj.class);
 
-    JsonObj(String json, ObjectMapper jsonMapper) {
+    JsonDataObj(String json, ObjectMapper jsonMapper) {
         this(jsonStrToObj(json, jsonMapper), jsonMapper);
     }
 
-    private JsonObj(JsonNode root, ObjectMapper jsonMapper) {
+    private JsonDataObj(JsonNode root, ObjectMapper jsonMapper) {
         this.objRoot = root;
         this.jsonMapper = jsonMapper;
     }
@@ -59,7 +64,7 @@ public class JsonObj implements DataObj {
 
     @Override
     public DataObj getVal(String path) {
-        return new JsonObj(getNode(path), jsonMapper);
+        return new JsonDataObj(getNode(path), jsonMapper);
     }
 
     @Override
@@ -102,6 +107,28 @@ public class JsonObj implements DataObj {
         return null;
     }
 
+    @Override
+    public DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList) {
+        if (!(rhs instanceof JsonDataObj)) {
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Rhs not Json obj type. Ignoring the transformation",
+                Constants.DATA, rhs.toString()
+            )));
+            return this;
+        }
+        JsonTransformer jsonTransformer = new JsonTransformer(jsonMapper);
+        JsonNode transformedRoot = jsonTransformer.transformResponse(this.objRoot, ((JsonDataObj)rhs).getRoot(),
+            operationList);
+
+        return new JsonDataObj(transformedRoot, jsonMapper);
+    }
+
+    @Override
+    public Event.RawPayload toRawPayload() {
+
+        return new Event.RawPayload(null, toString());
+    }
+
     /**
      * Unwrap the string at path into a json object. The type for interpreting the string is given by mimetype
      * @param path
@@ -135,6 +162,38 @@ public class JsonObj implements DataObj {
         }
         return false;
     }
+
+    /**
+     * wrap the value at path into a string
+     * @param path
+     * @param mimetype
+     */
+    @Override
+    public boolean wrapAsString(String path, String mimetype) {
+        return wrapAsString(objRoot, path, mimetype);
+    }
+
+    private boolean wrapAsString(JsonNode root, String path, String mimetype) {
+        JsonPointer pathPtr = JsonPointer.compile(path);
+        JsonNode valParent = root.at(pathPtr.head());
+        if (valParent != null &&  valParent.isObject()) {
+            ObjectNode valParentObj = (ObjectNode) valParent;
+            String fieldName = pathPtr.last().getMatchingProperty();
+            JsonNode val = valParentObj.get(fieldName);
+            if (val != null && !val.isValueNode()) {
+                // convert to string
+                // currently handling only json type
+                if (mimetype.equals(MediaType.APPLICATION_JSON)) {
+
+                    String newVal = val.toString();
+                    valParentObj.set(fieldName, new TextNode(newVal));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     private void processNode(JsonNode node, Function<String, Boolean> filter, Collection<String> vals, JsonPointer path) {
         if (node.isValueNode()) {
