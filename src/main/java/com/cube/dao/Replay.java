@@ -6,6 +6,8 @@
 package com.cube.dao;
 
 import com.cube.dao.Event.EventType;
+
+import java.net.URLClassLoader;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Collections;
@@ -156,6 +158,10 @@ public class Replay {
 	public final Optional<Double> sampleRate;
 	@JsonProperty("timestmp")
     public final Instant creationTimeStamp;
+	@com.fasterxml.jackson.annotation.JsonProperty("jarPath")
+	public Optional<String> generatedClassJarPath;
+	public transient URLClassLoader generatedClassLoader;
+
 
 	static final String uuidPatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayIdPatternStr = "^(.*)-" + uuidPatternStr + "$";

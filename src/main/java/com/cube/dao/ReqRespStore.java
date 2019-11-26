@@ -462,7 +462,7 @@ public interface ReqRespStore {
         @JsonIgnore
         public URLClassLoader getClassLoader() {
         	// TODO add replay logic as well
-        	return recording.map(rec -> rec.generatedClassLoader).orElse(null);
+	        return replay.map(replay1 -> replay1.generatedClassLoader).orElseGet(() -> recording.map(rec -> rec.generatedClassLoader).orElse(null));
         }
 
 

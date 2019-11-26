@@ -567,8 +567,6 @@ public class CubeStore {
                     Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()) , classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 return Optional.of("Compare template not found");
-            } catch (DataObjCreationException e) {
-                return Optional.of("Error while parsing payload and setting payload key");
             }
         }
 
@@ -745,7 +743,7 @@ public class CubeStore {
             try {
                 defaultReqEvent.parseAndSetKey(config, Utils.
                     getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
-            } catch (ComparatorCache.TemplateNotFoundException | DataObjCreationException e) {
+            } catch (ComparatorCache.TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
                         Constants.REQ_ID_FIELD, defaultReqEvent.reqId,

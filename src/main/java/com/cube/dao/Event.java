@@ -118,17 +118,16 @@ public class Event {
     }
 
     public void parseAndSetKeyAndCollection(Config config, String collection,
-                                                        CompareTemplate template) throws DataObjCreationException {
+                                                        CompareTemplate template) {
         this.collection = collection;
         parseAndSetKey(config, template);
     }
 
-    public void parseAndSetKey(Config config, CompareTemplate template) throws DataObjCreationException {
+    public void parseAndSetKey(Config config, CompareTemplate template) {
         parseAndSetKey(config,template,null);
     }
 
-    public void parseAndSetKey(Config config, CompareTemplate template, URLClassLoader classLoader)
-        throws DataObjCreationException {
+    public void parseAndSetKey(Config config, CompareTemplate template, URLClassLoader classLoader) {
         parsePayLoad(config, classLoader);
         List<String> keyVals = new ArrayList<>();
         payload.collectKeyVals(path -> template.getRule(path).getCompareType()
@@ -214,13 +213,7 @@ public class Event {
             .setRawPayloadString(newRawPayloadString)
             .createEvent();
         // set key for request events
-        comparator.ifPresent(comparatorVal -> {
-            try {
-                toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate());
-            } catch (DataObjCreationException e) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error Occured while setting payload key", Constants.REQ_ID_FIELD , this.reqId)), e);
-            }
-        });
+        comparator.ifPresent(comparatorVal -> toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate()));
         return toReturn;
     }
 
@@ -359,8 +352,7 @@ public class Event {
 
         public Event createEvent() throws com.cube.dao.Event.EventBuilder.InvalidEventException {
             Event event = new Event(customerId, app, service, instanceId, collection, traceId, runType, timestamp, reqId, apiPath,
-                eventType,
-                rawPayloadBinary, rawPayloadString, payload, payloadKey);
+                eventType, rawPayloadBinary, rawPayloadString, payload, payloadKey);
             if (event.validate()) {
                 return event;
             } else {

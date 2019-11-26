@@ -2,6 +2,7 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -51,9 +52,12 @@ import com.cube.dao.Event;
 import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
 import com.cube.dao.EventQuery;
+import com.cube.dao.EventQuery.Builder;
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Request;
 import com.cube.dao.Result;
+import com.cube.dao.ThriftMockRequest;
 import com.cube.exception.DataObjException;
 import com.cube.utils.Constants;
 
@@ -147,7 +151,7 @@ public class MockServiceHTTP {
                 try {
                     event.parseAndSetKey(config, Utils
                         .getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
-                } catch (ComparatorCache.TemplateNotFoundException | DataObjCreationException e) {
+                } catch (ComparatorCache.TemplateNotFoundException e) {
                     LOGGER.error(new ObjectMessage(
                         Map.of("message", "Compare template not found.",
                             "type", event.eventType,
@@ -280,6 +284,29 @@ public class MockServiceHTTP {
         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
             buildErrorResponse(Constants.FAIL, Constants.EVENT_NOT_FOUND,
                 errorReason)).build();
+    }
+
+    @POST
+    @Path("/thirft")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mockThrift(@Context UriInfo uriInfo, ThriftMockRequest thriftMockRequest) {
+        try {
+            RecordOrReplay recordOrReplay = rrstore
+                .getCurrentRecordOrReplay(Optional.ofNullable(thriftMockRequest.customerId),
+                    Optional.ofNullable(thriftMockRequest.appName),
+                    Optional.ofNullable(thriftMockRequest.instanceId), true).orElseThrow(() ->
+                    new Exception(
+                        "Could not find running replay for cust:: " + thriftMockRequest.customerId
+                            + " , app :: " + thriftMockRequest.appName + " , instanceId :: "
+                            + thriftMockRequest.instanceId));
+
+            URLClassLoader urlClassLoader = recordOrReplay.getClassLoader();
+            /*EventQuery.Builder builder = new Builder(thriftMockRequest.customerId, thriftMockRequest.appName, EventType.ThriftResponse)
+                .withRunType(RunType.Record).w;*/
+        } catch (Exception e) {
+
+        }
+        return Response.ok().build();
     }
 
     @POST
