@@ -1,5 +1,6 @@
 import config from '../config';
 import axios from 'axios';
+import {cubeActions} from "../actions";
 
 
 export const cubeService = {
@@ -15,10 +16,8 @@ export const cubeService = {
     fetchReport,
     fetchTimelineData,
     getCollectionUpdateOperationSet,
-    updateRecordingOperationSet,
     updateGoldenSet,
     getNewTemplateVerInfo,
-    updateTemplateOperationSet,
     fetchJiraBugData,
 };
 
@@ -53,15 +52,20 @@ async function fetchAppsList() {
 async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId) {
     let response, json;
     let user = JSON.parse(localStorage.getItem('user'));
+    let searchParams = new URLSearchParams();
+    searchParams.set('name', (recordingId + '_' + Date.now()));
+    searchParams.set('userId', user.username);
     let url = `${config.analyzeBaseUrl}/updateGoldenSet/${recordingId}/${replayId}/${collectionUpdOpSetId}/${templateVer}`;
     let updateRes;
     try {
         response = await fetch(url, {
-            method: "get",
+            method: "post",
             headers:{
                 'Access-Control-Allow-Origin': '*',
+                "Content-Type": "application/x-www-form-urlencoded",
                 "Authorization": "Bearer " + user['access_token']
-            }
+            },
+            body: searchParams
         });
         if (response.ok) {
             json = await response.json();
@@ -75,64 +79,6 @@ async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, reco
         throw e;
     }
     return updateRes;
-}
-
-async function updateTemplateOperationSet(templateVer, body) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.analyzeBaseUrl}/updateTemplateOperationSet/${templateVer}`;
-    let updateRes;
-    try {
-        response = await fetch(url, {
-            method: "post",
-            body: JSON.stringify(body),
-            headers:{
-                "Content-Type": "application/json",
-                'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token']
-            }
-        });
-        if (response.ok) {
-            json = await response.json();
-            updateRes = json;
-        } else {
-            console.log("Response not ok in updateTemplateOperationSet", response);
-            throw new Error("Response not ok updateTemplateOperationSet");
-        }
-    } catch (e) {
-        console.log("updateRecordingOperationSet has errors!", e);
-        throw e;
-    }
-    return updateRes;
-}
-
-async function updateRecordingOperationSet(rosData) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/update`;
-    let updateRes;
-    try {
-        response = await fetch(url, {
-            method: "post",
-            body: JSON.stringify(rosData),
-            headers:{
-                "Content-Type": "application/json",
-                'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token']
-            }
-        });
-        if (response.ok) {
-            json = await response.json();
-            updateRes = json;
-        } else {
-            console.log("Response not ok in updateRecordingOperationSet", response);
-            throw new Error("Response not ok updateRecordingOperationSet");
-        }
-    } catch (e) {
-        console.log("updateRecordingOperationSet has errors!", e);
-        throw e;
-    }
-    return updateRes ? updateRes : "done";
 }
 
 async function getNewTemplateVerInfo(app, currentTemplateVer) {
