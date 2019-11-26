@@ -14,7 +14,10 @@ class OperationSetLabel extends React.Component {
 
     findInOperationSet() {
         const {cube, jsonPath} = this.props;
-        for (const op of cube.newOperationSet) {
+        let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
+        if (indexMOS == -1)
+            return false;
+        for (const op of cube.multiOperationsSet[indexMOS].operationSet) {
             if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
                 return true;
             }
@@ -24,9 +27,16 @@ class OperationSetLabel extends React.Component {
 
     findInOperations() {
         const {cube, jsonPath} = this.props;
-        for (const op of cube.operations) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
-                return true;
+        for (let key in cube.templateOperationSetObject) {
+            if (cube.templateOperationSetObject.hasOwnProperty(key) && cube.templateOperationSetObject[key].operations) {
+                const keyObj = JSON.parse(key);
+                if (keyObj['path'] == cube.pathResultsParams.path) {
+                    for (const op of cube.templateOperationSetObject[key].operations) {
+                        if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
         return false;

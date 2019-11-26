@@ -455,8 +455,8 @@ class ShareableLink extends Component {
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
                     if (selectedResolutionType === "All" || selectedResolutionType === eachJsonPathParsedDiff.resolution) {
-                        resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
                         toFilter = true;
                     }
                 }
@@ -472,8 +472,8 @@ class ShareableLink extends Component {
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
                     if (selectedDiffOperationType === "All" || selectedDiffOperationType === eachJsonPathParsedDiff.op) {
-                        diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
                         toFilter = true;
                     }
                 }
@@ -550,7 +550,7 @@ class ShareableLink extends Component {
             </MenuItem>);
         });
         let requestMatchTypeMenuItems = requestMatchTypes.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item)}>
+            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item.value)}>
                 <Glyphicon style={{ visibility: selectedRequestMatchType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
@@ -690,7 +690,8 @@ class ShareableLink extends Component {
                     <Breadcrumb style={{}}>
                         <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
                         <Breadcrumb.Item href="javascript:void(0);">
-                            <DropdownButton title={"SERVICE: " + selectedService} id="dropdown-size-medium">
+                            <strong>Service:&nbsp;</strong>
+                            <DropdownButton title={selectedService} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
                                     <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
@@ -699,7 +700,8 @@ class ShareableLink extends Component {
                             </DropdownButton>
                         </Breadcrumb.Item>
                         <Breadcrumb.Item active>
-                            <DropdownButton title={selectedAPI ? "API PATH: " + selectedAPI : "Select API Path"} id="dropdown-size-medium">
+                            <strong>API Path:&nbsp;</strong>
+                            <DropdownButton title={selectedAPI ? selectedAPI : "Select API Path"} id="dropdown-size-medium">
                                 <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
                                     <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
                                 </MenuItem>
@@ -799,36 +801,33 @@ class ShareableLink extends Component {
 
     updateGolden = () => {
         const { cube, dispatch } = this.props;
+
         let user = JSON.parse(localStorage.getItem('user'));
-        let gObj = {
-            "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
-            "service": this.state.service,
-            "path": this.state.apiPath,
-            "operationSet": cube.newOperationSet,
-            "customer": user.customer_name,
-            "app": this.state.app
+
+        const headers = {
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*',
+            "Authorization": "Bearer " + user['access_token']
         };
 
-        let keyObjForRule = {
-            customerId: user.customer_name,
-            appId: this.state.app,
-            serviceId: this.state.service,
-            path: this.state.apiPath,
-            version: this.state.currentTemplateVer,
-            reqOrResp: "Response"
-        };
+        const post1 = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/updateTemplateOperationSet/${cube.newTemplateVerInfo['ID']}`,
+            data: cube.templateOperationSetObject,
+            headers: headers
+        });
 
-        const rObj = {};
-        const rObjKey = JSON.stringify(keyObjForRule);
-        for (const op of cube.operations) {
-
-        }
-        rObj[rObjKey] = { operations: cube.operations };
-
-        dispatch(cubeActions.updateRecordingOperationSet(gObj, this.state.replayId,
-            cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'],
-            this.state.recordingId, this.state.app));
-        dispatch(cubeActions.updateTemplateOperationSet(cube.newTemplateVerInfo['ID'], rObj));
+        const post2 = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
+            data: cube.multiOperationsSet,
+            headers: headers
+        });
+        const _self = this;
+        axios.all([post1, post2]).then(axios.spread(function (r1, r2) {
+            dispatch(cubeActions.updateRecordingOperationSet());
+            dispatch(cubeActions.updateGoldenSet(_self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
+        }));
     };
 }
 
