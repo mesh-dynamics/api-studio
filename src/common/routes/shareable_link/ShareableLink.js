@@ -347,7 +347,6 @@ class ShareableLink extends Component {
                     app: this.state.app,
                     templateVersion: this.state.templateVersion,
                     apiPath: item.path,
-                    service: this.state.service,
                     replayId: this.state.replayId,
                     recordingId: this.state.recordingId
                 }
