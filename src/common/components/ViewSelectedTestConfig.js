@@ -32,7 +32,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { dispatch } = this.props;
         dispatch(cubeActions.clear());
     }
-
+  
     handleChangeForInstance(e) {
         const { dispatch } = this.props;
         if (e && e.target.value) {
@@ -134,9 +134,11 @@ class ViewSelectedTestConfig extends React.Component {
 
     showCT = () => {
         this.setState({showCT: true});
-    }
+    };
 
     handleClose = () => {
+        const {cube} = this.props;
+        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
         this.setState({ show: false, showCT: false });
     };
 
@@ -192,7 +194,7 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10">
-                    <div onClick={this.replay} className="cube-btn width-100 text-center">RUN TEST</div>
+                    <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
                 </div>
 
                 <Modal show={this.state.show}>
