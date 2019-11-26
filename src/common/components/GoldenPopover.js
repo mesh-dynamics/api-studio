@@ -48,7 +48,7 @@ class GoldenPopover extends React.Component {
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
             issueTypeId: 10004,
-            projectInput: 10000, // TODO: Change this default
+            projectInput: null,
             projectList: [],
             jiraErrorMessage: null,
             showJiraError: false,
@@ -164,11 +164,13 @@ class GoldenPopover extends React.Component {
     }
 
     showBugModal() {
+        const firstElement = 0;
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
-            // TODO: Set default project variable
-            this.setState({projectList: r.values});
+            // On success, set the project list and set the default project id to
+            // first element on the list.
+            this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
         }, err => {
             console.error(err);
         }).catch(err => {
