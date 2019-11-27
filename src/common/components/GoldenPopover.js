@@ -20,6 +20,8 @@ class GoldenPopover extends React.Component {
         this.renderDescription = this.renderDescription.bind(this)
         this.getDefaultSummary = this.getDefaultSummary.bind(this)
         this.getDefaultDescription = this.getDefaultDescription.bind(this)
+        this.openJiraLink = this.openJiraLink.bind(this)
+        this.refreshList = this.refreshList.bind(this)
 
         this.state = {
             showGolden: false,
@@ -45,9 +47,10 @@ class GoldenPopover extends React.Component {
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
             issueTypeId: 10004,
-            projectInput: 10000,
-
+            projectInput: null,
             projectList: [],
+            jiraErrorMessage: null,
+            showJiraError: false,
         };
     }
 
@@ -143,11 +146,10 @@ class GoldenPopover extends React.Component {
             .then(r => {
                     this.hideGR()
                     this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
-                }, err => {
-                    console.error(err);
+                    this.refreshList();
                 })
-            .catch(err => {
-                console.error(err);
+            .catch(e => {
+                this.setState({ showJiraError: true, jiraErrorMessage: e.message, showBug: false })
             });
     }
 
@@ -161,16 +163,33 @@ class GoldenPopover extends React.Component {
     }
 
     showBugModal() {
+        const firstElement = 0;
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
-            this.setState({projectList: r.values});
+            // On success, set the project list and set the 
+            // default project id to first element on the list.
+            this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
         }, err => {
             console.error(err);
         }).catch(err => {
             console.error(err);
         });
     }
+    
+    openJiraLink() {
+        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
+        
+        window.open(issueUrl)
+    }
+    
+    refreshList() {
+        const { apiPath, replayId, dispatch } = this.props;
+
+        dispatch(cubeActions.getJiraBugs(replayId, apiPath))
+    }
+
 
     renderProjectList() {
         if(!this.state.projectList.length) {
@@ -191,7 +210,14 @@ class GoldenPopover extends React.Component {
     }
 
     hideGR() {
-        this.setState({ showRule: false, showGolden: false, showBug: false, showBugResponse: false });
+        this.setState({ 
+            showRule: false, 
+            showGolden: false, 
+            showBug: false, 
+            showBugResponse: false, 
+            jiraErrorMessage: null, 
+            showJiraError: false 
+        });
     }
 
     handleInputChange(event) {
@@ -231,11 +257,11 @@ class GoldenPopover extends React.Component {
 
     getDefaultDescription(cube) {
         let description = 
-    `Issue Details: 
-API Path: ${cube.pathResultsParams.path} 
-JSON Path: ${this.props.jsonPath}
-Analysis URL: ${window.location.href} 
-    `
+            `Issue Details: 
+                API Path: ${cube.pathResultsParams.path} 
+                JSON Path: ${this.props.jsonPath}
+                Analysis URL: ${window.location.href} 
+            `
         return description;
     }
 
@@ -250,7 +276,7 @@ Analysis URL: ${window.location.href}
     render() {
         return (
             <React.Fragment>
-                <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse ? "text-center" : "hidden"}
+                <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse && !this.state.showJiraError ? "text-center" : "hidden"}
                     style={{ color: "#333333" }}>
                     <div style={{ width: "300px", height: "100px", background: "#D5D5D5", padding: "20px" }}>
                         <div className="margin-bottom-10">STATUS</div>
@@ -260,14 +286,14 @@ Analysis URL: ${window.location.href}
                     </div>
                     <div style={{ width: "300px", height: "100px", background: "#ECECE7", padding: "15px" }}>
                         <div>
-                            <span onClick={this.showBugModal} className="back-grey">
-                                <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : ''}}></i>
+                            <span onClick={this.findInJiraBugs() ? this.openJiraLink : this.showBugModal} className="back-grey">
+                                <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : '', cursor: "pointer"}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
-                                    "font-size": ".65em", 
+                                    "fontSize": ".65em", 
                                     "position": "absolute",
-                                    "margin-left": "-6px",
-                                    "margin-top": "-3px"
+                                    "marginLeft": "-6px",
+                                    "marginTop": "-3px"
                                 }} aria-hidden="true"></i>}
                             </span>&nbsp;&nbsp;
                             <span className="back-grey"><i className="fas fa-comments"></i></span>&nbsp;&nbsp;
@@ -344,7 +370,7 @@ Analysis URL: ${window.location.href}
                                     </tr>
 
                                     <tr>
-                                        <td>Comparision Type</td>
+                                        <td>Comparison Type</td>
                                         <td>{this.state.defaultRule.ct}</td>
                                         <td>
                                             <select value={this.state.newRule.ct} className="width-100" onChange={(e) => this.setRule("ct", e)}>
@@ -429,14 +455,28 @@ Analysis URL: ${window.location.href}
                         </div>
                     </div>
                 </div>
-
                 <div className={this.state.showBugResponse ? "update-golden" : "hidden"} style={{ color: "#333333" }}>
                     <div onClick={this.hideGR} style={{ maxWidth: "400px", background: "#D5D5D5", padding: "5px 20px" }}>
                         CREATE JIRA ISSUE
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
-                        <div><b>Jira Issue&nbsp;</b><p><a href={this.state.jiraIssueURL} target="_"><p>{this.state.jiraIssueKey}</p></a></p></div>
+                        <div><b>Jira Issue&nbsp;</b>
+                            <p>
+                                <a style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
+                                    <p>{this.state.jiraIssueKey}</p>
+                                </a>
+                            </p>
+                        </div>
                         <div className="text-center margin-top-20">
+                            <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
+                        </div>
+                    </div>
+                </div>
+                <div className={this.state.showJiraError ? "update-golden" : "hidden"} style={{ color: "#333333", padding: "10px 5px", maxWidth: "400px" }}>
+                    <div>
+                        <b>Jira API Error&nbsp;</b>
+                        <p>{this.state.jiraErrorMessage}</p>
+                        <div className="text-center">
                             <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
                         </div>
                     </div>
@@ -444,7 +484,7 @@ Analysis URL: ${window.location.href}
             </React.Fragment>
         );
     }
-
+    
     async getResponseTemplate() {
         let user = JSON.parse(localStorage.getItem('user'));
         let { cube, jsonPath } = this.props;
@@ -501,16 +541,16 @@ Analysis URL: ${window.location.href}
                 }),
                 body: JSON.stringify(reqBody),
             });
+            json = await response.json();
             if (response.ok) {
-                json = await response.json();
                 resp = json;
             } else {
                 console.log("Response not ok in createJiraIssue", response);
                 throw new Error("Response not ok createJiraIssue");
             }
         } catch (e) {
-            console.log("createJiraIssue has errors!", e);
-            throw e;
+            console.log("createJiraIssue has errors! ", e.message);
+            throw new Error(json.message);
         }
 
         return resp;
