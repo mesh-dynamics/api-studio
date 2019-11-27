@@ -47,7 +47,7 @@ class GoldenPopover extends React.Component {
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
             issueTypeId: 10004,
-            projectInput: 10000,
+            projectInput: null,
             projectList: [],
             jiraErrorMessage: null,
             showJiraError: false,
@@ -163,10 +163,13 @@ class GoldenPopover extends React.Component {
     }
 
     showBugModal() {
+        const firstElement = 0;
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
-            this.setState({projectList: r.values});
+            // On success, set the project list and set the 
+            // default project id to first element on the list.
+            this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
         }, err => {
             console.error(err);
         }).catch(err => {
@@ -457,7 +460,13 @@ class GoldenPopover extends React.Component {
                         CREATE JIRA ISSUE
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
-                        <div><b>Jira Issue&nbsp;</b><p><a href={this.state.jiraIssueURL} target="_"><p>{this.state.jiraIssueKey}</p></a></p></div>
+                        <div><b>Jira Issue&nbsp;</b>
+                            <p>
+                                <a style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
+                                    <p>{this.state.jiraIssueKey}</p>
+                                </a>
+                            </p>
+                        </div>
                         <div className="text-center margin-top-20">
                             <span onClick={this.hideGR} className="cube-btn font-12">CLOSE</span>
                         </div>
