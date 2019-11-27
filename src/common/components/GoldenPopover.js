@@ -1,5 +1,4 @@
 import React from "react";
-import _ from 'lodash';
 import { connect } from "react-redux";
 import { cubeActions } from "../actions";
 import config from "../config";
