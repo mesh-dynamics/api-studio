@@ -15,14 +15,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.cube.agent.UtilException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.cube.agent.UtilException;
+import com.cube.dao.DataObj.PathNotFoundException;
+import com.cube.utils.Constants;
+import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.ws.Config;
 
 /*
@@ -84,11 +89,11 @@ public class Event {
     }
 
     public static List<EventType> getRequestEventTypes() {
-        return requestEventTypes;
+        return REQUEST_EVENT_TYPES;
     }
 
     public static boolean isReqType(EventType eventType) {
-        return requestEventTypes.contains(eventType);
+        return REQUEST_EVENT_TYPES.contains(eventType);
     }
 
     public String getCollection() {
@@ -133,7 +138,7 @@ public class Event {
 
     @JsonIgnore
     public boolean isRequestType() {
-        return requestEventTypes.contains(eventType);
+        return REQUEST_EVENT_TYPES.contains(eventType);
     }
 
     public String getReqId() {
@@ -148,6 +153,67 @@ public class Event {
     public DataObj getPayload(Config config) {
         parsePayLoad(config);
         return payload;
+    }
+
+    public String getPayloadAsJsonString(EventType eventType, Config config) {
+        switch (eventType) {
+            case HTTPRequest:
+            case HTTPResponse:
+                return rawPayloadString;
+            case JavaRequest:
+            case JavaResponse:
+                try {
+                    return getPayload(config).getValAsString(Constants.FN_RESPONSE_PATH);
+                } catch (PathNotFoundException e) {
+                    LOGGER.error(new ObjectMessage(
+                        Map.of(
+                            Constants.MESSAGE, "Response path not found in JSON"
+                        )));
+                }
+            case ThriftRequest:
+            case ThriftResponse:
+            case ProtoBufRequest:
+            case ProtoBufResponse:
+            default:
+                throw new NotImplementedException("Thrift and Protobuf not implemented");
+        }
+    }
+
+    /**
+     * Create a new event with transformed payload. While transforming request events, need
+     * to send the comparator so that payloadKey can be calculated
+     * @param rhs
+     * @param operationList
+     * @param config
+     * @param newCollection
+     * @param newReqId
+     * @return
+     * @throws EventBuilder.InvalidEventException
+     */
+    public Event applyTransform(Optional<Event> rhs, List<ReqRespUpdateOperation> operationList, Config config,
+                                String newCollection, String newReqId, Optional<Comparator> comparator) throws EventBuilder.InvalidEventException {
+        // parse if not already parsed
+        parsePayLoad(config);
+        Optional<RawPayload> newPayload = rhs.map(rhsEvent -> {
+            DataObj transformedDataObj = payload.applyTransform(rhsEvent.getPayload(config), operationList);
+            DataObjFactory.wrapIfNeeded(transformedDataObj, eventType);
+            return transformedDataObj.toRawPayload();
+        });
+
+        // payload doesn't change if rhs is empty
+        byte[] newRawPayloadBinary = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadBinary)
+            .orElse(rawPayloadBinary);
+        String newRawPayloadString = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadString)
+            .orElse(rawPayloadString);
+
+        Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection, traceId,
+            runType, timestamp, newReqId, apiPath, eventType)
+            .setRawPayloadBinary(newRawPayloadBinary)
+            .setRawPayloadString(newRawPayloadString)
+            .createEvent();
+        // set key for request events
+        comparator.ifPresent(comparatorVal -> toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate()));
+        return toReturn;
     }
 
     public enum EventType {
@@ -180,8 +246,13 @@ public class Event {
         }
     }
 
-    public static List<EventType> requestEventTypes = List.of(EventType.HTTPRequest, EventType.JavaRequest,
+    public static final List<EventType> REQUEST_EVENT_TYPES = List.of(EventType.HTTPRequest, EventType.JavaRequest,
         EventType.ThriftRequest, EventType.ProtoBufRequest);
+    // currently JavaRequest stores the response as well
+    // TODO: change JavaRequest to JavaResponse in list below once we separate the two
+    public static final List<EventType> RESPONSE_EVENT_TYPES = List.of(EventType.HTTPResponse, EventType.JavaRequest,
+        EventType.ThriftResponse, EventType.ProtoBufResponse);
+
 
     public final String customerId;
     public final String app;
@@ -299,6 +370,16 @@ public class Event {
 
         public static class InvalidEventException extends Exception {
 
+        }
+    }
+
+    public static class RawPayload {
+        public final byte[] rawPayloadBinary;
+        public final String rawPayloadString;
+
+        public RawPayload(byte[] rawPayloadBinary, String rawPayloadString) {
+            this.rawPayloadBinary = rawPayloadBinary;
+            this.rawPayloadString = rawPayloadString;
         }
     }
 

@@ -8,7 +8,6 @@ package com.cube.dao;
 import java.util.List;
 import java.util.Optional;
 
-import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -85,90 +84,6 @@ public class Analysis {
     public final String templateVersion;
 
 
-
-    public enum ReqMatchType {
-		ExactMatch,
-		PartialMatch,
-		NoMatch;
-
-		public ReqMatchType And(ReqMatchType other) {
-			switch (this) {
-				case NoMatch: return NoMatch;
-				case ExactMatch: return other;
-				default: return (other == NoMatch) ? NoMatch : PartialMatch;
-			}
-		}
-
-		/**
-		 * @param other
-		 * @return true if this is better or equal to other match
-		 */
-		public boolean isBetterOrEqual(ReqMatchType other) {
-			switch (this) {
-				case NoMatch: return (other == NoMatch);
-				case ExactMatch: return true;
-				default: return (other != ExactMatch); // PartialMatch is better only if other is not ExactMatch
-			}
-		}
-	}
-
-
-
-	public static class RespMatchWithReq  {
-
-		/**
-		 * @param recordreq
-		 * @param replayreq
-		 * @param match
-		 */
-		public RespMatchWithReq(Request recordreq, Optional<Request> replayreq, Comparator.Match match,
-								Optional<Response> recordres , Optional<Response> replayres) {
-			this.recordreq = recordreq;
-			this.replayreq = replayreq;
-			this.recordres = recordres;
-			this.replayres = replayres;
-			this.match = match;
-		}
-
-		final Comparator.Match match;
-		final Request recordreq;
-		final Optional<Request> replayreq;
-		final Optional<Response> recordres;
-		final Optional<Response> replayres;
-
-		public Comparator.MatchType getmt() {
-			return match.mt;
-		}
-
-		public List<Comparator.Diff> getDiffs() {
-			return match.diffs;
-		}
-
-		public Optional<String> getRecordedResponseBody() {
-			return recordres.map(response -> response.body);
-		}
-
-		public Optional<String> getReplayResponseBody() {
-			return replayres.map(response -> response.body);
-		}
-
-		private Optional<String> serializeRequest(Request request, ObjectMapper jsonMapper) {
-			try {
-				return Optional.of(jsonMapper.writeValueAsString(request));
-			} catch (Exception e) {
-				return Optional.empty();
-			}
-		}
-
-		public Optional<String> getReplayReq(ObjectMapper jsonMapper) {
-			return replayreq.flatMap(request -> serializeRequest(request , jsonMapper));
-		}
-
-
-		public Optional<String> getRecordReq(ObjectMapper jsonMapper) {
-			return serializeRequest(recordreq , jsonMapper);
-		}
-	}
 
     public static class RespMatchWithReqEvent  {
 
@@ -281,22 +196,6 @@ public class Analysis {
 			this.replayTraceId = replayTraceId;
 		}
 
-		/**
-		 * @param rm
-		 * @param reqmt
-		 * @param size
-		 * @param replayId
-		 * @param jsonMapper
-		 */
-		public ReqRespMatchResult(RespMatchWithReq rm, Comparator.MatchType reqmt, int size, String replayId, ObjectMapper jsonMapper) {
-		    this(rm.recordreq.reqId, rm.replayreq.flatMap(req -> req.reqId), reqmt, size,
-					rm.match,
-					rm.recordreq.customerId.orElse(""), rm.recordreq.app.orElse(""),
-					rm.recordreq.getService().orElse(""), rm.recordreq.apiPath,
-					replayId, jsonMapper,
-                    CommonUtils.getTraceId(rm.recordreq.hdrs),
-                    rm.replayreq.flatMap(replayreq -> CommonUtils.getTraceId(replayreq.hdrs))) ;
-		}
 
         public ReqRespMatchResult(RespMatchWithReqEvent rm, Comparator.MatchType reqmt, int size, String replayId,
                                   ObjectMapper jsonmapper) {

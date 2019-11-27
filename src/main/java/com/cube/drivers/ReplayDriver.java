@@ -120,6 +120,12 @@ public class ReplayDriver  {
         replay.status = Replay.ReplayStatus.Running;
         if (!rrstore.saveReplay(replay))
             return;
+        // This is a dummy lookup, just to get the Replay running status into Redis, so that deferred delete
+        // can be applied when replay ends. This is needed for very small replays
+        Optional<ReqRespStore.RecordOrReplay> recordOrReplay =
+            rrstore.getCurrentRecordOrReplay(Optional.of(replay.customerId),
+            Optional.of(replay.app), Optional.of(replay.instanceId));
+
         // start recording stats for the current replay
         //replayResultCache.startReplay(replay.customerId, replay.app, replay.instanceId, replay.replayId);
 
