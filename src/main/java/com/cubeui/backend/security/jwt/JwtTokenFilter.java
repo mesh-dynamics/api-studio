@@ -31,12 +31,6 @@ public class JwtTokenFilter extends GenericFilterBean {
 
         String token = jwtTokenProvider.resolveToken((HttpServletRequest) req);
 
-        //log.info("Request origin header: " + ((HttpServletRequest) req).getHeader("Origin"));
-        Enumeration<String> headerNames = ((HttpServletRequest) req).getHeaderNames();
-        while(headerNames.hasMoreElements()) {
-            String currentHeaderName = headerNames.nextElement();
-            log.info(String.format("Header '%s' = %s", currentHeaderName, ((HttpServletRequest) req).getHeader(currentHeaderName)));
-        }
         try {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
