@@ -7,10 +7,10 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.JiraIssueDetailsRepository;
 import com.cubeui.backend.repository.JiraUserCredentialsRepository;
 import com.cubeui.backend.service.JiraAPIService;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 import javax.ws.rs.QueryParam;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -86,12 +86,18 @@ public class JiraController {
     jiraIssueDetailsRepository.save(jiraIssueDetails);
   }
 
-  @GetMapping("issue/getdetails")
+  @GetMapping("issue/details")
   public ResponseEntity getIssueDetails(@QueryParam("replayId") String replayId, @QueryParam("apiPath") String apiPath,
       @QueryParam("requestId") String requestId, @QueryParam("jsonPath") String jsonPath, @AuthenticationPrincipal  User user){
-    Optional<List<JiraIssueDetails>> jiraIssueDetailsList = jiraIssueDetailsRepository
-        .findIssueDetails(user, replayId, apiPath, requestId, jsonPath);
-    return ResponseEntity.of(jiraIssueDetailsList);
+      Optional<List<JiraIssueDetails>> jiraIssueDetailsList = jiraIssueDetailsRepository
+              .findIssueDetails(user, replayId, apiPath, requestId, jsonPath);
+
+      if(jiraIssueDetailsList.isPresent()) {
+        return ResponseEntity.of(jiraIssueDetailsList);
+      } else {
+        return ResponseEntity.ok().body(Collections.emptyList());
+      }
+
   }
 
   @GetMapping("projects")
