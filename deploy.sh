@@ -30,13 +30,24 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
+	#Check if route exisits and ask which one to apply
+	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
+		if [ -z "$1" ]; then
+			echo "Which version of App you want to test?(v1/v2)"
+			read VERSION
+		else
+			VERSION=$1
+		fi
+		if [ "$VERSION" = "v1" ] || [ "$VERSION" = "v2" ]; then
+			kubectl apply -f $APP_DIR/kubernetes/route-$VERSION.yaml
+		else
+			echo "echo Invalid, enter a valid version(v1/v2)"
+			exit 1
+		fi
+	fi
 	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
 	kubectl apply -f $APP_DIR/kubernetes || :
 	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
-	#Check if route exists
-	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
-		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
-	fi
 
 }
 
