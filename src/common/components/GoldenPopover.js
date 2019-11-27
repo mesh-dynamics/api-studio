@@ -218,6 +218,7 @@ class GoldenPopover extends React.Component {
             jiraErrorMessage: null, 
             showJiraError: false 
         });
+        this.props.hideTippy();
     }
 
     handleInputChange(event) {
@@ -276,6 +277,12 @@ class GoldenPopover extends React.Component {
     render() {
         return (
             <React.Fragment>
+                <span 
+                    onClick={this.hideGR} 
+                    style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer"}}
+                >
+                    <i className="fas fa-times" style={{ color: "#616060"}}></i>
+                </span>
                 <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse && !this.state.showJiraError ? "text-center" : "hidden"}
                     style={{ color: "#333333" }}>
                     <div style={{ width: "300px", height: "100px", background: "#D5D5D5", padding: "20px" }}>
@@ -390,7 +397,7 @@ class GoldenPopover extends React.Component {
 
                         <div className="text-right margin-top-20">
                             <span onClick={this.updateRule} className="cube-btn font-12">APPLY</span>&nbsp;&nbsp;
-                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                            {/* <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span> */}
                         </div>
                     </div>
                 </div>
@@ -406,7 +413,7 @@ class GoldenPopover extends React.Component {
                         <div className="text-center margin-top-20">
                             <span onClick={this.updateGolden}
                                 className="cube-btn font-12">MARK FOR UPDATE</span>&nbsp;&nbsp;
-                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                            {/* <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span> */}
                         </div>
                     </div>
                 </div>
@@ -451,7 +458,7 @@ class GoldenPopover extends React.Component {
 
                         <div className="text-right margin-top-20">
                             <span onClick={this.createIssue} className="cube-btn font-12">CREATE</span>&nbsp;&nbsp;
-                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                            {/* <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span> */}
                         </div>
                     </div>
                 </div>
