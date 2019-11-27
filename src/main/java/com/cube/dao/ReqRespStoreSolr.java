@@ -1945,7 +1945,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
         Integer numMatch = getIntField(doc , NUMMATCHF).orElse(-1);
         String respMatchMetaData = getStrField(doc , RESPMATCHMETADATAF).orElse("");
-        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("");
+        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("[]");
         String customerId = getStrField(doc , CUSTOMERIDF).orElse("");
         String app = getStrField(doc , APPF).orElse("");
         String service = getStrField(doc, SERVICEF).orElse("");
