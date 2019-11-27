@@ -344,7 +344,7 @@ Analysis URL: ${window.location.href}
                                     </tr>
 
                                     <tr>
-                                        <td>Comparision Type</td>
+                                        <td>Comparison Type</td>
                                         <td>{this.state.defaultRule.ct}</td>
                                         <td>
                                             <select value={this.state.newRule.ct} className="width-100" onChange={(e) => this.setRule("ct", e)}>
