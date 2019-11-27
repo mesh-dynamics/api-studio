@@ -9,6 +9,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -46,6 +47,11 @@ public class BackendApplication {
                 registry.addMapping("/**").allowedOrigins("http://localhost:3006", "http://staging.cubecorp.io", "http://demo.cubecorp.io");
             }
         };
+    }
+
+    @Bean
+    public RestTemplate getRestTemplate() {
+      return new RestTemplate();
     }
 
     private static void logApplicationStartup(Environment env) {
