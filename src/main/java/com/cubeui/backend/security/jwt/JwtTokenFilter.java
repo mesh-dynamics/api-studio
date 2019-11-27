@@ -14,6 +14,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.Enumeration;
 
 @Slf4j
 public class JwtTokenFilter extends GenericFilterBean {
@@ -29,7 +30,13 @@ public class JwtTokenFilter extends GenericFilterBean {
         throws IOException, ServletException {
 
         String token = jwtTokenProvider.resolveToken((HttpServletRequest) req);
-        log.info("Request origin header: " + ((HttpServletRequest) req).getHeader("Origin"));
+
+        //log.info("Request origin header: " + ((HttpServletRequest) req).getHeader("Origin"));
+        Enumeration<String> headerNames = ((HttpServletRequest) req).getHeaderNames();
+        while(headerNames.hasMoreElements()) {
+            String currentHeaderName = headerNames.nextElement();
+            log.info(String.format("Header '%s' = %s", currentHeaderName, ((HttpServletRequest) req).getHeader(currentHeaderName)));
+        }
         try {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
