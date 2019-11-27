@@ -440,7 +440,7 @@ async function fetchTimelineData(app, userId, endDate) {
 async function fetchJiraBugData(replayId, apiPath) {  
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json, data;
-    let url = `${config.apiBaseUrl}/jira/issue/getdetails?replayId=${replayId}&apiPath=${apiPath}`;
+    let url = `${config.apiBaseUrl}/jira/issue/details?replayId=${replayId}&apiPath=${apiPath}`;
     try {
         response = await fetch(url, {
             method: "get",
