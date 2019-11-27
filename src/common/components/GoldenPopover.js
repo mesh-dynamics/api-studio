@@ -168,8 +168,8 @@ class GoldenPopover extends React.Component {
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
-            // On success, set the project list and set the default project id to
-            // first element on the list.
+            // On success, set the project list and set the 
+            // default project id to first element on the list.
             this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
         }, err => {
             console.error(err);
@@ -186,16 +186,9 @@ class GoldenPopover extends React.Component {
     }
     
     refreshList() {
-        let urlParameters = _.chain(window.location.search)
-            .replace('?', '')
-            .split('&')
-            .map(_.partial(_.split, _, '=', 2))
-            .fromPairs()
-            .value();
-        const apiPath = urlParameters["apiPath"] ? urlParameters["apiPath"]  : "%2A",
-            replayId = urlParameters["replayId"];
+        const { apiPath, replayId, dispatch } = this.props;
 
-        this.props.dispatch(cubeActions.getJiraBugs(replayId, apiPath))
+        dispatch(cubeActions.getJiraBugs(replayId, apiPath))
     }
 
 
@@ -385,7 +378,7 @@ class GoldenPopover extends React.Component {
                                     </tr>
 
                                     <tr>
-                                        <td>Comparision Type</td>
+                                        <td>Comparison Type</td>
                                         <td>{this.state.defaultRule.ct}</td>
                                         <td>
                                             <select value={this.state.newRule.ct} className="width-100" onChange={(e) => this.setRule("ct", e)}>
@@ -487,7 +480,7 @@ class GoldenPopover extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div className={this.state.showJiraError ? "update-golden" : "hidden"} style={{ color: "#333333", padding: "10px 5px" }}>
+                <div className={this.state.showJiraError ? "update-golden" : "hidden"} style={{ color: "#333333", padding: "10px 5px", maxWidth: "400px" }}>
                     <div>
                         <b>Jira API Error&nbsp;</b>
                         <p>{this.state.jiraErrorMessage}</p>

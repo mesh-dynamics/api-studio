@@ -62,7 +62,7 @@ exports.InlineLine = function (_a) {
 exports.DefaultLine = function (_a) {
     var leftLineNumber = _a.leftLineNumber, rightLineNumber = _a.rightLineNumber, onLineNumberClick = _a.onLineNumberClick, rightContent = _a.rightContent, leftContent = _a.leftContent, added = _a.added, removed = _a.removed, renderContent = _a.renderContent, _b = _a.hightlightLines, hightlightLines = _b === void 0 ? [] : _b, styles = _a.styles, hideLineNumbers = _a.hideLineNumbers,
     // author raj.maddireddy@cubecorp.io 
-    jsonPath = _a.jsonPath, serverSideDiff = _a.serverSideDiff, apiPath = _a.apiPath, service = _a.service, app = _a.app, templateVersion = _a.templateVersion;
+    jsonPath = _a.jsonPath, serverSideDiff = _a.serverSideDiff, apiPath = _a.apiPath, service = _a.service, app = _a.app, templateVersion = _a.templateVersion, replayId = _a.replayId, recordingId = _a.recordingId;
     var filterPath = _a.filterPath,
     inputElementRef = _a.inputElementRef;
     // author raj.maddireddy@cubecorp.io
@@ -96,11 +96,11 @@ exports.DefaultLine = function (_a) {
         React.createElement("td", { className: classnames_1.default(styles.gutter, styles.leftGutter, (_k = {},
             _k[styles.diffRemoved] = removed,
              _k[styles.hightlightedGutter] = hightlightLeftLine,
-            _k)) }, React.createElement(OperationSetLabel, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath}, "")),
+            _k)) }, React.createElement(OperationSetLabel, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, replayId, recordingId}, "")),
         React.createElement("td", { className: classnames_1.default(styles.marker, (_l = {},
             _l[styles.diffRemoved] = removed,
             _l[styles.hightlightedLine] = hightlightLeftLine,
-            _l)) }, React.createElement(OperationSet, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, elementRef: leftOperationSetElementRef, inputElementRef: inputElementRef}, "")),
+            _l)) }, React.createElement(OperationSet, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, elementRef: leftOperationSetElementRef, inputElementRef: inputElementRef, replayId, recordingId}, "")),
         React.createElement("td", { className: classnames_1.default(styles.marker, (_d = {},
                 _d[styles.diffRemoved] = removed,
                 _d[styles.hightlightedLine] = hightlightLeftLine,
@@ -118,7 +118,7 @@ exports.DefaultLine = function (_a) {
         React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_j = {},
             _j[styles.hightlightedGutter] = hightlightRightLine,
             _j)) },
-            (added || removed) && React.createElement(Resolutions, {className: classnames_1(''), added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath}, ""
+            (added || removed) && React.createElement(Resolutions, {className: classnames_1(''), added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, replayId, recordingId}, ""
             )
         ),
         !hideLineNumbers
@@ -130,11 +130,11 @@ exports.DefaultLine = function (_a) {
         React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_m = {},
             _m[styles.diffAdded] = added,
             _m[styles.hightlightedGutter] = hightlightRightLine,
-            _m)) }, React.createElement(OperationSetLabel, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath}, "")),
+            _m)) }, React.createElement(OperationSetLabel, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, replayId, recordingId}, "")),
         React.createElement("td", { className: classnames_1.default(styles.marker, (_n = {},
             _n[styles.diffAdded] = added,
             _n[styles.hightlightedLine] = hightlightRightLine,
-            _n)) }, React.createElement(OperationSet, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, elementRef: rightOperationSetElementRef, inputElementRef: inputElementRef}, "")),
+            _n)) }, React.createElement(OperationSet, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, elementRef: rightOperationSetElementRef, inputElementRef: inputElementRef, replayId, recordingId}, "")),
         React.createElement("td", { className: classnames_1.default(styles.marker, (_g = {},
                 _g[styles.diffAdded] = added,
                 _g[styles.hightlightedLine] = hightlightRightLine,
