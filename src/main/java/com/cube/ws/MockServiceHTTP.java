@@ -4,6 +4,7 @@ import static com.cube.core.Utils.buildErrorResponse;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,7 +69,10 @@ public class MockServiceHTTP {
 	@GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Virtualization service status\": \"VS is healthy\"}").build();
+        Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+        Map respMap = new HashMap(solrHealth);
+        respMap.put(Constants.SERVICE_HEALTH_STATUS, "MS is healthy");
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
     }
 
 	@GET

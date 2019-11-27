@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,7 +88,10 @@ public class CubeStore {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Cube store service status\": \"CS is healthy\"}").build();
+        Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+        Map respMap = new HashMap(solrHealth);
+        respMap.put(Constants.SERVICE_HEALTH_STATUS, "CS is healthy");
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
     }
 
 
