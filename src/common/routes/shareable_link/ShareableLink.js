@@ -210,7 +210,7 @@ class ShareableLink extends Component {
         if(!replayId) throw new Error("replayId is required");
         let response, json;
         let user = JSON.parse(localStorage.getItem('user'));
-        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includediff=true&path=%2A`;
+        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includeDiff=true&path=%2A`;
         let dataList = {};
 
         
@@ -228,15 +228,15 @@ class ShareableLink extends Component {
             if (response.ok) {
                 json = await response.json();
                 dataList = json;
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
+                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
                 this.layoutDataWithDiff.push(...diffLayoutData);
 
-                fetchedResults = dataList.res.length;
-                totalNumberOfRequest = dataList.numFound;
+                fetchedResults = dataList.data.res.length;
+                totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
                 this.setState({
-                    app: dataList.app,
-                    templateVersion: dataList.templateVersion,
+                    app: dataList.data.app,
+                    templateVersion: dataList.data.templateVersion,
                     fetchedResults: fetchedResults
                 });
                 let requestHeaders = {
@@ -250,13 +250,13 @@ class ShareableLink extends Component {
                         allFetched = true;
                         break;
                     }
-                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includediff=true&path=%2A`;
+                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includeDiff=true&path=%2A`;
                     promises.push(axios.get(url, requestHeaders));
                     fetchedResults = fetchedResults + resultSize;
                 }
                 axios.all(promises).then((results) => {
                     results.forEach((eachResponse) => {
-                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.res);
+                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
                     this.setState({
@@ -281,10 +281,7 @@ class ShareableLink extends Component {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 if (item.recordResponse.body) {
                     try {
-                        if (item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
-                            recordedData = JSON.parse(item.recordResponse.body);
-                        }
-                        else recordedData = item.recordResponse.body;
+                        recordedData = JSON.parse(item.recordResponse.body);
                     } catch (e) {
                         recordedData = JSON.parse('"' + cleanEscapedString(_.escape(item.recordResponse.body)) + '"')
                     }
@@ -300,10 +297,7 @@ class ShareableLink extends Component {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 if (item.replayResponse.body) {
                     try {
-                        if (item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
-                            replayedData = JSON.parse(item.replayResponse.body);
-                        }
-                        else replayedData = item.replayResponse.body;
+                        replayedData = JSON.parse(item.replayResponse.body);
                     } catch (e) {
                         replayedData = JSON.parse('"' + cleanEscapedString(_.escape(item.replayResponse.body)) + '"')
                     }
@@ -317,11 +311,7 @@ class ShareableLink extends Component {
             }
             let diff;
             if (item.diff) {
-                try {
-                    diff = JSON.parse(item.diff);
-                } catch (e) {
-                    diff = JSON.parse('"' + item.diff + '"')
-                }
+                diff = item.diff;
             }
             else diff = [];
             let actJSON = JSON.stringify(replayedData, undefined, 4),
@@ -346,7 +336,9 @@ class ShareableLink extends Component {
                     service: item.service,
                     app: this.state.app,
                     templateVersion: this.state.templateVersion,
-                    apiPath: item.path
+                    apiPath: item.path,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId
                 }
             });
             if (item.recordRequest) {
@@ -354,10 +346,7 @@ class ShareableLink extends Component {
                 recordedRequestParams = item.recordRequest.queryParams ? item.recordRequest.queryParams : {};
                 if (item.recordRequest.body) {
                     try {
-                        if (item.recordRequest.mimeType.indexOf('json') > -1 && item.recordRequest.mimeType.indexOf('json') > -1) {
-                            recordedRequestBody = JSON.parse(item.recordRequest.body);
-                        }
-                        else recordedRequestBody = item.recordRequest.body;
+                        recordedRequestBody = JSON.parse(item.recordRequest.body);
                     } catch (e) {
                         recordedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.recordRequest.body)) + '"')
                     }
@@ -375,10 +364,7 @@ class ShareableLink extends Component {
                 replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
                 if (item.replayRequest.body) {
                     try {
-                        if (item.replayRequest.mimeType.indexOf('json') > -1 && item.replayRequest.mimeType.indexOf('json') > -1) {
-                            replayedRequestBody = JSON.parse(item.replayRequest.body);
-                        }
-                        else replayedRequestBody = item.replayRequest.body;
+                        replayedRequestBody = JSON.parse(item.replayRequest.body);
                     } catch (e) {
                         replayedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.replayRequest.body)) + '"')
                     }
