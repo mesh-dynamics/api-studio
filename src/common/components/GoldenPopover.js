@@ -20,6 +20,8 @@ class GoldenPopover extends React.Component {
         this.renderDescription = this.renderDescription.bind(this)
         this.getDefaultSummary = this.getDefaultSummary.bind(this)
         this.getDefaultDescription = this.getDefaultDescription.bind(this)
+        this.openJiraLink = this.openJiraLink.bind(this)
+        this.refreshList = this.refreshList.bind(this)
 
         this.state = {
             showGolden: false,
@@ -143,6 +145,7 @@ class GoldenPopover extends React.Component {
             .then(r => {
                     this.hideGR()
                     this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
+                    this.refreshList();
                 }, err => {
                     console.error(err);
                 })
@@ -171,6 +174,20 @@ class GoldenPopover extends React.Component {
             console.error(err);
         });
     }
+    
+    openJiraLink() {
+        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
+        
+        window.open(issueUrl)
+    }
+    
+    refreshList() {
+        const { apiPath, replayId, dispatch } = this.props;
+
+        dispatch(cubeActions.getJiraBugs(replayId, apiPath))
+    }
+
 
     renderProjectList() {
         if(!this.state.projectList.length) {
@@ -260,7 +277,7 @@ Analysis URL: ${window.location.href}
                     </div>
                     <div style={{ width: "300px", height: "100px", background: "#ECECE7", padding: "15px" }}>
                         <div>
-                            <span onClick={this.showBugModal} className="back-grey">
+                            <span onClick={this.findInJiraBugs() ? this.openJiraLink : this.showBugModal} className="back-grey">
                                 <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : ''}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
