@@ -22,7 +22,7 @@ public class Constants {
     public static final String EXCEPTION_STACK = "exceptionStack";
     public static final String REQ_MATCH_TYPE = "reqMatchType";
     public static final String RESP_MATCH_TYPE = "respMatchType";
-    public static final String INCLUDE_DIFF = "diffInclude";
+    public static final String INCLUDE_DIFF = "includeDiff";
 
 
     //MESSAGE_IDs
@@ -33,6 +33,8 @@ public class Constants {
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
+    public static final String ANALYSIS_NOT_FOUND = "ANALYSIS_NOT_FOUND";
+    public static final String RECORDING_NOT_FOUND = "RECORDING_NOT_FOUND";
     public static final String TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND";
 
 
@@ -40,6 +42,10 @@ public class Constants {
     public static final String IO_EXCEPTION = "IO_EXCEPTION";
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
     public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
+    public static final String BAD_VALUE_EXCEPTION = "BAD_VALUE_EXCEPTION";
+    public static final String GENERIC_EXCEPTION = "GENERIC_EXCEPTION";
+    public static final String RECORDING_SAVE_FAILURE_EXCEPTION = "RECORDING_SAVE_FAILURE_EXCEPTION";
+
 
     //JSON FETCH PATH
     public static final String CUSTOMER_ID_PATH = "/customerId";
@@ -73,6 +79,7 @@ public class Constants {
     public static final String PATH_FIELD = "path";
     public static final String API_PATH_FIELD = "apiPath";
     public static final String REQ_ID_FIELD = "reqId";
+    public static final String REPLAY_ID_FIELD = "replayId";
     public static final String TIMESTAMP_FIELD = "timestamp";
     public static final String TRACE_ID_FIELD = "traceId";
     public static final String EVENT_TYPE_FIELD = "eventType";
@@ -84,7 +91,17 @@ public class Constants {
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
-    public static final String LIMIT_FIELD = "limit";
-    public static final String OFFSET_FIELD = "offset";
+    public static final String ROOT_RECORDING_FIELD = "root_recording_id";
+    public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
+    public static final String GOLDEN_NAME_FIELD = "golden_name";
+    public static final String CODE_VERSION_FIELD = "code_version";
+    public static final String BRANCH_FIELD = "branch";
+    public static final String TAGS_FIELD = "tags";
+    public static final String ARCHIVED_FIELD = "archived";
+    public static final String GIT_COMMIT_ID_FIELD = "git_commit_id";
+    public static final String COLLECTION_UPD_OP_SET_ID_FIELD = "collection_upd_op_set_id";
+    public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
+    public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
+    public static final String TEMPLATE_VERSION_FIELD = "version";
 
 }

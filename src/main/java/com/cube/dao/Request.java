@@ -5,7 +5,6 @@ package com.cube.dao;
 
 import static com.cube.dao.Event.RunType.Record;
 
-import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -15,6 +14,10 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,10 +26,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 // TODO: Event redesign: This can be removed
 public class Request extends RRBase {
@@ -142,24 +143,33 @@ public class Request extends RRBase {
 
     public static Optional<Request> fromEvent(Event event, ObjectMapper jsonMapper) {
         if (event.eventType != Event.EventType.HTTPRequest) {
-            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert event to request. " +
-                    "Event is not of right type:" , "eventType"
-                , event.eventType.toString() , "reqId", event.reqId)));
+            LOGGER
+                .error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Not able to convert event to request. " +
+                        "Event is not of right type:",
+                    Constants.EVENT_TYPE_FIELD, event.eventType.toString(),
+                    Constants.REQ_ID_FIELD, event.reqId)));
             return Optional.empty();
         }
 
         try {
-            HTTPRequestPayload payload = jsonMapper.readValue(event.rawPayloadString, HTTPRequestPayload.class);
+            HTTPRequestPayload payload = jsonMapper
+                .readValue(event.rawPayloadString, HTTPRequestPayload.class);
             MultivaluedHashMap<String, String> meta = new MultivaluedHashMap<>();
             meta.put(Constants.SERVICE_FIELD, List.of(event.service));
             meta.put(Constants.INSTANCE_ID_FIELD, List.of(event.instanceId));
-            return Optional.of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams, payload.formParams,
-                meta, payload.hdrs, payload.method, payload.body,
-                Optional.of(event.getCollection()), Optional.of(event.timestamp),
-                Optional.of(event.runType), Optional.of(event.customerId), Optional.of(event.app)));
+            return Optional
+                .of(new Request(event.apiPath, Optional.of(event.reqId), payload.queryParams,
+                    payload.formParams,
+                    meta, payload.hdrs, payload.method, payload.body,
+                    Optional.of(event.getCollection()), Optional.of(event.timestamp),
+                    Optional.of(event.runType), Optional.of(event.customerId),
+                    Optional.of(event.app)));
         } catch (IOException e) {
-            LOGGER.error(new ObjectMessage(Map.of("reason" , "Not able to convert Event to Request",
-                "eventType", event.eventType.toString() , "reqId", event.reqId)));
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Not able to convert Event to Request",
+                Constants.EVENT_TYPE_FIELD, event.eventType.toString(),
+                Constants.REQ_ID_FIELD, event.reqId)));
             return Optional.empty();
         }
     }
