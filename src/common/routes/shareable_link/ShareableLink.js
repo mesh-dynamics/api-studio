@@ -113,6 +113,7 @@ class ShareableLink extends Component {
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            dispatch(cubeActions.getJiraBugs(replayId, apiPath));
             this.fetchReplayList();
         });
     }
@@ -209,7 +210,7 @@ class ShareableLink extends Component {
         if(!replayId) throw new Error("replayId is required");
         let response, json;
         let user = JSON.parse(localStorage.getItem('user'));
-        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includediff=true&path=%2A`;
+        let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includeDiff=true&path=%2A`;
         let dataList = {};
 
         
@@ -227,15 +228,15 @@ class ShareableLink extends Component {
             if (response.ok) {
                 json = await response.json();
                 dataList = json;
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.res);
+                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
                 this.layoutDataWithDiff.push(...diffLayoutData);
 
-                fetchedResults = dataList.res.length;
-                totalNumberOfRequest = dataList.numFound;
+                fetchedResults = dataList.data.res.length;
+                totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
                 this.setState({
-                    app: dataList.app,
-                    templateVersion: dataList.templateVersion,
+                    app: dataList.data.app,
+                    templateVersion: dataList.data.templateVersion,
                     fetchedResults: fetchedResults
                 });
                 let requestHeaders = {
@@ -249,13 +250,13 @@ class ShareableLink extends Component {
                         allFetched = true;
                         break;
                     }
-                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includediff=true&path=%2A`;
+                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includeDiff=true&path=%2A`;
                     promises.push(axios.get(url, requestHeaders));
                     fetchedResults = fetchedResults + resultSize;
                 }
                 axios.all(promises).then((results) => {
                     results.forEach((eachResponse) => {
-                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.res);
+                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
                     this.setState({
@@ -280,10 +281,7 @@ class ShareableLink extends Component {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 if (item.recordResponse.body) {
                     try {
-                        if (item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
-                            recordedData = JSON.parse(item.recordResponse.body);
-                        }
-                        else recordedData = item.recordResponse.body;
+                        recordedData = JSON.parse(item.recordResponse.body);
                     } catch (e) {
                         recordedData = JSON.parse('"' + cleanEscapedString(_.escape(item.recordResponse.body)) + '"')
                     }
@@ -299,10 +297,7 @@ class ShareableLink extends Component {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 if (item.replayResponse.body) {
                     try {
-                        if (item.recordResponse.mimeType.indexOf('json') > -1 && item.replayResponse.mimeType.indexOf('json') > -1) {
-                            replayedData = JSON.parse(item.replayResponse.body);
-                        }
-                        else replayedData = item.replayResponse.body;
+                        replayedData = JSON.parse(item.replayResponse.body);
                     } catch (e) {
                         replayedData = JSON.parse('"' + cleanEscapedString(_.escape(item.replayResponse.body)) + '"')
                     }
@@ -316,11 +311,7 @@ class ShareableLink extends Component {
             }
             let diff;
             if (item.diff) {
-                try {
-                    diff = JSON.parse(item.diff);
-                } catch (e) {
-                    diff = JSON.parse('"' + item.diff + '"')
-                }
+                diff = item.diff;
             }
             else diff = [];
             let actJSON = JSON.stringify(replayedData, undefined, 4),
@@ -345,7 +336,9 @@ class ShareableLink extends Component {
                     service: item.service,
                     app: this.state.app,
                     templateVersion: this.state.templateVersion,
-                    apiPath: item.path
+                    apiPath: item.path,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId
                 }
             });
             if (item.recordRequest) {
@@ -353,10 +346,7 @@ class ShareableLink extends Component {
                 recordedRequestParams = item.recordRequest.queryParams ? item.recordRequest.queryParams : {};
                 if (item.recordRequest.body) {
                     try {
-                        if (item.recordRequest.mimeType.indexOf('json') > -1 && item.recordRequest.mimeType.indexOf('json') > -1) {
-                            recordedRequestBody = JSON.parse(item.recordRequest.body);
-                        }
-                        else recordedRequestBody = item.recordRequest.body;
+                        recordedRequestBody = JSON.parse(item.recordRequest.body);
                     } catch (e) {
                         recordedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.recordRequest.body)) + '"')
                     }
@@ -374,10 +364,7 @@ class ShareableLink extends Component {
                 replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
                 if (item.replayRequest.body) {
                     try {
-                        if (item.replayRequest.mimeType.indexOf('json') > -1 && item.replayRequest.mimeType.indexOf('json') > -1) {
-                            replayedRequestBody = JSON.parse(item.replayRequest.body);
-                        }
-                        else replayedRequestBody = item.replayRequest.body;
+                        replayedRequestBody = JSON.parse(item.replayRequest.body);
                     } catch (e) {
                         replayedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.replayRequest.body)) + '"')
                     }
@@ -454,8 +441,8 @@ class ShareableLink extends Component {
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
                     if (selectedResolutionType === "All" || selectedResolutionType === eachJsonPathParsedDiff.resolution) {
-                        resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
                         toFilter = true;
                     }
                 }
@@ -471,8 +458,8 @@ class ShareableLink extends Component {
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
                     if (selectedDiffOperationType === "All" || selectedDiffOperationType === eachJsonPathParsedDiff.op) {
-                        diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
                         toFilter = true;
                     }
                 }
@@ -549,7 +536,7 @@ class ShareableLink extends Component {
             </MenuItem>);
         });
         let requestMatchTypeMenuItems = requestMatchTypes.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item)}>
+            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item.value)}>
                 <Glyphicon style={{ visibility: selectedRequestMatchType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
@@ -800,36 +787,33 @@ class ShareableLink extends Component {
 
     updateGolden = () => {
         const { cube, dispatch } = this.props;
+
         let user = JSON.parse(localStorage.getItem('user'));
-        let gObj = {
-            "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
-            "service": this.state.service,
-            "path": this.state.apiPath,
-            "operationSet": cube.newOperationSet,
-            "customer": user.customer_name,
-            "app": this.state.app
+
+        const headers = {
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*',
+            "Authorization": "Bearer " + user['access_token']
         };
 
-        let keyObjForRule = {
-            customerId: user.customer_name,
-            appId: this.state.app,
-            serviceId: this.state.service,
-            path: this.state.apiPath,
-            version: this.state.currentTemplateVer,
-            reqOrResp: "Response"
-        };
+        const post1 = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/updateTemplateOperationSet/${cube.newTemplateVerInfo['ID']}`,
+            data: cube.templateOperationSetObject,
+            headers: headers
+        });
 
-        const rObj = {};
-        const rObjKey = JSON.stringify(keyObjForRule);
-        for (const op of cube.operations) {
-
-        }
-        rObj[rObjKey] = { operations: cube.operations };
-
-        dispatch(cubeActions.updateRecordingOperationSet(gObj, this.state.replayId,
-            cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'],
-            this.state.recordingId, this.state.app));
-        dispatch(cubeActions.updateTemplateOperationSet(cube.newTemplateVerInfo['ID'], rObj));
+        const post2 = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
+            data: cube.multiOperationsSet,
+            headers: headers
+        });
+        const _self = this;
+        axios.all([post1, post2]).then(axios.spread(function (r1, r2) {
+            dispatch(cubeActions.updateRecordingOperationSet());
+            dispatch(cubeActions.updateGoldenSet(_self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
+        }));
     };
 }
 
