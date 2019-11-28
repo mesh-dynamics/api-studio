@@ -124,7 +124,6 @@ public interface ReqRespStore {
      */
     Optional<Event> getRequestEvent(String reqId);
 
-
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
 
@@ -388,7 +387,6 @@ public interface ReqRespStore {
 	 */
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
                                                                String templateSetVersion);
-
 
     /**
      * @param customerId

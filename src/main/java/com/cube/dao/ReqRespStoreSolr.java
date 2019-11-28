@@ -734,7 +734,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-
     /**
      * @param solr
      * @param config
@@ -1992,7 +1991,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return analysis;
     }
 
-
     private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
@@ -2175,7 +2173,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
-
 
     private final static int FACETLIMIT = 100;
     private static final String REQMTFACET = "reqmt_facets";
