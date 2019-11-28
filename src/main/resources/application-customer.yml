@@ -1,0 +1,56 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://cubeuibackend-v2.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com:5432/cubecustomerdb?schema=qui
+        username: springboot_customer
+        password: 2K4!2om^U3
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+
+    jpa:
+        openInView: false
+        show_sql: false
+        generate-ddl: true
+        hibernate:
+            ddl-auto: none
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+        properties:
+            # fixes Caused by: java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc.PgConnection.createClob() is not yet implemented.
+            hibernate.jdbc.lob.non_contextual_creation: true
+
+    mail:
+        host: smtp.office365.com
+        port: 587
+        username: email.sender@cubecorp.io
+        password: Welcome@cube123
+        properties:
+            mail.smtp:
+                auth: true
+                connectiontimeout: 30000
+                timeout: 30000
+                writetimeout: 5000
+                starttls.enable: true
+                # Change timeout if authentication/read exception is being thrown
+
+        frontend:
+            baseUrl: http://localhost:8080
+            loginEndpoint: /login
+            resetEndpoint: /reset
+            activationEndpoint: /api/account/activate
+
+security:
+    jwt:
+        token:
+            secret-key: "prod-secret"
+            expire-length: 604800
+logging:
+    level:
+        org.springframework.web: INFO
+        org.springframework.security: DEBUG
+        com.cubeui.backend: DEBUG
+    file: app.log
+
+cube:
+    server:
+        baseUrl: http://demo.prod.v2.cubecorp.io
