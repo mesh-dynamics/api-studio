@@ -219,6 +219,7 @@ class GoldenPopover extends React.Component {
             jiraErrorMessage: null, 
             showJiraError: false 
         });
+        this.props.hideTippy();
     }
 
     handleInputChange(event) {
