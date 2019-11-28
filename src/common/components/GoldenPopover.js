@@ -168,7 +168,7 @@ class GoldenPopover extends React.Component {
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
-            // On success, set the project list and set the 
+            // On success, set the project list and set the
             // default project id to first element on the list.
             this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
         }, err => {
@@ -177,15 +177,22 @@ class GoldenPopover extends React.Component {
             console.error(err);
         });
     }
-    
+
     openJiraLink() {
+<<<<<<< HEAD
         const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
         const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
-        
+
         window.open(issueUrl)
         hideTippy();
+=======
+        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
+
+        window.open(issueUrl)
+>>>>>>> staging
     }
-    
+
     refreshList() {
         const { apiPath, replayId, dispatch } = this.props;
 
@@ -212,13 +219,13 @@ class GoldenPopover extends React.Component {
     }
 
     hideGR() {
-        this.setState({ 
-            showRule: false, 
-            showGolden: false, 
-            showBug: false, 
-            showBugResponse: false, 
-            jiraErrorMessage: null, 
-            showJiraError: false 
+        this.setState({
+            showRule: false,
+            showGolden: false,
+            showBug: false,
+            showBugResponse: false,
+            jiraErrorMessage: null,
+            showJiraError: false
         });
     }
 
@@ -258,11 +265,11 @@ class GoldenPopover extends React.Component {
     }
 
     getDefaultDescription(cube) {
-        let description = 
-            `Issue Details: 
-                API Path: ${cube.pathResultsParams.path} 
+        let description =
+            `Issue Details:
+                API Path: ${cube.pathResultsParams.path}
                 JSON Path: ${this.props.jsonPath}
-                Analysis URL: ${window.location.href} 
+                Analysis URL: ${window.location.href}
             `
         return description;
     }
@@ -283,12 +290,15 @@ class GoldenPopover extends React.Component {
     render() {
         return (
             <React.Fragment>
-                <span 
-                    onClick={this.closeTippy} 
+<<<<<<< HEAD
+                <span
+                    onClick={this.closeTippy}
                     style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer"}}
                 >
                     <i className="fas fa-times" style={{ color: "#616060"}}></i>
                 </span>
+=======
+>>>>>>> staging
                 <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse && !this.state.showJiraError ? "text-center" : "hidden"}
                     style={{ color: "#333333" }}>
                     <div style={{ width: "300px", height: "100px", background: "#D5D5D5", padding: "20px" }}>
@@ -303,7 +313,7 @@ class GoldenPopover extends React.Component {
                                 <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : '', cursor: "pointer"}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
-                                    "fontSize": ".65em", 
+                                    "fontSize": ".65em",
                                     "position": "absolute",
                                     "marginLeft": "-6px",
                                     "marginTop": "-3px"
@@ -436,7 +446,7 @@ class GoldenPopover extends React.Component {
                             <table className="table table-striped" style={{ textAlign: "left" }}>
                                 <tbody>
                                     <tr>
-                                        <td>Summary</td>                                                     
+                                        <td>Summary</td>
                                         <td>
                                             {this.renderSummary()}
                                         </td>
@@ -450,7 +460,7 @@ class GoldenPopover extends React.Component {
                                         <td>Project</td>
                                         <td>
                                             {this.renderProjectList()}
-                                        </td>                                        
+                                        </td>
                                     </tr>
 
                                     <tr>
@@ -497,7 +507,7 @@ class GoldenPopover extends React.Component {
             </React.Fragment>
         );
     }
-    
+
     async getResponseTemplate() {
         let user = JSON.parse(localStorage.getItem('user'));
         let { cube, jsonPath } = this.props;
