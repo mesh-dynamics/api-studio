@@ -179,10 +179,11 @@ class GoldenPopover extends React.Component {
     }
     
     openJiraLink() {
-        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
         const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
         
         window.open(issueUrl)
+        hideTippy();
     }
     
     refreshList() {
@@ -219,7 +220,6 @@ class GoldenPopover extends React.Component {
             jiraErrorMessage: null, 
             showJiraError: false 
         });
-        this.props.hideTippy();
     }
 
     handleInputChange(event) {
