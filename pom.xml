@@ -23,6 +23,11 @@
 			<id>local-repo</id>
 			<url>${project.basedir}/WebContent/WEB-INF/lib/agent-1.0-SNAPSHOT.jar</url>
 		</repository>
+    <repository>
+          <id>github</id>
+          <name>GitHub OWNER Apache Maven Packages</name>
+          <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+    </repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -318,7 +323,11 @@
 		  <artifactId>httpclient</artifactId>
 		  <version>4.5.9</version>
 	  </dependency>
-
+    <dependency>
+    <groupId>io.cube</groupId>
+    <artifactId>agent</artifactId>
+    <version>1.0</version>
+  </dependency>
   </dependencies>
   <groupId>com.cube</groupId>
 </project>
