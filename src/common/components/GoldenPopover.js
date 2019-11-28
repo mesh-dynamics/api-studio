@@ -22,6 +22,7 @@ class GoldenPopover extends React.Component {
         this.getDefaultDescription = this.getDefaultDescription.bind(this)
         this.openJiraLink = this.openJiraLink.bind(this)
         this.refreshList = this.refreshList.bind(this)
+        this.closeTippy = this.closeTippy.bind(this)
 
         this.state = {
             showGolden: false,
@@ -218,7 +219,6 @@ class GoldenPopover extends React.Component {
             jiraErrorMessage: null, 
             showJiraError: false 
         });
-        this.props.hideTippy();
     }
 
     handleInputChange(event) {
@@ -266,6 +266,11 @@ class GoldenPopover extends React.Component {
         return description;
     }
 
+    closeTippy() {
+        this.hideGR();
+        this.props.hideTippy();
+    }
+
     renderDescription() {
         return (
             <div>
@@ -278,7 +283,7 @@ class GoldenPopover extends React.Component {
         return (
             <React.Fragment>
                 <span 
-                    onClick={this.hideGR} 
+                    onClick={this.closeTippy} 
                     style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer"}}
                 >
                     <i className="fas fa-times" style={{ color: "#616060"}}></i>
