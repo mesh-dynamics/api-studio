@@ -91,8 +91,6 @@ public class Constants {
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
-    public static final String LIMIT_FIELD = "limit";
-    public static final String OFFSET_FIELD = "offset";
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
     public static final String GOLDEN_NAME_FIELD = "golden_name";

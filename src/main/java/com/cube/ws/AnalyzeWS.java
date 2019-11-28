@@ -904,7 +904,6 @@ public class AnalyzeWS {
                                     @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
                                     MultivaluedMap<String, String> formParams) {
         try {
-
             Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
                 new Exception("Unable to find recording object for the given id"));
 
@@ -944,7 +943,6 @@ public class AnalyzeWS {
             String newCollectionName = UUID.randomUUID().toString();
             boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
-
 
 
             Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));

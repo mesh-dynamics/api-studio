@@ -5,7 +5,6 @@ package com.cube.dao;
 
 import static com.cube.dao.Event.RunType.Record;
 
-import com.cube.utils.Constants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -15,6 +14,10 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,10 +26,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 // TODO: Event redesign: This can be removed
 public class Request extends RRBase {
