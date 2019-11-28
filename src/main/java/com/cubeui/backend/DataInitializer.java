@@ -1540,7 +1540,7 @@ public class DataInitializer implements CommandLineRunner {
             intermediateService.setTestConfig(testConfigRepository.findById(99L).get());
             testIntermediateServiceRepository.save(intermediateService);
         }
-
+      
         // Jira User Credentials
         if(!jiraUserCredentialsRepository.existsById(170L)) {
             JiraUserCredentials jiraUserCredentials = new JiraUserCredentials();
