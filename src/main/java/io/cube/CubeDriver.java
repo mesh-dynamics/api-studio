@@ -1,8 +1,5 @@
 package io.cube;
 
-import com.google.gson.reflect.TypeToken;
-import io.cube.agent.FnKey;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.Connection;
@@ -15,6 +12,10 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import com.google.gson.reflect.TypeToken;
+
+import io.cube.agent.FnKey;
 
 public class CubeDriver implements Driver {
 

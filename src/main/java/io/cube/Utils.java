@@ -1,18 +1,20 @@
 package io.cube;
 
+import java.lang.reflect.Type;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.reflect.TypeToken;
+
 import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.lang.reflect.Type;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Optional;
 
 /*
  * Created by IntelliJ IDEA.

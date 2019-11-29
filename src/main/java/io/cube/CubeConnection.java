@@ -1,8 +1,5 @@
 package io.cube;
 
-import com.google.gson.reflect.TypeToken;
-import io.cube.agent.FnKey;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.Array;
@@ -25,6 +22,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+
+import com.google.gson.reflect.TypeToken;
+
+import io.cube.agent.FnKey;
 
 public class CubeConnection implements Connection {
     private static Type integerType = new TypeToken<Integer>() {}.getType();

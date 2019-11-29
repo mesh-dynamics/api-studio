@@ -1,10 +1,9 @@
 package io.cube;
 
-import io.cube.agent.FnKey;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
@@ -24,9 +23,14 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.Optional;
+
+import com.google.gson.reflect.TypeToken;
+
+import io.cube.agent.FnKey;
 
 public class CubeResultSet implements ResultSet {
-
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final ResultSet resultSet;
     private final CubeStatement cubeStatement;
     private final Config config;
@@ -92,8 +96,6 @@ public class CubeResultSet implements ResultSet {
     private FnKey ruFnKey;
     private FnKey riFnKey;
     private FnKey rdFnKey;
-    private FnKey gobFnKey;
-    private FnKey gobjFnKey;
     private FnKey guFnKey;
     private FnKey gurFnKey;
     private FnKey ghFnKey;
@@ -101,6 +103,7 @@ public class CubeResultSet implements ResultSet {
     private FnKey gnscFnKey;
     private FnKey abFnKey;
     private FnKey reFnKey;
+    private FnKey gmdFnkey;
 
     public static class Builder {
         private final Config config;
@@ -621,8 +624,24 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        //TODO
-        return null;
+        if (null == gmdFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gmdFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
+                    config.commonConfig.serviceName, method);
+        }
+
+        if (config.intentResolver.isIntentToMock()) {
+            Object retVal = Utils.mock(config, gmdFnkey, Optional.of(integerType), this.resultSetInstanceId);
+            CubeResultSetMetaData mockMetadata = new CubeResultSetMetaData(this, config, (int) retVal);
+            return mockMetadata;
+        }
+
+        CubeResultSetMetaData metaData = new CubeResultSetMetaData(resultSet.getMetaData(), this, config);
+        if (config.intentResolver.isIntentToRecord()) {
+            Utils.record(metaData.getResultSetMetaData(), config, gmdFnkey, this.resultSetInstanceId);
+        }
+
+        return metaData;
     }
 
     @Override

@@ -1,13 +1,13 @@
 package io.cube;
 
-import io.cube.agent.FnKey;
-
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+
+import io.cube.agent.FnKey;
 
 public class CubeDatabaseMetaData implements DatabaseMetaData {
     private final DatabaseMetaData metaData;

@@ -1,8 +1,5 @@
 package io.cube;
 
-import com.google.gson.reflect.TypeToken;
-import io.cube.agent.FnKey;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.Connection;
@@ -11,6 +8,10 @@ import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.Optional;
+
+import com.google.gson.reflect.TypeToken;
+
+import io.cube.agent.FnKey;
 
 public class CubeStatement implements Statement {
 

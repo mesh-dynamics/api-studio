@@ -1,7 +1,5 @@
 package io.cube;
 
-import io.cube.agent.FnKey;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
@@ -21,6 +19,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+
+import io.cube.agent.FnKey;
 
 public class CubeCallableStatement extends CubePreparedStatement implements CallableStatement {
 
