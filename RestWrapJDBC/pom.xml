@@ -1,8 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>RestWrapJDBC</artifactId>
-  <packaging>war</packaging>
-  <name>RestWrapJDBC</name>
+  <artifactId>ThriftWrapJDBC</artifactId>
+  <packaging>jar</packaging>
+  <name>ThriftWrapJDBC</name>
 	<properties>
 		<version.java>11</version.java>
 		<version.jersey>2.27</version.jersey>
@@ -40,6 +40,7 @@
 				<target>${version.java}</target>
 			</configuration>
 		</plugin>
+			<!--
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.2.1</version>
@@ -47,8 +48,33 @@
           <warSourceDirectory>WebContent</warSourceDirectory>
         </configuration>
       </plugin>
+      -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>com.cubeio.thriftwrapjdbc.ThriftWrapJDBCServer</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+
       <!-- Copy Maven dependencies into target/lib/ -->
-      <plugin>
+
+			<plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
@@ -64,6 +90,8 @@
           </execution>
         </executions>
       </plugin>
+
+
       <plugin>
 		  <groupId>com.spotify</groupId>
 		  <artifactId>dockerfile-maven-plugin</artifactId>
@@ -78,11 +106,13 @@
 		    </execution>
 		  </executions>
 		  <configuration>
-		    <repository>cubeiocorp/restwrapjdbc</repository>
+		    <repository>cubeiocorp/thrift-wrap-jdbc</repository>
 		    <tag>${docker.tag}</tag>
+				<!--
 		    <buildArgs>
 		      <WAR_FILE>${project.build.finalName}.war</WAR_FILE>
 		    </buildArgs>
+		    -->
 		  </configuration>
 		    <!-- <resources>
 		      <resource>
@@ -201,7 +231,24 @@
         <artifactId>activation</artifactId>
         <version>1.1.1</version>
     </dependency>
-</dependencies>
+	 <dependency>
+		 <groupId>org.apache.thrift</groupId>
+		 <artifactId>libthrift</artifactId>
+		 <version>0.12.0</version>
+	 </dependency>
+	 <dependency>
+		 <groupId>io.cube</groupId>
+		 <artifactId>agent</artifactId>
+		 <version>1.0-SNAPSHOT</version>
+		 <scope>system</scope>
+		 <systemPath>${basedir}/resources/agent-1.0-SNAPSHOT-jar-with-dependencies.jar</systemPath>
+	 </dependency>
+
+ </dependencies>
+
+
+
+	<!-- https://mvnrepository.com/artifact/org.apache.thrift/libthrift -->
 
 
 </project>

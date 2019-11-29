@@ -18,13 +18,13 @@ services:
     #build: ./reviews/reviews-wlpcfg
     expose:
       - 9080
-  restwrapjdbc:
-    image: cubeiocorp/restwrapjdbc:V1-SNAPSHOT
-    container_name: restwrapjdbc
+  thriftwrapjdbc:
+    image: cubeiocorp/thrift-wrap-jdbc:V1-SNAPSHOT
+    container_name: thriftwrapjdbc
     #build: ./RestWrapJDBC
     expose:
-      - 8080
-  mirest:
+      - 9090
+  mithrift:
     image: cubeiocorp/sample-apps-mithrift:V1-SNAPSHOT
     container_name: mithrift
     build: ./MIRest
