@@ -9,6 +9,8 @@ package com.cube.ws;
 import com.cube.dao.ReqRespStore;
 import java.util.Map;
 import java.util.Optional;
+
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /*
@@ -37,6 +39,7 @@ public class WSUtils {
                 "replayId", replayId.orElse("None"),
                 "userId", userId.orElse("None"));
             return Response.status(Response.Status.CONFLICT)
+                .type(MediaType.APPLICATION_JSON)
                 .entity(respObj)
                 .build();
         });
