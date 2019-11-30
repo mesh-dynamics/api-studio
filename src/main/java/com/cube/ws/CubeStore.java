@@ -5,7 +5,6 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
-import static com.cube.dao.RRBase.METAPATHFIELD;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -59,13 +58,11 @@ import com.cube.dao.Event.EventBuilder.InvalidEventException;
 import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
 import com.cube.dao.EventQuery;
-import com.cube.dao.RRBase;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
-import com.cube.dao.Request;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
@@ -89,37 +86,10 @@ public class CubeStore {
     }
 
 
-	@POST
-	@Path("/req")
-    @Consumes({MediaType.APPLICATION_JSON})
-    // TODO: Event redesign cleanup: This can be removed
-    public Response storereq(Request req) {
-        setCollection(req);
-        if (rrstore.save(req)) {
-            return Response.ok().build();
-        } else {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store request").build();
-        }
-    }
-
-	@POST
-	@Path("/resp")
-    @Consumes({MediaType.APPLICATION_JSON})
-    // TODO: Event redesign cleanup: This can be removed
-    public Response storeresp(com.cube.dao.Response resp) {
-        setCollection(resp);
-        if (rrstore.save(resp)) {
-            return Response.ok().build();
-        } else {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Not able to store response").build();
-        }
-    }
-
 
 	@POST
 	@Path("/rr/{var:.*}")
     @Consumes({MediaType.APPLICATION_JSON})
-    // TODO: Event redesign cleanup: This can be removed
     public Response storerr(@Context UriInfo ui,
                             @PathParam("var") String path,
                             ReqRespStore.ReqResp rr) {
@@ -132,7 +102,8 @@ public class CubeStore {
 
     }
 
-    private Optional<String> storeSingleReqResp(ReqRespStore.ReqResp rr, String path, MultivaluedMap<String, String> queryParams) {
+    private Optional<String> storeSingleReqResp(ReqRespStore.ReqResp rr, String path,
+                                                MultivaluedMap<String, String> queryParams) {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
             hdrs.add(kv.getKey(), kv.getValue());
@@ -150,16 +121,14 @@ public class CubeStore {
         //if (inpcollection.isEmpty()) {
         //	inpcollection = Optional.ofNullable(hdrs.getFirst(Constants.CUBE_REPLAYID_HDRNAME));
         //}
-        Optional<Instant> timestamp = Optional.ofNullable(meta.getFirst("timestamp")).map(v -> {
-            Instant t = null;
-            try {
-                t = Instant.parse(v);
-            } catch (Exception e) {
-                LOGGER.error(String.format("Expecting time stamp, got %s", v));
-                t = Instant.now();
-            }
-            return t;
-        });
+        Instant timestamp = Optional.ofNullable(meta.getFirst("timestamp"))
+            .flatMap(Utils::strToTimeStamp)
+            .orElseGet(() -> {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Timestamp missing in event, using current time")));
+                return Instant.now();
+            });
+
         Optional<Event.RunType> runType = Optional.ofNullable(meta.getFirst(Constants.RUN_TYPE_FIELD)).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
         Optional<String> customerId = Optional.ofNullable(meta.getFirst(Constants.CUSTOMER_ID_FIELD));
         Optional<String> app = Optional.ofNullable(meta.getFirst(Constants.APP_FIELD));
@@ -196,7 +165,6 @@ public class CubeStore {
             if (t.equals(Constants.REQUEST)) {
                 Optional<String> method = Optional.ofNullable(meta.getFirst("method"));
                 return method.map(mval -> {
-                    Request req = new Request(path, rid, queryParams, formParams, meta, hdrs, mval, rr.body, collection, timestamp, runType, customerId, app);
 
                     // create Event object from Request
                     // fetch the template version, create template key and get a request comparator
@@ -223,13 +191,19 @@ public class CubeStore {
 
                     Event requestEvent = null;
                     try {
-                        // todo: consider creating the Event object directly instead of creating a Request
-                        requestEvent = req.toEvent(requestComparator, config);
+                        requestEvent = Utils.createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
+                            hdrs, mval, rr.body, collection, timestamp, runType, customerId, app, config, requestComparator);
                     } catch (JsonProcessingException e) {
-                        LOGGER.error("error in processing JSON: " + e);
+                        LOGGER.error(new ObjectMessage(Map.of(
+                            Constants.MESSAGE, "error in processing JSON",
+                            Constants.ERROR, e.getMessage()
+                        )));
                         return Optional.of("error in processing JSON");
                     } catch (Event.EventBuilder.InvalidEventException e) {
-                        LOGGER.error("error converting Request to Event: " + e);
+                        LOGGER.error(new ObjectMessage(Map.of(
+                            Constants.MESSAGE, "Event fields are invalid",
+                            Constants.ERROR, e.getMessage()
+                        )));
                         return Optional.of("error converting Request to Event");
                     }
 
@@ -250,17 +224,15 @@ public class CubeStore {
                     }
                 });
                 return s.map(sval -> {
-                    String reqApiPath = Optional.ofNullable(meta.getFirst(METAPATHFIELD)).orElse("");
-                    com.cube.dao.Response resp = new com.cube.dao.Response(rid, sval, meta, hdrs, rr.body, collection
-                        , timestamp, runType, customerId, app, reqApiPath);
+                    String reqApiPath = Optional.ofNullable(meta.getFirst(Constants.METAPATHFIELD)).orElse("");
                     Event responseEvent;
                     try {
-                        // todo: consider creating the Event object directly instead of creating a Response
-                        responseEvent = resp.toEvent(config, reqApiPath);
+                        responseEvent = Utils.createHTTPResponseEvent(reqApiPath, rid, sval, meta, hdrs, rr.body,
+                            collection, timestamp, runType, customerId, app, config);
                     } catch (JsonProcessingException e) {
                         LOGGER.error("error in processing JSON: " + e);
                         return Optional.of("error in processing JSON");
-                    } catch (Event.EventBuilder.InvalidEventException e) {
+                    } catch (InvalidEventException e) {
                         LOGGER.error("error converting Response to Event: " + e);
                         return Optional.of("error converting Response to Event");
                     }
@@ -343,7 +315,7 @@ public class CubeStore {
         ).orElse(Response.serverError().entity("Content type not specified").build());
     }
 
-    // TODO: Event redesign cleanup: This can be removed
+    // Event redesign cleanup: This can be removed - will keep for now
     private Optional<String> storeFnReqResp(String fnReqResponseString) throws Exception {
         FnReqResponse fnReqResponse = jsonMapper.readValue(fnReqResponseString, FnReqResponse.class);
         LOGGER.info("STORING FUNCTION  :: " + fnReqResponse.name);
@@ -363,7 +335,7 @@ public class CubeStore {
 	@POST
     @Path("/fr")
     @Consumes(MediaType.TEXT_PLAIN)
-    // TODO: Event redesign cleanup: This can be removed
+    // Event redesign cleanup: This can be removed - will keep for now
     public Response storeFunc(String functionReqRespString /* @PathParam("customer") String customer,
                               @PathParam("instance") String instance, @PathParam("app") String app,
                               @PathParam("service") String service*/) {
@@ -569,7 +541,7 @@ public class CubeStore {
 
     @POST
     @Path("/frbatch")
-    // TODO: Event redesign cleanup: This can be removed
+    // Event redesign cleanup: This can be removed -- keep for now
     public Response storeFuncBatch(@Context UriInfo uriInfo , @Context HttpHeaders headers,
                                    byte[] messageBytes) {
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
@@ -1076,15 +1048,6 @@ public class CubeStore {
 	ObjectMapper jsonMapper;
 	Config config;
 
-	/**
-	 * @param rr
-	 *
-	 * Set the collection field, if it is not already set
-	 */
-	private void setCollection(RRBase rr) {
-		rr.collection = getCurrentCollectionIfEmpty(rr.collection, rr.customerId,
-				rr.app, rr.getInstance());
-	}
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
 			Optional<String> customerId, Optional<String> app, Optional<String> instanceId) {

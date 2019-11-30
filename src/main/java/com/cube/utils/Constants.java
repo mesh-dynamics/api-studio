@@ -104,4 +104,7 @@ public class Constants {
     public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
     public static final String TEMPLATE_VERSION_FIELD = "version";
 
+    // meta fields
+    public static final String METAPATHFIELD = "apiPath"; // Used for responses
+
 }
