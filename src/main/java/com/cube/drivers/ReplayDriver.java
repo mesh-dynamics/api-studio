@@ -212,8 +212,7 @@ public class ReplayDriver  {
                 } catch (Exception e) {
                     // encode can throw UnsupportedEncodingException
                     LOGGER.error(new ObjectMessage(Map.of(
-                        Constants.MESSAGE, "Skipping request. Exception in creating HTTP request ",
-                        Constants.ERROR, e.getMessage()
+                        Constants.MESSAGE, "Skipping request. Exception in creating HTTP request "
                     )), e);
                 }
             });

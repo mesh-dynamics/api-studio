@@ -3,8 +3,6 @@
  */
 package com.cube.core;
 
-import static com.cube.dao.Event.RunType.Record;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -28,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -107,7 +104,7 @@ public class Utils {
 
     public static Optional<Instant> strToTimeStamp(String val) {
         try {
-            return Optional.ofNullable(Instant.parse(val));
+            return Optional.of(Instant.parse(val)); // parse cannot return null
         } catch (Exception e) {
             return Optional.empty();
         }
@@ -304,7 +301,7 @@ public class Utils {
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-        Optional<String> traceId = getFirst(hdrs, Config.DEFAULT_TRACE_FIELD);
+        Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
@@ -324,7 +321,7 @@ public class Utils {
     }
 
     public static HTTPRequestPayload getRequestPayload(Event event, Config config) throws IOException {
-        String payload = event.getPayloadAsJsonString(Event.EventType.HTTPRequest, config);
+        String payload = event.getPayloadAsJsonString(config);
         return config.jsonMapper.readValue(payload, HTTPRequestPayload.class);
     }
 
@@ -344,7 +341,7 @@ public class Utils {
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-        Optional<String> traceId = getFirst(meta, Config.DEFAULT_TRACE_FIELD);
+        Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
@@ -362,7 +359,7 @@ public class Utils {
     }
 
     public static HTTPResponsePayload getResponsePayload(Event event, Config config) throws IOException {
-        String payload = event.getPayloadAsJsonString(Event.EventType.HTTPResponse, config);
+        String payload = event.getPayloadAsJsonString(config);
         return config.jsonMapper.readValue(payload, HTTPResponsePayload.class);
     }
 

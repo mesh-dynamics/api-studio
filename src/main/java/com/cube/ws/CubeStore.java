@@ -224,7 +224,8 @@ public class CubeStore {
                     }
                 });
                 return s.map(sval -> {
-                    String reqApiPath = Optional.ofNullable(meta.getFirst(Constants.METAPATHFIELD)).orElse("");
+                    // pick apiPath from meta fields
+                    String reqApiPath = Optional.ofNullable(meta.getFirst(Constants.API_PATH_FIELD)).orElse("");
                     Event responseEvent;
                     try {
                         responseEvent = Utils.createHTTPResponseEvent(reqApiPath, rid, sval, meta, hdrs, rr.body,

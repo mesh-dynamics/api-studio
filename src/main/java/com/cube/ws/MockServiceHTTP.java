@@ -35,7 +35,6 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.CommonUtils;
 import io.cube.agent.UtilException;
 
 import com.cube.agent.FnReqResponse;
@@ -562,7 +561,7 @@ public class MockServiceHTTP {
 	private ObjectMapper jsonMapper;
 	private ComparatorCache comparatorCache;
 	private ReplayResultCache replayResultCache;
-	private static String tracefield = Config.DEFAULT_TRACE_FIELD;
+	private static String tracefield = Constants.DEFAULT_TRACE_FIELD;
 	private final Config config;
 
 

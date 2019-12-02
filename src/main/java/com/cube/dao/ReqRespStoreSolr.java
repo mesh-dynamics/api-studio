@@ -16,16 +16,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -724,12 +721,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String FPARAMS = "fp";
     private static final String META = "meta";
     private static final String HDR = "hdr";
-    private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
-    private static final String HDRSPANF = HDR + "_"  + Config.DEFAULT_SPAN_FIELD + STRINGSET_SUFFIX;
-    private static final String HDRPARENTSPANF = HDR + "_"  + Config.DEFAULT_PARENT_SPAN_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRTRACEF = HDR + "_"  + Constants.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRSPANF = HDR + "_"  + Constants.DEFAULT_SPAN_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRPARENTSPANF = HDR + "_"  + Constants.DEFAULT_PARENT_SPAN_FIELD + STRINGSET_SUFFIX;
     private static final String METASERVICEF = META + "_service" + STRINGSET_SUFFIX;
     private static final String METAREQID = META + "_c" + "-request-id" + STRINGSET_SUFFIX;
-    private static final String METATRACEID = META + "_" + Config.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
+    private static final String METATRACEID = META + "_" + Constants.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
