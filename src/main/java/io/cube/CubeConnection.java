@@ -379,8 +379,11 @@ public class CubeConnection implements Connection {
 
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+
+        return connection.getTypeMap();
     }
 
     @Override
@@ -602,26 +605,34 @@ public class CubeConnection implements Connection {
 
     @Override
     public Clob createClob() throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.createClob();
     }
 
     @Override
     public Blob createBlob() throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.createBlob();
     }
 
     @Override
     public NClob createNClob() throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.createNClob();
     }
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.createSQLXML();
     }
 
     @Override
@@ -673,14 +684,18 @@ public class CubeConnection implements Connection {
 
     @Override
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.createArrayOf(typeName, elements);
     }
 
     @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.createStruct(typeName, attributes);
     }
 
     @Override
@@ -728,13 +743,17 @@ public class CubeConnection implements Connection {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.unwrap(iface);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        //TODO
-        return false;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return connection.isWrapperFor(iface);
     }
 }

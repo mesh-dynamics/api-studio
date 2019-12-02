@@ -11,6 +11,7 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     private final CubeResultSet cubeResultSet;
     private final Config config;
     private final int resultSetMetaDataInstanceId;
+    private final CubePreparedStatement cubePreparedStatement;
     private FnKey gccFnKey;
     private FnKey iaicFnKey;
     private FnKey icscFnKey;
@@ -35,6 +36,7 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
 
     public CubeResultSetMetaData (CubeResultSet cubeResultSet, Config config, int resultSetMetaDataInstanceId) {
         this.resultSetMetaData = null;
+        this.cubePreparedStatement = null;
         this.cubeResultSet = cubeResultSet;
         this.config = config;
         this.resultSetMetaDataInstanceId = resultSetMetaDataInstanceId;
@@ -43,6 +45,23 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public CubeResultSetMetaData (ResultSetMetaData resultSetMetaData, CubeResultSet cubeResultSet, Config config) {
         this.resultSetMetaData = resultSetMetaData;
         this.cubeResultSet = cubeResultSet;
+        this.cubePreparedStatement = null;
+        this.config = config;
+        this.resultSetMetaDataInstanceId = System.identityHashCode(this);
+    }
+
+    public CubeResultSetMetaData (CubePreparedStatement cubePreparedStatement, Config config, int resultSetMetaDataInstanceId) {
+        this.resultSetMetaData = null;
+        this.cubeResultSet = null;
+        this.cubePreparedStatement = cubePreparedStatement;
+        this.config = config;
+        this.resultSetMetaDataInstanceId = resultSetMetaDataInstanceId;
+    }
+
+    public CubeResultSetMetaData (ResultSetMetaData resultSetMetaData, CubePreparedStatement cubePreparedStatement, Config config) {
+        this.resultSetMetaData = resultSetMetaData;
+        this.cubeResultSet = null;
+        this.cubePreparedStatement = cubePreparedStatement;
         this.config = config;
         this.resultSetMetaDataInstanceId = System.identityHashCode(this);
     }
@@ -305,13 +324,17 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSetMetaData.unwrap(iface);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        //TODO
-        return false;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSetMetaData.isWrapperFor(iface);
     }
 }
