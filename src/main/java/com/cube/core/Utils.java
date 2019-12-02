@@ -3,6 +3,8 @@
  */
 package com.cube.core;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -17,12 +19,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -31,6 +36,8 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.Event;
+import com.cube.dao.HTTPRequestPayload;
+import com.cube.dao.HTTPResponsePayload;
 import com.cube.golden.TemplateSet;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -92,6 +99,14 @@ public class Utils {
     public static Optional<Long> strToLong(String longStr) {
         try {
             return Optional.ofNullable(longStr).map(Long::valueOf);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<Instant> strToTimeStamp(String val) {
+        try {
+            return Optional.of(Instant.parse(val)); // parse cannot return null
         } catch (Exception e) {
             return Optional.empty();
         }
@@ -276,6 +291,88 @@ public class Utils {
         params.put(Constants.THRIFT_METHOD_NAME, methodName);
         params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
         return params;
+    }
+
+    public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap, String fieldname) {
+        return Optional.ofNullable(fieldMap.getFirst(fieldname));
+    }
+
+    public static Event createHTTPRequestEvent(String apiPath, Optional<String> reqId,
+                                               MultivaluedMap<String, String> queryParams,
+                                               MultivaluedMap<String, String> formParams,
+                                               MultivaluedMap<String, String> meta,
+                                               MultivaluedMap<String, String> hdrs, String method, String body,
+                                               Optional<String> collection, Instant timestamp,
+                                               Optional<Event.RunType> runType, Optional<String> customerId,
+                                               Optional<String> app,
+                                               Config config,
+                                               Comparator comparator) throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
+        HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method, body);
+
+        String payloadStr = config.jsonMapper.writeValueAsString(httpRequestPayload);
+
+        Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
+        Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
+        Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
+
+        if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
+            Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
+                service.get(), instance.orElse("NA"), collection.get(),
+                traceId.orElse("NA"), runType.get(), timestamp,
+                reqId.orElse("NA"),
+                apiPath, Event.EventType.HTTPRequest);
+            eventBuilder.setRawPayloadString(payloadStr);
+            Event event = eventBuilder.createEvent();
+            event.parseAndSetKey(config, comparator.getCompareTemplate());
+
+            return event;
+        } else {
+            throw new Event.EventBuilder.InvalidEventException();
+        }
+
+    }
+
+    public static HTTPRequestPayload getRequestPayload(Event event, Config config) throws IOException {
+        String payload = event.getPayloadAsJsonString(config);
+        return config.jsonMapper.readValue(payload, HTTPRequestPayload.class);
+    }
+
+
+    public static Event createHTTPResponseEvent(String apiPath, Optional<String> reqId,
+                                                Integer status,
+                                                MultivaluedMap<String, String> meta,
+                                                MultivaluedMap<String, String> hdrs,
+                                                String body,
+                                                Optional<String> collection, Instant timestamp,
+                                                Optional<Event.RunType> runType, Optional<String> customerId,
+                                                Optional<String> app,
+                                                Config config) throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
+        HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status, body);
+
+        String payloadStr = config.jsonMapper.writeValueAsString(httpResponsePayload);
+
+        Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
+        Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
+        Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+
+        if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
+            Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
+                service.get(), instance.orElse("NA"), collection.get(),
+                traceId.orElse("NA"), runType.get(), timestamp,
+                reqId.orElse("NA"),
+                apiPath, Event.EventType.HTTPResponse);
+            eventBuilder.setRawPayloadString(payloadStr);
+            Event event = eventBuilder.createEvent();
+            return event;
+        } else {
+            throw new Event.EventBuilder.InvalidEventException();
+        }
+
+    }
+
+    public static HTTPResponsePayload getResponsePayload(Event event, Config config) throws IOException {
+        String payload = event.getPayloadAsJsonString(config);
+        return config.jsonMapper.readValue(payload, HTTPResponsePayload.class);
     }
 
 }

@@ -222,15 +222,10 @@ public class Replay {
 		return String.format("%s-%s", collection, UUID.randomUUID().toString());
 	}
 
-	public Pair<Stream<List<Request>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore,
+	public Pair<Stream<List<Event>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore,
                                                                           ObjectMapper jsonMapper) {
-        Result<Request> requests = mapEventToRequestResult(getEventResult(rrstore), jsonMapper);
+        Result<Event> requests = getEventResult(rrstore);
         return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
-    }
-
-    private Result<Request> mapEventToRequestResult(Result<Event> events, ObjectMapper jsonMapper) {
-        return new Result<>(events.getObjects()
-                .flatMap(event -> Request.fromEvent(event, jsonMapper).stream()), events.numResults, events.numFound);
     }
 
     private Result<Event> getEventResult(ReqRespStore rrstore) {
@@ -239,23 +234,6 @@ public class Replay {
         return rrstore.getEvents(eventQuery);
     }
 
-    /**
-	 * @return
-	 */
-    // TODO: Event redesign - remove this
-    /*
-	@JsonIgnore
-	public Result<Request> getRequests(ReqRespStore rrstore) {
-		Result<Request> res = rrstore.getRequests(customerId, app, collection, reqIds, paths, Event.RunType.Record);
-		return res;
-	}
-
-	@JsonIgnore
-	public Pair<Stream<List<Request>>, Long> getRequestBatches(int batchSize, ReqRespStore rrstore) {
-		Result<Request> requests = getRequests(rrstore);
-		return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
-	}
-    */
 
     @JsonIgnore
     public Pair<Stream<List<Event>>, Long> getRequestEventBatches(int batchSize, ReqRespStore rrstore) {

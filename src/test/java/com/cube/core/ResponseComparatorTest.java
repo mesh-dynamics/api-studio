@@ -29,7 +29,7 @@ import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder;
-import com.cube.dao.Response;
+import com.cube.dao.HTTPResponsePayload;
 import com.cube.ws.Config;
 
 public class ResponseComparatorTest {
@@ -96,8 +96,8 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
-        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
+        Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
+        Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
 //        Optional<Response> response1 = config.rrstore.getResponseEvent(res1);
 //        Optional<Response> response2 = config.rrstore.getResponseEvent(res2);
         compareTest(testData, response1, response2);
@@ -115,8 +115,8 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
-        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
+        Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
+        Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
         compareTest(testData, response1, response2);
     }
 
@@ -132,9 +132,9 @@ public class ResponseComparatorTest {
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
-        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
-        response2.hdrs.putSingle("content-type",response2.hdrs.getFirst("content-type") + "K");
+        Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
+        Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
+        response2 = updateRequestEventHdr(response2, "content-type", "K");
         compareTest(testData, response1, response2);
     }
 
@@ -145,13 +145,12 @@ public class ResponseComparatorTest {
      */
     @Test
     @DisplayName("Same Response body test: Positive")
-    final void sameResponseBodyPositiveTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException {
+    final void sameResponseBodyPositiveTest() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("sameResponseBodyPositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
-        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
+        Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
+        Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
         compareTest(testData, response1, response2);
     }
 
@@ -166,14 +165,13 @@ public class ResponseComparatorTest {
         throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("sameResponseBodyNegative");
         String res1 = testData.get("res1").toString();
-        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
-        JSONObject body = new JSONObject(response1.body);
+        Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
+        JSONObject body = new JSONObject(Utils.getResponsePayload(response1, config).body);
         body.put("year", 1000);
         body.put("type", "softcopy");
         body.put("pages", 3.14);
-        Response response2 = new Response(response1.reqId, response1.status, response1.meta, response1.hdrs,
-            body.toString(), response1.collection, response1.timestamp, response1.runType, response1.customerId,
-            response1.app, response1.apiPath);
+
+        Event response2 = updateResponseEventBody(response1, body.toString());
         compareTest(testData, response1, response2);
     }
 
@@ -184,22 +182,23 @@ public class ResponseComparatorTest {
      */
     @Test
     @DisplayName("Different response Body test")
-    final void differentResponseBodyTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException {
+    final void differentResponseBodyTest() throws IOException, JSONException {
         JSONObject testData = object.getJSONObject("differentResponseBody");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
-        Response response1 = mapper.readValue(object.getJSONObject(res1).toString(), Response.class);
-        Response response2 = mapper.readValue(object.getJSONObject(res2).toString(), Response.class);
+        Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
+        Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
         compareTest(testData, response1, response2);
     }
 
-    private void compareTest(JSONObject testData, Response response1, Response response2)
-        throws JsonProcessingException, JSONException, EventBuilder.InvalidEventException {
+
+
+    private void compareTest(JSONObject testData, Event event1, Event event2) throws JsonProcessingException,
+        JSONException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
-        System.out.println(mapper.writeValueAsString(response1));
-        System.out.println(mapper.writeValueAsString(response2));
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event1));
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event2));
         CompareTemplate template = new CompareTemplate();
         for (int i = 0; i < rules.length(); i++) {
             JSONObject ruleObj = rules.getJSONObject(i);
@@ -216,8 +215,6 @@ public class ResponseComparatorTest {
         }
 
         Comparator comparator = new JsonComparator(template, mapper);
-        Event event1 = response1.toEvent(config, "/dummyApiPath");
-        Event event2 = response2.toEvent(config, "/dummyApiPath");
         Match m = comparator.compare(event1.getPayload(config),
             event2.getPayload(config));
 
@@ -225,30 +222,30 @@ public class ResponseComparatorTest {
         JSONAssert.assertEquals(expected, mjson, false);
     }
 
-    /**
-     * Test method for .
-     * @throws JsonProcessingException
-     * @throws JSONException
-     */
-//    @Test
-//    @DisplayName("Default comparison test")
-//    final void defaultComparisonTest() throws IOException, JSONException {
-//        String[] idList = {
-//            "72471111-e096-4494-942e-5fa942c07e90",
-//            "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
-//            "movieinfod6c58e4e-f7cf-448f-acc7-0b1258125577",
-//            "movieinfob0573202-5212-4016-ba9d-d2d295812959",
-//            "movieinfo688542ce-d62a-4115-8274-7cadc900389d",
-//            "movieinfoef243baf-1e76-494a-b66a-fcc8c8aea97a",
-//            "movieinfoa6b2c925-fca3-4397-8cd9-2ab0c2143f5c",
-//            "restwrapjdbc11939c73-78cd-489b-971f-50a073bc1487",
-//            "restwrapjdbce6acccf2-cf09-499f-a7dc-d6b4a11381ba",
-//            "restwrapjdbc6467c26f-2b7e-4441-a1f2-3f6d6707e4db"
-//        };
-//        for (String id: idList){
-//            Optional<Response> response = config.rrstore.getResponseEvent(id);
-//            System.out.println(response.get().body);
-//        }
-//    }
+    private Event updateRequestEventHdr(Event event, String hdrField, String val) throws IOException, EventBuilder.InvalidEventException {
+        HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
+        responsePayload.hdrs.putSingle(hdrField, val);
+
+        return cloneWithPayload(event, responsePayload);
+
+    }
+
+    private Event updateResponseEventBody(Event event, String body) throws IOException,
+        EventBuilder.InvalidEventException {
+        HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
+
+        HTTPResponsePayload newPayload = new HTTPResponsePayload(responsePayload.hdrs, responsePayload.status, body);
+        return cloneWithPayload(event, newPayload);
+
+    }
+
+    private Event cloneWithPayload(Event event, HTTPResponsePayload payload) throws JsonProcessingException, EventBuilder.InvalidEventException {
+        return new Event.EventBuilder(event.customerId, event.app, event.service, event.instanceId,
+            event.getCollection(), event.traceId, event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
+            .setRawPayloadString(mapper.writeValueAsString(payload))
+            .createEvent();
+    }
+
+
 
 }
