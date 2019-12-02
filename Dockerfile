@@ -7,6 +7,8 @@ COPY pom.xml ./pom.xml
 RUN mvn verify clean --fail-never
 COPY src ./src
 COPY WebContent ./WebContent
+#Add settings.xml file for github auth
+RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>e7d95f942f6d4f68f23245ad7ddcdb02cafb99a4</password></server></servers></settings>" > ~/.m2/settings.xml
 RUN mvn package
 #########################################
 ####Copy build to production image####

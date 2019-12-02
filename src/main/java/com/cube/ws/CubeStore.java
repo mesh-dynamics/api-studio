@@ -13,7 +13,6 @@ import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,8 +34,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import com.cube.dao.Recording.RecordingSaveFailureException;
-import com.cube.utils.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -66,6 +63,7 @@ import com.cube.dao.Event.RunType;
 import com.cube.dao.EventQuery;
 import com.cube.dao.RRBase;
 import com.cube.dao.Recording;
+import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
@@ -946,7 +944,6 @@ public class CubeStore {
         Optional<String> app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
         Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst(Constants.STATUS))
             .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-
 
         List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status).collect(Collectors.toList());
 

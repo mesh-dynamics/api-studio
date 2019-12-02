@@ -22,7 +22,7 @@ public class Constants {
     public static final String EXCEPTION_STACK = "exceptionStack";
     public static final String REQ_MATCH_TYPE = "reqMatchType";
     public static final String RESP_MATCH_TYPE = "respMatchType";
-    public static final String INCLUDE_DIFF = "diffInclude";
+    public static final String INCLUDE_DIFF = "includeDiff";
 
     //MESSAGE KEYS
     public static final String CLASS_NAME = "className";
@@ -36,6 +36,7 @@ public class Constants {
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
+    public static final String ANALYSIS_NOT_FOUND = "ANALYSIS_NOT_FOUND";
     public static final String RECORDING_NOT_FOUND = "RECORDING_NOT_FOUND";
     public static final String TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND";
 
@@ -87,6 +88,7 @@ public class Constants {
     public static final String PATH_FIELD = "path";
     public static final String API_PATH_FIELD = "apiPath";
     public static final String REQ_ID_FIELD = "reqId";
+    public static final String REPLAY_ID_FIELD = "replayId";
     public static final String TIMESTAMP_FIELD = "timestamp";
     public static final String TRACE_ID_FIELD = "traceId";
     public static final String EVENT_TYPE_FIELD = "eventType";
@@ -101,6 +103,7 @@ public class Constants {
     public static final String LIMIT_FIELD = "limit";
     public static final String OFFSET_FIELD = "offset";
     public static final String JAR_PATH_FIELD = "jarPath";
+
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
     public static final String GOLDEN_NAME_FIELD = "golden_name";
@@ -113,6 +116,5 @@ public class Constants {
     public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
     public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
     public static final String TEMPLATE_VERSION_FIELD = "version";
-
 
 }

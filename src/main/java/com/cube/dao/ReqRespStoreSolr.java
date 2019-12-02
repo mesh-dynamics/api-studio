@@ -738,7 +738,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-
     /**
      * @param solr
      * @param config
@@ -1949,7 +1948,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
         Integer numMatch = getIntField(doc , NUMMATCHF).orElse(-1);
         String respMatchMetaData = getStrField(doc , RESPMATCHMETADATAF).orElse("");
-        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("");
+        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("[]");
         String customerId = getStrField(doc , CUSTOMERIDF).orElse("");
         String app = getStrField(doc , APPF).orElse("");
         String service = getStrField(doc, SERVICEF).orElse("");
@@ -1997,7 +1996,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    // TODO Move these to constants.java once Ashoke's PR is merged.
     private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
@@ -2189,7 +2187,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
-
 
     private final static int FACETLIMIT = 100;
     private static final String REQMTFACET = "reqmt_facets";
