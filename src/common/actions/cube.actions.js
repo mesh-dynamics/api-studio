@@ -131,19 +131,8 @@ function updateRecordingOperationSet() {
     return { type: cubeConstants.GOLDEN_REQUEST };
 }
 
-function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId, app) {
-    return async dispatch => {
-        try {
-            let updateRes = await cubeService.updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId);
-            dispatch(success(updateRes, Date.now()));
-            dispatch(cubeActions.getTestIds(app));
-        } catch (error) {
-            console.error("Failed to updateGoldenSet", Date.now());
-            dispatch(cubeActions.clearGolden());
-            alert("Unable to update golden set");
-        }
-    }
-    function success(updateRes, date) { return { type: cubeConstants.NEW_GOLDEN_ADDED, data: updateRes, date: date }; }
+function updateGoldenSet(golden) {
+    return { type: cubeConstants.NEW_GOLDEN_ADDED, data: golden };
 }
 
 function hideTestConfig(bool) {

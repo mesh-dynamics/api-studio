@@ -61,7 +61,14 @@ class ShareableLink extends Component {
             showOnlyMarkedForGolden: false,
             currentPageNumber: 1,
             fetchComplete: false,
-            fetchedResults: 0
+            fetchedResults: 0,
+            showSaveGoldenModal: false,
+            nameG: "",
+            branch: "",
+            version: "",
+            tag: "",
+            commitId: "",
+            saveGoldenError: "",
         };
         this.handleChange = this.handleChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
@@ -667,7 +674,7 @@ class ShareableLink extends Component {
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
                     <Link to={"/"}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
-                    <span className="link pull-right" onClick={this.updateGolden}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-check-square font-15"></i>&nbsp;UPDATE OPERATIONS</span>
+                    <span className="link pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                     <Link to="/review_golden_updates" className="hidden">
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
                     </Link>
@@ -780,10 +787,110 @@ class ShareableLink extends Component {
                         </div>
                     </Modal.Footer>
                 </Modal>
+
+                <Modal show={this.state.showSaveGoldenModal}>
+                    <Modal.Header>
+                        <Modal.Title>Application:&nbsp;{cube.selectedApp}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div style={{padding: "15px 25px"}}>
+                            <div className={this.state.saveGoldenError ? "error-div" : "hidden"}>
+                                <h5 style={{marginTop: 0}}>
+                                    <i className="fas fa-warning"></i>&nbsp;Error!
+                                </h5>
+                                {this.state.saveGoldenError}
+                            </div>
+
+                            <div className="row margin-bottom-5">
+                                <div className="col-md-3">
+                                    Name*:
+                                </div>
+
+                                <div className="col-md-9">
+                                    <input required placeholder="Enter Golden Name" onChange={(event) => this.changeGoldenMetaData('nameG', event)} value={this.state.nameG} type="text" className="width-100"/>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-5">
+                                <div className="col-md-3">
+                                    Branch:
+                                </div>
+
+                                <div className="col-md-9">
+                                    <input placeholder="Enter Branch Name" onChange={(event) => this.changeGoldenMetaData('branch', event)} value={this.state.branch} type="text" className="width-100"/>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-5">
+                                <div className="col-md-3">
+                                    Version:
+                                </div>
+
+                                <div className="col-md-9">
+                                    <input placeholder="Enter Code Version" onChange={(event) => this.changeGoldenMetaData('version', event)} value={this.state.version} type="text" className="width-100"/>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-5">
+                                <div className="col-md-3">
+                                    Commit ID:
+                                </div>
+
+                                <div className="col-md-9">
+                                    <input placeholder="Enter Git Commit ID" onChange={(event) => this.changeGoldenMetaData('commitId', event)} value={this.state.commitId} type="text" className="width-100"/>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-5">
+                                <div className="col-md-3">
+                                    Tags:
+                                </div>
+
+                                <div className="col-md-9">
+                                    <input placeholder="Enter Tags(Comma Separated)" onChange={(event) => this.changeGoldenMetaData('tag', event)} value={this.state.tag} type="text" className="width-100"/>
+                                </div>
+                            </div>
+                        </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <div>
+                            <span onClick={this.handleCloseSG} className="cube-btn">CANCEL</span>&nbsp;&nbsp;
+                            <span onClick={this.handleSaveGolden} className="cube-btn">SAVE</span>
+                        </div>
+                    </Modal.Footer>
+                </Modal>
             </div>
 
         );
     }
+
+    changeGoldenMetaData = (meta, ev) => {
+        this.setState({[meta]: ev.target.value});
+    };
+
+    showSaveGoldenModal = () => {
+        this.setState({
+            nameG: (this.state.recordingId + '_' + Date.now()),
+            branch: "",
+            version: "",
+            tag: "",
+            commitId: "",
+            saveGoldenError: "",
+            showSaveGoldenModal: true
+        });
+    };
+
+    handleCloseSG = () => {
+        this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+    };
+
+    handleSaveGolden = () => {
+        if (!this.state.nameG.trim()) {
+            this.setState({saveGoldenError: "Name is a Required Field",})
+        } else {
+            this.updateGolden();
+        }
+    };
 
     updateGolden = () => {
         const { cube, dispatch } = this.props;
@@ -796,25 +903,79 @@ class ShareableLink extends Component {
             "Authorization": "Bearer " + user['access_token']
         };
 
-        const post1 = axios({
+        const updateTemplateOperationSet = axios({
             method: 'post',
             url: `${config.analyzeBaseUrl}/updateTemplateOperationSet/${cube.newTemplateVerInfo['ID']}`,
             data: cube.templateOperationSetObject,
             headers: headers
         });
 
-        const post2 = axios({
+        const goldenUpdate = axios({
             method: 'post',
             url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
             data: cube.multiOperationsSet,
             headers: headers
         });
         const _self = this;
-        axios.all([post1, post2]).then(axios.spread(function (r1, r2) {
+        axios.all([updateTemplateOperationSet, goldenUpdate]).then(axios.spread(function (r1, r2) {
             dispatch(cubeActions.updateRecordingOperationSet());
-            dispatch(cubeActions.updateGoldenSet(_self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
+            _self.updateGoldenSet();
+            // dispatch(cubeActions.updateGoldenSet(_self.state.nameG, _self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
         }));
     };
+
+    updateGoldenSet = () => {
+        const {cube, dispatch} = this.props;
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        const url = `${config.analyzeBaseUrl}/updateGoldenSet/${this.state.recordingId}/${this.state.replayId}/${cube.collectionUpdateOperationSetId.operationSetId}/${cube.newTemplateVerInfo['ID']}`;
+        const headers = {
+            'Access-Control-Allow-Origin': '*',
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": "Bearer " + user['access_token']
+        };
+
+        let searchParams = new URLSearchParams();
+        searchParams.set('name', this.state.nameG);
+        searchParams.set('userId', user.username);
+
+        let requestBody = {
+            name: this.state.nameG,
+            userId: user.username
+        };
+
+        if (this.state.version.trim()) {
+            searchParams.set('codeVersion', this.state.version);
+        }
+
+        if (this.state.branch.trim()) {
+            searchParams.set('branch', this.state.branch);
+        }
+
+        if (this.state.commitId.trim()) {
+            searchParams.set('gitCommitId', this.state.commitId);
+        }
+
+        if (this.state.tag.trim()) {
+            let tagList = this.state.tag.split(",");
+            for (let tag of tagList) {
+                tag = tag.trim();
+            }
+            searchParams.set('tags', JSON.stringify(tagList));
+        }
+
+
+        axios.post(url, searchParams, {headers: headers})
+            .then((result) => {
+                this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+                dispatch(cubeActions.updateGoldenSet(result.data));
+                dispatch(cubeActions.getTestIds(this.state.app));
+            })
+            .catch((err) => {
+                dispatch(cubeActions.clearGolden());
+                this.setState({saveGoldenError: err.response.data["Error"]});
+            })
+    }
 }
 
 function mapStateToProps(state) {

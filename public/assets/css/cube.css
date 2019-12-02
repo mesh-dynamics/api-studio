@@ -4472,6 +4472,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .margin-top-20{
     margin-top: 20px;
 }
+.margin-bottom-5 {
+    margin-bottom: 5px;
+}
 .margin-bottom-10 {
     margin-bottom: 10px;
 }
@@ -4573,11 +4576,11 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 }
 .utility {
     position: fixed;
-    padding: 8px;
+    padding: 5px;
     background: #EFEFEF;
-    font-size: 16px;
-    top: 15px;
-    right: 30px;
+    font-size: 15px;
+    top: 2px;
+    right: 20px;
 }
 .popover-content {
     padding: 0;
@@ -4625,4 +4628,11 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 
 .active-filter, .active-filter .link {
     color: green;
+}
+.error-div{
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+    color: #8a6d3b;
+    padding: 15px;
+    margin-bottom: 20px;
 }

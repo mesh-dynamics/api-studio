@@ -179,18 +179,11 @@ class GoldenPopover extends React.Component {
     }
 
     openJiraLink() {
-<<<<<<< HEAD
         const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
         const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
 
         window.open(issueUrl)
         hideTippy();
-=======
-        const { cube: { jiraBugs }, jsonPath } = this.props;
-        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
-
-        window.open(issueUrl)
->>>>>>> staging
     }
 
     refreshList() {
@@ -290,15 +283,12 @@ class GoldenPopover extends React.Component {
     render() {
         return (
             <React.Fragment>
-<<<<<<< HEAD
                 <span
                     onClick={this.closeTippy}
                     style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer"}}
                 >
                     <i className="fas fa-times" style={{ color: "#616060"}}></i>
                 </span>
-=======
->>>>>>> staging
                 <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse && !this.state.showJiraError ? "text-center" : "hidden"}
                     style={{ color: "#333333" }}>
                     <div style={{ width: "300px", height: "100px", background: "#D5D5D5", padding: "20px" }}>
