@@ -14,7 +14,7 @@ generate_manifest() {
 		CUBEIO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeio.git refs/heads/master | awk '{print $1}')-master
 		CUBEUI_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui.git refs/heads/master | awk '{print $1}')-master
 		CUBEUI_BACKEND_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
-		MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
+		MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/sample_apps.git refs/heads/master | awk '{print $1}')-master
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
 		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
@@ -30,13 +30,13 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
-	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
-	kubectl apply -f $APP_DIR/kubernetes || :
-	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
-	#Check if route exists
+	#Check if route exist
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
+	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
+	kubectl apply -f $APP_DIR/kubernetes || :
+	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
 
 }
 
