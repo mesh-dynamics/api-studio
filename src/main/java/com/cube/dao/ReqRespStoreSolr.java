@@ -16,16 +16,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -78,26 +75,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
 
-    /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#save(com.cube.dao.ReqRespStore.Request)
-     */
-    // TODO: Event redesign cleanup: This can be removed
-    @Override
-    public boolean save(Request req) {
-
-        SolrInputDocument doc = reqToSolrDoc(req);
-        return saveDoc(doc);
-    }
-
-    /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#save(com.cube.dao.ReqRespStore.Response)
-     */
-    @Override
-    public boolean save(Response resp) {
-
-        SolrInputDocument doc = respToSolrDoc(resp);
-        return saveDoc(doc);
-    }
 
     @Override
     public boolean save(Event event) {
@@ -248,22 +225,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return getEvents(eventQuery).getObjects().findFirst();
     }
 
-    public Stream<Request> expandOnTraceId(List<Request> originalList, List<String> intermediateServices,
-                                           String collectionId) {
-        List<String> traceIds = originalList.stream().map(request-> CommonUtils.getCaseInsensitiveMatches(request.hdrs,
-                Config.DEFAULT_TRACE_FIELD)).flatMap(List::stream).collect(Collectors.toList());
-        if (traceIds.isEmpty() || intermediateServices.isEmpty()) return originalList.stream() ;
-        SolrQuery query = new SolrQuery("*:*");
-        addFilter(query , METASERVICEF , intermediateServices.stream().collect(Collectors.joining(" OR "
-                , "(" , ")")) , false);
-        addFilter(query , TYPEF , Types.Request.toString());
-        addFilter(query , COLLECTIONF , collectionId);
-        addFilter(query , HDRTRACEF , traceIds.stream().collect(Collectors.joining("\" OR \"" , "(\""
-                , "\")")) , false);
-        return Stream.concat(originalList.stream() , SolrIterator.getStream(solr, query, Optional.empty())
-                .flatMap(doc -> docToRequest(doc).stream()));
-    }
-
     @Override
     public Stream<ReqRespMatchResult> expandOnTrace(ReqRespMatchResult reqRespMatchResult, boolean recordOrReplay) {
         String replayId = reqRespMatchResult.replayId;
@@ -367,35 +328,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxResults = Optional.of(1);
         Result<SolrDocument> solrDocumentResult = SolrIterator.getResults(solr, query, maxResults, x-> Optional.of(x));
         return solrDocumentResult.getObjects().findFirst().flatMap(doc -> solrDocToFnResponse(doc,solrDocumentResult.numFound>1));
-    }
-
-    // TODO: Event redesign: This should be event based
-    @Override
-    public boolean saveFnReqRespNewCollec(String customer, String app, String collection
-        , String newCollection) {
-        SolrQuery solrQuery = new SolrQuery("*:*");
-        addFilter(solrQuery, TYPEF , Types.FuncReqResp.toString());
-        addFilter(solrQuery, CUSTOMERIDF , customer);
-        addFilter(solrQuery, APPF , app);
-        addFilter(solrQuery, COLLECTIONF , collection);
-        SolrIterator.getStream(solr, solrQuery, Optional.empty()).forEach(doc -> {
-            SolrInputDocument inputDoc = new SolrInputDocument();
-            doc.entrySet().stream().forEach(v -> {
-                inputDoc.addField(v.getKey(), v.getValue());
-            });
-            inputDoc.setField(COLLECTIONF , newCollection);
-            inputDoc.removeField("_version_");
-            inputDoc.removeField("id");
-            try {
-                solr.add(inputDoc);
-            } catch (SolrServerException e) {
-                LOGGER.error("Error while saving fnreqresp object in new collection :: " + e.getMessage());
-            } catch (IOException e) {
-                LOGGER.error("Error while saving fnreqresp object in new collection :: " + e.getMessage());
-            }
-        });
-        softcommit();
-        return true;
     }
 
     @Override
@@ -734,7 +666,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-
     /**
      * @param solr
      * @param config
@@ -790,12 +721,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String FPARAMS = "fp";
     private static final String META = "meta";
     private static final String HDR = "hdr";
-    private static final String HDRTRACEF = HDR + "_"  + Config.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
-    private static final String HDRSPANF = HDR + "_"  + Config.DEFAULT_SPAN_FIELD + STRINGSET_SUFFIX;
-    private static final String HDRPARENTSPANF = HDR + "_"  + Config.DEFAULT_PARENT_SPAN_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRTRACEF = HDR + "_"  + Constants.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRSPANF = HDR + "_"  + Constants.DEFAULT_SPAN_FIELD + STRINGSET_SUFFIX;
+    private static final String HDRPARENTSPANF = HDR + "_"  + Constants.DEFAULT_PARENT_SPAN_FIELD + STRINGSET_SUFFIX;
     private static final String METASERVICEF = META + "_service" + STRINGSET_SUFFIX;
     private static final String METAREQID = META + "_c" + "-request-id" + STRINGSET_SUFFIX;
-    private static final String METATRACEID = META + "_" + Config.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
+    private static final String METATRACEID = META + "_" + Constants.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
@@ -956,38 +887,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    private static void setRRFields(Types type, RRBase rr, SolrInputDocument doc) {
-
-        rr.reqId.ifPresent(id -> {
-        	doc.setField(REQIDF, id);
-        	doc.setField(IDF, type.toString() + "-" + id);
-        });
-        doc.setField(BODYF, rr.body);
-        doc.setField(PATHF, rr.apiPath);
-        addFieldsToDoc(doc, META, rr.meta);
-        addFieldsToDoc(doc, HDR, rr.hdrs);
-        rr.collection.ifPresent(c -> doc.setField(COLLECTIONF, c));
-        rr.timestamp.ifPresent(t -> doc.setField(TIMESTAMPF, t.toString()));
-        rr.runType.ifPresent(c -> doc.setField(RRTYPEF, c.toString()));
-        rr.customerId.ifPresent(c -> doc.setField(CUSTOMERIDF, c));
-        rr.app.ifPresent(c -> doc.setField(APPF, c));
-
-    }
-
-
-
-    private static SolrInputDocument reqToSolrDoc(Request req) {
-        final SolrInputDocument doc = new SolrInputDocument();
-
-        setRRFields(Types.Request, req, doc);
-        doc.setField(TYPEF, Types.Request.toString());
-        doc.setField(METHODF, req.method);
-        addFieldsToDoc(doc, QPARAMS, req.queryParams);
-        addFieldsToDoc(doc, FPARAMS, req.formParams);
-
-        return doc;
-    }
-
     private static SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
         String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
@@ -1141,71 +1040,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    private static Optional<Request> docToRequest(SolrDocument doc) {
-
-        Optional<String> type = getStrField(doc, TYPEF);
-        Optional<String> path = getStrField(doc, PATHF);
-        Optional<String> reqId = getStrField(doc, REQIDF);
-        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>(); // query params
-        MultivaluedMap<String, String> formParams = new MultivaluedHashMap<>(); // form params
-        MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
-        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
-        Optional<String> method = getStrField(doc, METHODF);
-        Optional<String> body = getStrFieldMVFirst(doc, BODYF).or(() -> getStrField(doc, OLDBODYF)); // TODO - remove
-        // OLDBODYF
-        Optional<String> collection = getStrField(doc, COLLECTIONF);
-        Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
-        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
-        Optional<String> app = getStrField(doc, APPF);
-
-        for (Entry<String, Object> kv : doc) {
-            String k = kv.getKey();
-            Object v = kv.getValue();
-            Matcher m = pattern.matcher(k);
-            if (m.find()) {
-                switch (m.group(1)) {
-                case QPARAMS:
-                    checkAndAddValues(queryParams, m.group(2), v);
-                    break;
-                case FPARAMS:
-                    checkAndAddValues(formParams, m.group(2), v);
-                    break;
-                case META:
-                    checkAndAddValues(meta, m.group(2), v);
-                    break;
-                case HDR:
-                    checkAndAddValues(hdrs, m.group(2), v);
-                    break;
-                default:
-                }
-            }
-        }
-
-        final String p = path.orElse("");
-        final String m = method.orElse("");
-        final String b = body.orElse("");
-        return type.map(t -> {
-            if (t.equals(Types.Request.toString())) {
-                return new Request(p, reqId, queryParams, formParams, meta, hdrs, m, b, collection, timestamp, runType, customerId, app);
-            } else {
-                return null;
-            }
-        });
-    }
-
-
-
-    private static SolrInputDocument respToSolrDoc(Response resp) {
-        final SolrInputDocument doc = new SolrInputDocument();
-
-        setRRFields(Types.Response, resp, doc);
-        doc.setField(TYPEF, Types.Response.toString());
-        doc.setField(STATUSF, resp.status);
-
-        return doc;
-    }
-
     private static SolrInputDocument replayStatisticsToSolrDoc(String service, String replayId,
                                                                List<ReplayPathStatistic> pathStatistics,
                                                                ObjectMapper jsonMapper) {
@@ -1229,55 +1063,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
 
         return doc;
-    }
-
-
-
-    private static Optional<Response> docToResponse(SolrDocument doc) {
-
-        Optional<String> type = getStrField(doc, TYPEF);
-        Optional<Integer> status = getIntField(doc, STATUSF);
-        Optional<String> reqId = getStrField(doc, REQIDF);
-        Optional<String> path = getStrField(doc, PATHF);
-
-        MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
-        MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<>();
-        Optional<String> body = getStrFieldMVFirst(doc, BODYF).or(() -> getStrField(doc, OLDBODYF)); // TODO - remove
-        // OLDBODYF
-        Optional<String> collection = getStrField(doc, COLLECTIONF);
-        Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
-        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
-        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
-        Optional<String> app = getStrField(doc, APPF);
-
-
-        for (Entry<String, Object> kv : doc) {
-            String k = kv.getKey();
-            Object v = kv.getValue();
-            Matcher m = pattern.matcher(k);
-            if (m.find()) {
-                switch (m.group(1)) {
-                case META:
-                    checkAndAddValues(meta, m.group(2), v);
-                    break;
-                case HDR:
-                    checkAndAddValues(hdrs, m.group(2), v);
-                    break;
-                default:
-                }
-            }
-        }
-
-        final String pathVal = path.orElse("");
-        final String bodyVal = body.orElse("");
-        return type.flatMap(t -> {
-            if (t.equals(Types.Response.toString())) {
-                return status.map(sv -> new Response(reqId, sv, meta, hdrs, bodyVal, collection, timestamp, runType,
-                    customerId, app, pathVal));
-            } else {
-                return Optional.empty();
-            }
-        });
     }
 
 
@@ -1992,7 +1777,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return analysis;
     }
 
-
     private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
@@ -2175,7 +1959,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
-
 
     private final static int FACETLIMIT = 100;
     private static final String REQMTFACET = "reqmt_facets";

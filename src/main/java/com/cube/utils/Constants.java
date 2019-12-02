@@ -3,6 +3,10 @@ package com.cube.utils;
 public class Constants {
     public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
     public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
+    public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
+    public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
+    public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
     //API STRINGS
@@ -95,8 +99,6 @@ public class Constants {
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
-    public static final String LIMIT_FIELD = "limit";
-    public static final String OFFSET_FIELD = "offset";
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
     public static final String GOLDEN_NAME_FIELD = "golden_name";

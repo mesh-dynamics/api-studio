@@ -103,12 +103,6 @@ public interface ReqRespStore {
         MatchResultAggregate
     }
 
-    // TODO: Event redesign cleanup: This can be removed
-	boolean save(Request req);
-
-    // TODO: Event redesign cleanup: This can be removed
-    boolean save(Response resp);
-
     boolean save(Event event);
 
 
@@ -124,7 +118,6 @@ public interface ReqRespStore {
      */
     Optional<Event> getRequestEvent(String reqId);
 
-
 	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
 
@@ -137,7 +130,6 @@ public interface ReqRespStore {
 	 * @param runType
 	 * @return
 	 */
-    // TODO: Event redesign: This needs to be rewritten to get as event
     Result<Event> getRequests(String customerId, String app, String collection, List<String> reqids
 			, List<String> paths, Event.RunType runType);
 
@@ -217,6 +209,7 @@ public interface ReqRespStore {
                              Optional<String> instanceId, ReplayStatus status);
 
 	static void main(String[] args) throws IOException{
+
 
 		Map.Entry<String, String> e = new AbstractMap.SimpleEntry<String, String>("k1", "v1");
 		ObjectMapper m1 = new ObjectMapper();
@@ -388,7 +381,6 @@ public interface ReqRespStore {
 	 */
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
                                                                String templateSetVersion);
-
 
     /**
      * @param customerId
@@ -573,18 +565,6 @@ public interface ReqRespStore {
 	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
 
 	/**
-	 * Given a request List, fetch requests from backend matching on trace id's of the original requests and belonging
-	 * to the service name list provided
-	 * @param requestList
-	 * @param intermediateServices
-	 * @param collectionId
-	 * @return
-	 */
-    // TODO: Event redesign cleanup: This can be removed
-    Stream<Request> expandOnTraceId(List<Request> requestList, List<String> intermediateServices
-			, String collectionId);
-
-	/**
 	 * Given a request Id , find all the ReqRespMatchResults for Requests having the same traceId
 	 * as the given request in the same collection as Request (This function can be used for getting match results for
 	 * both record and replay)
@@ -600,8 +580,6 @@ public interface ReqRespStore {
 	boolean storeFunctionReqResp(FnReqResponse funcReqResponse, String collection);
 
 	Optional<FnResponse> getFunctionReturnValue(FnReqResponse funcReqResponse, String collection);
-
-	boolean saveFnReqRespNewCollec(String customer, String app, String collection, String newCollection);
 
     /**
      * TODO instead of the source template set (maybe we want to specify source golden set id/version)

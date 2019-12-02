@@ -47,6 +47,7 @@ public class WSUtils {
                 "replayId", replayId.orElse("None"),
                 "userId", userId.orElse("None"));
             return Response.status(Response.Status.CONFLICT)
+                .type(MediaType.APPLICATION_JSON)
                 .entity(respObj)
                 .build();
         });

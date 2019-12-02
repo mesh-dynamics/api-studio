@@ -5,6 +5,8 @@ import static org.apache.commons.io.FileUtils.readFileToString;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.json.JSONArray;
@@ -25,8 +27,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.cube.dao.DataObj;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder.InvalidEventException;
-import com.cube.dao.Request;
-import com.cube.dao.Response;
+import com.cube.dao.HTTPRequestPayload;
 import com.cube.ws.Config;
 
 public class RequestComparatorTest {
@@ -120,11 +121,10 @@ public class RequestComparatorTest {
     private void matchTest(JSONObject testData) throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
-        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
-        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
+        Event request1 = mapper.readValue(object.getJSONObject(req1).toString(), Event.class);
+        Event request2 = mapper.readValue(object.getJSONObject(req2).toString(), Event.class);
         compareTest(testData, request1, request2);
     }
-
     /**
      * Test method for {@link com.cube.core.Comparator#compare(DataObj, DataObj)} .
      * @throws JsonProcessingException
@@ -152,30 +152,20 @@ public class RequestComparatorTest {
     private void multimapMatchTest(JSONObject testData) throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
-        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
-        Request request2 = mapper.readValue(object.getJSONObject(req2).toString(), Request.class);
-        request2.hdrs.putSingle("accept",request2.hdrs.getFirst("accept") + "K");
-        compareTest(testData, request1, request2, Optional.of("/hdr/accept"));
-        request2.meta.putSingle("method",request2.hdrs.getFirst("method") + "K");
-        compareTest(testData, request1, request2, Optional.of("/meta/method"));
-        request2.formParams.putSingle("filmName",request2.formParams.getFirst("filmName") + "K");
-        compareTest(testData, request1, request2, Optional.of("/formParams/filmName"));
-        request2.queryParams.putSingle("filmId",request2.queryParams.getFirst("filmName") + "K");
-        compareTest(testData, request1, request2, Optional.of("/queryParams/filmId"));
-        compareTest(testData, request1, request2);
-    }
+        Event request1 = mapper.readValue(object.getJSONObject(req1).toString(), Event.class);
+        Event request2 = mapper.readValue(object.getJSONObject(req2).toString(), Event.class);
+        Event newReq = updateRequestEventHdr(request2, "accept","K");
+        compareTest(testData, request1, newReq, List.of("", "/hdrs/accept"));
+        newReq = updateRequestEventFormParams(request2, "filmName", "K");
+        compareTest(testData, request1, newReq, List.of("", "/formParams/filmName"));
+        newReq = updateRequestEventQueryParams(request2, "filmId", "K");
+        compareTest(testData, request1, newReq, List.of("", "/queryParams/filmId"));
 
-    /**
-     * Test method for {@link com.cube.core.Comparator#compare(DataObj, DataObj)} .
-     * @throws JsonProcessingException
-     * @throws JSONException
-     */
-    // This test no longer relevant after moving to Events. TODO: remove it
-    //@Test
-    @DisplayName("Root Param Fuzzy Match Test")
-    final void rootParaFuzzyoMatchTest() throws IOException, JSONException, InvalidEventException {
-        JSONObject testData = object.getJSONObject("rootParamFuzzyMatch");
-        rootParamMatchTest(testData);
+        // all changes together
+        newReq = updateRequestEventHdr(request2, "accept","K");
+        newReq = updateRequestEventFormParams(newReq, "filmName", "K");
+        newReq = updateRequestEventQueryParams(newReq, "filmId", "K");
+        compareTest(testData, request1, newReq);
     }
 
     /**
@@ -192,61 +182,27 @@ public class RequestComparatorTest {
 
     private void rootParamMatchTest(JSONObject testData) throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
-        Request request1 = mapper.readValue(object.getJSONObject(req1).toString(), Request.class);
-        Optional<String> temp = Optional.of("K");
+        Event event1 = mapper.readValue(object.getJSONObject(req1).toString(), Event.class);
 
-        Request request2 = new Request(temp.get(), request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
-            request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId, request1.app);
-        compareTest(testData, request1, request2, Optional.of("/apiPath"));
+        String req2 = testData.get("req2").toString();
+        Event event2 = mapper.readValue(object.getJSONObject(req2).toString(), Event.class);
+        compareTest(testData, event1, event2, List.of("/method"));
 
-        request2 = new Request(request1.apiPath, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs, temp.get(),
-            request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId, request1.app);
-        compareTest(testData, request1, request2, Optional.of("/method"));
-
-        if (request1.reqId.isPresent()) {
-            request2 = new Request(request1.apiPath, temp, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
-                request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId, request1.app);
-            compareTest(testData, request1, request2, Optional.of("/reqId"));
-        }
-
-        if (request1.collection.isPresent()) {
-            request2 = new Request(request1.apiPath, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
-                request1.method, request1.body, temp, request1.timestamp, request1.runType, request1.customerId, request1.app);
-            compareTest(testData, request1, request2, Optional.of("/collection"));
-        }
-
-        if (request1.customerId.isPresent()) {
-            request2 = new Request(request1.apiPath, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
-                request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, temp, request1.app);
-            compareTest(testData, request1, request2, Optional.of("/customerId"));
-        }
-
-        if (request1.app.isPresent()) {
-            request2 = new Request(request1.apiPath, request1.reqId, request1.queryParams, request1.formParams, request1.meta, request1.hdrs,
-                request1.method, request1.body, request1.collection, request1.timestamp, request1.runType, request1.customerId,  Optional.of(request1.app.get() + "K"));
-            compareTest(testData, request1, request2, Optional.of("/app"));
-        }
-
-        request2 = new Request(temp.get(), temp, request1.queryParams, request1.formParams, request1.meta, request1.hdrs, temp.get(),
-            request1.body, request1.collection, request1.timestamp, request1.runType, temp,  temp);
-        compareTest(testData, request1, request2);
     }
 
-
-    private void compareTest(JSONObject testData, Request response1, Request response2) throws JsonProcessingException, JSONException, InvalidEventException {
-        compareTest(testData, response1, response2, Optional.empty());
+    private void compareTest(JSONObject testData, Event event1, Event event2) throws JsonProcessingException,
+        JSONException {
+        compareTest(testData, event1, event2, Collections.emptyList());
     }
 
-    private void compareTest(JSONObject testData, Request response1, Request response2, Optional<String> rulePath) throws JsonProcessingException, JSONException, InvalidEventException {
+    private void compareTest(JSONObject testData, Event event1, Event event2, List<String> rulePaths) throws JsonProcessingException, JSONException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
-        System.out.println(mapper.writeValueAsString(response1));
-        System.out.println(mapper.writeValueAsString(response2));
         CompareTemplate template = new CompareTemplate();
         for (int i = 0; i < rules.length(); i++) {
             JSONObject ruleObj = rules.getJSONObject(i);
             String path = ruleObj.getString("path");
-            if (rulePath.isEmpty() || (path.equalsIgnoreCase(rulePath.get()))) {
+            if (rulePaths.contains(path) || rulePaths.isEmpty()) {
                 CompareTemplate.DataType dataType = CompareTemplate.DataType.valueOf(ruleObj.getString("dataType"));
                 CompareTemplate.PresenceType presenceType = CompareTemplate.PresenceType.valueOf(ruleObj.getString("presenceType"));
                 CompareTemplate.ComparisonType comparisonType = CompareTemplate.ComparisonType.valueOf(ruleObj.getString("comparisonType"));
@@ -260,40 +216,46 @@ public class RequestComparatorTest {
         }
 
         Comparator comparator = new JsonComparator(template, mapper);
-        Event event1 = response1.toEvent(comparator, config);
-        Event event2 = response2.toEvent(comparator, config);
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event1));
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event2));
         Comparator.MatchType matchType = comparator.compare(event1.getPayload(config),
             event2.getPayload(config)).mt;
 
         Assertions.assertEquals(expected, matchType.toString());
     }
 
-    /**
-     * Test method for {@link com.cube.core.Comparator#compare(Response, Response)} .
-     * @throws JsonProcessingException
-     * @throws JSONException
-     */
-//    @Test
-//    @DisplayName("Get request from Solr")
-//    final void getAllRequest() throws JsonProcessingException, JSONException {
-//        String[] idList = {
-//            "restwrapjdbc2523c0a2-0645-4471-9340-2c4aeef6635e",
-//            "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
-//            "restwrapjdbcd1c51946-f454-4988-9cb0-4d3eb761a0d5",
-//            "restwrapjdbccd64786d-1c64-4f50-b376-0b96f9d84eb1",
-//            "restwrapjdbcede1e225-f2dd-4378-aa47-fbee9c7c64ef",
-//            "restwrapjdbc59b33aff-4e35-47b1-9ead-df9f58407ee7",
-//            "reviews7bd68a74-2457-4948-81c9-8b61c851d752",
-//            "movieinfod8d4fdb8-7f5a-4610-90ed-4e9267a934ef",
-//            "movieinfo45348484-2ef0-47bd-ae94-6069a35e025e",
-//            "movieinfo504e9d35-0087-4289-91a0-67333360b7f9"
-//        };
-//        for (String id: idList){
-//            Request request = config.rrstore.getRequestOld(id).get();
-//            System.out.println(mapper.writeValueAsString(request));
-//            System.out.println(request.queryParams);
-//            System.out.println(request.body);
-//            System.out.println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-//        }
-//    }
+
+    private Event updateRequestEventHdr(Event event, String hdrField, String val) throws IOException, InvalidEventException {
+        HTTPRequestPayload requestPayload = Utils.getRequestPayload(event, config);
+        requestPayload.hdrs.putSingle(hdrField, val);
+
+        return cloneWithPayload(event, requestPayload);
+
+    }
+
+    private Event updateRequestEventFormParams(Event event, String param, String val) throws IOException,
+        InvalidEventException {
+        HTTPRequestPayload requestPayload = Utils.getRequestPayload(event, config);
+        requestPayload.formParams.putSingle(param, val);
+
+        return cloneWithPayload(event, requestPayload);
+
+    }
+
+    private Event updateRequestEventQueryParams(Event event, String param, String val) throws IOException,
+        InvalidEventException {
+        HTTPRequestPayload requestPayload = Utils.getRequestPayload(event, config);
+        requestPayload.queryParams.putSingle(param, val);
+
+        return cloneWithPayload(event, requestPayload);
+
+    }
+
+    private Event cloneWithPayload(Event event, HTTPRequestPayload payload) throws JsonProcessingException, InvalidEventException {
+        return new Event.EventBuilder(event.customerId, event.app, event.service, event.instanceId,
+            event.getCollection(), event.traceId, event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
+            .setRawPayloadString(mapper.writeValueAsString(payload))
+            .createEvent();
+    }
+
 }
