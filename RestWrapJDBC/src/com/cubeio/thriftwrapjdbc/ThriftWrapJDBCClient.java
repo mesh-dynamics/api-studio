@@ -12,8 +12,8 @@ import org.apache.thrift.transport.TTransport;
 import io.cube.utils.Tracing;
 import io.jaegertracing.internal.JaegerSpan;
 import io.jaegertracing.internal.JaegerTracer;
-import io.jaegertracing.thrift.internal.reporters.protocols.JaegerThriftSpanConverter;
-import io.jaegertracing.thriftjava.Span;
+import io.cube.tracing.thriftjava.JaegerMeshDThriftSpanConverter;
+import io.cube.tracing.thriftjava.Span;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -35,7 +35,7 @@ public class ThriftWrapJDBCClient {
         String MYSQL_PWD = "cubeio12";  // AWS RDS pwd
         String jdbcHost = "jdbc:mysql://" + MYSQL_HOST + ":" + MYSQL_PORT + "/sakila";
 
-        TTransport transport = new TSocket("localhost", 9091);
+        TTransport transport = new TSocket("localhost", 9090);
 
         JaegerTracer tracer = Tracing.init("MIThrift");
         GlobalTracer.register(tracer);
@@ -51,7 +51,7 @@ public class ThriftWrapJDBCClient {
 
             JaegerSpan span = (JaegerSpan) scope.span();
 
-            Span thriftSpan = JaegerThriftSpanConverter.convertSpan(span);
+            Span thriftSpan = JaegerMeshDThriftSpanConverter.convertSpan(span);
             thriftSpan.setBaggage(Map.of("intent", "record"));
 
             String queryParams = "[{\"index\":1,\"type\":\"string\",\"value\":\"GONE TROUBLE\"}]";

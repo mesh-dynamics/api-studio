@@ -270,7 +270,7 @@
       <artifactId>agent</artifactId>
       <version>1.0-SNAPSHOT</version>
       <scope>system</scope>
-      <systemPath>${basedir}/resources/agent-1.0-SNAPSHOT-jar-with-dependencies.jar</systemPath>
+      <systemPath>${basedir}/resources/agent-1.0.0-jar-with-dependencies.jar</systemPath>
     </dependency>
     
   </dependencies>

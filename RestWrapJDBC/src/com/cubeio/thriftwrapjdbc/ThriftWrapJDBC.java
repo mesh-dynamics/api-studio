@@ -12,25 +12,25 @@ public class ThriftWrapJDBC {
 
   public interface Iface {
 
-    public java.lang.String health(io.jaegertracing.thriftjava.Span span) throws org.apache.thrift.TException;
+    public java.lang.String health(io.cube.tracing.thriftjava.Span span) throws org.apache.thrift.TException;
 
-    public java.lang.String initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.jaegertracing.thriftjava.Span span) throws PoolCreationException, org.apache.thrift.TException;
+    public java.lang.String initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.cube.tracing.thriftjava.Span span) throws PoolCreationException, org.apache.thrift.TException;
 
-    public java.lang.String query(java.lang.String query, java.lang.String params, io.jaegertracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException;
+    public java.lang.String query(java.lang.String query, java.lang.String params, io.cube.tracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException;
 
-    public java.lang.String update(java.lang.String queryAndParam, io.jaegertracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException;
+    public java.lang.String update(java.lang.String queryAndParam, io.cube.tracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException;
 
   }
 
   public interface AsyncIface {
 
-    public void health(io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
+    public void health(io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
 
-    public void initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
+    public void initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
 
-    public void query(java.lang.String query, java.lang.String params, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
+    public void query(java.lang.String query, java.lang.String params, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
 
-    public void update(java.lang.String queryAndParam, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
+    public void update(java.lang.String queryAndParam, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -54,13 +54,13 @@ public class ThriftWrapJDBC {
       super(iprot, oprot);
     }
 
-    public java.lang.String health(io.jaegertracing.thriftjava.Span span) throws org.apache.thrift.TException
+    public java.lang.String health(io.cube.tracing.thriftjava.Span span) throws org.apache.thrift.TException
     {
       send_health(span);
       return recv_health();
     }
 
-    public void send_health(io.jaegertracing.thriftjava.Span span) throws org.apache.thrift.TException
+    public void send_health(io.cube.tracing.thriftjava.Span span) throws org.apache.thrift.TException
     {
       health_args args = new health_args();
       args.setSpan(span);
@@ -77,13 +77,13 @@ public class ThriftWrapJDBC {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "health failed: unknown result");
     }
 
-    public java.lang.String initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.jaegertracing.thriftjava.Span span) throws PoolCreationException, org.apache.thrift.TException
+    public java.lang.String initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.cube.tracing.thriftjava.Span span) throws PoolCreationException, org.apache.thrift.TException
     {
       send_initialize(username, password, uri, span);
       return recv_initialize();
     }
 
-    public void send_initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.jaegertracing.thriftjava.Span span) throws org.apache.thrift.TException
+    public void send_initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.cube.tracing.thriftjava.Span span) throws org.apache.thrift.TException
     {
       initialize_args args = new initialize_args();
       args.setUsername(username);
@@ -106,13 +106,13 @@ public class ThriftWrapJDBC {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "initialize failed: unknown result");
     }
 
-    public java.lang.String query(java.lang.String query, java.lang.String params, io.jaegertracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException
+    public java.lang.String query(java.lang.String query, java.lang.String params, io.cube.tracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException
     {
       send_query(query, params, span);
       return recv_query();
     }
 
-    public void send_query(java.lang.String query, java.lang.String params, io.jaegertracing.thriftjava.Span span) throws org.apache.thrift.TException
+    public void send_query(java.lang.String query, java.lang.String params, io.cube.tracing.thriftjava.Span span) throws org.apache.thrift.TException
     {
       query_args args = new query_args();
       args.setQuery(query);
@@ -134,13 +134,13 @@ public class ThriftWrapJDBC {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "query failed: unknown result");
     }
 
-    public java.lang.String update(java.lang.String queryAndParam, io.jaegertracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException
+    public java.lang.String update(java.lang.String queryAndParam, io.cube.tracing.thriftjava.Span span) throws GenericThriftWrapException, org.apache.thrift.TException
     {
       send_update(queryAndParam, span);
       return recv_update();
     }
 
-    public void send_update(java.lang.String queryAndParam, io.jaegertracing.thriftjava.Span span) throws org.apache.thrift.TException
+    public void send_update(java.lang.String queryAndParam, io.cube.tracing.thriftjava.Span span) throws org.apache.thrift.TException
     {
       update_args args = new update_args();
       args.setQueryAndParam(queryAndParam);
@@ -179,7 +179,7 @@ public class ThriftWrapJDBC {
       super(protocolFactory, clientManager, transport);
     }
 
-    public void health(io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
+    public void health(io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       health_call method_call = new health_call(span, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
@@ -187,8 +187,8 @@ public class ThriftWrapJDBC {
     }
 
     public static class health_call extends org.apache.thrift.async.TAsyncMethodCall<java.lang.String> {
-      private io.jaegertracing.thriftjava.Span span;
-      public health_call(io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private io.cube.tracing.thriftjava.Span span;
+      public health_call(io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.span = span;
       }
@@ -211,7 +211,7 @@ public class ThriftWrapJDBC {
       }
     }
 
-    public void initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
+    public void initialize(java.lang.String username, java.lang.String password, java.lang.String uri, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       initialize_call method_call = new initialize_call(username, password, uri, span, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
@@ -222,8 +222,8 @@ public class ThriftWrapJDBC {
       private java.lang.String username;
       private java.lang.String password;
       private java.lang.String uri;
-      private io.jaegertracing.thriftjava.Span span;
-      public initialize_call(java.lang.String username, java.lang.String password, java.lang.String uri, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private io.cube.tracing.thriftjava.Span span;
+      public initialize_call(java.lang.String username, java.lang.String password, java.lang.String uri, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.username = username;
         this.password = password;
@@ -252,7 +252,7 @@ public class ThriftWrapJDBC {
       }
     }
 
-    public void query(java.lang.String query, java.lang.String params, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
+    public void query(java.lang.String query, java.lang.String params, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       query_call method_call = new query_call(query, params, span, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
@@ -262,8 +262,8 @@ public class ThriftWrapJDBC {
     public static class query_call extends org.apache.thrift.async.TAsyncMethodCall<java.lang.String> {
       private java.lang.String query;
       private java.lang.String params;
-      private io.jaegertracing.thriftjava.Span span;
-      public query_call(java.lang.String query, java.lang.String params, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private io.cube.tracing.thriftjava.Span span;
+      public query_call(java.lang.String query, java.lang.String params, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.query = query;
         this.params = params;
@@ -290,7 +290,7 @@ public class ThriftWrapJDBC {
       }
     }
 
-    public void update(java.lang.String queryAndParam, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
+    public void update(java.lang.String queryAndParam, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       update_call method_call = new update_call(queryAndParam, span, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
@@ -299,8 +299,8 @@ public class ThriftWrapJDBC {
 
     public static class update_call extends org.apache.thrift.async.TAsyncMethodCall<java.lang.String> {
       private java.lang.String queryAndParam;
-      private io.jaegertracing.thriftjava.Span span;
-      public update_call(java.lang.String queryAndParam, io.jaegertracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private io.cube.tracing.thriftjava.Span span;
+      public update_call(java.lang.String queryAndParam, io.cube.tracing.thriftjava.Span span, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.queryAndParam = queryAndParam;
         this.span = span;
@@ -327,17 +327,17 @@ public class ThriftWrapJDBC {
 
   }
 
-  public static class Processor<I extends Iface> extends org.apache.thrift.TBaseProcessor<I> implements org.apache.thrift.TProcessor {
+  public static class Processor<I extends Iface> extends org.apache.thrift.MeshDTBaseProcessor<I> implements org.apache.thrift.TProcessor {
     private static final org.slf4j.Logger _LOGGER = org.slf4j.LoggerFactory.getLogger(Processor.class.getName());
     public Processor(I iface) {
-      super(iface, getProcessMap(new java.util.HashMap<java.lang.String, org.apache.thrift.ProcessFunction<I, ? extends org.apache.thrift.TBase>>()));
+      super(iface, getProcessMap(new java.util.HashMap<java.lang.String, org.apache.thrift.MeshDProcessFunction<I, ? extends org.apache.thrift.TBase>>()));
     }
 
-    protected Processor(I iface, java.util.Map<java.lang.String, org.apache.thrift.ProcessFunction<I, ? extends org.apache.thrift.TBase>> processMap) {
+    protected Processor(I iface, java.util.Map<java.lang.String, org.apache.thrift.MeshDProcessFunction<I, ? extends org.apache.thrift.TBase>> processMap) {
       super(iface, getProcessMap(processMap));
     }
 
-    private static <I extends Iface> java.util.Map<java.lang.String,  org.apache.thrift.ProcessFunction<I, ? extends org.apache.thrift.TBase>> getProcessMap(java.util.Map<java.lang.String, org.apache.thrift.ProcessFunction<I, ? extends  org.apache.thrift.TBase>> processMap) {
+    private static <I extends Iface> java.util.Map<java.lang.String,  org.apache.thrift.MeshDProcessFunction<I, ? extends org.apache.thrift.TBase>> getProcessMap(java.util.Map<java.lang.String, org.apache.thrift.MeshDProcessFunction<I, ? extends  org.apache.thrift.TBase>> processMap) {
       processMap.put("health", new health());
       processMap.put("initialize", new initialize());
       processMap.put("query", new query());
@@ -345,7 +345,7 @@ public class ThriftWrapJDBC {
       return processMap;
     }
 
-    public static class health<I extends Iface> extends org.apache.thrift.ProcessFunction<I, health_args> {
+    public static class health<I extends Iface> extends org.apache.thrift.MeshDProcessFunction<I, health_args> {
       public health() {
         super("health");
       }
@@ -370,7 +370,7 @@ public class ThriftWrapJDBC {
       }
     }
 
-    public static class initialize<I extends Iface> extends org.apache.thrift.ProcessFunction<I, initialize_args> {
+    public static class initialize<I extends Iface> extends org.apache.thrift.MeshDProcessFunction<I, initialize_args> {
       public initialize() {
         super("initialize");
       }
@@ -399,7 +399,7 @@ public class ThriftWrapJDBC {
       }
     }
 
-    public static class query<I extends Iface> extends org.apache.thrift.ProcessFunction<I, query_args> {
+    public static class query<I extends Iface> extends org.apache.thrift.MeshDProcessFunction<I, query_args> {
       public query() {
         super("query");
       }
@@ -428,7 +428,7 @@ public class ThriftWrapJDBC {
       }
     }
 
-    public static class update<I extends Iface> extends org.apache.thrift.ProcessFunction<I, update_args> {
+    public static class update<I extends Iface> extends org.apache.thrift.MeshDProcessFunction<I, update_args> {
       public update() {
         super("update");
       }
@@ -743,7 +743,7 @@ public class ThriftWrapJDBC {
     private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new health_argsStandardSchemeFactory();
     private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new health_argsTupleSchemeFactory();
 
-    public @org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span; // required
+    public @org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -810,7 +810,7 @@ public class ThriftWrapJDBC {
     static {
       java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SPAN, new org.apache.thrift.meta_data.FieldMetaData("span", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.jaegertracing.thriftjava.Span.class)));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.cube.tracing.thriftjava.Span.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(health_args.class, metaDataMap);
     }
@@ -819,7 +819,7 @@ public class ThriftWrapJDBC {
     }
 
     public health_args(
-      io.jaegertracing.thriftjava.Span span)
+      io.cube.tracing.thriftjava.Span span)
     {
       this();
       this.span = span;
@@ -830,7 +830,7 @@ public class ThriftWrapJDBC {
      */
     public health_args(health_args other) {
       if (other.isSetSpan()) {
-        this.span = new io.jaegertracing.thriftjava.Span(other.span);
+        this.span = new io.cube.tracing.thriftjava.Span(other.span);
       }
     }
 
@@ -844,11 +844,11 @@ public class ThriftWrapJDBC {
     }
 
     @org.apache.thrift.annotation.Nullable
-    public io.jaegertracing.thriftjava.Span getSpan() {
+    public io.cube.tracing.thriftjava.Span getSpan() {
       return this.span;
     }
 
-    public health_args setSpan(@org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span) {
+    public health_args setSpan(@org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span) {
       this.span = span;
       return this;
     }
@@ -874,7 +874,7 @@ public class ThriftWrapJDBC {
         if (value == null) {
           unsetSpan();
         } else {
-          setSpan((io.jaegertracing.thriftjava.Span)value);
+          setSpan((io.cube.tracing.thriftjava.Span)value);
         }
         break;
 
@@ -1036,7 +1036,7 @@ public class ThriftWrapJDBC {
           switch (schemeField.id) {
             case 1: // SPAN
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-                struct.span = new io.jaegertracing.thriftjava.Span();
+                struct.span = new io.cube.tracing.thriftjava.Span();
                 struct.span.read(iprot);
                 struct.setSpanIsSet(true);
               } else { 
@@ -1095,7 +1095,7 @@ public class ThriftWrapJDBC {
         org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
         java.util.BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
-          struct.span = new io.jaegertracing.thriftjava.Span();
+          struct.span = new io.cube.tracing.thriftjava.Span();
           struct.span.read(iprot);
           struct.setSpanIsSet(true);
         }
@@ -1488,7 +1488,7 @@ public class ThriftWrapJDBC {
     public @org.apache.thrift.annotation.Nullable java.lang.String username; // required
     public @org.apache.thrift.annotation.Nullable java.lang.String password; // required
     public @org.apache.thrift.annotation.Nullable java.lang.String uri; // required
-    public @org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span; // required
+    public @org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -1570,7 +1570,7 @@ public class ThriftWrapJDBC {
       tmpMap.put(_Fields.URI, new org.apache.thrift.meta_data.FieldMetaData("uri", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       tmpMap.put(_Fields.SPAN, new org.apache.thrift.meta_data.FieldMetaData("span", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.jaegertracing.thriftjava.Span.class)));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.cube.tracing.thriftjava.Span.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(initialize_args.class, metaDataMap);
     }
@@ -1582,7 +1582,7 @@ public class ThriftWrapJDBC {
       java.lang.String username,
       java.lang.String password,
       java.lang.String uri,
-      io.jaegertracing.thriftjava.Span span)
+      io.cube.tracing.thriftjava.Span span)
     {
       this();
       this.username = username;
@@ -1605,7 +1605,7 @@ public class ThriftWrapJDBC {
         this.uri = other.uri;
       }
       if (other.isSetSpan()) {
-        this.span = new io.jaegertracing.thriftjava.Span(other.span);
+        this.span = new io.cube.tracing.thriftjava.Span(other.span);
       }
     }
 
@@ -1697,11 +1697,11 @@ public class ThriftWrapJDBC {
     }
 
     @org.apache.thrift.annotation.Nullable
-    public io.jaegertracing.thriftjava.Span getSpan() {
+    public io.cube.tracing.thriftjava.Span getSpan() {
       return this.span;
     }
 
-    public initialize_args setSpan(@org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span) {
+    public initialize_args setSpan(@org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span) {
       this.span = span;
       return this;
     }
@@ -1751,7 +1751,7 @@ public class ThriftWrapJDBC {
         if (value == null) {
           unsetSpan();
         } else {
-          setSpan((io.jaegertracing.thriftjava.Span)value);
+          setSpan((io.cube.tracing.thriftjava.Span)value);
         }
         break;
 
@@ -2045,7 +2045,7 @@ public class ThriftWrapJDBC {
               break;
             case 4: // SPAN
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-                struct.span = new io.jaegertracing.thriftjava.Span();
+                struct.span = new io.cube.tracing.thriftjava.Span();
                 struct.span.read(iprot);
                 struct.setSpanIsSet(true);
               } else { 
@@ -2149,7 +2149,7 @@ public class ThriftWrapJDBC {
           struct.setUriIsSet(true);
         }
         if (incoming.get(3)) {
-          struct.span = new io.jaegertracing.thriftjava.Span();
+          struct.span = new io.cube.tracing.thriftjava.Span();
           struct.span.read(iprot);
           struct.setSpanIsSet(true);
         }
@@ -2647,7 +2647,7 @@ public class ThriftWrapJDBC {
 
     public @org.apache.thrift.annotation.Nullable java.lang.String query; // required
     public @org.apache.thrift.annotation.Nullable java.lang.String params; // required
-    public @org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span; // required
+    public @org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -2724,7 +2724,7 @@ public class ThriftWrapJDBC {
       tmpMap.put(_Fields.PARAMS, new org.apache.thrift.meta_data.FieldMetaData("params", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       tmpMap.put(_Fields.SPAN, new org.apache.thrift.meta_data.FieldMetaData("span", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.jaegertracing.thriftjava.Span.class)));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.cube.tracing.thriftjava.Span.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(query_args.class, metaDataMap);
     }
@@ -2735,7 +2735,7 @@ public class ThriftWrapJDBC {
     public query_args(
       java.lang.String query,
       java.lang.String params,
-      io.jaegertracing.thriftjava.Span span)
+      io.cube.tracing.thriftjava.Span span)
     {
       this();
       this.query = query;
@@ -2754,7 +2754,7 @@ public class ThriftWrapJDBC {
         this.params = other.params;
       }
       if (other.isSetSpan()) {
-        this.span = new io.jaegertracing.thriftjava.Span(other.span);
+        this.span = new io.cube.tracing.thriftjava.Span(other.span);
       }
     }
 
@@ -2820,11 +2820,11 @@ public class ThriftWrapJDBC {
     }
 
     @org.apache.thrift.annotation.Nullable
-    public io.jaegertracing.thriftjava.Span getSpan() {
+    public io.cube.tracing.thriftjava.Span getSpan() {
       return this.span;
     }
 
-    public query_args setSpan(@org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span) {
+    public query_args setSpan(@org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span) {
       this.span = span;
       return this;
     }
@@ -2866,7 +2866,7 @@ public class ThriftWrapJDBC {
         if (value == null) {
           unsetSpan();
         } else {
-          setSpan((io.jaegertracing.thriftjava.Span)value);
+          setSpan((io.cube.tracing.thriftjava.Span)value);
         }
         break;
 
@@ -3116,7 +3116,7 @@ public class ThriftWrapJDBC {
               break;
             case 3: // SPAN
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-                struct.span = new io.jaegertracing.thriftjava.Span();
+                struct.span = new io.cube.tracing.thriftjava.Span();
                 struct.span.read(iprot);
                 struct.setSpanIsSet(true);
               } else { 
@@ -3205,7 +3205,7 @@ public class ThriftWrapJDBC {
           struct.setParamsIsSet(true);
         }
         if (incoming.get(2)) {
-          struct.span = new io.jaegertracing.thriftjava.Span();
+          struct.span = new io.cube.tracing.thriftjava.Span();
           struct.span.read(iprot);
           struct.setSpanIsSet(true);
         }
@@ -3701,7 +3701,7 @@ public class ThriftWrapJDBC {
     private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new update_argsTupleSchemeFactory();
 
     public @org.apache.thrift.annotation.Nullable java.lang.String queryAndParam; // required
-    public @org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span; // required
+    public @org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -3773,7 +3773,7 @@ public class ThriftWrapJDBC {
       tmpMap.put(_Fields.QUERY_AND_PARAM, new org.apache.thrift.meta_data.FieldMetaData("queryAndParam", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       tmpMap.put(_Fields.SPAN, new org.apache.thrift.meta_data.FieldMetaData("span", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.jaegertracing.thriftjava.Span.class)));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, io.cube.tracing.thriftjava.Span.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(update_args.class, metaDataMap);
     }
@@ -3783,7 +3783,7 @@ public class ThriftWrapJDBC {
 
     public update_args(
       java.lang.String queryAndParam,
-      io.jaegertracing.thriftjava.Span span)
+      io.cube.tracing.thriftjava.Span span)
     {
       this();
       this.queryAndParam = queryAndParam;
@@ -3798,7 +3798,7 @@ public class ThriftWrapJDBC {
         this.queryAndParam = other.queryAndParam;
       }
       if (other.isSetSpan()) {
-        this.span = new io.jaegertracing.thriftjava.Span(other.span);
+        this.span = new io.cube.tracing.thriftjava.Span(other.span);
       }
     }
 
@@ -3838,11 +3838,11 @@ public class ThriftWrapJDBC {
     }
 
     @org.apache.thrift.annotation.Nullable
-    public io.jaegertracing.thriftjava.Span getSpan() {
+    public io.cube.tracing.thriftjava.Span getSpan() {
       return this.span;
     }
 
-    public update_args setSpan(@org.apache.thrift.annotation.Nullable io.jaegertracing.thriftjava.Span span) {
+    public update_args setSpan(@org.apache.thrift.annotation.Nullable io.cube.tracing.thriftjava.Span span) {
       this.span = span;
       return this;
     }
@@ -3876,7 +3876,7 @@ public class ThriftWrapJDBC {
         if (value == null) {
           unsetSpan();
         } else {
-          setSpan((io.jaegertracing.thriftjava.Span)value);
+          setSpan((io.cube.tracing.thriftjava.Span)value);
         }
         break;
 
@@ -4082,7 +4082,7 @@ public class ThriftWrapJDBC {
               break;
             case 2: // SPAN
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-                struct.span = new io.jaegertracing.thriftjava.Span();
+                struct.span = new io.cube.tracing.thriftjava.Span();
                 struct.span.read(iprot);
                 struct.setSpanIsSet(true);
               } else { 
@@ -4156,7 +4156,7 @@ public class ThriftWrapJDBC {
           struct.setQueryAndParamIsSet(true);
         }
         if (incoming.get(1)) {
-          struct.span = new io.jaegertracing.thriftjava.Span();
+          struct.span = new io.cube.tracing.thriftjava.Span();
           struct.span.read(iprot);
           struct.setSpanIsSet(true);
         }

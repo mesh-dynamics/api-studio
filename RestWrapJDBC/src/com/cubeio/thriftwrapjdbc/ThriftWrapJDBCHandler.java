@@ -10,14 +10,12 @@ import org.json.JSONObject;
 
 import com.cubeio.thriftwrapjdbc.ThriftWrapJDBC.Iface;
 
+import io.cube.agent.CommonUtils;
 import io.cube.utils.ConnectionPool;
 import io.cube.utils.Tracing;
-import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
-import io.jaegertracing.thriftjava.Span;
+import io.cube.tracing.thriftjava.Span;
 import io.opentracing.Scope;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 public class ThriftWrapJDBCHandler implements Iface {
@@ -50,21 +48,7 @@ public class ThriftWrapJDBCHandler implements Iface {
         }
     }
 
-    private static Scope startServerSpan(Span span, String methodName) {
-        Tracer tracer = GlobalTracer.get();
-        Tracer.SpanBuilder spanBuilder;
-        try {
-            //span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
-            JaegerSpanContext parentSpanCtx = new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
-                (byte) span.flags);
-            //parentSpanCtx = parentSpanCtx.withBaggage(span.baggage);
-            spanBuilder = tracer.buildSpan(methodName).asChildOf(parentSpanCtx);
-        } catch (Exception e) {
-            spanBuilder = tracer.buildSpan(methodName);
-        }
-        // TODO could add more tags like http.url
-        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
-    }
+
 
 
 
@@ -76,7 +60,7 @@ public class ThriftWrapJDBCHandler implements Iface {
     @Override
     public String initialize(String username, String password, String uri, Span span)
         throws PoolCreationException, TException {
-        try (Scope scope = startServerSpan(span, "initialize")) {
+        try (Scope scope = CommonUtils.startServerSpan(span, "initialize")) {
             scope.span().setTag("initialize", uri + "; "  + username + "; <pwd>");
             initJdbc(uri, username, password);
             return (new JSONObject(Map.of("status" , "Connection Pool Created"))).toString();
@@ -91,7 +75,7 @@ public class ThriftWrapJDBCHandler implements Iface {
         JSONArray result = null;
         JSONArray jsonParams = new JSONArray(params);
         LOGGER.info("Thrift Span Received :: " + span.toString());
-        try (Scope scope = startServerSpan(span, "serverQuery")) {
+        try (Scope scope = CommonUtils.startServerSpan(span, "serverQuery")) {
             scope.span().setTag("query", query);
             LOGGER.info("Jaeger Converted Span :: " + scope.span().toString());
             //LOGGER.info("INTENT :: " + scope.span().getBaggageItem("intent"));
@@ -107,7 +91,7 @@ public class ThriftWrapJDBCHandler implements Iface {
     public String update(String queryAndParam, Span span)
         throws GenericThriftWrapException, TException {
         JSONObject result = null;
-        try (Scope scope = startServerSpan(span, "updateQuery")) {
+        try (Scope scope = CommonUtils.startServerSpan(span, "updateQuery")) {
             scope.span().setTag("update", queryAndParam);
             JSONObject queryAndParams = new JSONObject(queryAndParam);
             JSONArray params = queryAndParams.getJSONArray("params");

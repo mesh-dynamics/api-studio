@@ -14,15 +14,12 @@ import com.cubeiosample.webservices.rest.jersey.Config;
 import com.cubeiosample.webservices.rest.jersey.ListMoviesCache;
 import com.cubeiosample.webservices.rest.jersey.MovieRentals;
 
-import io.cube.utils.Tracing;
-import io.jaegertracing.internal.JaegerSpanContext;
+import io.cube.agent.CommonUtils;
+import io.cube.tracing.thriftjava.Span;
 import io.jaegertracing.internal.JaegerTracer;
-import io.jaegertracing.thriftjava.Span;
 import io.opentracing.Scope;
-import io.opentracing.Tracer;
-import io.opentracing.tag.Tags;
 
-public class MIThriftService implements  MIRest.Iface {
+public class MIThriftService implements  MIThrift.Iface {
 
     private static Logger LOGGER  = Logger.getLogger(MIThriftService.class);
     private static JaegerTracer tracer;
@@ -36,44 +33,17 @@ public class MIThriftService implements  MIRest.Iface {
         BasicConfigurator.configure();
     }
 
-    static {
-        tracer = Tracing.init("MIThrift");
-        try (Scope scope  = startServerSpan(null, "startingUp")) {
-            LOGGER.debug("MIRest tracer: " + tracer.toString());
-            config = new Config();
-            mv = new MovieRentals(tracer, config);
-            lmc = new ListMoviesCache(mv, config);
-        } catch (ClassNotFoundException e) {
-            LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
-        }
-    }
-
-    private static Scope startServerSpan(Span span, String methodName) {
-        Tracer.SpanBuilder spanBuilder;
-        try {
-            span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
-            JaegerSpanContext parentSpanCtx = new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
-                (byte) span.flags);
-            parentSpanCtx = parentSpanCtx.withBaggage(span.baggage);
-            spanBuilder = tracer.buildSpan(methodName).asChildOf(parentSpanCtx);
-        } catch (Exception e) {
-            spanBuilder = tracer.buildSpan(methodName);
-        }
-        // TODO could add more tags like http.url
-        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
-    }
-
     @Override
     public boolean healthCheck() throws TException {
         return true;
     }
 
     @Override
-    public ListMovieResult listMovies(String filmName, String keyWord, String actor)
+    public ListMovieResult listMovies(String filmName, String keyWord, String actor, Span span)
             throws GenericMIRestException, TException {
         JSONArray films;
         ListMovieResult listMovieResult = new ListMovieResult();
-        try (Scope scope = startServerSpan(null, "listMovies")) {
+        try (Scope scope = CommonUtils.startServerSpan(span, "listMovies")) {
             LOGGER.info("Current span In List Movies (Started From Null):: " + scope.span().toString());
             films = lmc.getMovieList(filmName);
             if (films != null) {
@@ -165,7 +135,7 @@ public class MIThriftService implements  MIRest.Iface {
 
 
     @Override
-    public RentMovieResult rentMovie(RentalInfo rentalInfo) throws GenericMIRestException, TException {
+    public RentMovieResult rentMovie(RentalInfo rentalInfo, Span span) throws GenericMIRestException, TException {
         int customerId = rentalInfo.customerId;
         int duration = rentalInfo.duration;
         int filmId = rentalInfo.filmId;
@@ -177,7 +147,7 @@ public class MIThriftService implements  MIRest.Iface {
             throw new GenericMIRestException("Invalid query params");
         }
 
-        try {
+        try (Scope scope = CommonUtils.startServerSpan(span, "rentMovie"))  {
             JSONObject result = mv.rentMovie(filmId, storeId, duration, customerId, staffId);
             return new RentMovieResult(result.getInt("inventory_id") , result.getInt("num_updates")
                     , result.getDouble("rent"));
@@ -188,9 +158,9 @@ public class MIThriftService implements  MIRest.Iface {
     }
 
     @Override
-    public ListStoreResult listStores(int filmId) throws GenericMIRestException, TException {
+    public ListStoreResult listStores(int filmId, Span span) throws GenericMIRestException, TException {
         ListStoreResult storeResult = new ListStoreResult();
-        try {
+        try (Scope scope = CommonUtils.startServerSpan(span, "listStores")) {
             JSONArray resultArr = mv.findAvailableStores(filmId);
             resultArr.forEach(jsonObj -> new StoreInfo(((JSONObject)jsonObj).getInt("store_id")));
             return storeResult;
@@ -200,14 +170,20 @@ public class MIThriftService implements  MIRest.Iface {
     }
 
     @Override
-    public ReturnMovieResult returnMovie(ReturnInfo returnInfo) throws GenericMIRestException, TException {
+    public ReturnMovieResult returnMovie(ReturnInfo returnInfo, Span span)
+        throws GenericMIRestException, TException {
         int inventoryId = returnInfo.inventoryId;
         int userId = returnInfo.userId;
         int staffId = returnInfo.staffId;
         double rent = returnInfo.rent;
-        LOGGER.debug("ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", " + rent);
-        JSONObject jsonObject = mv.returnMovie(inventoryId, userId, staffId, rent);
-        return new ReturnMovieResult(jsonObject.getInt("rental_id"), jsonObject.getInt("return_updates")
+        try (Scope scope = CommonUtils.startServerSpan(span, "returnMovie")) {
+            LOGGER.debug(
+                "ReturnMovie Params: " + inventoryId + ", " + userId + ", " + staffId + ", "
+                    + rent);
+            JSONObject jsonObject = mv.returnMovie(inventoryId, userId, staffId, rent);
+            return new ReturnMovieResult(jsonObject.getInt("rental_id"),
+                jsonObject.getInt("return_updates")
                 , jsonObject.getInt("payment_updates"));
+        }
     }
 }

@@ -14,7 +14,7 @@ public class MIThriftServer {
         TServerTransport serverTransport = new TServerSocket(9090);
         /*THttpClient*/
         server = new TSimpleServer(new TServer.Args(serverTransport)
-                .processor(new MIRest.Processor<>(new MIThriftService())));
+                .processor(new MIThrift.Processor<>(new MIThriftService())));
 
         System.out.print("Starting the server... ");
 

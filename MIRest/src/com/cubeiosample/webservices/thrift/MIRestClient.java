@@ -16,9 +16,9 @@ public class MIRestClient {
         try  {
             transport.open();
             TProtocol protocol = new TBinaryProtocol(transport);
-            MIRest.Client client = new MIRest.Client(protocol);
+            MIThrift.Client client = new MIThrift.Client(protocol);
 
-            ListMovieResult result = client.listMovies("ANACONDA CONFESSIONS" , null , null);
+            ListMovieResult result = client.listMovies("ANACONDA CONFESSIONS" , null , null , null);
 //
 //
 //            //ListStoreResult result = client.listStores(23);
