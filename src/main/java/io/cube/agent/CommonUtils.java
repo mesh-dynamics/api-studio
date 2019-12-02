@@ -276,4 +276,20 @@ public class CommonUtils {
             , getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
     }
 
+    public static Scope startServerSpan(io.cube.tracing.thriftjava.Span span, String methodName) {
+        Tracer tracer = GlobalTracer.get();
+        Tracer.SpanBuilder spanBuilder;
+        try {
+            //span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
+            JaegerSpanContext parentSpanCtx = new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
+                (byte) span.flags);
+            parentSpanCtx = parentSpanCtx.withBaggage(span.baggage);
+            spanBuilder = tracer.buildSpan(methodName).asChildOf(parentSpanCtx);
+        } catch (Exception e) {
+            spanBuilder = tracer.buildSpan(methodName);
+        }
+        // TODO could add more tags like http.url
+        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
+    }
+
 }
