@@ -47,8 +47,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
         this.resultSetMetaDataInstanceId = System.identityHashCode(this);
     }
 
-    public ResultSetMetaData getResultSetMetaData() {
-        return resultSetMetaData;
+    public int getResultSetMetaDataInstanceId() {
+        return resultSetMetaDataInstanceId;
     }
 
     @Override

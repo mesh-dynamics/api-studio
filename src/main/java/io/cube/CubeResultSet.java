@@ -638,7 +638,7 @@ public class CubeResultSet implements ResultSet {
 
         CubeResultSetMetaData metaData = new CubeResultSetMetaData(resultSet.getMetaData(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(metaData.getResultSetMetaData(), config, gmdFnkey, this.resultSetInstanceId);
+            Utils.record(metaData.getResultSetMetaDataInstanceId(), config, gmdFnkey, this.resultSetInstanceId);
         }
 
         return metaData;
