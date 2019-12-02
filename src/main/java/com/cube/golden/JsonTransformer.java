@@ -27,10 +27,10 @@ public class JsonTransformer {
     }
 
     /*
-    * takes in Responses from the recording (golden) and replay and applies the operations given
-    * returns the modified Response with the given collection id and a generated reqId
+    * takes in objects from the recording (golden) and replay and applies the operations given
+    * returns the modified object
     */
-    public JsonNode transformResponse(JsonNode lhsRoot, JsonNode rhsRoot, List<ReqRespUpdateOperation> operationList) {
+    public JsonNode transform(JsonNode lhsRoot, JsonNode rhsRoot, List<ReqRespUpdateOperation> operationList) {
         JsonNode patch =
             preProcessUpdates(lhsRoot, rhsRoot, operationList);
 

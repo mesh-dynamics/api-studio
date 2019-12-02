@@ -1,6 +1,5 @@
 package com.cube.golden;
 
-import com.cube.dao.Response;
 import com.cube.ws.Config;
 
 import org.junit.jupiter.api.Test;
@@ -9,7 +8,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -29,10 +27,6 @@ class JsonTransformerTest {
         // response from golden collection
         String body1 = "[{\"actors_lastnames\":[\"SWANK\",\"HOPKINS\",\"SINATRA\",\"MANSFIELD\",\"ZELLWEGER\"]," +
             "\"display_actors\":[\"NATALIE HOPKINS\",\"GROUCHO SINATRA\",\"ED MANSFIELD\",\"JOE SWANK\"],\"film_id\":552,\"title\":\"MAJESTIC FLOATS\",\"actors_firstnames\":[\"JOE\",\"NATALIE\",\"GROUCHO\",\"ED\",\"JULIA\"],\"film_counts\":[25,32,26,32,16],\"timestamp\":7059275658430054,\"book_info\":{\"reviews\":[{\"rating\":{\"color\":\"black\",\"stars\":5},\"reviewer\":\"Reviewer1\",\"text\":\"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"},{\"rating\":{\"color\":\"black\",\"stars\":4},\"reviewer\":\"Reviewer2\",\"text\":\"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"}],\"id\":\"552\"}}]";
-        Response recordResponse = new Response(Optional.empty(), 200, body1,
-            Optional.of("golden_collection"), Optional.empty(),
-            Optional.empty(),
-            Optional.of("aa"), "/");
 
         // response from replayed collection
         String body2 = "[{\"display_actors\":[\"NATALIE HOPKINS\",\"GROUCHO SINATRA\",\"ED MANSFIELD\",\"JOE " +
@@ -40,10 +34,6 @@ class JsonTransformerTest {
             "\"GROUCHO\",\"ED\",\"JULIA\"],\"film_counts\":[25,32,26,32,16],\"timestamp\":7059391601149060," +
             "\"book_info\":{\"reviews\":[{\"rating\":{\"color\":\"black\",\"stars\":5},\"testkey\":\"testval\", " +
             "\"reviewer\":\"Reviewer1\",\"text\":\"An extremely entertaining play by Shakespeare. The slapstick humour is refreshing!\"},{\"rating\":{\"color\":\"black\",\"stars\":4},\"reviewer\":\"Reviewer2\",\"text\":\"Absolutely fun and entertaining. The play lacks thematic depth when compared to other plays by Shakespeare.\"}],\"id\":\"552\"}}]";
-        Response replayResponse = new Response(Optional.empty(), 200, body2,
-            Optional.of("replay_collection"), Optional.empty(),
-            Optional.empty(),
-            Optional.of("aa"), "/");
 
         // update operations list
         List<ReqRespUpdateOperation> operationsList = Arrays.asList(
@@ -53,10 +43,10 @@ class JsonTransformerTest {
         );
 
         // transform the response by applying the update operations
-        JsonNode recRoot = config.jsonMapper.readTree(recordResponse.body);
-        JsonNode replayRoot = config.jsonMapper.readTree(replayResponse.body);
+        JsonNode recRoot = config.jsonMapper.readTree(body1);
+        JsonNode replayRoot = config.jsonMapper.readTree(body2);
 
-        JsonNode transformedResponseToBeStored = jsonTransformer.transformResponse(recRoot,
+        JsonNode transformedResponseToBeStored = jsonTransformer.transform(recRoot,
             replayRoot, operationsList);
         String bodyExpected = "[{\"display_actors\":[\"NATALIE HOPKINS\",\"GROUCHO SINATRA\",\"ED MANSFIELD\",\"JOE" +
             " " +

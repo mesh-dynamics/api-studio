@@ -164,8 +164,8 @@ public class Event {
 		return payload;
 	}
 
-	public String getPayloadAsJsonString(EventType eventType, Config config) {
-		switch (eventType) {
+	public String getPayloadAsJsonString(Config config) {
+		switch (this.eventType) {
 			case HTTPRequest:
 			case HTTPResponse:
 				return rawPayloadString;
