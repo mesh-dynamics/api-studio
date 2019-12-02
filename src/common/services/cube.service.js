@@ -49,11 +49,11 @@ async function fetchAppsList() {
 
 }
 
-async function updateGoldenSet(replayId, collectionUpdOpSetId, templateVer, recordingId) {
+async function updateGoldenSet(name, replayId, collectionUpdOpSetId, templateVer, recordingId) {
     let response, json;
     let user = JSON.parse(localStorage.getItem('user'));
     let searchParams = new URLSearchParams();
-    searchParams.set('name', (recordingId + '_' + Date.now()));
+    searchParams.set('name', name);
     searchParams.set('userId', user.username);
     let url = `${config.analyzeBaseUrl}/updateGoldenSet/${recordingId}/${replayId}/${collectionUpdOpSetId}/${templateVer}`;
     let updateRes;
