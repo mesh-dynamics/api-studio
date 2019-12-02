@@ -198,8 +198,6 @@ class GoldenPopover extends React.Component {
             return ""
         }
 
-        console.log(this.state.projectList);
-
         let options = this.state.projectList
             .filter(project => project.style === "classic")
             .map(e => <option key={e.id} value={e.id}>{e.name}</option>)
