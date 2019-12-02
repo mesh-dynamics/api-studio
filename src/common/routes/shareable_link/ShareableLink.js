@@ -779,8 +779,8 @@ class ShareableLink extends Component {
                                 {this.state.saveGoldenError}
                             </div>
 
-                            <div className="row margin-bottom-5">
-                                <div className="col-md-3">
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-3 bold">
                                     Name*:
                                 </div>
 
@@ -789,8 +789,8 @@ class ShareableLink extends Component {
                                 </div>
                             </div>
 
-                            <div className="row margin-bottom-5">
-                                <div className="col-md-3">
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-3 bold">
                                     Branch:
                                 </div>
 
@@ -799,8 +799,8 @@ class ShareableLink extends Component {
                                 </div>
                             </div>
 
-                            <div className="row margin-bottom-5">
-                                <div className="col-md-3">
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-3 bold">
                                     Version:
                                 </div>
 
@@ -809,8 +809,8 @@ class ShareableLink extends Component {
                                 </div>
                             </div>
 
-                            <div className="row margin-bottom-5">
-                                <div className="col-md-3">
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-3 bold">
                                     Commit ID:
                                 </div>
 
@@ -819,8 +819,8 @@ class ShareableLink extends Component {
                                 </div>
                             </div>
 
-                            <div className="row margin-bottom-5">
-                                <div className="col-md-3">
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-3 bold">
                                     Tags:
                                 </div>
 
