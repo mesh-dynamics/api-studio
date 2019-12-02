@@ -1450,6 +1450,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TEMPLATE_VERSIONF, replay.templateVersion);
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.sampleRate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
+        replay.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
 
         return doc;
     }
@@ -1502,6 +1503,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Double> sampleRate = getDblField(doc, SAMPLERATEF);
         List<String> intermediateService = getStrFieldMV(doc , INTERMEDIATESERVF);
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
+        Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1511,7 +1513,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 				replay = Optional.of(new Replay(endpoint.get(), customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get(),
 				        reqIds, replayId.get(), async.get(), templateVersion.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toInstant() : creationTimestamp.get(),
-                        sampleRate , intermediateService));
+                        sampleRate , intermediateService, generatedClassJarPath));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayId.orElse("")));
 			}
@@ -2072,7 +2074,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(GOLDEN_NAMEF, recording.name);
         doc.setField(USERIDF, recording.userId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
-        doc.setField(GENERATED_CLASS_JAR_PATH, recording.generatedClassJarPath);
+        recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
         recording.codeVersion.ifPresent(cv -> doc.setField(CODE_VERSIONF, cv));
         recording.branch.ifPresent(branch -> doc.setField(BRANCHF, branch));

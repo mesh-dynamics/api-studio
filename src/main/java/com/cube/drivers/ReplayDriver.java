@@ -73,9 +73,9 @@ public class ReplayDriver  {
                          String replayId, boolean async, Replay.ReplayStatus status,
                          List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant  creationTimestamp,
                          Optional<Double> sampleRate, List<String> intermediateServices, String templateVersion,
-                         Config config) {
+                         Config config, Optional<String> generatedClassJarPath) {
         this(new Replay(endpoint, customerId, app, instanceId, collection, userId, reqIds, replayId, async,
-            templateVersion, status, paths, reqcnt, reqsent, reqfailed, creationTimestamp, sampleRate, intermediateServices), config);
+            templateVersion, status, paths, reqcnt, reqsent, reqfailed, creationTimestamp, sampleRate, intermediateServices, generatedClassJarPath), config);
     }
 
     /**
@@ -96,9 +96,9 @@ public class ReplayDriver  {
         String collection, String userId, List<String> reqIds,
         String replayId, boolean async, ReplayStatus status,
         List<String> paths, Optional<Double> sampleRate, List<String> intermediateServices,
-        String templateVersion, Config config) {
+        String templateVersion, Config config, Optional<String> generatedClassJarPath) {
         this(endpoint, customerId, app, instanceId, collection, userId, reqIds, replayId, async,
-            status, paths, 0, 0, 0, null, sampleRate, intermediateServices, templateVersion, config);
+            status, paths, 0, 0, 0, null, sampleRate, intermediateServices, templateVersion, config, generatedClassJarPath);
     }
 
     private ReplayDriver(Replay replay, Config config) {
@@ -253,10 +253,10 @@ public class ReplayDriver  {
     public static Optional<ReplayDriver> initReplay(String endpoint, String customerId, String app, String instanceId,
                                               String collection, String userId, List<String> reqIds, boolean async,
                                                     List<String> paths,
-                                              JSONObject xfms, Optional<Double> sampleRate, List<String> intermediateServices, String templateSetVersion, Config config) {
+                                              JSONObject xfms, Optional<Double> sampleRate, List<String> intermediateServices, String templateSetVersion, Config config, Optional<String> generatedClassJarPath) {
         String replayId = Replay.getReplayIdFromCollection(collection);
         ReplayDriver replaydriver = new ReplayDriver(endpoint, customerId, app, instanceId, collection, userId,
-                reqIds, replayId, async, Replay.ReplayStatus.Init, paths, sampleRate, intermediateServices, templateSetVersion, config);
+                reqIds, replayId, async, Replay.ReplayStatus.Init, paths, sampleRate, intermediateServices, templateSetVersion, config, generatedClassJarPath);
         if (config.rrstore.saveReplay(replaydriver.replay)) {
             return Optional.of(replaydriver);
         }

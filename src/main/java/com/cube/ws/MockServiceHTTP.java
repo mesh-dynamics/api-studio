@@ -289,24 +289,38 @@ public class MockServiceHTTP {
     @POST
     @Path("/thirft")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response mockThrift(@Context UriInfo uriInfo, ThriftMockRequest thriftMockRequest) {
+    public Response mockThrift(Event thriftMockRequest) {
         try {
             RecordOrReplay recordOrReplay = rrstore
                 .getCurrentRecordOrReplay(Optional.ofNullable(thriftMockRequest.customerId),
-                    Optional.ofNullable(thriftMockRequest.appName),
+                    Optional.ofNullable(thriftMockRequest.app),
                     Optional.ofNullable(thriftMockRequest.instanceId), true).orElseThrow(() ->
                     new Exception(
                         "Could not find running replay for cust:: " + thriftMockRequest.customerId
-                            + " , app :: " + thriftMockRequest.appName + " , instanceId :: "
+                            + " , app :: " + thriftMockRequest.app + " , instanceId :: "
                             + thriftMockRequest.instanceId));
-
             URLClassLoader urlClassLoader = recordOrReplay.getClassLoader();
-            /*EventQuery.Builder builder = new Builder(thriftMockRequest.customerId, thriftMockRequest.appName, EventType.ThriftResponse)
-                .withRunType(RunType.Record).w;*/
-        } catch (Exception e) {
+            thriftMockRequest.parseAndSetKey(config, Utils
+                .getRequestCompareTemplate(config, thriftMockRequest,
+                    recordOrReplay.getTemplateVersion()), urlClassLoader);
 
+            EventQuery.Builder builder = new Builder(thriftMockRequest.customerId,
+                thriftMockRequest.app, EventType.ThriftResponse)
+                .withRunType(RunType.Record).withPayloadKey(thriftMockRequest.payloadKey)
+                .withService(thriftMockRequest.service).withTraceId(thriftMockRequest.traceId);
+
+            Optional<Event> thriftMockResponse = rrstore.getEvents(builder.build()).getObjects()
+                .findFirst();
+            return thriftMockResponse
+                .map(mockResponse -> Response.ok().type(MediaType.APPLICATION_JSON).
+                    entity(mockResponse).build())
+                .orElseThrow(() -> new Exception("No Matching Response Event Found"));
+
+        } catch (Exception e) {
+            return Response.serverError()
+                .entity((new JSONObject(Map.of(Constants.MESSAGE, e.getMessage()))).toString())
+                .build();
         }
-        return Response.ok().build();
     }
 
     @POST

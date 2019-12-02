@@ -54,7 +54,6 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
-import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.DefaultEvent;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder.InvalidEventException;
@@ -233,8 +232,6 @@ public class CubeStore {
                     } catch (Event.EventBuilder.InvalidEventException e) {
                         LOGGER.error("error converting Request to Event: " + e);
                         return Optional.of("error converting Request to Event");
-                    } catch (DataObjCreationException e) {
-                        return Optional.of("Error in Parsing Payload " + e.getMessage());
                     }
 
                     if (!rrstore.save(requestEvent))

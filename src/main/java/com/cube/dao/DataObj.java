@@ -44,7 +44,7 @@ public interface DataObj {
 
     }
 
-    class DataObjCreationException extends Exception {
+    class DataObjCreationException extends RuntimeException {
         public DataObjCreationException(String msg, Throwable e) {
             super (msg,e);
         }

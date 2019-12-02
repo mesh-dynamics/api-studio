@@ -258,7 +258,7 @@ public class ReplayWS {
                         return ReplayDriver.initReplay(e, recording.customerId, recording.app, instanceId,
                             recording.collection,
                             userId, reqIds, async, paths, null, sampleRate, intermediateServices,
-                            recording.templateVersion, config)
+                            recording.templateVersion, config, recording.generatedClassJarPath)
                             .map(replayDriver -> {
                                 String json;
                                 Replay replay = replayDriver.getReplay();
