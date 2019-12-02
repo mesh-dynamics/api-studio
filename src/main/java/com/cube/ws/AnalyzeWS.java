@@ -89,7 +89,10 @@ public class AnalyzeWS {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Analysis service status\": \"AS is healthy\"}").build();
+    	Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+    	Map respMap = new HashMap(solrHealth);
+    	respMap.put(Constants.SERVICE_HEALTH_STATUS, "AS is healthy");
+	    return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
     }
 
 
