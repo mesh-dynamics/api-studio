@@ -86,7 +86,9 @@ public class Event {
 	public boolean validate() {
 
 		if ((customerId == null) || (app == null) || (service == null) || (instanceId
-			== null) /*|| (collection == null)*/ || (traceId == null) || (runType == null) || (
+			== null) /*|| (collection == null)*/ || (traceId == null && (eventType
+			!= EventType.ThriftResponse) && eventType != EventType.ThriftRequest) || (runType
+			== null) || (
 			timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null) || (
 			(rawPayloadBinary == null) == (rawPayloadString == null))) {
 			return false;

@@ -1,5 +1,6 @@
 package io.cube.agent;
 
+import java.util.Optional;
 import java.util.Properties;
 
 import io.opentracing.Tracer;
@@ -62,7 +63,8 @@ public class CommonConfig {
     }
 
     private String fromEnvOrProperties(String propertyName, String defaultValue) {
-        String fromEnv =  System.getenv(propertyName);
+        String fromEnv = Optional.ofNullable(System.getenv(propertyName))
+            .orElse(System.getProperty(propertyName));
         if (fromEnv != null) {
             return fromEnv;
         }

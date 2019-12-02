@@ -120,6 +120,19 @@ public class CubeClient {
         });
     }
 
+    public Optional<Event> getMockThriftResponse(Event event) {
+        Invocation.Builder builder = cubeMockService.path("ms").path("mockThrift").request(MediaType.APPLICATION_JSON);
+        return getResponse(builder, event).flatMap(response -> {
+            try {
+                LOGGER.debug(new ObjectMessage(Map.of("response" , response)));
+                return Optional.of(jsonMapper.readValue(response, Event.class));
+            } catch (Exception e) {
+                LOGGER.error("Error while parsing response from mock server :: " + e.getMessage());
+                return Optional.empty();
+            }
+        });
+    }
+
     public Optional<String> startRecording(String customerid, String app, String instanceid, String collection) {
         Invocation.Builder builder =
                 cubeRecordService.path("cs").path("start").path(customerid).path(app).path(instanceid).path(collection)

@@ -83,7 +83,7 @@ public class CommonUtils {
             if (tracer.activeSpan() != null) {
                 Span activeSpan = tracer.activeSpan();
                 String currentIntent = activeSpan.getBaggageItem(BAGGAGE_INTENT);
-                activeSpan.setBaggageItem(BAGGAGE_INTENT , null);
+                activeSpan.setBaggageItem(BAGGAGE_INTENT, null);
                 tracer.inject(activeSpan.context(),
                         Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
                 activeSpan.setBaggageItem(BAGGAGE_INTENT , currentIntent);
@@ -116,7 +116,7 @@ public class CommonUtils {
 
     public static Optional<String> getCurrentIntentFromScope() {
         Optional<String> currentIntent =  getCurrentSpan().flatMap(span -> Optional.
-                ofNullable(span.getBaggageItem(BAGGAGE_INTENT)));
+                ofNullable(span.getBaggageItem(BAGGAGE_INTENT))).or(() -> fromEnv(BAGGAGE_INTENT));
         LOGGER.info("Got intent from trace (in agent) :: " + currentIntent.orElse(" N/A"));
         return currentIntent;
     }
@@ -254,16 +254,21 @@ public class CommonUtils {
         return argsArray;
     }
 
-    private static String fromEnv(String propertyName) throws Exception {
+    private static Optional<String> fromEnv(String propertyName) {
         String fromEnv =  System.getenv(propertyName);
-        return Optional.ofNullable(fromEnv).orElseThrow(() -> new Exception(propertyName
-            + " not found in environment"));
+        return Optional.ofNullable(fromEnv).or(() -> Optional.ofNullable(System.getProperty(propertyName)));
     }
 
     public static CubeMetaInfo cubeMetaInfoFromEnv() throws Exception {
-        return new CubeMetaInfo(fromEnv("cubeCustomerId")
-            , fromEnv("cubeInstanceId"), fromEnv("cubeAppName")
-            , fromEnv("cubeServiceName"));
+        String customerId = fromEnv("cubeCustomerId")
+            .orElseThrow(() -> new Exception("Customer Id Not Found in Env"));
+        String instanceId = fromEnv("cubeInstanceId")
+            .orElseThrow(() -> new Exception("Instance Id Not Found in Env"));
+        String app = fromEnv("cubeAppName")
+            .orElseThrow(() -> new Exception("Cube App Name Not Found in Env"));
+        String serviceName = fromEnv("cubeServiceName")
+            .orElseThrow(() -> new Exception("Cube Service Name Not Found in Env"));
+        return new CubeMetaInfo(customerId, instanceId, app, serviceName);
     }
 
     public static CubeTraceInfo cubeTraceInfoFromContext() {
