@@ -54,9 +54,9 @@ public class WSUtils {
 
     public static Map solrHealthCheck (SolrClient solr) {
 	    try {
-		    SolrPing sping = new SolrPing();
-		    SolrPingResponse rsp = sping.process(solr);
-		    int status = rsp.getStatus();
+		    SolrPing solrPing = new SolrPing();
+		    SolrPingResponse solrPingResponse = solrPing.process(solr);
+		    int status = solrPingResponse.getStatus();
 		    String msg = status==0 ? "Solr server up" : "Solr server not working";
 		    return Map.of(Constants.SOLR_STATUS_CODE, status, Constants.SOLR_STATUS_MESSAGE, msg);
 	    }
