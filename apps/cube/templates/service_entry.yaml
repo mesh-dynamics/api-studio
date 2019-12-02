@@ -8,12 +8,14 @@ metadata:
     app: cube
 spec:
   hosts:
-  - 18.222.86.142
+  - cubecorp.io #this is not used, but is required
+  addresses:
+  - 18.222.86.142/32
   ports:
   - number: 8983
     name: solr
     protocol: TCP
-  resolution: DNS
+  resolution: NONE
   location: MESH_EXTERNAL
 ---
 apiVersion: networking.istio.io/v1alpha3
