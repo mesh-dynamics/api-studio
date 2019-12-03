@@ -2250,13 +2250,17 @@ public class CubeDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return metaData.unwrap(iface);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        //TODO
-        return false;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return metaData.isWrapperFor(iface);
     }
 }

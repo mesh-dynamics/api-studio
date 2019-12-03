@@ -308,32 +308,42 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public Object getObject(int parameterIndex, Map<String, Class<?>> map) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getObject(parameterIndex, map);
     }
 
     @Override
     public Ref getRef(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getRef(parameterIndex);
     }
 
     @Override
     public Blob getBlob(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getBlob(parameterIndex);
     }
 
     @Override
     public Clob getClob(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getClob(parameterIndex);
     }
 
     @Override
     public Array getArray(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getArray(parameterIndex);
     }
 
     @Override
@@ -775,32 +785,42 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public Object getObject(String parameterName, Map<String, Class<?>> map) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getObject(parameterName, map);
     }
 
     @Override
     public Ref getRef(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getRef(parameterName);
     }
 
     @Override
     public Blob getBlob(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getBlob(parameterName);
     }
 
     @Override
     public Clob getClob(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getClob(parameterName);
     }
 
     @Override
     public Array getArray(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getArray(parameterName);
     }
 
     @Override
@@ -857,14 +877,18 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public RowId getRowId(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getRowId(parameterIndex);
     }
 
     @Override
     public RowId getRowId(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getRowId(parameterName);
     }
 
     @Override
@@ -918,14 +942,18 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public NClob getNClob(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getNClob(parameterIndex);
     }
 
     @Override
     public NClob getNClob(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getNClob(parameterName);
     }
 
     @Override
@@ -937,14 +965,18 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public SQLXML getSQLXML(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getSQLXML(parameterIndex);
     }
 
     @Override
     public SQLXML getSQLXML(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getSQLXML(parameterName);
     }
 
     @Override
@@ -975,26 +1007,34 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public Reader getNCharacterStream(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getNCharacterStream(parameterIndex);
     }
 
     @Override
     public Reader getNCharacterStream(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getNCharacterStream(parameterName);
     }
 
     @Override
     public Reader getCharacterStream(int parameterIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getCharacterStream(parameterIndex);
     }
 
     @Override
     public Reader getCharacterStream(String parameterName) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getCharacterStream(parameterName);
     }
 
     @Override
@@ -1083,13 +1123,17 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
     @Override
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getObject(parameterIndex, type);
     }
 
     @Override
     public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return callableStatement.getObject(parameterName, type);
     }
 }

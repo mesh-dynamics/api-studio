@@ -390,20 +390,26 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getAsciiStream(columnIndex);
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getUnicodeStream(columnIndex);
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getBinaryStream(columnIndex);
     }
 
     @Override
@@ -577,20 +583,26 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getAsciiStream(columnLabel);
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getUnicodeStream(columnLabel);
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getBinaryStream(columnLabel);
     }
 
     @Override
@@ -684,14 +696,18 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getCharacterStream(columnIndex);
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getCharacterStream(columnLabel);
     }
 
     @Override
@@ -1290,62 +1306,82 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getObject(columnIndex, map);
     }
 
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getRef(columnIndex);
     }
 
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getBlob(columnIndex);
     }
 
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getClob(columnIndex);
     }
 
     @Override
     public Array getArray(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getArray(columnIndex);
     }
 
     @Override
     public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getObject(columnLabel, map);
     }
 
     @Override
     public Ref getRef(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getRef(columnLabel);
     }
 
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getBlob(columnLabel);
     }
 
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getClob(columnLabel);
     }
 
     @Override
     public Array getArray(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getArray(columnLabel);
     }
 
     @Override
@@ -1510,14 +1546,18 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getRowId(columnIndex);
     }
 
     @Override
     public RowId getRowId(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getRowId(columnLabel);
     }
 
     @Override
@@ -1586,26 +1626,34 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getNClob(columnIndex);
     }
 
     @Override
     public NClob getNClob(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getNClob(columnLabel);
     }
 
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getSQLXML(columnIndex);
     }
 
     @Override
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getSQLXML(columnLabel);
     }
 
     @Override
@@ -1650,14 +1698,18 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getNCharacterStream(columnIndex);
     }
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getNCharacterStream(columnLabel);
     }
 
     @Override
@@ -1858,25 +1910,33 @@ public class CubeResultSet implements ResultSet {
 
     @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getObject(columnIndex, type);
     }
 
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.getObject(columnLabel, type);
     }
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.unwrap(iface);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        //TODO
-        return false;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return resultSet.isWrapperFor(iface);
     }
 }

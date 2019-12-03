@@ -527,13 +527,17 @@ public class CubeStatement implements Statement {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        //TODO
-        return null;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return statement.unwrap(iface);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        //TODO
-        return false;
+        if (config.intentResolver.isIntentToMock()) {
+            throw new SQLException("This method is not supported yet!");
+        }
+        return statement.isWrapperFor(iface);
     }
 }
