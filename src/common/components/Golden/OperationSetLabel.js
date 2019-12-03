@@ -46,7 +46,7 @@ class OperationSetLabel extends React.Component {
     findInJiraBugs(){
         const {cube, jsonPath} = this.props;
         for (const op of cube.jiraBugs) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
+            if (jsonPath.replace("<BEGIN>", "") == op.jsonPath) {
                 return true;
             }
         }
@@ -81,14 +81,14 @@ class OperationSetLabel extends React.Component {
 
     getIssueUrl = () => {
         const { cube: { jiraBugs }, jsonPath } = this.props;
-        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath);
+        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
         return  jiraBugs.length > 0 && bugItem ? bugItem.issueUrl : "";
     }
     
     getIssueId = () => {
         const { cube: { jiraBugs }, jsonPath } = this.props;
-        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath);
+        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
         return  jiraBugs.length > 0 && bugItem ? bugItem.issueKey : "";
     };

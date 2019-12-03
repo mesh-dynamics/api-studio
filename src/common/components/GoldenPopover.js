@@ -140,7 +140,7 @@ class GoldenPopover extends React.Component {
         let projectId = this.state.projectInput
         let issueTypeId = this.state.issueTypeId
         let apiPath = cube.pathResultsParams.path;
-        let jsonPath = this.props.jsonPath;
+        let jsonPath = this.props.jsonPath.replace("<BEGIN>", "");
         let replayId = cube.pathResultsParams.replayId;
         let requestId  = ""; // TODO
         this.createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath)
@@ -180,7 +180,7 @@ class GoldenPopover extends React.Component {
 
     openJiraLink() {
         const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
-        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
+        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
         window.open(issueUrl)
         hideTippy();
@@ -242,7 +242,7 @@ class GoldenPopover extends React.Component {
     findInJiraBugs(){
         const {cube, jsonPath} = this.props;
         for (const op of cube.jiraBugs) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
+            if(jsonPath.replace("<BEGIN>", "")  == op.jsonPath){
                 return true;
             }
         }
@@ -261,7 +261,7 @@ class GoldenPopover extends React.Component {
         let description =
             `Issue Details:
                 API Path: ${cube.pathResultsParams.path}
-                JSON Path: ${this.props.jsonPath}
+                JSON Path: ${this.props.jsonPath.replace("<BEGIN>", "")}
                 Analysis URL: ${window.location.href}
             `
         return description;
@@ -475,7 +475,7 @@ class GoldenPopover extends React.Component {
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div><b>Jira Issue&nbsp;</b>
                             <p>
-                                <a style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
+                                <a onClick={this.closeTippy} style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
                                     <p>{this.state.jiraIssueKey}</p>
                                 </a>
                             </p>
