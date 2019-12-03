@@ -58,6 +58,7 @@ import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis.ReqRespMatchResult;
+import com.cube.dao.Event.EventType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -943,7 +944,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Event> event = eventBuilder.createEventOpt();
 
         // TODO: revisit if parsing is needed here or should be done on demand by the consumer
-        event.ifPresent(e -> e.parsePayLoad(config));
+        event.ifPresent(e -> {
+            if (e.eventType != EventType.ThriftResponse && e.eventType != EventType.ThriftRequest) {
+                e.parsePayLoad(config);
+            }
+        });
 
         return event;
     }

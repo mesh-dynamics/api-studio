@@ -260,7 +260,7 @@ public class MockServiceHTTP {
     }
 
     @POST
-    @Path("/thirft")
+    @Path("/thrift")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response mockThrift(Event thriftMockRequest) {
         try {
@@ -278,15 +278,15 @@ public class MockServiceHTTP {
                     recordOrReplay.getTemplateVersion()), urlClassLoader);
 
             EventQuery.Builder builder = new Builder(thriftMockRequest.customerId,
-                thriftMockRequest.app, EventType.ThriftResponse)
+                thriftMockRequest.app, EventType.ThriftRequest)
                 .withRunType(RunType.Record).withPayloadKey(thriftMockRequest.payloadKey)
                 .withService(thriftMockRequest.service).withTraceId(thriftMockRequest.traceId);
 
-            Optional<Event> thriftMockResponse = rrstore.getEvents(builder.build()).getObjects()
+            Optional<Event> matchingThriftRequest = rrstore.getEvents(builder.build()).getObjects()
                 .findFirst();
-            return thriftMockResponse
-                .map(mockResponse -> Response.ok().type(MediaType.APPLICATION_JSON).
-                    entity(mockResponse).build())
+            return matchingThriftRequest
+                .flatMap(matchingRequest ->rrstore.getResponseEvent(matchingRequest.reqId)).map(matchingResponse ->
+                    Response.ok().type(MediaType.APPLICATION_JSON).entity(matchingResponse).build())
                 .orElseThrow(() -> new Exception("No Matching Response Event Found"));
 
         } catch (Exception e) {

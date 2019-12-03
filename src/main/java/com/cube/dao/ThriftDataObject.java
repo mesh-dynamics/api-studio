@@ -10,6 +10,8 @@ import java.util.function.Function;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 
+import io.cube.agent.CommonUtils;
+
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
 import com.cube.dao.Event.RawPayload;
@@ -21,6 +23,7 @@ public class ThriftDataObject implements DataObj {
 
 
 	private JsonDataObj jsonDataObj;
+	public final String traceId;
 
 	public ThriftDataObject(byte[] payloadBin, Config config, Map<String, Object> params) {
 		try {
@@ -30,8 +33,9 @@ public class ThriftDataObject implements DataObj {
 				.loadClass((String) params.get(Constants.THRIFT_CLASS_NAME));
 			Constructor<?> constructor = clazz.getConstructor();
 			Object obj1 = constructor.newInstance();
-			tDeserializer.deserialize((TBase) obj1, payloadBin);
+			tDeserializer.deserialize((TBase)obj1, payloadBin);
 			String jsonSerialized = config.gson.toJson(obj1);
+			traceId = CommonUtils.traceIdFromThriftSpan((TBase)obj1);
 			jsonDataObj = new JsonDataObj(jsonSerialized, config.jsonMapper);
 		} catch (Exception e) {
 			throw new DataObjCreationException(e);

@@ -21,6 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.cube.agent.UtilException;
 
@@ -30,6 +32,8 @@ import com.cube.core.Utils;
 import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.golden.ReqRespUpdateOperation;
+import com.cube.serialize.BinaryPayloadDeserializer;
+import com.cube.serialize.BinaryPayloadSerializer;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -110,7 +114,7 @@ public class Event {
 
 		if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (
 			collection == null)
-			|| (traceId == null) || (runType == null) ||
+			|| (traceId == null && eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
 			|| ((rawPayloadBinary == null) == (rawPayloadString == null || rawPayloadString.trim()
 			.isEmpty()))) {
@@ -138,6 +142,9 @@ public class Event {
 		LOGGER.info(new ObjectMessage(
 			Map.of("message", "Generating event key from vals", "vals", keyVals.toString())));
 		payloadKey = Objects.hash(keyVals);
+		if (eventType == EventType.ThriftRequest) {
+			this.traceId = ((ThriftDataObject) payload).traceId;
+		}
 		LOGGER.info(
 			new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
 	}
@@ -294,7 +301,7 @@ public class Event {
 	public final String service;
 	public final String instanceId;
 	private String collection;
-	public final String traceId;
+	public  String traceId;
 	public final RunType runType;
 
 
@@ -309,6 +316,8 @@ public class Event {
 
 	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
 	// as base64. For debugging its easier if the string is readable.
+	@JsonSerialize(using = BinaryPayloadSerializer.class)
+	@JsonDeserialize(using = BinaryPayloadDeserializer.class)
 	public final byte[] rawPayloadBinary;
 	public final String rawPayloadString;
 

@@ -191,13 +191,13 @@ public class Recording {
 		String templateVersion, ReqRespStore rrstore, String name,
 		Optional<String> codeVersion, Optional<String> branch, List<String> tags,
 		boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId,
-		Optional<String> templateUpdOpSetId, Optional<String> comment, String userId) {
+		Optional<String> templateUpdOpSetId, Optional<String> comment, String userId, Optional<String> jarPath) {
 		Recording recording = new Recording(customerId, app, instanceId, collection,
 			RecordingStatus.Running
 			, Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name,
 			codeVersion, branch, tags
 			, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId,
-			Optional.empty());
+			jarPath);
 		if (rrstore.saveRecording(recording)) {
 			return Optional.of(recording);
 		}

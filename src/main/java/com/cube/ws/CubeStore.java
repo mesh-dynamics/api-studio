@@ -776,6 +776,7 @@ public class CubeStore {
 
         String name = formParams.getFirst("name");
         String userId = formParams.getFirst("userId");
+        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
 
         if (name==null) {
             return Response.status(Status.BAD_REQUEST)
@@ -806,7 +807,7 @@ public class CubeStore {
         Optional<Response> resp = Recording
             .startRecording(customerId, app, instanceId, collection, templateSetVersion, rrstore,
                 name, codeVersion, branch, tags,
-                false, gitCommitId, Optional.empty(), Optional.empty(), comment, userId)
+                false, gitCommitId, Optional.empty(), Optional.empty(), comment, userId, jarPath)
             .map(newr -> {
                 String json;
                 try {

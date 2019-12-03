@@ -151,6 +151,8 @@ public class ComparatorCache {
             case HTTPResponse:
             case JavaRequest:
             case JavaResponse:
+            case ThriftRequest:
+            case ThriftResponse:
                 return new JsonComparator(compareTemplate, jsonMapper);
             default:
                 throw new ComparatorNotImplementedException(eventType);
