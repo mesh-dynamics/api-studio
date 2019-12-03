@@ -37,6 +37,7 @@ public class JaegerMeshDThriftSpanConverter {
 			.setTags(buildTags(jaegerSpan.getTags()))
 			.setLogs(buildLogs(jaegerSpan.getLogs()));
 
+		// ADDED FOR MESH-D
 		if (jaegerSpan.getBaggageItem("intent") != null)  {
 			span.setBaggage(Map.of("intent" , jaegerSpan.getBaggageItem("intent")));
 		}

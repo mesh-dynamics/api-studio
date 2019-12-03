@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.cube.agent.Event.RunType;
 import io.jaegertracing.Configuration;
+import io.jaegertracing.internal.JaegerSpan;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
@@ -20,10 +21,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.thrift.TBase;
 
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -290,6 +294,20 @@ public class CommonUtils {
         }
         // TODO could add more tags like http.url
         return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
+    }
+
+    public static String traceIdFromThriftSpan(TBase spanContainingObject) {
+        try {
+            Class<?> clazz = spanContainingObject.getClass();
+            Field field = clazz.getField("span"); //Note, this can throw an exception if the field doesn't exist.
+            io.cube.tracing.thriftjava.Span span = (io.cube.tracing.thriftjava.Span) field.get(spanContainingObject);
+            JaegerSpanContext spanContext =  new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
+                (byte) span.flags);
+            return spanContext.getTraceId();
+        } catch (Exception e) {
+            return null;
+        }
+        //spanContainingObject.getFieldValue()
     }
 
 }

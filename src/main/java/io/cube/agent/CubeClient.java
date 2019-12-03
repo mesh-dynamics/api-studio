@@ -121,7 +121,7 @@ public class CubeClient {
     }
 
     public Optional<Event> getMockThriftResponse(Event event) {
-        Invocation.Builder builder = cubeMockService.path("ms").path("mockThrift").request(MediaType.APPLICATION_JSON);
+        Invocation.Builder builder = cubeMockService.path("ms").path("thrift").request(MediaType.APPLICATION_JSON);
         return getResponse(builder, event).flatMap(response -> {
             try {
                 LOGGER.debug(new ObjectMessage(Map.of("response" , response)));

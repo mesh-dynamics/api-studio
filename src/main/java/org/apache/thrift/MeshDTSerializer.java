@@ -23,6 +23,7 @@ public class MeshDTSerializer {
         this.protocol_ = protocolFactory.getProtocol(this.transport_);
     }
 
+    // Changed input type from TBase to TSerializable - MESH-D
     public byte[] serialize(TSerializable base) throws TException {
         this.baos_.reset();
         base.write(this.protocol_);

@@ -17,6 +17,7 @@ import io.cube.agent.Event.EventType;
 import io.cube.agent.Event.RunType;
 import io.cube.agent.EventBuilder;
 import io.cube.agent.FluentDLogRecorder;
+import io.cube.agent.ThriftMocker;
 
 public abstract class MeshDProcessFunction<I, T extends TBase> {
     private final String methodName;
@@ -29,6 +30,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
         try {
             fluentDLogRecorder = new FluentDLogRecorder((new GsonBuilder()).create());
             serializer = new MeshDTSerializer();
+            thriftMocker = new ThriftMocker();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -38,8 +40,10 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
     private FluentDLogRecorder fluentDLogRecorder;
     private String reqId;
     private MeshDTSerializer serializer;
+    private ThriftMocker thriftMocker;
 
-
+    // MESH-D All the logic for record and mock goes inside this function
+    // it was declared final in the original class and hence could not be overridden
     public final void process(int seqid, TProtocol iprot, TProtocol oprot, I iface)
         throws TException {
         T args = getEmptyArgsInstance();
@@ -54,11 +58,9 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
                         EventType.ThriftRequest).withRawPayloadBinary(serializer.serialize(args))
                         .withReqId(reqId);
                     fluentDLogRecorder.record(eventBuilder.build());
-                } else if (CommonUtils.isIntentToMock()) {
-                    //
                 }
             } catch (Exception e) {
-                System.out.println("Error occured while building event :: " + e.getMessage());
+                LOGGER.error("Error while recording event" , e);
             }
         } catch (TProtocolException e) {
             iprot.readMessageEnd();
@@ -75,7 +77,17 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
         byte msgType = TMessageType.REPLY;
 
         try {
-            result =  getResult(iface, args);
+            if (CommonUtils.isIntentToMock()) {
+                EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
+                    CommonUtils.cubeTraceInfoFromContext(), RunType.Replay,
+                    methodName + "::" + args.getClass().getName(),
+                    EventType.ThriftRequest).withRawPayloadBinary(serializer.serialize(args))
+                    .withReqId(reqId);
+                result = thriftMocker.mockThriftRequest(eventBuilder.build());
+                LOGGER.info("Successfully retrieved result from mock service");
+            } else {
+                result = getResult(iface, args);
+            }
         } catch (TTransportException ex) {
             LOGGER.error("Transport error while processing " + getMethodName(), ex);
             throw ex;

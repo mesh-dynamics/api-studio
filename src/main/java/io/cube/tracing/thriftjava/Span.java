@@ -53,6 +53,7 @@ public class Span implements org.apache.thrift.TBase<Span, Span._Fields>, java.i
     DURATION((short)9, "duration"),
     TAGS((short)10, "tags"),
     LOGS((short)11, "logs"),
+    // ADDED FOR MESH-D
     BAGGAGE((short)12, "baggage");
 
     private static final java.util.Map<String, _Fields> byName = new java.util.HashMap<String, _Fields>();
