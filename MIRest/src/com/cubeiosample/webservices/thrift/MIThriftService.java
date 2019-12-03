@@ -16,8 +16,10 @@ import com.cubeiosample.webservices.rest.jersey.MovieRentals;
 
 import io.cube.agent.CommonUtils;
 import io.cube.tracing.thriftjava.Span;
+import io.cube.utils.Tracing;
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Scope;
+import io.opentracing.util.GlobalTracer;
 
 public class MIThriftService implements  MIThrift.Iface {
 
@@ -27,6 +29,21 @@ public class MIThriftService implements  MIThrift.Iface {
 
     private static MovieRentals mv;
     private static ListMoviesCache lmc;
+
+    static {
+        tracer = Tracing.init("MIThrift");
+        GlobalTracer.register(tracer);
+        try (Scope scope = CommonUtils.startServerSpan((Span) null, "startingUp")) {
+            scope.span().setTag("starting-up", "MovieRentalThrift");
+            LOGGER.debug("MIRest tracer: " + tracer.toString());
+            config = new Config();
+            mv = new MovieRentals(tracer, config);
+            lmc = new ListMoviesCache(mv, config);
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Couldn't initialize MovieRentals instance: " + e.toString());
+        }
+    }
+
 
     static {
         LOGGER = Logger.getLogger(MIThriftService.class);

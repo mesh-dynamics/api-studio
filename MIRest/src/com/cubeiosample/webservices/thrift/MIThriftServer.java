@@ -11,6 +11,12 @@ public class MIThriftServer {
     private TServer server;
 
     public void start() throws TTransportException {
+
+        System.setProperty("cubeCustomerId", "ravivj");
+        System.setProperty("cubeInstanceId", "test");
+        System.setProperty("cubeAppName", "thriftWrapJdbc");
+        System.setProperty("cubeServiceName", "miThrift");
+        System.setProperty("intent", "record");
         TServerTransport serverTransport = new TServerSocket(9090);
         /*THttpClient*/
         server = new TSimpleServer(new TServer.Args(serverTransport)
