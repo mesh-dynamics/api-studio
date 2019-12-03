@@ -22,6 +22,11 @@ import static com.cube.core.Comparator.Resolution.*;
 import static com.cube.core.CompareTemplate.ComparisonType.Equal;
 import static com.cube.core.CompareTemplate.DataType.Default;
 
+import com.cube.core.CompareTemplate.ComparisonType;
+import com.cube.core.CompareTemplate.DataType;
+import com.cube.core.CompareTemplate.ExtractionMethod;
+import com.cube.core.CompareTemplate.PresenceType;
+
 public class TemplateEntry {
 
     private static final Logger LOGGER = LogManager.getLogger(TemplateEntry.class);
@@ -346,7 +351,25 @@ public class TemplateEntry {
         return this.path;
     }
 
+    public DataType getDataType() {
+        return dt;
+    }
+
+    public PresenceType getPresenceType() {
+        return pt;
+    }
+
     public CompareTemplate.ComparisonType getCompareType() {
         return ct;
     }
+
+    public ExtractionMethod getExtractionMethod() {
+        return em;
+    }
+
+    public Optional<String> getCustomization() {
+        return customization;
+    }
+
+
 }

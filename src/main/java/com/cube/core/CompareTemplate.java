@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -110,7 +111,8 @@ public class CompareTemplate {
 	 * is found. Never returns null. Will return default rule if nothing is found.
 	 */
 	public TemplateEntry getRule(String path) {
-		TemplateEntry toReturn = get(path).orElseGet(() -> getInheritedRule(path, path));
+		String normalisedPath = getNormalisedPath(path);
+		TemplateEntry toReturn = get(normalisedPath).orElseGet(() -> getInheritedRule(normalisedPath, path));
 		// TODO maybe it's better to precompute these values
 		toReturn.isParentArray = isParentArray(path);
 		return toReturn;
@@ -155,6 +157,50 @@ public class CompareTemplate {
 		return ret;
 	}
 
+	public String getNormalisedPath(String rootPath) {
+		ArrayList<Integer> slashIndexes = new ArrayList<>();
+		int index = 0;
+		while(index != -1){
+			index = rootPath.indexOf("/", index);
+			if (index != -1) {
+				slashIndexes.add(index);
+				index++;
+			}
+		}
+
+		int totalSlashes = slashIndexes.size();
+		int totalPathLength = rootPath.length();
+		if(totalSlashes==0) {
+			return rootPath;
+		}
+
+		int startI = slashIndexes.get(0);
+		int endI = totalSlashes > 1 ? slashIndexes.get(1) : totalPathLength;
+		int slashNum = 1;
+		StringBuilder stringBuilder = new StringBuilder(rootPath);
+		while (startI < totalPathLength) {
+			String subPath = rootPath.substring(0,startI);
+			// Base case to check if "/" is itself a RptArray
+			if(subPath.isEmpty()) {
+				subPath = "/";
+			}
+
+			int finalStartI = startI;
+			int finalEndI = endI;
+			get(subPath).ifPresent(rule -> {
+				if (rule.dt == DataType.RptArray) {
+					stringBuilder.replace(finalStartI, finalEndI, "/*");
+				}
+			});
+
+			slashNum++;
+			startI = endI;
+			endI = slashNum < totalSlashes ? slashIndexes.get(slashNum) : totalPathLength;
+		}
+
+		return stringBuilder.toString();
+	}
+
 	/*
 	 * Equality and Ignore compare rules can be inherited from the nearest ancestor
 	 */
@@ -163,14 +209,6 @@ public class CompareTemplate {
 		if (index != -1) {
 			String subPath = path.substring(0, index);
 			return get(subPath).flatMap(rule -> {
-			    if (rule.dt == DataType.RptArray) {
-                    Optional<TemplateEntry> starRuleOpt = get(subPath + "/*");
-                    if (starRuleOpt.isPresent()) {
-                        TemplateEntry starRule = starRuleOpt.get();
-                        return Optional.of(new TemplateEntry(origPath, starRule.dt, starRule.pt, starRule.ct));
-                    }
-                }
-
                 // Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
                 // explicitly stated for a path. This will be ensured through validating template before registering.
                 if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
@@ -247,7 +285,9 @@ public class CompareTemplate {
 	 * @param rule
 	 */
 	public void addRule(TemplateEntry rule) {
-		rules.put(rule.path, rule);
+		TemplateEntry normalisedRule = new TemplateEntry(getNormalisedPath(rule.path),
+			rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
+		rules.put(normalisedRule.path, normalisedRule);
 	}
 
 	public static class CompareTemplateStoreException extends Exception {
