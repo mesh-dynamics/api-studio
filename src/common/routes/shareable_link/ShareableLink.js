@@ -917,21 +917,16 @@ class ShareableLink extends Component {
         searchParams.set('name', this.state.nameG);
         searchParams.set('userId', user.username);
 
-        let requestBody = {
-            name: this.state.nameG,
-            userId: user.username
-        };
-
         if (this.state.version.trim()) {
-            searchParams.set('codeVersion', this.state.version);
+            searchParams.set('codeVersion', this.state.version.trim());
         }
 
         if (this.state.branch.trim()) {
-            searchParams.set('branch', this.state.branch);
+            searchParams.set('branch', this.state.branch.trim());
         }
 
         if (this.state.commitId.trim()) {
-            searchParams.set('gitCommitId', this.state.commitId);
+            searchParams.set('gitCommitId', this.state.commitId.trim());
         }
 
         if (this.state.tag.trim()) {
