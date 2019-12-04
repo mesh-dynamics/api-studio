@@ -122,4 +122,5 @@ class Resolutions extends React.Component {
     }
 }
 
+export {resolutionsIconMap};
 export default Resolutions;

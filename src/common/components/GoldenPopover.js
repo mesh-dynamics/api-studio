@@ -22,6 +22,7 @@ class GoldenPopover extends React.Component {
         this.getDefaultDescription = this.getDefaultDescription.bind(this)
         this.openJiraLink = this.openJiraLink.bind(this)
         this.refreshList = this.refreshList.bind(this)
+        this.closeTippy = this.closeTippy.bind(this)
 
         this.state = {
             showGolden: false,
@@ -139,7 +140,7 @@ class GoldenPopover extends React.Component {
         let projectId = this.state.projectInput
         let issueTypeId = this.state.issueTypeId
         let apiPath = cube.pathResultsParams.path;
-        let jsonPath = this.props.jsonPath;
+        let jsonPath = this.props.jsonPath.replace("<BEGIN>", "");
         let replayId = cube.pathResultsParams.replayId;
         let requestId  = ""; // TODO
         this.createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath)
@@ -167,7 +168,7 @@ class GoldenPopover extends React.Component {
         this.setState({ showBug: true });
         this.getProjectList()
         .then(r => {
-            // On success, set the project list and set the 
+            // On success, set the project list and set the
             // default project id to first element on the list.
             this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
         }, err => {
@@ -176,14 +177,15 @@ class GoldenPopover extends React.Component {
             console.error(err);
         });
     }
-    
+
     openJiraLink() {
-        const { cube: { jiraBugs }, jsonPath } = this.props;
-        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath);
-        
+        const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
+        const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath.replace("<BEGIN>", ""));
+
         window.open(issueUrl)
+        hideTippy();
     }
-    
+
     refreshList() {
         const { apiPath, replayId, dispatch } = this.props;
 
@@ -196,9 +198,9 @@ class GoldenPopover extends React.Component {
             return ""
         }
 
-        let options = this.state.projectList.map(e => {
-            return (<option value={e.id}>{e.name}</option>)
-        })
+        let options = this.state.projectList
+            .filter(project => project.style === "classic")
+            .map(e => <option key={e.id} value={e.id}>{e.name}</option>)
 
         let jsxContent = <div>
             <select placeholder="Select Project" onChange={this.handleSelectProjectChange}>
@@ -210,13 +212,13 @@ class GoldenPopover extends React.Component {
     }
 
     hideGR() {
-        this.setState({ 
-            showRule: false, 
-            showGolden: false, 
-            showBug: false, 
-            showBugResponse: false, 
-            jiraErrorMessage: null, 
-            showJiraError: false 
+        this.setState({
+            showRule: false,
+            showGolden: false,
+            showBug: false,
+            showBugResponse: false,
+            jiraErrorMessage: null,
+            showJiraError: false
         });
     }
 
@@ -240,7 +242,7 @@ class GoldenPopover extends React.Component {
     findInJiraBugs(){
         const {cube, jsonPath} = this.props;
         for (const op of cube.jiraBugs) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
+            if(jsonPath.replace("<BEGIN>", "")  == op.jsonPath){
                 return true;
             }
         }
@@ -256,13 +258,18 @@ class GoldenPopover extends React.Component {
     }
 
     getDefaultDescription(cube) {
-        let description = 
-            `Issue Details: 
-                API Path: ${cube.pathResultsParams.path} 
-                JSON Path: ${this.props.jsonPath}
-                Analysis URL: ${window.location.href} 
+        let description =
+            `Issue Details:
+                API Path: ${cube.pathResultsParams.path}
+                JSON Path: ${this.props.jsonPath.replace("<BEGIN>", "")}
+                Analysis URL: ${window.location.href}
             `
         return description;
+    }
+
+    closeTippy() {
+        this.hideGR();
+        this.props.hideTippy();
     }
 
     renderDescription() {
@@ -276,6 +283,12 @@ class GoldenPopover extends React.Component {
     render() {
         return (
             <React.Fragment>
+                <span
+                    onClick={this.closeTippy}
+                    style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer"}}
+                >
+                    <i className="fas fa-times" style={{ color: "#616060"}}></i>
+                </span>
                 <div className={!this.state.showGolden && !this.state.showRule && !this.state.showBug && !this.state.showBugResponse && !this.state.showJiraError ? "text-center" : "hidden"}
                     style={{ color: "#333333" }}>
                     <div style={{ width: "300px", height: "100px", background: "#D5D5D5", padding: "20px" }}>
@@ -290,7 +303,7 @@ class GoldenPopover extends React.Component {
                                 <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : '', cursor: "pointer"}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
-                                    "fontSize": ".65em", 
+                                    "fontSize": ".65em",
                                     "position": "absolute",
                                     "marginLeft": "-6px",
                                     "marginTop": "-3px"
@@ -390,7 +403,7 @@ class GoldenPopover extends React.Component {
 
                         <div className="text-right margin-top-20">
                             <span onClick={this.updateRule} className="cube-btn font-12">APPLY</span>&nbsp;&nbsp;
-                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                            {/* <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span> */}
                         </div>
                     </div>
                 </div>
@@ -406,7 +419,7 @@ class GoldenPopover extends React.Component {
                         <div className="text-center margin-top-20">
                             <span onClick={this.updateGolden}
                                 className="cube-btn font-12">MARK FOR UPDATE</span>&nbsp;&nbsp;
-                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                            {/* <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span> */}
                         </div>
                     </div>
                 </div>
@@ -423,7 +436,7 @@ class GoldenPopover extends React.Component {
                             <table className="table table-striped" style={{ textAlign: "left" }}>
                                 <tbody>
                                     <tr>
-                                        <td>Summary</td>                                                     
+                                        <td>Summary</td>
                                         <td>
                                             {this.renderSummary()}
                                         </td>
@@ -437,7 +450,7 @@ class GoldenPopover extends React.Component {
                                         <td>Project</td>
                                         <td>
                                             {this.renderProjectList()}
-                                        </td>                                        
+                                        </td>
                                     </tr>
 
                                     <tr>
@@ -451,7 +464,7 @@ class GoldenPopover extends React.Component {
 
                         <div className="text-right margin-top-20">
                             <span onClick={this.createIssue} className="cube-btn font-12">CREATE</span>&nbsp;&nbsp;
-                            <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span>
+                            {/* <span onClick={this.hideGR} className="cube-btn font-12">CANCEL</span> */}
                         </div>
                     </div>
                 </div>
@@ -462,7 +475,7 @@ class GoldenPopover extends React.Component {
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div><b>Jira Issue&nbsp;</b>
                             <p>
-                                <a style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
+                                <a onClick={this.closeTippy} style={{cursor: "pointer"}} href={this.state.jiraIssueURL} target="_">
                                     <p>{this.state.jiraIssueKey}</p>
                                 </a>
                             </p>
@@ -484,7 +497,7 @@ class GoldenPopover extends React.Component {
             </React.Fragment>
         );
     }
-    
+
     async getResponseTemplate() {
         let user = JSON.parse(localStorage.getItem('user'));
         let { cube, jsonPath } = this.props;

@@ -64,7 +64,9 @@ exports.DefaultLine = function (_a) {
     // author raj.maddireddy@cubecorp.io 
     jsonPath = _a.jsonPath, serverSideDiff = _a.serverSideDiff, apiPath = _a.apiPath, service = _a.service, app = _a.app, templateVersion = _a.templateVersion, replayId = _a.replayId, recordingId = _a.recordingId;
     var filterPath = _a.filterPath,
-    inputElementRef = _a.inputElementRef;
+    inputElementRef = _a.inputElementRef,
+    showAll = _a.showAll,
+    searchFilterPath = _a.searchFilterPath;
     // author raj.maddireddy@cubecorp.io
     var _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
     var hightlightLeftLine = leftLineNumber !== true
@@ -86,7 +88,8 @@ exports.DefaultLine = function (_a) {
         let refElement = ref.current;
         if(refElement) refElement.style.visibility = "hidden";
     }
-    return !jsonPath || jsonPath.indexOf(filterPath) > -1 ? React.createElement("tr", { className: styles.line, onMouseOver: () => showRefElement(actionsWrapperElementRef), onMouseOut: () => hideRefElement(actionsWrapperElementRef) },
+
+    return !jsonPath || (showAll || (filterPath.indexOf(jsonPath) > -1)) && (jsonPath.indexOf(searchFilterPath) > -1) ? React.createElement("tr", { className: styles.line, onMouseOver: () => showRefElement(actionsWrapperElementRef), onMouseOut: () => hideRefElement(actionsWrapperElementRef) },
         !hideLineNumbers
             && React.createElement("td", { className: classnames_1.default(styles.gutter, styles.leftGutter, (_c = {},
                     _c[styles.diffRemoved] = removed,
