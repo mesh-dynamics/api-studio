@@ -6,7 +6,6 @@
 
 package com.cube.drivers;
 
-import com.cube.dao.Replay.ReplayStatus;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.URI;
@@ -15,7 +14,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -24,20 +28,26 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
-import com.cube.ws.Config;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cube.agent.UtilException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.glassfish.jersey.uri.UriComponent;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.cube.agent.UtilException;
+
 import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
+import com.cube.dao.Event;
+import com.cube.dao.HTTPRequestPayload;
 import com.cube.dao.Replay;
+import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.Request;
+import com.cube.utils.Constants;
+import com.cube.ws.Config;
 
 /*
  * Created by IntelliJ IDEA.
@@ -50,6 +60,7 @@ public class ReplayDriver  {
 
     private final Replay replay;
     public final ReqRespStore rrstore;
+    private final Config config;
     private ReplayResultCache replayResultCache;
     private ObjectMapper jsonMapper;
 
@@ -107,6 +118,7 @@ public class ReplayDriver  {
         this.rrstore = config.rrstore;
         this.replayResultCache = config.replayResultCache;
         this.jsonMapper = config.jsonMapper;
+        this.config = config;
     }
 
 
@@ -135,15 +147,6 @@ public class ReplayDriver  {
 
         // TODO: add support for matrix params
 
- 	    /*
-	    HttpClient client = HttpClient.newBuilder()
-		        .version(Version.HTTP_1_1)
-		        .followRedirects(Redirect.NORMAL)
-		        .connectTimeout(Duration.ofSeconds(20))
-		        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
-		        .authenticator(Authenticator.getDefault())
-		        .build();
-		*/
         HttpClient.Builder clientbuilder = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1) // need to explicitly set this
             // if server is not supporting HTTP 2.0, getting a 403 error
@@ -153,7 +156,8 @@ public class ReplayDriver  {
             clientbuilder.authenticator(Authenticator.getDefault());
         HttpClient client = clientbuilder.build();
 
-        Pair<Stream<List<Request>>, Long> batchedResult = replay.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, jsonMapper);
+        Pair<Stream<List<Event>>, Long> batchedResult = replay.getRequestBatchesUsingEvents(BATCHSIZE, rrstore,
+            jsonMapper);
         replay.reqcnt = batchedResult.getRight().intValue(); // NOTE: converting long to int, should be ok, since we
         // never replay so many requests
 
@@ -162,21 +166,24 @@ public class ReplayDriver  {
             // replay.reqcnt += requests.size();
 
             List<HttpRequest> reqs = new ArrayList<>();
-            requests.forEach(r -> {
-                /*
-                 TODO: currently sampling samples across all paths with same rate. If we want to ensure that we have some
-                 minimum requests from each path (particularly the rare ones), we need to add more logic
-                */
-                if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
-                    return; // drop this request
-                }
-                // transform fields in the request before the replay.
-                replay.xfmer.ifPresent(x -> x.transformRequest(r));
+            requests.forEach(eventReq -> {
 
                 try {
+                    HTTPRequestPayload httpRequest = Utils.getRequestPayload(eventReq, config);
+
+                    /*
+                     TODO: currently sampling samples across all paths with same rate. If we want to ensure that we have some
+                     minimum requests from each path (particularly the rare ones), we need to add more logic
+                    */
+                    if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
+                        return; // drop this request
+                    }
+                    // transform fields in the request before the replay.
+                    replay.xfmer.ifPresent(x -> x.transformRequest(httpRequest));
+
                     UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
-                        .path(r.apiPath);
-                    r.queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
+                        .path(eventReq.apiPath);
+                    httpRequest.queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
                         String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
                             return UriComponent.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
                             // return URLEncoder.encode(v, "UTF-8"); // this had a problem of encoding space as +, which further gets encoded as %2B
@@ -186,9 +193,9 @@ public class ReplayDriver  {
                     URI uri = uribuilder.build();
                     HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
                         .uri(uri)
-                        .method(r.method, HttpRequest.BodyPublishers.ofString(r.body));
+                        .method(httpRequest.method, HttpRequest.BodyPublishers.ofString(httpRequest.body));
 
-                    r.hdrs.forEach((k, vlist) -> {
+                    httpRequest.hdrs.forEach((k, vlist) -> {
                         // some headers are restricted and cannot be set on the request
                         // lua adds ':' to some headers which we filter as they are invalid
                         // and not needed for our requests.
@@ -204,7 +211,9 @@ public class ReplayDriver  {
                     reqs.add(reqbuilder.build());
                 } catch (Exception e) {
                     // encode can throw UnsupportedEncodingException
-                    LOGGER.error("Skipping request. Exception in creating uri: " + r.queryParams.toString(), e);
+                    LOGGER.error(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Skipping request. Exception in creating HTTP request "
+                    )), e);
                 }
             });
 

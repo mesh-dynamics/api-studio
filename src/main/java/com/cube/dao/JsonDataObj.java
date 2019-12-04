@@ -117,7 +117,7 @@ public class JsonDataObj implements DataObj {
             return this;
         }
         JsonTransformer jsonTransformer = new JsonTransformer(jsonMapper);
-        JsonNode transformedRoot = jsonTransformer.transformResponse(this.objRoot, ((JsonDataObj)rhs).getRoot(),
+        JsonNode transformedRoot = jsonTransformer.transform(this.objRoot, ((JsonDataObj)rhs).getRoot(),
             operationList);
 
         return new JsonDataObj(transformedRoot, jsonMapper);
@@ -198,7 +198,7 @@ public class JsonDataObj implements DataObj {
     private void processNode(JsonNode node, Function<String, Boolean> filter, Collection<String> vals, JsonPointer path) {
         if (node.isValueNode()) {
             if (filter.apply(path.toString())) {
-                vals.add(node.asText());
+                vals.add(path + "=" + node.asText());
             }
         } else if (node.isObject()) {
             Iterator<Map.Entry<String, JsonNode>> fields = node.fields();

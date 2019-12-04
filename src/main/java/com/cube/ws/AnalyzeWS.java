@@ -89,7 +89,10 @@ public class AnalyzeWS {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Analysis service status\": \"AS is healthy\"}").build();
+    	Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+    	Map respMap = new HashMap(solrHealth);
+    	respMap.put(Constants.SERVICE_HEALTH_STATUS, "AS is healthy");
+	    return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
     }
 
 
@@ -100,7 +103,7 @@ public class AnalyzeWS {
                             MultivaluedMap<String, String> formParams) {
         String tracefield = Optional.ofNullable(formParams.get("tracefield"))
             .flatMap(vals -> vals.stream().findFirst())
-            .orElse(Config.DEFAULT_TRACE_FIELD);
+            .orElse(Constants.DEFAULT_TRACE_FIELD);
 
         try {
             Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
@@ -457,16 +460,16 @@ public class AnalyzeWS {
 		    rrstore.getAnalysisMatchResult(recordReqId, replayId);
 	    return matchResult.map(matchRes -> {
 		    Optional<String> request = rrstore.getRequestEvent(recordReqId)
-			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+			    .map(event -> event.getPayloadAsJsonString(config));
 		    Optional<String> recordedResponse = rrstore.getResponseEvent(recordReqId)
-			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+			    .map(event -> event.getPayloadAsJsonString(config));
 
 		    Optional<String> replayedRequest = matchRes.replayReqId
 			    .flatMap(rrstore::getRequestEvent)
-			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+			    .map(event -> event.getPayloadAsJsonString(config));
 
 		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
-			    .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+			    .map(event -> event.getPayloadAsJsonString(config));
 
 		    Optional<String> diff = Optional.of(matchRes.diff);
 		    MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
@@ -644,7 +647,7 @@ public class AnalyzeWS {
                 Optional<String> request =
                     matchRes.recordReqId
                         .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
-                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+                        .map(event -> event.getPayloadAsJsonString(config));
 
                 Optional<String> recordedRequest = Optional.empty();
                 Optional<String> replayedRequest = Optional.empty();
@@ -656,12 +659,12 @@ public class AnalyzeWS {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequestEvent)
-                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+                        .map(event -> event.getPayloadAsJsonString(config));
                     diff = Optional.of(matchRes.diff);
                     recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponseEvent)
-                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+                        .map(event -> event.getPayloadAsJsonString(config));
                     replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
-                        .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+                        .map(event -> event.getPayloadAsJsonString(config));
                 }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
@@ -712,9 +715,9 @@ public class AnalyzeWS {
         Optional<Analysis.ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
         Optional<String> recordResponse = recordReqId.flatMap(rrstore::getResponseEvent)
-            .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+            .map(event -> event.getPayloadAsJsonString(config));
         Optional<String> replayResponse = replayReqId.flatMap(rrstore::getResponseEvent)
-            .map(event -> event.getPayloadAsJsonString(event.eventType, config));
+            .map(event -> event.getPayloadAsJsonString(config));
 
         String json;
         try {

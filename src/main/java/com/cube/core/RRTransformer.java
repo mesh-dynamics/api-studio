@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.cube.dao.Request;
+import com.cube.dao.HTTPRequestPayload;
 
 
 public class RRTransformer {
@@ -37,7 +37,7 @@ public class RRTransformer {
 	
 	// match request/response for transformation
 	// Hypothesis is that most requests don't need to be transformed. Hence, separating the check from actual transformation. 
-	public boolean transformRequest(Request req) {
+	public boolean transformRequest(HTTPRequestPayload req) {
 		// headers
 		boolean transformed = false;
 		try {
