@@ -19,6 +19,8 @@ import io.cube.agent.EventBuilder;
 import io.cube.agent.FluentDLogRecorder;
 import io.cube.agent.ThriftMocker;
 
+// MESH-D Mostly overriding the process function in
+// https://github.com/apache/thrift/blob/master/lib/java/src/org/apache/thrift/ProcessFunction.java
 public abstract class MeshDProcessFunction<I, T extends TBase> {
     private final String methodName;
 

@@ -8,6 +8,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.transport.TIOStreamTransport;
 
+// https://github.com/apache/thrift/blob/master/lib/java/src/org/apache/thrift/TSerializer.java
 public class MeshDTSerializer {
     private final ByteArrayOutputStream baos_;
     private final TIOStreamTransport transport_;

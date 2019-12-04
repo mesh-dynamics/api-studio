@@ -9,7 +9,8 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolUtil;
 import org.apache.thrift.protocol.TType;
 
-// Using MeshDProcessFunction Everywhere instead of ProcessFunction - MESH-D
+// MESH-D - Using MeshDProcessFunction Everywhere instead of ProcessFunction
+// https://github.com/apache/thrift/blob/master/lib/java/src/org/apache/thrift/TProcessor.java
 public class MeshDTBaseProcessor<I> implements TProcessor {
     private final I iface;
     private final Map<String, MeshDProcessFunction<I, ? extends TBase>> processMap;
