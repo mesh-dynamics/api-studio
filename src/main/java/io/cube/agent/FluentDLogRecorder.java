@@ -37,4 +37,17 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
             return false;
         }
     }
+
+    @Override
+    public boolean record(ReqResp httpReqResp) {
+        try {
+            String jsonSerialized = jsonMapper.writeValueAsString(httpReqResp);
+            // The prefix will be a part of the fluentd parse regex
+            LOGGER.info("Cube ReqResp:" + jsonSerialized);
+            return true;
+        } catch (Exception e) {
+            LOGGER.error("Unable to serialize ReqResp Object :: " + e.getMessage());
+            return false;
+        }
+    }
 }

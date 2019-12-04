@@ -76,6 +76,18 @@ public class CubeClient {
         return Optional.empty();
     }
 
+    private Optional<String> getResponse(Invocation.Builder builder, ReqResp reqResp) {
+        try {
+            String jsonEntity = jsonMapper.writeValueAsString(reqResp);
+            CommonUtils.addTraceHeaders(builder , "POST");
+            return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error while serializing single HTTP req/resp object :: "
+                + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
     private Optional<String> getResponse(Invocation.Builder builder, Event event) {
         try {
             String jsonEntity = jsonMapper.writeValueAsString(event);
@@ -93,6 +105,12 @@ public class CubeClient {
         Invocation.Builder builder = cubeRecordService.path("cs").path("fr").request(MediaType.TEXT_PLAIN);
         return getResponse(builder , fnReqResponse);
     }
+
+    public Optional<String> storeSingleReqResp(ReqResp reqResp) {
+        Invocation.Builder builder = cubeRecordService.path("cs").path("rr").request(MediaType.TEXT_PLAIN);
+        return getResponse(builder , reqResp);
+    }
+
 
     public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
         Invocation.Builder builder = cubeMockService.path("ms").path("fr").request(MediaType.TEXT_PLAIN);
