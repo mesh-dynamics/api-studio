@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button } from 'react-bootstrap';
+import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
 
@@ -11,6 +11,7 @@ import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
 import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
+import {resolutionsIconMap} from '../../components/Resolutions.js'
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -31,7 +32,7 @@ class ShareableLink extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            filterPath: '',
+            searchFilterPath: '',
             showResponseMessageHeaders: false,
             shownResponseMessageHeaders: false,
             showResponseMessageBody: true,
@@ -47,7 +48,6 @@ class ShareableLink extends Component {
             selectedRequestMatchType: "All",
             selectedResponseMatchType: "All",
             selectedResolutionType: "All",
-            selectedDiffOperationType: "All",
             showNewGolden: false,
             app: "",
             templateVersion: "",
@@ -57,16 +57,15 @@ class ShareableLink extends Component {
             service: "",
             replayId: null,
             recordingId: null,
-            showOnlyFailures: false,
-            showOnlyMarkedForGolden: false,
             currentPageNumber: 1,
             fetchComplete: false,
-            fetchedResults: 0
+            fetchedResults: 0,
+            selectedReqRespMatchType: "responseMismatch",
+            showAll: true,
         };
-        this.handleChange = this.handleChange.bind(this);
+        this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
+        this.handleReqRespMtChange = this.handleReqRespMtChange.bind(this)
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
-        this.toggleShowOnlyFailures = this.toggleShowOnlyFailures.bind(this);
-        this.toggleShowOnlyMarkedForUpdate = this.toggleShowOnlyMarkedForUpdate.bind(this);
         this.changePageNumber = this.changePageNumber.bind(this);
 
         this.inputElementRef = React.createRef();
@@ -151,20 +150,16 @@ class ShareableLink extends Component {
         this.setState({ showNewGolden: false });
     };
 
-    handleChange(e) {
-        this.setState({ filterPath: e.target.value });
+    handleSearchFilterChange(e) {
+        this.setState({ searchFilterPath: e.target.value });
+    }
+
+    handleReqRespMtChange(e) {
+        this.setState({selectedReqRespMatchType: e.target.value});
     }
 
     changePageNumber(e) {
         this.setState({ currentPageNumber: +e.target.innerHTML.trim()});
-    }
-
-    toggleShowOnlyFailures(e) {
-        this.setState({showOnlyFailures : e.target.checked});
-    }
-
-    toggleShowOnlyMarkedForUpdate(e) {
-        this.setState({showOnlyMarkedForGolden : e.target.checked});
     }
 
     toggleMessageContents(e) {
@@ -200,6 +195,12 @@ class ShareableLink extends Component {
             });
         } else if (metaDataType == "selectedService") {
             this.setState({service: value, [metaDataType] : value, selectedAPI: ""});
+        } else if (metaDataType == "selectedResolutionType") {
+            if (value ===  "All") {
+                this.setState({selectedResolutionType : value, showAll : true});
+            } else {
+                this.setState({selectedResolutionType : value, showAll : false});
+            }
         } else {
             this.setState({[metaDataType] : value});
         }
@@ -400,11 +401,24 @@ class ShareableLink extends Component {
         return diffLayoutData;
     }
 
+    generateJsonPathList(resolutionType, diffLayoutDataFiltered) {
+        // for each response body
+        return  diffLayoutDataFiltered.flatMap((v) => {
+            // for each diff in that body
+            return v.parsedDiff.map((diff) => {
+                // if the resolution matches the required one, get its json path
+                if(diff.resolution === resolutionType) {
+                    return diff.path;
+                }
+            })
+        })
+    }
+
     render() {
-        let { selectedAPI, selectedRequestMatchType, selectedResponseMatchType, selectedResolutionType, selectedDiffOperationType, selectedService, showOnlyFailures, currentPageNumber, fetchedResults } = this.state;
-        let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], services = [], resolutionTypes = [], diffOperationTypes = [];
+        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
+        let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], services = [], resolutionTypes = [];
         const {cube} = this.props;
-        this.layoutDataWithDiff.filter(function (eachItem) {
+        let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function (eachItem) {
             services.push({value: eachItem.service, count: 0});
             if (selectedService === "All" || selectedService === eachItem.service) {
                 eachItem.show = true;
@@ -423,55 +437,65 @@ class ShareableLink extends Component {
             }
             return eachItem.show === true;
         }).filter(function (eachItem) {
-            requestMatchTypes.push({value: eachItem.reqmt, count: 0});
-            if (eachItem.show === true && (selectedRequestMatchType === "All" || selectedRequestMatchType === eachItem.reqmt)) {
-                
-            } else {
-                eachItem.show = false;
+            if (eachItem.show === true) {
+                if (selectedReqRespMatchType === "All") {
+                    // do nothing
+                } else if (selectedReqRespMatchType === "requestMismatch") {
+                    // hide non-mismatch
+                    if (eachItem.reqmt !== "NoMatch") {
+                        eachItem.show = false;
+                    }
+                } else if (selectedReqRespMatchType === "responseMismatch") {
+                    // hide non-mismatch
+                    if (eachItem.respmt !== "NoMatch") {
+                        eachItem.show = false;
+                    }
+                }
             }
+            
             return eachItem.show === true;
         }).filter(function (eachItem) {
-            responseMatchTypes.push({value: eachItem.respmt, count: 0});
-            if (eachItem.show === true && (selectedResponseMatchType === "All" || selectedResponseMatchType === eachItem.respmt)) {
-            } else {
-                eachItem.show = false;
-            }
-            return eachItem.show === true;
-        }).filter(function (eachItem) {
+            eachItem.filterPaths = [];
             let toFilter = false;
             if (eachItem.show === true) {
                 for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                    // add non error types to resolutionTypes list
                     resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
-                    if (selectedResolutionType === "All" || selectedResolutionType === eachJsonPathParsedDiff.resolution) {
+
+                    // add path to the filter list if the resolution is All or matches the current selected one,
+                    // and if the selected type is 'All Errors' it is an error type
+                    if (selectedResolutionType === "All" 
+                    || selectedResolutionType === eachJsonPathParsedDiff.resolution 
+                    || (selectedResolutionType === "ERR" && eachJsonPathParsedDiff.resolution.indexOf("ERR_") > -1)) {
+                        // add only the json paths we want to show in the diff
+                        let path = eachJsonPathParsedDiff.path;
+                        eachItem.filterPaths.push(path);
                         toFilter = true;
-                    }
+                        
+                    } 
                 }
             }
+
             if(eachItem.parsedDiff && eachItem.parsedDiff.length === 0) {
                 toFilter = true;
             }
+
             if (!toFilter) {
                 eachItem.show = false;
             }
-            return eachItem.show === true;
-        }).filter(function (eachItem) {
-            let toFilter = false;
-            if (eachItem.show === true) {
-                for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
-                    diffOperationTypes.push({value: eachJsonPathParsedDiff.op, count: 0});
-                    if (selectedDiffOperationType === "All" || selectedDiffOperationType === eachJsonPathParsedDiff.op) {
-                        toFilter = true;
-                    }
-                }
-            }
-            if(eachItem.parsedDiff && eachItem.parsedDiff.length === 0) {
-                toFilter = true;
-            }
-            if (!toFilter) {
-                eachItem.show = false;
-            }
+
             return eachItem.show === true;
         });
+
+       let pagedDiffLayoutData = [];
+       this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
+       if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
+           let startCount = (currentPageNumber - 1 ) * (this.pageSize);
+           for(let i = startCount; i < this.pageSize + startCount; i++) {
+               diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
+            }
+        }
+        
         const filterFunction = (item, index, itself) => {
             item.count = itself.reduce((counter, currentItem, currentIndex) => {
                 if(item.value === currentItem.value) return (counter + 1);
@@ -486,23 +510,15 @@ class ShareableLink extends Component {
             }
             return idx === index;
         };
-        let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function(eachItem) {
-            return eachItem.show === true;
-        });
-        let pagedDiffLayoutData = [];
-        this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
-        if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
-            let startCount = (currentPageNumber - 1 ) * (this.pageSize);
-            for(let i = startCount; i < this.pageSize + startCount; i++) {
-                diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
-            }
-        }
         requestMatchTypes = requestMatchTypes.filter(filterFunction);
         responseMatchTypes = responseMatchTypes.filter(filterFunction);
         services = services.filter(filterFunction);
         apiPaths = apiPaths.filter(filterFunction);
         resolutionTypes = resolutionTypes.filter(filterFunction);
-        diffOperationTypes = diffOperationTypes.filter(filterFunction);
+        // // if 'ERR' type isn't present, add it with count 0
+        // if (resolutionTypes.indexOf("ERR") == -1) {
+        //     resolutionTypes.unshift({value: "ERR", count: 0});
+        // }
         const newStyles = {
             variables: {
                 addedBackground: '#e6ffed !important',
@@ -535,24 +551,9 @@ class ShareableLink extends Component {
                 <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
-        let requestMatchTypeMenuItems = requestMatchTypes.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", item.value)}>
-                <Glyphicon style={{ visibility: selectedRequestMatchType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
-            </MenuItem>);
-        });
-        let responseMatchTypeMenuItems = responseMatchTypes.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResponseMatchType", item.value)}>
-                <Glyphicon style={{ visibility: selectedResponseMatchType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
-            </MenuItem>);
-        });
         let resolutionTypeMenuItems = resolutionTypes.map((item, index) => {
             return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
-                <Glyphicon style={{ visibility: selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
-            </MenuItem>);
-        });
-        let diffOperationTypeMenuItems = diffOperationTypes.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedDiffOperationType", item.value)}>
-                <Glyphicon style={{ visibility: selectedDiffOperationType === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
+                <Glyphicon style={{ visibility: selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
             </MenuItem>);
         });
         let pageButtons = [];
@@ -562,8 +563,7 @@ class ShareableLink extends Component {
             );
         }
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
-            let toShow = showOnlyFailures ? item.respmt === "NoMatch" ? true : false : item.show;
-            return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: toShow ? "block" : "none" }}>
+            return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
@@ -653,9 +653,11 @@ class ShareableLink extends Component {
                                 splitView={true}
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArray}
-                                filterPath={this.state.filterPath}
+                                filterPath={item.filterPaths}
                                 onLineNumberClick={(lineId, e) => { return; }}
                                 inputElementRef={this.inputElementRef}
+                                showAll={this.state.showAll}
+                                searchFilterPath={this.state.searchFilterPath}
                             />
                         </div>
                     </div>
@@ -697,65 +699,41 @@ class ShareableLink extends Component {
                         </Breadcrumb.Item>
                     </Breadcrumb>
                     <div style={{ marginBottom: "18px" }}>
-                        <div style={{ display: "inline-block" }}>
-                            <div style={{ paddingRight: "9px", display: "inline-block" }}>
-                                <DropdownButton title="Request Match Type" id="dropdown-size-medium">
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedRequestMatchType", "All")}>
-                                        <Glyphicon style={{ visibility: selectedRequestMatchType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({requestMatchTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    <MenuItem divider />
-                                    {requestMatchTypeMenuItems}
-                                </DropdownButton>
-                            </div>
-                            <div style={{ paddingRight: "9px", display: "inline-block" }}>
-                                <DropdownButton title="Response Match Type" id="dropdown-size-medium">
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResponseMatchType", "All")}>
-                                        <Glyphicon style={{ visibility: selectedResponseMatchType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({responseMatchTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    <MenuItem divider />
-                                    {responseMatchTypeMenuItems}
-                                </DropdownButton>
-                            </div>
-                            <div style={{ paddingRight: "9px", display: "inline-block" }}>
-                                <DropdownButton title="Resolution Type" id="dropdown-size-medium">
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
-                                        <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    <MenuItem divider />
-                                    {resolutionTypeMenuItems}
-                                </DropdownButton>
-                            </div>
-                            <div style={{ paddingRight: "9px", display: "inline-block" }}>
-                                <DropdownButton title="Diff Operation Type" id="dropdown-size-medium">
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedDiffOperationType", "All")}>
-                                        <Glyphicon style={{ visibility: selectedDiffOperationType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({diffOperationTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    <MenuItem divider />
-                                    {diffOperationTypeMenuItems}
-                                </DropdownButton>
-                            </div>
-                        </div>
+                        <Radio inline value="responseMismatch" checked={this.state.selectedReqRespMatchType === "responseMismatch"} onChange={this.handleReqRespMtChange}> Response Mismatches only </Radio>
+                        <Radio inline value="requestMismatch" checked={this.state.selectedReqRespMatchType === "requestMismatch"} onChange={this.handleReqRespMtChange}> Request Mismatches only </Radio>
+                        <Radio inline value="All" checked={this.state.selectedReqRespMatchType === "All"} onChange={this.handleReqRespMtChange}> All </Radio>
                     </div>
                     <FormGroup>
-                        <FormControl style={{marginBottom: "12px"}}
-                            ref={this.inputElementRef}
-                            type="text"
-                            value={this.state.filterPath}
-                            placeholder="Enter text"
-                            onChange={this.handleChange}
-                            id="filterPathInputId"
-                            inputRef={ref => { this.input = ref; }}
-                        />
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders">Request Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestParams">Request Params</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestBody">Request Body</Checkbox>
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
-                        <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                        <Checkbox inline onChange={this.toggleShowOnlyFailures}>Show requests with failures only</Checkbox>
-                        <span style={{borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                        <Checkbox inline onChange={this.toggleShowOnlyMarkedForUpdate}>Marked for golden update</Checkbox>
+                        <div style={{ display: "inline-block" }}>
+                            <div style={{ paddingLeft: "9px", display: "inline-block" }}>
+                                <DropdownButton title="Resolution Type" id="dropdown-size-medium">
+                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
+                                        <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
+                                    </MenuItem>
+                                    <MenuItem divider />
+                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
+                                        <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                                    </MenuItem>
+                                    <MenuItem divider />
+                                    {resolutionTypeMenuItems}
+                                </DropdownButton>
+                            </div>
+                        </div>
+                        <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
+                            ref={this.inputElementRef}
+                            type="text"
+                            value={this.state.searchFilterPath} 
+                            placeholder="Search"
+                            onChange={this.handleSearchFilterChange} 
+                            id="filterPathInputId"
+                            inputRef={ref => { this.input = ref; }}
+                        />
                     </FormGroup>
                     <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
                         <div style={{textAlign: "left"}}>{pageButtons}</div>
