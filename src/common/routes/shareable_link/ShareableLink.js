@@ -886,7 +886,7 @@ class ShareableLink extends Component {
 
     handleSaveGolden = () => {
         if (!this.state.nameG.trim()) {
-            this.setState({saveGoldenError: "Name is a Required Field",})
+            this.setState({saveGoldenError: "Name is a Required Field, cannot be Empty.",})
         } else {
             this.updateGolden();
         }
