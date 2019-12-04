@@ -8,13 +8,14 @@ metadata:
   name: cubews-record
   namespace: {{namespace}}
   labels:
-    app: cubews-record
+    app: cube
+    component: cubews-record
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: cubews-record
+    component: cubews-record
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -31,7 +32,8 @@ spec:
   template:
     metadata:
       labels:
-        app: cubews-record
+        component: cubews-record
+        app: cube
         version: v1
         namespace: {{namespace}}
     spec:
@@ -144,13 +146,14 @@ metadata:
   name: cubews-mock
   namespace: {{namespace}}
   labels:
-    app: cubews-mock
+    app: cube
+    component: cubews-mock
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: cubews-mock
+    component: cubews-mock
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -167,7 +170,8 @@ spec:
   template:
     metadata:
       labels:
-        app: cubews-mock
+        app: cube
+        component: cubews-mock
         version: v1
         namespace: {{namespace}}
     spec:
@@ -280,13 +284,14 @@ metadata:
   name: cubews-replay
   namespace: {{namespace}}
   labels:
-    app: cubews-replay
+    app: cube
+    component: cubews-replay
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: cubews-replay
+    component: cubews-replay
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -303,7 +308,8 @@ spec:
   template:
     metadata:
       labels:
-        app: cubews-replay
+        app: cube
+        component: cubews-replay
         version: v1
         namespace: {{namespace}}
     spec:
@@ -415,13 +421,14 @@ metadata:
   name: cubeui
   namespace: {{namespace}}
   labels:
-    app: cubeui
+    app: cube
+    component: cubeui
 spec:
   ports:
   - port: 80
     name: http
   selector:
-    app: cubeui
+    component: cubeui
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -438,7 +445,8 @@ spec:
   template:
     metadata:
       labels:
-        app: cubeui
+        app: cube
+        component: cubeui
         version: v1
         namespace: {{namespace}}
     spec:
@@ -467,13 +475,14 @@ metadata:
   name: cubeui-backend
   namespace: {{namespace}}
   labels:
-    app: cubeui-backend
+    app: cube
+    component: cubeui-backend
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: cubeui-backend
+    component: cubeui-backend
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -490,7 +499,8 @@ spec:
   template:
     metadata:
       labels:
-        app: cubeui-backend
+        app: cube
+        component: cubeui-backend
         version: v1
         namespace: {{namespace}}
     spec:
@@ -548,7 +558,7 @@ spec:
     name: peer
   clusterIP: None
   selector:
-    app: redis
+    component: redis
 
 ---
 apiVersion: apps/v1beta1
@@ -557,14 +567,16 @@ metadata:
   name: redis
   namespace: {{namespace}}
   labels:
-    app: redis
+    app: cube
+    component: redis
 spec:
   replicas: 1
   serviceName: redis
   template:
     metadata:
       labels:
-        app: redis
+        app: cube
+        component: redis
     spec:
       containers:
       - command: [sh, -c, source /redis-config/init.sh ]

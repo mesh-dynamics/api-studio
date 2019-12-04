@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: cubews
   namespace: {{namespace}}
+  labels:
+    app: cube
 data:
   APP_DOGFOOD: "{{cube_application}}"
   INSTANCE_DOGFOOD: "{{cube_instance}}"
@@ -22,7 +24,8 @@ metadata:
   name: redis-config
   namespace: {{namespace}}
   labels:
-    app: redis
+    app: cube
+    component: redis
 data:
   init.sh: |
     #!/bin/bash

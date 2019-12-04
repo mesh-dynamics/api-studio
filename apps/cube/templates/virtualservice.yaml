@@ -4,9 +4,13 @@ kind: VirtualService
 metadata:
   name: cube
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   hosts:
   - "{{namespace_host}}"
+  # - customer1.cubecorp.io
+  # - customer2.cubecorp.io
   gateways:
   - {{namespace}}-gateway
   http:
