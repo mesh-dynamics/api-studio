@@ -8,8 +8,9 @@ import {cubeActions} from "../../actions";
 class OperationSetLabel extends React.Component {
     constructor(props, context) {
         super(props, context);
-        //cube.newOperationSet []
-        //cube.operations []
+        this.state = {
+            showBugTippy: false,
+        }
     }
 
     findInOperationSet() {
@@ -45,7 +46,7 @@ class OperationSetLabel extends React.Component {
     findInJiraBugs(){
         const {cube, jsonPath} = this.props;
         for (const op of cube.jiraBugs) {
-            if (jsonPath.replace("<BEGIN>", "") == (op.jsonPath)) {
+            if (jsonPath.replace("<BEGIN>", "") == op.jsonPath) {
                 return true;
             }
         }
@@ -74,9 +75,33 @@ class OperationSetLabel extends React.Component {
         return;
     };
 
+    setShowBugTippy = () => this.setState({ showBugTippy: true });
+
+    setHideBugTippy = () => this.setState({ showBugTippy: false });
+
+    getIssueUrl = () => {
+        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+
+        return  jiraBugs.length > 0 && bugItem ? bugItem.issueUrl : "";
+    }
+    
+    getIssueId = () => {
+        const { cube: { jiraBugs }, jsonPath } = this.props;
+        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+
+        return  jiraBugs.length > 0 && bugItem ? bugItem.issueKey : "";
+    };
+
+    handleIssueUrlClick = () => {
+        this.setHideBugTippy();
+        window.open(this.getIssueUrl())
+    }
+
     removeFromJiraBugs = () => {
         // To Be Implemented
     }
+
 
     render() {
         const tippyContent = (
@@ -84,6 +109,20 @@ class OperationSetLabel extends React.Component {
                 <strong>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</strong>.
             </div>
         );
+
+        const bugContent = (
+            <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", alignItems: "flex-start", padding: "10px", background: "#ECE7E6", cursor: "default"}}>
+                <div>
+                    <span>JSON Path: </span>
+                    <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</span>
+                </div>
+                <div>
+                    <span>Jira Issue: </span>
+                    <span style={{ cursor: "pointer", color: "#0052CC"}} onClick={this.handleIssueUrlClick}>{this.getIssueId()}</span>
+                </div>
+            </div>
+        );
+
         return this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0 ? (
             <span>
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
@@ -92,15 +131,13 @@ class OperationSetLabel extends React.Component {
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
                     <span onDoubleClick={this.removeFromOperations} className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
                 </Tippy>
-                <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
-                    <span onDoubleClick={this.removeFromJiraBugs} className={this.findInJiraBugs() ? '' : "hidden"}><i className="fas fa-bug"></i></span>
+                <Tippy visible={this.state.showBugTippy} content={bugContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
+                    <span onClick={this.setShowBugTippy} onDoubleClick={this.removeFromJiraBugs} className={this.findInJiraBugs() ? '' : "hidden"}><i className="fas fa-bug"></i></span>
                 </Tippy>
             </span>
         ) : "";
     }
 }
-
-{/* <span onDoubleClick={this.removeFromOperations} className={this.findJiraBugs() ? '' : 'hidden'}><Glyphicon glyph="bookmark" /></span> */}
 
 function mapStateToProps(state) {
     const cube = state.cube;
