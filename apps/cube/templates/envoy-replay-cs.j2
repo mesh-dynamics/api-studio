@@ -3,9 +3,11 @@ kind: EnvoyFilter
 metadata:
   name: {{service_name}}-lua
   namespace: {{namespace}}
+  labels:
+    app: cube
 spec:
   workloadLabels:
-    app: {{service_name}}
+    component: {{service_name}}
     namespace: {{namespace}}
   filters:
   - listenerMatch:

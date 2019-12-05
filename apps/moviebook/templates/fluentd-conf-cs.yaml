@@ -4,6 +4,8 @@ metadata:
   creationTimestamp: null
   name: fluentd-moviebook-conf-{{namespace}}
   namespace: logging
+  labels:
+    app: moviebook
 data:
   fluent-moviebook-{{namespace}}.conf: |-
     # tail movieinfo (envoy) logs

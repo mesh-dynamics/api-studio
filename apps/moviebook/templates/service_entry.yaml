@@ -6,6 +6,8 @@ kind: ServiceEntry
 metadata:
   name: aws-mysql-sakila
   namespace: {{namespace}}
+  labels:
+    app: moviebook
 spec:
   hosts:
   - sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com

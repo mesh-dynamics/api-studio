@@ -14,7 +14,7 @@ generate_manifest() {
 		CUBEIO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeio.git refs/heads/master | awk '{print $1}')-master
 		CUBEUI_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui.git refs/heads/master | awk '{print $1}')-master
 		CUBEUI_BACKEND_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
-		MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeui-backend.git refs/heads/master | awk '{print $1}')-master
+		MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/sample_apps.git refs/heads/master | awk '{print $1}')-master
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
 		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
@@ -30,13 +30,13 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
-	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
-	kubectl apply -f $APP_DIR/kubernetes || :
-	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
-	#Check if route exists
+	#Check if route exist
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
+	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
+	kubectl apply -f $APP_DIR/kubernetes || :
+	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
 
 }
 
@@ -52,35 +52,31 @@ if [ -z "$1" ]; then
 }
 
 set_default() {
-echo "Setting default responses for RESTWrap!"
+echo "Setting default responses!"
 
-NOW=$(date +%Y-%m-%dT%H:%M:%SZ)
+	if [ -z "$1" ]; then
+		echo "Enter default response file"
+		read FILE_NAME
+	else
+		FILE_NAME=$1
+	fi
 
-# reqId cannot be NA as we are creating Solr doc id with reqId value. Otherwise second request
-# will override the first request here.
+    FILE_PATH=$APP_DIR/default_responses/$FILE_NAME
+    echo "Checking the file path : $FILE_PATH"
+
+    if [ -f $FILE_PATH ]; then
+        FILE_DATA=`jq '.' $FILE_PATH`
+    else
+        echo "File not found : $FILE_PATH"
+        exit 1
+    fi
 
 RESPONSE="$(curl -X POST \
   http://$GATEWAY_URL/cs/event/setDefaultResponse \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -H "Host:$CUBE_HOST" \
-  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc","instanceId":"NA","collection":"NA",
-  "traceId":"NA","runType":"Manual","timestamp":"'$NOW'","reqId":"'$NOW'","apiPath":"restsql/initialize","eventType":"HTTPRequest",
-  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"GET\",\"body\":\"\"}"},
-  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{status:Connection pool created.}\",\"status\":200}"}')"
-
-echo $RESPONSE
-
-RESPONSE="$(curl -X POST \
-  http://$GATEWAY_URL/cs/event/setDefaultResponse \
-  -H 'Content-Type: application/json' \
-  -H 'cache-control: no-cache' \
-  -H "Host:$CUBE_HOST" \
-  -d '{"event":{"customerId":"CubeCorp","app":"MovieInfo","service":"restwrapjdbc",
-  "instanceId":"NA","collection":"NA","traceId":"NA","runType":"Manual","timestamp":"'$NOW'",
-  "reqId":"'$NOW'","apiPath":"restsql/update","eventType":"HTTPRequest",
-  "rawPayloadString":"{\"hdrs\":{},\"queryParams\":{},\"formParams\":{},\"method\":\"POST\",\"body\":\"\"}"},
-  "rawRespPayloadString":"{\"hdrs\":{\"content-type\":[\"application\/json\"]},\"body\":\"{num_updates:1}\",\"status\":200}"}')"
+  -d "$FILE_DATA")"
 
 echo $RESPONSE
 
@@ -267,12 +263,12 @@ get_environment() {
 
 clean() {
 	# TODO: fix permissions issue
-	kubectl delete all --all -n $NAMESPACE
-	kubectl delete virtualservices.networking.istio.io --all -n $NAMESPACE
-	kubectl delete envoyfilters.networking.istio.io --all -n $NAMESPACE
-	kubectl delete destinationrules.networking.istio.io --all -n $NAMESPACE
-	kubectl delete gateways.networking.istio.io --all -n $NAMESPACE
-	kubectl delete serviceentries.networking.istio.io --all -n $NAMESPACE
+	kubectl delete all -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete virtualservices.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete envoyfilters.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete destinationrules.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete gateways.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete serviceentries.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
 	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
 	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
 	# TODO: check that volumeMountsindex and volumeindex are not empty, otherwise
