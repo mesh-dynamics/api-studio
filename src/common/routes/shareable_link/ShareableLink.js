@@ -561,11 +561,25 @@ class ShareableLink extends Component {
                 <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
-        let resolutionTypeMenuItems = resolutionTypes.map((item, index) => {
+
+        let resTypeMenuJsx = (item, index) => {
             return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
                 <Glyphicon style={{ visibility: selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
             </MenuItem>);
-        });
+        }
+        
+        let resolutionTypeErrorMenuItems 
+                    = resolutionTypes.filter((item) => {
+                        return item.value.indexOf("ERR_") > -1;
+                    })
+                    .map(resTypeMenuJsx);
+        
+        let resolutionTypeOtherMenuItems 
+                    = resolutionTypes.filter((item) => {
+                        return item.value.indexOf("ERR_") == -1;
+                    })
+                    .map(resTypeMenuJsx);
+        
         let pageButtons = [];
         for(let idx = 1; idx <= this.pages; idx++) {
             pageButtons.push(
@@ -730,8 +744,9 @@ class ShareableLink extends Component {
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
                                         <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
                                     </MenuItem>
+                                    {resolutionTypeErrorMenuItems}
                                     <MenuItem divider />
-                                    {resolutionTypeMenuItems}
+                                    {resolutionTypeOtherMenuItems}
                                 </DropdownButton>
                             </div>
                         </div>
