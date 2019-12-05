@@ -53,12 +53,21 @@ class OperationSetLabel extends React.Component {
         return false;
     }
 
-    removeFromOS = () => {
+    removeFromGoldenOS = () => {
         const {cube, jsonPath, dispatch} = this.props;
-        for (let i =  0; i < cube.newOperationSet.length; i++) {
-            if (jsonPath.replace("<BEGIN>", "") == (cube.newOperationSet[i].path)) {
-                dispatch(cubeActions.removeFromNOS(i));
-                return;
+        let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
+        if (indexMOS == -1)
+            return false;
+        /*for (const op of cube.multiOperationsSet[indexMOS].operationSet) {
+            if (jsonPath.replace("<BEGIN>", "") == (op.path)) {
+                return true;
+            }
+        }*/
+        let opList = cube.multiOperationsSet[indexMOS].operationSet;
+        for (let ind = 0; ind < opList.length; ind++) {
+            if (jsonPath.replace("<BEGIN>", "") == (opList[ind].path)) {
+                dispatch(cubeActions.removeFromNOS(ind, opList.length, indexMOS));
+                break;
             }
         }
         return;
@@ -66,10 +75,18 @@ class OperationSetLabel extends React.Component {
 
     removeFromOperations = () => {
         const {cube, jsonPath, dispatch} = this.props;
-        for (let i =  0; i < cube.operations.length; i++) {
-            if (jsonPath.replace("<BEGIN>", "") == (cube.operations[i].path)) {
-                dispatch(cubeActions.removeFromOperations(i));
-                return;
+        for (let key in cube.templateOperationSetObject) {
+            if (cube.templateOperationSetObject.hasOwnProperty(key) && cube.templateOperationSetObject[key].operations) {
+                const keyObj = JSON.parse(key);
+                if (keyObj['path'] == cube.pathResultsParams.path) {
+                    let opList = cube.templateOperationSetObject[key].operations;
+                    for (let ind = 0; ind < opList.length; ind++) {
+                        if (jsonPath.replace("<BEGIN>", "") == (opList[ind].path)) {
+                            dispatch(cubeActions.removeFromOperations(ind, opList.length, key));
+                            break;
+                        }
+                    }
+                }
             }
         }
         return;
@@ -126,7 +143,7 @@ class OperationSetLabel extends React.Component {
         return this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0 ? (
             <span>
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
-                    <span onDoubleClick={this.removeFromOS} className={this.findInOperationSet() ? '' : 'hidden'}><Glyphicon glyph="asterisk" /></span>
+                    <span onDoubleClick={this.removeFromGoldenOS} className={this.findInOperationSet() ? '' : 'hidden'}><Glyphicon glyph="asterisk" /></span>
                 </Tippy>
                 <Tippy content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"} flipOnUpdate={true}>
                     <span onDoubleClick={this.removeFromOperations} className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
