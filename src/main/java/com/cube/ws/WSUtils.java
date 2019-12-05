@@ -7,9 +7,19 @@
 package com.cube.ws;
 
 import com.cube.dao.ReqRespStore;
+import com.cube.utils.Constants;
+
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.request.SolrPing;
+import org.apache.solr.client.solrj.response.SolrPingResponse;
 
 /*
  * Created by IntelliJ IDEA.
@@ -37,10 +47,27 @@ public class WSUtils {
                 "replayId", replayId.orElse("None"),
                 "userId", userId.orElse("None"));
             return Response.status(Response.Status.CONFLICT)
+                .type(MediaType.APPLICATION_JSON)
                 .entity(respObj)
                 .build();
         });
     }
+
+    public static Map solrHealthCheck (SolrClient solr) {
+	    try {
+		    SolrPing solrPing = new SolrPing();
+		    SolrPingResponse solrPingResponse = solrPing.process(solr);
+		    int status = solrPingResponse.getStatus();
+		    String solrStatusMessage = status==0 ? "Solr server up" : "Solr server not working";
+		    return Map.of(Constants.SOLR_STATUS_CODE, status, Constants.SOLR_STATUS_MESSAGE, solrStatusMessage);
+	    }
+	    catch (IOException ioe) {
+		    return Map.of(Constants.SOLR_STATUS_CODE, -1, Constants.SOLR_STATUS_MESSAGE, "Unable to reach Solr server", Constants.ERROR, ioe.getMessage());
+	    }
+	    catch (SolrServerException sse) {
+		    return Map.of(Constants.SOLR_STATUS_CODE, -1, Constants.SOLR_STATUS_MESSAGE, "Unable to reach Solr server", Constants.ERROR, sse.getMessage());
+	    }
+	}
 
     public static class BadValueException extends Exception {
         public BadValueException(String message) {
