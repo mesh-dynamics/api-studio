@@ -752,10 +752,10 @@ class ShareableLink extends Component {
 
                 <Modal show={this.state.showNewGolden}>
                     <Modal.Header>
-                        <Modal.Title>Golden Update</Modal.Title>
+                        <Modal.Title>{!cube.newGoldenId ? "Saving Golden" : "Golden Saved"}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <p className={cube.newGoldenId ? "" : "hidden"}>Golden ID: {cube.newGoldenId}</p>
+                        <p className={cube.newGoldenId ? "" : "hidden"}>Name: {this.state.nameG}</p>
                         <p className={cube.newGoldenId ? "hidden" : ""}>Updating Operations...</p>
                     </Modal.Body>
                     <Modal.Footer className={cube.newGoldenId ? "" : "hidden"}>
