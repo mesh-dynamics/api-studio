@@ -296,6 +296,8 @@ public class CommonUtils {
         return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
     }
 
+    // TODO assuming that the name of the field/argument containing will always be span
+    // this might again require extra config to indicate the field containing span
     public static String traceIdFromThriftSpan(TBase spanContainingObject) {
         try {
             Class<?> clazz = spanContainingObject.getClass();
