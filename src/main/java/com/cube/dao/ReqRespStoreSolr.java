@@ -66,6 +66,7 @@ import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.Constants;
+import com.cube.utils.ReplayTypeEnum;
 import com.cube.ws.Config;
 
 /**
@@ -1238,7 +1239,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.sampleRate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
         replay.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
-
+        replay.service.ifPresent(serv -> doc.setField(SERVICEF, serv));
+        doc.setField(REPLAY_TYPE_F, replay.replayType.toString());
         return doc;
     }
 
@@ -1291,6 +1293,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> intermediateService = getStrFieldMV(doc , INTERMEDIATESERVF);
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
+        Optional<String> service = getStrField(doc, SERVICEF);
+        ReplayTypeEnum replayType = ReplayTypeEnum.fromString(getStrField(doc, REPLAY_TYPE_F).orElse(null));
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1300,7 +1304,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 				replay = Optional.of(new Replay(endpoint.get(), customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get(),
 				        reqIds, replayId.get(), async.get(), templateVersion.get(), status.get(), paths, reqcnt, reqsent, reqfailed,
                         creationTimestamp.isEmpty() ? format.parse("2010-01-01 00:00:00.000").toInstant() : creationTimestamp.get(),
-                        sampleRate , intermediateService, generatedClassJarPath));
+                        sampleRate , intermediateService, generatedClassJarPath, service, replayType));
 			} catch (ParseException e) {
 				LOGGER.error(String.format("Not able to convert Solr result to Replay object for replay id %s", replayId.orElse("")));
 			}
@@ -1566,6 +1570,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
     private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
     private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid" + STRING_SUFFIX;
+    private static final String REPLAY_TYPE_F = CPREFIX + Constants.REPLAY_TYPE_FIELD + STRING_SUFFIX;
 
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveResult(com.cube.dao.Analysis.Result)

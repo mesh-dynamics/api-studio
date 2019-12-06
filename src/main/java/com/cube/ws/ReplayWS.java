@@ -24,18 +24,22 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
+import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Recording;
 import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
-import com.cube.drivers.ReplayDriver;
-import org.json.JSONObject;
+import com.cube.drivers.AbstractReplayDriver;
+import com.cube.drivers.ReplayDriverFactory;
+import com.cube.utils.ReplayTypeEnum;
 
 
 /**
@@ -78,7 +82,7 @@ public class ReplayWS {
                 LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
             }
             xfms = xfmsParam.get(0);
-            Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
+            Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
             if (replay.isPresent()) {
                 replay.get().updateXfmsFromJSONString(xfms);
             }
@@ -97,7 +101,7 @@ public class ReplayWS {
                            @PathParam("replayId") String replayId,
                            @PathParam("customerId") String customerId,
                            @PathParam("app") String app) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayId, rrstore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, rrstore);
         Response resp = replay.map(r -> {
             String json;
             try {
@@ -125,7 +129,7 @@ public class ReplayWS {
 	@Path("forcecomplete/{replayId}")
     public Response forceComplete(@Context UriInfo ui,
                                   @PathParam("replayId") String replayId) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
             rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
@@ -161,7 +165,7 @@ public class ReplayWS {
     @Path("forcestart/{replayId}")
     public Response forceStart(@Context UriInfo ui,
                                @PathParam("replayId") String replayId) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
             String json;
@@ -224,8 +228,10 @@ public class ReplayWS {
         List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
         Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate")).flatMap(v -> Utils.strToDouble(v));
         List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService")).orElse(new ArrayList<>());
+        Optional<String> service = Optional.ofNullable(formParams.getFirst("service"));
         String userId = formParams.getFirst("userId");
         String instanceId = formParams.getFirst("instanceId");
+        String replayType = formParams.getFirst("replayType");
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
 
         if (userId==null) {
@@ -244,7 +250,6 @@ public class ReplayWS {
         }
 
         Recording recording = recordingOpt.get();
-
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId),
             Optional.ofNullable(recording.app), Optional.ofNullable(instanceId), Optional.ofNullable(userId));
@@ -255,10 +260,17 @@ public class ReplayWS {
 
         return endpoint.map(e -> {
                         // TODO: introduce response transforms as necessary
-                        return ReplayDriver.initReplay(e, recording.customerId, recording.app, instanceId,
-                            recording.collection,
-                            userId, reqIds, async, paths, null, sampleRate, intermediateServices,
-                            recording.templateVersion, config, recording.generatedClassJarPath)
+                        return ReplayDriverFactory
+                            .initReplay(
+                                new ReplayBuilder(e, new CubeMetaInfo(recording.customerId,
+                                    recording.app, instanceId), recording.collection, userId)
+                                    .withTemplateSetVersion(recording.templateVersion)
+                                    .withReqIds(reqIds).withAsync(async).withPaths(paths)
+                                    .withSampleRate(sampleRate).withServiceToReplay(service)
+                                    .withIntermediateServices(intermediateServices)
+                                    .withGeneratedClassJar(recording.generatedClassJarPath)
+                                    .withReplayType(ReplayTypeEnum.fromString(replayType)),
+                                config)
                             .map(replayDriver -> {
                                 String json;
                                 Replay replay = replayDriver.getReplay();

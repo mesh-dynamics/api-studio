@@ -35,6 +35,7 @@ import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.serialize.BinaryPayloadDeserializer;
 import com.cube.serialize.BinaryPayloadSerializer;
 import com.cube.utils.Constants;
+import com.cube.utils.ReplayTypeEnum;
 import com.cube.ws.Config;
 
 /*
@@ -282,6 +283,17 @@ public class Event {
 					return ProtoBufResponse;
 				default:
 					return HTTPResponse;
+			}
+		}
+
+		public static EventType fromReplayType(ReplayTypeEnum replayType) {
+			switch(replayType) {
+				case THRIFT:
+					return ThriftRequest;
+				case GRPC:
+					return ProtoBufRequest;
+				default:
+					return HTTPRequest;
 			}
 		}
 	}

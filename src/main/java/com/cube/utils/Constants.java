@@ -107,6 +107,7 @@ public class Constants {
     public static final String LIMIT_FIELD = "limit";
     public static final String OFFSET_FIELD = "offset";
     public static final String JAR_PATH_FIELD = "jarPath";
+    public static final String REPLAY_TYPE_FIELD = "replayType";
 
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
@@ -120,5 +121,6 @@ public class Constants {
     public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
     public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
     public static final String TEMPLATE_VERSION_FIELD = "version";
+
 
 }

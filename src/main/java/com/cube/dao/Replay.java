@@ -35,6 +35,7 @@ import com.cube.core.BatchingIterator;
 import com.cube.core.RRTransformer;
 import com.cube.dao.Event.EventType;
 import com.cube.utils.Constants;
+import com.cube.utils.ReplayTypeEnum;
 
 /**
  * @author prasad
@@ -66,11 +67,13 @@ public class Replay {
      * @param status
      * @param sampleRate
      */
-	public Replay(String endpoint, String customerId, String app, String instanceId, String collection, String userId
-            , List<String> reqIds,
-                  String replayId, boolean async, String templateVersion, ReplayStatus status,
-                  List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
-                  Optional<Double> sampleRate, List<String> intermediateServices, Optional<String> generatedClassJarPath) {
+	public Replay(String endpoint, String customerId, String app, String instanceId,
+		String collection, String userId
+		, List<String> reqIds,
+		String replayId, boolean async, String templateVersion, ReplayStatus status,
+		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
+		Optional<Double> sampleRate, List<String> intermediateServices,
+		Optional<String> generatedClassJarPath, Optional<String> service, ReplayTypeEnum replayType) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -92,6 +95,8 @@ public class Replay {
 		this.sampleRate = sampleRate;
 		this.intermediateServices = intermediateServices;
 		this.generatedClassJarPath = generatedClassJarPath;
+		this.service = service;
+		this.replayType = replayType;
 		generatedClassJarPath.ifPresent(classJarPath -> {
 			try {
 				Path path = Paths.get(classJarPath);
@@ -122,9 +127,11 @@ public class Replay {
         creationTimeStamp = Instant.now();
 	    reqIds = Collections.emptyList();
 	    paths = Collections.emptyList();
+	    service = Optional.empty();
 	    intermediateServices = Collections.emptyList();
 	    templateVersion = "";
 	    generatedClassJarPath = Optional.empty();
+	    replayType = ReplayTypeEnum.HTTP;
     }
 
 	/*
@@ -161,6 +168,8 @@ public class Replay {
     public final boolean async;
     @JsonProperty("status")
 	public ReplayStatus status;
+    @JsonProperty("service")
+    public final Optional<String> service;
     @JsonProperty("paths")
     public final List<String> paths; // paths to be replayed
     @JsonProperty("intermdtserv")
@@ -179,6 +188,8 @@ public class Replay {
     public final Instant creationTimeStamp;
 	@JsonProperty("jarPath")
 	public Optional<String> generatedClassJarPath;
+	@JsonProperty("replayType")
+	public final ReplayTypeEnum replayType;
 	public transient URLClassLoader generatedClassLoader;
 
 	@JsonSetter
@@ -228,11 +239,12 @@ public class Replay {
         return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
     }
 
-    private Result<Event> getEventResult(ReqRespStore rrstore) {
-        EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.HTTPRequest)
-            .withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
-        return rrstore.getEvents(eventQuery);
-    }
+	private Result<Event> getEventResult(ReqRespStore rrstore) {
+		EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.fromReplayType(replayType))
+			.withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths)
+			.withCollection(collection).withServices(service.map(List::of).orElse(Collections.emptyList())).build();
+		return rrstore.getEvents(eventQuery);
+	}
 
 
     @JsonIgnore
