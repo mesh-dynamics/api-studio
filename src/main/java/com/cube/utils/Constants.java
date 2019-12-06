@@ -43,6 +43,10 @@ public class Constants {
     public static final String ANALYSIS_NOT_FOUND = "ANALYSIS_NOT_FOUND";
     public static final String RECORDING_NOT_FOUND = "RECORDING_NOT_FOUND";
     public static final String TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND";
+    public static final String SERVICE_HEALTH_STATUS = "SERVICE_HEALTH_STATUS";
+    public static final String SOLR_STATUS_CODE = "SOLR_STATUS_CODE";
+    public static final String SOLR_STATUS_MESSAGE = "SOLR_STATUS_MESSAGE";
+
 
     //EXCEPTIONS
     public static final String IO_EXCEPTION = "IO_EXCEPTION";

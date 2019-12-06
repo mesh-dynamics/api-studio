@@ -4,6 +4,7 @@
 package com.cube.ws;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,8 +40,8 @@ import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.ReplayDriverFactory;
+import com.cube.utils.Constants;
 import com.cube.utils.ReplayTypeEnum;
-
 
 /**
  * @author prasad
@@ -55,7 +56,10 @@ public class ReplayWS {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"Replay service status\": \"RS is healthy\"}").build();
+        Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+        Map respMap = new HashMap(solrHealth);
+        respMap.put(Constants.SERVICE_HEALTH_STATUS, "RS is healthy");
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
     }
 
 
