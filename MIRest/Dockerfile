@@ -1,7 +1,3 @@
-FROM tomcat:9-jre11
-RUN rm -rf /usr/local/tomcat/webapps/ROOT
-# adding line below to speedup tomcat startup
-# see https://github.com/theotherp/nzbhydra2/issues/42
-# reduced time from 360 s to 6s!
-RUN perl -0777 -i -pe 's/securerandom.source=file:\/dev\/random/securerandom.source=file:\/dev\/urandom/' /etc/java-11-openjdk/security/java.security
-ADD target/MIRest-V1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+FROM openjdk:11.0.4-jre-slim
+ADD target/MIThrift-V1-SNAPSHOT-jar-with-dependencies.jar /opt/MIThrift.jar
+CMD java -jar /opt/MIThrift.jar

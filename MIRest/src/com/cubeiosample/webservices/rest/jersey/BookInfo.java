@@ -82,31 +82,38 @@ public class BookInfo {
             }
             requestTimeStamp = currentRequestTimeStamp;
 
-            if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
+           /* if (random.nextDouble() < randomGuassianPercentGivenStdDevAndMean) {
                 JSONObject detailsResult = null;
                 bookInfo.put("details", detailsResult);
-            } else {
+            } else {*/
+           LOGGER.info("Before calling details service");
                 response = RestUtils.callWithRetries(tracer,
                         bookDetailsService.path("details").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON),
                         null, "GET", 3, config.ADD_TRACING_HEADERS);
                 result = new JSONObject(response.readEntity(String.class));
                 bookInfo.put("details", result);
-            }
-            
-            // get ratings
+            //}
+
+
+            LOGGER.info("Before calling ratings service"); // get ratings
             response = RestUtils.callWithRetries(tracer, 
         			bookRatingsService.path("ratings").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON), 
         	   	    null, "GET", 3, config.ADD_TRACING_HEADERS);
             result = new JSONObject(response.readEntity(String.class));
-            bookInfo.put("ratings", result);
+            if (result.has("ratings")) {
+                bookInfo.put("ratings", result.getJSONObject("ratings"));
+            }
 
             // get reviews
+            LOGGER.info("Before calling reviews service");
             response = RestUtils.callWithRetries(tracer, 
         			bookReviewsService.path("reviews").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON), 
         	   	    null, "GET", 3, config.ADD_TRACING_HEADERS);
             result = new JSONObject(response.readEntity(String.class));
-            bookInfo.put("reviews", result);
-            
+            if (result.has("reviews")) {
+                bookInfo.put("reviews" , result.getJSONArray("reviews"));
+            }
+
         	response.close();
   	    return bookInfo;
   	  } catch (Exception e) {

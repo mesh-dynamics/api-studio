@@ -24,7 +24,7 @@ public class Config {
     public String MYSQL_PWD = "cubeio12";  // AWS RDS pwd
 
     // restwrapjdbc
-    public String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
+    public String RESTWRAPJDBC_URI =   "http://restwrapjdbc:8080/restsql";
 
     // Flags
     public boolean USE_KUBE = false;
@@ -87,7 +87,7 @@ public class Config {
         // additional services from bookinfo
         String getBookReviews = this.getProperty("GET_BOOK_REVIEWS");
         if (getBookReviews == null || !getBookReviews.equalsIgnoreCase("TRUE")) {
-        	GET_BOOK_REVIEWS = false;
+        	GET_BOOK_REVIEWS = true;
         } else {
         	GET_BOOK_REVIEWS = true;
         }
@@ -165,7 +165,7 @@ public class Config {
         	overrideConfigWithKubeSettings();
         }
 
-
+        LOGGER.info("final value for get book reviews is :: " + GET_BOOK_REVIEWS);
         LOGGER.info("final value for concat bug is :: " + CONCAT_BUG);
         LOGGER.info("final value for number of actors to display is :: " + NUM_ACTORS_TO_DISPLAY);
         LOGGER.info("final value for use caching is :: " + USE_CACHING);

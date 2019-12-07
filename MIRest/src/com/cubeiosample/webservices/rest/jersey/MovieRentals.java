@@ -20,7 +20,7 @@ import com.google.gson.JsonArray;
 
 public class MovieRentals {
 
-    private static RestOverSql ros = null;
+    private static ThriftOverSql tos = null;
     private static BookInfo bookInfo = null;
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -39,7 +39,7 @@ public class MovieRentals {
 
 	    try {
 	    	LOGGER.debug("MV tracer: " + tracer.toString());
-	    	ros = new RestOverSql(this.tracer, config);
+	    	tos = new ThriftOverSql(this.tracer, config);
 
 	    	if (this.config.GET_BOOK_REVIEWS) {
 	    		bookInfo = new BookInfo(tracer, config);
@@ -50,7 +50,7 @@ public class MovieRentals {
 
 	    // health check of the ROS
 	    try {
-	      LOGGER.info(ros.getHealth());
+	      LOGGER.info(tos.getHealth());
 	    } catch (Exception e) {
 	      LOGGER.error("health check of RestWrapper over JDBC failed; " + e.toString());
 	    }
@@ -96,7 +96,7 @@ public class MovieRentals {
       JSONArray params = new JSONArray();
       RestOverSql.addStringParam(params, filmname);
       JSONArray films = null;
-      films = ros.executeQuery(query, params);
+      films = tos.executeQuery(query, params);
 
       processActorNamesForDisplay(films);
       addTimestamp(films);
@@ -259,7 +259,7 @@ public class MovieRentals {
       RestOverSql.addStringParam(params, keyword);
       JSONArray films = null;
       LOGGER.debug("params array:" + params.toString());
-      return ros.executeQuery(query, params);
+      return tos.executeQuery(query, params);
     }
 
 
@@ -270,12 +270,12 @@ public class MovieRentals {
 		    			+ " inventory_id not in (select inventory_id from rental where return_date is null)";
 		    	JSONArray params = new JSONArray();
 		    	RestOverSql.addIntegerParam(params, filmId);
-	    	    if (ros == null) {
+	    	    if (tos == null) {
 	    	    	LOGGER.debug("Creating ROS since it is null");
-	    	    	ros = new RestOverSql(tracer, config);
+	    	    	tos = new ThriftOverSql(tracer, config);
 		    	}
 		    	// else
-		    	return ros.executeQuery(storesQuery, params);
+		    	return tos.executeQuery(storesQuery, params);
 	    	} catch (Exception e) {
 	    		LOGGER.error("FindAvailableStores failed on filmId=" + filmId + "; " + e.toString());
 	    	}
@@ -287,7 +287,7 @@ public class MovieRentals {
         String duesQuery = "select * from rental where return_date is null and customer_id = ?";
 	    JSONArray params = new JSONArray();
 	    RestOverSql.addIntegerParam(params, userId);
-        return ros.executeQuery(duesQuery, params);
+        return tos.executeQuery(duesQuery, params);
     }
 
 
@@ -371,7 +371,7 @@ public class MovieRentals {
 		    	JSONArray params = new JSONArray();
 		    	RestOverSql.addIntegerParam(params, film_id);
 		    	RestOverSql.addIntegerParam(params, store_id);
-		    	rs = ros.executeQuery(inventoryQuery, params);
+		    	rs = tos.executeQuery(inventoryQuery, params);
 	    		if (rs == null || rs.length() < 1) {
 		    		return -1;
 		    	}
@@ -389,7 +389,7 @@ public class MovieRentals {
       JSONArray params = new JSONArray();
       RestOverSql.addIntegerParam(params, film_id);
       JSONArray rs = null;
-      rs = ros.executeQuery(query, params);
+      rs = tos.executeQuery(query, params);
       if (rs.length() < 1) {
         return -1;
   	  }
@@ -407,7 +407,7 @@ public class MovieRentals {
       	RestOverSql.addIntegerParam(params, staff_id);
       	RestOverSql.addStringParam(params, dateString);
       	LOGGER.debug(rentalUpdateQuery + "; " + params.toString());
-    	return ros.executeUpdate(rentalUpdateQuery, params);
+    	return tos.executeUpdate(rentalUpdateQuery, params);
     }
 
 
@@ -419,7 +419,7 @@ public class MovieRentals {
         RestOverSql.addIntegerParam(params, customerId);
         RestOverSql.addIntegerParam(params, staffId);
         JSONArray rs = null;
-        rs = ros.executeQuery(rentalIdForReturnQuery, params);
+        rs = tos.executeQuery(rentalIdForReturnQuery, params);
         return rs.getJSONObject(0).getInt("rental_id");
       } catch (Exception e) {
         LOGGER.info("Couldn't find rental_id for [" + inventoryId + ", " + customerId + ", " + staffId + "]");
@@ -442,7 +442,7 @@ public class MovieRentals {
       RestOverSql.addStringParam(params1, dateString);
       RestOverSql.addIntegerParam(params1, rentalId);
       JSONObject returnUpdate = null;
-      returnUpdate = ros.executeUpdate(rentalReturnQuery, params1);
+      returnUpdate = tos.executeUpdate(rentalReturnQuery, params1);
       int returnUpdates = returnUpdate.getInt("num_updates");
       result.put("return_updates", returnUpdates);
       if (returnUpdates == -1) {
@@ -457,7 +457,7 @@ public class MovieRentals {
       RestOverSql.addDoubleParam(params2, amount);
       RestOverSql.addStringParam(params2, dateString);
       JSONObject paymentUpdate = null;
-      paymentUpdate = ros.executeUpdate(paymentQuery, params2);
+      paymentUpdate = tos.executeUpdate(paymentQuery, params2);
       result.put("payment_updates", paymentUpdate.getInt("num_updates"));
       return result;
     }
