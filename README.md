@@ -1,1 +1,1 @@
-# Sample Apps
+# Movie Info on Thrift RPC
