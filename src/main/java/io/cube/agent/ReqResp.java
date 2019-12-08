@@ -16,7 +16,7 @@ public class ReqResp {
 	 * @param hdrs
 	 * @param body
 	 */
-	private ReqResp(String pathwparams, List<Entry<String, String>> meta,
+	public ReqResp(String pathwparams, List<Entry<String, String>> meta,
 		List<Entry<String, String>> hdrs, String body) {
 		super();
 		this.pathwparams = pathwparams;
