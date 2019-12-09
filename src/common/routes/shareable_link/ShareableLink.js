@@ -423,7 +423,8 @@ class ShareableLink extends Component {
 
     render() {
         let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
-        let requestMatchTypes = [], responseMatchTypes = [], apiPaths = [], services = [], resolutionTypes = [];
+        let apiPaths = [], services = [], resolutionTypes = [];
+        let apiPathIndicators = {};
         const {cube} = this.props;
         let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function (eachItem) {
             services.push({value: eachItem.service, count: 0});
@@ -435,7 +436,12 @@ class ShareableLink extends Component {
             }
             return eachItem.show === true;
         }).filter(function (eachItem) {
+            if (eachItem.reqmt === "NoMatch" || eachItem.respmt === "NoMatch") {
+                apiPathIndicators[eachItem.path] = true;
+            }
+            
             apiPaths.push({value: eachItem.path, count: 0});
+            
             if (eachItem.show === true && (selectedAPI === "All" || selectedAPI === eachItem.path)) {
                 
             }
@@ -494,12 +500,12 @@ class ShareableLink extends Component {
             return eachItem.show === true;
         });
 
-       let pagedDiffLayoutData = [];
-       this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
-       if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
-           let startCount = (currentPageNumber - 1 ) * (this.pageSize);
-           for(let i = startCount; i < this.pageSize + startCount; i++) {
-               diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
+        let pagedDiffLayoutData = [];
+        this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
+        if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
+            let startCount = (currentPageNumber - 1 ) * (this.pageSize);
+            for(let i = startCount; i < this.pageSize + startCount; i++) {
+                diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
             }
         }
 
@@ -517,15 +523,11 @@ class ShareableLink extends Component {
             }
             return idx === index;
         };
-        requestMatchTypes = requestMatchTypes.filter(filterFunction);
-        responseMatchTypes = responseMatchTypes.filter(filterFunction);
+        
         services = services.filter(filterFunction);
         apiPaths = apiPaths.filter(filterFunction);
         resolutionTypes = resolutionTypes.filter(filterFunction);
-        // // if 'ERR' type isn't present, add it with count 0
-        // if (resolutionTypes.indexOf("ERR") == -1) {
-        //     resolutionTypes.unshift({value: "ERR", count: 0});
-        // }
+        
         const newStyles = {
             variables: {
                 addedBackground: '#e6ffed !important',
@@ -555,14 +557,29 @@ class ShareableLink extends Component {
         });
         let apiPathMenuItems = apiPaths.map((item, index) => {
             return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedAPI", item.value)}>
+                <Glyphicon style={{ visibility: apiPathIndicators[item.value] ? "visible" : "hidden", color: "red"}} glyph="alert" /> 
                 <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
             </MenuItem>);
         });
-        let resolutionTypeMenuItems = resolutionTypes.map((item, index) => {
+
+        let resTypeMenuJsx = (item, index) => {
             return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
                 <Glyphicon style={{ visibility: selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
             </MenuItem>);
-        });
+        }
+        
+        let resolutionTypeErrorMenuItems 
+                    = resolutionTypes.filter((item) => {
+                        return item.value.indexOf("ERR_") > -1;
+                    })
+                    .map(resTypeMenuJsx);
+        
+        let resolutionTypeOtherMenuItems 
+                    = resolutionTypes.filter((item) => {
+                        return item.value.indexOf("ERR_") == -1;
+                    })
+                    .map(resTypeMenuJsx);
+        
         let pageButtons = [];
         for(let idx = 1; idx <= this.pages; idx++) {
             pageButtons.push(
@@ -727,8 +744,9 @@ class ShareableLink extends Component {
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
                                         <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
                                     </MenuItem>
+                                    {resolutionTypeErrorMenuItems}
                                     <MenuItem divider />
-                                    {resolutionTypeMenuItems}
+                                    {resolutionTypeOtherMenuItems}
                                 </DropdownButton>
                             </div>
                         </div>
