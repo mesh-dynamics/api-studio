@@ -484,7 +484,6 @@ class ShareableLink extends Component {
                         let path = eachJsonPathParsedDiff.path;
                         eachItem.filterPaths.push(path);
                         toFilter = true;
-
                     }
                 }
             }
