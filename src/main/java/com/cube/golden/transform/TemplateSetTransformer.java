@@ -96,7 +96,7 @@ public class TemplateSetTransformer {
             pathVsEntry.put(templateEntry.getPath(), templateEntry);
         });
         atomicUpdateOperations.forEach(updateOperation -> {
-            String normalisedPath = sourceTemplate.getNormalisedPath(updateOperation.getPath());
+            String normalisedPath = sourceTemplate.getNormalisedPath(updateOperation.getPath()).toString();
             OperationType operationType = updateOperation.getType();
             if (operationType.equals(OperationType.REMOVE)) {
                 // remove the rule on a delete operation
@@ -110,7 +110,7 @@ public class TemplateSetTransformer {
                     TemplateEntry newRule = updateOperation.getNewRule().get();
                     // normalisedPath can also be directly used while creating new rule but getNormalisedPath is called again to be safe
                     // in case the updateOperation's path  and rule's path are different
-                    TemplateEntry newRuleNormalised = new TemplateEntry(sourceTemplate.getNormalisedPath(newRule.getPath()), newRule.getDataType(),
+                    TemplateEntry newRuleNormalised = new TemplateEntry(sourceTemplate.getNormalisedPath(newRule.getPath()).toString(), newRule.getDataType(),
                         newRule.getPresenceType(), newRule.getCompareType(), newRule.getExtractionMethod(), newRule.getCustomization());
                     pathVsEntry.put(normalisedPath, newRuleNormalised);
                 }
