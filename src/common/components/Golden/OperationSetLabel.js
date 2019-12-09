@@ -128,14 +128,22 @@ class OperationSetLabel extends React.Component {
         );
 
         const bugContent = (
-            <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", alignItems: "flex-start", padding: "10px", background: "#ECE7E6", cursor: "default"}}>
-                <div>
-                    <span>JSON Path: </span>
-                    <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</span>
-                </div>
-                <div>
-                    <span>Jira Issue: </span>
-                    <span style={{ cursor: "pointer", color: "#0052CC"}} onClick={this.handleIssueUrlClick}>{this.getIssueId()}</span>
+            <div style={{ background: "#ECE7E6", cursor: "default"}}>
+                <span
+                    onClick={this.setHideBugTippy}
+                    style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer", width: "100%", fontSize: "12px"}}
+                >
+                    <i className="fas fa-times" style={{ color: "#616060"}}></i>
+                </span>
+                <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", alignItems: "flex-start", padding: "10px" }}>
+                    <div>
+                        <span>JSON Path: </span>
+                        <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</span>
+                    </div>
+                    <div>
+                        <span>Jira Issue: </span>
+                        <span style={{ cursor: "pointer", color: "#0052CC"}} onClick={this.handleIssueUrlClick}>{this.getIssueId()}</span>
+                    </div>
                 </div>
             </div>
         );
