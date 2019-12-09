@@ -484,7 +484,6 @@ class ShareableLink extends Component {
                         let path = eachJsonPathParsedDiff.path;
                         eachItem.filterPaths.push(path);
                         toFilter = true;
-
                     }
                 }
             }
@@ -677,7 +676,7 @@ class ShareableLink extends Component {
                                 splitView={true}
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArray}
-                                filterPath={item.filterPaths}
+                                filterPaths={item.filterPaths}
                                 onLineNumberClick={(lineId, e) => { return; }}
                                 inputElementRef={this.inputElementRef}
                                 showAll={this.state.showAll}
