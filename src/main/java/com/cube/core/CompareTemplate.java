@@ -142,16 +142,10 @@ public class CompareTemplate {
 
 		// Here sorting the rules based on the length of path.
 		// This is needed because let's say there is rule for /body
-		// marked as RptArray, so all descendant paths should ne
+		// marked as RptArray, so all descendant paths should be
 		// normalised and have "*" at the child level of body.
 		List<TemplateEntry> rulesList = new ArrayList(rules);
-		Collections.sort(rulesList, new java.util.Comparator<TemplateEntry>() {
-				@Override
-				public int compare(TemplateEntry o1, TemplateEntry o2) {
-					return o1.path.length() - o2.path.length();
-				}
-			});
-
+		rulesList.sort(java.util.Comparator.comparing(TemplateEntry::getPathLength));
 
 		for (TemplateEntry rule : rulesList) {
 			addRule(rule);
@@ -177,13 +171,16 @@ public class CompareTemplate {
 		JsonPointer rootPointer = JsonPointer.valueOf(rootPath);
 		JsonPointer pointer = rootPointer;
 
+		// TODO: Use JSONPointer's append than stringbuilder for normalised path after Jackson upgrade
 		StringBuilder stringBuilder = new StringBuilder();
+		// TODO: Change comparison to JsonPointer.empty() method once we upgrade Jackson to 2.10
 		while (!pointer.toString().isEmpty()) {
 			String currentProperty = pointer.getMatchingProperty();
 
 			get(stringBuilder.toString()).ifPresentOrElse(rule -> {
 					if (rule.dt == DataType.RptArray) {
 						stringBuilder.append("/*");
+						// TODO would be returnPointer.append(JsonPointer.valueOf("/*")) 
 					} else {
 						stringBuilder.append("/" + currentProperty);
 					}

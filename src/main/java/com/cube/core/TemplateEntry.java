@@ -371,5 +371,9 @@ public class TemplateEntry {
         return customization;
     }
 
+    public int getPathLength() {
+        return path.length();
+    }
+
 
 }
