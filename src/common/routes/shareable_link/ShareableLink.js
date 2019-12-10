@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
-
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
@@ -12,6 +11,7 @@ import {cubeActions} from "../../actions";
 import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
+import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -78,7 +78,8 @@ class ShareableLink extends Component {
         this.inputElementRef = React.createRef();
         this.pageSize = 5;
         this.pages = 0;
-        this.layoutDataWithDiff = []
+        this.layoutDataWithDiff = [];
+        this.getSearchHistoryParams = getSearchHistoryParams();
     }
 
     componentDidMount() {
@@ -89,12 +90,21 @@ class ShareableLink extends Component {
             .map(_.partial(_.split, _, '=', 2))
             .fromPairs()
             .value();
-        const apiPath = urlParameters["apiPath"] ? urlParameters["apiPath"]  : "%2A",
-            replayId = urlParameters["replayId"],
-            app = urlParameters["app"],
-            recordingId = urlParameters["recordingId"],
-            currentTemplateVer = urlParameters["currentTemplateVer"],
-            service = urlParameters["service"];
+        
+        const app = urlParameters["app"];
+        const apiPath = urlParameters["apiPath"] ? urlParameters["apiPath"]  : "%2A";
+        const replayId = urlParameters["replayId"];
+        const recordingId = urlParameters["recordingId"];
+        const currentTemplateVer = urlParameters["currentTemplateVer"];
+        const service = urlParameters["service"];
+        const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
+        const selectedResolutionType = urlParameters["selectedResolutionType"];
+        const searchFilterPath = urlParameters["searchFilterPath"];
+        const requestHeaders = urlParameters["requestHeaders"];
+        const requestParams = urlParameters["requestParams"];
+        const requestBody = urlParameters["requestBody"];
+        const responseHeaders = urlParameters["responseHeaders"];
+        const responseBody = urlParameters["responseBody"];
 
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
@@ -104,8 +114,26 @@ class ShareableLink extends Component {
             recordingId: recordingId,
             currentTemplateVer: currentTemplateVer,
             app: app,
-            selectedAPI: urlParameters["apiPath"] ? urlParameters["apiPath"] : "All",
-            selectedService: urlParameters["service"] ? urlParameters["service"] : "All",
+            selectedAPI: apiPath || "All",
+            selectedService: service || "All",
+            selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
+            selectedResolutionType: selectedResolutionType || "All",
+            searchFilterPath: searchFilterPath || "",
+            // response headers
+            showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
+            shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
+            // response boday
+            showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
+            shownResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
+            // request header
+            showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
+            shownRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
+            // request params
+            showRequestMessageParams: requestParams ? JSON.parse(requestParams) : false,
+            shownRequestMessageParams: requestParams ? JSON.parse(requestParams) : false,
+            // request body
+            showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
+            shownRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
         });
         setTimeout(() => {
             const { dispatch, history, cube } = this.props;
@@ -158,11 +186,29 @@ class ShareableLink extends Component {
     };
 
     handleSearchFilterChange(e) {
+        const { history } = this.props;
+
         this.setState({ searchFilterPath: e.target.value });
+
+        this.historySearchParams = updateSearchHistoryParams("searchFilterPath", e.target.value, this.state);
+
+        history.push({
+            pathname: '/shareable_link',
+            search: this.historySearchParams
+        });
     }
 
     handleReqRespMtChange(e) {
+        const { history } = this.props;
+
         this.setState({selectedReqRespMatchType: e.target.value});
+
+        this.historySearchParams = updateSearchHistoryParams("selectedReqRespMatchType", e.target.value, this.state);
+
+        history.push({
+            pathname: '/shareable_link',
+            search: this.historySearchParams
+        });
     }
 
     changePageNumber(e) {
@@ -170,13 +216,13 @@ class ShareableLink extends Component {
     }
 
     toggleMessageContents(e) {
+        const { history } = this.props;
 
         if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
         if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
         if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
         if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked, shownRequestMessageParams: true });
         if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
-        
 
         setTimeout(() => {
             const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageParams, showRequestMessageBody } = this.state;
@@ -185,11 +231,20 @@ class ShareableLink extends Component {
                 this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
             }
         });
+
+        this.historySearchParams = updateSearchHistoryParams(e.target.value, e.target.checked, this.state);
+
+        history.push({
+            pathname: '/shareable_link',
+            search: this.historySearchParams
+        });
     }
 
     handleMetaDataSelect(metaDataType, value) {
+        const { history, dispatch } = this.props;
+        this.historySearchParams = updateSearchHistoryParams(metaDataType, value, this.state);
+
         if (metaDataType == "selectedAPI") {
-            const {dispatch} = this.props;
             this.setState({apiPath: value, [metaDataType] : value});
             setTimeout(() => {
                 dispatch(cubeActions.setPathResultsParams({
@@ -211,6 +266,11 @@ class ShareableLink extends Component {
         } else {
             this.setState({[metaDataType] : value});
         }
+
+        history.push({
+                pathname: '/shareable_link',
+                search: this.historySearchParams
+        })
     }
 
     async fetchReplayList() {
@@ -727,9 +787,9 @@ class ShareableLink extends Component {
                         <Radio inline value="All" checked={this.state.selectedReqRespMatchType === "All"} onChange={this.handleReqRespMtChange}> All </Radio>
                     </div>
                     <FormGroup>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders">Request Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestParams">Request Params</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody">Request Body</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={this.state.showRequestMessageHeaders}>Request Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestParams" checked={this.state.showRequestMessageParams}>Request Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={this.state.showRequestMessageBody}>Request Body</Checkbox>
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
