@@ -29,7 +29,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
             Event.EventType.getResponseType(reqEvent.eventType));
         EventQuery eventQuery = builder.withCollection(reqEvent.getCollection())
             .withService(reqEvent.service)
-            .withTraceId(reqEvent.traceId)
+            .withTraceId(reqEvent.getTraceId())
             .withReqId(reqEvent.reqId)
             .withLimit(1)
             .build();

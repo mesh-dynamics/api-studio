@@ -144,7 +144,7 @@ public class MockServiceHTTP {
                         Constants.CUSTOMER_ID_FIELD, event.customerId,
                         Constants.APP_FIELD, event.app,
                         Constants.INSTANCE_ID_FIELD, event.instanceId,
-                        Constants.TRACE_ID_FIELD, event.traceId)));
+                        Constants.TRACE_ID_FIELD, event.getTraceId())));
                 return false;
             }
         } else {
@@ -165,7 +165,7 @@ public class MockServiceHTTP {
     private EventQuery buildFunctionEventQuery(Event event, int offset, int limit, boolean isSortOrderAsc) {
         return new EventQuery.Builder(event.customerId, event.app, Event.EventType.JavaRequest)
             .withService(event.service).withInstanceId(event.instanceId)
-            .withPaths(List.of(event.apiPath)).withTraceId(event.traceId).withTimestamp(event.timestamp)
+            .withPaths(List.of(event.apiPath)).withTraceId(event.getTraceId()).withTimestamp(event.timestamp)
             .withCollection(event.getCollection()).withPayloadKey(event.payloadKey)
             .withOffset(offset).withLimit(limit).withSortOrderAsc(isSortOrderAsc)
             .build();
@@ -187,7 +187,7 @@ public class MockServiceHTTP {
             LOGGER.error(new ObjectMessage(
                 Map.of(
                     Constants.API_PATH_FIELD, event.apiPath,
-                    Constants.TRACE_ID_FIELD, event.traceId,
+                    Constants.TRACE_ID_FIELD, event.getTraceId(),
                     Constants.REASON, errorReason
                 )));
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
@@ -200,7 +200,7 @@ public class MockServiceHTTP {
         LOGGER.debug(new ObjectMessage(
             Map.of(
                 Constants.API_PATH_FIELD, retEvent.apiPath,
-                Constants.TRACE_ID_FIELD, retEvent.traceId,
+                Constants.TRACE_ID_FIELD, retEvent.getTraceId(),
                 Constants.DATA, retEvent.rawPayloadString)));
         try {
             FnResponse fnResponse = new FnResponse(
@@ -214,7 +214,7 @@ public class MockServiceHTTP {
             LOGGER.error(new ObjectMessage(
                 Map.of(
                     Constants.API_PATH_FIELD, event.apiPath,
-                    Constants.TRACE_ID_FIELD, event.traceId)) , e);
+                    Constants.TRACE_ID_FIELD, event.getTraceId())) , e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     "Unable to find response path in json ")).build();
@@ -226,7 +226,7 @@ public class MockServiceHTTP {
         LOGGER.error(new ObjectMessage(
             Map.of(
                 Constants.API_PATH_FIELD, event.apiPath,
-                Constants.TRACE_ID_FIELD, event.traceId,
+                Constants.TRACE_ID_FIELD, event.getTraceId(),
                 Constants.REASON, errorReason)));
 
         EventQuery.Builder defEventQuery = new EventQuery.Builder(event.customerId,
@@ -284,7 +284,7 @@ public class MockServiceHTTP {
             EventQuery.Builder builder = new Builder(thriftMockRequest.customerId,
                 thriftMockRequest.app, EventType.ThriftRequest)
                 .withRunType(RunType.Record).withPayloadKey(thriftMockRequest.payloadKey)
-                .withService(thriftMockRequest.service).withTraceId(thriftMockRequest.traceId);
+                .withService(thriftMockRequest.service).withTraceId(thriftMockRequest.getTraceId());
 
             Optional<Event> matchingThriftRequest = rrstore.getSingleEvent(builder.build());
             return matchingThriftRequest
@@ -385,7 +385,7 @@ public class MockServiceHTTP {
                                           String replayCollection) throws Event.EventBuilder.InvalidEventException {
         Event.EventBuilder builder = new Event.EventBuilder(originalResponse.customerId, originalResponse.app,
             originalResponse.service,
-            instanceId, replayCollection, originalResponse.traceId, Event.RunType.Replay, Instant.now(),
+            instanceId, replayCollection, originalResponse.getTraceId(), Event.RunType.Replay, Instant.now(),
             mockReqId.orElse("NA"),
             originalResponse.apiPath, Event.EventType.HTTPResponse);
         return builder.setRawPayloadString(originalResponse.rawPayloadString).createEvent();
@@ -489,7 +489,7 @@ public class MockServiceHTTP {
                 new Analysis.ReqRespMatchResult(Optional.empty(), Optional.of(mockRequestEvent.reqId),
                     Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
                     customerId, app, service, path, mockRequestEvent.getCollection(), Optional.empty(),
-                    Optional.of(mockRequestEvent.traceId));
+                    Optional.of(mockRequestEvent.getTraceId()));
             rrstore.saveResult(matchResult);
             return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
         });
@@ -530,8 +530,8 @@ public class MockServiceHTTP {
                 "", mockRequestEvent.customerId, mockRequestEvent.app, mockRequestEvent.service,
                 mockRequestEvent.apiPath,
                 mockRequestEvent.getCollection(),
-                Optional.of(respEventVal.traceId),
-                Optional.of(mockRequestEvent.traceId));
+                Optional.of(respEventVal.getTraceId()),
+                Optional.of(mockRequestEvent.getTraceId()));
         rrstore.saveResult(matchResult);
         try {
             Event mockResponseToStore = createMockResponseEvent(respEventVal,
@@ -541,7 +541,7 @@ public class MockServiceHTTP {
         } catch (Event.EventBuilder.InvalidEventException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Not able to store mock event",
-                    Constants.TRACE_ID_FIELD, respEventVal.traceId,
+                    Constants.TRACE_ID_FIELD, respEventVal.getTraceId(),
                     Constants.REQ_ID_FIELD, respEventVal.reqId)));
         }
         return Optional.of(builder.entity(responsePayload.body).build());
@@ -565,7 +565,7 @@ public class MockServiceHTTP {
         return builder
             .withCollection(collection)
             .withService(mockRequest.service)
-            .withTraceId(mockRequest.traceId)
+            .withTraceId(mockRequest.getTraceId())
             .withPaths(List.of(mockRequest.apiPath))
             .withPayloadKey(mockRequest.payloadKey)
             .withRunType(Event.RunType.Record)

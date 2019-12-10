@@ -203,8 +203,8 @@ public class Analysis {
                 rm.match,
                 rm.recordReq.customerId, rm.recordReq.app,
                 rm.recordReq.service, rm.recordReq.apiPath,
-                replayId, jsonmapper, Optional.of(rm.recordReq.traceId),
-                rm.replayReq.map(replayreq -> replayreq.traceId)) ;
+                replayId, jsonmapper, Optional.of(rm.recordReq.getTraceId()),
+                rm.replayReq.map(Event::getTraceId)) ;
         }
 
         final public Optional<String> recordReqId;

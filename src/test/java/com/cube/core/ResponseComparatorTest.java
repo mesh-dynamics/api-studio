@@ -241,7 +241,7 @@ public class ResponseComparatorTest {
 
     private Event cloneWithPayload(Event event, HTTPResponsePayload payload) throws JsonProcessingException, EventBuilder.InvalidEventException {
         return new Event.EventBuilder(event.customerId, event.app, event.service, event.instanceId,
-            event.getCollection(), event.traceId, event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
+            event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
             .setRawPayloadString(mapper.writeValueAsString(payload))
             .createEvent();
     }
