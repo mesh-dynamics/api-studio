@@ -276,7 +276,7 @@ public class MockServiceHTTP {
                         "Could not find running replay for cust:: " + thriftMockRequest.customerId
                             + " , app :: " + thriftMockRequest.app + " , instanceId :: "
                             + thriftMockRequest.instanceId));
-            URLClassLoader urlClassLoader = recordOrReplay.getClassLoader();
+            Optional<URLClassLoader> urlClassLoader = recordOrReplay.getClassLoader();
             thriftMockRequest.parseAndSetKey(config, Utils
                 .getRequestCompareTemplate(config, thriftMockRequest,
                     recordOrReplay.getTemplateVersion()), urlClassLoader);

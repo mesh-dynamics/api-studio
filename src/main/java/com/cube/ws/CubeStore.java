@@ -54,6 +54,7 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
+import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.DefaultEvent;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder.InvalidEventException;
@@ -63,6 +64,7 @@ import com.cube.dao.EventQuery;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Result;
@@ -530,9 +532,9 @@ public class CubeStore {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
             try {
-                URLClassLoader classLoader = null;
+                Optional<URLClassLoader> classLoader = Optional.empty();
                 if (event.eventType.equals(EventType.ThriftRequest)) {
-                    classLoader = recordOrReplay.map(RecordOrReplay::getClassLoader).orElse(null);
+                    classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
                 }
 
                 event.parseAndSetKey(config,
@@ -808,10 +810,22 @@ public class CubeStore {
         List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
+        RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(customerId, app
+            , instanceId), collection).withTemplateSetVersion(templateSetVersion).withName(name)
+            .withUserId(userId).withTags(tags);
+        codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+        branch.ifPresent(recordingBuilder::withBranch);
+        gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+        comment.ifPresent(recordingBuilder::withComment);
+        try {
+            jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+        } catch (Exception e) {
+            return Response.serverError().entity((new JSONObject(Map.of(Constants.ERROR
+                , e.getMessage()))).toString()).build();
+        }
+
         Optional<Response> resp = Recording
-            .startRecording(customerId, app, instanceId, collection, templateSetVersion, rrstore,
-                name, codeVersion, branch, tags,
-                false, gitCommitId, Optional.empty(), Optional.empty(), comment, userId, jarPath)
+            .startRecording(recordingBuilder.build() ,rrstore)
             .map(newr -> {
                 String json;
                 try {

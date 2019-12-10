@@ -8,10 +8,7 @@ import com.cube.ws.Config;
 
 public class ReplayDriverFactory {
 
-	public static Optional<AbstractReplayDriver> initReplay(ReplayBuilder replayBuilder,
-		Config config) {
-
-		Replay replay = replayBuilder.build();
+	public static Optional<AbstractReplayDriver> initReplay(Replay replay, Config config) {
 		AbstractReplayDriver driver;
 		switch (replay.replayType) {
 			case HTTP:

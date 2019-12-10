@@ -10,6 +10,7 @@ package com.cube.dao;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -132,10 +133,10 @@ public class Event {
 	}
 
 	public void parseAndSetKey(Config config, CompareTemplate template) {
-		parseAndSetKey(config,template,null);
+		parseAndSetKey(config,template,Optional.empty());
 	}
 
-	public void parseAndSetKey(Config config, CompareTemplate template, URLClassLoader classLoader)  {
+	public void parseAndSetKey(Config config, CompareTemplate template, Optional<URLClassLoader> classLoader)  {
 		parsePayLoad(config, classLoader);
 		List<String> keyVals = new ArrayList<>();
 		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
@@ -151,17 +152,19 @@ public class Event {
 	}
 
 	public DataObj parsePayLoad(Config config)  {
-		return parsePayLoad(config, null);
+		return parsePayLoad(config, Optional.empty());
 	}
 
-	public DataObj parsePayLoad(Config config, URLClassLoader classLoader)  {
+	public DataObj parsePayLoad(Config config, Optional<URLClassLoader> classLoader)  {
 		// parse if not already parsed
 		if (payload == null) {
-			Map<String, Object> params = null;
+			Map<String, Object> params = new HashMap<>();
 			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
 				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
 				params = Utils.extractThriftParams(this.apiPath);
-				params.put(Constants.CLASS_LOADER, classLoader);
+				Map<String, Object> finalParams = params;
+				classLoader.ifPresent(urlClassLoader -> finalParams
+					.put(Constants.CLASS_LOADER, urlClassLoader));
 			}
 			payload = DataObjFactory
 				.build(eventType, rawPayloadBinary, rawPayloadString, config, params);
@@ -180,7 +183,6 @@ public class Event {
 	}
 
 	public String getPayloadAsString(Config config) {
-		if (this.rawPayloadString != null) return rawPayloadString;
 		parsePayLoad(config , null);
 		return payload.toString();
 	}
@@ -313,7 +315,7 @@ public class Event {
 	public final String service;
 	public final String instanceId;
 	private String collection;
-	public  String traceId;
+	private  String traceId;
 	public final RunType runType;
 
 
@@ -344,6 +346,14 @@ public class Event {
 		Record,
 		Replay,
 		Manual  // manually created e.g. default requests and responses
+	}
+
+	public String getTraceId() {
+		return this.traceId;
+	}
+
+	public void setTraceId(String traceId){
+		this.traceId = traceId;
 	}
 
 	public static class EventBuilder {

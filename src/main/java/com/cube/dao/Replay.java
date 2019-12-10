@@ -68,12 +68,12 @@ public class Replay {
      * @param sampleRate
      */
 	public Replay(String endpoint, String customerId, String app, String instanceId,
-		String collection, String userId
-		, List<String> reqIds,
+		String collection, String userId, List<String> reqIds,
 		String replayId, boolean async, String templateVersion, ReplayStatus status,
 		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
 		Optional<Double> sampleRate, List<String> intermediateServices,
-		Optional<String> generatedClassJarPath, Optional<String> service, ReplayTypeEnum replayType) {
+		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
+		Optional<String> service, ReplayTypeEnum replayType) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -90,26 +90,14 @@ public class Replay {
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
-		this.creationTimeStamp = creationTimestamp == null ? Instant.now() : creationTimestamp;
-		this.xfmer = Optional.ofNullable(null);
+		this.creationTimeStamp = creationTimestamp;
+		this.xfmer = Optional.empty();
 		this.sampleRate = sampleRate;
 		this.intermediateServices = intermediateServices;
 		this.generatedClassJarPath = generatedClassJarPath;
 		this.service = service;
 		this.replayType = replayType;
-		generatedClassJarPath.ifPresent(classJarPath -> {
-			try {
-				Path path = Paths.get(classJarPath);
-				this.generatedClassLoader = new URLClassLoader(
-					new URL[]{path.toUri().toURL()},
-					this.getClass().getClassLoader()
-				);
-			} catch (Exception e) {
-				LOGGER.error(new
-					ObjectMessage(Map.of(Constants.MESSAGE, "Unable to initialize URL Class Loader",
-					Constants.JAR_PATH_FIELD, classJarPath)));
-			}
-		});
+		this.generatedClassLoader = classLoader;
 	}
 
 	//for deserialization
@@ -190,7 +178,7 @@ public class Replay {
 	public Optional<String> generatedClassJarPath;
 	@JsonProperty("replayType")
 	public final ReplayTypeEnum replayType;
-	public transient URLClassLoader generatedClassLoader;
+	public transient Optional<URLClassLoader> generatedClassLoader;
 
 	@JsonSetter
 	public void setGeneratedClassJarPath(Optional<String> jarPathOpt){
@@ -198,10 +186,10 @@ public class Replay {
 		generatedClassJarPath.ifPresent(jarPath -> {
 			try {
 				Path path = Paths.get(jarPath);
-				this.generatedClassLoader = new URLClassLoader(
+				this.generatedClassLoader = Optional.of(new URLClassLoader(
 					new URL[]{path.toUri().toURL()},
 					this.getClass().getClassLoader()
-				);
+				));
 			} catch (Exception e) {
 				LOGGER.error(new
 					ObjectMessage(Map.of(Constants.MESSAGE, "Unable to initialize URL Class Loader",

@@ -1,9 +1,15 @@
 package com.cube.dao;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import io.cube.agent.UtilException;
 
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.utils.Constants;
@@ -31,7 +37,12 @@ public class ReplayBuilder {
 	List<String> intermediateServices;
 	Optional<String> generatedClassJarPath;
 	Optional<String> serviceToReplay;
+	Optional<URLClassLoader> classLoader;
 	ReplayTypeEnum replayType;
+	int reqCnt;
+	int reqSent;
+	int reqFailed;
+	private Instant updateTimestamp;
 
 	public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
 		String collection, String userId) {
@@ -52,22 +63,25 @@ public class ReplayBuilder {
 		this.serviceToReplay = Optional.empty();
 		// Default replay type as HTTP
 		this.replayType = ReplayTypeEnum.HTTP;
+		reqCnt = 0;  reqFailed = 0 ; reqSent = 0;
+		this.updateTimestamp = Instant.now();
+	}
+
+	private void populateClassLoader() throws Exception {
+		generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(jarPath -> {
+			Path path = Paths.get(jarPath);
+			this.classLoader = Optional.of(new URLClassLoader(
+				new URL[]{path.toUri().toURL()},
+				this.getClass().getClassLoader()
+			));
+		}));
 	}
 
 	public Replay build() {
-		/**
-		 * public Replay(String endpoint, String customerId, String app, String instanceId,
-		 * 		String collection, String userId
-		 * 		, List<String> reqIds,
-		 * 		String replayId, boolean async, String templateVersion, ReplayStatus status,
-		 * 		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
-		 * 		Optional<Double> sampleRate, List<String> intermediateServices,
-		 * 		Optional<String> generatedClassJarPath, Optional<String> service)
-		 */
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
-			0 , 0 , 0, Instant.now(), sampleRate, intermediateServices,
-			generatedClassJarPath, serviceToReplay, replayType);
+			reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
+			generatedClassJarPath, classLoader, serviceToReplay, replayType);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -100,8 +114,8 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withSampleRate(Optional<Double> sampleRate) {
-		this.sampleRate = sampleRate;
+	public ReplayBuilder withSampleRate(Double sampleRate) {
+		this.sampleRate = Optional.of(sampleRate);
 		return this;
 	}
 
@@ -110,18 +124,31 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withGeneratedClassJar(Optional<String> jarPath) {
-		this.generatedClassJarPath = jarPath;
+	public ReplayBuilder withGeneratedClassJar(String jarPath) throws Exception {
+		this.generatedClassJarPath = Optional.of(jarPath);
+		populateClassLoader();
 		return this;
 	}
 
-	public ReplayBuilder withServiceToReplay(Optional<String> service) {
-		this.serviceToReplay = service;
+	public ReplayBuilder withServiceToReplay(String service) {
+		this.serviceToReplay = Optional.of(service);
 		return this;
 	}
 
 	public ReplayBuilder withReplayType(ReplayTypeEnum replayType) {
 		this.replayType = replayType;
+		return this;
+	}
+
+	public ReplayBuilder withReqCounts(int reqCnt, int reqSent, int reqFailed) {
+		this.reqCnt = reqCnt;
+		this.reqSent = reqSent;
+		this.reqFailed = reqFailed;
+		return this;
+	}
+
+	public ReplayBuilder withUpdateTimestamp(Instant updateTimestamp) {
+		this.updateTimestamp = updateTimestamp;
 		return this;
 	}
 

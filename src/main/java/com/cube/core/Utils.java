@@ -51,8 +51,9 @@ public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
+    // Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
-	    return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
+	    return EnumSet.allOf(clazz).stream().filter(v -> v.name().toLowerCase().equals(name.toLowerCase()))
 	                    .findAny();
 	}
 

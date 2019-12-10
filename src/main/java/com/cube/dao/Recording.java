@@ -44,16 +44,13 @@ public class Recording {
 	 * @param status
 	 * @param templateVersion
 	 */
-	public Recording(String customerId, String app, String instanceId, String collection,
-		RecordingStatus status
-		, Optional<Instant> updateTimestamp, String templateVersion,
-		Optional<String> parentRecordingId
-		, Optional<String> rootRecordingId, String name, Optional<String> codeVersion,
-		Optional<String> branch
-		, List<String> tags, boolean archived, Optional<String> gitCommitId,
-		Optional<String> collectionUpdOpSetId
+	public Recording(String id, String customerId, String app, String instanceId, String collection,
+		RecordingStatus status, Optional<Instant> updateTimestamp, String templateVersion,
+		Optional<String> parentRecordingId, String rootRecordingId, String name
+		, Optional<String> codeVersion, Optional<String> branch, List<String> tags
+		, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
 		, Optional<String> templateUpdOpSetId, Optional<String> comment, String userId,
-		Optional<String> generatedClassJarPath) {
+		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader) {
 
 		super();
 		this.customerId = customerId;
@@ -63,11 +60,9 @@ public class Recording {
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
 		this.templateVersion = templateVersion;
-		this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-")
-			.concat(String.valueOf(Objects.hash(customerId, app,
-				collection, templateVersion)));
+		this.id = id;
 		this.parentRecordingId = parentRecordingId;
-		this.rootRecordingId = rootRecordingId.orElse(this.id);
+		this.rootRecordingId = rootRecordingId;
 		this.name = name;
 		this.codeVersion = codeVersion;
 		this.branch = branch;
@@ -79,19 +74,7 @@ public class Recording {
 		this.comment = comment;
 		this.userId = userId;
 		this.generatedClassJarPath = generatedClassJarPath;
-		generatedClassJarPath.ifPresent(jarPath -> {
-			try {
-				Path path = Paths.get(jarPath);
-				this.generatedClassLoader = new URLClassLoader(
-					new URL[]{path.toUri().toURL()},
-					this.getClass().getClassLoader()
-				);
-			} catch (Exception e) {
-				LOGGER.error(new
-					ObjectMessage(Map.of(Constants.MESSAGE, "Unable to initialize URL Class Loader",
-					Constants.JAR_PATH_FIELD, jarPath)));
-			}
-		});
+		this.generatedClassLoader = generatedClassLoader;
 	}
 
 	// for json deserialization
@@ -160,19 +143,19 @@ public class Recording {
 	public final String userId;
 	@JsonProperty("jarPath")
 	public Optional<String> generatedClassJarPath;
-	public transient URLClassLoader generatedClassLoader;
+	public transient Optional<URLClassLoader> generatedClassLoader;
 
 
 	@JsonSetter
-	public void setGeneratedClassJarPath(Optional<String> jarPathOpt){
+	public void setGeneratedClassJarPath(Optional<String> jarPathOpt) {
 		this.generatedClassJarPath = jarPathOpt;
 		generatedClassJarPath.ifPresent(jarPath -> {
 			try {
 				Path path = Paths.get(jarPath);
-				this.generatedClassLoader = new URLClassLoader(
+				this.generatedClassLoader = Optional.of(new URLClassLoader(
 					new URL[]{path.toUri().toURL()},
 					this.getClass().getClassLoader()
-				);
+				));
 			} catch (Exception e) {
 				LOGGER.error(new
 					ObjectMessage(Map.of(Constants.MESSAGE, "Unable to initialize URL Class Loader",
@@ -186,18 +169,7 @@ public class Recording {
 	}
 
 
-	public static Optional<Recording> startRecording(String customerId, String app,
-		String instanceId, String collection,
-		String templateVersion, ReqRespStore rrstore, String name,
-		Optional<String> codeVersion, Optional<String> branch, List<String> tags,
-		boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId,
-		Optional<String> templateUpdOpSetId, Optional<String> comment, String userId, Optional<String> jarPath) {
-		Recording recording = new Recording(customerId, app, instanceId, collection,
-			RecordingStatus.Running
-			, Optional.of(Instant.now()), templateVersion, Optional.empty(), Optional.empty(), name,
-			codeVersion, branch, tags
-			, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment, userId,
-			jarPath);
+	public static Optional<Recording> startRecording(Recording recording, ReqRespStore rrstore) {
 		if (rrstore.saveRecording(recording)) {
 			return Optional.of(recording);
 		}
@@ -213,18 +185,22 @@ public class Recording {
 		return recording;
 	}
 
-    public Recording softDeleteRecording( ReqRespStore rrstore) throws RecordingSaveFailureException {
-        this.archived = true;
-	    this.updateTimestamp = Optional.of(Instant.now());
-        boolean success = rrstore.saveRecording(this);
-        if(!success) throw new RecordingSaveFailureException("Cannot delete recording");
-        return this;
-    }
+	public Recording softDeleteRecording(ReqRespStore rrstore)
+		throws RecordingSaveFailureException {
+		this.archived = true;
+		this.updateTimestamp = Optional.of(Instant.now());
+		boolean success = rrstore.saveRecording(this);
+		if (!success) {
+			throw new RecordingSaveFailureException("Cannot delete recording");
+		}
+		return this;
+	}
 
-    public static class RecordingSaveFailureException extends Exception {
-	    public RecordingSaveFailureException(String message) {
-		    super(message);
-	    }
+	public static class RecordingSaveFailureException extends Exception {
 
-    }
+		public RecordingSaveFailureException(String message) {
+			super(message);
+		}
+
+	}
 }

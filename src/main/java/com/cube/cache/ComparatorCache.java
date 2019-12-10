@@ -82,14 +82,14 @@ public class ComparatorCache {
         // default rule for Thrift Request Payload (serialized using gson)
         CompareTemplate defaultThriftRequestTemplate = new CompareTemplate();
         defaultThriftRequestTemplate.addRule(
-            new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal));
+            new TemplateEntry(Constants.ROOT_PATH, DataType.Obj, PresenceType.Required, ComparisonType.Equal));
         defaultThriftRequestComparator = new JsonComparator(defaultThriftRequestTemplate,
             jsonMapper);
 
         // default rule for Thrift Response Payload (serialized using gson)
         CompareTemplate defaultThriftResponseTemplate = new CompareTemplate();
         defaultThriftResponseTemplate.addRule(
-            new TemplateEntry("", DataType.Obj, PresenceType.Required, ComparisonType.Equal));
+            new TemplateEntry(Constants.ROOT_PATH, DataType.Obj, PresenceType.Required, ComparisonType.Equal));
         defaultThriftResponseComparator = new JsonComparator(defaultThriftResponseTemplate,
             jsonMapper);
 
