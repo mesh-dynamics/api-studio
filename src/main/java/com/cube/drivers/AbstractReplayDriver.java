@@ -153,8 +153,8 @@ public abstract class AbstractReplayDriver {
 				}
 			});
 
-			List<Integer> respcodes = replay.async ? sendReqAsync(reqs.stream(), client)
-				: sendReqSync(reqs.stream(), client);
+			List<Integer> respcodes = replay.async ? sendReqAsync(reqs.stream())
+				: sendReqSync(reqs.stream());
 
 			// count number of errors
 			replay.reqfailed += respcodes.stream()
@@ -180,8 +180,7 @@ public abstract class AbstractReplayDriver {
 	}
 
 
-	private List<Integer> sendReqAsync(Stream<IReplayRequest> replayRequests,
-		IReplayClient client) {
+	private List<Integer> sendReqAsync(Stream<IReplayRequest> replayRequests) {
 		// exceptions are converted to status code indicating error
 		List<CompletableFuture<Integer>> respcodes = replayRequests.map(request -> {
 			replay.reqsent++;
@@ -200,8 +199,7 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
-	private List<Integer> sendReqSync(Stream<IReplayRequest> requests,
-		IReplayClient client) {
+	private List<Integer> sendReqSync(Stream<IReplayRequest> requests) {
 
 		return requests.map(request -> {
 			try {
