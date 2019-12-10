@@ -285,12 +285,14 @@ public class Utils {
     }
 
     public static Map<String,Object> extractThriftParams(String thriftApiPath) {
-        String[] splitResult = thriftApiPath.split("::");
-        String methodName = splitResult[0];
-        String argsClassName = splitResult[1];
         Map<String, Object> params = new HashMap<>();
-        params.put(Constants.THRIFT_METHOD_NAME, methodName);
-        params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
+        if (thriftApiPath != null) {
+            String[] splitResult = thriftApiPath.split("::");
+            String methodName = splitResult[0];
+            String argsClassName = splitResult[1];
+            params.put(Constants.THRIFT_METHOD_NAME, methodName);
+            params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
+        }
         return params;
     }
 
