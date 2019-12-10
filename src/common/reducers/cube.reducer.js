@@ -323,17 +323,29 @@ export function cube (state = initialState, action) {
                 ...state,
                 templateOperationSetObject: temp
             };
-        case cubeConstants.REMOVE_FROM_OPERATIONSETS:
-            state.newOperationSet.splice(action.data, 1);
+        case cubeConstants.REMOVE_FROM_OPERATION_GOLDEN:
+            state.multiOperationsSet[action.data.indexMOS].operationSet.splice(action.data.index, 1);
             return {
                 ...state,
-                newOperationSet: state.newOperationSet
+                multiOperationsSet: state.multiOperationsSet
+            };
+        case cubeConstants.REMOVE_ENTIRE_OPERATIONS_GOLDEN_OBJ:
+            state.multiOperationsSet.splice(action.data.indexMOS, 1);
+            return {
+                ...state,
+                multiOperationsSet: state.multiOperationsSet
             };
         case cubeConstants.REMOVE_FROM_OPERATIONS:
-            state.operations.splice(action.data, 1);
+            state.templateOperationSetObject[action.data.key].operations.splice(action.data.index, 1);
             return {
                 ...state,
-                operations: state.operations
+                templateOperationSetObject: state.templateOperationSetObject
+            };
+        case cubeConstants.REMOVE_ENTIRE_OPERATIONS_OBJ:
+            delete state.templateOperationSetObject[action.data.key];
+            return {
+                ...state,
+                templateOperationSetObject: state.templateOperationSetObject
             };
         case cubeConstants.TEMPLATE_VER_SUCCESS:
             return {

@@ -47,7 +47,7 @@ var DiffViewer = /** @class */ (function (_super) {
     __extends(DiffViewer, _super);
     function DiffViewer() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.splitView = function (filterPath, diffArray, styles, inputElementRef, showAll, searchFilterPath) {
+        _this.splitView = function (filterPaths, diffArray, styles, inputElementRef, showAll, searchFilterPath) {
             var leftLineNumber = 0;
             var rightLineNumber = 0;
             return function () { return diffArray.map(function (obj, i) {
@@ -58,7 +58,7 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightLineNumber = rightLineNumber + 1;
                         leftLineNumber = leftLineNumber + 1;
                         // author raj.maddireddy@cubecorp.io
-                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPath: filterPath, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll: showAll, searchFilterPath: searchFilterPath});
+                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll: showAll, searchFilterPath: searchFilterPath});
                     }
                     var leftContent;
                     var rightContent;
@@ -96,11 +96,11 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightContent = ch;
                     }
                     // author raj.maddireddy@cubecorp.io
-                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPath: filterPath, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll: showAll, searchFilterPath: searchFilterPath });
+                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll: showAll, searchFilterPath: searchFilterPath });
                 }));
             }); };
         };
-        _this.inlineView = function (filterPath, diffArray, styles) {
+        _this.inlineView = function (filterPaths, diffArray, styles) {
             var leftLineNumber = 0;
             var rightLineNumber = 0;
             return function () {
@@ -138,7 +138,7 @@ var DiffViewer = /** @class */ (function (_super) {
                             leftLineNumber = leftLineNumber + 1;
                             content = ch;
                         }
-                        return React.createElement(line_1.InlineLine, { styles: styles, onLineNumberClick: _this.props.onLineNumberClick, key: num, hideLineNumbers: _this.props.hideLineNumbers, renderContent: _this.props.renderContent, removed: diffObj.removed, leftLineNumber: diffObj.added || leftLineNumber, rightLineNumber: diffObj.removed || rightLineNumber, content: content, hightlightLines: _this.props.highlightLines, added: diffObj.added, serverSideDiff: diffObj.serverSideDiff, jsonPath: diffObj.jsonPath, filterPath: filterPath });
+                        return React.createElement(line_1.InlineLine, { styles: styles, onLineNumberClick: _this.props.onLineNumberClick, key: num, hideLineNumbers: _this.props.hideLineNumbers, renderContent: _this.props.renderContent, removed: diffObj.removed, leftLineNumber: diffObj.added || leftLineNumber, rightLineNumber: diffObj.removed || rightLineNumber, content: content, hightlightLines: _this.props.highlightLines, added: diffObj.added, serverSideDiff: diffObj.serverSideDiff, jsonPath: diffObj.jsonPath, filterPaths: filterPaths });
                     });
                 });
             };
@@ -161,13 +161,13 @@ var DiffViewer = /** @class */ (function (_super) {
                     ignoreCase: false,
                 });
             }
-            let filterPath = _a.filterPath;
+            let filterPaths = _a.filterPaths;
             let showAll = _a.showAll;
             let searchFilterPath = _a.searchFilterPath;
-            if(!filterPath) filterPath = "";
+            if(!filterPaths) filterPaths = [];
             var nodes = splitView
-                ? _this.splitView(filterPath, diffArray, newStyles, inputElementRef, showAll, searchFilterPath)()
-                : _this.inlineView(filterPath, diffArray, newStyles, inputElementRef)();
+                ? _this.splitView(filterPaths, diffArray, newStyles, inputElementRef, showAll, searchFilterPath)()
+                : _this.inlineView(filterPaths, diffArray, newStyles, inputElementRef)();
             return (React.createElement("table", { className: newStyles.diffContainer },
                 React.createElement("tbody", null, nodes)));
         };

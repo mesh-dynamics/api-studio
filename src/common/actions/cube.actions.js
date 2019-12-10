@@ -90,12 +90,20 @@ function pushNewOperationKeyToOperations(o, key) {
     return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: o, key: key}};
 }
 
-function removeFromNOS(index) {
-    return {type: cubeConstants.REMOVE_FROM_OPERATIONSETS, data: index};
+function removeFromNOS(index, length, indexMOS) {
+    if (length > 1) {
+        return {type: cubeConstants.REMOVE_FROM_OPERATION_GOLDEN, data: {index: index, indexMOS: indexMOS}};
+    } else {
+        return {type: cubeConstants.REMOVE_ENTIRE_OPERATIONS_GOLDEN_OBJ, data: {index: index, indexMOS: indexMOS}};
+    }
 }
 
-function removeFromOperations(index) {
-    return {type: cubeConstants.REMOVE_FROM_OPERATIONS, data: index};
+function removeFromOperations(index, length, key) {
+    if (length > 1) {
+        return {type: cubeConstants.REMOVE_FROM_OPERATIONS, data: {index: index, key: key}};
+    } else {
+        return {type: cubeConstants.REMOVE_ENTIRE_OPERATIONS_OBJ, data: {index: index, key: key}};
+    }
 }
 
 
