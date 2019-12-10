@@ -183,12 +183,12 @@ public class Event {
 	}
 
 	public String getPayloadAsString(Config config) {
-		parsePayLoad(config , null);
+		parsePayLoad(config , Optional.empty());
 		return payload.toString();
 	}
 
 	public DataObj getPayload(Config config) {
-		parsePayLoad(config, null);
+		parsePayLoad(config, Optional.empty());
 		return payload;
 	}
 
