@@ -26,6 +26,28 @@ steps:
         exclude:
         - pull_request
 
+  - name: docker_build_on_PR
+    image: plugins/docker
+    settings:
+      username: cubeiocorp
+      password: S9qe2fJ8*vtk
+      repo: cubeiocorp/cubews
+      target: prod
+      tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "1500Mi"
+      limits:
+        cpu: 1
+        memory: "1500Mi"
+    when:
+      branch:
+      - develop
+      event:
+        include:
+        - pull_request
+
   - name: deploy_cubeServices_cube_dev
     image: quay.io/honestbee/drone-kubernetes
     settings:
@@ -39,9 +61,9 @@ steps:
     when:
       branch:
       - develop
-      event:
-        exclude:
-        - pull_request
+      # event:
+      #   exclude:
+      #   - pull_request
 
   - name: deploy_cubeServices_staging_dev
     image: quay.io/honestbee/drone-kubernetes
@@ -56,9 +78,9 @@ steps:
     when:
       branch:
       - develop
-      event:
-        exclude:
-        - pull_request
+      # event:
+      #   exclude:
+      #   - pull_request
 
   - name: deploy_cubeServices_cube_staging
     image: quay.io/honestbee/drone-kubernetes
