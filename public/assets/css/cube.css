@@ -4642,7 +4642,28 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     padding: 15px;
     margin-bottom: 20px;
 }
-
+.timeline-replay-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    margin-bottom: -10px;
+}
+.timeline-replay-id {
+    overflow: hidden;
+    display: block;
+    text-overflow: ellipsis;
+    padding-top: 5px;
+}
+.underline {
+    border-bottom: 1px solid #bfbfbf;
+}
+.timeline-replay-id::-webkit-scrollbar {
+    display: none;
+} 
+.timeline-header-text {
+    padding-bottom: 5px;
+    font-weight: bold;
+}
 .selected-g-row td{
     background: #CCC6B0 !important;
 }

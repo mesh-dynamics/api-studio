@@ -122,7 +122,7 @@ class ShareableLink extends Component {
             // response headers
             showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
             shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
-            // response boday
+            // response body
             showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
             shownResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
             // request header
