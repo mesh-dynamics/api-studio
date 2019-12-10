@@ -63,7 +63,8 @@ public abstract class AbstractReplayDriver {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 				"Unable to initialize replay client")), e);
 		}
-		LOGGER.info(String.format("Starting replay with id %s", replay.replayId));
+		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Starting Replay",
+			Constants.REPLAY_ID_FIELD , replay.replayId)));
 		CompletableFuture.runAsync(this::replay).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,

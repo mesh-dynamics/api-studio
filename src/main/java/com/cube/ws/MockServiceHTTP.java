@@ -286,8 +286,7 @@ public class MockServiceHTTP {
                 .withRunType(RunType.Record).withPayloadKey(thriftMockRequest.payloadKey)
                 .withService(thriftMockRequest.service).withTraceId(thriftMockRequest.traceId);
 
-            Optional<Event> matchingThriftRequest = rrstore.getEvents(builder.build()).getObjects()
-                .findFirst();
+            Optional<Event> matchingThriftRequest = rrstore.getSingleEvent(builder.build());
             return matchingThriftRequest
                 .flatMap(matchingRequest ->rrstore.getResponseEvent(matchingRequest.reqId)).map(matchingResponse ->
                     Response.ok().type(MediaType.APPLICATION_JSON).entity(matchingResponse).build())
