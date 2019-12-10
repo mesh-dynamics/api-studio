@@ -6,12 +6,14 @@ package com.cube.core;
 import static com.cube.core.Comparator.Resolution.*;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -21,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.core.JsonPointer;
 
 import io.cube.agent.CommonUtils;
 
@@ -110,7 +113,8 @@ public class CompareTemplate {
 	 * is found. Never returns null. Will return default rule if nothing is found.
 	 */
 	public TemplateEntry getRule(String path) {
-		TemplateEntry toReturn = get(path).orElseGet(() -> getInheritedRule(path, path));
+		JsonPointer normalisedPathPointer = getNormalisedPath(path);
+		TemplateEntry toReturn = get(normalisedPathPointer.toString()).orElseGet(() -> getInheritedRule(normalisedPathPointer, path));
 		// TODO maybe it's better to precompute these values
 		toReturn.isParentArray = isParentArray(path);
 		return toReturn;
@@ -135,7 +139,15 @@ public class CompareTemplate {
 
 	@JsonSetter("rules")
 	public void setRules(Collection<TemplateEntry> rules) {
-		for (TemplateEntry rule : rules) {
+
+		// Here sorting the rules based on the length of path.
+		// This is needed because let's say there is rule for /body
+		// marked as RptArray, so all descendant paths should be
+		// normalised and have "*" at the child level of body.
+		List<TemplateEntry> rulesList = new ArrayList(rules);
+		rulesList.sort(java.util.Comparator.comparing(TemplateEntry::getPathLength));
+
+		for (TemplateEntry rule : rulesList) {
 			addRule(rule);
 		}
 	}
@@ -155,22 +167,38 @@ public class CompareTemplate {
 		return ret;
 	}
 
+	public JsonPointer getNormalisedPath(String rootPath) {
+		JsonPointer rootPointer = JsonPointer.valueOf(rootPath);
+		JsonPointer pointer = rootPointer;
+
+		// Using array for changing variable inside the lambda function
+		final JsonPointer[] returnPointer = {JsonPointer.valueOf("")};
+		// TODO: Change comparison to JsonPointer.empty() method once we upgrade Jackson to 2.10
+		while (!pointer.toString().isEmpty()) {
+			String currentProperty = pointer.getMatchingProperty();
+
+			get(returnPointer[0].toString()).ifPresentOrElse(rule -> {
+					if (rule.dt == DataType.RptArray) {
+						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/*"));
+					} else {
+						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
+					}
+				},
+				() -> {
+					returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
+				});
+			pointer = pointer.tail();
+		}
+		return returnPointer[0];
+	}
+
 	/*
 	 * Equality and Ignore compare rules can be inherited from the nearest ancestor
 	 */
-	private TemplateEntry getInheritedRule(String path, String origPath) {
-		int index = path.lastIndexOf('/');
-		if (index != -1) {
-			String subPath = path.substring(0, index);
-			return get(subPath).flatMap(rule -> {
-			    if (rule.dt == DataType.RptArray) {
-                    Optional<TemplateEntry> starRuleOpt = get(subPath + "/*");
-                    if (starRuleOpt.isPresent()) {
-                        TemplateEntry starRule = starRuleOpt.get();
-                        return Optional.of(new TemplateEntry(origPath, starRule.dt, starRule.pt, starRule.ct));
-                    }
-                }
-
+	private TemplateEntry getInheritedRule(JsonPointer pathPointer, String origPath) {
+		JsonPointer parentPointer = pathPointer.head();
+		if (parentPointer!=null) {
+			return get(pathPointer.toString()).flatMap(rule -> {
                 // Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
                 // explicitly stated for a path. This will be ensured through validating template before registering.
                 if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
@@ -180,7 +208,7 @@ public class CompareTemplate {
                     return Optional.of(new TemplateEntry(origPath, DataType.Default, rule.pt, rule.ct));
                 }
 
-			}).orElseGet(() -> getInheritedRule(subPath, origPath));
+			}).orElseGet(() -> getInheritedRule(parentPointer, origPath));
 		} else {
 			return new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default);
 
@@ -247,7 +275,9 @@ public class CompareTemplate {
 	 * @param rule
 	 */
 	public void addRule(TemplateEntry rule) {
-		rules.put(rule.path, rule);
+		TemplateEntry normalisedRule = new TemplateEntry(getNormalisedPath(rule.path).toString(),
+			rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
+		rules.put(normalisedRule.path, normalisedRule);
 	}
 
 	public static class CompareTemplateStoreException extends Exception {
