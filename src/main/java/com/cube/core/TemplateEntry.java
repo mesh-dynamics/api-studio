@@ -347,30 +347,37 @@ public class TemplateEntry {
         }
     }
 
+    @JsonIgnore
     public String getPath() {
         return this.path;
     }
 
+    @JsonIgnore
     public DataType getDataType() {
         return dt;
     }
 
+    @JsonIgnore
     public PresenceType getPresenceType() {
         return pt;
     }
 
+    @JsonIgnore
     public CompareTemplate.ComparisonType getCompareType() {
         return ct;
     }
 
+    @JsonIgnore
     public ExtractionMethod getExtractionMethod() {
         return em;
     }
 
+    @JsonIgnore
     public Optional<String> getCustomization() {
         return customization;
     }
 
+    @JsonIgnore
     public int getPathLength() {
         return path.length();
     }

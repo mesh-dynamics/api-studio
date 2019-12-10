@@ -171,26 +171,25 @@ public class CompareTemplate {
 		JsonPointer rootPointer = JsonPointer.valueOf(rootPath);
 		JsonPointer pointer = rootPointer;
 
-		// TODO: Use JSONPointer's append than stringbuilder for normalised path after Jackson upgrade
-		StringBuilder stringBuilder = new StringBuilder();
+		// Using array for changing variable inside the lambda function
+		final JsonPointer[] returnPointer = {JsonPointer.valueOf("")};
 		// TODO: Change comparison to JsonPointer.empty() method once we upgrade Jackson to 2.10
 		while (!pointer.toString().isEmpty()) {
 			String currentProperty = pointer.getMatchingProperty();
 
-			get(stringBuilder.toString()).ifPresentOrElse(rule -> {
+			get(returnPointer[0].toString()).ifPresentOrElse(rule -> {
 					if (rule.dt == DataType.RptArray) {
-						stringBuilder.append("/*");
-						// TODO would be returnPointer.append(JsonPointer.valueOf("/*")) 
+						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/*"));
 					} else {
-						stringBuilder.append("/" + currentProperty);
+						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
 					}
 				},
 				() -> {
-					stringBuilder.append("/" + currentProperty);
+					returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
 				});
 			pointer = pointer.tail();
 		}
-		return JsonPointer.valueOf(stringBuilder.toString());
+		return returnPointer[0];
 	}
 
 	/*
