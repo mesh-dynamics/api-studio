@@ -198,7 +198,7 @@ public class CompareTemplate {
 	private TemplateEntry getInheritedRule(JsonPointer pathPointer, String origPath) {
 		JsonPointer parentPointer = pathPointer.head();
 		if (parentPointer!=null) {
-			return get(pathPointer.toString()).flatMap(rule -> {
+			return get(parentPointer.toString()).flatMap(rule -> {
                 // Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
                 // explicitly stated for a path. This will be ensured through validating template before registering.
                 if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
