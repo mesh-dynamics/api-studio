@@ -98,16 +98,25 @@ class OperationSetLabel extends React.Component {
 
     getIssueUrl = () => {
         const { cube: { jiraBugs }, jsonPath } = this.props;
-        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+        
+        if(jsonPath) {
+            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
-        return  jiraBugs.length > 0 && bugItem ? bugItem.issueUrl : "";
+            return  jiraBugs.length > 0 && bugItem ? bugItem.issueUrl : "";
+        }
+
+        return;
     }
     
     getIssueId = () => {
         const { cube: { jiraBugs }, jsonPath } = this.props;
-        const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
+        if(jsonPath) {
+            const bugItem = jiraBugs.find(item => item.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
-        return  jiraBugs.length > 0 && bugItem ? bugItem.issueKey : "";
+            return  jiraBugs.length > 0 && bugItem ? bugItem.issueKey : "";
+        }
+        
+        return;
     };
 
     handleIssueUrlClick = () => {
