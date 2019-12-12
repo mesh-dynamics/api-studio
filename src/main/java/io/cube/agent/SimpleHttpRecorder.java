@@ -31,4 +31,9 @@ public class SimpleHttpRecorder extends AbstractGsonSerializeRecorder {
     }
 
 
+    @Override
+    public boolean record(ReqResp httpReqResp) {
+        Optional<String> cubeResponse = cubeClient.storeSingleReqResp(httpReqResp);
+        return true;
+    }
 }
