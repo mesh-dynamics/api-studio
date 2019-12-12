@@ -19,7 +19,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 			// https://github.com/fluent/fluent-logger-java
 			String jsonSerialized = jsonMapper.writeValueAsString(fnReqResponse);
 			// The prefix will be a part of the fluentd parse regex
-			LOGGER.info("[Cube FnReqResp Event]:" + jsonSerialized);
+			LOGGER.info("[Cube FnReqResp Event]" + jsonSerialized);
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(
@@ -36,7 +36,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 			// https://github.com/fluent/fluent-logger-java
 			String jsonSerialized = jsonMapper.writeValueAsString(event);
 			// The prefix will be a part of the fluentd parse regex
-			LOGGER.info("[Cube Event]:" + jsonSerialized);
+			LOGGER.info("[Cube Event]" + jsonSerialized);
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(
@@ -51,7 +51,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 		try {
 			String jsonSerialized = jsonMapper.writeValueAsString(httpReqResp);
 			// The prefix will be a part of the fluentd parse regex
-			LOGGER.info("[Cube ReqResp]:" + jsonSerialized);
+			LOGGER.info("[Cube ReqResp]" + jsonSerialized);
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(
