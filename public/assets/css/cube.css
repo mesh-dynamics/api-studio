@@ -4435,7 +4435,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 }
 
 .link {
-    color: #CCC6B0;
+    color: #666666;
 }
 
 .link:hover {
@@ -4477,6 +4477,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 }
 .margin-bottom-10 {
     margin-bottom: 10px;
+}
+.h-20px {
+    height: 20px;
 }
 .main_container {
     display: flex;
@@ -4564,6 +4567,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .modal-content {
     margin-top: 30vh;
 }
+.modal-lg .modal-content {
+    margin-top: 20px;
+}
 .fullscreen {
     padding: 20px;
     border: 5px solid #efefef;
@@ -4635,4 +4641,8 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     color: #8a6d3b;
     padding: 15px;
     margin-bottom: 20px;
+}
+
+.selected-g-row td{
+    background: #CCC6B0 !important;
 }

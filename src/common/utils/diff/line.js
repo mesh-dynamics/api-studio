@@ -63,7 +63,7 @@ exports.DefaultLine = function (_a) {
     var leftLineNumber = _a.leftLineNumber, rightLineNumber = _a.rightLineNumber, onLineNumberClick = _a.onLineNumberClick, rightContent = _a.rightContent, leftContent = _a.leftContent, added = _a.added, removed = _a.removed, renderContent = _a.renderContent, _b = _a.hightlightLines, hightlightLines = _b === void 0 ? [] : _b, styles = _a.styles, hideLineNumbers = _a.hideLineNumbers,
     // author raj.maddireddy@cubecorp.io 
     jsonPath = _a.jsonPath, serverSideDiff = _a.serverSideDiff, apiPath = _a.apiPath, service = _a.service, app = _a.app, templateVersion = _a.templateVersion, replayId = _a.replayId, recordingId = _a.recordingId;
-    var filterPath = _a.filterPath,
+    var filterPaths = _a.filterPaths,
     inputElementRef = _a.inputElementRef,
     showAll = _a.showAll,
     searchFilterPath = _a.searchFilterPath;
@@ -89,7 +89,10 @@ exports.DefaultLine = function (_a) {
         if(refElement) refElement.style.visibility = "hidden";
     }
 
-    return !jsonPath || (showAll || (filterPath.indexOf(jsonPath) > -1)) && (jsonPath.indexOf(searchFilterPath) > -1) ? React.createElement("tr", { className: styles.line, onMouseOver: () => showRefElement(actionsWrapperElementRef), onMouseOut: () => hideRefElement(actionsWrapperElementRef) },
+    // prefix match filter paths
+    let showPath = filterPaths.some(path => (jsonPath.indexOf(path) > -1));
+
+    return !jsonPath || (showAll || showPath) && (jsonPath.indexOf(searchFilterPath) > -1) ? React.createElement("tr", { className: styles.line, onMouseOver: () => showRefElement(actionsWrapperElementRef), onMouseOut: () => hideRefElement(actionsWrapperElementRef) },
         !hideLineNumbers
             && React.createElement("td", { className: classnames_1.default(styles.gutter, styles.leftGutter, (_c = {},
                     _c[styles.diffRemoved] = removed,

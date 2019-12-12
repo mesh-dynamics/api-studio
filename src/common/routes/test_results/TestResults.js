@@ -65,7 +65,8 @@ class TestResults extends Component {
             currentTemplateVer: currentTemplateVer
         }));
         setTimeout(() => {
-            history.push(`/shareable_link?replayId=${replayId}&app=${cube.selectedApp}&apiPath=${path}&replayId=${replayId}&service=${service}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}`);
+            // initial default path
+            history.push(`/shareable_link?replayId=${replayId}&app=${cube.selectedApp}&apiPath=${path}&service=${service}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&selectedReqRespMatchType=responseMismatch&selectedResolutionType=All`);
         });
     }
 

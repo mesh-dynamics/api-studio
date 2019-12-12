@@ -17,6 +17,12 @@ class ViewSelectedTestConfig extends React.Component {
             replayId: null,
             show: false,
             showCT: false,
+            showGoldenFilter: false,
+            goldenNameFilter: "",
+            goldenIdFilter: "",
+            goldenBranchFilter: "",
+            goldenVersionFilter: "",
+            selectedGoldenFromFilter: ""
         };
         this.doReplay = true;
         this.hideModalForFC = true;
@@ -103,14 +109,63 @@ class ViewSelectedTestConfig extends React.Component {
         return jsxContent;
     }
 
+    getFormattedDate(date) {
+        var year = date.getFullYear();
+
+        var month = (1 + date.getMonth()).toString();
+        month = month.length > 1 ? month : '0' + month;
+
+        var day = date.getDate().toString();
+        day = day.length > 1 ? day : '0' + day;
+
+        return month + '/' + day + '/' + year;
+    }
+
+    renderCollectionTable() {
+        const {cube} = this.props;
+        let collectionList = cube.testIds;
+
+        if (this.state.goldenNameFilter) {
+            collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
+        }
+
+        if (this.state.goldenBranchFilter) {
+            collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
+        }
+
+        if (this.state.goldenVersionFilter) {
+            collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
+        }
+
+        if (this.state.goldenIdFilter) {
+            collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
+        }
+
+        if (!collectionList || collectionList.length == 0) {
+            return <tr><td colSpan="5">NO DATA FOUND</td></tr>
+            return;
+        }
+
+        let trList = collectionList.map(item => (<tr value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
+        return trList;
+    }
+
+    selectGoldenFromFilter = (g) => {
+        this.setState({selectedGoldenFromFilter: g});
+    };
+
+    applyGoldenFilter = (filter, event) => {
+        this.setState({[filter] : event.target.value});
+    };
+
     renderCollectionDD ( cube ) {
         if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
             return <select className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
                 <option value="">No App Selected</option>
-            </select>
+            </select>;
         let options = [];
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.testIds.map(item => (<option key={item.collec} value={item.collec}>{item.id}</option>));
+            options = cube.testIds.map(item => (<option key={item.collec} value={item.collec}>{item.name}</option>));
         }
         let jsxContent = '';
         if (options.length) {
@@ -187,7 +242,7 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10">
-                    <div className="label-n">SELECT GOLDEN</div>
+                    <div className="label-n">SELECT GOLDEN&nbsp;<i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-filter pull-right"></i></div>
                     <div className="value-n">
                         {this.renderCollectionDD(cube)}
                     </div>
@@ -231,9 +286,97 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.handleFCDone} className="cube-btn">Done</span>
                     </Modal.Footer>
                 </Modal>
+
+                <Modal show={this.state.showGoldenFilter} bsSize="large">
+                    <Modal.Header>
+                        <Modal.Title>Application: {cube.selectedApp}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-5">
+                                    <div className="label-n">NAME</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenNameFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+
+                                <div className="col-md-2"></div>
+
+                                <div className="col-md-5">
+                                    <div className="label-n">BRANCH</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenBranchFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-5">
+                                    <div className="label-n">RECORDING ID</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenIdFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+
+                                <div className="col-md-2"></div>
+
+                                <div className="col-md-5">
+                                    <div className="label-n">CODE VERSION</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenVersionFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{height: "300px", overflowY: "auto"}}>
+                            <table className="table table-condensed table-hover table-striped">
+                                <thead>
+                                <tr>
+                                    <td className="bold">Name</td>
+                                    <td className="bold">ID</td>
+                                    <td className="bold">Date</td>
+                                    <td className="bold">Created By</td>
+                                    <td className="bold">Parent ID</td>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                {this.renderCollectionTable()}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <span onClick={this.selectHighlighted} className="cube-btn">Select Chosen</span>&nbsp;&nbsp;
+                        <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
+                    </Modal.Footer>
+                </Modal>
             </div>
         );
     }
+
+    showGoldenFilter = () => {
+        this.setState({
+            goldenNameFilter: "",
+            goldenIdFilter: "",
+            goldenBranchFilter: "",
+            goldenVersionFilter: "",
+            selectedGoldenFromFilter: "",
+            showGoldenFilter: true
+        });
+    };
+
+    hideGoldenFilter = () => {
+        this.setState({showGoldenFilter: false});
+    };
+
+    selectHighlighted = () => {
+        this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
+        this.hideGoldenFilter();
+    };
 
     replay () {
         const {cube, dispatch} = this.props;
