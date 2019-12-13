@@ -10,6 +10,7 @@ import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -54,12 +55,20 @@ class RecorderAndMockerTest {
 
     static Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
             .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
-    static Recorder recorder = new SimpleHttpRecorder(gson);
-    static Mocker mocker = new SimpleMocker(gson);
+
     static Map<String, Double> disc1 = new HashMap<String, Double>();
     static Map<String, Double> disc2 = new HashMap<String, Double>();
     static Map<String, Double> disc3 = new HashMap<String, Double>();
+    static Recorder recorder;
+    static Mocker mocker;
     static {
+        try {
+            recorder = new SimpleHttpRecorder(gson);
+            mocker = new SimpleMocker(gson);
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to initialize recorder/mocker")));
+        }
         disc1.put("Prod1", 0.50); disc1.put("Prod2", 0.50); disc1.put("Prod3", 0.5); disc1.put("Prod4", 0.5);
         disc2.put("Prod1", 0.25); disc2.put("Prod2", 0.25); disc2.put("Prod3", 0.25); disc2.put("Prod4", 0.25);
         disc3.put("Prod1", 0.10); disc3.put("Prod2", 0.20); disc3.put("Prod3", 0.30); disc3.put("Prod4", 0.4);
@@ -269,7 +278,7 @@ class RecorderAndMockerTest {
         static FnKey getPromoNameFnKey; // for getPromoName
     }
 
-    public RecorderAndMockerTest() {
+    public RecorderAndMockerTest() throws Exception {
         this.jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new Jdk8Module());
         jsonMapper.registerModule(new JavaTimeModule());

@@ -35,7 +35,7 @@ public class CubeClient {
 
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
-	public CubeClient(ObjectMapper jsonMapper) {
+	public CubeClient(ObjectMapper jsonMapper) throws Exception {
 		CommonConfig config = new CommonConfig();
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
@@ -58,7 +58,8 @@ public class CubeClient {
 				}
 				numberOfAttempts++;
 			} catch (Exception e) {
-				LOGGER.error("Error while sending request to cube service :: " + e.getMessage());
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Error while sending request to cube service" )), e);
 				numberOfAttempts++;
 			}
 		}
@@ -72,8 +73,8 @@ public class CubeClient {
 			CommonUtils.addTraceHeaders(builder, "POST");
 			return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error("Error while serializing function req/resp object :: "
-				+ e.getMessage());
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Error while serializing function req/resp object" )), e);
 		}
 		return Optional.empty();
 	}
@@ -85,8 +86,8 @@ public class CubeClient {
 			return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
 		} catch (JsonProcessingException e) {
 			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Error while serializing single HTTP req/resp object",
-					Constants.REASON, e.getMessage())));
+				Map.of(Constants.MESSAGE,
+					"Error while serializing single HTTP req/resp object")),e);
 		}
 		return Optional.empty();
 	}
@@ -98,8 +99,8 @@ public class CubeClient {
 			return getResponse(
 				builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error("Error while serializing function req/resp object :: "
-				+ e.getMessage());
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
+				"Error while serializing event")), e);
 		}
 		return Optional.empty();
 	}
@@ -123,11 +124,11 @@ public class CubeClient {
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, fnReqResponse).flatMap(response -> {
 			try {
-				LOGGER.debug("GOT RESPONSE :: " + response);
+				LOGGER.debug(new ObjectMessage(Map.of("Response" , response)));
 				return Optional.of(jsonMapper.readValue(response, FnResponse.class));
 			} catch (Exception e) {
-				LOGGER.error(
-					"Error while parsing json response from mock server :: " + e.getMessage());
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
+					"Error while parsing json response from mock server")), e);
 				return Optional.empty();
 			}
 		});
@@ -138,11 +139,25 @@ public class CubeClient {
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, event).flatMap(response -> {
 			try {
-				LOGGER.debug("GOT RESPONSE :: " + response);
+				LOGGER.debug(new ObjectMessage(Map.of("Response" , response)));
 				return Optional.of(jsonMapper.readValue(response, FnResponse.class));
 			} catch (Exception e) {
-				LOGGER.error(
-					"Error while parsing json response from mock server :: " + e.getMessage());
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
+					"Error while parsing json response from mock server")), e);
+				return Optional.empty();
+			}
+		});
+	}
+
+	public Optional<Event> getMockThriftResponse(Event event) {
+		Invocation.Builder builder = cubeMockService.path("ms").path("thrift").request(MediaType.APPLICATION_JSON);
+		return getResponse(builder, event).flatMap(response -> {
+			try {
+				LOGGER.debug(new ObjectMessage(Map.of("Response" , response)));
+				return Optional.of(jsonMapper.readValue(response, Event.class));
+			} catch (Exception e) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
+					"Error while parsing json response from mock server")), e);
 				return Optional.empty();
 			}
 		});
@@ -209,4 +224,5 @@ public class CubeClient {
 		}
 		return Optional.empty();
 	}
+
 }
