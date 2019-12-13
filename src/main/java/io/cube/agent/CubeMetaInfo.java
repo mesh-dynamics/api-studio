@@ -1,10 +1,10 @@
 package io.cube.agent;
 
 public class CubeMetaInfo {
-    final String customerId;
-    final String appName;
-    final String instance;
-    final String serviceName;
+    public final String customerId;
+    public final String appName;
+    public final String instance;
+    public final String serviceName;
 
     public CubeMetaInfo(String customerId, String instance, String appName, String serviceName) {
       this.customerId = customerId;

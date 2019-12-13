@@ -2,9 +2,9 @@ package io.cube.agent;
 
 public class CubeTraceInfo {
 
-  final String traceId;
-  final String spanId;
-  final String parentSpanId;
+  public final String traceId;
+  public final String spanId;
+  public final String parentSpanId;
 
   CubeTraceInfo(String traceId, String spanId, String parentSpanId) {
     this.traceId = traceId;
