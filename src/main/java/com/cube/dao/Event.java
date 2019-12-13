@@ -24,6 +24,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.cube.agent.UtilException;
 
@@ -33,8 +34,6 @@ import com.cube.core.Utils;
 import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.golden.ReqRespUpdateOperation;
-import com.cube.serialize.BinaryPayloadDeserializer;
-import com.cube.serialize.BinaryPayloadSerializer;
 import com.cube.utils.Constants;
 import com.cube.utils.ReplayTypeEnum;
 import com.cube.ws.Config;
@@ -330,8 +329,8 @@ public class Event {
 
 	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
 	// as base64. For debugging its easier if the string is readable.
-	@JsonSerialize(using = BinaryPayloadSerializer.class)
-	@JsonDeserialize(using = BinaryPayloadDeserializer.class)
+	@JsonSerialize(using = ByteArraySerializer.class)
+	@JsonDeserialize(as = byte[].class)
 	public final byte[] rawPayloadBinary;
 	public final String rawPayloadString;
 

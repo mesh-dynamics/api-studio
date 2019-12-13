@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
+import io.cube.agent.CommonUtils;
 import io.cube.agent.FluentDLogRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
@@ -126,11 +127,8 @@ public class Config {
 	}
 
     private String fromEnvOrProperties(String propertyName, String defaultValue) {
-        String fromEnv =  System.getenv(propertyName);
-        if (fromEnv != null) {
-            return fromEnv;
-        }
-        return  properties.getProperty(propertyName , defaultValue);
+	    return CommonUtils.fromEnvOrSystemProperties(propertyName)
+		    .orElse(properties.getProperty(propertyName , defaultValue));
     }
 
 
