@@ -38,7 +38,7 @@ public class SimpleMocker implements Mocker {
     private Gson gson;
     CubeClient cubeClient;
 
-    public SimpleMocker(Gson gson) {
+    public SimpleMocker(Gson gson) throws Exception {
         jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new Jdk8Module());
         jsonMapper.registerModule(new JavaTimeModule());

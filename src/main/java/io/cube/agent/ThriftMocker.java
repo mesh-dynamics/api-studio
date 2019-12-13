@@ -16,7 +16,7 @@ public class ThriftMocker {
 	private CubeClient cubeClient;
 	private ObjectMapper jsonMapper;
 
-	public ThriftMocker() {
+	public ThriftMocker() throws Exception {
 		jsonMapper = new ObjectMapper();
 		jsonMapper.registerModule(new Jdk8Module());
 		jsonMapper.registerModule(new JavaTimeModule());

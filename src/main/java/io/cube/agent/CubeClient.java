@@ -35,7 +35,7 @@ public class CubeClient {
 
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
-	public CubeClient(ObjectMapper jsonMapper) {
+	public CubeClient(ObjectMapper jsonMapper) throws Exception {
 		CommonConfig config = new CommonConfig();
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
