@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 /*
  * Created by IntelliJ IDEA.
@@ -158,8 +159,8 @@ public class Event {
 
 	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
 	// as base64. For debugging its easier if the string is readable.
-	@JsonSerialize(using = BinaryPayloadSerializer.class)
-	@JsonDeserialize(using = BinaryPayloadDeserializer.class)
+	@JsonSerialize(using = ByteArraySerializer.class)
+	@JsonDeserialize(as = byte[].class)
 	public final byte[] rawPayloadBinary;
 	public final String rawPayloadString;
 

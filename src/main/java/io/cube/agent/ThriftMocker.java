@@ -16,9 +16,6 @@ public class ThriftMocker {
 	private CubeClient cubeClient;
 	private ObjectMapper jsonMapper;
 
-	public static final String THRIFT_CLASS_NAME = "thriftClassName";
-	public static final String THRIFT_METHOD_NAME  = "thirftMethodName";
-
 	public ThriftMocker() {
 		jsonMapper = new ObjectMapper();
 		jsonMapper.registerModule(new Jdk8Module());

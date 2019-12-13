@@ -22,7 +22,7 @@ public class EventBuilder {
 	private final String customerId;
 	private final String app;
 	private final String service;
-	private final String instanceId;
+	private final String instance;
 	private String collection;
 	private final String traceId;
 	private final String spanId;
@@ -37,13 +37,13 @@ public class EventBuilder {
 	private DataObj payload;
 	private int payloadKey = 0;
 
-    public EventBuilder(String customerId, String app, String service, String instanceId,
+    public EventBuilder(String customerId, String app, String service, String instance,
         String collection, String traceId, Event.RunType runType, Instant timestamp, String reqId,
         String apiPath, Event.EventType eventType) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
-		this.instanceId = instanceId;
+		this.instance = instance;
 		this.collection = collection;
 		this.traceId = traceId;
 		this.spanId = null;
@@ -59,7 +59,7 @@ public class EventBuilder {
 		Event.RunType runType, String apiPath, EventType eventType) {
 		this.customerId = cubeMetaInfo.customerId;
 		this.app = cubeMetaInfo.appName;
-		this.instanceId = cubeMetaInfo.instanceId;
+		this.instance = cubeMetaInfo.instance;
 		this.service = cubeMetaInfo.serviceName;
 
 		this.traceId = cubeTraceInfo.traceId;
@@ -113,7 +113,7 @@ public class EventBuilder {
 		if (this.timestamp == null) {
 			this.timestamp = Instant.now();
 		}
-        Event event = new Event(customerId, app, service, instanceId, collection, traceId, runType,
+        Event event = new Event(customerId, app, service, instance, collection, traceId, runType,
             timestamp, reqId, apiPath, eventType, rawPayloadBinary, rawPayloadString, payload,
             payloadKey);
         if (event.validate()) {

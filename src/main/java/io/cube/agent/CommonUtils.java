@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.cube.agent.Event.RunType;
 import io.jaegertracing.Configuration;
-import io.jaegertracing.internal.JaegerSpan;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
@@ -48,11 +47,6 @@ import java.util.stream.Collectors;
  */
 public class CommonUtils {
 
-    public static final String BAGGAGE_INTENT = "intent";
-    public static final String INTENT_RECORD = "record";
-    public static final String INTENT_MOCK = "mock";
-    public static final String NO_INTENT = "normal";
-
     private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
 
     public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
@@ -86,11 +80,14 @@ public class CommonUtils {
             //Tags.HTTP_URL.set(tracer.activeSpan(), requestBuilder.toString());
             if (tracer.activeSpan() != null) {
                 Span activeSpan = tracer.activeSpan();
-                String currentIntent = activeSpan.getBaggageItem(BAGGAGE_INTENT);
-                activeSpan.setBaggageItem(BAGGAGE_INTENT, null);
+                String currentIntent = activeSpan.getBaggageItem(Constants
+                    .ZIPKIN_HEADER_BAGGAGE_INTENT_KEY);
+                activeSpan.setBaggageItem(Constants
+                    .ZIPKIN_HEADER_BAGGAGE_INTENT_KEY, null);
                 tracer.inject(activeSpan.context(),
                         Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
-                activeSpan.setBaggageItem(BAGGAGE_INTENT , currentIntent);
+                activeSpan.setBaggageItem(Constants
+                    .ZIPKIN_HEADER_BAGGAGE_INTENT_KEY , currentIntent);
             }
 
             if (scope != null) {
@@ -120,17 +117,19 @@ public class CommonUtils {
 
     public static Optional<String> getCurrentIntentFromScope() {
         Optional<String> currentIntent =  getCurrentSpan().flatMap(span -> Optional.
-                ofNullable(span.getBaggageItem(BAGGAGE_INTENT))).or(() -> fromEnv(BAGGAGE_INTENT));
-        LOGGER.info("Got intent from trace (in agent) :: " + currentIntent.orElse(" N/A"));
+                ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
+            fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
+        LOGGER.info("Got intent from trace (in agent) :: " +
+            currentIntent.orElse(" N/A"));
         return currentIntent;
     }
 
     public static boolean isIntentToRecord() {
-        return getCurrentIntent().equalsIgnoreCase(INTENT_RECORD);
+        return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_RECORD);
     }
 
     public static boolean isIntentToMock() {
-        return getCurrentIntent().equalsIgnoreCase(INTENT_MOCK);
+        return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
     }
 
     public static Scope startClientSpan(String operationName) {
@@ -231,7 +230,7 @@ public class CommonUtils {
     }
 
     public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
-        return findFirstCaseInsensitiveMatch(mMap, CommonConfig.DEFAULT_TRACE_FIELD);
+        return findFirstCaseInsensitiveMatch(mMap, Constants.ZIPKIN_TRACE_HEADER);
     }
 
     public static JsonObject createPayload(Object responseOrException, Gson gson, Object... args) {
@@ -258,21 +257,21 @@ public class CommonUtils {
         return argsArray;
     }
 
-    private static Optional<String> fromEnv(String propertyName) {
-        String fromEnv =  System.getenv(propertyName);
-        return Optional.ofNullable(fromEnv).or(() -> Optional.ofNullable(System.getProperty(propertyName)));
+    public static Optional<String> fromEnvOrSystemProperties(String propertyName) {
+        return Optional.ofNullable(System.getenv(propertyName)).or(() ->
+            Optional.ofNullable(System.getProperty(propertyName)));
     }
 
     public static CubeMetaInfo cubeMetaInfoFromEnv() throws Exception {
-        String customerId = fromEnv("cubeCustomerId")
+        String customerId = fromEnvOrSystemProperties(Constants.MD_CUSTOMER_PROP)
             .orElseThrow(() -> new Exception("Customer Id Not Found in Env"));
-        String instanceId = fromEnv("cubeInstanceId")
+        String instance = fromEnvOrSystemProperties(Constants.MD_INSTANCE_PROP)
             .orElseThrow(() -> new Exception("Instance Id Not Found in Env"));
-        String app = fromEnv("cubeAppName")
+        String appName = fromEnvOrSystemProperties(Constants.MD_APP_PROP)
             .orElseThrow(() -> new Exception("Cube App Name Not Found in Env"));
-        String serviceName = fromEnv("cubeServiceName")
+        String serviceName = fromEnvOrSystemProperties(Constants.MD_SERVICE_PROP)
             .orElseThrow(() -> new Exception("Cube Service Name Not Found in Env"));
-        return new CubeMetaInfo(customerId, instanceId, app, serviceName);
+        return new CubeMetaInfo(customerId, instance, appName, serviceName);
     }
 
     public static CubeTraceInfo cubeTraceInfoFromContext() {
@@ -301,7 +300,7 @@ public class CommonUtils {
     public static String traceIdFromThriftSpan(TBase spanContainingObject) {
         try {
             Class<?> clazz = spanContainingObject.getClass();
-            Field field = clazz.getField("span"); //Note, this can throw an exception if the field doesn't exist.
+            Field field = clazz.getField(Constants.THRIFT_SPAN_ARGUMENT_NAME); //Note, this can throw an exception if the field doesn't exist.
             io.cube.tracing.thriftjava.Span span = (io.cube.tracing.thriftjava.Span) field.get(spanContainingObject);
             JaegerSpanContext spanContext =  new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
                 (byte) span.flags);
