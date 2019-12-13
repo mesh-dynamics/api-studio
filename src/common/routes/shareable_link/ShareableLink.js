@@ -748,6 +748,19 @@ class ShareableLink extends Component {
             </div >);
         });
 
+        let getResolutionTypeDescription = function (resolutionType) {
+            switch (resolutionType) {
+                case "All":
+                    return "All"
+                
+                case "ERR":
+                    return "All Errors"
+                
+                default:
+                    return resolutionsIconMap[resolutionType].description;
+            }
+        }
+
         return (
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
@@ -793,9 +806,14 @@ class ShareableLink extends Component {
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
-                        <div style={{ display: "inline-block" }}>
+                        
+                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        <div style={{display: "inline-block"}}>
+                            <label class="checkbox-inline">
+                                Resolution Type:
+                            </label>
                             <div style={{ paddingLeft: "9px", display: "inline-block" }}>
-                                <DropdownButton title="Resolution Type" id="dropdown-size-medium">
+                                <DropdownButton title={getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
                                         <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
                                     </MenuItem>

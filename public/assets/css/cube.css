@@ -3310,9 +3310,6 @@ ul.project_files li a i {
 .form-group.has-feedback span {
     display: block !important;
 }
-.form-group .btn {
-    margin-bottom: -6px;
-}
 
 .input-group-btn .btn { margin-bottom:0; }
 
