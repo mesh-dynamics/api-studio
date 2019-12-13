@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -49,8 +51,9 @@ public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
+    // Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
-	    return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
+	    return EnumSet.allOf(clazz).stream().filter(v -> v.name().toLowerCase().equals(name.toLowerCase()))
 	                    .findAny();
 	}
 
@@ -281,6 +284,18 @@ public class Utils {
         return errorResponse.toString();
     }
 
+    public static Map<String,Object> extractThriftParams(String thriftApiPath) {
+        Map<String, Object> params = new HashMap<>();
+        if (thriftApiPath != null) {
+            String[] splitResult = thriftApiPath.split("::");
+            String methodName = splitResult[0];
+            String argsClassName = splitResult[1];
+            params.put(Constants.THRIFT_METHOD_NAME, methodName);
+            params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
+        }
+        return params;
+    }
+
     public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap, String fieldname) {
         return Optional.ofNullable(fieldMap.getFirst(fieldname));
     }
@@ -362,9 +377,5 @@ public class Utils {
         String payload = event.getPayloadAsJsonString(config);
         return config.jsonMapper.readValue(payload, HTTPResponsePayload.class);
     }
-
-
-
-
 
 }

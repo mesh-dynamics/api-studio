@@ -112,7 +112,7 @@ public class Analyzer {
 
             List<Event> matchedReqs = matches.getObjects().collect(Collectors.toList());
             Map<String, Event> replayResponseMap = getReqToResponseMap(matchedReqs, replay.customerId,
-                replay.app, replay.replayId, r.service, r.eventType, r.traceId, rrstore);
+                replay.app, replay.replayId, r.service, r.eventType, r.getTraceId(), rrstore);
 
 
 
@@ -240,7 +240,7 @@ public class Analyzer {
     Stream<Event> expandOnTraceId(List<Event> requestList, String customerId,
                                   String app, String collectionId, ReqRespStore rrstore) {
         List<String> traceIds =
-            requestList.stream().map(request -> request.traceId).collect(Collectors.toList());
+            requestList.stream().map(Event::getTraceId).collect(Collectors.toList());
         if (traceIds.isEmpty()) {
             return requestList.stream();
         }
@@ -260,7 +260,7 @@ public class Analyzer {
         return builder.withPath(reqEvent.apiPath)
             .withCollection(replayId)
             .withRunType(Event.RunType.Replay)
-            .withTraceId(reqEvent.traceId)
+            .withTraceId(reqEvent.getTraceId())
             .withPayloadKey(reqEvent.payloadKey)
             .withLimit(limit)
             .build();
@@ -292,7 +292,7 @@ public class Analyzer {
 
     static Optional<Event> getResponseFromRequestEvent(Event reqEvent, ReqRespStore rrstore) {
         EventQuery eventQuery = reqEventToResponseEventQuery(List.of(reqEvent.reqId), reqEvent.customerId, reqEvent.app,
-            reqEvent.getCollection(), reqEvent.service, reqEvent.eventType, reqEvent.traceId);
+            reqEvent.getCollection(), reqEvent.service, reqEvent.eventType, reqEvent.getTraceId());
         return rrstore.getEvents(eventQuery).getObjects().findFirst();
 
     }

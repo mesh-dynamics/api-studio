@@ -212,7 +212,7 @@ public class RecordingUpdate {
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
 
-                Event transformedResponse = new Event.EventBuilder(recordResponse.customerId, recordResponse.app, recordResponse.service, recordResponse.instanceId, "", recordResponse.traceId,
+                Event transformedResponse = new Event.EventBuilder(recordResponse.customerId, recordResponse.app, recordResponse.service, recordResponse.instanceId, "", recordResponse.getTraceId(),
                     recordResponse.runType, recordResponse.timestamp, newReqId, recordResponse.apiPath, recordResponse.eventType)
                     .setRawPayloadBinary(recordResponse.rawPayloadBinary)
                     .setRawPayloadString(recordResponse.rawPayloadString)
@@ -223,7 +223,7 @@ public class RecordingUpdate {
 
                 LOGGER.debug("Changing the reqid and collection name in the response for the sanitized collection");
 
-                Event transformedRequest = new Event.EventBuilder(recordRequest.customerId, recordRequest.app, recordRequest.service, recordRequest.instanceId, "", recordRequest.traceId,
+                Event transformedRequest = new Event.EventBuilder(recordRequest.customerId, recordRequest.app, recordRequest.service, recordRequest.instanceId, "", recordRequest.getTraceId(),
                     recordRequest.runType, recordRequest.timestamp, newReqId, recordRequest.apiPath, recordRequest.eventType)
                     .setRawPayloadBinary(recordRequest.rawPayloadBinary)
                     .setRawPayloadString(recordRequest.rawPayloadString)

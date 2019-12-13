@@ -6,10 +6,11 @@
 
 package com.cube.dao;
 
-import static com.cube.dao.Event.RunType.Record;
 
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,14 +22,20 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.cube.agent.UtilException;
 
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.core.Utils;
+import com.cube.dao.DataObj.DataObjCreationException;
 import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.utils.Constants;
+import com.cube.utils.ReplayTypeEnum;
 import com.cube.ws.Config;
 
 /*
@@ -80,7 +87,7 @@ public class Event {
 		this.instanceId = null;
 		this.collection = null;
 		this.traceId = null;
-		this.runType = Record;
+		this.runType = RunType.Record;
 		this.timestamp = null;
 		this.reqId = null;
 		this.apiPath = null;
@@ -108,7 +115,7 @@ public class Event {
 
 		if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (
 			collection == null)
-			|| (traceId == null) || (runType == null) ||
+			|| (traceId == null && eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
 			|| ((rawPayloadBinary == null) == (rawPayloadString == null || rawPayloadString.trim()
 			.isEmpty()))) {
@@ -118,28 +125,48 @@ public class Event {
 	}
 
 	public void parseAndSetKeyAndCollection(Config config, String collection,
-		CompareTemplate template) {
+		CompareTemplate template)
+		throws DataObjCreationException {
 		this.collection = collection;
 		parseAndSetKey(config, template);
 	}
 
 	public void parseAndSetKey(Config config, CompareTemplate template) {
+		parseAndSetKey(config,template,Optional.empty());
+	}
 
-		parsePayLoad(config);
+	public void parseAndSetKey(Config config, CompareTemplate template, Optional<URLClassLoader> classLoader)  {
+		parsePayLoad(config, classLoader);
 		List<String> keyVals = new ArrayList<>();
-		payload.collectKeyVals(
-			path -> template.getRule(path).getCompareType() == CompareTemplate.ComparisonType.Equal,
-			keyVals);
+		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
+			== CompareTemplate.ComparisonType.Equal, keyVals);
 		LOGGER.info(new ObjectMessage(
 			Map.of("message", "Generating event key from vals", "vals", keyVals.toString())));
 		payloadKey = Objects.hash(keyVals);
-		LOGGER.info(new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
+		if (eventType == EventType.ThriftRequest) {
+			this.traceId = ((ThriftDataObject) payload).traceId;
+		}
+		LOGGER.info(
+			new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
 	}
 
-	public DataObj parsePayLoad(Config config) {
+	public DataObj parsePayLoad(Config config)  {
+		return parsePayLoad(config, Optional.empty());
+	}
+
+	public DataObj parsePayLoad(Config config, Optional<URLClassLoader> classLoader)  {
 		// parse if not already parsed
 		if (payload == null) {
-			payload = DataObjFactory.build(eventType, rawPayloadBinary, rawPayloadString, config);
+			Map<String, Object> params = new HashMap<>();
+			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
+				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
+				params = Utils.extractThriftParams(this.apiPath);
+				Map<String, Object> finalParams = params;
+				classLoader.ifPresent(urlClassLoader -> finalParams
+					.put(Constants.CLASS_LOADER, urlClassLoader));
+			}
+			payload = DataObjFactory
+				.build(eventType, rawPayloadBinary, rawPayloadString, config, params);
 		}
 
 		return payload;
@@ -155,12 +182,12 @@ public class Event {
 	}
 
 	public String getPayloadAsString(Config config) {
-		parsePayLoad(config);
+		parsePayLoad(config , Optional.empty());
 		return payload.toString();
 	}
 
 	public DataObj getPayload(Config config) {
-		parsePayLoad(config);
+		parsePayLoad(config, Optional.empty());
 		return payload;
 	}
 
@@ -259,6 +286,17 @@ public class Event {
 					return HTTPResponse;
 			}
 		}
+
+		public static EventType fromReplayType(ReplayTypeEnum replayType) {
+			switch(replayType) {
+				case THRIFT:
+					return ThriftRequest;
+				case GRPC:
+					return ProtoBufRequest;
+				default:
+					return HTTPRequest;
+			}
+		}
 	}
 
 	public static final List<EventType> REQUEST_EVENT_TYPES = List
@@ -276,7 +314,7 @@ public class Event {
 	public final String service;
 	public final String instanceId;
 	private String collection;
-	public final String traceId;
+	private  String traceId;
 	public final RunType runType;
 
 
@@ -291,6 +329,8 @@ public class Event {
 
 	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
 	// as base64. For debugging its easier if the string is readable.
+	@JsonSerialize(using = ByteArraySerializer.class)
+	@JsonDeserialize(as = byte[].class)
 	public final byte[] rawPayloadBinary;
 	public final String rawPayloadString;
 
@@ -305,6 +345,14 @@ public class Event {
 		Record,
 		Replay,
 		Manual  // manually created e.g. default requests and responses
+	}
+
+	public String getTraceId() {
+		return this.traceId;
+	}
+
+	public void setTraceId(String traceId){
+		this.traceId = traceId;
 	}
 
 	public static class EventBuilder {

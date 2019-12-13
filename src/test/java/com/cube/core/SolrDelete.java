@@ -26,7 +26,7 @@ public class SolrDelete {
             SolrClient Solr = config.solr;
 
             //Preparing the Solr document
-            SolrInputDocument doc = new SolrInputDocument();
+            /*SolrInputDocument doc = new SolrInputDocument();
             doc.setField("test_s", createDataSize(50000));
 
 
@@ -38,14 +38,14 @@ public class SolrDelete {
             //Solr.deleteByQuery("id:\"ResponseCompareTemplate-1412732366\"");
             //Solr.deleteByQuery("id:\"ResponseCompareTemplate--491986321" +"\"");
             //Solr.deleteByQuery("id:ResponseCompareTemplate-1069006985");
-    /*        Solr.deleteByQuery("id:" +
+    *//*        Solr.deleteByQuery("id:" +
                     "\"-1763741525\"");
             Solr.deleteByQuery("id:" +
-                    "\"-484826313\"");*/
+                    "\"-484826313\"");*//*
             //Saving the document
 
                 Solr.add(doc);
-            Solr.add(doc);
+            Solr.add(doc);*/
 
             Solr.commit();
         } catch (Exception e) {

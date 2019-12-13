@@ -89,7 +89,8 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Exact Match Test")
-    final void exactMatchTest() throws IOException, JSONException, InvalidEventException {
+    final void exactMatchTest()
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("exactMatch");
         matchTest(testData);
     }
@@ -101,7 +102,8 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("DataType NoMatch Test")
-    final void dataTypeNoMatchTest() throws IOException, JSONException, InvalidEventException {
+    final void dataTypeNoMatchTest()
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("dataTypeNoMatch");
         matchTest(testData);
     }
@@ -113,12 +115,14 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Path NoMatch Test")
-    final void pathNotFoundTest() throws IOException, JSONException, InvalidEventException {
+    final void pathNotFoundTest()
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("pathNotFound");
         matchTest(testData);
     }
 
-    private void matchTest(JSONObject testData) throws IOException, JSONException, InvalidEventException {
+    private void matchTest(JSONObject testData)
+        throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
         Event request1 = mapper.readValue(object.getJSONObject(req1).toString(), Event.class);
@@ -132,7 +136,8 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Multimap FuzzyMatch Test")
-    final void multimapFuzzyMatchTest() throws IOException, JSONException, InvalidEventException {
+    final void multimapFuzzyMatchTest()
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("multimapFuzzyMatch");
         multimapMatchTest(testData);
     }
@@ -144,12 +149,14 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Multimap NoMatch Test")
-    final void multimapNoMatchTest() throws IOException, JSONException, InvalidEventException {
+    final void multimapNoMatchTest()
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("multimapNoMatch");
         multimapMatchTest(testData);
     }
 
-    private void multimapMatchTest(JSONObject testData) throws IOException, JSONException, InvalidEventException {
+    private void multimapMatchTest(JSONObject testData)
+        throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         String req2 = testData.get("req2").toString();
         Event request1 = mapper.readValue(object.getJSONObject(req1).toString(), Event.class);
@@ -175,12 +182,14 @@ public class RequestComparatorTest {
      */
     @Test
     @DisplayName("Root Param No Match Test")
-    final void rootParamNoMatchTest() throws IOException, JSONException, InvalidEventException {
+    final void rootParamNoMatchTest()
+        throws IOException, JSONException, InvalidEventException {
         JSONObject testData = object.getJSONObject("rootParamNoMatch");
         rootParamMatchTest(testData);
     }
 
-    private void rootParamMatchTest(JSONObject testData) throws IOException, JSONException, InvalidEventException {
+    private void rootParamMatchTest(JSONObject testData)
+        throws IOException, JSONException, InvalidEventException {
         String req1 = testData.get("req1").toString();
         Event event1 = mapper.readValue(object.getJSONObject(req1).toString(), Event.class);
 
@@ -253,7 +262,7 @@ public class RequestComparatorTest {
 
     private Event cloneWithPayload(Event event, HTTPRequestPayload payload) throws JsonProcessingException, InvalidEventException {
         return new Event.EventBuilder(event.customerId, event.app, event.service, event.instanceId,
-            event.getCollection(), event.traceId, event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
+            event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
             .setRawPayloadString(mapper.writeValueAsString(payload))
             .createEvent();
     }

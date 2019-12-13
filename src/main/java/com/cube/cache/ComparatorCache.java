@@ -16,7 +16,6 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
@@ -80,6 +79,19 @@ public class ComparatorCache {
             PresenceType.Required, ComparisonType.Equal));
         defaultJavaResponseComparator = new JsonComparator(defaultJavaResponseTemplate, jsonMapper);
 
+        // default rule for Thrift Request Payload (serialized using gson)
+        CompareTemplate defaultThriftRequestTemplate = new CompareTemplate();
+        defaultThriftRequestTemplate.addRule(
+            new TemplateEntry(Constants.ROOT_PATH, DataType.Obj, PresenceType.Required, ComparisonType.Equal));
+        defaultThriftRequestComparator = new JsonComparator(defaultThriftRequestTemplate,
+            jsonMapper);
+
+        // default rule for Thrift Response Payload (serialized using gson)
+        CompareTemplate defaultThriftResponseTemplate = new CompareTemplate();
+        defaultThriftResponseTemplate.addRule(
+            new TemplateEntry(Constants.ROOT_PATH, DataType.Obj, PresenceType.Required, ComparisonType.Equal));
+        defaultThriftResponseComparator = new JsonComparator(defaultThriftResponseTemplate,
+            jsonMapper);
 
     }
 
@@ -107,6 +119,10 @@ public class ComparatorCache {
                     return defaultJavaRequestComparator;
                 case JavaResponse:
                     return defaultJavaResponseComparator;
+                case ThriftRequest:
+                    return defaultThriftRequestComparator;
+                case ThriftResponse:
+                    return defaultThriftResponseComparator;
                 default:
                     LOGGER.error(new ObjectMessage(Map.of(
                         "message", "No default template found",
@@ -135,6 +151,8 @@ public class ComparatorCache {
             case HTTPResponse:
             case JavaRequest:
             case JavaResponse:
+            case ThriftRequest:
+            case ThriftResponse:
                 return new JsonComparator(compareTemplate, jsonMapper);
             default:
                 throw new ComparatorNotImplementedException(eventType);
@@ -167,5 +185,6 @@ public class ComparatorCache {
     private final Comparator defaultHTTPResponseComparator;
     private final Comparator defaultJavaRequestComparator;
     private final Comparator defaultJavaResponseComparator;
-
+    private final Comparator defaultThriftRequestComparator;
+    private final Comparator defaultThriftResponseComparator;
 }
