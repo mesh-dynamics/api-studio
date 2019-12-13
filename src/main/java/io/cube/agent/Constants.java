@@ -4,10 +4,10 @@ public class Constants {
 
 	//Properties
 	public static final String MD_RECORD_SERVICE_PROP = "io.md.service.record";
-	public static final String CUBE_MOCK_SERVICE_PROP = "io.md.service.mock";
-	public static final String READ_TIMEOUT_PROP = "io.md.read.timeout";
-	public static final String CONNECT_TIMEOUT_PROP = "io.md.connect.timeout";
-	public static final String RETRIES_PROP = "io.md.connect.retries";
+	public static final String MD_MOCK_SERVICE_PROP = "io.md.service.mock";
+	public static final String MD_READ_TIMEOUT_PROP = "io.md.read.timeout";
+	public static final String MD_CONNECT_TIMEOUT_PROP = "io.md.connect.timeout";
+	public static final String MD_RETRIES_PROP = "io.md.connect.retries";
 	public static final String MD_CUSTOMER_PROP = "io.md.customer";
 	public static final String MD_APP_PROP = "io.md.app";
 	public static final String MD_INSTANCE_PROP = "io.md.instance";

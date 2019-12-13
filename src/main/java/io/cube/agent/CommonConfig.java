@@ -1,6 +1,5 @@
 package io.cube.agent;
 
-import java.util.Optional;
 import java.util.Properties;
 
 import io.opentracing.Tracer;
@@ -35,10 +34,10 @@ public class CommonConfig {
             LOGGER.error("Error while initializing config :: " + e.getMessage() );
         }
         CUBE_RECORD_SERVICE_URI = fromEnvOrProperties(Constants.MD_RECORD_SERVICE_PROP);
-        CUBE_MOCK_SERVICE_URI = fromEnvOrProperties(Constants.CUBE_MOCK_SERVICE_PROP);
-        READ_TIMEOUT = Integer.parseInt(fromEnvOrProperties(Constants.READ_TIMEOUT_PROP));
-        CONNECT_TIMEOUT = Integer.parseInt(fromEnvOrProperties(Constants.CONNECT_TIMEOUT_PROP));
-        RETRIES = Integer.parseInt(fromEnvOrProperties(Constants.RETRIES_PROP));
+        CUBE_MOCK_SERVICE_URI = fromEnvOrProperties(Constants.MD_MOCK_SERVICE_PROP);
+        READ_TIMEOUT = Integer.parseInt(fromEnvOrProperties(Constants.MD_READ_TIMEOUT_PROP));
+        CONNECT_TIMEOUT = Integer.parseInt(fromEnvOrProperties(Constants.MD_CONNECT_TIMEOUT_PROP));
+        RETRIES = Integer.parseInt(fromEnvOrProperties(Constants.MD_RETRIES_PROP));
         customerId =fromEnvOrProperties(Constants.MD_CUSTOMER_PROP);
         app = fromEnvOrProperties(Constants.MD_APP_PROP);
         instance = fromEnvOrProperties(Constants.MD_INSTANCE_PROP);
