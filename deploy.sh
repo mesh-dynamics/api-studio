@@ -83,6 +83,11 @@ echo $RESPONSE
 }
 
 start_record() {
+	#start_record function can have 3 arguments, if these arguments are passed then
+	#script will run in non-interactive fashion:
+	# $1 collection name
+	# $2 template version
+	# #3 golden name
 	if [ -z "$1" ]; then
 		echo "Enter collection name"
 		read COLLECTION_NAME
@@ -90,23 +95,31 @@ start_record() {
 		COLLECTION_NAME=$1
 	fi
 
-	if [ -e "$TEMPLATE_VERSION_TEMP_FILE" ]; then
-		echo "Picking up template_version from file $TEMPLATE_VERSION_TEMP_FILE. Okay ? y/n"
-		read USER_INP_TEMPLATE_VERSION
+	if [ -z "$2" ]; then
+		if [ -e "$TEMPLATE_VERSION_TEMP_FILE" ]; then
+			echo "Picking up template_version from file $TEMPLATE_VERSION_TEMP_FILE. Okay ? y/n"
+			read USER_INP_TEMPLATE_VERSION
+		else
+			USER_INP_TEMPLATE_VERSION="n"
+		fi
+
+		if [ $USER_INP_TEMPLATE_VERSION = "y" ]; then
+	    local TEMPLATE_VERSION=$(cat "$TEMPLATE_VERSION_TEMP_FILE")
+	 		echo "Template version : $TEMPLATE_VERSION"
+		else
+			echo "Enter Template version"
+			read TEMPLATE_VERSION
+		fi
 	else
-		USER_INP_TEMPLATE_VERSION="n"
+		TEMPLATE_VERSION=$2
 	fi
 
-	if [ $USER_INP_TEMPLATE_VERSION = "y" ]; then
-    local TEMPLATE_VERSION=$(cat "$TEMPLATE_VERSION_TEMP_FILE")
- 		echo "Template version : $TEMPLATE_VERSION"
+	if [ -z "$3" ]; then
+		echo "Enter unique recording name"
+		read GOLDEN_NAME
 	else
-		echo "Enter Template version"
-		read TEMPLATE_VERSION
+		GOLDEN_NAME=$3
 	fi
-
-  echo "Enter unique recording name"
-	read GOLDEN_NAME
 
 	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
 
