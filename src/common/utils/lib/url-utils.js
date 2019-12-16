@@ -79,6 +79,7 @@ const constructUrlParams = (params) => {
 const updateSearchHistoryParams = (metaDataType, value, state) => {
     const { app, replayId, apiPath, service, recordingId, currentTemplateVer, selectedReqRespMatchType,selectedResolutionType, searchFilterPath } = state;
     const { requestHeaders, requestParams, requestBody, responseHeaders, responseBody } = getCheckboxParams();
+
     const params = {
         app, 
         service, 
@@ -96,6 +97,12 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
         selectedService: service,
         selectedReqRespMatchType,
     };
+
+    // selectedService is a special case where if 
+    //the service changes the api path is reset
+    if(metaDataType === "selectedService") {
+        params["selectedAPI"] = "";
+    }
 
     params[metaDataType] = value;
 
