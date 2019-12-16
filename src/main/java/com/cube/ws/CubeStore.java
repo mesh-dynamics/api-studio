@@ -297,7 +297,7 @@ public class CubeStore {
                             LOGGER.error(new ObjectMessage(
                                 Map.of(
                                     Constants.MESSAGE, "Error while processing multiline json " + e.toString(),
-                                    Constants.EXCEPTION_STACK, e
+                                    Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
                                 )));
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
