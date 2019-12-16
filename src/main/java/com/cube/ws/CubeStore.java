@@ -294,7 +294,11 @@ public class CubeStore {
                             Arrays.stream(jsons).forEach(UtilException.rethrowConsumer(this::processRRJson));
                             return Response.ok().build();
                         } catch (Exception e) {
-                            LOGGER.error("Error while processing multiline json " + e.getMessage());
+                            LOGGER.error(new ObjectMessage(
+                                Map.of(
+                                    Constants.MESSAGE, "Error while processing multiline json " + e.toString(),
+                                    Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
+                                )));
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
 
