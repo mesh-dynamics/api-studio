@@ -2,30 +2,32 @@ package com.cubeio.thriftwrapjdbc;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
+import org.apache.thrift.server.TThreadPoolServer.Args;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.transport.TTransportException;
+
+import com.cubeio.thriftwrapjdbc.ThriftWrapJDBC.Processor;
 
 public class ThriftWrapJDBCServer {
 
 	private TServer server;
 
 	public void start() throws TTransportException {
-		TServerTransport serverTransport = new TServerSocket(9090);
-		/*THttpClient*/
-        /*Properties properties = new Properties();
-        properties.putAll(Map.of("cubeCustomerId", "ravivj" , "cubeInstanceId" ,
-            "test" , "cubeAppName", "thriftWrapJdbc" , "cubeServiceName"
-            , "thriftWrapJdbc" , "intent" , "record"));*/
+		TServerTransport serverTransport = new  TServerSocket(9090);
 
-		System.setProperty("cubeCustomerId", "ravivj");
-		System.setProperty("cubeInstanceId", "test");
-		System.setProperty("cubeAppName", "thriftWrapJdbc");
-		System.setProperty("cubeServiceName", "thriftWrapJdbc");
-		System.setProperty("intent", "record");
+		System.setProperty("io.md.customer", "ravivj");
+		System.setProperty("io.md.instance", "test");
+		System.setProperty("io.md.app", "movie-info-thrift");
+		System.setProperty("io.md.service", "thriftWrapJdbc");
+		System.setProperty("io.md.intent", "record");
 		server = new TSimpleServer(new TServer.Args(serverTransport)
 			.processor(new ThriftWrapJDBC.Processor<>(new ThriftWrapJDBCHandler())));
 

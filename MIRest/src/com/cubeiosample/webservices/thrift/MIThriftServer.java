@@ -12,11 +12,12 @@ public class MIThriftServer {
 
 	public void start() throws TTransportException {
 
-		System.setProperty("cubeCustomerId", "ravivj");
-		System.setProperty("cubeInstanceId", "test");
-		System.setProperty("cubeAppName", "thriftWrapJdbc");
-		System.setProperty("cubeServiceName", "miThrift");
-		System.setProperty("intent", "record");
+		System.setProperty("io.md.customer", "ravivj");
+		System.setProperty("io.md.instance", "test");
+		System.setProperty("io.md.app", "movie-info-thrift");
+		System.setProperty("io.md.service", "miThrift");
+		System.setProperty("io.md.intent", "record");
+
 		TServerTransport serverTransport = new TServerSocket(9090);
 		/*THttpClient*/
 		server = new TSimpleServer(new TServer.Args(serverTransport)

@@ -9,6 +9,7 @@
 		<version.jackson>2.8.7</version.jackson>
 		<version.dockerfile-maven>1.4.9</version.dockerfile-maven>
 		<version.jaeger>0.32.0</version.jaeger>
+		<version.log4j>2.11.1</version.log4j>
     <docker.tag>V1-SNAPSHOT</docker.tag>
 	</properties>
 
@@ -72,6 +73,44 @@
 				</configuration>
 			</plugin>
 
+
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.4.1</version>
+				<configuration>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
+					<transformers>
+						<transformer
+							implementation="com.github.edwgiz.mavenShadePlugin.log4j2CacheTransformer.PluginsCacheFileTransformer"/>
+					</transformers>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>com.github.edwgiz</groupId>
+						<artifactId>maven-shade-plugin.log4j2-cachefile-transformer</artifactId>
+						<version>2.1</version>
+					</dependency>
+				</dependencies>
+			</plugin>
       <!-- Copy Maven dependencies into target/lib/ -->
 
 			<plugin>
@@ -157,7 +196,14 @@
     	</plugins>
     </pluginManagement>
   </build>
- <dependencies>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>oss.sonatype.org</id>
+			<name>OSS Sonatype Staging</name>
+			<url>https://oss.sonatype.org/content/groups/staging</url>
+		</pluginRepository>
+	</pluginRepositories>
+	<dependencies>
   	<dependency>
   		<groupId>org.json</groupId>
   		<artifactId>json</artifactId>
@@ -188,11 +234,23 @@
        <artifactId>mysql-connector-java</artifactId>
        <version>5.1.46</version>
     </dependency>
-    <dependency>
-		<groupId>log4j</groupId>
-		<artifactId>log4j</artifactId>
-		<version>1.2.17</version>
-	</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${version.log4j}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${version.log4j}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>${version.log4j}</version>
+		</dependency>
+
+
 	 <dependency>
        <groupId>commons-dbcp</groupId>
        <artifactId>commons-dbcp</artifactId>
@@ -239,10 +297,9 @@
 	 <dependency>
 		 <groupId>io.cube</groupId>
 		 <artifactId>agent</artifactId>
-		 <version>1.0-SNAPSHOT</version>
-		 <scope>system</scope>
-		 <systemPath>${basedir}/resources/agent-1.0.0-jar-with-dependencies.jar</systemPath>
+		 <version>1.0.1</version>
 	 </dependency>
+
 
  </dependencies>
 

@@ -158,15 +158,15 @@ service MIThrift {
 
     bool healthCheck(),
 
-    ListMovieResult listMovies(1: string filmName, 2: string keyWord, 3: string actor, 4: optional jaegar.Span span)
+    ListMovieResult listMovies(1: string filmName, 2: string keyWord, 3: string actor, 4: optional jaegar.Span meshd_span)
         throws (1: GenericMIThriftException genericException),
 
-    RentMovieResult rentMovie(1: RentalInfo rentalInfo, 2: optional jaegar.Span span)
+    RentMovieResult rentMovie(1: RentalInfo rentalInfo, 2: optional jaegar.Span meshd_span)
         throws (1: GenericMIThriftException genericException);
 
-    ListStoreResult listStores(1: i32 filmId, 2: optional jaegar.Span span) throws (1: GenericMIThriftException genericException);
+    ListStoreResult listStores(1: i32 filmId, 2: optional jaegar.Span meshd_span) throws (1: GenericMIThriftException genericException);
 
-    ReturnMovieResult returnMovie(1: ReturnInfo returnInfo, 2: optional jaegar.Span span)
+    ReturnMovieResult returnMovie(1: ReturnInfo returnInfo, 2: optional jaegar.Span meshd_span)
         throws (1: GenericMIThriftException genericException);
 
 }
