@@ -48,23 +48,6 @@ steps:
         include:
         - pull_request
 
-  - name: deploy_cubeServices_cube_dev
-    image: quay.io/honestbee/drone-kubernetes
-    settings:
-      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tbmxuanYiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjQ4N2VkNmJiLTRjOWItMTFlOS04ZmM2LTAyNjRlYjM2ZjlhMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.nHnEKdEj73HH2gCzgaC9-yHf5XfrwnsyvEUtwI4KxKETjvWx87_kkco26zwk7VHzmLC8pQRQsBph90cIzITLdHcsZqcpG-VQtcECnJO4NjHbaXSFKO8T7_m274Qyifo-7uXMg0iSjmkicXg6kZtbDYZNH3IHUsCzOutu3lrFSulSqvHaGSyzPmJGP8JE-HlzWj5t6RkzPKIMMeGQ1hounbFW4Z7d1g2ffL4tkEUJJECLQmQ9pMtLtikfDIC_Ioyml2Hd-iQ26qOnRs-ZZpzmNqlqJ7fjRewPb03ctwwbjBs4OUAp7mQ-ou7ipB4_TMBbv1sMDb90J6GNQmsKyGnVbA
-      namespace: cube
-      deployment: [ cubews-mock-v1, cubews-record-v1, cubews-replay-v1 ]
-      repo: cubeiocorp/cubews
-      container: cubews
-      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
-    when:
-      branch:
-      - develop
-      # event:
-      #   exclude:
-      #   - pull_request
-
   - name: deploy_cubeServices_staging_dev
     image: quay.io/honestbee/drone-kubernetes
     settings:
@@ -81,6 +64,34 @@ steps:
       # event:
       #   exclude:
       #   - pull_request
+
+  - name: Run_test_on_PR
+    image: spotify/alpine
+    commands:
+    - ./moviebooktest.sh
+    when:
+      branch:
+      - develop
+      event:
+        include:
+        - pull_request
+
+  - name: deploy_cubeServices_cube_dev
+    image: quay.io/honestbee/drone-kubernetes
+    settings:
+      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
+      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tbmxuanYiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjQ4N2VkNmJiLTRjOWItMTFlOS04ZmM2LTAyNjRlYjM2ZjlhMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.nHnEKdEj73HH2gCzgaC9-yHf5XfrwnsyvEUtwI4KxKETjvWx87_kkco26zwk7VHzmLC8pQRQsBph90cIzITLdHcsZqcpG-VQtcECnJO4NjHbaXSFKO8T7_m274Qyifo-7uXMg0iSjmkicXg6kZtbDYZNH3IHUsCzOutu3lrFSulSqvHaGSyzPmJGP8JE-HlzWj5t6RkzPKIMMeGQ1hounbFW4Z7d1g2ffL4tkEUJJECLQmQ9pMtLtikfDIC_Ioyml2Hd-iQ26qOnRs-ZZpzmNqlqJ7fjRewPb03ctwwbjBs4OUAp7mQ-ou7ipB4_TMBbv1sMDb90J6GNQmsKyGnVbA
+      namespace: cube
+      deployment: [ cubews-mock-v1, cubews-record-v1, cubews-replay-v1 ]
+      repo: cubeiocorp/cubews
+      container: cubews
+      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
+    when:
+      branch:
+      - develop
+      event:
+        exclude:
+        - pull_request
 
   - name: deploy_cubeServices_cube_staging
     image: quay.io/honestbee/drone-kubernetes
