@@ -69,6 +69,7 @@ class ShareableLink extends Component {
             tag: "",
             commitId: "",
             saveGoldenError: "",
+            timeStamp: "",
         };
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.handleReqRespMtChange = this.handleReqRespMtChange.bind(this)
@@ -105,6 +106,7 @@ class ShareableLink extends Component {
         const requestBody = urlParameters["requestBody"];
         const responseHeaders = urlParameters["responseHeaders"];
         const responseBody = urlParameters["responseBody"];
+        const timeStamp = decodeURI(urlParameters["timeStamp"]);
 
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
@@ -119,6 +121,7 @@ class ShareableLink extends Component {
             selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
             selectedResolutionType: selectedResolutionType || "All",
             searchFilterPath: searchFilterPath || "",
+            timeStamp: timeStamp || "",
             // response headers
             showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
             shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
@@ -142,7 +145,8 @@ class ShareableLink extends Component {
                 service: service,
                 replayId: replayId,
                 recordingId: recordingId,
-                currentTemplateVer: currentTemplateVer
+                currentTemplateVer: currentTemplateVer,
+                timeStamp: timeStamp
             }));
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
@@ -184,6 +188,11 @@ class ShareableLink extends Component {
         dispatch(cubeActions.clearGolden());
         this.setState({ showNewGolden: false });
     };
+
+    handleBackToDashboardClick = () => {
+        const { history, dispatch } = this.props;
+        dispatch(cubeActions.clearPathResultsParams());
+    }
 
     handleSearchFilterChange(e) {
         const { history } = this.props;
@@ -764,7 +773,7 @@ class ShareableLink extends Component {
         return (
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <Link to={"/"}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
                     <span className="link pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                     <Link to="/review_golden_updates" className="hidden">
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
