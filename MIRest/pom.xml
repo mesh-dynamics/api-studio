@@ -9,7 +9,7 @@
   <parent>
     <groupId>io.cube.sampleapps</groupId>
     <artifactId>root</artifactId>
-    <version>V1-SNAPSHOT</version>
+    <version>1.0.0</version>
   </parent>
 
   <dependencyManagement>
@@ -42,6 +42,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.2.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -318,8 +319,15 @@
     <dependency>
       <groupId>io.cube.sampleapps</groupId>
       <artifactId>Utils</artifactId>
-      <version>V1-SNAPSHOT</version>
+      <version>1.0.0</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.cube.sampleapps</groupId>
+      <artifactId>ThriftWrapJDBC</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.apache.thrift/libthrift -->
     <dependency>
       <groupId>org.apache.thrift</groupId>
@@ -332,7 +340,15 @@
       <artifactId>agent</artifactId>
       <version>1.0.1</version>
     </dependency>
-    
+
+    <dependency>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-assembly-plugin</artifactId>
+      <version>3.2.0</version>
+    </dependency>
+
+
+
   </dependencies>
 
 </project>

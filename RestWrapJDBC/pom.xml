@@ -16,7 +16,7 @@
 	<parent>
 		<groupId>io.cube.sampleapps</groupId>
 		<artifactId>root</artifactId>
-		<version>V1-SNAPSHOT</version>
+		<version>1.0.0</version>
 	</parent>
 
 	<dependencyManagement>
@@ -277,8 +277,9 @@
 	 <dependency>
 		 <groupId>io.cube.sampleapps</groupId>
 		 <artifactId>Utils</artifactId>
-		 <version>V1-SNAPSHOT</version>
+		 <version>1.0.0</version>
 	 </dependency>
+
     <dependency>
 	    <groupId>javax.xml.bind</groupId>
 	    <artifactId>jaxb-api</artifactId>

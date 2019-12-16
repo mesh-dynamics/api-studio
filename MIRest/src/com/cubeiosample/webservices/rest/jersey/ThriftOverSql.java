@@ -12,9 +12,9 @@ import org.json.JSONObject;
 
 import com.cubeio.thriftwrapjdbc.ThriftWrapJDBC;
 
+import io.cube.tracing.thriftjava.JaegerMeshDThriftSpanConverter;
+import io.cube.tracing.thriftjava.Span;
 import io.jaegertracing.internal.JaegerSpan;
-import io.jaegertracing.thrift.internal.reporters.protocols.JaegerThriftSpanConverter;
-import io.jaegertracing.thriftjava.Span;
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -55,7 +55,7 @@ public class ThriftOverSql {
 		JaegerSpan currentSpan = (JaegerSpan) tracer.activeSpan();
 		LOGGER.info(
 			"Jaeger Span (In Thrift Over Sql), Before Client Call :: " + currentSpan.toString());
-		Span toReturn = JaegerThriftSpanConverter.convertSpan(currentSpan);
+		Span toReturn = JaegerMeshDThriftSpanConverter.convertSpan(currentSpan);
 		LOGGER
 			.info("Thrift Span (In Thrift Over Sql), Before Client Call :: " + toReturn.toString());
 		return toReturn;
