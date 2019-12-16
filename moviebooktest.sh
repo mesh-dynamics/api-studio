@@ -48,7 +48,7 @@ RESPNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"respnotmatched":\([^"]*\).*/\1/' | c
 #Display replay ID
 echo "Replay ID:" $REPLAY_ID
 #Exit with non-zero exit code if reqstnotmatched and respnotmatchted are have nono-zero value
-if [ "$REQNOTMATCHED" = "0" ] && [ "$RESPNOTMATCHED" = "0" ]; then
+if [ "$RESPNOTMATCHED" = "0" ]; then
 	echo "test passed"
 	exit 0
 else
