@@ -92,74 +92,81 @@ exports.DefaultLine = function (_a) {
     // prefix match filter paths
     let showPath = filterPaths.some(path => (jsonPath.indexOf(path) > -1));
 
-    return !jsonPath || (showAll || showPath) && (jsonPath.indexOf(searchFilterPath) > -1) ? React.createElement("tr", { className: styles.line, onMouseOver: () => showRefElement(actionsWrapperElementRef), onMouseOut: () => hideRefElement(actionsWrapperElementRef) },
-        !hideLineNumbers
-            && React.createElement("td", { className: classnames_1.default(styles.gutter, styles.leftGutter, (_c = {},
+    return !jsonPath || (showAll || showPath) && (jsonPath.indexOf(searchFilterPath) > -1) ? 
+    <React.Fragment>
+        <tr className={styles.line} onMouseOver = {() => showRefElement(actionsWrapperElementRef)} onMouseOut = {() => hideRefElement(actionsWrapperElementRef)} >
+            {!hideLineNumbers && (
+                <td className = {classnames_1.default(styles.gutter, styles.leftGutter, (_c = {},
                     _c[styles.diffRemoved] = removed,
                     _c[styles.hightlightedGutter] = hightlightLeftLine,
-                    _c)), onClick: onLineNumberClickProxy(onLineNumberClick, leftLineNumberPrefix + "-" + leftLineNumber) }, leftLineNumber
-                && React.createElement(LineNumber, { lineNumber: leftLineNumber, prefix: leftLineNumberPrefix })),
-        React.createElement("td", { className: classnames_1.default(styles.gutter, styles.leftGutter, (_k = {},
-            _k[styles.diffRemoved] = removed,
-             _k[styles.hightlightedGutter] = hightlightLeftLine,
-            _k)) }, React.createElement(OperationSetLabel, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, replayId, recordingId}, "")),
-        React.createElement("td", { className: classnames_1.default(styles.marker, (_l = {},
-            _l[styles.diffRemoved] = removed,
-            _l[styles.hightlightedLine] = hightlightLeftLine,
-            _l)) }, React.createElement(OperationSet, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, elementRef: leftOperationSetElementRef, inputElementRef: inputElementRef, replayId, recordingId}, "")),
-        React.createElement("td", { className: classnames_1.default(styles.marker, (_d = {},
-                _d[styles.diffRemoved] = removed,
-                _d[styles.hightlightedLine] = hightlightLeftLine,
-                _d)) }, removed
-            && React.createElement("pre", null, "-")),
-        React.createElement("td", { className: classnames_1.default(styles.defaultTdClass, (_e = {},
-                _e[styles.diffRemoved] = removed,
-                _e[styles.hightlightedLine] = hightlightLeftLine,
-                _e)) }, typeof leftContent === 'string'
-            && (renderContent
-                ? renderContent(leftContent)
-                : React.createElement("pre", {style: {backgroundColor: "transparent"}, onMouseOver: () => showRefElement(leftOperationSetElementRef), onMouseOut: () => hideRefElement(leftOperationSetElementRef)}, leftContent))
-            || leftContent),
-        // author raj.maddireddy@cubecorp.io
-        React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_j = {},
-            _j[styles.hightlightedGutter] = hightlightRightLine,
-            _j)) },
-            (added || removed) && React.createElement(Resolutions, {className: classnames_1(''), added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, replayId, recordingId}, ""
-            )
-        ),
-        !hideLineNumbers
-            && React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_f = {},
-                    _f[styles.diffAdded] = added,
-                    _f[styles.hightlightedGutter] = hightlightRightLine,
-                    _f)), onClick: onLineNumberClickProxy(onLineNumberClick, rightLineNumberPrefix + "-" + rightLineNumber) },
-                React.createElement(LineNumber, { lineNumber: rightLineNumber, prefix: rightLineNumberPrefix })),
-        React.createElement("td", { className: classnames_1.default(styles.gutter, styles.rightGutter, (_m = {},
-            _m[styles.diffAdded] = added,
-            _m[styles.hightlightedGutter] = hightlightRightLine,
-            _m)) }, React.createElement(OperationSetLabel, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, replayId, recordingId}, "")),
-        React.createElement("td", { className: classnames_1.default(styles.marker, (_n = {},
-            _n[styles.diffAdded] = added,
-            _n[styles.hightlightedLine] = hightlightRightLine,
-            _n)) }, React.createElement(OperationSet, {added, removed, jsonPath, serverSideDiff, app, templateVersion, service, apiPath, elementRef: rightOperationSetElementRef, inputElementRef: inputElementRef, replayId, recordingId}, "")),
-        React.createElement("td", { className: classnames_1.default(styles.marker, (_g = {},
-                _g[styles.diffAdded] = added,
-                _g[styles.hightlightedLine] = hightlightRightLine,
-                _g)) }, added
-            && React.createElement("pre", null, "+")),
-        React.createElement("td", { className: classnames_1.default(styles.defaultTdClass, (_h = {},
-                _h[styles.diffAdded] = added,
-                _h[styles.hightlightedLine] = hightlightRightLine,
-                _h))}, typeof rightContent === 'string'
+                    _c))}  onClick = {onLineNumberClickProxy(onLineNumberClick, leftLineNumberPrefix + "-" + leftLineNumber)}>
+                        {leftLineNumber && (
+                            <LineNumber lineNumber={leftLineNumber} prefix={leftLineNumberPrefix}/>
+                        )}
+                </td>
+            )}
+
+            <td className={classnames_1.default(styles.gutter, styles.leftGutter, (_k = {}, _k[styles.diffRemoved] = removed, _k[styles.hightlightedGutter] = hightlightLeftLine, _k))}>
+                <OperationSetLabel added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId}/>
+            </td>
+
+            <td className={classnames_1.default(styles.marker, (_l = {}, _l[styles.diffRemoved] = removed, _l[styles.hightlightedLine] = hightlightLeftLine, _l))}>
+                <OperationSet added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} elementRef={leftOperationSetElementRef} inputElementRef={inputElementRef}/>
+            </td>
+
+            <td className={classnames_1.default(styles.marker, (_d = {}, _d[styles.diffRemoved] = removed, _d[styles.hightlightedLine] = hightlightLeftLine, _d))}>
+                {removed && (
+                    <pre>-</pre>
+                )}
+            </td>
+
+            <td className={classnames_1.default(styles.defaultTdClass, (_e = {}, _e[styles.diffRemoved] = removed, _e[styles.hightlightedLine] = hightlightLeftLine, _e))}>
+                {typeof leftContent === 'string' && (
+                    renderContent 
+                    ? renderContent(leftContent) 
+                    : 
+                    <pre style={{backgroundColor:"transparent"}}  onMouseOver= {() => showRefElement(leftOperationSetElementRef)} onMouseOut={() => hideRefElement(leftOperationSetElementRef)}>
+                        {leftContent}
+                    </pre> 
+                ) || leftContent}
+            </td>
+
+            <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_j = {}, _j[styles.hightlightedGutter] = hightlightRightLine, _j))} >
+                    { (added || removed) && (
+                        <Resolutions className={classnames_1('')} added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId}/>
+                    )}
+            </td>
+            
+            {!hideLineNumbers && (
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_f = {}, _f[styles.diffAdded] = added, _f[styles.hightlightedGutter] = hightlightRightLine, _f))} onClick={onLineNumberClickProxy(onLineNumberClick, rightLineNumberPrefix + "-" + rightLineNumber)}>
+                    <LineNumber lineNumber={rightLineNumber} prefix={rightLineNumberPrefix}/>
+                </td>
+            )}
+
+            <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_m = {}, _m[styles.diffAdded] = added, _m[styles.hightlightedGutter] = hightlightRightLine, _m))}>
+                <OperationSetLabel  added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} />
+            </td>
+
+            <td className={classnames_1.default(styles.marker, (_n = {}, _n[styles.diffAdded] = added, _n[styles.hightlightedLine] = hightlightRightLine, _n))}>
+                <OperationSet added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} elementRef={rightOperationSetElementRef} inputElementRef={inputElementRef}/>
+            </td>
+
+            <td className={classnames_1.default(styles.marker, (_g = {}, _g[styles.diffAdded] = added, _g[styles.hightlightedLine] = hightlightRightLine, _g))}>
+                {added && (
+                    <pre>+</pre>
+                )}
+            </td>
+
+            <td className={classnames_1.default(styles.defaultTdClass, (_h = {}, _h[styles.diffAdded] = added, _h[styles.hightlightedLine] = hightlightRightLine, _h))}>
+                {typeof rightContent === 'string'
             && (renderContent
                 ? renderContent(rightContent)
-                : React.createElement("pre", {style: {backgroundColor: "transparent"}, onMouseOver: () => showRefElement(rightOperationSetElementRef), onMouseOut: () => hideRefElement(rightOperationSetElementRef)}, rightContent))
-            || rightContent),
-        // author raj.maddireddy@cubecorp.io
-        /* React.createElement("td", { className: classnames_1.default(styles.actions, (_i = {},
-                _i[styles.diffAdded] = added,
-                _i[styles.hightlightedLine] = hightlightRightLine,
-                _i)) }, (leftContent || rightContent)
-            && React.createElement(Actions, {added: added, removed: removed, jsonPath: jsonPath, serverSideDiff: serverSideDiff, elementRef: actionsWrapperElementRef}, "")
-        ), */
-    ) : React.createElement("tr", {style: {display: "none"}});
+                : <pre style={{backgroundColor:"transparent"}}  onMouseOver={() => showRefElement(rightOperationSetElementRef)} onMouseOut={() => hideRefElement(rightOperationSetElementRef)}>
+                    {rightContent}
+                </pre>
+            ) || rightContent}
+            </td>
+        </tr>
+    </React.Fragment>
+    : <tr style={{display:"none"}}/>
 };
