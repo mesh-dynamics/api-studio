@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -46,7 +47,8 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 
 			this.tDeserializer = new TDeserializer();
 			TTransport transport = new TSocket(replayEndpoint, 9090);
-			TProtocol protocol = new TCompactProtocol(transport);
+			transport.open();
+			TProtocol protocol = new TBinaryProtocol(transport);
 			thriftServiceClient = new CubeThriftServiceClient(protocol);
 
 		}
@@ -57,6 +59,7 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 				ThriftRequest thriftRequest = (ThriftRequest) request;
 				thriftServiceClient.sendBase(thriftRequest.methodName, thriftRequest.args);
 				thriftServiceClient.receiveBase(thriftRequest.result, thriftRequest.methodName);
+				thriftServiceClient.flushTransport();
 				return 1;
 			} catch (Exception e) {
 				return 0;
