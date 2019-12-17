@@ -71,8 +71,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		}
 		catch (Exception e) {
 			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while setting key: " + e.toString()
-			)), e);
+				Constants.MESSAGE, "Error while setting key")), e);
 		}
 	}
 
@@ -88,8 +87,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		catch (Exception e)
 		{
 			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while encrypting: " + e.toString()
-			)), e);
+				Constants.MESSAGE, "Error while encrypting")), e);
 		}
 		return Optional.empty();
 	}
@@ -106,8 +104,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		catch (Exception e)
 		{
 			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while encrypting: " + e.toString()
-			)), e);
+				Constants.MESSAGE, "Error while decrypting")), e);
 
 		}
 		return Optional.empty();

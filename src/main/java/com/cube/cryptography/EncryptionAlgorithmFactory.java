@@ -7,7 +7,7 @@ public class EncryptionAlgorithmFactory {
 		switch (algorithm) {
 			case Constants.AES_CBC_PKCS5_ALGO:
 			case Constants.AES_CTR_PKCS5_ALGO:
-				return new JcaEncryption(algorithm, metaData.getString("cipherKeyType"), passPhrase);
+				return new JcaEncryption(algorithm, metaData.getString(Constants.CIPHER_KEY_TYPE_FIELD), passPhrase);
 			default:
 				return new JcaEncryption(passPhrase);
 		}

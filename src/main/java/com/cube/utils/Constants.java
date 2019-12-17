@@ -65,6 +65,8 @@ public class Constants {
     public static final String AES_CTR_PKCS5_ALGO = "AES/CTR/PKCS5Padding";
     public static final String AES_CIPHER_KEY_TYPE = "AES";
     public static final String DEFAULT_PASS_PHRASE = "WubbaLubbaDubDub";
+    public static final String CIPHER_KEY_TYPE_FIELD = "cipherKeyType";
+
 
 
     //JSON FETCH PATH
