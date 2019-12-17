@@ -12,6 +12,7 @@ import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
+import statusCodeList from "../../StatusCodeList"
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -490,6 +491,16 @@ class ShareableLink extends Component {
         })
     }
 
+    getHttpStatus = (code) => {
+        for (let httpStatus of statusCodeList) {
+            if (code == httpStatus.status) {
+                return httpStatus.value;
+            }
+        }
+
+        return code;
+    };
+
     render() {
         let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
         let apiPaths = [], services = [], resolutionTypes = [];
@@ -731,7 +742,10 @@ class ShareableLink extends Component {
                 )}
                 {item.recordedData != null && item.replayedData != null && (
                     <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label></h4>
+                        <h4>
+                            <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
+                            <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span>
+                        </h4>
                         <div>
                             {item.missedRequiredFields.map((eachMissedField) => {
                                 return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
