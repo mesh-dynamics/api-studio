@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
@@ -41,12 +40,13 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 
 		private TDeserializer tDeserializer;
 		private CubeThriftServiceClient thriftServiceClient;
+		private TTransport transport;
 
 		ThriftReplayClient(String replayEndpoint) throws Exception {
 			// TODO extract port from replay endpoint as well
 
 			this.tDeserializer = new TDeserializer();
-			TTransport transport = new TSocket(replayEndpoint, 9090);
+			transport = new TSocket(replayEndpoint, 9090);
 			transport.open();
 			TProtocol protocol = new TBinaryProtocol(transport);
 			thriftServiceClient = new CubeThriftServiceClient(protocol);
@@ -108,6 +108,12 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 		@Override
 		public int getErrorStatusCode() {
 			return 0;
+		}
+
+		@Override
+		public boolean tearDown() {
+			this.transport.close();
+			return true;
 		}
 	}
 
