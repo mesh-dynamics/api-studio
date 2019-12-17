@@ -16,8 +16,7 @@ public class JcaEncryptionBasicTest {
 	{
 		final String passPhrase = "pAsSwOrD@!#!";
 
-//		String originalString = "\"I am lord Voldemort. I come from @ HogWards ! \"";
-		String originalString = "200";
+		String originalString = "\"I am lord Voldemort. I come from @ HogWards ! \"";
 		JcaEncryption encrypter = new JcaEncryption(Constants.AES_CBC_PKCS5_ALGO, Constants.AES_CIPHER_KEY_TYPE, passPhrase);
 		Optional<String> encryptedString = encrypter.encrypt(originalString);
 		Assertions.assertNotEquals(Optional.empty(), encryptedString);
