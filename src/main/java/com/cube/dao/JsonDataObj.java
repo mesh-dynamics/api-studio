@@ -214,8 +214,6 @@ public class JsonDataObj implements DataObj {
             String fieldName = pathPtr.last().getMatchingProperty();
             JsonNode val = valParentObj.get(fieldName);
             if (val != null && val.isValueNode()) {
-                System.out.println("val.toString() encryption");
-                System.out.println(val.toString());
                 return encrypter.encrypt(val.toString()).map(newVal -> {
                     valParentObj.set(fieldName, new TextNode(newVal));
                     return newVal;
@@ -240,9 +238,6 @@ public class JsonDataObj implements DataObj {
             JsonNode val = valParentObj.get(fieldName);
             if (val != null && val.isValueNode()) {
                 String strToDecrypt = val.isTextual() ? val.textValue() : val.toString();
-//                String strToDecrypt = val.toString();
-                System.out.println("val.toString() decryption");
-                System.out.println(strToDecrypt);
                 return decrypter.decrypt(strToDecrypt).map(newVal -> {
                     valParentObj.set(fieldName, new TextNode(newVal));
                     return newVal;

@@ -69,11 +69,10 @@ public class JcaEncryption implements EncryptionAlgorithm {
 			key = Arrays.copyOf(key, 16);
 			secretKey = new SecretKeySpec(key, cipherKeyType);
 		}
-		catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-		catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+		catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error while setting key: " + e.toString()
+			)), e);
 		}
 	}
 
@@ -84,15 +83,13 @@ public class JcaEncryption implements EncryptionAlgorithm {
 			Cipher cipher = Cipher.getInstance(jcaAlgorithm);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, initialisationVector);
 			String encryptedString = Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes()));
-			System.out.println("encryptedString: " + encryptedString);
 			return Optional.of(encryptedString);
 		}
 		catch (Exception e)
 		{
-			LOGGER.error(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Error while encrypting: " + e.toString()
-				)));
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error while encrypting: " + e.toString()
+			)), e);
 		}
 		return Optional.empty();
 	}
@@ -108,10 +105,10 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		}
 		catch (Exception e)
 		{
-			LOGGER.error(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Error while decrypting: " + e.toString()
-				)));
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error while encrypting: " + e.toString()
+			)), e);
+
 		}
 		return Optional.empty();
 	}
