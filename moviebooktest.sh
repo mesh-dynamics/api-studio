@@ -22,7 +22,7 @@ REPLAY_ID=$(curl -X POST \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'cache-control: no-cache' \
 	-d $BODY \
-| sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
+| sed 's/^.*"id":"\([^"]*\)".*/\1/')
 
 echo $REPLAY_ID
 
