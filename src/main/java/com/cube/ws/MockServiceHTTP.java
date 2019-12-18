@@ -442,7 +442,7 @@ public class MockServiceHTTP {
                     Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
                     , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
                     Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
-                    body)), e);
+                    body, Constants.REPLAY_ID_FIELD , replayId)), e);
             return notFound();
         }
 
@@ -458,7 +458,7 @@ public class MockServiceHTTP {
                     Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
                     , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
                     Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
-                    body)), e);
+                    body, Constants.REPLAY_ID_FIELD , replayId)), e);
             return notFound();
         }
 
@@ -471,7 +471,7 @@ public class MockServiceHTTP {
                         Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
                         , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
                         Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.TRACE_ID_FIELD,
-                        String.join(":", reqQuery.getTraceIds()))));
+                        String.join(":", reqQuery.getTraceIds()) , Constants.REPLAY_ID_FIELD , replayId)));
 
                 EventQuery respQuery = getDefaultRespEventQuery(mockRequestEvent);
                 Optional<Event> defRespEvent = rrstore.getSingleEvent(respQuery);
@@ -483,7 +483,7 @@ public class MockServiceHTTP {
                         Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
                         , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
                         Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
-                        body)));
+                        body, Constants.REPLAY_ID_FIELD , replayId)));
                 return Optional.empty();
             });
 
