@@ -255,7 +255,7 @@ class ShareableLink extends Component {
         this.historySearchParams = updateSearchHistoryParams(metaDataType, value, this.state);
 
         if (metaDataType == "selectedAPI") {
-            this.setState({apiPath: value, [metaDataType] : value});
+            this.setState({apiPath: value, [metaDataType] : value, currentPageNumber: 1});
             setTimeout(() => {
                 dispatch(cubeActions.setPathResultsParams({
                     path: value,
@@ -266,12 +266,12 @@ class ShareableLink extends Component {
                 }));
             });
         } else if (metaDataType == "selectedService") {
-            this.setState({service: value, [metaDataType] : value, selectedAPI: ""});
+            this.setState({service: value, [metaDataType] : value, selectedAPI: "", currentPageNumber: 1});
         } else if (metaDataType == "selectedResolutionType") {
             if (value ===  "All") {
-                this.setState({selectedResolutionType : value, showAll : true});
+                this.setState({selectedResolutionType : value, showAll : true, currentPageNumber: 1});
             } else {
-                this.setState({selectedResolutionType : value, showAll : false});
+                this.setState({selectedResolutionType : value, showAll : false, currentPageNumber: 1});
             }
         } else {
             this.setState({[metaDataType] : value});
