@@ -5,30 +5,37 @@
  */
 package com.cube.dao;
 
-import com.cube.dao.Event.EventType;
-import java.text.SimpleDateFormat;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.spotify.docker.client.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.cube.core.BatchingIterator;
 import com.cube.core.RRTransformer;
+import com.cube.dao.Event.EventType;
+import com.cube.utils.Constants;
+import com.cube.utils.ReplayTypeEnum;
 
 /**
  * @author prasad
@@ -60,11 +67,13 @@ public class Replay {
      * @param status
      * @param sampleRate
      */
-	public Replay(String endpoint, String customerId, String app, String instanceId, String collection, String userId
-            , List<String> reqIds,
-                  String replayId, boolean async, String templateVersion, ReplayStatus status,
-                  List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
-                  Optional<Double> sampleRate, List<String> intermediateServices) {
+	public Replay(String endpoint, String customerId, String app, String instanceId,
+		String collection, String userId, List<String> reqIds,
+		String replayId, boolean async, String templateVersion, ReplayStatus status,
+		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
+		Optional<Double> sampleRate, List<String> intermediateServices,
+		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
+		Optional<String> service, ReplayTypeEnum replayType) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -81,10 +90,14 @@ public class Replay {
 		this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
-		this.creationTimeStamp = creationTimestamp == null ? Instant.now() : creationTimestamp;
-		this.xfmer = Optional.ofNullable(null);
+		this.creationTimeStamp = creationTimestamp;
+		this.xfmer = Optional.empty();
 		this.sampleRate = sampleRate;
 		this.intermediateServices = intermediateServices;
+		this.generatedClassJarPath = generatedClassJarPath;
+		this.service = service;
+		this.replayType = replayType;
+		this.generatedClassLoader = classLoader;
 	}
 
 	//for deserialization
@@ -102,8 +115,11 @@ public class Replay {
         creationTimeStamp = Instant.now();
 	    reqIds = Collections.emptyList();
 	    paths = Collections.emptyList();
+	    service = Optional.empty();
 	    intermediateServices = Collections.emptyList();
 	    templateVersion = "";
+	    generatedClassJarPath = Optional.empty();
+	    replayType = ReplayTypeEnum.HTTP;
     }
 
 	/*
@@ -140,6 +156,8 @@ public class Replay {
     public final boolean async;
     @JsonProperty("status")
 	public ReplayStatus status;
+    @JsonProperty("service")
+    public final Optional<String> service;
     @JsonProperty("paths")
     public final List<String> paths; // paths to be replayed
     @JsonProperty("intermdtserv")
@@ -156,6 +174,30 @@ public class Replay {
 	public final Optional<Double> sampleRate;
 	@JsonProperty("timestmp")
     public final Instant creationTimeStamp;
+	@JsonProperty("jarPath")
+	public Optional<String> generatedClassJarPath;
+	@JsonProperty("replayType")
+	public final ReplayTypeEnum replayType;
+	public transient Optional<URLClassLoader> generatedClassLoader;
+
+	@JsonSetter
+	public void setGeneratedClassJarPath(Optional<String> jarPathOpt){
+		this.generatedClassJarPath = jarPathOpt;
+		generatedClassJarPath.ifPresent(jarPath -> {
+			try {
+				Path path = Paths.get(jarPath);
+				this.generatedClassLoader = Optional.of(new URLClassLoader(
+					new URL[]{path.toUri().toURL()},
+					this.getClass().getClassLoader()
+				));
+			} catch (Exception e) {
+				LOGGER.error(new
+					ObjectMessage(Map.of(Constants.MESSAGE, "Unable to initialize URL Class Loader",
+					Constants.JAR_PATH_FIELD, jarPath)));
+			}
+		});
+	}
+
 
 	static final String uuidPatternStr = "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-\\b[0-9a-fA-F]{12}\\b";
 	static final String replayIdPatternStr = "^(.*)-" + uuidPatternStr + "$";
@@ -185,11 +227,12 @@ public class Replay {
         return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
     }
 
-    private Result<Event> getEventResult(ReqRespStore rrstore) {
-        EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.HTTPRequest)
-            .withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths).withCollection(collection).build();
-        return rrstore.getEvents(eventQuery);
-    }
+	private Result<Event> getEventResult(ReqRespStore rrstore) {
+		EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.fromReplayType(replayType))
+			.withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths)
+			.withCollection(collection).withServices(service.map(List::of).orElse(Collections.emptyList())).build();
+		return rrstore.getEvents(eventQuery);
+	}
 
 
     @JsonIgnore

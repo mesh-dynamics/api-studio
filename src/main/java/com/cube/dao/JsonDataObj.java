@@ -43,6 +43,10 @@ public class JsonDataObj implements DataObj {
 
     private static final Logger LOGGER = LogManager.getLogger(JsonDataObj.class);
 
+    public static JsonDataObj createEmptyObject(ObjectMapper jsonMapper) {
+        return new JsonDataObj(MissingNode.getInstance(), jsonMapper);
+    }
+
     JsonDataObj(String json, ObjectMapper jsonMapper) {
         this(jsonStrToObj(json, jsonMapper), jsonMapper);
     }

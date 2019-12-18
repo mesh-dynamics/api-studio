@@ -96,18 +96,23 @@ public class TemplateSetTransformer {
             pathVsEntry.put(templateEntry.getPath(), templateEntry);
         });
         atomicUpdateOperations.forEach(updateOperation -> {
-            String path = updateOperation.getPath();
+            String normalisedPath = sourceTemplate.getNormalisedPath(updateOperation.getPath()).toString();
             OperationType operationType = updateOperation.getType();
             if (operationType.equals(OperationType.REMOVE)) {
                 // remove the rule on a delete operation
-                pathVsEntry.remove(path);
+                pathVsEntry.remove(normalisedPath);
             } else if (operationType.equals(OperationType.ADD) || operationType.equals(OperationType.REPLACE)) {
                 if (updateOperation.getNewRule().isEmpty()) {
-                    LOGGER.error("New Rule Not Available for Add/Replace Operation for Path :: " + path);
+                    LOGGER.error("New Rule Not Available for Add/Replace Operation for Path :: " + normalisedPath);
                 } else {
                     // for add or replace ... for the given json path .. add the new rule
                     // (in case of replace the entire rule will be replaced with the new rule)
-                    pathVsEntry.put(path, updateOperation.getNewRule().get());
+                    TemplateEntry newRule = updateOperation.getNewRule().get();
+                    // normalisedPath can also be directly used while creating new rule but getNormalisedPath is called again to be safe
+                    // in case the updateOperation's path  and rule's path are different
+                    TemplateEntry newRuleNormalised = new TemplateEntry(sourceTemplate.getNormalisedPath(newRule.getPath()).toString(), newRule.getDataType(),
+                        newRule.getPresenceType(), newRule.getCompareType(), newRule.getExtractionMethod(), newRule.getCustomization());
+                    pathVsEntry.put(normalisedPath, newRuleNormalised);
                 }
             }
         });
