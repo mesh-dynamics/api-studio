@@ -61,14 +61,14 @@ public abstract class AbstractReplayDriver {
 			this.client = initClient(replay);
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Unable to initialize replay client")), e);
+				"Unable to initialize replay client", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
 		}
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Starting Replay",
 			Constants.REPLAY_ID_FIELD , replay.replayId)));
 		CompletableFuture.runAsync(this::replay).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Exception in replaying requests")), e);
+					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
 			}
 			return ret;
 		});
@@ -148,7 +148,8 @@ public abstract class AbstractReplayDriver {
 				} catch (Exception e) {
 					LOGGER.error(new ObjectMessage(Map.of(
 						Constants.MESSAGE, "Skipping request. Exception in Creating Replay Request"
-						, Constants.REQ_ID_FIELD, eventReq.reqId != null ? eventReq.reqId : "NA"
+						, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
+						, Constants.REPLAY_ID_FIELD, replay.replayId
 					)), e);
 				}
 			});
@@ -163,7 +164,7 @@ public abstract class AbstractReplayDriver {
 
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Completed"
 			, Constants.REPLAY_ID_FIELD, replay.replayId,
-			"Total Requests", replay.reqcnt, "Total Errors", replay.reqfailed)));
+			"totalRequests", replay.reqcnt, "errorRequests", replay.reqfailed)));
 
 		replay.status =
 			(replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
@@ -174,7 +175,8 @@ public abstract class AbstractReplayDriver {
 	private void logUpdate() {
 		if (replay.reqsent % UPDBATCHSIZE == 0) {
 			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Update",
-				Constants.REPLAY_ID_FIELD, replay.replayId, "Requests Sent", replay.reqsent)));
+				Constants.REPLAY_ID_FIELD, replay.replayId, "sentRequests", replay.reqsent
+				, "totalRequests", replay.reqcnt)));
 			rrstore.saveReplay(replay);
 		}
 	}
@@ -193,7 +195,8 @@ public abstract class AbstractReplayDriver {
 			return rcodes.get();
 		} catch (InterruptedException | ExecutionException e) {
 			LOGGER.error(
-				new ObjectMessage(Map.of(Constants.MESSAGE, "Exception in replaying requests")), e);
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Exception in replaying requests",
+					Constants.REPLAY_ID_FIELD, replay.replayId)), e);
 			return Collections
 				.nCopies(respcodes.size(), client.getErrorStatusCode());
 		}
@@ -210,13 +213,14 @@ public abstract class AbstractReplayDriver {
 				if (ret != client.getSuccessStatusCode()) {
 					LOGGER.error(new ObjectMessage(
 						Map.of(Constants.MESSAGE, "Got Error Status while Replaying Request",
-							Constants.REQUEST, request.toString(), "Return Status", ret)));
+							Constants.REQUEST, request.toString(), "Return Status", ret
+						,Constants.REPLAY_ID_FIELD, replay.replayId)));
 				}
 				return ret;
 			} catch (IOException | InterruptedException e) {
 				LOGGER.error(
-					new ObjectMessage(Map.of(Constants.MESSAGE, "Exception in replaying requests")),
-					e);
+					new ObjectMessage(Map.of(Constants.MESSAGE, "Exception in replaying requests"
+					,Constants.REPLAY_ID_FIELD , replay.replayId)), e);
 				return client.getErrorStatusCode();
 			}
 		}).collect(Collectors.toList());

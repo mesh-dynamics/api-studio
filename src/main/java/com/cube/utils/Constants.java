@@ -130,4 +130,6 @@ public class Constants {
 
 	public static final String ROOT_PATH = "";
 
+	public static final String NOT_PRESENT = "Absent";
+	public static final String EVENT_STRING = "eventAsString";
 }

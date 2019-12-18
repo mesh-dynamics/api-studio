@@ -2,8 +2,8 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 
-import java.net.URLClassLoader;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,8 +37,6 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.UtilException;
-
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ComparatorCache;
@@ -53,9 +51,9 @@ import com.cube.dao.Event.EventType;
 import com.cube.dao.Event.RunType;
 import com.cube.dao.EventQuery;
 import com.cube.dao.EventQuery.Builder;
+import com.cube.dao.HTTPResponsePayload;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
-import com.cube.dao.HTTPResponsePayload;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
 
@@ -397,7 +395,10 @@ public class MockServiceHTTP {
         String customerId, String app, String instanceId,
         String service, String method, String body, HttpHeaders headers) {
 
-        LOGGER.info(String.format("Mocking request for %s", path));
+        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Attempting to mock request",
+            Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
+            , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
+            Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path)));
 
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
@@ -417,7 +418,12 @@ public class MockServiceHTTP {
             */
 
         if (replayIdOpt.isEmpty() || collectionOpt.isEmpty()) {
-            LOGGER.error("Cannot mock request since replay/collection is empty");
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Unable to mock request since replay/collection is empty",
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
+                    , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
+                    Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
+                    body)));
             return notFound();
         }
 
@@ -431,10 +437,12 @@ public class MockServiceHTTP {
         try {
             comparator = comparatorCache.getComparator(key , EventType.HTTPRequest);
         } catch (ComparatorCache.TemplateNotFoundException e) {
-            LOGGER.error(new ObjectMessage(Map.of(
-                "message", "Compare template not found",
-                "key", key
-            )));
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Unable to mock request since request comparator not found",
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
+                    , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
+                    Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
+                    body)), e);
             return notFound();
         }
 
@@ -445,8 +453,12 @@ public class MockServiceHTTP {
                 service, method, body, headers, queryParams, replayId, comparator);
             rrstore.save(mockRequestEvent);
         } catch (Exception e) {
-            LOGGER.error("Exception in creating mock request, message: {}, location: {}",
-                e.getMessage(), UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Unable to mock request, exception while creating request",
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
+                    , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
+                    Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
+                    body)), e);
             return notFound();
         }
 
@@ -454,21 +466,24 @@ public class MockServiceHTTP {
         Optional<Event> respEvent = rrstore.getSingleEvent(reqQuery)
             .flatMap(event -> rrstore.getRespEventForReqEvent(event))
             .or(() -> {
-                LOGGER.info("Using default response");
+                LOGGER.info(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "Using default response(as no matching request event found)",
+                        Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
+                        , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
+                        Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.TRACE_ID_FIELD,
+                        String.join(":", reqQuery.getTraceIds()))));
 
                 EventQuery respQuery = getDefaultRespEventQuery(mockRequestEvent);
                 Optional<Event> defRespEvent = rrstore.getSingleEvent(respQuery);
                 if (defRespEvent.isPresent()) {
                     return defRespEvent;
                 }
-
                 LOGGER.error(new ObjectMessage(
-                    Map.of(Constants.MESSAGE, "No default response found for request.",
-                        Constants.CUSTOMER_ID_FIELD, mockRequestEvent.customerId,
-                        Constants.APP_FIELD, mockRequestEvent.app,
-                        Constants.SERVICE_FIELD, mockRequestEvent.service,
-                        Constants.API_PATH_FIELD, mockRequestEvent.apiPath)));
-
+                    Map.of(Constants.MESSAGE, "Unable to mock request since no default response found",
+                        Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app
+                        , Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service,
+                        Constants.METHOD_FIELD, method, Constants.PATH_FIELD, path, Constants.BODY,
+                        body)));
                 return Optional.empty();
             });
 
@@ -540,7 +555,7 @@ public class MockServiceHTTP {
             rrstore.save(mockResponseToStore);
         } catch (Event.EventBuilder.InvalidEventException e) {
             LOGGER.error(new ObjectMessage(
-                Map.of(Constants.MESSAGE, "Not able to store mock event",
+                Map.of(Constants.MESSAGE, "Not able to store mock response event",
                     Constants.TRACE_ID_FIELD, respEventVal.getTraceId(),
                     Constants.REQ_ID_FIELD, respEventVal.reqId)));
         }
