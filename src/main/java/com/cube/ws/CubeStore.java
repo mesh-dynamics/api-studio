@@ -156,7 +156,6 @@ public class CubeStore {
         LOGGER.info(new ObjectMessage(properties));
     }
 
-
     static class CubeStoreException extends Exception {
         private String message;
         public Optional<String> eventType;
@@ -263,12 +262,12 @@ public class CubeStore {
 
             MultivaluedMap<String, String> formParams = new MultivaluedHashMap<String, String>();
 
-            String t = type.orElseThrow(() ->
+            String typeStr = type.orElseThrow(() ->
                 new CubeStoreException(null, "Type not specified", type, rid, customerId,
                     app, instanceId, collection, Optional.ofNullable(path),
                     Optional.empty(), Optional.empty()));
 
-            if (t.equals(Constants.REQUEST)) {
+            if (typeStr.equals(Constants.REQUEST)) {
                 String method = Optional.ofNullable(meta.getFirst("method")).orElseThrow(() ->
                     new CubeStoreException(null, "Method field missing", type, rid, customerId,
                         app, instanceId, collection, Optional.ofNullable(path), Optional.empty(), Optional.empty()));
@@ -312,7 +311,7 @@ public class CubeStore {
                         , type, rid, customerId, app, instanceId, collection
                         , Optional.ofNullable(path), Optional.of(requestEvent.toString()), Optional.empty());
                 }
-            } else if (t.equals(Constants.RESPONSE)) {
+            } else if (typeStr.equals(Constants.RESPONSE)) {
                 int status;
                 try {
                     status =
