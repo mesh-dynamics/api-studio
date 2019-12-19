@@ -8,6 +8,7 @@ import static com.cube.core.Utils.buildSuccessResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +54,7 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
+import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.DefaultEvent;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventBuilder.InvalidEventException;
@@ -62,6 +64,7 @@ import com.cube.dao.EventQuery;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Result;
@@ -291,7 +294,11 @@ public class CubeStore {
                             Arrays.stream(jsons).forEach(UtilException.rethrowConsumer(this::processRRJson));
                             return Response.ok().build();
                         } catch (Exception e) {
-                            LOGGER.error("Error while processing multiline json " + e.getMessage());
+                            LOGGER.error(new ObjectMessage(
+                                Map.of(
+                                    Constants.MESSAGE, "Error while processing multiline json " + e.toString(),
+                                    Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
+                                )));
                             return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
                         }
 
@@ -529,8 +536,13 @@ public class CubeStore {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
             try {
+                Optional<URLClassLoader> classLoader = Optional.empty();
+                if (event.eventType.equals(EventType.ThriftRequest)) {
+                    classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
+                }
+
                 event.parseAndSetKey(config,
-                    Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
+                    Utils.getRequestCompareTemplate(config, event, recordOrReplay.get().getTemplateVersion()) , classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 return Optional.of("Compare template not found");
             }
@@ -711,10 +723,9 @@ public class CubeStore {
                     getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
-                    Map.of(Constants.MESSAGE, "Compare template not found.",
-                        Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
+                    Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
                         Constants.REQ_ID_FIELD, defaultReqEvent.reqId,
-                        Constants.API_PATH_FIELD, defaultReqEvent.apiPath)));
+                        Constants.API_PATH_FIELD, defaultReqEvent.apiPath)) , e);
                 return Optional.empty();
             }
 
@@ -775,6 +786,7 @@ public class CubeStore {
 
         String name = formParams.getFirst("name");
         String userId = formParams.getFirst("userId");
+        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
 
         if (name==null) {
             return Response.status(Status.BAD_REQUEST)
@@ -802,10 +814,22 @@ public class CubeStore {
         List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
+        RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(customerId, app
+            , instanceId), collection).withTemplateSetVersion(templateSetVersion).withName(name)
+            .withUserId(userId).withTags(tags);
+        codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+        branch.ifPresent(recordingBuilder::withBranch);
+        gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+        comment.ifPresent(recordingBuilder::withComment);
+        try {
+            jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+        } catch (Exception e) {
+            return Response.serverError().entity((new JSONObject(Map.of(Constants.ERROR
+                , e.getMessage()))).toString()).build();
+        }
+
         Optional<Response> resp = Recording
-            .startRecording(customerId, app, instanceId, collection, templateSetVersion, rrstore,
-                name, codeVersion, branch, tags,
-                false, gitCommitId, Optional.empty(), Optional.empty(), comment, userId)
+            .startRecording(recordingBuilder.build() ,rrstore)
             .map(newr -> {
                 String json;
                 try {

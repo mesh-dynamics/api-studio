@@ -58,9 +58,12 @@ import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
+import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
+import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.RecordingBuilder;
 import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;
@@ -954,11 +957,20 @@ public class AnalyzeWS {
             List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
             Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
-            Recording updatedRecording = new Recording(originalRec.customerId,
-                originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
-                Optional.of(Instant.now()), updatedTemplateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId), name, codeVersion, branch, tags, false, gitCommitId,
-                Optional.of(collectionUpdateOpSetId), Optional.of(templateUpdOpSetId), comment, userId);
+            RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(
+            	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
+                .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
+	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
+                .withName(name).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
+	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId);
+	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
+	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+	        originalRec.comment.ifPresent(recordingBuilder::withComment);
+	        originalRec.generatedClassJarPath.ifPresent(UtilException
+		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+
+            Recording updatedRecording = recordingBuilder.build();
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
@@ -988,11 +1000,20 @@ public class AnalyzeWS {
 
             if (!created) throw new Exception("Unable to create an updated collection from existing golden");
 
-            Recording updatedRecording = new Recording(originalRec.customerId,
-                originalRec.app, originalRec.instanceId, newCollectionName, Recording.RecordingStatus.Completed,
-                Optional.of(Instant.now()), templateSet.version, Optional.of(originalRec.getId()),
-                Optional.of(originalRec.rootRecordingId), originalRec.name, originalRec.codeVersion, originalRec.branch,
-                originalRec.tags, originalRec.archived, originalRec.gitCommitId, Optional.empty(), Optional.empty(), Optional.empty(), originalRec.userId);
+            RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(
+            	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
+	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
+	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
+	            .withName(originalRec.name).withTags(originalRec.tags).withArchived(originalRec.archived)
+	            .withUserId(originalRec.userId);
+	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
+	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+	        originalRec.comment.ifPresent(recordingBuilder::withComment);
+	        originalRec.generatedClassJarPath.ifPresent(UtilException
+		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+
+            Recording updatedRecording = recordingBuilder.build();
 
             rrstore.saveRecording(updatedRecording);
             return Response.ok().entity((new JSONObject(Map.of(

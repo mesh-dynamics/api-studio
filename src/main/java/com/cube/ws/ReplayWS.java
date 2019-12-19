@@ -25,21 +25,26 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.UtilException;
+
 import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
+import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Recording;
 import com.cube.dao.Replay;
 import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
-import com.cube.drivers.ReplayDriver;
+import com.cube.drivers.AbstractReplayDriver;
+import com.cube.drivers.ReplayDriverFactory;
 import com.cube.utils.Constants;
-
-import org.json.JSONObject;
-
+import com.cube.utils.ReplayTypeEnum;
 
 /**
  * @author prasad
@@ -84,7 +89,7 @@ public class ReplayWS {
                 LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
             }
             xfms = xfmsParam.get(0);
-            Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
+            Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
             if (replay.isPresent()) {
                 replay.get().updateXfmsFromJSONString(xfms);
             }
@@ -103,7 +108,7 @@ public class ReplayWS {
                            @PathParam("replayId") String replayId,
                            @PathParam("customerId") String customerId,
                            @PathParam("app") String app) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayId, rrstore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, rrstore);
         Response resp = replay.map(r -> {
             String json;
             try {
@@ -131,7 +136,7 @@ public class ReplayWS {
 	@Path("forcecomplete/{replayId}")
     public Response forceComplete(@Context UriInfo ui,
                                   @PathParam("replayId") String replayId) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
             rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
@@ -167,7 +172,7 @@ public class ReplayWS {
     @Path("forcestart/{replayId}")
     public Response forceStart(@Context UriInfo ui,
                                @PathParam("replayId") String replayId) {
-        Optional<Replay> replay = ReplayDriver.getStatus(replayId, this.rrstore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
             String json;
@@ -192,11 +197,12 @@ public class ReplayWS {
     @Path("start/{recordingId}")
     @Consumes("application/x-www-form-urlencoded")
     public Response start(@Context UriInfo ui,
-                          @PathParam("recordingId") String recordingId,
-                          MultivaluedMap<String, String> formParams) {
+        @PathParam("recordingId") String recordingId,
+        MultivaluedMap<String, String> formParams) {
         /**
          // Block for testing -- we need to initialize the auth token to inject
-         List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms")).orElse(new ArrayList<String>());
+         List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms"))
+         .orElse(new ArrayList<String>());
          Optional<Replay> replay = Optional.ofNullable(null);
          if (xfmsParam.size() == 0) {
          LOGGER.sinfo(String.format("No transformation strings found %s",  xfmsParam));
@@ -206,7 +212,8 @@ public class ReplayWS {
          String xfms = "";
          // expect only one JSON String.
          if (xfmsParam.size() > 1) {
-         LOGGER.error("Expected only one json string but got multiple: " + xfmsParam.size() + "; Only considering the first.");
+         LOGGER.error("Expected only one json string but got multiple: "
+         + xfmsParam.size() + "; Only considering the first.");
          }
          xfms = xfmsParam.get(0);
          replay = Replay.getStatus(replayId, this.rrstore);
@@ -225,67 +232,100 @@ public class ReplayWS {
                 return (v == "t") ? true : false;
             })
             .orElse(false);
-        List<String> reqIds = Optional.ofNullable(formParams.get("reqIds")).orElse(new ArrayList<String>());
+        List<String> reqIds = Optional.ofNullable(formParams.get("reqIds"))
+            .orElse(new ArrayList<String>());
         Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endPoint"));
-        List<String> paths = Optional.ofNullable(formParams.get("paths")).orElse(new ArrayList<String>());
-        Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate")).flatMap(v -> Utils.strToDouble(v));
-        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService")).orElse(new ArrayList<>());
+        List<String> paths = Optional.ofNullable(formParams.get("paths"))
+            .orElse(new ArrayList<String>());
+        Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate"))
+            .flatMap(v -> Utils.strToDouble(v));
+        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService"))
+            .orElse(new ArrayList<>());
+        Optional<String> service = Optional.ofNullable(formParams.getFirst("service"));
         String userId = formParams.getFirst("userId");
         String instanceId = formParams.getFirst("instanceId");
+        String replayType = formParams.getFirst("replayType");
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
 
-        if (userId==null) {
-            return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","userId Not Specified"))).toString()).build();
+        if (userId == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity((new JSONObject(Map.of("Message", "userId Not Specified"))).toString())
+                .build();
         }
 
-        if (instanceId==null) {
-            return Response.status(Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message","instanceId Not Specified"))).toString()).build();
+        if (instanceId == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity((new JSONObject(Map.of("Message", "instanceId Not Specified"))).toString())
+                .build();
         }
-
 
         Optional<Recording> recordingOpt = rrstore.getRecording(recordingId);
         if (recordingOpt.isEmpty()) {
-            LOGGER.error(String.format("Cannot init Replay since cannot find recording for id %s", recordingId));
-            return Response.status(Status.NOT_FOUND).entity(String.format("cannot find recording for id %s", recordingId)).build();
+            LOGGER.error(String
+                .format("Cannot init Replay since cannot find recording for id %s", recordingId));
+            return Response.status(Status.NOT_FOUND)
+                .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
         Recording recording = recordingOpt.get();
-
         // check if recording or replay is ongoing for (customer, app, instanceid)
-        Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId),
-            Optional.ofNullable(recording.app), Optional.ofNullable(instanceId), Optional.ofNullable(userId));
+        Optional<Response> errResp = WSUtils
+            .checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId),
+                Optional.ofNullable(recording.app), Optional.ofNullable(instanceId),
+                Optional.ofNullable(userId));
         if (errResp.isPresent()) {
             return errResp.get();
         }
 
-
         return endpoint.map(e -> {
-                        // TODO: introduce response transforms as necessary
-                        return ReplayDriver.initReplay(e, recording.customerId, recording.app, instanceId,
-                            recording.collection,
-                            userId, reqIds, async, paths, null, sampleRate, intermediateServices,
-                            recording.templateVersion, config)
-                            .map(replayDriver -> {
-                                String json;
-                                Replay replay = replayDriver.getReplay();
-                                try {
-                                    json = jsonMapper.writeValueAsString(replay);
-                                    if (startReplay) {
-                                        boolean status = replayDriver.start();
-                                        if (status) {
-                                            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                                        }
-                                        return Response.status(Response.Status.CONFLICT).entity(
-                                            "Not able to start replay. It may be already running or completed").build();
-                                    } else {
-                                        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                                    }
-                                } catch (JsonProcessingException ex) {
-                                    LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replay.replayId), ex);
-                                    return Response.serverError().build();
-                                }
-                            }).orElse(Response.serverError().build());
-                }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
+            // TODO: introduce response transforms as necessary
+
+            ReplayBuilder replayBuilder = new ReplayBuilder(e,
+                new CubeMetaInfo(recording.customerId,
+                    recording.app, instanceId), recording.collection, userId)
+                .withTemplateSetVersion(recording.templateVersion)
+                .withReqIds(reqIds).withAsync(async).withPaths(paths)
+                .withIntermediateServices(intermediateServices)
+                .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
+                    .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP);
+            sampleRate.ifPresent(replayBuilder::withSampleRate);
+            service.ifPresent(replayBuilder::withServiceToReplay);
+            try {
+                recording.generatedClassJarPath
+                    .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
+            } catch (Exception ex) {
+                return Response.serverError().entity((new JSONObject(Map.of(
+                    Constants.MESSAGE, "Error while constructing class loader from the specified jar path"
+                    , Constants.ERROR, ex.getMessage()
+                ))).toString()).build();
+            }
+            Replay replay = replayBuilder.build();
+            return ReplayDriverFactory
+                .initReplay(replay, config)
+                .map(replayDriver -> {
+                    String json;
+                    Replay replayFromDriver = replayDriver.getReplay();
+                    try {
+                        json = jsonMapper.writeValueAsString(replayFromDriver);
+                        if (startReplay) {
+                            boolean status = replayDriver.start();
+                            if (status) {
+                                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                            }
+                            return Response.status(Response.Status.CONFLICT).entity(
+                                "Not able to start replay. It may be already running or completed")
+                                .build();
+                        } else {
+                            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                        }
+                    } catch (JsonProcessingException ex) {
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                            "Error in converting Replay object to Json)) String",
+                            Constants.REPLAY_ID_FIELD, replay.replayId)), ex);
+                        return Response.serverError().build();
+                    }
+                }).orElse(Response.serverError().build());
+        }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
     }
 
 

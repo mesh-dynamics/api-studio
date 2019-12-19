@@ -28,12 +28,15 @@ public class Constants {
     public static final String RESP_MATCH_TYPE = "respMatchType";
     public static final String INCLUDE_DIFF = "includeDiff";
 
+    //MESSAGE KEYS
+    public static final String CLASS_NAME = "className";
 
     //MESSAGE_IDs
     public static final String EVENT_NOT_FOUND = "EVENT_NOT_FOUND";
     public static final String STORE_EVENT_FAILED = "STORE_EVENT_FAILED";
     public static final String INVALID_EVENT = "INVALID_EVENT";
     public static final String INVALID_INPUT = "INVALID_INPUT";
+    public static final String INVALID_HEX_PAYLOAD = "INVALID_HEX_PAYLOAD";
     public static final String TEMPLATE_STORE_FAILED = "TEMPLATE_STORE_FAILED";
     public static final String TEMPLATE_META_STORE_FAILED = "TEMPLATE_META_STORE_FAILED";
     public static final String UPDATE_RECORDING_OPERATION_FAILED = "UPDATE_RECORDING_OPERATION_FAILED";
@@ -45,14 +48,25 @@ public class Constants {
     public static final String SOLR_STATUS_MESSAGE = "SOLR_STATUS_MESSAGE";
 
 
-
     //EXCEPTIONS
     public static final String IO_EXCEPTION = "IO_EXCEPTION";
     public static final String RUNTIME_EXCEPTION = "RUNTIME_EXCEPTION";
     public static final String JSON_PARSING_EXCEPTION = "JSON_PARSING_EXCEPTION";
+
+    public static final String DECODING_EXCEPTION = "DECODING_EXCPETION";
     public static final String BAD_VALUE_EXCEPTION = "BAD_VALUE_EXCEPTION";
     public static final String GENERIC_EXCEPTION = "GENERIC_EXCEPTION";
     public static final String RECORDING_SAVE_FAILURE_EXCEPTION = "RECORDING_SAVE_FAILURE_EXCEPTION";
+
+
+    // Cryptography
+    // Algos https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#Cipher
+    public static final String AES_CBC_PKCS5_ALGO = "AES/CBC/PKCS5Padding";
+    public static final String AES_CTR_PKCS5_ALGO = "AES/CTR/PKCS5Padding";
+    public static final String AES_CIPHER_KEY_TYPE = "AES";
+    public static final String DEFAULT_PASS_PHRASE = "WubbaLubbaDubDub";
+    public static final String CIPHER_KEY_TYPE_FIELD = "cipherKeyType";
+
 
 
     //JSON FETCH PATH
@@ -77,6 +91,11 @@ public class Constants {
     public static final String META_PATH = "/meta";
     public static final String BODY_PATH = "/body";
 
+    public static final String THRIFT_CLASS_NAME = "thriftClassName";
+    public static final String THRIFT_METHOD_NAME  = "thirftMethodName";
+    public static final String CLASS_LOADER = "classLoader";
+
+
     //COMMON STRINGS
     public static final String CUSTOMER_ID_FIELD = "customerId";
     public static final String APP_FIELD = "app";
@@ -99,6 +118,12 @@ public class Constants {
     public static final String END_DATE_FIELD = "endDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
+    public static final String LIMIT_FIELD = "limit";
+    public static final String OFFSET_FIELD = "offset";
+    public static final String JAR_PATH_FIELD = "jarPath";
+    public static final String REPLAY_TYPE_FIELD = "replayType";
+    public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path"  ;
+
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
     public static final String GOLDEN_NAME_FIELD = "golden_name";
@@ -111,5 +136,8 @@ public class Constants {
     public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
     public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
     public static final String TEMPLATE_VERSION_FIELD = "version";
+
+
+	public static final String ROOT_PATH = "";
 
 }
