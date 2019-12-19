@@ -3,6 +3,7 @@ package io.cube.agent;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import io.cube.agent.Event.RunType;
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
@@ -19,10 +20,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.thrift.TBase;
 
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -42,11 +46,6 @@ import java.util.stream.Collectors;
  * @author Prasad M D
  */
 public class CommonUtils {
-
-    public static final String BAGGAGE_INTENT = "intent";
-    public static final String INTENT_RECORD = "record";
-    public static final String INTENT_MOCK = "mock";
-    public static final String NO_INTENT = "normal";
 
     private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
 
@@ -81,11 +80,14 @@ public class CommonUtils {
             //Tags.HTTP_URL.set(tracer.activeSpan(), requestBuilder.toString());
             if (tracer.activeSpan() != null) {
                 Span activeSpan = tracer.activeSpan();
-                String currentIntent = activeSpan.getBaggageItem(BAGGAGE_INTENT);
-                activeSpan.setBaggageItem(BAGGAGE_INTENT , null);
+                String currentIntent = activeSpan.getBaggageItem(Constants
+                    .ZIPKIN_HEADER_BAGGAGE_INTENT_KEY);
+                activeSpan.setBaggageItem(Constants
+                    .ZIPKIN_HEADER_BAGGAGE_INTENT_KEY, null);
                 tracer.inject(activeSpan.context(),
                         Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
-                activeSpan.setBaggageItem(BAGGAGE_INTENT , currentIntent);
+                activeSpan.setBaggageItem(Constants
+                    .ZIPKIN_HEADER_BAGGAGE_INTENT_KEY , currentIntent);
             }
 
             if (scope != null) {
@@ -115,17 +117,25 @@ public class CommonUtils {
 
     public static Optional<String> getCurrentIntentFromScope() {
         Optional<String> currentIntent =  getCurrentSpan().flatMap(span -> Optional.
-                ofNullable(span.getBaggageItem(BAGGAGE_INTENT)));
-        LOGGER.info("Got intent from trace (in agent) :: " + currentIntent.orElse(" N/A"));
+                ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
+            fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
+        LOGGER.info("Got intent from trace (in agent) :: " +
+            currentIntent.orElse(" N/A"));
         return currentIntent;
     }
 
     public static boolean isIntentToRecord() {
-        return getCurrentIntent().equalsIgnoreCase(INTENT_RECORD);
+        return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_RECORD);
     }
 
     public static boolean isIntentToMock() {
-        return getCurrentIntent().equalsIgnoreCase(INTENT_MOCK);
+        return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
+    }
+
+    public static Scope startClientSpan(String operationName) {
+        Tracer tracer = GlobalTracer.get();
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
+        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT).startActive(true);
     }
 
     public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders, String operationName) {
@@ -220,7 +230,7 @@ public class CommonUtils {
     }
 
     public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
-        return findFirstCaseInsensitiveMatch(mMap, CommonConfig.DEFAULT_TRACE_FIELD);
+        return findFirstCaseInsensitiveMatch(mMap, Constants.ZIPKIN_TRACE_HEADER);
     }
 
     public static JsonObject createPayload(Object responseOrException, Gson gson, Object... args) {
@@ -231,13 +241,13 @@ public class CommonUtils {
         return payloadObj;
     }
 
-    public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId, Event.RecordReplayType rrType, Instant timestamp, JsonObject payload) {
+    public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId, RunType rrType, Instant timestamp, JsonObject payload) {
 
         EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
                 fnKey.service, fnKey.instanceId, "NA",
                 traceId.orElse(null), rrType, timestamp, "NA",
                 fnKey.signature, Event.EventType.JavaRequest);
-        eventBuilder.setRawPayloadString(payload.toString());
+        eventBuilder.withRawPayloadString(payload.toString());
         return eventBuilder.createEventOpt();
     }
 
@@ -245,6 +255,60 @@ public class CommonUtils {
         JsonArray argsArray = new JsonArray();
         Arrays.stream(argVals).forEach(arg -> argsArray.add(gson.toJson(arg)));
         return argsArray;
+    }
+
+    public static Optional<String> fromEnvOrSystemProperties(String propertyName) {
+        return Optional.ofNullable(System.getenv(propertyName)).or(() ->
+            Optional.ofNullable(System.getProperty(propertyName)));
+    }
+
+    public static CubeMetaInfo cubeMetaInfoFromEnv() throws Exception {
+        String customerId = fromEnvOrSystemProperties(Constants.MD_CUSTOMER_PROP)
+            .orElseThrow(() -> new Exception("Customer Id Not Found in Env"));
+        String instance = fromEnvOrSystemProperties(Constants.MD_INSTANCE_PROP)
+            .orElseThrow(() -> new Exception("Instance Id Not Found in Env"));
+        String appName = fromEnvOrSystemProperties(Constants.MD_APP_PROP)
+            .orElseThrow(() -> new Exception("Cube App Name Not Found in Env"));
+        String serviceName = fromEnvOrSystemProperties(Constants.MD_SERVICE_PROP)
+            .orElseThrow(() -> new Exception("Cube Service Name Not Found in Env"));
+        return new CubeMetaInfo(customerId, instance, appName, serviceName);
+    }
+
+    public static CubeTraceInfo cubeTraceInfoFromContext() {
+        return new CubeTraceInfo(getCurrentTraceId().orElse(null)
+            , getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
+    }
+
+    public static Scope startServerSpan(io.cube.tracing.thriftjava.Span span, String methodName) {
+        Tracer tracer = GlobalTracer.get();
+        Tracer.SpanBuilder spanBuilder;
+        try {
+            //span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
+            JaegerSpanContext parentSpanCtx = new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
+                (byte) span.flags);
+            parentSpanCtx = parentSpanCtx.withBaggage(span.baggage);
+            spanBuilder = tracer.buildSpan(methodName).asChildOf(parentSpanCtx);
+        } catch (Exception e) {
+            spanBuilder = tracer.buildSpan(methodName);
+        }
+        // TODO could add more tags like http.url
+        return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).startActive(true);
+    }
+
+    // TODO assuming that the name of the field/argument containing will always be span
+    // this might again require extra config to indicate the field containing span
+    public static String traceIdFromThriftSpan(TBase spanContainingObject) {
+        try {
+            Class<?> clazz = spanContainingObject.getClass();
+            Field field = clazz.getField(Constants.THRIFT_SPAN_ARGUMENT_NAME); //Note, this can throw an exception if the field doesn't exist.
+            io.cube.tracing.thriftjava.Span span = (io.cube.tracing.thriftjava.Span) field.get(spanContainingObject);
+            JaegerSpanContext spanContext =  new JaegerSpanContext(span.traceIdHigh, span.traceIdLow, span.spanId, span.parentSpanId,
+                (byte) span.flags);
+            return spanContext.getTraceId();
+        } catch (Exception e) {
+            return null;
+        }
+        //spanContainingObject.getFieldValue()
     }
 
 }
