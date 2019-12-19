@@ -18,11 +18,13 @@ const getSearchHistoryParams = () => {
     const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
     const selectedResolutionType = urlParameters["selectedResolutionType"];
     const searchFilterPath = urlParameters["searchFilterPath"];
+    const timeStamp = decodeURI(urlParameters["timeStamp"]);
     
     return constructUrlParams({
         app, 
         service, 
         replayId, 
+        timeStamp,
         requestBody, 
         recordingId, 
         responseBody,
@@ -59,8 +61,9 @@ const constructUrlParams = (params) => {
     const {
         app, 
         replayId, 
+        timeStamp, 
         requestBody, 
-        selectedAPI, 
+        selectedAPI,
         recordingId, 
         responseBody,
         requestParams, 
@@ -73,16 +76,18 @@ const constructUrlParams = (params) => {
         selectedResolutionType, 
     } = params;
 
-    return `?replayId=${replayId}&app=${app}&apiPath=${selectedAPI}&service=${selectedService}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&searchFilterPath=${searchFilterPath}&requestHeaders=${requestHeaders}&requestParams=${requestParams}&requestBody=${requestBody}&responseHeaders=${responseHeaders}&responseBody=${responseBody}`;
+    return `?replayId=${replayId}&app=${app}&apiPath=${selectedAPI}&service=${selectedService}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&searchFilterPath=${searchFilterPath}&requestHeaders=${requestHeaders}&requestParams=${requestParams}&requestBody=${requestBody}&responseHeaders=${responseHeaders}&responseBody=${responseBody}`;
 };
 
 const updateSearchHistoryParams = (metaDataType, value, state) => {
-    const { app, replayId, apiPath, service, recordingId, currentTemplateVer, selectedReqRespMatchType,selectedResolutionType, searchFilterPath } = state;
+    const { app, replayId, timeStamp, apiPath, service, recordingId, currentTemplateVer, selectedReqRespMatchType,selectedResolutionType, searchFilterPath } = state;
     const { requestHeaders, requestParams, requestBody, responseHeaders, responseBody } = getCheckboxParams();
+
     const params = {
         app, 
         service, 
         replayId, 
+        timeStamp,
         requestBody, 
         recordingId, 
         responseBody,
@@ -96,6 +101,12 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
         selectedService: service,
         selectedReqRespMatchType,
     };
+
+    // selectedService is a special case where if 
+    //the service changes the api path is reset
+    if(metaDataType === "selectedService") {
+        params["selectedAPI"] = "";
+    }
 
     params[metaDataType] = value;
 
