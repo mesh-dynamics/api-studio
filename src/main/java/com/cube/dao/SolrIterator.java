@@ -6,6 +6,7 @@ package com.cube.dao;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
@@ -16,6 +17,7 @@ import io.cube.agent.CommonConfig;
 import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -29,6 +31,7 @@ import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 /**
@@ -187,14 +190,16 @@ public class SolrIterator implements Iterator<SolrDocument> {
     private static FnKey queryFnKey;
 
     static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
-        LOGGER.info(String.format("Running Solr query %s", query.toQueryString()));
+        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Running Solr Query"
+	        , "query" , query.toQueryString())));
         if (queryFnKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("query", SolrParams.class);
                 queryFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
                     config.commonConfig.serviceName, currentMethod);
             } catch (Exception e) {
-                LOGGER.error("Unable to find solr query method by reflection :: " + e.getMessage());
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+	                "Unable to find solr query method by reflection")) ,e);
             }
         }
         if (config.intentResolver.isIntentToMock()) {
@@ -212,7 +217,8 @@ public class SolrIterator implements Iterator<SolrDocument> {
             response = solr.query(query);
             toReturn = Optional.of(response);
         } catch (SolrServerException | IOException e) {
-            LOGGER.error("Error in querying Solr", e);
+	        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+		        "Error in querying Solr")) ,e);
         }
 
         try {

@@ -107,7 +107,7 @@ public class ComparatorCache {
             });
         } catch (ExecutionException e) {
             LOGGER.info(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Unable to find template, using default",
+                Constants.MESSAGE, "Unable to find template in cache, using default",
                 "key", key,
                 Constants.REASON, e.getMessage())));
             switch (eventType) {
@@ -132,9 +132,8 @@ public class ComparatorCache {
             }
         } catch (Throwable e) {
             LOGGER.error(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Unhandled exception occured (re-throwing)",
-                Constants.ERROR, e.getMessage()
-            )));
+                Constants.MESSAGE, "Unhandled exception occured (re-throwing)"
+            )),e);
             throw e;
         }
     }
