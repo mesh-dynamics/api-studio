@@ -134,23 +134,23 @@ public class Replay {
 		}
 	}
 
-	@JsonProperty("endpt")
+	@JsonProperty("endpoint")
 	public final String endpoint;
-	@JsonProperty("cust")
+	@JsonProperty("customerId")
 	public final String customerId;
     @JsonProperty("app")
 	public final String app;
-    @JsonProperty("instance")
+    @JsonProperty("instanceId")
 	public final String instanceId;
-    @JsonProperty("collect")
+    @JsonProperty("collection")
 	public final String collection;
-    @JsonProperty("userid")
+    @JsonProperty("userId")
     public final String userId;
     @JsonProperty("reqIds")
 	public final List<String> reqIds;
-    @JsonProperty("templateVer")
+    @JsonProperty("templateVersion")
 	public final String templateVersion;
-    @JsonProperty("id")
+    @JsonProperty("replayId")
     public final String replayId; // this needs to be globally unique
     @JsonProperty("async")
     public final boolean async;
@@ -160,21 +160,21 @@ public class Replay {
     public final Optional<String> service;
     @JsonProperty("paths")
     public final List<String> paths; // paths to be replayed
-    @JsonProperty("intermdtserv")
+    @JsonProperty("intermediateServices")
     public final List<String> intermediateServices;
     @JsonProperty("reqcnt")
     public int reqcnt; // total number of requests
-    @JsonProperty("reqsnt")
+    @JsonProperty("reqsent")
     public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
-    @JsonProperty("reqfl")
+    @JsonProperty("reqfailed")
     public int reqfailed; // requests failed, return code not 200
 	@JsonIgnore
     public transient Optional<RRTransformer> xfmer;
-    @JsonProperty("smplrate")
+    @JsonProperty("sampleRate")
 	public final Optional<Double> sampleRate;
-	@JsonProperty("timestmp")
+	@JsonProperty("creationTimeStamp")
     public final Instant creationTimeStamp;
-	@JsonProperty("jarPath")
+	@JsonProperty("generatedClassJarPath")
 	public Optional<String> generatedClassJarPath;
 	@JsonProperty("replayType")
 	public final ReplayTypeEnum replayType;
