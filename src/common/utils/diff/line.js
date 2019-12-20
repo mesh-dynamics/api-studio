@@ -94,6 +94,24 @@ exports.DefaultLine = function (_a) {
 
     return !jsonPath || (showAll || showPath) && (jsonPath.indexOf(searchFilterPath) > -1) ? 
     <React.Fragment>
+        {showPath && !showAll && (
+            <tr className={styles.line}>
+                <td/>
+                <td/>
+                <td/>
+                <td>
+                {jsonPath}
+                </td>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+
+            </tr>
+        )}
         <tr className={styles.line} onMouseOver = {() => showRefElement(actionsWrapperElementRef)} onMouseOut = {() => hideRefElement(actionsWrapperElementRef)} >
             {!hideLineNumbers && (
                 <td className = {classnames_1.default(styles.gutter, styles.leftGutter, (_c = {},
