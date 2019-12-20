@@ -113,6 +113,13 @@ public class Constants {
     public static final String JAR_PATH_FIELD = "jarPath";
     public static final String REPLAY_TYPE_FIELD = "replayType";
     public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path"  ;
+    public static final String TEMPLATE_KEY_FIELD = "templateKey";
+    public static final String OLD_TEMPLATE_SET_ID = "oldTemplateSetId";
+    public static final String OLD_TEMPLATE_SET_VERSION = "oldTemplateSetVersion";
+    public static final String NEW_TEMPLATE_SET_VERSION = "newTemplateSetVersion";
+    public static final String RECORDING_ID = "recordingId";
+    public static final String RECORDING_UPDATE_OPERATION_SET_ID = "recUpdateOpSetId";
+    public static final String RECORDING_UPDATE_API_OPERATION_SET_ID = "recUpdateApiPathOpSetId";
 
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
@@ -132,4 +139,5 @@ public class Constants {
 
 	public static final String NOT_PRESENT = "Absent";
 	public static final String EVENT_STRING = "eventAsString";
+    public static final String PAYLOAD = "payload" ;
 }

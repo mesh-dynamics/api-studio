@@ -142,7 +142,10 @@ public abstract class AbstractReplayDriver {
 					if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
 						return; // drop this request
 					}
-
+					LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Enqueuing request"
+						+ "for reply", Constants.REPLAY_ID_FIELD , replay.replayId
+						, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId)
+							.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD, eventReq.getTraceId())));
 					reqs.add(client.build(replay, eventReq, config));
 
 				} catch (Exception e) {

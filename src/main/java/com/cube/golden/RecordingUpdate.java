@@ -40,12 +40,14 @@ public class RecordingUpdate {
     */
     public String createRecordingOperationSet(String customer, String app){
         RecordingOperationSetMeta recordingOperationSetMeta = new RecordingOperationSetMeta(customer, app);
-        LOGGER.info("Creating new recording operation set with id: " + recordingOperationSetMeta.id);
         boolean stored = config.rrstore.storeRecordingOperationSetMeta(recordingOperationSetMeta);
         if (!stored) {
             LOGGER.error("error storing recording operation set");
             return null; // todo: what to return if storing fails?
         }
+        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully Created New Recording "
+                + "Update Operation Set", Constants.CUSTOMER_ID_FIELD, customer, Constants.APP_FIELD
+            , app, Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetMeta.id)));
         // if successful return id
         return recordingOperationSetMeta.id;
     }
@@ -56,42 +58,50 @@ public class RecordingUpdate {
     */
     public boolean updateRecordingOperationSet(RecordingOperationSetSP updateRequest){
         // fetch operation set meta from Solr to verify the recordingOperationSetId
-        LOGGER.info("Fetching and verifying recordingOperationSetId");
 
         Optional<RecordingOperationSetMeta> recordingOperationSetMeta = config.rrstore.getRecordingOperationSetMeta(
             updateRequest.operationSetId);
         if(recordingOperationSetMeta.isEmpty()) {
-            LOGGER.error(String.format("recording operation set with id %s does not exist", updateRequest.operationSetId));
-            // todo raise error?
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Recording Update Operation "
+                + "Set Doesn't exist", Constants.RECORDING_UPDATE_OPERATION_SET_ID, updateRequest.operationSetId)));
             return false;
         }
 
         // fetch the operation set from Solr
-        LOGGER.info(String.format("Fetching RecordingOperationSetSP for service %s, path %s with " +
-                "recordingOperationSetId %s", updateRequest.service,
-            updateRequest.path, updateRequest.operationSetId));
+        LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Trying to fetch RecordingOperationSetSP"
+            , Constants.SERVICE_FIELD, updateRequest.service, Constants.API_PATH_FIELD
+            , updateRequest.path, Constants.RECORDING_UPDATE_OPERATION_SET_ID , updateRequest.operationSetId)));
         Optional<RecordingOperationSetSP> storedOperationSet = config.rrstore.getRecordingOperationSetSP(updateRequest.operationSetId,
             updateRequest.service, updateRequest.path);
         return storedOperationSet
             // if present, update/insert the new operations
             .map(recordingOperationSet -> {
                 // convert operation list to map
-                LOGGER.debug("recording operation set: " + recordingOperationSet);
+                //LOGGER.debug("recording operation set: " + recordingOperationSet);
                 Map<String, ReqRespUpdateOperation> operationMap = createOperationsMap(recordingOperationSet.operationsList);
                 // upsert new operation for path
-                LOGGER.debug("updating operations");
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Updating RecordingOperationSetSP"
+                    , Constants.SERVICE_FIELD, updateRequest.service, Constants.API_PATH_FIELD
+                    , updateRequest.path, Constants.RECORDING_UPDATE_OPERATION_SET_ID
+                    , updateRequest.operationSetId, Constants.RECORDING_UPDATE_API_OPERATION_SET_ID, recordingOperationSet.operationSetId)));
                 updateRequest.operationsList.forEach(
                     newOperation -> operationMap.put(newOperation.jsonpath, newOperation)
                 );
                 recordingOperationSet.setOperationsList(new ArrayList<>(operationMap.values()));
                 // store it back
                 // if successful return true
-                LOGGER.info("Storing updated operation set");
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Storing Updated RecordingOperationSetSP"
+                    , Constants.SERVICE_FIELD, updateRequest.service, Constants.API_PATH_FIELD
+                    , updateRequest.path, Constants.RECORDING_UPDATE_OPERATION_SET_ID
+                    , updateRequest.operationSetId, Constants.RECORDING_UPDATE_API_OPERATION_SET_ID, recordingOperationSet.operationSetId)));
                 return config.rrstore.storeRecordingOperationSet(recordingOperationSet);
             })
             // if empty, create a new one (we have verified the existence of the recordingOperationSetId)
             .orElseGet(() -> {
-                LOGGER.info("RecordingOperationSetSP not found, creating new one");
+                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "RecordingOperationSetSP not found, creating new one"
+                    , Constants.SERVICE_FIELD, updateRequest.service, Constants.API_PATH_FIELD
+                    , updateRequest.path, Constants.RECORDING_UPDATE_OPERATION_SET_ID
+                    , updateRequest.operationSetId)));
 //                RecordingOperationSetSP recordingOperationSet
 //                    = new RecordingOperationSetSP(recordingOperationSetId, recordingOperationSetMeta.get().customer,
 //                    recordingOperationSetMeta.get().app, Optional.of(service), Optional.of(path), newOperationSet);
@@ -135,8 +145,9 @@ public class RecordingUpdate {
         Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId/*, recordingOperationSetSP*/);
         results.forEach(res -> {
             try {
-                LOGGER.debug(String.format("get record and replay responses with recordReqId %s, replayReqId %s",
-                    res.recordReqId.get(), res.replayReqId.get()));
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Applying Recording Update",
+                    Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
+                    Constants.TRACE_ID_FIELD, res.replayId, Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId)));
                 Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
                 Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseEvent)
@@ -153,8 +164,6 @@ public class RecordingUpdate {
 
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
-
-                LOGGER.debug("applying transformations");
                 Event transformedResponse = recordResponse.applyTransform(replayResponse, operationsList, config,
                         newCollectionName, newReqId, Optional.empty());
 
@@ -173,19 +182,26 @@ public class RecordingUpdate {
                     Constants.MESSAGE, "Saving transformed request/response",
                     Constants.REQ_ID_FIELD, transformedResponse.reqId
                 )));
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Saving transformed request/response",
+                    Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
+                    Constants.TRACE_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, transformedResponse.reqId,
+                    Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId, Constants.PAYLOAD
+                    , Optional.ofNullable(transformedResponse.rawPayloadString).orElse(Constants.NOT_PRESENT))));
+
                 boolean saved =
                     config.rrstore.save(transformedRequest) && config.rrstore.save(transformedResponse);
                 if(!saved) {
-                    LOGGER.error(new ObjectMessage(Map.of(
-                        Constants.MESSAGE, "Error in saving request/response to Solr",
-                        Constants.REQ_ID_FIELD, recordRequest.reqId
-                    )));
+                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error in saving transformed request/response",
+                        Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
+                        Constants.TRACE_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, transformedResponse.reqId,
+                        Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId, Constants.PAYLOAD
+                        , Optional.ofNullable(transformedResponse.rawPayloadString).orElse(Constants.NOT_PRESENT))));
                 }
             } catch (Exception e) {
-                LOGGER.error(new ObjectMessage(Map.of(
-                    Constants.MESSAGE, "Exception occured while transforming response",
-                    Constants.ERROR, e.getMessage()
-                )));
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Exception Occured while transforming request/response",
+                    Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
+                    Constants.TRACE_ID_FIELD, res.replayId,
+                    Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId)));
             }
 
         });
