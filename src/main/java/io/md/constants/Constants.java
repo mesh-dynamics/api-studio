@@ -81,11 +81,6 @@ public class Constants {
 	public static final String META_PATH = "/meta";
 	public static final String BODY_PATH = "/body";
 
-	public static final String THRIFT_CLASS_NAME = "thriftClassName";
-	public static final String THRIFT_METHOD_NAME  = "thirftMethodName";
-	public static final String CLASS_LOADER = "classLoader";
-
-
 	//COMMON STRINGS
 	public static final String CUSTOMER_ID_FIELD = "customerId";
 	public static final String APP_FIELD = "app";
@@ -158,7 +153,19 @@ public class Constants {
 	//Thrift Related
 	public static final String THRIFT_SPAN_ARGUMENT_NAME = "meshd_span";
 
-
+	// Param keys to Data Object Factory
 	public static final String GSON_OBJECT = "gson";
 	public static final String OBJECT_MAPPER = "objectMapper";
+	public static final String THRIFT_CLASS_NAME = "thriftClassName";
+	public static final String THRIFT_METHOD_NAME  = "thirftMethodName";
+	public static final String CLASS_LOADER = "classLoader";
+
+	// Cryptography
+	// Algos https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#Cipher
+	public static final String AES_CBC_PKCS5_ALGO = "AES/CBC/PKCS5Padding";
+	public static final String AES_CTR_PKCS5_ALGO = "AES/CTR/PKCS5Padding";
+	public static final String AES_CIPHER_KEY_TYPE = "AES";
+	public static final String DEFAULT_PASS_PHRASE = "WubbaLubbaDubDub";
+	public static final String CIPHER_KEY_TYPE_FIELD = "cipherKeyType";
+
 }

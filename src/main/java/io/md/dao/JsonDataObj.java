@@ -3,9 +3,9 @@ package io.md.dao;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.ws.rs.core.MediaType;
@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
+import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.UtilException;
 
 public class JsonDataObj implements DataObj {
@@ -187,6 +187,53 @@ public class JsonDataObj implements DataObj {
 		}
 		return false;
 	}
+
+	@Override
+	public Optional<String> encryptField(String path, EncryptionAlgorithm encrypter) {
+		return encryptField(objRoot, path, encrypter);
+	}
+
+	private Optional<String> encryptField(JsonNode root, String path, EncryptionAlgorithm encrypter) {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valParent = root.at(pathPtr.head());
+		if (valParent != null &&  valParent.isObject()) {
+			ObjectNode valParentObj = (ObjectNode) valParent;
+			String fieldName = pathPtr.last().getMatchingProperty();
+			JsonNode val = valParentObj.get(fieldName);
+			if (val != null && val.isValueNode()) {
+				return encrypter.encrypt(val.toString()).map(newVal -> {
+					valParentObj.set(fieldName, new TextNode(newVal));
+					return newVal;
+				});
+			}
+		}
+		return Optional.empty();
+	}
+
+
+	@Override
+	public Optional<String> decryptField(String path, EncryptionAlgorithm encrypter) {
+		return decryptField(objRoot, path, encrypter);
+	}
+
+	private Optional<String> decryptField(JsonNode root, String path, EncryptionAlgorithm decrypter) {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valParent = root.at(pathPtr.head());
+		if (valParent != null &&  valParent.isObject()) {
+			ObjectNode valParentObj = (ObjectNode) valParent;
+			String fieldName = pathPtr.last().getMatchingProperty();
+			JsonNode val = valParentObj.get(fieldName);
+			if (val != null && val.isValueNode()) {
+				String strToDecrypt = val.isTextual() ? val.textValue() : val.toString();
+				return decrypter.decrypt(strToDecrypt).map(newVal -> {
+					valParentObj.set(fieldName, new TextNode(newVal));
+					return newVal;
+				});
+			}
+		}
+		return Optional.empty();
+	}
+
 
 
 	private void processNode(JsonNode node, Function<String, Boolean> filter, Collection<String> vals, JsonPointer path) {

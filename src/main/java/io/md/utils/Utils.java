@@ -196,6 +196,7 @@ public class Utils {
 				apiPath, Event.EventType.HTTPRequest);
 			eventBuilder.setRawPayloadString(payloadStr);
 			Event event = eventBuilder.createEvent();
+			//TODO keep this logic on cube end
 			//event.parseAndSetKey(config, comparator.getCompareTemplate());
 
 			return event;

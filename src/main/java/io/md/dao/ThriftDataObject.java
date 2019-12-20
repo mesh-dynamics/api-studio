@@ -33,8 +33,8 @@ public class ThriftDataObject extends JsonDataObj implements DataObj  {
 				ObjectMapper jsonMapper = (ObjectMapper) params.get(Constants.OBJECT_MAPPER);
 				if (jsonMapper == null) throw new Exception("object mapper is null");
 				String jsonSerialized = gson.toJson(obj1);
-				//String traceId = CommonUtils.traceIdFromThriftSpan((TBase)obj1);
-				return new ThriftDataObject(jsonSerialized, jsonMapper, null);
+				String traceId = CommonUtils.traceIdFromThriftSpan((TBase)obj1);
+				return new ThriftDataObject(jsonSerialized, jsonMapper, traceId);
 			} catch (Exception e) {
 				throw new DataObjCreationException(e);
 			}

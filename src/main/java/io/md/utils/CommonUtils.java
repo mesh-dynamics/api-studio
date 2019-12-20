@@ -1,5 +1,6 @@
 package io.md.utils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TBase;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -294,7 +296,7 @@ public class CommonUtils {
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
 	}
 
-	/*public static Scope startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
+	public static Scope startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
 		Tracer tracer = GlobalTracer.get();
 		Tracer.SpanBuilder spanBuilder;
 		try {
@@ -329,7 +331,7 @@ public class CommonUtils {
 			return null;
 		}
 		//spanContainingObject.getFieldValue()
-	}*/
+	}
 
 }
 
