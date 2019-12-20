@@ -36,7 +36,8 @@ export const cubeActions = {
     removeFromNOS,
     removeFromOperations,
     getNewTemplateVerInfo,
-    getJiraBugs
+    getJiraBugs,
+    clearPathResultsParams
 };
 
 function clear() {
@@ -226,6 +227,10 @@ function setSelectedInstance ( instance ) {
 
 function setPathResultsParams ( pathResultsParams ) {
     return {type: cubeConstants.SET_PATH_RESULTS_PARAMS, data: pathResultsParams}
+}
+
+function clearPathResultsParams () {
+    return {type: cubeConstants.CLEAR_PATH_RESULTS_PARAMS }
 }
 
 function setGolden ( golden ) {

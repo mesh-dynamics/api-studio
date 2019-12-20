@@ -12,6 +12,7 @@ import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
+import statusCodeList from "../../StatusCodeList"
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -69,6 +70,7 @@ class ShareableLink extends Component {
             tag: "",
             commitId: "",
             saveGoldenError: "",
+            timeStamp: "",
         };
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.handleReqRespMtChange = this.handleReqRespMtChange.bind(this)
@@ -105,6 +107,7 @@ class ShareableLink extends Component {
         const requestBody = urlParameters["requestBody"];
         const responseHeaders = urlParameters["responseHeaders"];
         const responseBody = urlParameters["responseBody"];
+        const timeStamp = decodeURI(urlParameters["timeStamp"]);
 
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
@@ -119,10 +122,11 @@ class ShareableLink extends Component {
             selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
             selectedResolutionType: selectedResolutionType || "All",
             searchFilterPath: searchFilterPath || "",
+            timeStamp: timeStamp || "",
             // response headers
             showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
             shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
-            // response boday
+            // response body
             showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
             shownResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
             // request header
@@ -142,7 +146,8 @@ class ShareableLink extends Component {
                 service: service,
                 replayId: replayId,
                 recordingId: recordingId,
-                currentTemplateVer: currentTemplateVer
+                currentTemplateVer: currentTemplateVer,
+                timeStamp: timeStamp
             }));
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
@@ -184,6 +189,11 @@ class ShareableLink extends Component {
         dispatch(cubeActions.clearGolden());
         this.setState({ showNewGolden: false });
     };
+
+    handleBackToDashboardClick = () => {
+        const { history, dispatch } = this.props;
+        dispatch(cubeActions.clearPathResultsParams());
+    }
 
     handleSearchFilterChange(e) {
         const { history } = this.props;
@@ -245,7 +255,7 @@ class ShareableLink extends Component {
         this.historySearchParams = updateSearchHistoryParams(metaDataType, value, this.state);
 
         if (metaDataType == "selectedAPI") {
-            this.setState({apiPath: value, [metaDataType] : value});
+            this.setState({apiPath: value, [metaDataType] : value, currentPageNumber: 1});
             setTimeout(() => {
                 dispatch(cubeActions.setPathResultsParams({
                     path: value,
@@ -256,12 +266,12 @@ class ShareableLink extends Component {
                 }));
             });
         } else if (metaDataType == "selectedService") {
-            this.setState({service: value, [metaDataType] : value, selectedAPI: ""});
+            this.setState({service: value, [metaDataType] : value, selectedAPI: "", currentPageNumber: 1});
         } else if (metaDataType == "selectedResolutionType") {
             if (value ===  "All") {
-                this.setState({selectedResolutionType : value, showAll : true});
+                this.setState({selectedResolutionType : value, showAll : true, currentPageNumber: 1});
             } else {
-                this.setState({selectedResolutionType : value, showAll : false});
+                this.setState({selectedResolutionType : value, showAll : false, currentPageNumber: 1});
             }
         } else {
             this.setState({[metaDataType] : value});
@@ -480,6 +490,16 @@ class ShareableLink extends Component {
             })
         })
     }
+
+    getHttpStatus = (code) => {
+        for (let httpStatus of statusCodeList) {
+            if (code == httpStatus.status) {
+                return httpStatus.value;
+            }
+        }
+
+        return code;
+    };
 
     render() {
         let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
@@ -722,7 +742,10 @@ class ShareableLink extends Component {
                 )}
                 {item.recordedData != null && item.replayedData != null && (
                     <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label></h4>
+                        <h4>
+                            <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
+                            <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span>
+                        </h4>
                         <div>
                             {item.missedRequiredFields.map((eachMissedField) => {
                                 return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
@@ -748,10 +771,23 @@ class ShareableLink extends Component {
             </div >);
         });
 
+        let getResolutionTypeDescription = function (resolutionType) {
+            switch (resolutionType) {
+                case "All":
+                    return "All"
+                
+                case "ERR":
+                    return "All Errors"
+                
+                default:
+                    return resolutionsIconMap[resolutionType].description;
+            }
+        }
+
         return (
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <Link to={"/"}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
                     <span className="link pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                     <Link to="/review_golden_updates" className="hidden">
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
@@ -793,9 +829,14 @@ class ShareableLink extends Component {
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
-                        <div style={{ display: "inline-block" }}>
+                        
+                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        <div style={{display: "inline-block"}}>
+                            <label class="checkbox-inline">
+                                Resolution Type:
+                            </label>
                             <div style={{ paddingLeft: "9px", display: "inline-block" }}>
-                                <DropdownButton title="Resolution Type" id="dropdown-size-medium">
+                                <DropdownButton title={getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
                                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
                                         <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
                                     </MenuItem>

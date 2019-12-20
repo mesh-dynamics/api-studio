@@ -144,6 +144,15 @@ class Navigation extends Component{
                                 <div className="label-n">MOCK(S)</div>
                                 <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
                             </div>
+                            {
+                                cube.pathResultsParams && cube.pathResultsParams.replayId ?
+                                <div className="margin-top-10">
+                                    <div className="label-n">TEST ID</div>
+                                    <div className="value-n">{cube.pathResultsParams.replayId}</div>
+                                    <div className="label-n">TIMESTAMP</div>
+                                    <div className="value-n">{cube.pathResultsParams.timeStamp}</div>    
+                                </div> : null
+                            }
                         </div>
 
                         <div className={!cube.hideServiceGraph ? "margin-top-10 info-div" : "hidden"}>

@@ -20,7 +20,8 @@ class TestResults extends Component {
         this.state = {
             endDate: new Date(),
             userFilter: "ALL",
-            noFilter: true
+            noFilter: true,
+            showHeaderDetails: false,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -66,17 +67,83 @@ class TestResults extends Component {
         }));
         setTimeout(() => {
             // initial default path
-            history.push(`/shareable_link?replayId=${replayId}&app=${cube.selectedApp}&apiPath=${path}&service=${service}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&selectedReqRespMatchType=responseMismatch&selectedResolutionType=All`);
+            history.push(`/shareable_link?replayId=${replayId}&app=${cube.selectedApp}&apiPath=${path}&service=${service}&recordingId=${recordingId}&timeStamp=${dateTime}&currentTemplateVer=${currentTemplateVer}&selectedReqRespMatchType=responseMismatch&selectedResolutionType=All`);
         });
     }
 
+    toggleHeaderDetails = () => this.setState({ showHeaderDetails: !this.state.showHeaderDetails });
+
+    renderTimeLineHeader = (header) => {
+        const { date, replayId, recordingId } = header;
+        const { showHeaderDetails } = this.state;
+
+        return (
+            showHeaderDetails ? 
+            <div>
+                <Tippy 
+                    arrow={true} 
+                    interactive={true} 
+                    animateFill={false} 
+                    distance={7} 
+                    animation={"fade"} 
+                    size={"large"} 
+                    theme={"light"} 
+                    trigger={"mouseenter"} 
+                    delay={[500, 0]} 
+                    placement={"top"}
+                    flipOnUpdate={true} 
+                    flipBehavior={"flip"}
+                    content={
+                        <div style={{ fontSize: "12px", color: "#000"}} className="grey">
+                            <span className="timeline-replay-id">
+                                    {`Test ID : ${replayId}`}
+                            </span>
+                            <span className="timeline-replay-id">
+                                    {`Recording ID : ${recordingId}`}
+                            </span>
+                        </div>
+                    }
+                >
+                    <div className="timeline-replay-header">
+                        <div className="timeline-header-text underline">
+                                {moment(date).format('lll')}
+                        </div>
+                        <div className="timeline-replay-id">
+                                {`Test ID : ${replayId}`}
+                        </div>
+                        <div className="timeline-replay-id">
+                                {`Recording ID : ${recordingId}`}
+                        </div>
+                    </div>
+                </Tippy>
+            </div>
+            : 
+            <div className="timeline-replay-header">
+                <div className="timeline-header-text">
+                        {moment(date).format('lll')}
+                </div>
+            </div>
+        );
+    };
+
+    renderServiceLabel = () => {
+        const { showHeaderDetails } = this.state;
+        return (
+            <div style={{ "fontSize": "14px", fontWeight: "bold" }}>
+                <span>Service</span>
+                <i className={showHeaderDetails ? "fas fa-chevron-up": "fas fa-chevron-down"} style={{marginLeft: "5px", cursor: "pointer"}} onClick={this.toggleHeaderDetails}></i>
+            </div>
+        );
+    };
+    
     render() {
         const { cube } = this.props;
         if (cube.timelineData == null) {
             return (
                 <div style={{ margin: "27px" }}>
                     <h5>Test Results</h5>
-                </div >);
+                </div>
+            );
         }
 
         let timelineData = cube.timelineData.timelineResults,
@@ -93,7 +160,12 @@ class TestResults extends Component {
                 dateTime = localMomentDateObejct.format('lll'),
                 recordingId = testResult.recordingid,
                 templateVer = testResult.templateVer;
-            if (allRunsTimestamps.indexOf(momentDateObject.valueOf()) < 0) allRunsTimestamps.push(momentDateObject.valueOf());
+            if (allRunsTimestamps.indexOf(momentDateObject.valueOf()) < 0) 
+                allRunsTimestamps.push({
+                    date: momentDateObject.valueOf(), 
+                    replayId: testResult.replayId,
+                    recordingId: testResult.recordingid
+                })
             for (let eachReplayResult of testResultsPerReplay) {
                 if (eachReplayResult.service != null && eachReplayResult.path != null) {
                     if (uniquePaths.indexOf(eachReplayResult.path) < 0) uniquePaths.push(eachReplayResult.path);
@@ -197,7 +269,7 @@ class TestResults extends Component {
             }]
         });*/
         columns.push({
-            Header: "Service",
+            Header: this.renderServiceLabel(), //"Service",
             fixed: "left",
             columns: [{
                 expander: true,
@@ -251,8 +323,8 @@ class TestResults extends Component {
         let count = 0;
         for (let eachTimeStamp of allRunsTimestamps) {
             columns.push({
-                Header: "" + moment(eachTimeStamp).format('lll'),
-                accessor: "" + eachTimeStamp,
+                Header: this.renderTimeLineHeader(eachTimeStamp),
+                accessor: "" + eachTimeStamp.date,
                 sortable: false,
                 minWidth: count == 0 ? 240 : 150,
                 columns: [{
@@ -275,7 +347,7 @@ class TestResults extends Component {
                         }
                         return (<strong></strong>);
                     },
-                    accessor: "" + eachTimeStamp,
+                    accessor: "" + eachTimeStamp.date,
                     minWidth: count == 0 ? 240 : 150,
                     sortable: false,
                     Cell: row => {

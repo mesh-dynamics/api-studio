@@ -242,7 +242,7 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10">
-                    <div className="label-n">SELECT GOLDEN&nbsp;<i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-filter pull-right"></i></div>
+                    <div className="label-n">SELECT GOLDEN&nbsp;<i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i></div>
                     <div className="value-n">
                         {this.renderCollectionDD(cube)}
                     </div>

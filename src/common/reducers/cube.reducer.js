@@ -295,8 +295,16 @@ export function cube (state = initialState, action) {
         case cubeConstants.SET_PATH_RESULTS_PARAMS:
             return {
                 ...state,
-                pathResultsParams: action.data
+                pathResultsParams: {
+                    ...state.pathResultsParams,
+                    ...action.data
+                }
             };
+        case cubeConstants.CLEAR_PATH_RESULTS_PARAMS:
+            return {
+                ...state,
+                pathResultsParams: null,
+            }
         case cubeConstants.PUSH_TO_OS:
             let mos = state.multiOperationsSet;
             mos[action.data.ind].operationSet.push(action.data.os);
