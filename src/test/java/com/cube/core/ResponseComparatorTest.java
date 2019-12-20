@@ -91,7 +91,8 @@ public class ResponseComparatorTest {
      */
     @Test
     @DisplayName("Exact Match Test")
-    final void exactMatchTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
+    final void exactMatchTest()
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("exactMatch");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -109,7 +110,8 @@ public class ResponseComparatorTest {
      */
     @Test
     @DisplayName("Header template test: Positive")
-    final void headerTemplatePositiveTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
+    final void headerTemplatePositiveTest()
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("headerTemplatePositive");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -125,7 +127,8 @@ public class ResponseComparatorTest {
      */
     @Test
     @DisplayName("Header template test: Negative")
-    final void headerTemplateNegativeTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
+    final void headerTemplateNegativeTest()
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
@@ -158,7 +161,8 @@ public class ResponseComparatorTest {
      */
     @Test
     @DisplayName("Same Response body test: Negative")
-    final void sameResponseBodyNegativeTest() throws IOException, JSONException, EventBuilder.InvalidEventException {
+    final void sameResponseBodyNegativeTest()
+        throws IOException, JSONException, EventBuilder.InvalidEventException {
         JSONObject testData = object.getJSONObject("sameResponseBodyNegative");
         String res1 = testData.get("res1").toString();
         Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
@@ -237,7 +241,7 @@ public class ResponseComparatorTest {
 
     private Event cloneWithPayload(Event event, HTTPResponsePayload payload) throws JsonProcessingException, EventBuilder.InvalidEventException {
         return new Event.EventBuilder(event.customerId, event.app, event.service, event.instanceId,
-            event.getCollection(), event.traceId, event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
+            event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
             .setRawPayloadString(mapper.writeValueAsString(payload))
             .createEvent();
     }

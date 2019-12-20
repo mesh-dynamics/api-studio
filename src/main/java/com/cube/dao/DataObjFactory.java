@@ -28,7 +28,8 @@ public class DataObjFactory {
 
     public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
 
-    public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr, Config config) {
+    public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
+        Config config, Map<String, Object> params) {
 
         switch (type) {
             case HTTPRequest:
@@ -38,7 +39,8 @@ public class DataObjFactory {
                 try {
                     mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
                 } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.info("Content-type not found, using default of TEXT_PLAIN for payload: " + payloadStr);
+                    LOGGER.info("Content-type not found, using default of TEXT_PLAIN for payload: "
+                        + payloadStr);
                 }
                 obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
                 return obj;
@@ -47,10 +49,11 @@ public class DataObjFactory {
                 return new JsonDataObj(payloadStr, config.jsonMapper);
             case ThriftRequest:
             case ThriftResponse:
+                return new ThriftDataObject.ThriftDataObjectBuilder().build(payloadBin, config, params);
             case ProtoBufRequest:
             case ProtoBufResponse:
             default:
-                throw new NotImplementedException("Thrift and Protobuf not implemented");
+                throw new NotImplementedException("Protobuf not implemented");
         }
 
         //return null;

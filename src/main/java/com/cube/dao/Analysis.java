@@ -116,7 +116,7 @@ public class Analysis {
         }
 
         public Optional<String> getRecordedResponseBody(Config config) {
-            return recordResp.map(response -> response.getPayloadAsString(config));
+            return recordResp.map(response-> response.getPayloadAsString(config));
         }
 
         public Optional<String> getReplayResponseBody(Config config) {
@@ -129,7 +129,7 @@ public class Analysis {
 
 
         public Optional<String> getRecordReq(Config config) {
-            return Optional.of(recordReq.getPayloadAsString(config));
+	        return Optional.of(recordReq.getPayloadAsString(config));
         }
     }
 
@@ -203,8 +203,8 @@ public class Analysis {
                 rm.match,
                 rm.recordReq.customerId, rm.recordReq.app,
                 rm.recordReq.service, rm.recordReq.apiPath,
-                replayId, jsonmapper, Optional.of(rm.recordReq.traceId),
-                rm.replayReq.map(replayreq -> replayreq.traceId)) ;
+                replayId, jsonmapper, Optional.of(rm.recordReq.getTraceId()),
+                rm.replayReq.map(Event::getTraceId)) ;
         }
 
         final public Optional<String> recordReqId;
