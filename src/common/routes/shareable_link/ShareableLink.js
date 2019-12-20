@@ -742,10 +742,20 @@ class ShareableLink extends Component {
                 )}
                 {item.recordedData != null && item.replayedData != null && (
                     <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
-                        <h4>
-                            <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
-                            <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span>
-                        </h4>
+                        <div className="row">
+                            <div className="col-md-6">
+                                <h4>
+                                    <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
+                                    <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.recordResponse.status)}</span></span>
+                                </h4>
+                            </div>
+
+                            <div className="col-md-6">
+                                <h4 style={{marginLeft: "18%"}}>
+                                    <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span>
+                                </h4>
+                            </div>
+                        </div>
                         <div>
                             {item.missedRequiredFields.map((eachMissedField) => {
                                 return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)

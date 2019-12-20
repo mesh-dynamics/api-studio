@@ -372,9 +372,16 @@ export function cube (state = initialState, action) {
                 operations:[]
             };
         case cubeConstants.SET_GOLDEN:
+            let golden = action.data.golden;
+            for (const gold of state.testIds){
+                if (gold.id == golden) {
+                    golden = gold.name;
+                    break;
+                }
+            }
             return {
                 ...state,
-                golden: action.data.golden,
+                golden: golden,
                 goldenTimeStamp: action.data.timeStamp,
             };
         case cubeConstants.CLEAR_GOLDEN:
