@@ -123,6 +123,7 @@ class ShareableLink extends Component {
             selectedResolutionType: selectedResolutionType || "All",
             searchFilterPath: searchFilterPath || "",
             timeStamp: timeStamp || "",
+            showAll: (selectedResolutionType === "All"),
             // response headers
             showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
             shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
