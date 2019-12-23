@@ -33,7 +33,7 @@ steps:
       password: S9qe2fJ8*vtk
       repo: cubeiocorp/cubews
       target: prod
-      tags: 
+      tags:
         - ${DRONE_COMMIT}-${DRONE_BRANCH}
         - ${DRONE_BRANCH}-latest
     resources:
@@ -68,9 +68,9 @@ steps:
       #   - pull_request
 
   - name: Run_test_on_PR
-    image: spotify/alpine
+    image: cubeiocorp/kubectl:test
     commands:
-    - ./moviebooktest.sh
+    - /code/moviebooktest.sh
     when:
       branch:
       - develop
