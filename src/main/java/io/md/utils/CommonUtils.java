@@ -118,8 +118,9 @@ public class CommonUtils {
 		Optional<String> currentIntent = getCurrentSpan().flatMap(span -> Optional.
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
 			fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
-		LOGGER.debug(Map.of(Constants.MESSAGE, "Intent from trace" , "intent",
-			currentIntent.orElse(" N/A")));
+		currentIntent.ifPresent(
+			intent -> LOGGER.debug(Map.of(Constants.MESSAGE, "Intent from trace", "intent",
+				intent)));
 		return currentIntent;
 	}
 
