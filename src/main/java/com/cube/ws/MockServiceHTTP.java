@@ -607,7 +607,7 @@ public class MockServiceHTTP {
 		this.jsonMapper = config.jsonMapper;
 		this.comparatorCache = config.comparatorCache;
 		this.replayResultCache = config.replayResultCache;
-		LOGGER.info("Cube mock service started");
+		//LOGGER.info("Cube mock service started");
 	}
 
 
