@@ -68,7 +68,7 @@ steps:
   #     #   - pull_request
 
   - name: Run_test_on_PR
-    image: cubeiocorp/kubectl:test
+    image: cubeiocorp/kubectl:test2
     pull: true
     commands:
     - cd /code && ./moviebooktest.sh
