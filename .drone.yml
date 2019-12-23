@@ -26,29 +26,29 @@ steps:
         exclude:
         - pull_request
 
-  - name: docker_build_on_PR
-    image: plugins/docker
-    settings:
-      username: cubeiocorp
-      password: S9qe2fJ8*vtk
-      repo: cubeiocorp/cubews
-      target: prod
-      tags:
-        - ${DRONE_COMMIT}-${DRONE_BRANCH}
-        - ${DRONE_BRANCH}-latest
-    resources:
-      requests:
-        cpu: 0.1
-        memory: "1500Mi"
-      limits:
-        cpu: 1
-        memory: "1500Mi"
-    when:
-      branch:
-      - develop
-      event:
-        include:
-        - pull_request
+  # - name: docker_build_on_PR
+  #   image: plugins/docker
+  #   settings:
+  #     username: cubeiocorp
+  #     password: S9qe2fJ8*vtk
+  #     repo: cubeiocorp/cubews
+  #     target: prod
+  #     tags:
+  #       - ${DRONE_COMMIT}-${DRONE_BRANCH}
+  #       - ${DRONE_BRANCH}-latest
+  #   resources:
+  #     requests:
+  #       cpu: 0.1
+  #       memory: "1500Mi"
+  #     limits:
+  #       cpu: 1
+  #       memory: "1500Mi"
+  #   when:
+  #     branch:
+  #     - develop
+  #     event:
+  #       include:
+  #       - pull_request
 
   # - name: deploy_cubeServices_staging_dev
   #   image: quay.io/honestbee/drone-kubernetes
@@ -70,7 +70,7 @@ steps:
   - name: Run_test_on_PR
     image: cubeiocorp/kubectl:test
     commands:
-    - cd code && moviebooktest.sh
+    - cd /code && moviebooktest.sh
     when:
       branch:
       - develop
