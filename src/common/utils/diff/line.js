@@ -96,19 +96,23 @@ exports.DefaultLine = function (_a) {
     <React.Fragment>
         {showPath && !showAll && (
             <tr className={styles.line}>
-                <td/>
-                <td/>
-                <td/>
-                <td>
-                {jsonPath}
+                <td className={classnames_1(styles.gutter, styles.leftGutter, {[styles.diffRemoved]: removed, [styles.hightlightedGutter]: hightlightLeftLine})}/>
+                <td className={classnames_1.default(styles.gutter, styles.leftGutter, (_k = {}, _k[styles.diffRemoved] = removed, _k[styles.hightlightedGutter] = hightlightLeftLine, _k))}>
+                
+                
                 </td>
-                <td/>
-                <td/>
-                <td/>
-                <td/>
-                <td/>
-                <td/>
-                <td/>
+                <td className={classnames_1.default(styles.marker, (_l = {}, _l[styles.diffRemoved] = removed, _l[styles.hightlightedLine] = hightlightLeftLine, _l))}/>
+                <td className={classnames_1.default(styles.marker, (_d = {}, _d[styles.diffRemoved] = removed, _d[styles.hightlightedLine] = hightlightLeftLine, _d))}>
+                </td>
+                <td className={classnames_1.default(styles.defaultTdClass, (_e = {}, _e[styles.diffRemoved] = removed, _e[styles.hightlightedLine] = hightlightLeftLine, _e))}>
+                    <span style={{color:"#ab4d4d"}}>{jsonPath}</span>
+                </td>
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_j = {}, _j[styles.hightlightedGutter] = hightlightRightLine, _j))}/>
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_f = {}, _f[styles.diffAdded] = added, _f[styles.hightlightedGutter] = hightlightRightLine, _f))}/>
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_m = {}, _m[styles.diffAdded] = added, _m[styles.hightlightedGutter] = hightlightRightLine, _m))}/>
+                <td className={classnames_1.default(styles.marker, (_n = {}, _n[styles.diffAdded] = added, _n[styles.hightlightedLine] = hightlightRightLine, _n))}/>
+                <td className={classnames_1.default(styles.marker, (_g = {}, _g[styles.diffAdded] = added, _g[styles.hightlightedLine] = hightlightRightLine, _g))}/>
+                <td className={classnames_1.default(styles.defaultTdClass, (_h = {}, _h[styles.diffAdded] = added, _h[styles.hightlightedLine] = hightlightRightLine, _h))}/>
 
             </tr>
         )}
