@@ -30,6 +30,8 @@ public class TracingFilter implements ContainerRequestFilter , ContainerResponse
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
         LOGGER.debug("Inside Method :: " + resourceInfo.getResourceMethod().getName() + " "
             + resourceInfo.getResourceClass().getName());
+        // deliberately not generating span for health calls (to stop bombarding logs)
+        if ("health".equals(resourceInfo.getResourceMethod().getName())) return;
         Scope scope = CommonUtils.startServerSpan(containerRequestContext.getHeaders() ,
             resourceInfo.getResourceClass().getSimpleName() + "-" + resourceInfo.getResourceMethod().getName());
         containerRequestContext.setProperty("scope" , scope);
