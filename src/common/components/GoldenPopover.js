@@ -56,8 +56,10 @@ class GoldenPopover extends React.Component {
     }
 
     setRule(tag, evt) {
+        const { dispatch, jsonPath } = this.props;
         let { newRule } = this.state;
         newRule[tag] = evt.target.value;
+        dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule));
         this.setState({ newRule: newRule });
     }
 
@@ -73,7 +75,7 @@ class GoldenPopover extends React.Component {
         }
 
         return "";
-    }
+    };
 
     updateRule() {
         const {dispatch, jsonPath, cube} = this.props;
@@ -159,7 +161,13 @@ class GoldenPopover extends React.Component {
     }
 
     showRuleModal() {
-        this.getResponseTemplate();
+        const { cube, jsonPath } = this.props;
+        if (cube.ruleBook[jsonPath.replace("<BEGIN>", "")]) {
+            let rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
+            this.setState({ defaultRule: { ...rule }, newRule: { ...rule } });
+        } else {
+            this.getResponseTemplate();
+        }
         this.setState({ showRule: true });
     }
 
@@ -299,7 +307,7 @@ class GoldenPopover extends React.Component {
                     </div>
                     <div style={{ width: "300px", height: "100px", background: "#ECECE7", padding: "15px" }}>
                         <div>
-                            <span onClick={this.findInJiraBugs() ? this.openJiraLink : this.showBugModal} className="back-grey">
+                            <span onClick={this.findInJiraBugs() ? this.openJiraLink : this.showBugModal} className="back-grey link">
                                 <i className="fas fa-bug" style={{color: this.findInJiraBugs() ? 'blue' : '', cursor: "pointer"}}></i>
                                 {this.findInJiraBugs() && <i class="fa fa-check-circle" style={{
                                     "color": "green",
@@ -309,9 +317,9 @@ class GoldenPopover extends React.Component {
                                     "marginTop": "-3px"
                                 }} aria-hidden="true"></i>}
                             </span>&nbsp;&nbsp;
-                            <span className="back-grey"><i className="fas fa-comments"></i></span>&nbsp;&nbsp;
-                            <span className="back-grey"><i className="fas fa-code"></i></span>&nbsp;&nbsp;
-                            <span className="back-grey"><i className="fas fa-share-alt"></i></span>
+                            <span className="back-grey inactive-link"><i className="fas fa-comments"></i></span>&nbsp;&nbsp;
+                            <span className="back-grey inactive-link"><i className="fas fa-code"></i></span>&nbsp;&nbsp;
+                            <span className="back-grey inactive-link"><i className="fas fa-share-alt"></i></span>
                         </div>
                         <div className="margin-top-15">
                             <span onClick={this.showGoldenModal}

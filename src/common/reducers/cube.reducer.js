@@ -1,15 +1,6 @@
 import { cubeConstants } from '../constants';
 
 const initialState = {
-    left: {
-        replayList: [
-            '20190108-2053-rl',
-            '20190103-1934-vg',
-            '20190104-2345-pd'
-        ]
-    },
-    sidebar: {},
-
     appsListReqStatus: cubeConstants.REQ_NOT_DONE,
     appsListReqErr: '',
     appsList: [],
@@ -24,6 +15,7 @@ const initialState = {
     multiOperationsSet: [],
     operations:[],
     templateOperationSetObject: {},
+    ruleBook: {},
     newTemplateVerInfo: null,
 
     testConfigList: [],
@@ -285,6 +277,7 @@ export function cube (state = initialState, action) {
                 newOperationSet:[],
                 operations:[],
                 templateOperationSetObject: {},
+                ruleBook: {},
                 multiOperationsSet: []
             };
         case cubeConstants.DIFF_SUCCESS:
@@ -304,7 +297,21 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 pathResultsParams: null,
-            }
+            };
+        case cubeConstants.ADD_TO_RULE_BOOK:
+            let ruleB = state.ruleBook;
+            ruleB[action.data.key] = action.data.val;
+            return {
+                ...state,
+                ruleBook: ruleB
+            };
+        case cubeConstants.REMOVE_FROM_RULE_BOOK:
+            let ruleBDel = state.ruleBook;
+            delete ruleBDel[action.data];
+            return {
+                ...state,
+                ruleBook: ruleBDel
+            };
         case cubeConstants.PUSH_TO_OS:
             let mos = state.multiOperationsSet;
             mos[action.data.ind].operationSet.push(action.data.os);

@@ -289,7 +289,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <Modal show={this.state.showGoldenFilter} bsSize="large">
                     <Modal.Header>
-                        <Modal.Title>Application: {cube.selectedApp}</Modal.Title>
+                        <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
@@ -350,7 +350,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                     </Modal.Body>
                     <Modal.Footer>
-                        <span onClick={this.selectHighlighted} className="cube-btn">Select Chosen</span>&nbsp;&nbsp;
+                        <span onClick={this.selectHighlighted} className={this.state.selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
                         <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
                     </Modal.Footer>
                 </Modal>
