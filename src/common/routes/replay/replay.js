@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import CytoscapeReactWrapper from '../../components/Cytoscape/CytoscapeReactWrapper';
+import GoldenVisibility from '../../components/Golden-Visibility/GoldenVisibility';
 import "./ReplayAttribute.css";
 import {cubeActions} from "../../actions";
 
@@ -126,11 +127,15 @@ class replay extends Component {
         const graphData = this.getGD(cube);
         return (
             <div>
-                <div className="content-wrapper">
-                    <h4>Service Graph</h4>
-                    <CytoscapeReactWrapper graphData={graphData}/>
-                </div>
-
+                {!cube.hideGoldenVisibilityView ? 
+                    <GoldenVisibility /> : 
+                    (
+                        <div className="content-wrapper">                    
+                            <h4>Service Graph</h4>
+                            <CytoscapeReactWrapper graphData={graphData}/>
+                        </div>
+                    )
+                }
             </div>
         )
     }

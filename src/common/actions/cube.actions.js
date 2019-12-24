@@ -39,6 +39,7 @@ export const cubeActions = {
     removeFromOperations,
     getNewTemplateVerInfo,
     getJiraBugs,
+    hideGoldenVisibility,
     clearPathResultsParams
 };
 
@@ -168,6 +169,10 @@ function showTCInfo(bool) {
 
 function hideServiceGraph(bool) {
     return {type: cubeConstants.REPLAY_VIEW, data: bool};
+}
+
+function hideGoldenVisibility(bool){
+    return {type: cubeConstants.HIDE_GOLDEN_VISIBILITY, data: bool};
 }
 
 function getInstances () {

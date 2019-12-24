@@ -11,6 +11,7 @@ const initialState = {
     hideServiceGraph: false,
     hideTestConfigSetup: true,
     hideTestConfigView: true,
+    hideGoldenVisibilityView: true,
     newOperationSet:[],
     multiOperationsSet: [],
     operations:[],
@@ -115,12 +116,18 @@ export function cube (state = initialState, action) {
                 ...state,
                 hideTestConfig: action.data,
             };
+        case cubeConstants.HIDE_GOLDEN_VISIBILITY:
+            return {
+                ...state,
+                hideGoldenVisibilityView: action.data,
+            };
         case cubeConstants.TEST_CONFIG_SETUP:
             return {
                 ...state,
                 hideTestConfig: action.data,
                 hideServiceGraph: action.data,
                 hideTestConfigSetup: !action.data,
+                hideGoldenVisibilityView: action.data,
             };
         case cubeConstants.TEST_CONFIG_VIEW:
             return {
@@ -128,7 +135,16 @@ export function cube (state = initialState, action) {
                 hideTestConfig: action.data,
                 hideServiceGraph: action.data,
                 hideTestConfigView: !action.data,
+                hideGoldenVisibilityView: action.data,
             };
+        case cubeConstants.GOLDEN_VISIBILITY_VIEW:
+            return {
+                ...state,
+                hideTestConfig: action.data,
+                hideServiceGraph: action.data,
+                hideTestConfigSetup: action.data,
+                hideGoldenVisibilityView: !action.data,
+            }
         case cubeConstants.REPLAY_VIEW:
             return {
                 ...state,
