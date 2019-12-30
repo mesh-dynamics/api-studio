@@ -121,7 +121,7 @@ main() {
 	sleep 60
 	call_deploy_script moviebook init $CONFIG_FILE
 	sleep 60
-	call_deploy_script moviebook record $CONFIG_FILE moviebook-$DRONE_BUILD_NUMBER default moviebook-$DRONE_BUILD_NUMBER
+	call_deploy_script moviebook record $CONFIG_FILE moviebook-$DRONE_BUILD_NUMBER RespPartialMatch moviebook-$DRONE_BUILD_NUMBER
 	sleep 5
 	generate_traffic $NO_OF_REQUEST
 	sleep 5
