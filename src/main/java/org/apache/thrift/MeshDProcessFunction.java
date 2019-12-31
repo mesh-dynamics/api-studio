@@ -1,5 +1,6 @@
 package org.apache.thrift;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,13 +15,14 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.gson.GsonBuilder;
 
-import io.cube.agent.CommonUtils;
-import io.cube.agent.Constants;
-import io.cube.agent.Event.EventType;
-import io.cube.agent.Event.RunType;
-import io.cube.agent.EventBuilder;
+import io.cube.agent.CommonConfig;
 import io.cube.agent.FluentDLogRecorder;
 import io.cube.agent.ThriftMocker;
+import io.md.constants.Constants;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventType;
+import io.md.dao.Event.RunType;
+import io.md.utils.CommonUtils;
 
 // MESH-D Mostly overriding the process function in
 // https://github.com/apache/thrift/blob/master/lib/java/src/org/apache/thrift/ProcessFunction.java
@@ -64,13 +66,13 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 			reqId = CommonUtils.getCurrentTraceId().orElse("NA") + "-"
 				+ UUID.randomUUID().toString();
 			try {
-				if (CommonUtils.isIntentToRecord()) {
+				if (CommonConfig.isIntentToRecord()) {
 					EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
 						CommonUtils.cubeTraceInfoFromContext(), RunType.Record,
 						constructApiPath(methodName, args),
-						EventType.ThriftRequest).withRawPayloadBinary(serializer.serialize(args))
-						.withReqId(reqId);
-					fluentDLogRecorder.record(eventBuilder.build());
+						EventType.ThriftRequest, Instant.now(), reqId, Constants.DEFAULT_COLLECTION)
+						.setRawPayloadBinary(serializer.serialize(args));
+					fluentDLogRecorder.record(eventBuilder.createEvent());
 				}
 			} catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -91,13 +93,13 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 		byte msgType = TMessageType.REPLY;
 
 		try {
-			if (CommonUtils.isIntentToMock()) {
+			if (CommonConfig.isIntentToMock()) {
 				EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
 					CommonUtils.cubeTraceInfoFromContext(), RunType.Replay,
 					constructApiPath(methodName, args),
-					EventType.ThriftRequest).withRawPayloadBinary(serializer.serialize(args))
-					.withReqId(reqId);
-				result = thriftMocker.mockThriftRequest(eventBuilder.build());
+					EventType.ThriftRequest, Instant.now(), reqId, Constants.DEFAULT_COLLECTION)
+					.setRawPayloadBinary(serializer.serialize(args));
+				result = thriftMocker.mockThriftRequest(eventBuilder.createEvent());
 				LOGGER.info(new ObjectMessage(
 					Map.of(Constants.MESSAGE,
 						"Successfully retrieved result from mock service")));
@@ -127,14 +129,14 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 			}
 		}
 
-		if (CommonUtils.isIntentToRecord()) {
+		if (CommonConfig.isIntentToRecord()) {
 			try {
 				EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
 					CommonUtils.cubeTraceInfoFromContext(), RunType.Record,
 					constructApiPath(methodName, result),
-					EventType.ThriftResponse).withRawPayloadBinary(serializer.serialize(result))
-					.withReqId(reqId);
-				fluentDLogRecorder.record(eventBuilder.build());
+					EventType.ThriftResponse, Instant.now(), reqId, Constants.DEFAULT_COLLECTION)
+					.setRawPayloadBinary(serializer.serialize(result));
+				fluentDLogRecorder.record(eventBuilder.createEvent());
 			} catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Error while recording event")), e);

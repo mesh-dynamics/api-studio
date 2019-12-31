@@ -6,6 +6,9 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.gson.Gson;
 
+import io.md.constants.Constants;
+import io.md.dao.Event;
+
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
 	public FluentDLogRecorder(Gson gson) {

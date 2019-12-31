@@ -7,7 +7,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.cube.agent.Event.RunType;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -17,8 +17,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.cube.agent.CommonUtils.createEvent;
-import static io.cube.agent.CommonUtils.createPayload;
+import static io.md.utils.CommonUtils.createEvent;
+import static io.md.utils.CommonUtils.createPayload;
+
+import io.md.dao.Event;
+import io.md.dao.Event.RunType;
+import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
