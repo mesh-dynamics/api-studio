@@ -33,10 +33,13 @@ export const cubeActions = {
     pushToMOS,
     pushToOperations,
     pushNewOperationKeyToOperations,
+    addToRuleBook,
+    removeFromRuleBook,
     removeFromNOS,
     removeFromOperations,
     getNewTemplateVerInfo,
     getJiraBugs,
+    hideGoldenVisibility,
     clearPathResultsParams
 };
 
@@ -89,6 +92,14 @@ function pushToOperations(o, key) {
 
 function pushNewOperationKeyToOperations(o, key) {
     return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: o, key: key}};
+}
+
+function addToRuleBook(key, value) {
+    return {type: cubeConstants.ADD_TO_RULE_BOOK, data: {key: key, val: value}};
+}
+
+function removeFromRuleBook(key) {
+    return {type: cubeConstants.REMOVE_FROM_RULE_BOOK, data: key};
 }
 
 function removeFromNOS(index, length, indexMOS) {
@@ -158,6 +169,10 @@ function showTCInfo(bool) {
 
 function hideServiceGraph(bool) {
     return {type: cubeConstants.REPLAY_VIEW, data: bool};
+}
+
+function hideGoldenVisibility(bool){
+    return {type: cubeConstants.HIDE_GOLDEN_VISIBILITY, data: bool};
 }
 
 function getInstances () {

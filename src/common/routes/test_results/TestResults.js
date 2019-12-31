@@ -303,7 +303,7 @@ class TestResults extends Component {
                 className: "freeze-column",
                 accessor: "serviceRowKey",
                 sortable: false,
-                filterable: true,
+                filterable: false,
                 width: 300,
                 Cell: row => {
                     if (row.value && row.value.indexOf("--") == 0) {
@@ -351,6 +351,9 @@ class TestResults extends Component {
                     minWidth: count == 0 ? 240 : 150,
                     sortable: false,
                     Cell: row => {
+                        if (row.row.serviceRowKey && row.row.serviceRowKey.indexOf("--") == 0) {
+                            return (<div><br/><br/></div>);
+                        }
                         if (!row.value) {
                             return (<div
                                 style={{
@@ -362,9 +365,6 @@ class TestResults extends Component {
                             >
                                 <div>NA</div>
                             </div>)
-                        }
-                        if (row.row.serviceRowKey && row.row.serviceRowKey.indexOf("--") == 0) {
-                            return (<strong></strong>);
                         }
                         if (row.row.serviceRowKey && row.row.serviceRowKey.indexOf("--") > 0) {
                             return (
