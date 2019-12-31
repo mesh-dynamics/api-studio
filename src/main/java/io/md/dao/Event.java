@@ -358,6 +358,8 @@ public class Event {
 		private final String instanceId;
 		private final String collection;
 		private final String traceId;
+		private final String spanId;
+		private final String parentSpanId;
 		private final Event.RunType runType;
 		private final Instant timestamp;
 		private final String reqId;
@@ -378,11 +380,32 @@ public class Event {
 			this.instanceId = instanceId;
 			this.collection = collection;
 			this.traceId = traceId;
+			this.spanId = null;
+			this.parentSpanId = null;
 			this.runType = runType;
 			this.timestamp = timestamp;
 			this.reqId = reqId;
 			this.apiPath = apiPath;
 			this.eventType = eventType;
+		}
+
+		public EventBuilder(CubeMetaInfo cubeMetaInfo, CubeTraceInfo cubeTraceInfo,
+			Event.RunType runType, String apiPath, EventType eventType, Instant timestamp, String reqId, String collection) {
+			this.customerId = cubeMetaInfo.customerId;
+			this.app = cubeMetaInfo.appName;
+			this.instanceId = cubeMetaInfo.instance;
+			this.service = cubeMetaInfo.serviceName;
+
+			this.traceId = cubeTraceInfo.traceId;
+			this.spanId = cubeTraceInfo.spanId;
+			this.parentSpanId = cubeTraceInfo.parentSpanId;
+
+			this.runType = runType;
+			this.apiPath = apiPath;
+			this.eventType = eventType;
+			this.timestamp = timestamp;
+			this.reqId = reqId;
+			this.collection = collection;
 		}
 
 
