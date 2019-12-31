@@ -46,7 +46,7 @@ init() {
 	kubectl apply -f $APP_DIR/kubernetes || :
 	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
 	#Check fluentd rollout status, exit once rollout is complete
-	rollout status ds/fluentd -n logging
+	kubectl rollout status ds/fluentd -n logging
 }
 
 register_matcher() {
