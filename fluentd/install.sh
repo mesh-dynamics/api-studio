@@ -8,8 +8,14 @@ else
 	ENDPOINT=$1
 fi
 
-#registers a new rpm repository and installs the td-agent rpm package
-curl -L https://toolbelt.treasuredata.com/sh/install-amazon2-td-agent3.sh | sh
+#Check if fluentd is already installed
+VERSION="$(/opt/td-agent/embedded/bin/fluentd --version | awk '{print $NF}')"
+if [[ $VERSION == 1.7.* ]]; then
+	echo "Complatible version of fluentd already installed, Skipping Fluentd installation.."
+else
+	#registers a new rpm repository and installs the td-agent rpm package
+	curl -L https://toolbelt.treasuredata.com/sh/install-amazon2-td-agent3.sh | sh
+fi
 
 #rename the default config file
 sudo mv /etc/td-agent/td-agent.conf /etc/td-agent/td-agent.org
