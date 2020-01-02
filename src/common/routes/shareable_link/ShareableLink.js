@@ -212,9 +212,13 @@ class ShareableLink extends Component {
     handleReqRespMtChange(e) {
         const { history } = this.props;
 
-        this.setState({selectedReqRespMatchType: e.target.value});
+        this.setState({
+            selectedReqRespMatchType: e.target.value, 
+            selectedResolutionType: "All"
+        });
 
         this.historySearchParams = updateSearchHistoryParams("selectedReqRespMatchType", e.target.value, this.state);
+        this.historySearchParams = updateSearchHistoryParams("selectedResolutionType", "All", this.state);
 
         history.push({
             pathname: '/shareable_link',
@@ -255,8 +259,26 @@ class ShareableLink extends Component {
         const { history, dispatch } = this.props;
         this.historySearchParams = updateSearchHistoryParams(metaDataType, value, this.state);
 
-        if (metaDataType == "selectedAPI") {
-            this.setState({apiPath: value, [metaDataType] : value, currentPageNumber: 1});
+        if (metaDataType == "selectedService") {
+            this.setState({
+                service: value, 
+                [metaDataType] : value, 
+                selectedAPI: "", 
+                selectedResolutionType: "All",
+                currentPageNumber: 1
+            });
+            this.historySearchParams = updateSearchHistoryParams("selectedResolutionType", "All", this.state);
+
+        } else if (metaDataType == "selectedAPI") {
+            this.setState({
+                apiPath: value, 
+                [metaDataType] : value, 
+                selectedResolutionType: "All",
+                currentPageNumber: 1
+            });
+
+            this.historySearchParams = updateSearchHistoryParams("selectedResolutionType", "All", this.state);
+            
             setTimeout(() => {
                 dispatch(cubeActions.setPathResultsParams({
                     path: value,
@@ -266,14 +288,12 @@ class ShareableLink extends Component {
                     currentTemplateVer: this.state.currentTemplateVer
                 }));
             });
-        } else if (metaDataType == "selectedService") {
-            this.setState({service: value, [metaDataType] : value, selectedAPI: "", currentPageNumber: 1});
         } else if (metaDataType == "selectedResolutionType") {
-            if (value ===  "All") {
-                this.setState({selectedResolutionType : value, showAll : true, currentPageNumber: 1});
-            } else {
-                this.setState({selectedResolutionType : value, showAll : false, currentPageNumber: 1});
-            }
+            this.setState({
+                selectedResolutionType : value, 
+                showAll : (value ===  "All"), 
+                currentPageNumber: 1
+            });
         } else {
             this.setState({[metaDataType] : value});
         }
@@ -506,7 +526,7 @@ class ShareableLink extends Component {
         let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
         let apiPaths = [], services = [], resolutionTypes = [];
         let apiPathIndicators = {};
-        const {cube} = this.props;
+        const {cube, history} = this.props;
         let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function (eachItem) {
             services.push({value: eachItem.service, count: 0});
             if (selectedService === "All" || selectedService === eachItem.service) {
@@ -519,10 +539,14 @@ class ShareableLink extends Component {
         }).filter(function (eachItem) {
             if (eachItem.reqmt === "NoMatch" || eachItem.respmt === "NoMatch") {
                 apiPathIndicators[eachItem.path] = true;
+                if (!selectedAPI) {
+                    // set a default selected API path
+                    selectedAPI = eachItem.path
+                }
             }
             
             apiPaths.push({value: eachItem.path, count: 0});
-            
+
             if (eachItem.show === true && (selectedAPI === "All" || selectedAPI === eachItem.path)) {
                 
             }
@@ -580,6 +604,13 @@ class ShareableLink extends Component {
             return eachItem.show === true;
         });
 
+        if (!selectedAPI) {
+            // if after the filters, still the selected API is empty, set to All
+            selectedAPI = "All"
+        }
+
+        this.historySearchParams = updateSearchHistoryParams("selectedAPI", selectedAPI, this.state);
+        
         let pagedDiffLayoutData = [];
         this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
         if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
