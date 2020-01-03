@@ -138,6 +138,12 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		public int getErrorStatusCode() {
 			return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
 		}
+
+		@Override
+		public boolean tearDown() {
+			//do nothing
+			return true;
+		}
 	}
 
 	static class HttpReplayRequest implements IReplayRequest {
