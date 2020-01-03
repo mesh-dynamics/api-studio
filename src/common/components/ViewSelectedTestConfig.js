@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import {Link} from "react-router-dom";
 import {connect} from "react-redux";
 import {cubeActions} from "../actions";
@@ -6,7 +6,7 @@ import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
 import axios from "axios";
-
+import { GoldenMeta } from "./Golden-Visibility";
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -17,6 +17,7 @@ class ViewSelectedTestConfig extends React.Component {
             replayId: null,
             show: false,
             showCT: false,
+            showGoldenMeta: false,
             showGoldenFilter: false,
             goldenNameFilter: "",
             goldenIdFilter: "",
@@ -82,6 +83,17 @@ class ViewSelectedTestConfig extends React.Component {
             dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
         }
     }
+
+    
+    showCT = () => {
+        this.setState({showCT: true});
+    };
+
+    handleClose = () => {
+        const {cube} = this.props;
+        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
+        this.setState({ show: false, showCT: false });
+    };
 
     renderInstances(cube) {
         if (!cube.instances) {
@@ -187,22 +199,26 @@ class ViewSelectedTestConfig extends React.Component {
         return jsxContent;
     }
 
-    showCT = () => {
-        this.setState({showCT: true});
-    };
+    handleViewGoldenClick = () => {
+        const { dispatch } = this.props;
+        
+        this.setState({ showGoldenMeta: true });
+        dispatch(cubeActions.hideGoldenVisibility(false))
+    }
 
-    handleClose = () => {
-        const {cube} = this.props;
-        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
-        this.setState({ show: false, showCT: false });
-    };
+    handleBackToTestInfoClick = () => {
+        const { dispatch } = this.props;
 
+        this.setState({ showGoldenMeta: false });
 
-    render() {
+        dispatch(cubeActions.hideGoldenVisibility(true));
+    }
+
+    renderTestInfo = () => {
         const { cube } = this.props;
 
-        return (
-            <div>
+        return(
+            <Fragment>
                 <div className="div-label">
                     Test Configuration
                     <Link to="/test_config">
@@ -242,7 +258,15 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10">
-                    <div className="label-n">SELECT GOLDEN&nbsp;<i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i></div>
+                    <div className="label-n">SELECT GOLDEN&nbsp;
+                        <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
+                        {
+                            cube.selectedInstance && cube.selectedTestId &&
+                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
+                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
+                                    </span>
+                        }
+                    </div>
                     <div className="value-n">
                         {this.renderCollectionDD(cube)}
                     </div>
@@ -251,6 +275,20 @@ class ViewSelectedTestConfig extends React.Component {
                 <div className="margin-top-10">
                     <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
                 </div>
+            </Fragment>
+        );
+
+    };
+
+    render() {
+        const { cube } = this.props;
+        const { showGoldenMeta } = this.state;
+
+        return (
+            <div>
+                {!showGoldenMeta && this.renderTestInfo()}
+
+                {showGoldenMeta && <GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />}
 
                 <Modal show={this.state.show}>
                     <Modal.Header>
@@ -271,7 +309,6 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.handleClose} className="cube-btn">Done</span>
                     </Modal.Footer>
                 </Modal>
-
                 <Modal show={this.state.fcId}>
                     <Modal.Header>
                         <Modal.Title>Force Complete</Modal.Title>
@@ -289,7 +326,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <Modal show={this.state.showGoldenFilter} bsSize="large">
                     <Modal.Header>
-                        <Modal.Title>Application: {cube.selectedApp}</Modal.Title>
+                        <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
@@ -350,7 +387,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                     </Modal.Body>
                     <Modal.Footer>
-                        <span onClick={this.selectHighlighted} className="cube-btn">Select Chosen</span>&nbsp;&nbsp;
+                        <span onClick={this.selectHighlighted} className={this.state.selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
                         <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
                     </Modal.Footer>
                 </Modal>
@@ -367,6 +404,7 @@ class ViewSelectedTestConfig extends React.Component {
             selectedGoldenFromFilter: "",
             showGoldenFilter: true
         });
+
     };
 
     hideGoldenFilter = () => {

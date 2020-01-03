@@ -82,6 +82,7 @@ class OperationSetLabel extends React.Component {
                     let opList = cube.templateOperationSetObject[key].operations;
                     for (let ind = 0; ind < opList.length; ind++) {
                         if (jsonPath.replace("<BEGIN>", "") == (opList[ind].path)) {
+                            dispatch(cubeActions.removeFromRuleBook(jsonPath.replace("<BEGIN>", "")));
                             dispatch(cubeActions.removeFromOperations(ind, opList.length, key));
                             break;
                         }
