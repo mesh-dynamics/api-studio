@@ -225,7 +225,7 @@ public class Config {
 		// restwrapjdbc uri
         String restwrapjdbc_uri = System.getenv("RESTWRAPJDBC_URI");
         if (restwrapjdbc_uri != null) {
-        	RESTWRAPJDBC_URI = restwrapjdbc_uri;
+          RESTWRAPJDBC_URI = restwrapjdbc_uri;
         }
 		
         String getBookReviews = System.getenv("GET_BOOK_REVIEWS");
@@ -301,7 +301,7 @@ public class Config {
 
         String failPercentStdDev = System.getenv("FAIL_PERCENT_STD_DEV");
         if (failPercentStdDev != null) {
-            FAIL_PERCENT = Double.parseDouble(failPercentStdDev);
+          FAIL_PERCENT_STD_DEV = Double.parseDouble(failPercentStdDev);
         }
 
         String version = System.getenv("VERSION");
