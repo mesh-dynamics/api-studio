@@ -38,25 +38,15 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
-<<<<<<< HEAD
 	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
 	kubectl apply -f $APP_DIR/kubernetes || :
-=======
->>>>>>> master
 	#Check if route exist
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
-<<<<<<< HEAD
 	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
 	#Check fluentd rollout status, exit once rollout is complete
 	kubectl rollout status ds/fluentd -n logging
-=======
-	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
-	kubectl apply -f $APP_DIR/kubernetes || :
-	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
-
->>>>>>> master
 }
 
 register_matcher() {
@@ -79,17 +69,8 @@ echo "Setting default responses!"
 	else
 		FILE_NAME=$1
 	fi
-<<<<<<< HEAD
-
     FILE_PATH=$APP_DIR/default_responses/$FILE_NAME
     echo "Checking the file path : $FILE_PATH"
-
-=======
-
-    FILE_PATH=$APP_DIR/default_responses/$FILE_NAME
-    echo "Checking the file path : $FILE_PATH"
-
->>>>>>> master
     if [ -f $FILE_PATH ]; then
         FILE_DATA=`jq '.' $FILE_PATH`
     else
