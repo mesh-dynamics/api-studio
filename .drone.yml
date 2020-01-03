@@ -46,6 +46,7 @@ steps:
     when:
       branch:
       - develop
+      - staging
       event:
         include:
         - pull_request
@@ -58,6 +59,7 @@ steps:
     when:
       branch:
       - develop
+      - staging
       event:
         include:
         - pull_request
