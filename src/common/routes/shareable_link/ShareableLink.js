@@ -376,8 +376,11 @@ class ShareableLink extends Component {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestParams, replayedRequestParams, recordedRequestBody,
                 replayedRequestBody;
+            // processing Response    
+            // recorded response body and headers
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
+                // body is a string, try to parse it into an object
                 if (item.recordResponse.body) {
                     try {
                         recordedData = JSON.parse(item.recordResponse.body);
@@ -392,6 +395,8 @@ class ShareableLink extends Component {
                 recordedResponseHeaders = null;
                 recordedData = null;
             }
+
+            // same as above but for replayed response
             if (item.replayResponse) {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 if (item.replayResponse.body) {
@@ -411,11 +416,18 @@ class ShareableLink extends Component {
             let diff;
             if (item.diff) {
                 diff = item.diff;
+            } else {
+                diff = [];
             }
-            else diff = [];
             let actJSON = JSON.stringify(replayedData, undefined, 4),
                 expJSON = JSON.stringify(recordedData, undefined, 4);
-            let reductedDiffArray = null, missedRequiredFields = [];
+            let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
+
+            let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
+            let expRespHdrJSON = JSON.stringify(recordedResponseHeaders, undefined, 4);
+            
+
+            // use the backend diff and the two JSONs to generate diff array that will be passed to the diff renderer
             if (diff && diff.length > 0) {
                 let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
                 reductedDiffArray = reduceDiff.computeDiffArray();
@@ -423,6 +435,10 @@ class ShareableLink extends Component {
                 missedRequiredFields = diff.filter((eachItem) => {
                     return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
                 })
+
+                let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
+                reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
+
             } else if (diff && diff.length == 0) {
                 if (_.isEqual(expJSON, actJSON)) {
                     let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
@@ -440,6 +456,22 @@ class ShareableLink extends Component {
                     recordingId: this.state.recordingId
                 }
             });
+
+            let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
+                return {
+                    ...eachItem,
+                    service: item.service,
+                    app: this.state.app,
+                    templateVersion: this.state.templateVersion,
+                    apiPath: item.path,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId
+                }
+            });
+
+            // process Requests
+            // recorded request header and body
+            // parse and clean up body string
             if (item.recordRequest) {
                 recordedRequestHeaders = item.recordRequest.hdrs ? item.recordRequest.hdrs : {};
                 recordedRequestParams = item.recordRequest.queryParams ? item.recordRequest.queryParams : {};
@@ -458,7 +490,10 @@ class ShareableLink extends Component {
                 recordedRequestBody = null;
                 recordedRequestParams = null;
             }
-            if (item.replayRequest) {
+
+            // replayed request header and body
+            // same as above
+            if (item.replayRequest) { 
                 replayedRequestHeaders = item.replayRequest.hdrs ? item.replayRequest.hdrs : {};
                 replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
                 if (item.replayRequest.body) {
@@ -493,7 +528,8 @@ class ShareableLink extends Component {
                 recordedRequestParams,
                 replayedRequestParams,
                 recordedRequestBody,
-                replayedRequestBody
+                replayedRequestBody,
+                updatedReducedDiffArrayRespHdr
             }
         });
         return diffLayoutData;
@@ -760,8 +796,12 @@ class ShareableLink extends Component {
                                 newValue={JSON.stringify(item.replayedResponseHeaders, undefined, 4)}
                                 splitView={true}
                                 disableWordDiff={false}
-                                diffArray={null}
+                                diffArray={item.updatedReducedDiffArrayRespHdr}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={this.state.showAll}
+                                searchFilterPath={this.state.searchFilterPath}
+                                filterPaths={item.filterPaths}
+                                inputElementRef={this.inputElementRef}
                             />
                         </div>
                     </div>
