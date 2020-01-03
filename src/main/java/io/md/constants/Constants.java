@@ -127,6 +127,8 @@ public class Constants {
 
 	public static final String NOT_PRESENT = "Absent";
 	public static final String EVENT_STRING = "eventAsString";
+	public static final String DEFAULT_COLLECTION = "defaultCollection";
+
 
 
 	//Properties

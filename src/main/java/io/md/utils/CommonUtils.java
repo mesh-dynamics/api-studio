@@ -3,6 +3,7 @@ package io.md.utils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -20,10 +21,12 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.thrift.TBase;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import io.jaegertracing.Configuration;
 import io.jaegertracing.internal.JaegerSpanContext;
@@ -32,6 +35,9 @@ import io.jaegertracing.internal.samplers.ConstSampler;
 import io.md.constants.Constants;
 import io.md.dao.CubeMetaInfo;
 import io.md.dao.CubeTraceInfo;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.RunType;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -248,7 +254,7 @@ public class CommonUtils {
 	public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
 		return findFirstCaseInsensitiveMatch(mMap, Constants.ZIPKIN_TRACE_HEADER);
 	}
-/*
+
 
 	public static JsonObject createPayload(Object responseOrException, Gson gson, Object... args) {
 		JsonObject payloadObj = new JsonObject();
@@ -256,18 +262,18 @@ public class CommonUtils {
 		payloadObj.addProperty("response", gson.toJson(responseOrException));
 		LOGGER.info(new ObjectMessage(Map.of("function_payload", payloadObj.toString())));
 		return payloadObj;
-	}*/
+	}
 
-	/*public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId,
+	public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId,
 		RunType rrType, Instant timestamp, JsonObject payload) {
 
 		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
 			traceId.orElse(null), rrType, timestamp, "NA",
 			fnKey.signature, Event.EventType.JavaRequest);
-		eventBuilder.withRawPayloadString(payload.toString());
+		eventBuilder.setRawPayloadString(payload.toString());
 		return eventBuilder.createEventOpt();
-	}*/
+	}
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
 		JsonArray argsArray = new JsonArray();
