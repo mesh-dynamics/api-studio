@@ -8,8 +8,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import io.cube.agent.Event.RunType;
+
 import io.cube.agent.FnReqResponse.RetStatus;
+import io.md.dao.Event;
+import io.md.dao.Event.RunType;
+import io.md.utils.FnKey;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -21,8 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.cube.agent.CommonUtils.createEvent;
-import static io.cube.agent.CommonUtils.createPayload;
+import static io.md.utils.CommonUtils.createEvent;
+import static io.md.utils.CommonUtils.createPayload;
 import static io.cube.agent.UtilException.rethrowFunction;
 
 /*
@@ -140,14 +144,15 @@ public class SimpleMocker implements Mocker {
                             fnKey.function.getGenericReturnType()));
                 } catch (Exception e) {
                     String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
-                    LOGGER.error(new ObjectMessage(Map.of("func_signature", eve.apiPath , "trace_id" , eve.traceId)) , e);
+                    LOGGER.error(new ObjectMessage(Map.of("func_signature", eve.apiPath , "trace_id" ,
+                        eve.getTraceId())) , e);
                     return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
                 }
 
                 return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus, resp.exceptionType);
             }).orElseGet(() -> {
                 LOGGER.error(new ObjectMessage(Map.of("reason" , "No Matching Response Received"
-                        , "trace_id" , eve.traceId , "func_signature" , eve.apiPath)));
+                        , "trace_id" , eve.getTraceId(), "func_signature" , eve.apiPath)));
                 return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
             });
         }).orElseGet(() -> {

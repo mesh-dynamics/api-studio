@@ -3,6 +3,8 @@ package io.cube.agent;
 import com.google.gson.Gson;
 import java.util.Optional;
 
+import io.md.dao.Event;
+
 
 /*
  * Created by IntelliJ IDEA.

@@ -3,10 +3,13 @@ package io.cube.agent;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import io.md.constants.Constants;
+import io.md.utils.CommonUtils;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 
 // TODO make this config file singleton and inject it
 public class CommonConfig {
@@ -27,7 +30,7 @@ public class CommonConfig {
     public String customerId, app, instance, serviceName;
 
     public CommonConfig() throws Exception {
-        properties = new java.util.Properties();
+        properties = new Properties();
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
@@ -70,5 +73,29 @@ public class CommonConfig {
             .or(() -> Optional.ofNullable(properties.getProperty(propertyName)));
     }
 
+    public static String getConfigIntent() {
+        return CommonConfig.intent;
+    }
+
+    public static String getCurrentIntent() {
+        return getCurrentIntentFromScope().orElse(getConfigIntent());
+    }
+
+    public static Optional<String> getCurrentIntentFromScope() {
+        Optional<String> currentIntent =  CommonUtils.getCurrentSpan().flatMap(span -> Optional.
+            ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
+            CommonUtils.fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
+        LOGGER.info("Got intent from trace (in agent) :: " +
+            currentIntent.orElse(" N/A"));
+        return currentIntent;
+    }
+
+    public static boolean isIntentToRecord() {
+        return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_RECORD);
+    }
+
+    public static boolean isIntentToMock() {
+        return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
+    }
 
 }
