@@ -212,12 +212,6 @@
 	    <artifactId>zjsonpatch</artifactId>
 	    <version>0.4.7</version>
 	</dependency>
-    <!-- https://mvnrepository.com/artifact/com.spotify/dockerfile-maven-plugin -->
-	    <dependency>
-		  <groupId>com.spotify</groupId>
-		  <artifactId>dockerfile-maven-plugin</artifactId>
-		  <version>${version.dockerfile-maven}</version>
-	    </dependency>
 	<!-- https://mvnrepository.com/artifact/commons-httpclient/commons-httpclient -->
 	 <!-- For building a small client to test out cube io service-->
 	  <dependency>

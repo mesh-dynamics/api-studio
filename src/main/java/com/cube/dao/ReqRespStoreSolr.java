@@ -1870,7 +1870,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             branch.ifPresent(recordingBuilder::withBranch);
             gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
             collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
-            templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateSetVersion);
+            templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
             comment.ifPresent(recordingBuilder::withComment);
             try {
                 generatedClassJarPath.ifPresent(

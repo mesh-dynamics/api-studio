@@ -33,7 +33,9 @@ steps:
       password: S9qe2fJ8*vtk
       repo: cubeiocorp/cubews
       target: prod
-      tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
+      tags:
+        - ${DRONE_COMMIT}-${DRONE_BRANCH}
+        - ${DRONE_BRANCH}-latest
     resources:
       requests:
         cpu: 0.1
@@ -44,34 +46,20 @@ steps:
     when:
       branch:
       - develop
+      - staging
       event:
         include:
         - pull_request
 
-  - name: deploy_cubeServices_staging_dev
-    image: quay.io/honestbee/drone-kubernetes
-    settings:
-      kubernetes_server: https://api-cubeio-aakash-cluster-fdksm7-1812099752.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tbmxuanYiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjQ4N2VkNmJiLTRjOWItMTFlOS04ZmM2LTAyNjRlYjM2ZjlhMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.nHnEKdEj73HH2gCzgaC9-yHf5XfrwnsyvEUtwI4KxKETjvWx87_kkco26zwk7VHzmLC8pQRQsBph90cIzITLdHcsZqcpG-VQtcECnJO4NjHbaXSFKO8T7_m274Qyifo-7uXMg0iSjmkicXg6kZtbDYZNH3IHUsCzOutu3lrFSulSqvHaGSyzPmJGP8JE-HlzWj5t6RkzPKIMMeGQ1hounbFW4Z7d1g2ffL4tkEUJJECLQmQ9pMtLtikfDIC_Ioyml2Hd-iQ26qOnRs-ZZpzmNqlqJ7fjRewPb03ctwwbjBs4OUAp7mQ-ou7ipB4_TMBbv1sMDb90J6GNQmsKyGnVbA
-      namespace: staging
-      deployment: [ cubews-mock-v1, cubews-record-v1, cubews-replay-v1 ]
-      repo: cubeiocorp/cubews
-      container: cubews
-      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
-    when:
-      branch:
-      - develop
-      # event:
-      #   exclude:
-      #   - pull_request
-
   - name: Run_test_on_PR
-    image: spotify/alpine
+    image: cubeiocorp/kubectl:latest
+    pull: always
     commands:
-    - ./moviebooktest.sh
+    - cd /code && ./moviebooktest.sh
     when:
       branch:
       - develop
+      - staging
       event:
         include:
         - pull_request
@@ -99,23 +87,6 @@ steps:
       kubernetes_server: https://api-cluster-prod-k8s-loca-4kne7o-1269526097.us-east-2.elb.amazonaws.com
       kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tNnF3ODgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjU2ODJkNGQwLTk4YzctMTFlOS05ZTk5LTAyZWJkOThmMjllMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.VhuG5s3zodhV7p0UnXxmXL8TjnkT0blkBCog42RWiiMIzohZqoRe2v_RWhtb1kViRQ_8-0wV0NJqv3PLBn7YcigJwujApN2WfRFfeX8Iu_RCNJDrFJVAv_cgdyFltS04zFJ5NPZjwGDi2lKxvVdwcq5xmuS9ni5cw77AcCiKB2RHHz-dcfM66EjbexEFgDruBWPCR1nEl73bKgbtiqSQfXuMbWev7yNpRpMvhoP0Krt_F6BNZVOoOxIr7ZBzEkB5-vfvdnFU0l0Ye7aosGe7KXpRpEtdoE8tQF2t3hIFbZXCuH7a7cT7wswS65uDDBDlkoFxjZJu95qn7M5i0mOi5g
       namespace: cube
-      deployment: [ cubews-mock-v1, cubews-record-v1, cubews-replay-v1 ]
-      repo: cubeiocorp/cubews
-      container: cubews
-      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
-    when:
-      branch:
-      - staging
-      event:
-        exclude:
-        - pull_request
-
-  - name: deploy_cubeServices_staging_staging
-    image: quay.io/honestbee/drone-kubernetes
-    settings:
-      kubernetes_server: https://api-cluster-prod-k8s-loca-4kne7o-1269526097.us-east-2.elb.amazonaws.com
-      kubernetes_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tNnF3ODgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjU2ODJkNGQwLTk4YzctMTFlOS05ZTk5LTAyZWJkOThmMjllMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.VhuG5s3zodhV7p0UnXxmXL8TjnkT0blkBCog42RWiiMIzohZqoRe2v_RWhtb1kViRQ_8-0wV0NJqv3PLBn7YcigJwujApN2WfRFfeX8Iu_RCNJDrFJVAv_cgdyFltS04zFJ5NPZjwGDi2lKxvVdwcq5xmuS9ni5cw77AcCiKB2RHHz-dcfM66EjbexEFgDruBWPCR1nEl73bKgbtiqSQfXuMbWev7yNpRpMvhoP0Krt_F6BNZVOoOxIr7ZBzEkB5-vfvdnFU0l0Ye7aosGe7KXpRpEtdoE8tQF2t3hIFbZXCuH7a7cT7wswS65uDDBDlkoFxjZJu95qn7M5i0mOi5g
-      namespace: staging
       deployment: [ cubews-mock-v1, cubews-record-v1, cubews-replay-v1 ]
       repo: cubeiocorp/cubews
       container: cubews

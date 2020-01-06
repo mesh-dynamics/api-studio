@@ -72,43 +72,39 @@ public class JsonTransformer {
 
 
     private Optional<JsonNode> processOperation(JsonNode recRoot, JsonNode repRoot,
-                                                ReqRespUpdateOperation operation) {
-        switch (operation.operationType) {
-            // todo: check existence of value at path
-            case ADD:
-                // This case gets dealt in REPLACE
-            case REPLACE:
-                // there could be cases where the operation has been specified as 'replace', but all the response
-                // bodies in the api path might not have both values present.
-                // hence the following conditions may occur which would require changing the operation type/value
-                // left: record; right: replay
-                // if no value on left side, add
-                // if no value on right side, delete
-                // if both values present, replace
-                JsonNode lval = (recRoot != null)? recRoot.at(operation.jsonpath) : MissingNode.getInstance();
-                JsonNode rval = (repRoot != null)? repRoot.at(operation.jsonpath) : MissingNode.getInstance();
-                JsonNode val = rval;
-                if (rval.isMissingNode()) { // (not the same as isNull)
-                    if (lval.isMissingNode()) {
-                        return Optional.empty();
-                    }
-                    // change operation type to remove
-                    operation.operationType = OperationType.REMOVE;
-                    val = null; // no need to specify value in remove
-                } else if (lval.isMissingNode()) {
-                    // change operation type to add
-                    operation.operationType = OperationType.ADD;
-                    // the value to apply is still right hand value, it's just the operation type would change
-                    //val = rval;
-                }
-                operation.value = val;
-                break;
-            case REMOVE:
-
-                // nothing to be done for 'remove'; perhaps validate the path?
-                break;
+        ReqRespUpdateOperation operation) {
+        ReqRespUpdateOperation updateOperation = new ReqRespUpdateOperation(operation.operationType,
+            operation.jsonpath);
+        // there could be cases where the operation has been specified as 'replace', but all the response
+        // bodies in the api path might not have both values present.
+        // hence the following conditions may occur which would require changing the operation type/value
+        // left: record; right: replay
+        // if no value on left side, add
+        // if no value on right side, delete
+        // if both values present, replace
+        JsonNode lval =
+            (recRoot != null) ? recRoot.at(operation.jsonpath) : MissingNode.getInstance();
+        JsonNode rval =
+            (repRoot != null) ? repRoot.at(operation.jsonpath) : MissingNode.getInstance();
+        JsonNode val = rval;
+        if (rval.isMissingNode()) { // (not the same as isNull)
+            if (lval.isMissingNode()) {
+                // both rhs and lhs are absent -- do nothing
+                return Optional.empty();
+            }
+            // rhs is absent and lhs is present -- remove
+            updateOperation.operationType = OperationType.REMOVE;
+            val = null; // no need to specify value in remove
+        } else if (lval.isMissingNode()) {
+            // rhs is present but lhs is absent -- add
+            updateOperation.operationType = OperationType.ADD;
+        } else {
+            // both values are present -- replace
+            updateOperation.operationType = OperationType.REPLACE;
         }
-        return Optional.of(jsonMapper.valueToTree(operation));
+
+        updateOperation.value = val;
+        return Optional.of(jsonMapper.valueToTree(updateOperation));
     }
 
 

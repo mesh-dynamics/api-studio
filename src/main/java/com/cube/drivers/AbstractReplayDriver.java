@@ -87,6 +87,8 @@ public abstract class AbstractReplayDriver {
 		int getSuccessStatusCode();
 
 		int getErrorStatusCode();
+
+		boolean tearDown();
 	}
 
 	// this is just a marker interface
@@ -171,8 +173,8 @@ public abstract class AbstractReplayDriver {
 
 		replay.status =
 			(replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
-
 		rrstore.saveReplay(replay);
+		this.client.tearDown();
 	}
 
 	private void logUpdate() {

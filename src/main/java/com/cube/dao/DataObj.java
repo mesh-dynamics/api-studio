@@ -8,10 +8,12 @@ package com.cube.dao;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
+import com.cube.cryptography.EncryptionAlgorithm;
 import com.cube.golden.ReqRespUpdateOperation;
 
 /*
@@ -39,6 +41,10 @@ public interface DataObj {
     Event.RawPayload toRawPayload();
 
     boolean wrapAsString(String path, String mimetype);
+
+    Optional<String> encryptField(String path, EncryptionAlgorithm encrypter);
+
+    Optional<String> decryptField(String path, EncryptionAlgorithm decrypter);
 
     class PathNotFoundException extends Exception{
 
