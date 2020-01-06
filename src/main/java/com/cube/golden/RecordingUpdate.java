@@ -147,7 +147,7 @@ public class RecordingUpdate {
             try {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Applying Recording Update",
                     Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
-                    Constants.TRACE_ID_FIELD, res.replayId, Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId)));
+                    Constants.REPLAY_ID_FIELD, res.replayId, Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId)));
                 Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded request :: " + res.recordReqId.get()));
                 Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseEvent)
@@ -184,7 +184,7 @@ public class RecordingUpdate {
                 )));
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Saving transformed request/response",
                     Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
-                    Constants.TRACE_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, transformedResponse.reqId,
+                    Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, transformedResponse.reqId,
                     Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId, Constants.PAYLOAD
                     , Optional.ofNullable(transformedResponse.rawPayloadString).orElse(Constants.NOT_PRESENT))));
 
@@ -193,15 +193,15 @@ public class RecordingUpdate {
                 if(!saved) {
                     LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error in saving transformed request/response",
                         Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
-                        Constants.TRACE_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, transformedResponse.reqId,
+                        Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, transformedResponse.reqId,
                         Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId, Constants.PAYLOAD
                         , Optional.ofNullable(transformedResponse.rawPayloadString).orElse(Constants.NOT_PRESENT))));
                 }
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Exception Occured while transforming request/response",
                     Constants.RECORD_REQ_ID_FIELD, res.recordReqId.get(), Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.get(),
-                    Constants.TRACE_ID_FIELD, res.replayId,
-                    Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId)));
+                    Constants.REPLAY_ID_FIELD, res.replayId,
+                    Constants.RECORDING_UPDATE_OPERATION_SET_ID,recordingOperationSetId)), e);
             }
 
         });

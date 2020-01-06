@@ -54,6 +54,7 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
+import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.DefaultEvent;
 import com.cube.dao.Event;
@@ -102,104 +103,50 @@ public class CubeStore {
                             ReqRespStore.ReqResp rr) {
 	    LOGGER.info("/cs/rr request received");
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> error = storeSingleReqResp(rr, path, queryParams);
-        return error.map(e -> {
+        try {
+            storeSingleReqResp(rr, path, queryParams);
+            return Response.ok().build();
+        } catch (CubeStoreException e) {
+            logStoreError(e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }).orElse(Response.ok().build());
-
+        }
     }
 
     private void logStoreError(CubeStoreException e) {
-
-        Map<String, String> properties = new HashMap<>(Map.of(Constants.MESSAGE,
-            "Dropping Store Event Request"
-            , Constants.REASON, e.message
-            , Constants.EVENT_TYPE_FIELD, e.eventType.orElse(Constants.NOT_PRESENT)
-            , Constants.REQ_ID_FIELD, e.requestId.orElse(Constants.NOT_PRESENT)
-            , Constants.CUSTOMER_ID_FIELD, e.customerId.orElse(Constants.NOT_PRESENT)
-            , Constants.APP_FIELD, e.app.orElse(Constants.NOT_PRESENT)
-            , Constants.INSTANCE_ID_FIELD, e.instance.orElse(Constants.NOT_PRESENT)
-            , Constants.COLLECTION_FIELD, e.collection.orElse(Constants.NOT_PRESENT)
-            , Constants.PATH_FIELD, e.path.orElse(Constants.NOT_PRESENT)
-            , Constants.EVENT_STRING, e.event.orElse(Constants.NOT_PRESENT)));
-        properties.put(Constants.TRACE_ID_FIELD, e.traceId.orElse(Constants.NOT_PRESENT));
-
-        LOGGER.error(new ObjectMessage(properties), e.getCause());
+        Map<String, String> propertiesMap = e.cubeEventMetaInfo.getPropertiesMap();
+        propertiesMap.put(Constants.MESSAGE, e.getMessage());
+        LOGGER.info(new ObjectMessage(propertiesMap));
+	    LOGGER.error(new ObjectMessage(e.cubeEventMetaInfo.getPropertiesMap()), e.getCause());
     }
 
-	private void logStoreInfo(String message, Optional<String> eventType, Optional<String> reqId
-        , Optional<String> customerId, Optional<String> app, Optional<String> instance
-        , Optional<String> collection, Optional<String> apiPath) {
-        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
-            message, Constants.EVENT_TYPE_FIELD, eventType.orElse(Constants.NOT_PRESENT)
-            , Constants.REQ_ID_FIELD , reqId.orElse(Constants.NOT_PRESENT) , Constants.CUSTOMER_ID_FIELD,
-            customerId.orElse(Constants.NOT_PRESENT) , Constants.APP_FIELD , app.orElse(Constants.NOT_PRESENT),
-            Constants.INSTANCE_ID_FIELD, instance.orElse(Constants.NOT_PRESENT), Constants.COLLECTION_FIELD
-            , collection.orElse(Constants.NOT_PRESENT) , Constants.PATH_FIELD
-            , apiPath.orElse(Constants.NOT_PRESENT))));
-    }
+    private void logStoreInfo(String message, CubeEventMetaInfo e, boolean debug){
+	    Map<String, String> propertiesMap = e.getPropertiesMap();
+	    propertiesMap.put(Constants.MESSAGE, message);
+	    if (debug) {
+            LOGGER.debug(new ObjectMessage(propertiesMap));
+        } else {
+            LOGGER.info(new ObjectMessage(propertiesMap));
+        }
 
-    private void logStoreInfo(String message, Event e){
-        Map<String, String> properties = new HashMap<>(Map.of(Constants.MESSAGE,
-            message
-            , Constants.EVENT_TYPE_FIELD,Optional.ofNullable(e.eventType).map(EventType::toString)
-                .orElse(Constants.NOT_PRESENT)
-            , Constants.REQ_ID_FIELD, Optional.ofNullable(e.getReqId()).orElse(Constants.NOT_PRESENT)
-            , Constants.CUSTOMER_ID_FIELD, Optional.ofNullable(e.customerId).orElse(Constants.NOT_PRESENT)
-            , Constants.APP_FIELD,  Optional.ofNullable(e.app).orElse(Constants.NOT_PRESENT)
-            , Constants.INSTANCE_ID_FIELD, Optional.ofNullable(e.instanceId).orElse(Constants.NOT_PRESENT)
-            , Constants.COLLECTION_FIELD, Optional.ofNullable(e.getCollection()).orElse(Constants.NOT_PRESENT)
-            , Constants.PATH_FIELD, Optional.ofNullable(e.apiPath).orElse(Constants.NOT_PRESENT)
-            , Constants.EVENT_STRING, e.toString()));
-        properties.put(Constants.TRACE_ID_FIELD, Optional.ofNullable(e.getTraceId()).orElse(Constants.NOT_PRESENT));
-
-        LOGGER.info(new ObjectMessage(properties));
     }
 
     static class CubeStoreException extends Exception {
-        private String message;
-        public Optional<String> eventType;
-        public Optional<String> requestId;
-        public Optional<String> customerId;
-        public Optional<String> app;
-        public Optional<String> instance;
-        public Optional<String> collection;
-        public Optional<String> path;
-        public Optional<String> event;
-        public Optional<String> traceId;
+        CubeEventMetaInfo cubeEventMetaInfo;
 
-	    CubeStoreException(Exception e, String message, Optional<String> eventType, Optional<String> requestId
-        , Optional<String> customerId, Optional<String> app, Optional<String> instance
-        , Optional<String> collection, Optional<String> path, Optional<String> event, Optional<String> traceId) {
+        CubeStoreException(Exception e, String message, CubeEventMetaInfo cubeEventMetaInfo) {
 	        super(message , e);
-	        this.eventType = eventType;
-	        this.requestId = requestId;
-	        this.customerId = customerId;
-	        this.app = app;
-	        this.instance = instance;
-	        this.collection = collection;
-	        this.path = path;
-	        this.event = event;
-	        this.traceId = traceId;
+	        this.cubeEventMetaInfo = cubeEventMetaInfo;
         }
 
         CubeStoreException(Exception e, String message, Event event){
 	        super(message, e);
-	        this.eventType = Optional.ofNullable(event.eventType != null ? event.eventType.toString() : null);
-	        this.requestId = Optional.ofNullable(event.reqId);
-	        this.customerId = Optional.ofNullable(event.customerId);
-	        this.app = Optional.ofNullable(event.app);
-	        this.instance = Optional.ofNullable(event.instanceId);
-	        this.collection = Optional.ofNullable(event.getCollection());
-	        this.path = Optional.ofNullable(event.apiPath);
-	        this.event = Optional.ofNullable(event.toString());
-	        this.traceId = Optional.ofNullable(event.getTraceId());
+	        this.cubeEventMetaInfo = new CubeEventMetaInfo(event);
         }
 
     }
 
-    private Optional<String> storeSingleReqResp(ReqRespStore.ReqResp rr, String path,
-        MultivaluedMap<String, String> queryParams) {
+    private void storeSingleReqResp(ReqRespStore.ReqResp rr, String path,
+        MultivaluedMap<String, String> queryParams) throws CubeStoreException {
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
             hdrs.add(kv.getKey(), kv.getValue());
@@ -210,8 +157,22 @@ public class CubeStore {
             meta.add(kv.getKey(), kv.getValue());
         });
 
+        CubeEventMetaInfo cubeEventMetaInfo = new CubeEventMetaInfo();
+
+        Optional<String> customerId = Optional
+            .ofNullable(meta.getFirst(Constants.CUSTOMER_ID_FIELD));
+        cubeEventMetaInfo.setCustomer(customerId);
+        Optional<String> app = Optional.ofNullable(meta.getFirst(Constants.APP_FIELD));
+        cubeEventMetaInfo.setApp(app);
+        Optional<String> instanceId = Optional
+            .ofNullable(meta.getFirst(Constants.INSTANCE_ID_FIELD));
+        cubeEventMetaInfo.setInstance(instanceId);
+        Optional<String> service = Optional.ofNullable(meta.getFirst(Constants.SERVICE_FIELD));
+        cubeEventMetaInfo.setService(service);
         Optional<String> rid = Optional.ofNullable(meta.getFirst("c-request-id"));
+        cubeEventMetaInfo.setReqId(rid);
         Optional<String> type = Optional.ofNullable(meta.getFirst("type"));
+        cubeEventMetaInfo.setEventType(type);
         // TODO: the following can pass replayid to cubestore but currently requests don't match in the mock
         // since we don't have the ability to ignore certain fields (in header and body)
         //if (inpcollection.isEmpty()) {
@@ -220,7 +181,7 @@ public class CubeStore {
         Instant timestamp = Optional.ofNullable(meta.getFirst("timestamp"))
             .flatMap(Utils::strToTimeStamp)
             .orElseGet(() -> {
-                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
+                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Timestamp missing in event, using current time")));
                 return Instant.now();
             });
@@ -228,134 +189,105 @@ public class CubeStore {
         Optional<Event.RunType> runType = Optional
             .ofNullable(meta.getFirst(Constants.RUN_TYPE_FIELD))
             .flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
-        Optional<String> customerId = Optional
-            .ofNullable(meta.getFirst(Constants.CUSTOMER_ID_FIELD));
-        Optional<String> app = Optional.ofNullable(meta.getFirst(Constants.APP_FIELD));
-        Optional<String> service = Optional.ofNullable(meta.getFirst(Constants.SERVICE_FIELD));
-        Optional<String> instanceId = Optional
-            .ofNullable(meta.getFirst(Constants.INSTANCE_ID_FIELD));
+        cubeEventMetaInfo.setRunType(runType.map(Enum::name));
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s"
         // , type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
-        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app
-            , instanceId, true);
+        Optional<RecordOrReplay> recordOrReplay = rrstore
+            .getCurrentRecordOrReplay(customerId, app, instanceId, true);
 
-        try {
-
-            if (recordOrReplay.isEmpty()) {
-                throw new CubeStoreException(null, "Unable to find running record/replay", type,
-                    rid, customerId, app, instanceId, Optional.empty(), Optional.ofNullable(path)
-                    , Optional.empty(), Optional.empty());
-            }
-
-            Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
-
-            if (collection.isEmpty()) {
-                // Dropping if collection is empty, i.e. recording is not started
-                throw new CubeStoreException(null, "Collection is empty", type, rid, customerId,
-                    app, instanceId, Optional.empty(), Optional.ofNullable(path), Optional.empty(), Optional.empty());
-            } else {
-                logStoreInfo("Attempting store", type, rid, customerId, app, instanceId, collection
-                    , Optional.ofNullable(path));
-            }
-
-            MultivaluedMap<String, String> formParams = new MultivaluedHashMap<String, String>();
-
-            String typeStr = type.orElseThrow(() ->
-                new CubeStoreException(null, "Type not specified", type, rid, customerId,
-                    app, instanceId, collection, Optional.ofNullable(path),
-                    Optional.empty(), Optional.empty()));
-
-            if (typeStr.equals(Constants.REQUEST)) {
-                String method = Optional.ofNullable(meta.getFirst("method")).orElseThrow(() ->
-                    new CubeStoreException(null, "Method field missing", type, rid, customerId,
-                        app, instanceId, collection, Optional.ofNullable(path), Optional.empty(), Optional.empty()));
-
-                // create Event object from Request
-                // fetch the template version, create template key and get a request comparator
-                String templateVersion = recordOrReplay.get().getTemplateVersion();
-                if (!(customerId.isPresent() && app.isPresent() && service.isPresent())) {
-                    throw new CubeStoreException(null, "customer id, app or service not present"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.empty(), Optional.empty());
-                }
-
-                TemplateKey tkey = new TemplateKey(templateVersion, customerId.get(),
-                        app.get(), service.get(), path, TemplateKey.Type.Request);
-
-                Comparator requestComparator = null;
-                try {
-                    requestComparator = config.comparatorCache
-                        .getComparator(tkey, Event.EventType.HTTPRequest);
-                } catch (ComparatorCache.TemplateNotFoundException e) {
-                    throw new CubeStoreException(e, "Request Comparator Not Found"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.empty(), Optional.empty());
-                }
-
-                Event requestEvent = null;
-                try {
-                    requestEvent = Utils
-                        .createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
-                            hdrs, method, rr.body, collection, timestamp, runType, customerId,
-                            app, config, requestComparator);
-                } catch (JsonProcessingException | Event.EventBuilder.InvalidEventException e) {
-                    throw new CubeStoreException(e, "Invalid Event"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.empty(), Optional.empty());
-                }
-
-                if (!rrstore.save(requestEvent)) {
-                    throw new CubeStoreException(null, "Unable to store request event in solr"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.of(requestEvent.toString()), Optional.empty());
-                }
-            } else if (typeStr.equals(Constants.RESPONSE)) {
-                int status;
-                try {
-                    status =
-                        Optional.ofNullable(meta.getFirst(Constants.STATUS))
-                            .map(Integer::valueOf).orElseThrow(() ->
-                                new CubeStoreException(null, "Status missing"
-                                    , type, rid, customerId, app, instanceId, collection
-                                    , Optional.ofNullable(path), Optional.empty(), Optional.empty()));
-                    // to catch number format exception
-                } catch (Exception e) {
-                    throw new CubeStoreException(e, "Expecting Integer status"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.empty(), Optional.empty());
-                }
-                // pick apiPath from meta fields
-                String reqApiPath = Optional
-                    .ofNullable(meta.getFirst(Constants.API_PATH_FIELD)).orElse("");
-                Event responseEvent;
-                try {
-                    responseEvent = Utils
-                        .createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
-                            collection, timestamp, runType, customerId, app, config);
-                } catch (JsonProcessingException | InvalidEventException e) {
-                    throw new CubeStoreException(e, "Invalid Event"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.empty(), Optional.empty());
-                }
-                if (!rrstore.save(responseEvent)) {
-                    throw new CubeStoreException(null, "Unable to store response event in solr"
-                        , type, rid, customerId, app, instanceId, collection
-                        , Optional.ofNullable(path), Optional.of(responseEvent.toString()), Optional.empty());
-                }
-
-            } else {
-                throw new CubeStoreException(null, "Unknown type"
-                    , type, rid, customerId, app, instanceId, collection
-                    , Optional.ofNullable(path), Optional.empty(), Optional.empty());
-            }
-            return Optional.empty();
-
-        } catch (CubeStoreException e) {
-            logStoreError(e);
-            return Optional.of(e.getMessage());
+        if (recordOrReplay.isEmpty()) {
+            throw new CubeStoreException(null, "Unable to find running record/replay", cubeEventMetaInfo);
         }
+
+        Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+        cubeEventMetaInfo.setCollection(collection);
+        if (collection.isEmpty()) {
+            // Dropping if collection is empty, i.e. recording is not started
+            throw new CubeStoreException(null, "Collection is empty", cubeEventMetaInfo);
+        } else {
+            logStoreInfo("Attempting store", cubeEventMetaInfo, true);
+        }
+
+        MultivaluedMap<String, String> formParams = new MultivaluedHashMap<String, String>();
+
+        String typeStr = type.orElseThrow(() ->
+            new CubeStoreException(null, "Type not specified", cubeEventMetaInfo));
+
+        if (typeStr.equals(Constants.REQUEST)) {
+            String method = Optional.ofNullable(meta.getFirst("method")).orElseThrow(() ->
+                new CubeStoreException(null, "Method field missing", cubeEventMetaInfo));
+
+            // create Event object from Request
+            // fetch the template version, create template key and get a request comparator
+            String templateVersion = recordOrReplay.get().getTemplateVersion();
+            if (!(customerId.isPresent() && app.isPresent() && service.isPresent())) {
+                throw new CubeStoreException(null, "customer id, app or service not present"
+                    , cubeEventMetaInfo);
+            }
+
+            TemplateKey tkey = new TemplateKey(templateVersion, customerId.get(),
+                app.get(), service.get(), path, TemplateKey.Type.Request);
+
+            Comparator requestComparator = null;
+            try {
+                requestComparator = config.comparatorCache
+                    .getComparator(tkey, Event.EventType.HTTPRequest);
+            } catch (ComparatorCache.TemplateNotFoundException e) {
+                throw new CubeStoreException(e, "Request Comparator Not Found"
+                    , cubeEventMetaInfo);
+            }
+
+            Event requestEvent = null;
+            try {
+                requestEvent = Utils
+                    .createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
+                        hdrs, method, rr.body, collection, timestamp, runType, customerId,
+                        app, config, requestComparator);
+            } catch (JsonProcessingException | Event.EventBuilder.InvalidEventException e) {
+                throw new CubeStoreException(e, "Invalid Event"
+                    , cubeEventMetaInfo);
+            }
+
+            if (!rrstore.save(requestEvent)) {
+                throw new CubeStoreException(null, "Unable to store request event in solr"
+                    , cubeEventMetaInfo);
+            }
+        } else if (typeStr.equals(Constants.RESPONSE)) {
+            int status;
+            try {
+                status =
+                    Optional.ofNullable(meta.getFirst(Constants.STATUS))
+                        .map(Integer::valueOf).orElseThrow(() ->
+                        new CubeStoreException(null, "Status missing", cubeEventMetaInfo));
+                // to catch number format exception
+            } catch (Exception e) {
+                throw new CubeStoreException(e, "Expecting Integer status"
+                    , cubeEventMetaInfo);
+            }
+            // pick apiPath from meta fields
+            String reqApiPath = Optional
+                .ofNullable(meta.getFirst(Constants.API_PATH_FIELD)).orElse("");
+            Event responseEvent;
+            try {
+                responseEvent = Utils
+                    .createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
+                        collection, timestamp, runType, customerId, app, config);
+            } catch (JsonProcessingException | InvalidEventException e) {
+                throw new CubeStoreException(e, "Invalid Event"
+                    , cubeEventMetaInfo);
+            }
+            if (!rrstore.save(responseEvent)) {
+                throw new CubeStoreException(null, "Unable to store response event in solr"
+                    , cubeEventMetaInfo);
+            }
+
+        } else {
+            throw new CubeStoreException(null, "Unknown type"
+                , cubeEventMetaInfo);
+        }
+
     }
 
     private void processRRJson(String rrJson) throws Exception {
@@ -372,8 +304,12 @@ public class CubeStore {
         queryParams.forEach(nameValuePair -> {
             queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
         });
-
-        storeSingleReqResp(rr, path, queryParamsMap);
+        try {
+            storeSingleReqResp(rr, path, queryParamsMap);
+        } catch (CubeStoreException e) {
+            logStoreError(e);
+            throw e;
+        }
     }
 
     @POST
@@ -557,12 +493,14 @@ public class CubeStore {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(Event event) {
 
-        Optional<String> err = processEvent(event);
-
-        return err.map(e -> Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build()).orElseGet(() -> {
-            logStoreInfo("Completed Store", event);
+	    try {
+            processEvent(event);
+            logStoreInfo("Completed Store", new CubeEventMetaInfo(event), true);
             return Response.ok().build();
-        });
+        } catch (CubeStoreException e) {
+	        logStoreError(e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
+        }
     }
 
     // converts event from json to Event, stores it,
@@ -576,74 +514,68 @@ public class CubeStore {
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
             return 0;
         }
-        Optional<String> err = processEvent(event);
-        if(err.isPresent()) {
-            return 0;
-        } else {
-            logStoreInfo("Completed Store",event);
+        try {
+            processEvent(event);
+            logStoreInfo("Completed Store", new CubeEventMetaInfo(event) , true);
             return 1;
+        } catch (CubeStoreException e) {
+            logStoreError(e);
+            return 0;
         }
 	}
 	// process and store Event
     // return error string (Optional<String>)
-    private Optional<String> processEvent(Event event) {
+    private void processEvent(Event event) throws CubeStoreException {
         if (event == null) {
-            LOGGER.error("event is null");
-            return Optional.of("event is null");
+            throw new CubeStoreException(null, "Event is null", new CubeEventMetaInfo());
         }
 
         Optional<String> collection;
 
         event.setCollection("NA"); // so that validate doesn't fail
 
-        try {
-            if (!event.validate()) {
-                throw new CubeStoreException(null, "some required field missing,"
-                    + " or both binary and string payloads set", event);
-            }
-
-            Optional<RecordOrReplay> recordOrReplay =
-                rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId),
-                    Optional.of(event.app), Optional.of(event.instanceId), true);
-
-            if (recordOrReplay.isEmpty()) {
-                throw new CubeStoreException(null, "No current record/replay!", event);
-            }
-
-            collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
-
-            // check collection, validate, fetch template for request, set key and store. If error at any point stop
-            if (collection.isEmpty()) {
-                throw new CubeStoreException(null, "Collection is missing", event);
-            }
-            event.setCollection(collection.get());
-            if (event.isRequestType()) {
-                // if request type, need to extract keys from request and index it, so that it can be
-                // used while mocking
-                try {
-                    Optional<URLClassLoader> classLoader = Optional.empty();
-                    if (event.eventType.equals(EventType.ThriftRequest)) {
-                        classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
-                    }
-
-                    event.parseAndSetKey(config,
-                        Utils.getRequestCompareTemplate(config, event,
-                            recordOrReplay.get().getTemplateVersion()), classLoader);
-                } catch (ComparatorCache.TemplateNotFoundException e) {
-                    throw new CubeStoreException(e, "Compare Template Not Found", event);
-                }
-            }
-
-            boolean saveResult = rrstore.save(event);
-            if (!saveResult) {
-                throw new CubeStoreException(null, "Unable to store event in solr" ,event);
-            }
-
-            return Optional.empty();
-        } catch (CubeStoreException e) {
-            logStoreError(e);
-            return Optional.of(e.getMessage());
+        if (!event.validate()) {
+            throw new CubeStoreException(null, "some required field missing,"
+                + " or both binary and string payloads set", event);
         }
+
+        Optional<RecordOrReplay> recordOrReplay =
+            rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId),
+                Optional.of(event.app), Optional.of(event.instanceId), true);
+
+        if (recordOrReplay.isEmpty()) {
+            throw new CubeStoreException(null, "No current record/replay!", event);
+        }
+
+        collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+
+        // check collection, validate, fetch template for request, set key and store. If error at any point stop
+        if (collection.isEmpty()) {
+            throw new CubeStoreException(null, "Collection is missing", event);
+        }
+        event.setCollection(collection.get());
+        if (event.isRequestType()) {
+            // if request type, need to extract keys from request and index it, so that it can be
+            // used while mocking
+            try {
+                Optional<URLClassLoader> classLoader = Optional.empty();
+                if (event.eventType.equals(EventType.ThriftRequest)) {
+                    classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
+                }
+
+                event.parseAndSetKey(config,
+                    Utils.getRequestCompareTemplate(config, event,
+                        recordOrReplay.get().getTemplateVersion()), classLoader);
+            } catch (ComparatorCache.TemplateNotFoundException e) {
+                throw new CubeStoreException(e, "Compare Template Not Found", event);
+            }
+        }
+
+        boolean saveResult = rrstore.save(event);
+        if (!saveResult) {
+            throw new CubeStoreException(null, "Unable to store event in solr", event);
+        }
+
     }
 
     @POST
