@@ -108,7 +108,7 @@ public class CubeStore {
             return Response.ok().build();
         } catch (CubeStoreException e) {
             logStoreError(e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
     }
 
@@ -308,7 +308,6 @@ public class CubeStore {
             storeSingleReqResp(rr, path, queryParamsMap);
         } catch (CubeStoreException e) {
             logStoreError(e);
-            throw e;
         }
     }
 
@@ -499,7 +498,7 @@ public class CubeStore {
             return Response.ok().build();
         } catch (CubeStoreException e) {
 	        logStoreError(e);
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
     }
 
