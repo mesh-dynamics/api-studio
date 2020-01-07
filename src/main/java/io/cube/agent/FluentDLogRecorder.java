@@ -1,15 +1,27 @@
 package io.cube.agent;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.gson.Gson;
 
 import io.md.constants.Constants;
+import io.md.dao.DataObj;
 import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventType;
+import io.md.dao.Event.RunType;
+import io.md.utils.CommonUtils;
 
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
+
+	@Inject
+	CommonConfig commonConfig;
 
 	public FluentDLogRecorder(Gson gson) {
 		super(gson);
@@ -37,7 +49,17 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 		try {
 			// TODO might wanna explore java fluent logger
 			// https://github.com/fluent/fluent-logger-java
-			String jsonSerialized = jsonMapper.writeValueAsString(event);
+			DataObj payload = Utils.encryptFields(commonConfig, event);
+			String jsonSerialized;
+			if(payload!=null) {
+				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
+				event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType);
+				eventBuilder.setPayload(payload);
+				eventBuilder.setRawPayloadString(payload.toString());
+				jsonSerialized = jsonMapper.writeValueAsString(eventBuilder.createEvent());
+			} else {
+				jsonSerialized = jsonMapper.writeValueAsString(event);
+			}
 			// The prefix will be a part of the fluentd parse regex
 			LOGGER.info("[Cube Event]" + jsonSerialized);
 			return true;

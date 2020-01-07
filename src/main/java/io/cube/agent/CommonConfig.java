@@ -1,22 +1,33 @@
 package io.cube.agent;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
+import javax.inject.Singleton;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 
-// TODO make this config file singleton and inject it
+@Singleton
 public class CommonConfig {
 
     private static final String CONFFILE = "agent.conf";
 
     final Properties properties;
+    protected ObjectMapper jsonMapper;
     public final String CUBE_RECORD_SERVICE_URI;
     public final String CUBE_MOCK_SERVICE_URI;
     public final int READ_TIMEOUT;
@@ -28,8 +39,12 @@ public class CommonConfig {
     public static String intent;
 
     public String customerId, app, instance, serviceName;
+    public Optional<EncryptionConfig> encryptionConfig = Optional.empty();
 
     public CommonConfig() throws Exception {
+        this.jsonMapper = new ObjectMapper();
+        jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
         properties = new Properties();
         try {
             properties.load(this.getClass().getClassLoader().
@@ -57,6 +72,21 @@ public class CommonConfig {
             .orElseThrow(() -> new Exception("Mesh-D Service Name Not Specified"));
         intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
             .orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
+
+        // TODO Replace with constants once it comes in commons
+//        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
+        fromEnvOrProperties("io.md.encryptionconfig.path").map(ecf -> {
+            try {
+                    encryptionConfig = Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
+                } catch (Exception e) {
+                    LOGGER.error(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Error in reading encryption config file",
+                        Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
+                    )));
+                }
+            return null;
+        });
+
 
         Tracer tracer = CommonUtils.init("tracer");
         try {
