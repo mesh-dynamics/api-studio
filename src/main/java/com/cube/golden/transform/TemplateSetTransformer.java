@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
@@ -23,6 +24,7 @@ import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.utils.Constants;
 
 public class TemplateSetTransformer {
 
@@ -54,6 +56,10 @@ public class TemplateSetTransformer {
                 // (that might be taken care of in forward testing)
                 CompareTemplateVersioned updated = updateTemplate(sourceTemplateMap.get(key) , update);
                 sourceTemplateMap.put(key, updated);
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Updated Compare Template"
+                    , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateSetUpdateSpec.getTemplateUpdateOperationSetId()
+                    , Constants.TEMPLATE_KEY_FIELD , key.toString(), Constants.OLD_TEMPLATE_SET_VERSION,
+                    sourceTemplateSet.version)));
             } else {
                 //construct a new CompareTemplateVersion
                 CompareTemplate template = new CompareTemplate();
@@ -61,6 +67,10 @@ public class TemplateSetTransformer {
                     flatMap(op -> op.getNewRule().stream()).collect(Collectors.toList()));
                 CompareTemplateVersioned newTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
                     , Optional.of(key.getPath()), key.getReqOrResp(), template);
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Created New Compare Template"
+                    , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateSetUpdateSpec.getTemplateUpdateOperationSetId()
+                    , Constants.TEMPLATE_KEY_FIELD , key.toString() , Constants.OLD_TEMPLATE_SET_VERSION,
+                    sourceTemplateSet.version)));
                 sourceTemplateMap.put(key, newTemplate);
             }
         });
@@ -100,10 +110,15 @@ public class TemplateSetTransformer {
             OperationType operationType = updateOperation.getType();
             if (operationType.equals(OperationType.REMOVE)) {
                 // remove the rule on a delete operation
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Removing rule",
+                    Constants.JSON_PATH_FIELD , normalisedPath, Constants.SERVICE_FIELD, sourceTemplate.service,
+                    Constants.API_PATH_FIELD , sourceTemplate.requestPath)));
                 pathVsEntry.remove(normalisedPath);
             } else if (operationType.equals(OperationType.ADD) || operationType.equals(OperationType.REPLACE)) {
                 if (updateOperation.getNewRule().isEmpty()) {
-                    LOGGER.error("New Rule Not Available for Add/Replace Operation for Path :: " + normalisedPath);
+                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                        "New Rule Not Available for Add/Replace Operation"
+                        , Constants.JSON_PATH_FIELD , normalisedPath)));
                 } else {
                     // for add or replace ... for the given json path .. add the new rule
                     // (in case of replace the entire rule will be replaced with the new rule)
@@ -112,6 +127,9 @@ public class TemplateSetTransformer {
                     // in case the updateOperation's path  and rule's path are different
                     TemplateEntry newRuleNormalised = new TemplateEntry(sourceTemplate.getNormalisedPath(newRule.getPath()).toString(), newRule.getDataType(),
                         newRule.getPresenceType(), newRule.getCompareType(), newRule.getExtractionMethod(), newRule.getCustomization());
+                    LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Replacing with new rule",
+                        Constants.JSON_PATH_FIELD , normalisedPath, Constants.SERVICE_FIELD, sourceTemplate.service,
+                        Constants.API_PATH_FIELD , sourceTemplate.requestPath)));
                     pathVsEntry.put(normalisedPath, newRuleNormalised);
                 }
             }

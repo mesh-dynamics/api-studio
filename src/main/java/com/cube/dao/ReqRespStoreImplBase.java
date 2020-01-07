@@ -4,15 +4,18 @@
 package com.cube.dao;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.common.base.MoreObjects;
 
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
+import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -76,43 +79,66 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 	 * looks up the state and caches it for quick retrieval
 	 */
 	@Override
-	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceId, boolean extendTTL) {
+	public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId,
+		Optional<String> app, Optional<String> instanceId, boolean extendTTL) {
 
-		CollectionKey ckey = new CollectionKey(customerId.orElse(""), app.orElse(""), instanceId.orElse(""));
+		CollectionKey ckey = new CollectionKey(customerId.orElse(""), app.orElse(""),
+			instanceId.orElse(""));
 
 		// in this case matching has to be exact. Null values should match empty strings
 		Optional<String> ncustomerid = customerId.or(() -> Optional.of(""));
 		Optional<String> napp = app.or(() -> Optional.of(""));
 		Optional<String> ninstanceid = instanceId.or(() -> Optional.of(""));
-        Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey, extendTTL);
-		//Optional<RecordOrReplay> cachedrr = Optional.ofNullable(currentCollectionMap.get(ckey));
-		String customerAppInstance = "Cust :: " + customerId.orElse("") + " App :: " + app.orElse("") +
-            "Instance :: " + instanceId.orElse("");
+		Optional<RecordOrReplay> cachedrr = retrieveFromCache(ckey, extendTTL);
 
-		//LOGGER.info(String.format("Looking up collection for cust %s, app %s, instance %s", customerId.orElse(""), app.orElse(""), instanceId.orElse("")));
 		return cachedrr.map(cachedRRVal -> {
-		    LOGGER.info("Retrieved Record/Replay from Cache for " + customerAppInstance + " :: " + cachedRRVal.toString());
-		    return cachedRRVal;
-        }).or(() -> {
+			LOGGER.debug(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Retrieved Record/Replay from Cache"
+					, Constants.CUSTOMER_ID_FIELD, customerId.orElse(Constants.NOT_PRESENT)
+					, Constants.APP_FIELD, app.orElse(Constants.NOT_PRESENT)
+					, Constants.INSTANCE_ID_FIELD, instanceId.orElse(Constants.NOT_PRESENT)
+					, "value", cachedRRVal.toString())));
+			return cachedRRVal;
+		}).or(() -> {
 			// not cached, read from underlying store
-            // check if there is a recording going on
-			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid, Optional.of(RecordingStatus.Running))
-					.findFirst()
-					.map(recording -> RecordOrReplay.createFromRecording(recording))
-					.or(() -> { // no ongoing recording, check replay
-						LOGGER.info("No running recording, looking up current replay");
-						return getReplay(ncustomerid, napp, ninstanceid, ReplayStatus.Running)
-								.findFirst()
-								.map(replay -> RecordOrReplay.createFromReplay(replay));
-					});
+			// check if there is a recording going on
+			LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to retrieve"
+					+ " Record/Replay from Cache, Looking for recording in solr",
+				Constants.CUSTOMER_ID_FIELD, customerId.orElse(Constants.NOT_PRESENT),
+				Constants.APP_FIELD,
+				app.orElse(Constants.NOT_PRESENT), Constants.INSTANCE_ID_FIELD,
+				instanceId.orElse(Constants.NOT_PRESENT))));
+			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid,
+				Optional.of(RecordingStatus.Running))
+				.findFirst()
+				.map(recording -> RecordOrReplay.createFromRecording(recording))
+				.or(() -> { // no ongoing recording, check replay
+					LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
+						, "No running recording, looking for replay in solr"
+						, Constants.CUSTOMER_ID_FIELD, customerId.orElse(Constants.NOT_PRESENT)
+						, Constants.APP_FIELD, app.orElse(Constants.NOT_PRESENT)
+						, Constants.INSTANCE_ID_FIELD, instanceId.orElse(Constants.NOT_PRESENT))));
+					return getReplay(ncustomerid, napp, ninstanceid, ReplayStatus.Running)
+						.findFirst()
+						.map(replay -> RecordOrReplay.createFromReplay(replay));
+				});
 			//rr.ifPresent(rrv -> currentCollectionMap.put(ckey, rrv));
-            rr.ifPresent(rrv -> populateCache(ckey, rrv));
-            rr.ifPresentOrElse
-                (rrVal ->
-                LOGGER.info("Retrieved Record/Replay from Solr for " + customerAppInstance + " :: " + rrVal.toString())
-                    , () -> LOGGER.info("No Record/Replay retrieved from Cache/Solr for " + customerAppInstance));
-            return rr;
+			rr.ifPresent(rrv -> populateCache(ckey, rrv));
+			rr.ifPresentOrElse
+				(rrVal ->
+						LOGGER.debug(new ObjectMessage(
+							Map.of(Constants.MESSAGE, "Retrieved Record/Replay from Solr",
+								Constants.CUSTOMER_ID_FIELD, customerId.orElse(Constants.NOT_PRESENT),
+								Constants.APP_FIELD,
+								app.orElse(Constants.NOT_PRESENT), Constants.INSTANCE_ID_FIELD
+								, instanceId.orElse(Constants.NOT_PRESENT), "value", rrVal.toString())))
+					, () -> LOGGER.error(new ObjectMessage(
+						Map.of(Constants.MESSAGE, "No Record/Replay retrieved from Cache/Solr",
+							Constants.CUSTOMER_ID_FIELD, customerId.orElse(Constants.NOT_PRESENT),
+							Constants.APP_FIELD,
+							app.orElse(Constants.NOT_PRESENT), Constants.INSTANCE_ID_FIELD
+							, instanceId.orElse(Constants.NOT_PRESENT)))));
+			return rr;
 		});
 	}
 

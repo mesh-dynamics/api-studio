@@ -24,8 +24,8 @@
   </Appenders>
  
   <Loggers> 
-    <Root level="debug">
-       <AppenderRef ref="STDOUT"/>
+    <Root level="info">
+       <!-- AppenderRef ref="STDOUT"/ -->
       <!-- Useful docs https://logging.apache.org/log4j/2.x/manual/customconfig.html-->
       <AppenderRef ref="ConsoleJSONAppender"/>
 

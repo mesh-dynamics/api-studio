@@ -5,12 +5,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
 import com.cube.cache.TemplateKey;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.utils.Constants;
 
 public class TemplateUpdateOperationSetTransformer {
+
+
+    private static final Logger LOGGER = LogManager.getLogger(TemplateUpdateOperationSetTransformer.class);
 
     /**
      * Merge update operations for a single template
@@ -43,11 +51,17 @@ public class TemplateUpdateOperationSetTransformer {
             .getTemplateUpdates()).orElse(new HashMap<>());
         updates.forEach((key, update) -> {
             if (existingOperations.containsKey(key)) {
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE , "Merging template update rules"  ,
+                    Constants.TEMPLATE_KEY_FIELD , key.toString() , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD
+                    , sourceOperationSet.getTemplateUpdateOperationSetId())));
                 // merge update rules for templates, for which already some updates are specified
                 SingleTemplateUpdateOperation existing = existingOperations.get(key);
                 SingleTemplateUpdateOperation merged = mergeTemplateUpdate(existing, update);
                 existingOperations.put(key, merged);
             } else {
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE , "Creating new template update rules"  ,
+                    Constants.TEMPLATE_KEY_FIELD , key.toString() , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD
+                    , sourceOperationSet.getTemplateUpdateOperationSetId())));
                 // add update rules for new templates (which were not present yet in the update set), as it is
                 existingOperations.put(key, update);
             }
