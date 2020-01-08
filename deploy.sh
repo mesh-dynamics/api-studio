@@ -291,6 +291,7 @@ clean() {
 	kubectl delete destinationrules.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
 	kubectl delete gateways.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
 	kubectl delete serviceentries.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete cm fluentd-$APP_NAME-conf-$NAMESPACE -n logging
 	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
 	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
 	# TODO: check that volumeMountsindex and volumeindex are not empty, otherwise
