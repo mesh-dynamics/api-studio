@@ -28,7 +28,8 @@ public class TemplateKey {
 
     public enum Type {
         Request,
-        Response
+        Response,
+        RequestCompare
     }
 
     /**
