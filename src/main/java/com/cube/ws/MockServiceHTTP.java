@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,9 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
+import com.cube.core.Comparator.Match;
+import com.cube.core.Comparator.MatchType;
 import com.cube.core.Utils;
-import com.cube.dao.Analysis;
 import com.cube.dao.DataObj.PathNotFoundException;
 import com.cube.dao.Event;
 import com.cube.dao.Event.EventType;
@@ -52,6 +54,7 @@ import com.cube.dao.Event.RunType;
 import com.cube.dao.EventQuery;
 import com.cube.dao.EventQuery.Builder;
 import com.cube.dao.HTTPResponsePayload;
+import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Result;
@@ -500,11 +503,13 @@ public class MockServiceHTTP {
             // match result for now.
             // TODO change it back to MockReqNoMatch
 
-            Analysis.ReqRespMatchResult matchResult =
-                new Analysis.ReqRespMatchResult(Optional.empty(), Optional.of(mockRequestEvent.reqId),
-                    Comparator.MatchType.NoMatch, 0, Comparator.MatchType.Default, "", "",
-                    customerId, app, service, path, mockRequestEvent.getCollection(), Optional.empty(),
-                    Optional.of(mockRequestEvent.getTraceId()));
+            ReqRespMatchResult matchResult =
+                new ReqRespMatchResult(Optional.empty()
+                    , Optional.ofNullable(mockRequestEvent.reqId), MatchType.NoMatch
+                    , 0, mockRequestEvent.getCollection(), mockRequestEvent.service
+                    , mockRequestEvent.apiPath, Optional.empty()
+                    , Optional.of(mockRequestEvent.getTraceId()), new Match(MatchType
+                    .Default, "", Collections.emptyList()), Optional.empty());
             rrstore.saveResult(matchResult);
             return Response.status(Response.Status.NOT_FOUND).entity("Response not found").build();
         });
@@ -539,14 +544,13 @@ public class MockServiceHTTP {
         // store a req-resp analysis match result for the mock request (during replay)
         // and the matched recording request
         String recordReqId = respEventVal.reqId;
-        Analysis.ReqRespMatchResult matchResult =
-            new Analysis.ReqRespMatchResult(Optional.of(recordReqId), Optional.of(mockRequestEvent.reqId),
-                Comparator.MatchType.ExactMatch, 1, Comparator.MatchType.ExactMatch, "",
-                "", mockRequestEvent.customerId, mockRequestEvent.app, mockRequestEvent.service,
-                mockRequestEvent.apiPath,
-                mockRequestEvent.getCollection(),
-                Optional.of(respEventVal.getTraceId()),
-                Optional.of(mockRequestEvent.getTraceId()));
+        ReqRespMatchResult matchResult =
+            new ReqRespMatchResult(Optional.ofNullable(recordReqId)
+                , Optional.ofNullable(mockRequestEvent.reqId), Comparator.MatchType.ExactMatch
+                , 1, mockRequestEvent.getCollection(), mockRequestEvent.service
+                , mockRequestEvent.apiPath, Optional.of(respEventVal.getTraceId())
+                , Optional.of(mockRequestEvent.getTraceId()), new Match(Comparator.MatchType
+                .ExactMatch, "", Collections.emptyList()), Optional.empty());
         rrstore.saveResult(matchResult);
         try {
             Event mockResponseToStore = createMockResponseEvent(respEventVal,

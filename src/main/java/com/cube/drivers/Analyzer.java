@@ -32,11 +32,12 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
 import com.cube.dao.Analysis;
-import com.cube.dao.Analysis.RespMatchWithReqEvent;
+import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import com.cube.dao.Event;
 import com.cube.dao.EventQuery;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Replay;
+import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
 import com.cube.ws.Config;
@@ -125,8 +126,8 @@ public class Analyzer {
 
             // fetch response of recording and replay
             // TODO change it back to RecReqNoMatch
-            RespMatchWithReqEvent bestmatch = new RespMatchWithReqEvent(r, Optional.empty(),
-                Comparator.Match.DEFAULT, Optional.empty(), Optional.empty());
+            ReqRespMatchWithEvent bestmatch = new ReqRespMatchWithEvent(r, Optional.empty(),
+                Comparator.Match.DEFAULT, Optional.empty(), Optional.empty(), Optional.empty());
             MatchType bestreqmt = MatchType.NoMatch;
 
             // matches is ordered in decreasing order of request match score. so exact matches
@@ -136,12 +137,12 @@ public class Analyzer {
             for (Event replayreq : matchedReqs) {
                 // we have removed EqualOptional in request match. So any match has to be ExactMatch
                 MatchType reqmt = ExactMatch;
-                RespMatchWithReqEvent match = checkRespEventMatch(r, replayreq, recordedResponse,
+                ReqRespMatchWithEvent match = checkRespEventMatch(r, replayreq, recordedResponse,
                     replayResponseMap);
-                if (isReqRespMatchBetter(reqmt, match.getmt(), bestreqmt, bestmatch.getmt())) {
+                if (isReqRespMatchBetter(reqmt, match.getRespMt(), bestreqmt, bestmatch.getRespMt())) {
                     bestmatch = match;
                     bestreqmt = reqmt;
-                    if (bestmatch.getmt() == ExactMatch) {
+                    if (bestmatch.getRespMt() == ExactMatch) {
                         break;
                     }
                 }
@@ -152,7 +153,7 @@ public class Analyzer {
             } else {
                 analysis.reqpartiallymatched++;
             }
-            switch (bestmatch.getmt()) {
+            switch (bestmatch.getRespMt()) {
                 case ExactMatch:
                     analysis.respmatched++;
                     break;
@@ -164,12 +165,12 @@ public class Analyzer {
                     break;
             }
 
-            LOGGER.debug(bestmatch.getmt() + " OCCURRED FOR RESPONSE :: " + r.reqId);
+            LOGGER.debug(bestmatch.getRespMt() + " OCCURRED FOR RESPONSE :: " + r.reqId);
             LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(config).orElse(" N/A"));
             LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(config).orElse("N/A"));
             LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody(config).orElse(" N/A"));
             LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody(config).orElse(" N/A"));
-            bestmatch.getDiffs().forEach(
+            bestmatch.getRespDiffs().forEach(
                 diff -> {
                     try {
                         LOGGER.debug("DIFF :: " + jsonMapper.writeValueAsString(diff));
@@ -178,15 +179,15 @@ public class Analyzer {
                     }
                 });
 
-            Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(bestmatch, bestreqmt,
-                (int) matches.numResults, analysis.replayId, jsonMapper);
+            ReqRespMatchResult res = new ReqRespMatchResult(bestmatch, bestreqmt,
+                (int) matches.numResults, analysis.replayId);
             rrstore.saveResult(res);
 
         } else {
             // TODO change it back to RecReqNoMatch
-            Analysis.ReqRespMatchResult res = new Analysis.ReqRespMatchResult(new RespMatchWithReqEvent(r,
-                Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty()),
-                MatchType.NoMatch, (int)matches.numResults, analysis.replayId, jsonMapper);
+            ReqRespMatchResult res = new ReqRespMatchResult(new ReqRespMatchWithEvent(r,
+                Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Optional.empty()),
+                MatchType.NoMatch, (int)matches.numResults, analysis.replayId);
             rrstore.saveResult(res);
             analysis.reqnotmatched++;
         }
@@ -199,7 +200,7 @@ public class Analyzer {
     }
 
 
-    private RespMatchWithReqEvent checkRespEventMatch(Event recordreq, Event replayreq,
+    private ReqRespMatchWithEvent checkRespEventMatch(Event recordreq, Event replayreq,
                                                       Optional<Event> recordedResponse ,
                                                      Map<String, Event> replayResponseMap) {
 
@@ -213,18 +214,18 @@ public class Analyzer {
                 Event replayr = replayresp.get();
                 Comparator comparator = comparatorCache.getComparator(key, recordedr.eventType);
                 Comparator.Match rm = comparator.compare(recordedr.getPayload(config), replayr.getPayload(config));
-                return new RespMatchWithReqEvent(recordreq, Optional.of(replayreq) , rm ,
-                    Optional.of(recordedr) , Optional.of(replayr));
+                return new ReqRespMatchWithEvent(recordreq, Optional.of(replayreq) , rm ,
+                    Optional.of(recordedr) , Optional.of(replayr), Optional.empty());
             }
-            return new RespMatchWithReqEvent(recordreq, Optional.of(replayreq),
-                Comparator.Match.NOMATCH, recordedResponse, replayresp);
+            return new ReqRespMatchWithEvent(recordreq, Optional.of(replayreq),
+                Comparator.Match.NOMATCH, recordedResponse, replayresp , Optional.empty());
         } catch(Exception e) {
             // if analysis retrieval caused an error, log the error and return NO MATCH
             String stackTraceError =  UtilException.extractFirstStackTraceLocation(e.getStackTrace());
             LOGGER.error("Exception while analyzing response :: " +
                 recordreq.reqId + " " +  e.getMessage() + " " + stackTraceError);
-            return new RespMatchWithReqEvent(recordreq, Optional.of(replayreq),
-                Comparator.Match.NOMATCH, Optional.empty() , Optional.empty());
+            return new ReqRespMatchWithEvent(recordreq, Optional.of(replayreq),
+                Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Optional.empty());
         }
     }
 

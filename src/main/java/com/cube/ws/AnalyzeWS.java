@@ -66,6 +66,7 @@ import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.RecordingOperationSetSP;
 import com.cube.dao.Replay;
+import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
 import com.cube.drivers.Analyzer;
@@ -408,7 +409,7 @@ public class AnalyzeWS {
 	 * @param reqRespMatchResults
 	 * @return
 	 */
-	private String getJsonArrayString(Stream<Analysis.ReqRespMatchResult> reqRespMatchResults) {
+	private String getJsonArrayString(Stream<ReqRespMatchResult> reqRespMatchResults) {
 		return reqRespMatchResults.flatMap(result -> {
 			try {
 				return Stream.of(jsonMapper.writeValueAsString(result));
@@ -438,12 +439,12 @@ public class AnalyzeWS {
     @Path("analysisRes/{replayId}/{recordReqId}")
     public Response getAnalysisResult(@Context UriInfo urlInfo, @PathParam("recordReqId") String recordReqId,
                                       @PathParam("replayId") String replayId) {
-        Optional<Analysis.ReqRespMatchResult> matchResult =
+        Optional<ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayId);
         return matchResult.map(mRes -> {
-            Stream<Analysis.ReqRespMatchResult> recordMatchResultList = rrstore.
+            Stream<ReqRespMatchResult> recordMatchResultList = rrstore.
                 expandOnTrace(mRes, true);
-            Stream<Analysis.ReqRespMatchResult> replayMatchResultList = rrstore.
+            Stream<ReqRespMatchResult> replayMatchResultList = rrstore.
                 expandOnTrace(mRes, false);
             String recordJsonArray = getJsonArrayString(recordMatchResultList);
             String replayJsonArray = getJsonArrayString(replayMatchResultList);
@@ -459,7 +460,7 @@ public class AnalyzeWS {
     public Response getAnalysisResultWithoutTrace(@Context UriInfo urlInfo,
 	    @PathParam("recordReqId") String recordReqId,
 	    @PathParam("replayId") String replayId) {
-	    Optional<Analysis.ReqRespMatchResult> matchResult =
+	    Optional<ReqRespMatchResult> matchResult =
 		    rrstore.getAnalysisMatchResult(recordReqId, replayId);
 	    return matchResult.map(matchRes -> {
 		    Optional<String> request = rrstore.getRequestEvent(recordReqId)
@@ -474,10 +475,16 @@ public class AnalyzeWS {
 		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
 			    .map(event -> event.getPayloadAsJsonString(config));
 
-		    Optional<String> diff = Optional.of(matchRes.diff);
+		    Optional<String> diff = null;
+		    try {
+			    diff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
+		    } catch (JsonProcessingException e) {
+			   LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				   "Unable to convert diff list to json string")),e);
+		    }
 		    MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
-			    matchRes.reqMatchType, matchRes.numMatch,
-			    matchRes.respMatchType, matchRes.service, matchRes.path,
+			    matchRes.reqMatchRes, matchRes.numMatch,
+			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
 			    diff, request, replayedRequest, recordedResponse, replayedResponse);
 
 		    String resultJson = null;
@@ -626,13 +633,13 @@ public class AnalyzeWS {
 
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
-            Result<Analysis.ReqRespMatchResult> result = rrstore
+            Result<ReqRespMatchResult> result = rrstore
                 .getAnalysisMatchResults(replayId, service, path,
                     reqMatchType, respMatchType, start, numResults);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
-            List<Analysis.ReqRespMatchResult> res = result.getObjects()
+            List<ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
             List<String> reqIds = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
                 .collect(Collectors.toList());
@@ -663,16 +670,21 @@ public class AnalyzeWS {
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequestEvent)
                         .map(event -> event.getPayloadAsJsonString(config));
-                    diff = Optional.of(matchRes.diff);
-                    recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponseEvent)
+	                try {
+		                diff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
+	                } catch (JsonProcessingException e) {
+		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+			                "Unable to convert diff to json string")), e);
+	                }
+	                recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponseEvent)
                         .map(event -> event.getPayloadAsJsonString(config));
                     replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
                         .map(event -> event.getPayloadAsJsonString(config));
                 }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
-                    matchRes.reqMatchType, matchRes.numMatch,
-                    matchRes.respMatchType, matchRes.service, matchRes.path,
+                    matchRes.reqMatchRes, matchRes.numMatch,
+                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
                     diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
@@ -715,7 +727,7 @@ public class AnalyzeWS {
         Optional<String> replayReqId = Optional
             .ofNullable(queryParams.getFirst(Constants.REPLAY_REQ_ID_FIELD));
 
-        Optional<Analysis.ReqRespMatchResult> matchResult =
+        Optional<ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
         Optional<String> recordResponse = recordReqId.flatMap(rrstore::getResponseEvent)
             .map(event -> event.getPayloadAsJsonString(config));
@@ -1330,7 +1342,7 @@ public class AnalyzeWS {
 
 
         public RespAndMatchResults(Optional<String> recordResponse, Optional<String> replayResponse,
-                                   Optional<Analysis.ReqRespMatchResult> matchResult) {
+                                   Optional<ReqRespMatchResult> matchResult) {
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
             this.matchResult = matchResult;
@@ -1342,7 +1354,7 @@ public class AnalyzeWS {
         public final Optional<String> recordResponse;
         @JsonIgnore
 	    public final Optional<String> replayResponse;
-	    public final Optional<Analysis.ReqRespMatchResult> matchResult;
+	    public final Optional<ReqRespMatchResult> matchResult;
 
 	    //JsonRawValue is to avoid Jackson escaping the String while using writeValueAsString
 	    @JsonRawValue

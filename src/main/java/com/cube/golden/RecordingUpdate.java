@@ -17,11 +17,11 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
-import com.cube.dao.Analysis;
 import com.cube.dao.Event;
 import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetMeta;
 import com.cube.dao.RecordingOperationSetSP;
+import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -142,7 +142,7 @@ public class RecordingUpdate {
         Map<String, RecordingOperationSetSP> apiPathVsUpdateOperationSet =
             config.rrstore.getRecordingOperationSetSPs(recordingOperationSetId).collect(Collectors.toMap( set -> set.path
             , Function.identity()));
-        Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId/*, recordingOperationSetSP*/);
+        Stream<ReqRespMatchResult> results = getReqRespMatchResultStream(replayId/*, recordingOperationSetSP*/);
         results.forEach(res -> {
             try {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Applying Recording Update",
@@ -216,7 +216,7 @@ public class RecordingUpdate {
 
     public boolean createSanitizedCollection(String replayId, String newCollectionName, Recording originalRec) {
 
-        Stream<Analysis.ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
+        Stream<ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
 
         //1. Create a new collection with all the Req/Responses
         results.forEach(res -> {
@@ -263,7 +263,7 @@ public class RecordingUpdate {
         config.rrstore.commit();
 
         //2. Get all the ReqResMatchResult with MatchType as NoMatch either for request or response match
-        Stream<Analysis.ReqRespMatchResult> resultsOnlyNoMatch = config.rrstore.getAnalysisMatchResultOnlyNoMatch(replayId).getObjects();
+        Stream<ReqRespMatchResult> resultsOnlyNoMatch = config.rrstore.getAnalysisMatchResultOnlyNoMatch(replayId).getObjects();
 
         //3. Delete all the requests and responses in the new collection that has the trace id in the above list
         resultsOnlyNoMatch.forEach( res -> {
@@ -281,8 +281,8 @@ public class RecordingUpdate {
     }
 
 
-     Stream<Analysis.ReqRespMatchResult> getReqRespMatchResultStream(String replayId/*, RecordingOperationSetSP recordingOperationSetSP*/) {
-        Result<Analysis.ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
+     Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId/*, RecordingOperationSetSP recordingOperationSetSP*/) {
+        Result<ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
             replayId,
             Optional.empty(),//Optional.of(recordingOperationSetSP.service),
             Optional.empty(),//Optional.of(recordingOperationSetSP.path),

@@ -5,7 +5,6 @@ package com.cube.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,8 +57,6 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
-import com.cube.dao.Analysis.ReqRespMatchResult;
-import com.cube.dao.Event.EventType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -1624,13 +1621,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF, id);
         res.recordReqId.ifPresent(recordReqId ->  doc.setField(RECORDREQIDF, recordReqId));
         res.replayReqId.ifPresent(replayReqId ->  doc.setField(REPLAYREQIDF, replayReqId));
-        doc.setField(REQMTF, res.reqMatchType.toString());
+        // TODO
+       /* doc.setField(REQMTF, res.reqMatchType.toString());
         doc.setField(NUMMATCHF, res.numMatch);
         doc.setField(RESPMTF, res.respMatchType.toString());
         doc.setField(RESPMATCHMETADATAF, res.respMatchMetadata);
         doc.setField(DIFFF, res.diff);
         doc.setField(CUSTOMERIDF, res.customerId);
-        doc.setField(APPF, res.app);
+        doc.setField(APPF, res.app);*/
         doc.setField(SERVICEF, res.service);
         doc.setField(PATHF, res.path);
         doc.setField(REPLAYIDF, res.replayId);
@@ -1775,9 +1773,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         String path = getStrField(doc, PATHF).orElse("");
         Optional<String> recordTraceId = getStrField(doc, RECORDTRACEIDF);
         Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
-        return Optional.of(new ReqRespMatchResult(
+        return Optional.empty();
+        // TODO
+        /*return Optional.of(new ReqRespMatchResult(
                 recordReqId , replayReqId , reqMatchType , numMatch , respMatchType, respMatchMetaData,
-                diff, customerId, app, service, path, replayId, recordTraceId, replayTraceId));
+                diff, customerId, app, service, path, replayId, recordTraceId, replayTraceId));*/
     }
 
     /* (non-Javadoc)
