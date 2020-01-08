@@ -376,12 +376,15 @@ class ShareableLink extends Component {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestParams, replayedRequestParams, recordedRequestBody,
                 replayedRequestBody;
+            let isJson = true;
             // processing Response    
             // recorded response body and headers
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
-                // body is a string, try to parse it into an object
-                if (item.recordResponse.body) {
+                // check if the content type is JSON and attempt to parse it
+                let recordedResponseMime = recordedResponseHeaders["content-type"][0];
+                isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
+                if (item.recordResponse.body && isJson) {
                     try {
                         recordedData = JSON.parse(item.recordResponse.body);
                     } catch (e) {
@@ -389,7 +392,8 @@ class ShareableLink extends Component {
                     }
                 }
                 else {
-                    recordedData = JSON.parse('""');
+                    // in case the content type isn't json, display the entire body if present, or else an empty string
+                    recordedData = item.recordResponse.body ? item.recordResponse.body : '""';
                 }
             } else {
                 recordedResponseHeaders = null;
@@ -399,7 +403,10 @@ class ShareableLink extends Component {
             // same as above but for replayed response
             if (item.replayResponse) {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
-                if (item.replayResponse.body) {
+                // check if the content type is JSON and attempt to parse it
+                let replayedResponseMime = replayedResponseHeaders["content-type"][0];
+                isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
+                if (item.replayResponse.body && isJson) {
                     try {
                         replayedData = JSON.parse(item.replayResponse.body);
                     } catch (e) {
@@ -407,11 +414,12 @@ class ShareableLink extends Component {
                     }
                 }
                 else {
-                    replayedData = JSON.parse('""');
+                    // in case the content type isn't json, display the entire body if present, or else an empty string
+                    replayedData = item.replayResponse.body ? item.replayResponse.body : '""';
                 }
             } else {
                 replayedResponseHeaders = null;
-                replayedData = null;
+                replayedData = "";
             }
             let diff;
             if (item.diff) {
@@ -429,8 +437,12 @@ class ShareableLink extends Component {
 
             // use the backend diff and the two JSONs to generate diff array that will be passed to the diff renderer
             if (diff && diff.length > 0) {
-                let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
-                reductedDiffArray = reduceDiff.computeDiffArray();
+                // skip calculating the diff array in case of non json data 
+                // pass diffArray as null so that the diff library can render it directly
+                if (isJson) { 
+                    let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
+                    reductedDiffArray = reduceDiff.computeDiffArray();
+                }
                 let expJSONPaths = generator(recordedData, "", "", prefix);
                 missedRequiredFields = diff.filter((eachItem) => {
                     return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
@@ -487,7 +499,7 @@ class ShareableLink extends Component {
                 }
             } else {
                 recordedRequestHeaders = null;
-                recordedRequestBody = null;
+                recordedRequestBody = "";
                 recordedRequestParams = null;
             }
 
@@ -507,9 +519,9 @@ class ShareableLink extends Component {
                     replayedRequestBody = JSON.parse('""');
                 }
             } else {
-                replayedRequestHeaders = null;
-                replayedRequestBody = null;
-                replayedRequestParams = null;
+                replayedRequestHeaders = "";
+                replayedRequestBody = "";
+                replayedRequestParams = "";
             }
             return {
                 ...item,
@@ -738,7 +750,7 @@ class ShareableLink extends Component {
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
                     {item.path}
                 </div>
-                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders != null && item.replayedRequestHeaders != null && (
+                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders && item.replayedRequestHeaders && (
                     <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -754,7 +766,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageParams || this.state.shownRequestMessageParams) && item.recordedRequestParams != null && item.replayedRequestParams != null && (
+                {(this.state.showRequestMessageParams || this.state.shownRequestMessageParams) && item.recordedRequestParams && item.replayedRequestParams && (
                     <div style={{ display: this.state.showRequestMessageParams ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Params</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -770,7 +782,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && item.recordedRequestBody != null && item.replayedRequestBody != null && (
+                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && item.recordedRequestBody && item.replayedRequestBody && (
                     <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body (Includes Form Params)</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -786,7 +798,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && item.recordedResponseHeaders != null && item.replayedResponseHeaders != null && (
+                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && item.recordedResponseHeaders && item.replayedResponseHeaders && (
                     <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -806,25 +818,19 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {item.recordedData == null && (
-                    <div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Recorded Data</div>
-                )}
-                {item.replayedData == null && (
-                    <div style={{ margin: "27px", textAlign: "center", fontSize: "24px" }}>No Replayed Data</div>
-                )}
-                {item.recordedData != null && item.replayedData != null && (
+                {(
                     <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
                         <div className="row">
                             <div className="col-md-6">
                                 <h4>
                                     <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
-                                    <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.recordResponse.status)}</span></span>
+                                    {item.recordResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.recordResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Recorded Data</span>}
                                 </h4>
                             </div>
 
                             <div className="col-md-6">
                                 <h4 style={{marginLeft: "18%"}}>
-                                    <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span>
+                                {item.replayResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Replayed Data</span>}
                                 </h4>
                             </div>
                         </div>
@@ -833,21 +839,23 @@ class ShareableLink extends Component {
                                 return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
                             })}
                         </div>
-                        <div className="diff-wrapper">
-                            < ReactDiffViewer
-                                styles={newStyles}
-                                oldValue={item.expJSON}
-                                newValue={item.actJSON}
-                                splitView={true}
-                                disableWordDiff={false}
-                                diffArray={item.reductedDiffArray}
-                                filterPaths={item.filterPaths}
-                                onLineNumberClick={(lineId, e) => { return; }}
-                                inputElementRef={this.inputElementRef}
-                                showAll={this.state.showAll}
-                                searchFilterPath={this.state.searchFilterPath}
-                            />
-                        </div>
+                        {(item.recordedData || item.replayedData) && (
+                            <div className="diff-wrapper">
+                                < ReactDiffViewer
+                                    styles={newStyles}
+                                    oldValue={item.expJSON}
+                                    newValue={item.actJSON}
+                                    splitView={true}
+                                    disableWordDiff={false}
+                                    diffArray={null}
+                                    filterPaths={item.filterPaths}
+                                    onLineNumberClick={(lineId, e) => { return; }}
+                                    inputElementRef={this.inputElementRef}
+                                    showAll={this.state.showAll}
+                                    searchFilterPath={this.state.searchFilterPath}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
             </div >);
