@@ -34,6 +34,12 @@ export const golden = (state = initialState, { type, data }) => {
             requestExamples: data.request,
             responseExamples: data.response
         };
+    case goldenConstants.RESET_GOLDEN_API_PATH_AND_SERVICE:
+        return {
+            ...state,
+            selectedService: "",
+            selectedApi: "",
+        };
     default:
         return state
     }

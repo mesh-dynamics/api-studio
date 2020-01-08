@@ -1,0 +1,20 @@
+.gv-view-type-container {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 12px;
+}
+
+.gv-view-type-container-options {
+    display: flex;    
+}
+
+.gv-view-type-option {
+    display: flex;
+    margin-left: 12px;
+}
+
+.gv-view-type-label {
+    margin-left: 5px;
+    margin-top: 2px;
+}

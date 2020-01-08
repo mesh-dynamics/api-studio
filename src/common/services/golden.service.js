@@ -1,7 +1,7 @@
 
 const fetchGoldenContract = async (goldenId, service, api) => {
     try {
-        const response = await fetch("http://www.mocky.io/v2/5dfbfddf3100005f00d2bd6a");
+        const response = await fetch("http://www.mocky.io/v2/5e1460b42d00006c00166fb4");
         const data = await response.json();
     
         return data;
