@@ -298,8 +298,9 @@ form:after {
 	margin-top: 30px;
 }
 .sign-in-wrapper {
-	height: 100%;
-	padding: 50px 0;
+	display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 .sign-in {
 	text-align: center;
@@ -333,14 +334,14 @@ form:after {
 	font-size: 14px;
 }
 
-.custom-link {
+/* .custom-link {
 	cursor: pointer;
 	color: #8585FF;
-}
+} */
 
 .forgot-password {
 	font-size: 14px;
-	padding-bottom: 10px;
+	padding-bottom: 15px;
 }
 
 .create-account {
