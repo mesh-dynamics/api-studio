@@ -127,12 +127,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             String keyStr = key.toString();
             String fromCache = jedis.get(keyStr);
             if (fromCache != null) {
-                LOGGER.info("Successfully retrieved from redis, key :: " + keyStr);
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Successfully retrieved from redis",  "key" ,  keyStr)));
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
                 Long ttl = jedis.ttl(keyStr);
                 if (ttl != -1 && extendTTL) {
                     jedis.expire(keyStr, config.REDIS_DELETE_TTL);
-                    LOGGER.info("Extending ttl for redis key :: " + keyStr);
+                    LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
+                        "Extending ttl in redis","key" , keyStr,"duration"
+                        , String.valueOf(config.REDIS_DELETE_TTL))));
                 }
             }
             if (config.intentResolver.isIntentToRecord()) {
@@ -146,7 +149,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
                     Optional.of(e.getClass().getName()), key);
             }
-            LOGGER.error("Error while retrieving RecordOrReplay from cache :: " + e.getMessage());
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Error while retrieving Record/Replay from cache")) , e);
         }
         return toReturn;
     }
@@ -163,7 +167,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
             if (ret != null && ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Throwing exception as a result of mocking function")));
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
             // do nothing -- return type is void
@@ -172,11 +177,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         try (Jedis jedis = config.jedisPool.getResource()) {
             String toString = config.jsonMapper.writeValueAsString(rr);
-            LOGGER.info("Before storing in cache :: " + toString);
             jedis.set(collectionKey.toString() , toString);
-            LOGGER.info("Successfully stored in redis, key :: " + collectionKey.toString());
+            LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully stored in redis"
+                , "key" , collectionKey.toString())));
         } catch (JsonProcessingException e) {
-            LOGGER.error("Error while population RecordOrReplay in cache :: "  + e.getMessage());
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Error while population RecordOrReplay in cache")) , e);
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayStoreKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
                     CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,

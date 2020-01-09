@@ -806,6 +806,8 @@ public class AnalyzeWS {
         // delegate to backend store
         try {
             String operationSetID = rrstore.createTemplateUpdateOperationSet(customer, app, sourceVersion);
+	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully created new template "
+		        +  "rules update op set", Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, operationSetID)));
             return Response.ok().entity("{\"Message\" :  \"Template Update Operation Set successfully created\" , \"ID\" : \"" +
                 operationSetID + "\"}").build();
         } catch (Exception e) {
@@ -843,6 +845,8 @@ public class AnalyzeWS {
                 .orElseThrow(() -> new Exception("Missing template update operation set for given id"));
             // save the merged operation set
             rrstore.saveTemplateUpdateOperationSet(transformed);
+            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template "
+	            + "rules update op set", Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, operationSetId)));
             return Response.ok().entity("{\"Message\" :  \"Successfully updated Template update operation set\" , \"ID\" : \"" +
                 operationSetId + "\"}").build();
         } catch (Exception e) {
@@ -879,6 +883,10 @@ public class AnalyzeWS {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
             // save the new template set (and return the new version as a part of the response)
+	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
+		        Constants.OLD_TEMPLATE_SET_ID, templateSetId, Constants.NEW_TEMPLATE_SET_VERSION, updated.version,
+		        Constants.CUSTOMER_ID_FIELD, updated.customer, Constants.APP_FIELD
+		        , updated.app, Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateUpdateOperationSetId)));
             rrstore.saveTemplateSet(updated);
             return Response.ok().entity("{\"Message\" :  \"Template Set successfully updated\" , \"ID\" : \"" +
                 updated.version + "\"}").build();
@@ -937,6 +945,12 @@ public class AnalyzeWS {
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
             TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
+
+	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
+		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
+		        Constants.CUSTOMER_ID_FIELD, updatedTemplateSet.customer, Constants.APP_FIELD
+		        , updatedTemplateSet.app, Constants.TEMPLATE_UPD_OP_SET_ID_FIELD,
+		        templateUpdOpSetId , Constants.RECORDING_ID, recordingId, Constants.REPLAY_ID_FIELD, replayId)));
 
             // Validate updated template set
             ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updatedTemplateSet);

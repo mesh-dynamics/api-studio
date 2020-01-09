@@ -2,12 +2,14 @@ package com.cube.cache;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Optional;
 
-import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
+import io.cube.agent.CommonUtils;
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
@@ -15,9 +17,9 @@ import io.cube.agent.UtilException;
 import redis.clients.jedis.Jedis;
 
 import com.cube.core.CompareTemplate;
-import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 
@@ -54,7 +56,8 @@ public class TemplateCache {
             FnResponseObj ret = config.mocker.mock(cacheFnKey,  CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == RetStatus.Exception) {
-                LOGGER.info("Throwing exception as a result of mocking function");
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Throwing exception as a result of mocking function")));
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
             return (CompareTemplate) ret.retVal;
@@ -65,13 +68,15 @@ public class TemplateCache {
             CompareTemplate toReturn = null;
             if (jedis.exists(key.toString())) {
                 String comparatorJson = jedis.get(key.toString());
-                LOGGER.info("Successfully retrieved from redis key :: " + key.toString());
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Successfully retrieved from redis",  "key" ,  key.toString())));
                 toReturn = config.jsonMapper.readValue(comparatorJson, CompareTemplate.class);
             } else {
                 toReturn = reqRespStore.getCompareTemplate(key).orElseThrow(() ->
                     new IOException("Template not found in solr " + key.toString()));
                 jedis.set(key.toString() , config.jsonMapper.writeValueAsString(toReturn));
-                LOGGER.info("Successfully stored in redis key :: " + key.toString());
+                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully stored in redis"
+                    , "key" , key.toString())));
             }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(cacheFnKey,  CommonUtils.getCurrentTraceId(),
@@ -97,7 +102,9 @@ public class TemplateCache {
                 // no need to remove the key if it doesn't exist
                 if (jedis.exists(key.toString())) {
                     jedis.del(key.toString());
-                    LOGGER.info("Successfully removed from redis , key :: " + key.toString());
+                    LOGGER.debug(new ObjectMessage(
+                        Map.of(Constants.MESSAGE ,
+                            "Successfully removed from redis", "key" , key.toString())));
                 }
             }
     }

@@ -1,6 +1,7 @@
 package com.cube.ws;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
@@ -14,6 +15,7 @@ import javax.ws.rs.ext.Provider;
 import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import io.opentracing.Scope;
 
@@ -28,15 +30,19 @@ public class TracingFilter implements ContainerRequestFilter , ContainerResponse
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
-        LOGGER.debug("Inside Method :: " + resourceInfo.getResourceMethod().getName() + " "
-            + resourceInfo.getResourceClass().getName());
+        // deliberately not generating span for health calls (to stop bombarding logs)
+        if ("health".equals(resourceInfo.getResourceMethod().getName())) return;
+        LOGGER.debug(new ObjectMessage(Map.of("method" ,resourceInfo.getResourceMethod()
+            .getName(), "resourceClass" ,  resourceInfo.getResourceClass().getName())));
         Scope scope = CommonUtils.startServerSpan(containerRequestContext.getHeaders() ,
-            resourceInfo.getResourceClass().getSimpleName() + "-" + resourceInfo.getResourceMethod().getName());
+            resourceInfo.getResourceClass().getSimpleName() + "-"
+                + resourceInfo.getResourceMethod().getName());
         containerRequestContext.setProperty("scope" , scope);
     }
 
     @Override
-    public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
+    public void filter(ContainerRequestContext containerRequestContext
+        , ContainerResponseContext containerResponseContext) throws IOException {
         Scope scope = (Scope) containerRequestContext.getProperty("scope");
         if (scope != null) {
             LOGGER.debug("Closing scope");
