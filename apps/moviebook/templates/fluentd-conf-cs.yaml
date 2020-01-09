@@ -50,8 +50,12 @@ data:
         @type json
       </format>
       <buffer log>
-        @type memory
-        chunk_limit_records 10
-        flush_interval 10
+        @type file
+        path /var/log/fluentd/{{namespace}}/movieinfo/buffer
+        chunk_limit_records 100
+        chunk_limit_size 5MB
+        flush_interval 10s
+        retry_max_times 2
+        retry_wait 2s
       </buffer>
     </match>
