@@ -1,0 +1,32 @@
+.gv-table-root {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #c3c0c0;
+    max-height: 300px;
+    overflow: auto;
+}
+
+.gv-table-cell {
+    display: flex;
+    border: 1px solid #c3c0c0;
+    flex: 1;
+    padding: 5px;
+}
+
+.gv-table-cell-key {
+    display: flex;
+}
+
+.gv-table-cell-value {
+    display: flex;
+    flex: 3;
+}
+
+.gv-table-header {
+    background-color: #e0e0e0;
+    font-weight: 700;
+}
+
+.gv-table-row {
+    display: flex
+}

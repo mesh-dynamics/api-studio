@@ -6,7 +6,8 @@ import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
 import axios from "axios";
-import { GoldenMeta } from "./Golden-Visibility";
+import {GoldenMeta} from "./Golden-Visibility";
+import {goldenActions} from '../actions/golden.actions'
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -212,6 +213,7 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ showGoldenMeta: false });
 
         dispatch(cubeActions.hideGoldenVisibility(true));
+        dispatch(goldenActions.resetServiceAndApiPath());
     }
 
     renderTestInfo = () => {

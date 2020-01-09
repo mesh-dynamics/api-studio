@@ -1,6 +1,8 @@
 import { goldenConstants } from "../constants/golden.constants";
 import { fetchGoldenContract, fetchGoldenExamples } from "../services/golden.service";
 
+const resetServiceAndApiPath = () => ({ type: goldenConstants.RESET_GOLDEN_API_PATH_AND_SERVICE });
+
 const setSelectedService = (data) => ({ type: goldenConstants.SET_SELECTED_SERVICE, data });
 
 const setSelectedApiPath = (data) => ({ type: goldenConstants.SET_SELECTED_API_PATH, data });
@@ -20,5 +22,6 @@ const getGoldenData = (goldenId, servce, api, selectedPageNumber) => async (disp
 export const goldenActions = {
     getGoldenData,
     setSelectedService,
-    setSelectedApiPath
+    setSelectedApiPath,
+    resetServiceAndApiPath
 };
