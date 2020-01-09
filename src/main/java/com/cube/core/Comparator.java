@@ -271,8 +271,8 @@ public interface Comparator {
 		}
 
 
-		Diff(String op, String path, Optional<JsonNode> value, Optional<String> from,
-					Optional<JsonNode> fromValue, Resolution resolution) {
+		public Diff(String op, String path, Optional<JsonNode> value, Optional<String> from,
+			Optional<JsonNode> fromValue, Resolution resolution) {
 			super();
 			this.op = op;
 			this.path = path;

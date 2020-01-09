@@ -100,7 +100,8 @@ public interface ReqRespStore {
         GoldenSet,
         RecordingOperationSetMeta,
         RecordingOperationSet,
-        MatchResultAggregate
+        MatchResultAggregate,
+		Diff
     }
 
     boolean save(Event event);

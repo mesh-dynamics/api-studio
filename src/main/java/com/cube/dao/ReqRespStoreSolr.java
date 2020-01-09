@@ -40,6 +40,7 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.CommonUtils;
@@ -53,6 +54,9 @@ import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
+import com.cube.core.Comparator.Diff;
+import com.cube.core.Comparator.Match;
+import com.cube.core.Comparator.Resolution;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
@@ -1589,6 +1593,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String NUMMATCHF = CPREFIX + "numMatch" + INT_SUFFIX;
     private static final String RESPMTF = CPREFIX + Constants.RESP_MATCH_TYPE + STRING_SUFFIX; // match type
     private static final String RESPMATCHMETADATAF = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
+    private static final String REQ_COMP_RES_TYPE_F = CPREFIX + Constants.REQ_COMP_RES_TYPE + STRING_SUFFIX;
+    private static final String REQ_COMP_RES_META_F = CPREFIX + Constants.REQ_COMP_RES_META + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
     private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
     private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
@@ -1614,28 +1620,89 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // usually result will never be updated. But we set id field uniquely anyway
 
         String type = Types.ReqRespMatchResult.toString();
-        // the id field is to (recordReqId, replayReqId) which is unique
-        String id = type + '-' + res.recordReqId.orElse("None") + '-' + res.replayReqId.orElse("None");
+        String recReplayReqIdCombined =
+            res.recordReqId.orElse("None") + '-' + res.replayReqId.orElse("None");
 
+        // the id field is to (recordReqId, replayReqId) which is unique
+        String id = type + '-' + recReplayReqIdCombined;
+        System.out.println(id);
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
         res.recordReqId.ifPresent(recordReqId ->  doc.setField(RECORDREQIDF, recordReqId));
         res.replayReqId.ifPresent(replayReqId ->  doc.setField(REPLAYREQIDF, replayReqId));
-        // TODO
-       /* doc.setField(REQMTF, res.reqMatchType.toString());
-        doc.setField(NUMMATCHF, res.numMatch);
-        doc.setField(RESPMTF, res.respMatchType.toString());
-        doc.setField(RESPMATCHMETADATAF, res.respMatchMetadata);
-        doc.setField(DIFFF, res.diff);
-        doc.setField(CUSTOMERIDF, res.customerId);
-        doc.setField(APPF, res.app);*/
         doc.setField(SERVICEF, res.service);
         doc.setField(PATHF, res.path);
         doc.setField(REPLAYIDF, res.replayId);
         res.recordTraceId.ifPresent(traceId  -> doc.setField(RECORDTRACEIDF, traceId));
         res.replayTraceId.ifPresent(traceId  -> doc.setField(REPLAYTRACEIDF, traceId));
+        doc.setField(REQMTF, res.reqMatchRes.toString());
+        doc.setField(NUMMATCHF, res.numMatch);
+        doc.setField(RESPMTF, res.respCompareRes.mt.toString());
+        doc.setField(RESPMATCHMETADATAF, res.respCompareRes.matchmeta);
+        doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
+                diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
+                    .concat(res.service).concat(res.path)))
+            .collect(Collectors.toList()));
+
+        res.reqCompareRes.ifPresent(reqCompRes -> {
+            doc.addChildDocuments(reqCompRes.diffs.stream().map(diff ->
+            diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
+                .concat(res.service).concat(res.path)))
+                .collect(Collectors.toList()));
+            doc.addField(REQ_COMP_RES_TYPE_F, reqCompRes.mt.toString());
+            doc.addField(REQ_COMP_RES_META_F, reqCompRes.matchmeta);
+        });
         return doc;
     }
+
+    private static final String DIFF_VALUE_F = CPREFIX + Constants.DIFF_VALUE_FIELD + NOTINDEXED_SUFFIX;
+    private static final String DIFF_FROM_STR_F = CPREFIX + Constants.DIFF_FROM_STR_FIELD + NOTINDEXED_SUFFIX;
+    private static final String DIFF_FROM_VALUE_F = CPREFIX + Constants.DIFF_FROM_VALUE_FIELD  + NOTINDEXED_SUFFIX;
+    private static final String DIFF_OP_F = CPREFIX + Constants.DIFF_OP_FIELD + STRING_SUFFIX;
+    private static final String DIFF_PATH_F = CPREFIX + Constants.DIFF_PATH_FIELD + STRING_SUFFIX;
+    private static final String DIFF_RESOLUTION_F = CPREFIX + Constants.DIFF_RESOLUTION_FIELD + STRING_SUFFIX;
+    private static final String DIFF_TYPE_F = CPREFIX + Constants.DIFF_TYPE_FIELD + STRING_SUFFIX;
+
+    private enum DiffType {
+        Request, Response
+    }
+
+    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix) {
+        SolrInputDocument inputDocument = new SolrInputDocument();
+        diff.value.ifPresent(val -> inputDocument
+            .setField(DIFF_VALUE_F, val.toString()));
+        diff.fromValue.ifPresent(fromVal -> inputDocument
+            .setField(DIFF_FROM_VALUE_F, fromVal.toString()));
+        diff.from.ifPresent(frm -> inputDocument.setField(DIFF_FROM_STR_F, frm));
+        inputDocument.setField(DIFF_OP_F, diff.op);
+        inputDocument.setField(DIFF_PATH_F, diff.path);
+        inputDocument.setField(DIFF_RESOLUTION_F, diff.resolution.name());
+        inputDocument.setField(DIFF_TYPE_F, type.name());
+        String id = Types.Diff.toString().concat("-").concat(
+            String.valueOf(Objects.hash(idPrefix, diff.path)));
+        System.out.println(id);
+        inputDocument.setField(IDF, id);
+        inputDocument.setField(TYPEF, Types.Diff.toString());
+        return inputDocument;
+    }
+
+    private Diff solrDocToDiff(SolrDocument doc) throws Exception {
+        String op = getStrField(doc, DIFF_OP_F).orElseThrow(() ->
+            new Exception("Operation not present"));
+        String path = getStrField(doc, DIFF_PATH_F).orElseThrow(() ->
+            new Exception("Path not present"));
+        Resolution resolution = getStrField(doc, DIFF_RESOLUTION_F).flatMap(res ->
+            Utils.valueOf(Resolution.class, res)).orElseThrow(() ->
+            new Exception("Resolution Not Specified"));
+        Optional<JsonNode> valNode = getStrField(doc, DIFF_VALUE_F)
+            .map(UtilException.rethrowFunction(config.jsonMapper::readTree));
+        Optional<JsonNode> fromValueNode =  getStrField(doc, DIFF_FROM_VALUE_F)
+            .map(UtilException.rethrowFunction(config.jsonMapper::readTree));
+        Optional<String> fromVal = getStrField(doc, DIFF_FROM_STR_F);
+
+        return new Diff(op, path, valNode, fromVal, fromValueNode,resolution);
+    }
+
 
     /**
      * Get request/response match result (as computed by analysis) for a given recorded request and
@@ -1652,7 +1719,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
             addFilter(query, RECORDREQIDF, recordReqId);
             addFilter(query, REPLAYIDF, replayId);
-
+            query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()+"]");
             Optional<Integer> maxresults = Optional.of(1);
             return SolrIterator.getStream(solr, query, maxresults).findFirst()
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
@@ -1688,7 +1755,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REQMTF, reqmt.map(Enum::toString));
         addFilter(query, RESPMTF, respmt.map(Enum::toString));
 
-        return SolrIterator.getResults(solr, query, nummatches, ReqRespStoreSolr::docToAnalysisMatchResult, start);
+        return SolrIterator.getResults(solr, query, nummatches, this::docToAnalysisMatchResult, start);
     }
 
     @Override
@@ -1698,7 +1765,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
         addFilter(query, REPLAYIDF, replayId);
 
-        return SolrIterator.getResults(solr, query, Optional.empty(), ReqRespStoreSolr::docToAnalysisMatchResult, Optional.empty());
+        return SolrIterator.getResults(solr, query, Optional.empty(), this::docToAnalysisMatchResult, Optional.empty());
     }
 
     @Override
@@ -1755,29 +1822,51 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param doc
      * @return
      */
-    private static Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
-        Optional<String> recordReqId = getStrField(doc , RECORDREQIDF);
-        Optional<String> replayReqId = getStrField(doc, REPLAYREQIDF);
-        String replayId = getStrField(doc, REPLAYIDF).orElse("");
+    private Optional<ReqRespMatchResult> docToAnalysisMatchResult(SolrDocument doc) {
+        try {
+            Optional<String> recordReqId = getStrField(doc, RECORDREQIDF);
+            Optional<String> replayReqId = getStrField(doc, REPLAYREQIDF);
+            String replayId = getStrField(doc, REPLAYIDF).orElse("");
 
-        Comparator.MatchType reqMatchType = getStrField(doc , REQMTF)
+            Comparator.MatchType reqMatchType = getStrField(doc, REQMTF)
                 .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
-        Comparator.MatchType respMatchType = getStrField(doc, RESPMTF)
+
+            Comparator.MatchType respMatchType = getStrField(doc, RESPMTF)
                 .map(Comparator.MatchType::valueOf).orElse(Comparator.MatchType.Default);
-        Integer numMatch = getIntField(doc , NUMMATCHF).orElse(-1);
-        String respMatchMetaData = getStrField(doc , RESPMATCHMETADATAF).orElse("");
-        String diff = getStrFieldMV(doc , DIFFF).stream().findFirst().orElse("[]");
-        String customerId = getStrField(doc , CUSTOMERIDF).orElse("");
-        String app = getStrField(doc , APPF).orElse("");
-        String service = getStrField(doc, SERVICEF).orElse("");
-        String path = getStrField(doc, PATHF).orElse("");
-        Optional<String> recordTraceId = getStrField(doc, RECORDTRACEIDF);
-        Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
-        return Optional.empty();
-        // TODO
-        /*return Optional.of(new ReqRespMatchResult(
-                recordReqId , replayReqId , reqMatchType , numMatch , respMatchType, respMatchMetaData,
-                diff, customerId, app, service, path, replayId, recordTraceId, replayTraceId));*/
+            String respMatchMetaData = getStrField(doc, RESPMATCHMETADATAF).orElse("");
+
+            List<Diff> respMatchDiffList = doc.getChildDocuments().stream().filter(childDoc ->
+                DiffType.Response.name().equals(getStrField(childDoc
+                    , DIFF_TYPE_F).orElse(DiffType.Response.name())))
+                .map(UtilException.rethrowFunction(this::solrDocToDiff)).collect(
+                Collectors.toList());
+
+            Match respMatch = new Match(respMatchType, respMatchMetaData, respMatchDiffList);
+
+            Optional<Match> reqCompResOptional = getStrField(doc, REQ_COMP_RES_TYPE_F)
+                .map(Comparator.MatchType::valueOf).map(UtilException.rethrowFunction(
+                    reqCompResType -> { String reqCompResMeta = getStrField(doc
+                        , REQ_COMP_RES_META_F).orElse("");
+                List<Diff> reqCompDiffList = doc.getChildDocuments().stream().filter(childDoc ->
+                    DiffType.Request.name().equals(getStrField(childDoc
+                        , DIFF_TYPE_F).orElse(DiffType.Response.name())))
+                    .map(UtilException.rethrowFunction(this::solrDocToDiff)).collect(
+                        Collectors.toList());
+                return new Match(reqCompResType, reqCompResMeta, reqCompDiffList);
+            }));
+            Integer numMatch = getIntField(doc, NUMMATCHF).orElse(-1);
+            String service = getStrField(doc, SERVICEF).orElse("");
+            String path = getStrField(doc, PATHF).orElse("");
+            Optional<String> recordTraceId = getStrField(doc, RECORDTRACEIDF);
+            Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
+            return Optional.of(new ReqRespMatchResult(recordReqId, replayReqId, reqMatchType
+                , numMatch, replayId, service, path, recordTraceId, replayTraceId, respMatch
+                , reqCompResOptional));
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert solr doc to diff")), e);
+            return Optional.empty();
+        }
     }
 
     /* (non-Javadoc)
