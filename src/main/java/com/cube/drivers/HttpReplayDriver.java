@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import javax.ws.rs.core.Response;
@@ -125,8 +126,14 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				}
 			});
 
-			return new HttpReplayRequest(reqbuilder.build());
+			//Adding additional headers during Replay, This will help identify the case where the request is retried
+            // by the platform for some reason, which leads to multiple identical events during the replay run.
+            reqbuilder.header(Constants.CUBE_HEADER_PREFIX + Constants.SRC_REQEUEST_ID, reqEvent.reqId);
 
+            //This will help to catch if the same request is replayed multiple times by Replay Driver
+            reqbuilder.header(Constants.CUBE_HEADER_PREFIX + Constants.REQEUEST_ID, UUID.randomUUID().toString());
+
+			return new HttpReplayRequest(reqbuilder.build());
 		}
 
 		@Override
