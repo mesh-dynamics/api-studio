@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Provider } from "react-redux";
 import App from "./App";
-import { LoginPage } from "./LoginPage";
+import { LoginPage } from "./Authentication/LoginPage";
 import { PrivateRoute } from "./PrivateRoute";
 import { history } from '../helpers';
 
@@ -15,7 +15,6 @@ const Root = ( { store } ) => (
                 <Switch>
                     <Route path="/sign_in" component={LoginPage} />
                     <PrivateRoute path="/*" component={App} />
-
                     <Route path="/*" component={App} />
                 </Switch>
             </div>
