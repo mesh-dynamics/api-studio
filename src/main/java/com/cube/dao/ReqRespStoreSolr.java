@@ -780,10 +780,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
-        if(orValues.isEmpty()) return;
-        String value = orValues.stream().map(SolrIterator::escapeQueryChars)
-            .collect(Collectors.joining(" OR " , "(" , ")"));
-        addFilter(query , fieldname, value, false);
+        if(orValues.isEmpty()) return; // No values specified, so no filters
+        String filter = orValues.stream().map(val -> {
+            if (val.isBlank()) {
+                // if value is a blank string, convert it to field negation predicate since Solr does not store blank
+                // fields
+                return (String.format("(*:* NOT %s:*)", fieldname));
+            } else {
+                return String.format("(%s:%s)", fieldname, SolrIterator.escapeQueryChars(val));
+            }
+        }).collect(Collectors.joining(" OR "));
+        query.addFilterQuery(filter);
     }
 
     private static void addEndRangeFilter(SolrQuery query, String fieldname, String fval, boolean endInclusive, boolean quote) {
