@@ -847,7 +847,7 @@ class ShareableLink extends Component {
                                     newValue={item.actJSON}
                                     splitView={true}
                                     disableWordDiff={false}
-                                    diffArray={null}
+                                    diffArray={item.reductedDiffArray}
                                     filterPaths={item.filterPaths}
                                     onLineNumberClick={(lineId, e) => { return; }}
                                     inputElementRef={this.inputElementRef}
