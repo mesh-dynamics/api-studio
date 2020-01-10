@@ -18,53 +18,13 @@ public class AnalyzeWSController {
         this.cubeServerService = cubeServerService;
     }
 
-    @GetMapping("/health")
-    public ResponseEntity getData1(HttpServletRequest request) {
+    @GetMapping("**")
+    public ResponseEntity getData(HttpServletRequest request) {
         return cubeServerService.fetchGetResponse(request);
     }
 
-    @GetMapping("/aggrresult/{replayid}")
-    public ResponseEntity getResultAggregate(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @GetMapping("/replayRes/{customerId}/{app}/{service}/{replayId}")
-    public ResponseEntity replayResult(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @GetMapping("/analysisRes/{replayId}/{recordReqId}")
-    public ResponseEntity getAnalysisResult(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @GetMapping("/analysisResByPath/{replayId}")
-    public ResponseEntity getAnalysisResultByPath(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @GetMapping("/analysisResNoTrace/{replayId}/{recordRequestId}")
-    public ResponseEntity getAnalysisResultByRequest(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @GetMapping("/timelineres/{customer}/{app}")
-    public ResponseEntity getTimelineResults(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @PostMapping("/registerTemplate/{type}/{customerId}/{appId}/{serviceName}/{path:.+}")
-    public ResponseEntity registerTemplate(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping("/registerTemplateApp/{type}/{customerId}/{appId}")
-    public ResponseEntity registerTemplateApp(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping(value = "/analyze/{replayid}")
-    public ResponseEntity analyze(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
+    @PostMapping("**")
+    public ResponseEntity postData(HttpServletRequest request, Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
     }
 }

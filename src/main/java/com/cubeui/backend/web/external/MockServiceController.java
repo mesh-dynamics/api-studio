@@ -18,30 +18,14 @@ public class MockServiceController {
     public MockServiceController(CubeServerService cubeServerService) {
         this.cubeServerService = cubeServerService;
     }
-
-    @GetMapping("/health")
-    public ResponseEntity health(HttpServletRequest request) {
+    @GetMapping("**")
+    public ResponseEntity getData(HttpServletRequest request) {
         return cubeServerService.fetchGetResponse(request);
     }
 
-    @GetMapping("/{customerid}/{app}/{instanceid}/{service}/{var:.+}")
-    public ResponseEntity get(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
-    }
-
-    @PostMapping(value = "/{customerid}/{app}/{instanceid}/{service}/{var:.+}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity postForms(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping(value = "/{customerid}/{app}/{instanceid}/{service}/{var:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity postJson(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping(value = "/fr", consumes = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity funcJson(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
+    @PostMapping("**")
+    public ResponseEntity postData(HttpServletRequest request, Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
     }
 
 }
