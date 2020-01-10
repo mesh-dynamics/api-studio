@@ -630,7 +630,8 @@ public class AnalyzeWS {
             .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
         Optional<Boolean> includeDiff = Optional
             .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);
-
+		Optional<String> resolution = Optional.ofNullable(queryParams
+			.getFirst(Constants.DIFF_RESOLUTION_FIELD));
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
@@ -640,7 +641,7 @@ public class AnalyzeWS {
 
             Result<ReqRespMatchResult> result = rrstore
                 .getAnalysisMatchResults(replayId, service, path,
-                    reqMatchType, respMatchType, start, numResults);
+                    reqMatchType, respMatchType, start, numResults, resolution);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;

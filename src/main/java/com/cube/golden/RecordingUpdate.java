@@ -289,7 +289,7 @@ public class RecordingUpdate {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
-            Optional.empty()
+            Optional.empty(), Optional.empty()
         );
 
         return matchResults.getObjects();

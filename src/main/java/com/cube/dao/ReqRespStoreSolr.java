@@ -1744,9 +1744,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Result<ReqRespMatchResult>
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
-                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches) {
+                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches,
+        Optional<String> resolution) {
 
-        SolrQuery query = new SolrQuery("*:*");
+        String queryString = resolution.map(res ->
+            "{!parent which="+TYPEF+":"+Types.ReqRespMatchResult.toString()+"} "
+                + "+("+TYPEF+":"+Types.Diff.toString()+") +("+DIFF_RESOLUTION_F+":"+res+")")
+            .orElse("*:*");
+
+
+        SolrQuery query = new SolrQuery(queryString);
         query.setFields("*");
         addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
         addFilter(query, REPLAYIDF, replayId);
