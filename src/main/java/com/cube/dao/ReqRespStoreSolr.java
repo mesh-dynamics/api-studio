@@ -1694,9 +1694,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Resolution resolution = getStrField(doc, DIFF_RESOLUTION_F).flatMap(res ->
             Utils.valueOf(Resolution.class, res)).orElseThrow(() ->
             new Exception("Resolution Not Specified"));
-        Optional<JsonNode> valNode = getStrField(doc, DIFF_VALUE_F)
+        Optional<JsonNode> valNode = getStrFieldMVFirst(doc, DIFF_VALUE_F)
             .map(UtilException.rethrowFunction(config.jsonMapper::readTree));
-        Optional<JsonNode> fromValueNode =  getStrField(doc, DIFF_FROM_VALUE_F)
+        Optional<JsonNode> fromValueNode =  getStrFieldMVFirst(doc, DIFF_FROM_VALUE_F)
             .map(UtilException.rethrowFunction(config.jsonMapper::readTree));
         Optional<String> fromVal = getStrField(doc, DIFF_FROM_STR_F);
 
