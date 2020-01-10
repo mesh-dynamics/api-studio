@@ -475,9 +475,13 @@ public class AnalyzeWS {
 		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
 			    .map(event -> event.getPayloadAsJsonString(config));
 
-		    Optional<String> diff = null;
+		    Optional<String> diff = Optional.empty();
+		    Optional<String> reqCompDiff = Optional.empty();
 		    try {
 			    diff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
+			    reqCompDiff = matchRes.reqCompareRes.map(UtilException.rethrowFunction(
+			    	reqCompRes -> jsonMapper.writeValueAsString(reqCompRes.diffs)));
+
 		    } catch (JsonProcessingException e) {
 			   LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 				   "Unable to convert diff list to json string")),e);
@@ -485,7 +489,8 @@ public class AnalyzeWS {
 		    MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
 			    matchRes.reqMatchRes, matchRes.numMatch,
 			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
-			    diff, request, replayedRequest, recordedResponse, replayedResponse);
+			    matchRes.reqCompareRes.map(reqComRes -> reqComRes.mt),
+			    diff, reqCompDiff, request, replayedRequest, recordedResponse, replayedResponse);
 
 		    String resultJson = null;
 		    try {
@@ -664,7 +669,9 @@ public class AnalyzeWS {
                 Optional<String> diff = Optional.empty();
                 Optional<String> recordResponse = Optional.empty();
                 Optional<String> replayResponse = Optional.empty();
-
+				Optional<String> reqCompDiff = Optional.empty();
+				Optional<Comparator.MatchType> reqCompResType =  matchRes.reqCompareRes.map(reqCompRes ->
+					reqCompRes.mt);
                 if (includeDiff.orElse(false)) {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
@@ -672,6 +679,8 @@ public class AnalyzeWS {
                         .map(event -> event.getPayloadAsJsonString(config));
 	                try {
 		                diff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
+		                reqCompDiff = matchRes.reqCompareRes.map(UtilException.rethrowFunction(reqCompRes ->
+			                 jsonMapper.writeValueAsString(reqCompRes.diffs)));
 	                } catch (JsonProcessingException e) {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
@@ -684,8 +693,8 @@ public class AnalyzeWS {
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
                     matchRes.reqMatchRes, matchRes.numMatch,
-                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
-                    diff, recordedRequest, replayedRequest, recordResponse, replayResponse);
+                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType,
+                    diff, reqCompDiff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1258,7 +1267,9 @@ public class AnalyzeWS {
                         Comparator.MatchType respmt,
                         String service,
                         String path,
+                        Optional<Comparator.MatchType> reqCompResType,
                         Optional<String> diff,
+                        Optional<String> reqCompDiff,
                         Optional<String> recordRequest,
                         Optional<String> replayRequest,
                         Optional<String> recordResponse,
@@ -1271,6 +1282,8 @@ public class AnalyzeWS {
             this.service = service;
             this.path = path;
             this.diff = diff;
+            this.reqCompDiff = reqCompDiff;
+            this.reqCompResType = reqCompResType;
             this.recordRequest = recordRequest;
             this.replayRequest = replayRequest;
             this.recordResponse = recordResponse;
@@ -1296,7 +1309,10 @@ public class AnalyzeWS {
         public final Optional<String> recordResponse;
         @JsonIgnore
         public final Optional<String> replayResponse;
-
+        @JsonIgnore
+        public final Optional<String> reqCompDiff;
+		@JsonIgnore
+		public final Optional<Comparator.MatchType> reqCompResType;
 	    //JsonRawValue is to avoid Jackson escaping the String while using writeValueAsString
 	    @JsonRawValue
 	    public String getDiff() {
@@ -1322,7 +1338,12 @@ public class AnalyzeWS {
 	    public String getReplayResponse() {
 		    return replayResponse.orElse(null);
 	    }
-    }
+
+	    @JsonRawValue
+	    public String getReqCompDiff() {return reqCompDiff.orElse(null);}
+
+	    @JsonRawValue Comparator.MatchType getReqCompResType(){return reqCompResType.orElse(null);}
+	}
 
     static class MatchResults {
         public MatchResults(List<MatchRes> res, long numFound, String app, String templateVersion) {

@@ -1734,7 +1734,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RECORDREQIDF, recordReqId, true);
         addFilter(query, REPLAYREQIDF, replayReqId, true);
         addFilter(query, REPLAYIDF, replayId);
-
+        query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()+"]");
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst()
             .flatMap(doc -> docToAnalysisMatchResult(doc));
@@ -1754,7 +1754,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, PATHF, path);
         addFilter(query, REQMTF, reqmt.map(Enum::toString));
         addFilter(query, RESPMTF, respmt.map(Enum::toString));
-
+        query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()+"]");
         return SolrIterator.getResults(solr, query, nummatches, this::docToAnalysisMatchResult, start);
     }
 
