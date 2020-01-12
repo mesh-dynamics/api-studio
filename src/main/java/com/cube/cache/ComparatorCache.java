@@ -105,6 +105,7 @@ public class ComparatorCache {
                 )));
                 return toReturn;
             });
+            
         } catch (ExecutionException e) {
             LOGGER.info(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Unable to find template in cache, using default",
