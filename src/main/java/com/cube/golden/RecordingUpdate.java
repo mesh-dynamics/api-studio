@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.dao.Event;
 import com.cube.dao.Recording;
@@ -170,7 +171,7 @@ public class RecordingUpdate {
 
                 TemplateKey key = new TemplateKey(originalRec.templateVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
-                    TemplateKey.Type.Request);
+                    Type.RequestMatch);
                 Comparator comparator = config.comparatorCache.getComparator(key , Event.EventType.HTTPRequest);
 
                 // Currently request is not transformed, so send empty operation list and empty replayRequest
@@ -289,7 +290,7 @@ public class RecordingUpdate {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
-            Optional.empty()
+            Optional.empty(), Optional.empty()
         );
 
         return matchResults.getObjects();

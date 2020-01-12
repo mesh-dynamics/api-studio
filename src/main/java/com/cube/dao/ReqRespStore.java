@@ -91,8 +91,9 @@ public interface ReqRespStore {
 		Analysis,
 		ReqRespMatchResult,
 		Recording,
-		ResponseCompareTemplate,
+		RequestMatchTemplate,
 		RequestCompareTemplate,
+		ResponseCompareTemplate,
 		ReplayStats,
         FuncReqResp,
         TemplateSet,
@@ -536,7 +537,7 @@ public interface ReqRespStore {
      */
     Result<ReqRespMatchResult>
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
-                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
+                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches, Optional<String> resolution);
 
     /**
      * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType

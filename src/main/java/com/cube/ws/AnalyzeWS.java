@@ -51,6 +51,7 @@ import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.TemplateEntry;
@@ -291,13 +292,16 @@ public class AnalyzeWS {
             // to our class definition , otherwise send error response
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
             TemplateKey key;
-            if (Constants.REQUEST.equalsIgnoreCase(type)) {
+            if (Type.RequestMatch.toString().equalsIgnoreCase(type)) {
                 key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
-                    serviceName, path, TemplateKey.Type.Request);
-            } else if (Constants.RESPONSE.equalsIgnoreCase(type)) {
-                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
-                    serviceName, path,
-                    TemplateKey.Type.Response);
+                    serviceName, path, Type.RequestMatch);
+            } else if (Type.RequestCompare.toString().equalsIgnoreCase(type)) {
+		        key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+			        serviceName, path, Type.RequestCompare);
+            }
+            else if (Type.ResponseCompare.toString().equalsIgnoreCase(type)) {
+	            key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+		            serviceName, path, Type.RequestCompare);
             } else {
                 return Response.serverError().type(MediaType.TEXT_PLAIN)
                     .entity("Invalid template type, should be " +
@@ -343,11 +347,11 @@ public class AnalyzeWS {
                                      @PathParam("templateVersion") String templateVersion,
                                      @PathParam("service") String service) {
 
-        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, TemplateKey.Type.Response);
+        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, Type.ResponseCompare);
     }
 
     /**
-     * Endpoint to get registered request template
+     * Endpoint to get registered request match template
      * @param urlInfo UrlInfo object
      * @param appId Application Id
      * @param customerId Customer Id
@@ -356,14 +360,33 @@ public class AnalyzeWS {
      * @return
      */
     @GET
-    @Path("getReqTemplate/{customerId}/{appId}/{templateVersion}/{service}")
-    public Response getReqTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+    @Path("getReqMatchTemplate/{customerId}/{appId}/{templateVersion}/{service}")
+    public Response getReqMatchTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
                                     @PathParam("customerId") String customerId,
                                     @PathParam("templateVersion") String templateVersion,
                                     @PathParam("service") String service) {
 
-        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, TemplateKey.Type.Request);
+        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, Type.RequestMatch);
     }
+
+	/**
+	 * Endpoint to get registered request compare template
+	 * @param urlInfo UrlInfo object
+	 * @param appId Application Id
+	 * @param customerId Customer Id
+	 * @param templateVersion Template version
+	 * @param service The service id
+	 * @return
+	 */
+	@GET
+	@Path("getReqCompareTemplate/{customerId}/{appId}/{templateVersion}/{service}")
+	public Response getReqCompareTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+		@PathParam("customerId") String customerId,
+		@PathParam("templateVersion") String templateVersion,
+		@PathParam("service") String service) {
+
+		return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, Type.RequestCompare);
+	}
 
 
     public Response getCompareTemplate(UriInfo urlInfo, String appId,
@@ -475,12 +498,11 @@ public class AnalyzeWS {
 		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
 			    .map(event -> event.getPayloadAsJsonString(config));
 
-		    Optional<String> diff = Optional.empty();
-		    Optional<String> reqCompDiff = Optional.empty();
+		    Optional<String> respCompDiff = Optional.empty();
+		    Optional<String> reqCompDiff = Optional.empty();;
 		    try {
-			    diff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
-			    reqCompDiff = matchRes.reqCompareRes.map(UtilException.rethrowFunction(
-			    	reqCompRes -> jsonMapper.writeValueAsString(reqCompRes.diffs)));
+			    respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
+			    reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.reqCompareRes.diffs));
 
 		    } catch (JsonProcessingException e) {
 			   LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -489,8 +511,8 @@ public class AnalyzeWS {
 		    MatchRes matchResFinal = new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
 			    matchRes.reqMatchRes, matchRes.numMatch,
 			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
-			    matchRes.reqCompareRes.map(reqComRes -> reqComRes.mt),
-			    diff, reqCompDiff, request, replayedRequest, recordedResponse, replayedResponse);
+			    matchRes.reqCompareRes.mt,
+			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse, replayedResponse);
 
 		    String resultJson = null;
 		    try {
@@ -630,7 +652,8 @@ public class AnalyzeWS {
             .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
         Optional<Boolean> includeDiff = Optional
             .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);
-
+		Optional<String> resolution = Optional.ofNullable(queryParams
+			.getFirst(Constants.DIFF_RESOLUTION_FIELD));
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
@@ -640,7 +663,7 @@ public class AnalyzeWS {
 
             Result<ReqRespMatchResult> result = rrstore
                 .getAnalysisMatchResults(replayId, service, path,
-                    reqMatchType, respMatchType, start, numResults);
+                    reqMatchType, respMatchType, start, numResults, resolution);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
@@ -666,21 +689,19 @@ public class AnalyzeWS {
 
                 Optional<String> recordedRequest = Optional.empty();
                 Optional<String> replayedRequest = Optional.empty();
-                Optional<String> diff = Optional.empty();
+                Optional<String> respCompDiff = Optional.empty();
                 Optional<String> recordResponse = Optional.empty();
                 Optional<String> replayResponse = Optional.empty();
 				Optional<String> reqCompDiff = Optional.empty();
-				Optional<Comparator.MatchType> reqCompResType =  matchRes.reqCompareRes.map(reqCompRes ->
-					reqCompRes.mt);
+				Comparator.MatchType reqCompResType =  matchRes.reqCompareRes.mt;
                 if (includeDiff.orElse(false)) {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequestEvent)
                         .map(event -> event.getPayloadAsJsonString(config));
 	                try {
-		                diff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
-		                reqCompDiff = matchRes.reqCompareRes.map(UtilException.rethrowFunction(reqCompRes ->
-			                 jsonMapper.writeValueAsString(reqCompRes.diffs)));
+		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
+		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.reqCompareRes.diffs));
 	                } catch (JsonProcessingException e) {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
@@ -694,7 +715,7 @@ public class AnalyzeWS {
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
                     matchRes.reqMatchRes, matchRes.numMatch,
                     matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType,
-                    diff, reqCompDiff, recordedRequest, replayedRequest, recordResponse, replayResponse);
+	                respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse, replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1262,12 +1283,12 @@ public class AnalyzeWS {
 
         public MatchRes(Optional<String> recordReqId,
                         Optional<String> replayReqId,
-                        Comparator.MatchType reqmt,
+                        Comparator.MatchType reqMatchResType,
                         int numMatch,
-                        Comparator.MatchType respmt,
+                        Comparator.MatchType respCompResType,
                         String service,
                         String path,
-                        Optional<Comparator.MatchType> reqCompResType,
+                        Comparator.MatchType reqCompResType,
                         Optional<String> diff,
                         Optional<String> reqCompDiff,
                         Optional<String> recordRequest,
@@ -1276,12 +1297,12 @@ public class AnalyzeWS {
                         Optional<String> replayResponse) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
-            this.reqmt = reqmt;
+            this.reqMatchResType = reqMatchResType;
             this.numMatch = numMatch;
-            this.respmt = respmt;
+            this.respCompResType = respCompResType;
             this.service = service;
             this.path = path;
-            this.diff = diff;
+            this.respCompDiff = diff;
             this.reqCompDiff = reqCompDiff;
             this.reqCompResType = reqCompResType;
             this.recordRequest = recordRequest;
@@ -1292,15 +1313,16 @@ public class AnalyzeWS {
 
         public final Optional<String> recordReqId;
         public final Optional<String> replayReqId;
-        public final Comparator.MatchType reqmt;
+        public final Comparator.MatchType reqMatchResType;
         public final int numMatch;
-        public final Comparator.MatchType respmt;
-        public final String service;
+        public final Comparator.MatchType respCompResType;
+	    public final Comparator.MatchType reqCompResType;
+	    public final String service;
         public final String path;
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
         @JsonIgnore
-        public final Optional<String> diff;
+        public final Optional<String> respCompDiff;
         @JsonIgnore
         public final Optional<String> recordRequest;
         @JsonIgnore
@@ -1311,12 +1333,10 @@ public class AnalyzeWS {
         public final Optional<String> replayResponse;
         @JsonIgnore
         public final Optional<String> reqCompDiff;
-		@JsonIgnore
-		public final Optional<Comparator.MatchType> reqCompResType;
 	    //JsonRawValue is to avoid Jackson escaping the String while using writeValueAsString
 	    @JsonRawValue
-	    public String getDiff() {
-		    return diff.orElse(null);
+	    public String getRespCompDiff() {
+		    return respCompDiff.orElse(null);
 	    }
 
 	    @JsonRawValue
@@ -1341,8 +1361,6 @@ public class AnalyzeWS {
 
 	    @JsonRawValue
 	    public String getReqCompDiff() {return reqCompDiff.orElse(null);}
-
-	    @JsonRawValue Comparator.MatchType getReqCompResType(){return reqCompResType.orElse(null);}
 	}
 
     static class MatchResults {

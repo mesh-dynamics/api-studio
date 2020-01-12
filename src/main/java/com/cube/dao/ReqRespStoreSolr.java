@@ -53,6 +53,7 @@ import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Diff;
 import com.cube.core.Comparator.Match;
@@ -633,8 +634,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         try {
             CompareTemplate compareTemplateObj = config.jsonMapper.readValue(compareTemplate.get() , CompareTemplate.class);
-            TemplateKey.Type templateType = type.get().equals(Types.RequestCompareTemplate.toString()) ?
-                TemplateKey.Type.Request : TemplateKey.Type.Response;
+            TemplateKey.Type templateType = getTemplateType(type.get());
             CompareTemplateVersioned compareTemplateVersioned = new CompareTemplateVersioned(service , requestPath,
                 templateType, compareTemplateObj);
             return Stream.of(compareTemplateVersioned);
@@ -1412,9 +1412,28 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return solrDoc.getFieldValue(IDF).toString();
     }
 
+
     public static String getTemplateType(TemplateKey key) {
-        return (key.getReqOrResp() == TemplateKey.Type.Request) ?
-                Types.RequestCompareTemplate.toString() : Types.ResponseCompareTemplate.toString();
+         if (key.getReqOrResp() == Type.RequestMatch) {
+             return  Types.RequestMatchTemplate.toString();
+         }
+         else if (key.getReqOrResp() == Type.RequestCompare) {
+             return  Types.RequestCompareTemplate.toString();
+         }
+         else {
+             return Types.ResponseCompareTemplate.toString();
+         }
+    }
+
+    public static TemplateKey.Type getTemplateType(String type) {
+        // Cannot creat switch since type enums are not constant
+        if(type.equalsIgnoreCase(TemplateKey.Type.RequestMatch.toString())) {
+            return Type.RequestMatch;
+        }
+        else if(type.equalsIgnoreCase(TemplateKey.Type.RequestCompare.toString())) {
+            return Type.ResponseCompare;
+        }
+        return Type.ResponseCompare;
     }
 
 
@@ -1644,14 +1663,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .concat(res.service).concat(res.path)))
             .collect(Collectors.toList()));
 
-        res.reqCompareRes.ifPresent(reqCompRes -> {
-            doc.addChildDocuments(reqCompRes.diffs.stream().map(diff ->
-            diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
-                .concat(res.service).concat(res.path)))
-                .collect(Collectors.toList()));
-            doc.addField(REQ_COMP_RES_TYPE_F, reqCompRes.mt.toString());
-            doc.addField(REQ_COMP_RES_META_F, reqCompRes.matchmeta);
-        });
+        doc.addChildDocuments(res.reqCompareRes.diffs.stream().map(diff ->
+        diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
+            .concat(res.service).concat(res.path)))
+            .collect(Collectors.toList()));
+        doc.addField(REQ_COMP_RES_TYPE_F, res.reqCompareRes.mt.toString());
+        doc.addField(REQ_COMP_RES_META_F, res.reqCompareRes.matchmeta);
         return doc;
     }
 
@@ -1744,9 +1761,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Result<ReqRespMatchResult>
     getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
-                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches) {
+                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches,
+        Optional<String> resolution) {
 
-        SolrQuery query = new SolrQuery("*:*");
+        String queryString = resolution.map(res ->
+            "{!parent which="+TYPEF+":"+Types.ReqRespMatchResult.toString()+"} "
+                + "+("+TYPEF+":"+Types.Diff.toString()+") +("+DIFF_RESOLUTION_F+":"+res+")")
+            .orElse("*:*");
+
+
+        SolrQuery query = new SolrQuery(queryString);
         query.setFields("*");
         addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
         addFilter(query, REPLAYIDF, replayId);
@@ -1861,7 +1885,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
             return Optional.of(new ReqRespMatchResult(recordReqId, replayReqId, reqMatchType
                 , numMatch, replayId, service, path, recordTraceId, replayTraceId, respMatch
-                , reqCompResOptional));
+                , reqCompResOptional.get()));
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Unable to convert solr doc to diff")), e);

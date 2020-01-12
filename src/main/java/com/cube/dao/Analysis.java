@@ -5,7 +5,6 @@
  */
 package com.cube.dao;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,6 +67,9 @@ public class Analysis {
 	public int reqsinglematch=0; // matched with only one request in replay
 	public int reqmultiplematch=0; // matched multiple requests in the replay
 	public int reqnotmatched=0; // not matched
+	public int reqcomparematched=0; // number of requests exactly matched
+	public int reqcomparepartiallymatched=0; // number of requests partially matched
+	public int reqcomparenotmatched=0; // not matched
 	public int respmatched=0; // resp matched exactly
 	public int resppartiallymatched=0; // resp matched based on template
 	public int respnotmatched=0; // not matched
@@ -89,40 +91,48 @@ public class Analysis {
         /**
          * @param recordReq
          * @param replayReq
-         * @param respMatch
+         * @param respCompareRes
          */
         public ReqRespMatchWithEvent(Event recordReq, Optional<Event> replayReq
-	        , Comparator.Match respMatch, Optional<Event> recordResp, Optional<Event> replayResp
-	        , Optional<Comparator.Match> reqCompareRes) {
+	        , Comparator.Match respCompareRes, Optional<Event> recordResp, Optional<Event> replayResp
+	        , Comparator.Match reqCompareRes) {
 	        this.recordReq = recordReq;
 	        this.replayReq = replayReq;
 	        this.recordResp = recordResp;
 	        this.replayResp = replayResp;
-	        this.respMatch = respMatch;
+	        this.respCompareRes = respCompareRes;
 	        this.reqCompareRes = reqCompareRes;
         }
 
-        final Comparator.Match respMatch;
-        final Optional<Comparator.Match> reqCompareRes;
+        final Comparator.Match respCompareRes;
+        final Comparator.Match reqCompareRes;
         final Event recordReq;
         final Optional<Event> replayReq;
         final Optional<Event> recordResp;
         final Optional<Event> replayResp;
 
         public Comparator.MatchType getRespMt() {
-            return respMatch.mt;
+            return respCompareRes.mt;
         }
 
         public List<Comparator.Diff> getRespDiffs() {
-            return respMatch.diffs;
+            return respCompareRes.diffs;
         }
 
-        public Optional<Comparator.Match> getReqCompResult() {
+        public Comparator.Match getReqCompResult() {
         	return reqCompareRes;
         }
 
+	    public Comparator.MatchType getReqMt() {
+		    return reqCompareRes.mt;
+	    }
 
-        public Optional<String> getRecordedResponseBody(Config config) {
+	    public List<Comparator.Diff> getReqDiffs() {
+		    return reqCompareRes.diffs;
+	    }
+
+
+	    public Optional<String> getRecordedResponseBody(Config config) {
             return recordResp.map(response-> response.getPayloadAsString(config));
         }
 
