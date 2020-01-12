@@ -39,7 +39,7 @@ public class CommonConfig {
     public static String intent;
 
     public String customerId, app, instance, serviceName;
-    public Optional<EncryptionConfig> encryptionConfig = Optional.empty();
+    public final Optional<EncryptionConfig> encryptionConfig;
 
     public CommonConfig() throws Exception {
         this.jsonMapper = new ObjectMapper();
@@ -75,9 +75,10 @@ public class CommonConfig {
 
         // TODO Replace with constants once it comes in commons
 //        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
-        fromEnvOrProperties("io.md.encryptionconfig.path").map(ecf -> {
+
+        encryptionConfig = fromEnvOrProperties("io.md.encryptionconfig.path").map(ecf -> {
             try {
-                    encryptionConfig = Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
+                    return jsonMapper.readValue(new File(ecf), EncryptionConfig.class);
                 } catch (Exception e) {
                     LOGGER.error(new ObjectMessage(Map.of(
                         Constants.MESSAGE, "Error in reading encryption config file",

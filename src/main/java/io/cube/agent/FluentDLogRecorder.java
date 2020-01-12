@@ -3,6 +3,7 @@ package io.cube.agent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -49,9 +50,12 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 		try {
 			// TODO might wanna explore java fluent logger
 			// https://github.com/fluent/fluent-logger-java
-			DataObj payload = Utils.encryptFields(commonConfig, event);
+			Optional<DataObj> payloadOptional = Utils.encryptFields(commonConfig, event);
 			String jsonSerialized;
-			if(payload!=null) {
+
+			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
+			if(payloadOptional.isPresent()) {
+				DataObj payload = payloadOptional.get();
 				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
 				event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType);
 				eventBuilder.setPayload(payload);
@@ -60,6 +64,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 			} else {
 				jsonSerialized = jsonMapper.writeValueAsString(event);
 			}
+
 			// The prefix will be a part of the fluentd parse regex
 			LOGGER.info("[Cube Event]" + jsonSerialized);
 			return true;

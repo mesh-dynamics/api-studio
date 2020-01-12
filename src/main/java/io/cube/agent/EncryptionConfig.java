@@ -6,39 +6,72 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EncryptionConfig {
 	@JsonProperty("services")
-	Map<String, ServiceMeta> services;
+	private final Map<String, ServiceMeta> services;
 
 	@JsonProperty("passPhrase")
-	String passPhrase;
+	private final String passPhrase;
+
+	public EncryptionConfig(
+		Map<String, ServiceMeta> services, String passPhrase) {
+		this.services = services;
+		this.passPhrase = passPhrase;
+	}
+
+	public Map<String, ServiceMeta> getServices() {
+		return services;
+	}
+
+	public String getPassPhrase() {
+		return passPhrase;
+	}
 
 	static public class JSONPathMeta {
-		String algorithm;
+		private final String algorithm;
+		private final Map<String, Object> metaData;
+
+		public JSONPathMeta(String algorithm,
+			Map<String, Object> metaData) {
+			this.algorithm = algorithm;
+			this.metaData = metaData;
+		}
 
 		public String getAlgorithm() {
 			return algorithm;
-		}
-
-		public void setAlgorithm(String algorithm) {
-			this.algorithm = algorithm;
 		}
 
 		public Map<String, Object> getMetaData() {
 			return metaData;
 		}
 
-		public void setMetaData(Map<String, Object> metaData) {
-			this.metaData = metaData;
-		}
 
-		Map<String, Object> metaData;
 	}
 
 	static public class APIPathMeta {
-		public Map<String, JSONPathMeta> JSONPathMap;
+
+		public Map<String, JSONPathMeta> getJSONPathMap() {
+			return JSONPathMap;
+		}
+
+		private final Map<String, JSONPathMeta> JSONPathMap;
+
+		public APIPathMeta(
+			Map<String, JSONPathMeta> jsonPathMap) {
+			JSONPathMap = jsonPathMap;
+		}
 	}
 
 	static public class ServiceMeta {
-		public Map<String, APIPathMeta> apiPathMetaMap;
+
+		public ServiceMeta(
+			Map<String, APIPathMeta> apiPathMetaMap) {
+			this.apiPathMetaMap = apiPathMetaMap;
+		}
+
+		public Map<String, APIPathMeta> getApiPathMetaMap() {
+			return apiPathMetaMap;
+		}
+
+		private final Map<String, APIPathMeta> apiPathMetaMap;
 	}
 
 }
