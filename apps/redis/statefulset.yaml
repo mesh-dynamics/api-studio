@@ -1,0 +1,56 @@
+################################################
+# Redis
+################################################
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: cache
+  labels:
+    app: cube
+    component: redis
+spec:
+  replicas: 1
+  serviceName: redis
+  template:
+    metadata:
+      labels:
+        app: cube
+        component: redis
+    spec:
+      containers:
+      - command: [sh, -c, source /redis-config/init.sh ]
+        image: redis:5.0.5-alpine
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - mountPath: /redis-config
+          name: config
+        - mountPath: /redis-data
+          name: data
+        resources:
+          requests:
+            memory: "64Mi"
+          limits:
+            cpu: "0.1"
+            memory: "128Mi"
+      - command: [sh, -c, cp /redis-config/sentinel.conf /redis-sentinel-conf/sentinel.conf  && source /redis-config/sentinel.sh]
+        image: redis:5.0.5-alpine
+        name: sentinel
+        volumeMounts:
+        - mountPath: /redis-config
+          name: config
+        - mountPath: /redis-sentinel-conf
+          name: redis-sentinel
+      volumes:
+      - configMap:
+          defaultMode: 0666
+          name: redis-config
+        name: config
+      - emptyDir:
+        name: data
+      - emptyDir:
+        name: redis-sentinel
