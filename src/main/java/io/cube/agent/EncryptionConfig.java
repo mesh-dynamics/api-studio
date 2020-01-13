@@ -1,6 +1,7 @@
 package io.cube.agent;
 
 import java.util.Map;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -17,8 +18,8 @@ public class EncryptionConfig {
 		this.passPhrase = passPhrase;
 	}
 
-	public Map<String, ServiceMeta> getServices() {
-		return services;
+	public Optional<ServiceMeta> getServiceMeta(String service) {
+		return Optional.ofNullable(services.get(service));
 	}
 
 	public String getPassPhrase() {
@@ -67,8 +68,8 @@ public class EncryptionConfig {
 			this.apiPathMetaMap = apiPathMetaMap;
 		}
 
-		public Map<String, APIPathMeta> getApiPathMetaMap() {
-			return apiPathMetaMap;
+		public Optional<APIPathMeta> getApiPathMeta(String apiPath) {
+			return Optional.ofNullable(apiPathMetaMap.get(apiPath));
 		}
 
 		private final Map<String, APIPathMeta> apiPathMetaMap;

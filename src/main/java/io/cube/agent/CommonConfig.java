@@ -76,16 +76,16 @@ public class CommonConfig {
         // TODO Replace with constants once it comes in commons
 //        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
 
-        encryptionConfig = fromEnvOrProperties("io.md.encryptionconfig.path").map(ecf -> {
+        encryptionConfig = fromEnvOrProperties("io.md.encryptionconfig.path").flatMap(ecf -> {
             try {
-                    return jsonMapper.readValue(new File(ecf), EncryptionConfig.class);
+                    return Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
                 } catch (Exception e) {
                     LOGGER.error(new ObjectMessage(Map.of(
                         Constants.MESSAGE, "Error in reading encryption config file",
                         Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
                     )));
                 }
-            return null;
+            return Optional.empty();
         });
 
 

@@ -9,6 +9,7 @@ import javax.inject.Inject;
 
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 
 import io.md.constants.Constants;
@@ -51,19 +52,23 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 			// TODO might wanna explore java fluent logger
 			// https://github.com/fluent/fluent-logger-java
 			Optional<DataObj> payloadOptional = Utils.encryptFields(commonConfig, event);
-			String jsonSerialized;
 
 			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
-			if(payloadOptional.isPresent()) {
-				DataObj payload = payloadOptional.get();
+
+			String jsonSerialized = payloadOptional.map(UtilException.rethrowFunction(payload -> {
 				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
 				event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType);
 				eventBuilder.setPayload(payload);
 				eventBuilder.setRawPayloadString(payload.toString());
-				jsonSerialized = jsonMapper.writeValueAsString(eventBuilder.createEvent());
-			} else {
-				jsonSerialized = jsonMapper.writeValueAsString(event);
-			}
+				return jsonMapper.writeValueAsString(eventBuilder.createEvent());}))
+				.orElseGet(()-> {
+					try {
+						return jsonMapper.writeValueAsString(event);
+					} catch (JsonProcessingException e) {
+						UtilException.throwAsUnchecked(e); //UtilException.rethrowFunction doesn't work hence this
+						return "";
+					}
+				});
 
 			// The prefix will be a part of the fluentd parse regex
 			LOGGER.info("[Cube Event]" + jsonSerialized);

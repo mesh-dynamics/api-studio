@@ -21,12 +21,9 @@ public class Utils {
 
 	static Optional<DataObj> encryptFields(CommonConfig commonConfig, Event event) {
 
-		Optional<DataObj> payload = commonConfig.encryptionConfig.map(encryptionConfig -> {
-			ServiceMeta services = encryptionConfig.getServices().get((event.service));
-			if (services != null) {
-				Map<String, APIPathMeta> apiPaths = services.getApiPathMetaMap();
-				APIPathMeta apiPathMeta = apiPaths.get(event.apiPath);
-				if (apiPathMeta != null) {
+		Optional<DataObj> payload = commonConfig.encryptionConfig.flatMap(encryptionConfig -> {
+			return encryptionConfig.getServiceMeta(event.service).flatMap(services -> {
+				return services.getApiPathMeta(event.apiPath).flatMap(apiPathMeta -> {
 					Map<String, JSONPathMeta> jsonPathMetas = apiPathMeta.getJSONPathMap();
 
 					Map<String, Object> params = new HashMap<>();
@@ -39,13 +36,13 @@ public class Utils {
 						Map<String, Object> metaDataMap = algoDetails.getMetaData();
 
 						EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
-							.build(algoName, encryptionConfig.getPassPhrase(), new JSONObject(metaDataMap)); //TODO Remove JSONObject conversion when changes are reflected in commons
+							.build(algoName, encryptionConfig.getPassPhrase(), new JSONObject(
+								metaDataMap)); //TODO Remove JSONObject conversion when changes are reflected in commons
 						eventPayload.encryptField(jsonPath, encryptionAlgorithm);
 					}
-					return eventPayload;
-				}
-			}
-			return null;
+					return Optional.of(eventPayload);
+				});
+			});
 		});
 		return payload;
 	}
