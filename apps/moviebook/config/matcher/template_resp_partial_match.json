@@ -281,7 +281,7 @@
       "rules":[
         {
           "path":"/body",
-          "dt":"Default",
+          "dt":"RptArray",
           "pt":"Required",
           "ct":"Equal",
           "em":"Default",
@@ -289,14 +289,6 @@
         },
         {
           "path":"/body/0/store_id",
-          "dt":"Int",
-          "pt":"Optional",
-          "ct":"Equal",
-          "em":"Default",
-          "customization":null
-        },
-        {
-          "path":"/body/1/store_id",
           "dt":"Int",
           "pt":"Optional",
           "ct":"Equal",
