@@ -283,7 +283,6 @@ form:after {
 .logo-wrapper {
 	border-right: 1px solid #CCCCCC;
 	height: 100%;
-	padding: 40px 0 60px;
 }
 .logo-wrapper img {
 	height: 200px;
@@ -346,4 +345,9 @@ form:after {
 
 .create-account {
 	margin-left: 10px;
+}
+
+.vertical-align-middle {
+	display: flex;
+	align-items: center;
 }

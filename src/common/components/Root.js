@@ -13,7 +13,7 @@ const Root = ( { store } ) => (
         <Router history={history}>
             <div>
                 <Switch>
-                    <Route path="/sign_in" component={LoginPage} />
+                    <Route path="/auth" component={LoginPage} />
                     <PrivateRoute path="/*" component={App} />
                     <Route path="/*" component={App} />
                 </Switch>
@@ -21,6 +21,7 @@ const Root = ( { store } ) => (
         </Router>
     </Provider>
 );
+
 Root.propTypes = {
     store: PropTypes.oneOfType( [
         PropTypes.func.isRequired,
