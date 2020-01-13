@@ -273,9 +273,7 @@ public class Analyzer {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Exception while analyzing response"
                     + e.getMessage(),
-                Constants.REQ_ID_FIELD, recordreq.reqId,
-                Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
-            )));
+                Constants.REQ_ID_FIELD, recordreq.reqId)), e);
         }
 
         return new ReqRespMatchWithEvent(recordreq, Optional.of(replayreq),
@@ -289,9 +287,7 @@ public class Analyzer {
             if(reqComparem1==MatchType.Default && reqComparem2==MatchType.Default) {
                 return respComparem1.isBetter(respComparem2);
             }
-            if(reqComparem1.isBetter(reqComparem2)) {
-                return true;
-            }
+             return reqComparem1.isBetter(reqComparem2);
         }
         return false;
     }
