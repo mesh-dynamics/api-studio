@@ -1509,7 +1509,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         String type = Types.MatchResultAggregate.toString();
         // the id field is set using (replayId, service, path) which is unique
-        String id = type + "-" + Objects.hash(resultAggregate.replayId, resultAggregate.service.orElse(""), resultAggregate.path.orElse(""));
+        String id = type + "-" + Objects.hash(resultAggregate.replayId, resultAggregate.service.orElse(DEFAULT_EMPTY_FIELD_VALUE), resultAggregate.path.orElse(DEFAULT_EMPTY_FIELD_VALUE));
 
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
@@ -2046,6 +2046,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SERVICEFACET = "service_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
     private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
+    private static final String MISSINGBUCKETFIELD = "missing"; // term in solr results indicating facet bucket for
+    // missing value
     private static final String VALFIELD = "val"; // term in solr facet results indicating a distinct value of the field
     private static final String COUNTFIELD = "count"; // term in solr facet results indicating aggregate value computed
     private static final String FACETSFIELD = "facets"; // term in solr facet results indicating the facet results block
@@ -2252,6 +2254,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         private static final String FIELDK = "field";
         private static final String LIMITK = "limit";
         private static final String FACETK = "facet";
+        private static final String MISSINGK = "missing";
+
 
         /**
          * @param params
@@ -2280,6 +2284,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
             limit.ifPresent(l -> params.put(LIMITK, l));
+            // include missing value in facet
+            params.put(MISSINGK, true);
 
             return new Facet(params);
         }
@@ -2477,33 +2483,44 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             List<List<String>> rest = facetFields.subList(1, facetFields.size());
             head.forEach(facetname -> {
                 getNLFromNL(facetresult, facetname)
-                    .flatMap(bucketobj -> getListFromNL(bucketobj, BUCKETFIELD))
-                    .ifPresent(bucketarrobj -> {
-                        bucketarrobj.forEach(bucket -> {
-                            objToNL(bucket).ifPresent(b -> {
-                                Optional<String> val = getStringFromNL(b, VALFIELD);
-                                Optional<Integer> count = getIntFromNL(b, COUNTFIELD);
-                                val.ifPresent(v -> {
-                                    List<FacetR> subfacetr = flatten(b, rest);
-                                    FacetRKey rkey = new FacetRKey(v, facetname);
-                                    subfacetr.forEach(subr -> {
-                                        subr.addKey(rkey);
-                                        results.add(subr);
-                                    });
-                                    count.ifPresent(c -> {
-                                        List<FacetRKey> frkeys = new ArrayList<>();
-                                        frkeys.add(rkey);
-                                        FacetR newr = new FacetR(frkeys, c);
-                                        results.add(newr);
-                                    });
-                                });
+                    .ifPresent(bucketObj -> {
+                        getListFromNL(bucketObj, BUCKETFIELD).ifPresent(bucketarrobj -> {
+                            bucketarrobj.forEach(bucket -> {
+                                processFacetBucket(results, rest, facetname, bucket);
                             });
                         });
+                        getObjFromNL(bucketObj, MISSINGBUCKETFIELD).ifPresent(bucket ->
+                            processFacetBucket(results, rest, facetname, bucket));
                     });
             });
         }
         return results;
     }
+
+    private static void processFacetBucket(List<FacetR> results, List<List<String>> rest,
+                                           String facetname, Object bucket) {
+        objToNL(bucket).ifPresent(b -> {
+            // VALFIELD is missing for bucket with missing values. Treat that as empty string ""
+            String val = getStringFromNL(b, VALFIELD).orElse("");
+            Optional<Integer> count = getIntFromNL(b, COUNTFIELD);
+
+            List<FacetR> subfacetr = flatten(b, rest);
+            FacetRKey rkey = new FacetRKey(val, facetname);
+            subfacetr.forEach(subr -> {
+                subr.addKey(rkey);
+                results.add(subr);
+            });
+            count.ifPresent(c -> {
+                if (c > 0) {
+                    List<FacetRKey> frkeys = new ArrayList<>();
+                    frkeys.add(rkey);
+                    FacetR newr = new FacetR(frkeys, c);
+                    results.add(newr);
+                }
+            });
+        });
+    }
+
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#commit()
