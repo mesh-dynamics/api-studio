@@ -178,11 +178,17 @@ class ViewSelectedTestConfig extends React.Component {
             </select>;
         let options = [];
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.testIds.map(item => (<option key={item.collec} value={item.collec}>{item.name}</option>));
+            options = cube.testIds.map((item, index) => {
+                if (index < 8)
+                    return (<option key={item.collec} value={item.collec}>{item.name}</option>);
+
+                else
+                    return (<option className="hidden" key={item.collec} value={item.collec}>{item.name}</option>);
+            });
         }
         let jsxContent = '';
         if (options.length) {
-            let selectedTestIdObj = ''
+            let selectedTestIdObj = '';
             if (cube.selectedTestId)
                 selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
             jsxContent = <div>
