@@ -34,6 +34,7 @@ import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.MatchType;
+import com.cube.core.JsonComparator;
 import com.cube.dao.Analysis;
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import com.cube.dao.Event;
@@ -245,7 +246,9 @@ public class Analyzer {
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath , Type.RequestCompare);
                 Comparator reqComparator = comparatorCache.getComparator(reqCompareKey, recordreq.eventType);
-                reqCompareRes = reqComparator.compare(recordreq.getPayload(config), replayreq.getPayload(config));
+                if(reqComparator != JsonComparator.EMPTY_COMPARATOR) {
+                    reqCompareRes = reqComparator.compare(recordreq.getPayload(config), replayreq.getPayload(config));
+                }
         } catch (Exception e) {
 
             LOGGER.error(new ObjectMessage(Map.of(

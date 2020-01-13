@@ -62,9 +62,6 @@ public class ComparatorCache {
             ComparisonType.Equal));
         defaultHTTPRequestMatchComparator = new JsonComparator(defaultHTTPRequestMatchTemplate, jsonMapper);
 
-        CompareTemplate defaultHTTPRequestCompareTemplate = new CompareTemplate();
-        defaultHTTPRequestCompareComparator = new JsonComparator(defaultHTTPRequestCompareTemplate, jsonMapper);
-
         // default rules for HTTP Response
         CompareTemplate defaultHTTPResponseTemplate = new CompareTemplate();
         defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
@@ -120,7 +117,7 @@ public class ComparatorCache {
                     if(key.getReqOrResp() == Type.RequestMatch) {
                         return defaultHTTPRequestMatchComparator;
                     } else {
-                        return defaultHTTPRequestCompareComparator;
+                        return JsonComparator.EMPTY_COMPARATOR;
                     }
                 case HTTPResponse:
                     return defaultHTTPResponseComparator;
@@ -190,7 +187,6 @@ public class ComparatorCache {
     }
 
     private final Comparator defaultHTTPRequestMatchComparator;
-    private final Comparator defaultHTTPRequestCompareComparator;
     private final Comparator defaultHTTPResponseComparator;
     private final Comparator defaultJavaRequestComparator;
     private final Comparator defaultJavaResponseComparator;
