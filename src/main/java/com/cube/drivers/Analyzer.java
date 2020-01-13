@@ -33,7 +33,6 @@ import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
-import com.cube.core.Comparator.Match;
 import com.cube.core.Comparator.MatchType;
 import com.cube.dao.Analysis;
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
@@ -119,9 +118,9 @@ public class Analyzer {
 
             Optional<Event> recordedResponse = getResponseFromRequestEvent(recordReq, rrstore);
             if (matches.numResults > 1) {
-                analysis.reqmultiplematch++;
+                analysis.reqMultipleMatch++;
             } else {
-                analysis.reqsinglematch++;
+                analysis.reqSingleMatch++;
             }
 
             // fetch response of recording and replay
@@ -139,56 +138,68 @@ public class Analyzer {
                 MatchType reqMt = ExactMatch;
                 ReqRespMatchWithEvent match = checkReqRespEventMatch(recordReq, replayReq, recordedResponse,
                     replayResponseMap);
-                if (isReqRespMatchBetter(reqMt, match.getReqMt(), match.getRespMt(), bestReqMt, bestmatch.getReqMt(), bestmatch.getRespMt())) {
+                if (isReqRespMatchBetter(reqMt, match.getReqCompareResType(), match.getRespCompareResType(), bestReqMt, bestmatch.getReqCompareResType(), bestmatch.getRespCompareResType())) {
                     bestmatch = match;
                     bestReqMt = reqMt;
                     // TODO : Should the break also based on bestmatch.getReqMt() == ExactMatch ?
-                    if (bestmatch.getRespMt() == ExactMatch) {
+                    if (bestmatch.getRespCompareResType() == ExactMatch) {
                         break;
                     }
                 }
             }
             // compare & write out result
             if (bestReqMt == ExactMatch) {
-                analysis.reqmatched++;
+                analysis.reqMatched++;
             } else {
-                analysis.reqpartiallymatched++;
+                analysis.reqPartiallyMatched++;
             }
 
-            switch (bestmatch.getReqMt()) {
+            switch (bestmatch.getReqCompareResType()) {
                 case ExactMatch:
-                    analysis.reqcomparematched++;
+                    analysis.reqCompareMatched++;
                     break;
                 case FuzzyMatch:
-                    analysis.reqcomparepartiallymatched++;
+                    analysis.reqComparePartiallyMatched++;
                     break;
                 default:
-                    analysis.reqcomparenotmatched++;
+                    analysis.reqCompareNotMatched++;
                     break;
             }
 
-            switch (bestmatch.getRespMt()) {
+            switch (bestmatch.getRespCompareResType()) {
                 case ExactMatch:
-                    analysis.respmatched++;
+                    analysis.respMatched++;
                     break;
                 case FuzzyMatch:
-                    analysis.resppartiallymatched++;
+                    analysis.respPartiallyMatched++;
                     break;
                 default:
-                    analysis.respnotmatched++;
+                    analysis.respNotMatched++;
                     break;
             }
 
-            LOGGER.debug(bestmatch.getReqMt() + " OCCURRED FOR REQUEST :: " + recordReq.reqId);
-            LOGGER.debug(bestmatch.getRespMt() + " OCCURRED FOR RESPONSE :: " + recordReq.reqId);
-            LOGGER.debug("REQUEST 1 " + bestmatch.getRecordReq(config).orElse(" N/A"));
-            LOGGER.debug("REQUEST 2 " + bestmatch.getReplayReq(config).orElse("N/A"));
-            LOGGER.debug("DOC 1 " + bestmatch.getRecordedResponseBody(config).orElse(" N/A"));
-            LOGGER.debug("DOC 2 " + bestmatch.getReplayResponseBody(config).orElse(" N/A"));
+
+            LOGGER.debug(new ObjectMessage(Map.of(
+                Constants.MESSAGE, bestmatch.getReqCompareResType() + " OCCURRED ",
+                Constants.REQ_ID_FIELD, recordReq.reqId
+            )));
+
+            LOGGER.debug(new ObjectMessage(Map.of(
+                Constants.MESSAGE, bestmatch.getRespCompareResType() + " OCCURRED ",
+                Constants.REQ_ID_FIELD, recordReq.reqId
+                )));
+
+            LOGGER.debug(new ObjectMessage(Map.of(
+                "REQUEST 1", bestmatch.getRecordReq(config).orElse(" N/A"),
+                "REQUEST 2", bestmatch.getReplayReq(config).orElse(" N/A"),
+                "DOC 1", bestmatch.getRecordedResponseBody(config).orElse(" N/A"),
+                "DOC 2", bestmatch.getReplayResponseBody(config).orElse(" N/A")
+                )));
+
             bestmatch.getReqDiffs().forEach(
                 diff -> {
                     try {
-                        LOGGER.debug("REQ DIFF :: " + jsonMapper.writeValueAsString(diff));
+                        LOGGER.debug(new ObjectMessage(Map.of(Constants.REQUEST_DIFF, jsonMapper.writeValueAsString(diff))));
                     } catch (JsonProcessingException e) {
                         // DO NOTHING
                     }
@@ -198,7 +209,7 @@ public class Analyzer {
             bestmatch.getRespDiffs().forEach(
                 diff -> {
                     try {
-                        LOGGER.debug("RESP DIFF :: " + jsonMapper.writeValueAsString(diff));
+                        LOGGER.debug(new ObjectMessage(Map.of(Constants.RESPONSE_DIFF, jsonMapper.writeValueAsString(diff))));
                     } catch (JsonProcessingException e) {
                         // DO NOTHING
                     }
@@ -214,12 +225,12 @@ public class Analyzer {
                 Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Comparator.Match.NOMATCH),
                 MatchType.NoMatch, (int)matches.numResults, analysis.replayId);
             rrstore.saveResult(res);
-            analysis.reqnotmatched++;
+            analysis.reqNotMatched++;
         }
 
-        analysis.reqanalyzed++;
-        if (analysis.reqanalyzed % UPDBATCHSIZE == 0) {
-            LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayId, analysis.reqanalyzed));
+        analysis.reqAnalyzed++;
+        if (analysis.reqAnalyzed % UPDBATCHSIZE == 0) {
+            LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayId, analysis.reqAnalyzed));
             rrstore.saveAnalysis(analysis);
         }
     }
@@ -240,9 +251,8 @@ public class Analyzer {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Exception while analyzing request"
                     + e.getMessage(),
-                Constants.REQ_ID_FIELD, recordreq.reqId,
-                Constants.EXCEPTION_STACK, Arrays.toString(e.getStackTrace())
-            )));
+                Constants.REQ_ID_FIELD, recordreq.reqId
+                )), e);
         }
 
         Comparator.Match respCompareRes = Comparator.Match.NOMATCH;
@@ -276,8 +286,11 @@ public class Analyzer {
                                                 MatchType reqm2, MatchType reqComparem2, MatchType respComparem2) {
         // request match has to be better. Only if it is better, check request compare match and if that then response compare match
         if (reqm1.isBetterOrEqual(reqm2)) {
-            if(reqComparem1.isBetter(reqComparem2)) {
+            if(reqComparem1==MatchType.Default && reqComparem2==MatchType.Default) {
                 return respComparem1.isBetter(respComparem2);
+            }
+            if(reqComparem1.isBetter(reqComparem2)) {
+                return true;
             }
         }
         return false;

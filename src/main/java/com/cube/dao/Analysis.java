@@ -34,10 +34,10 @@ public class Analysis {
 	/**
 	 * @param replayId
 	 */
-	public Analysis(String replayId, int reqcnt, String templateVersion) {
+	public Analysis(String replayId, int reqCnt, String templateVersion) {
 		this.replayId = replayId;
 		this.status = Status.Running;
-		this.reqcnt = reqcnt;
+		this.reqCnt = reqCnt;
 		this.timestamp = System.currentTimeMillis();
 		this.templateVersion = templateVersion;
 	}
@@ -47,10 +47,10 @@ public class Analysis {
 	/**
 	 * This constructor is only for jackson json deserialization
      * @param replayId
-     * @param reqcnt
+     * @param reqCnt
      */
 
-	private Analysis(String replayId, int reqcnt) {
+	private Analysis(String replayId, int reqCnt) {
 		super();
 		this.replayId = "";
 		// Assuming this value will be overwritten during json deserialization
@@ -61,18 +61,18 @@ public class Analysis {
 
 	public final String replayId;
 	public Status status;
-	public int reqcnt=0; // total number of requests
-	public int reqmatched=0; // number of requests exactly matched
-	public int reqpartiallymatched=0; // number of requests partially matched
-	public int reqsinglematch=0; // matched with only one request in replay
-	public int reqmultiplematch=0; // matched multiple requests in the replay
-	public int reqnotmatched=0; // not matched
-	public int reqcomparematched=0; // number of requests exactly matched
-	public int reqcomparepartiallymatched=0; // number of requests partially matched
-	public int reqcomparenotmatched=0; // not matched
-	public int respmatched=0; // resp matched exactly
-	public int resppartiallymatched=0; // resp matched based on template
-	public int respnotmatched=0; // not matched
+	public int reqCnt = 0; // total number of requests
+	public int reqMatched = 0; // number of requests exactly matched
+	public int reqPartiallyMatched = 0; // number of requests partially matched
+	public int reqSingleMatch = 0; // matched with only one request in replay
+	public int reqMultipleMatch = 0; // matched multiple requests in the replay
+	public int reqNotMatched = 0; // not matched
+	public int reqCompareMatched = 0; // number of requests exactly matched
+	public int reqComparePartiallyMatched = 0; // number of requests partially matched
+	public int reqCompareNotMatched = 0; // not matched
+	public int respMatched = 0; // resp matched exactly
+	public int respPartiallyMatched = 0; // resp matched based on template
+	public int respNotMatched = 0; // not matched
     public final long timestamp;
 	/*
 	 * invariants:
@@ -81,7 +81,7 @@ public class Analysis {
 	 * reqanalyzed - reqnotmatched = respmatched + resppartiallymatched + respnotmatched
 	 *
 	 */
-	public int reqanalyzed;
+	public int reqAnalyzed;
     public final String templateVersion;
 
 
@@ -111,7 +111,7 @@ public class Analysis {
         final Optional<Event> recordResp;
         final Optional<Event> replayResp;
 
-        public Comparator.MatchType getRespMt() {
+        public Comparator.MatchType getRespCompareResType() {
             return respCompareRes.mt;
         }
 
@@ -123,7 +123,7 @@ public class Analysis {
         	return reqCompareRes;
         }
 
-	    public Comparator.MatchType getReqMt() {
+	    public Comparator.MatchType getReqCompareResType() {
 		    return reqCompareRes.mt;
 	    }
 

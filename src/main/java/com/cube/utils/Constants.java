@@ -159,4 +159,7 @@ public class Constants {
     public static final String DIFF_TYPE_FIELD = "diffType";
     public static final String REQ_COMP_RES_META = "reqCmpResMeta" ;
     public static final String REQ_COMP_RES_TYPE = "reqCmpResType";
+    public static final String REQUEST_DIFF = "requestDiff";
+    public static final String RESPONSE_DIFF = "responseDiff";
+
 }
