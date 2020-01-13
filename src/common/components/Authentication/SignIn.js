@@ -46,7 +46,7 @@ const SignIn = (props) => {
                     <Link to="/reset" >Forgot your password?</Link>
                 </div>
                 <div className="custom-fg form-group">
-                    <button className="btn btn-custom-sign-in width-100">Login</button>
+                    <button className="btn btn-custom-auth width-100">Login</button>
                 </div>
                 <div className="custom-sign-in-divider" />
                 <div className="create-account-container">

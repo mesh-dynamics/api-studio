@@ -306,31 +306,11 @@ form:after {
 	font-size: 32px;
 	font-weight: 100;
 	color: #999999;
+	/* color: #FF6600; */
 	margin-bottom: 30px;
 }
 .custom-fg {
 	margin-bottom: 20px !important;
-}
-
-.btn-custom-sign-in {
-	background-color: #FF6600;
-	border-color: #FFA76D;
-	cursor: pointer;
-	color: #fff;
-}
-.btn-custom-sign-in:hover {
-	background-color: #FFA76D;
-	cursor: pointer;
-	color: #fff;
-}
-
-.custom-sign-in-divider {
-	border: 1px solid #FFA76D;
-}
-
-.create-account-container {
-	margin-top: 20px;
-	font-size: 14px;
 }
 
 /* .custom-link {
@@ -350,4 +330,17 @@ form:after {
 .vertical-align-middle {
 	display: flex;
 	align-items: center;
+}
+
+.btn-custom-auth {
+	background-color: #FF6600;
+	border-color: #FFA76D;
+	cursor: pointer;
+	color: #fff;
+}
+
+.btn-custom-auth:hover {
+	background-color: #FFA76D;
+	cursor: pointer;
+	color: #fff;
 }

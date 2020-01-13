@@ -8,6 +8,7 @@ export const userService = {
     getAll,
     getById,
     update,
+    createUser,
     delete: _delete
 };
 
@@ -121,4 +122,18 @@ function handleResponseLogin(response) {
         localStorage.setItem('user', JSON.stringify(json));
         return (data);
     });
+}
+
+function createUser(user) {
+    const requestOptions = {
+        method: 'POST',
+        headers: { 
+            ...authHeader(), 
+            'Content-Type': 'application/json'
+            // 'Access-Control-Allow-Origin': '*' 
+        },
+        body: JSON.stringify(user)
+    };
+
+    return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions).then(handleResponse);;    
 }
