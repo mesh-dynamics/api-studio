@@ -1,7 +1,10 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { connect } from 'react-redux';
 
-import "./GoldenVisibility.css";
+import ViewType from './ViewType';
+import RequestTable from './RequestTable';
+import ResponseTable from './ResponseTable';
+import './GoldenVisibility.css';
 import { goldenActions } from '../../actions/golden.actions';
 
 const REQUEST_TABS = {
@@ -19,6 +22,10 @@ const VIEW = {
     GOLDEN_SUMMARRY: "view::golden::summary"
 };
 
+const VIEW_TYPE = {
+    TABLE: "viewtype::table",
+    JSON: "viewtype::json"
+};
 // To simulate pagination. To be removed and pagination 
 // functionality is finalized and implemented
 const pageNumbers = [1,2,3,4,5];
@@ -39,6 +46,10 @@ const GoldenVisibility = (props) => {
 
     const [selectedRequestTab, setSelectedRequestTab] = useState(REQUEST_TABS.PARAMS);
 
+    const [requestViewType, setRequestViewType] =  useState(VIEW_TYPE.TABLE);
+
+    const [responseViewType, setResponseViewType] = useState(VIEW_TYPE.TABLE);
+    
     const [selectedResponseTab, setSelectedResponseTab] = useState(RESPONSE_TABS.BODY);
 
     const [currentView, setCurrentView] = useState(VIEW.GOLDEN_SUMMARRY);
@@ -51,6 +62,11 @@ const GoldenVisibility = (props) => {
         setCurrentView(VIEW.GOLDEN_SUMMARRY);
         setSelectedPageNumber(1);
     };
+
+    const handleRequestTabClick = (view) => {
+        setSelectedRequestTab(view);
+        setRequestViewType(VIEW_TYPE.TABLE);
+    }
 
     useEffect(() => {
         getGoldenData(selectedGolden, selectedService, selectedApi, selectedPageNumber);
@@ -132,30 +148,47 @@ const GoldenVisibility = (props) => {
                 </div>
                 <div className="gv-tab-container">
                     <div 
-                        onClick={() => setSelectedRequestTab(REQUEST_TABS.PARAMS)} 
+                        onClick={() => handleRequestTabClick(REQUEST_TABS.PARAMS)} 
                         className={selectedRequestTab === REQUEST_TABS.PARAMS ? "gv-tab-button-selected" : "gv-tab-button"}
                     >
                         Params
                     </div>
                     <div 
-                        onClick={() => setSelectedRequestTab(REQUEST_TABS.BODY)} 
+                        onClick={() => handleRequestTabClick(REQUEST_TABS.BODY)} 
                         className={selectedRequestTab === REQUEST_TABS.BODY ? "gv-tab-button-selected" : "gv-tab-button"}
                     >
                         Body
                     </div>
                 </div>
-                <div className="gv-textarea-container">
-                    <textarea value={
-                        selectedRequestTab === REQUEST_TABS.PARAMS 
-                        ? JSON.stringify(requestContract.params, undefined, 4)
-                        : JSON.stringify(requestContract.body, undefined, 4)
-                        } 
-                        readOnly 
-                        className="gv-textarea" 
-                        rows="8" 
-                        cols="40"
-                    ></textarea>
+                <div className="gv-contract-container">
+                    <ViewType viewType={requestViewType} setViewType={setRequestViewType} />
+                    {
+                        requestViewType === VIEW_TYPE.TABLE && 
+                        <RequestTable
+                            value={
+                                    selectedRequestTab === REQUEST_TABS.PARAMS 
+                                    ? requestContract.params
+                                    : requestContract.body
+                            } 
+                        />
+                    }
+                    {
+                        requestViewType === VIEW_TYPE.JSON && 
+                        <div className="gv-textarea-container">
+                            <textarea value={
+                                selectedRequestTab === REQUEST_TABS.PARAMS 
+                                ? JSON.stringify(requestContract.params, undefined, 4)
+                                : JSON.stringify(requestContract.body, undefined, 4)
+                                } 
+                                readOnly 
+                                className="gv-textarea" 
+                                rows="8" 
+                                cols="40"
+                            ></textarea>
+                        </div>
+                    }
                 </div>
+                
             </div>
             <div className="gv-section-banner">
                 <span>Response</span>
@@ -165,9 +198,19 @@ const GoldenVisibility = (props) => {
                 <div className="gv-tab-container">
                     <div className="gv-tab-button-selected gv-tab-single">Body</div>
                 </div>
-                <div className="gv-textarea-container">
-                    <textarea value={JSON.stringify(responseContract.body, undefined, 4)} readOnly className="gv-textarea" rows="15" cols="40"></textarea>
-                </div>
+                <div className="gv-contract-container">
+                    <ViewType viewType={responseViewType} setViewType={setResponseViewType} />
+                    {
+                        responseViewType === VIEW_TYPE.TABLE && 
+                        <ResponseTable value={responseContract.body.table} />
+                    }
+                    {
+                        responseViewType === VIEW_TYPE.JSON &&
+                        <div className="gv-textarea-container">
+                            <textarea value={JSON.stringify(responseContract.body.json, undefined, 4)} readOnly className="gv-textarea" rows="15" cols="40"></textarea>
+                        </div>
+                    }
+                </div>                
             </div>
         </Fragment>
     );
@@ -212,3 +255,4 @@ const mapDispatchToProps = (dispatch) => ({
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(GoldenVisibility);
+export { VIEW_TYPE };

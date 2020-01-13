@@ -90,7 +90,7 @@ exports.DefaultLine = function (_a) {
     }
 
     // prefix match filter paths
-    let showPath = filterPaths.some(path => (jsonPath.indexOf(path) > -1));
+    let showPath = jsonPath ? filterPaths.some(path => (jsonPath.indexOf(path) > -1)) : showPath;
 
     return !jsonPath || (showAll || showPath) && (jsonPath.indexOf(searchFilterPath) > -1) ? 
     <React.Fragment>

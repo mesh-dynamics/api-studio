@@ -115,3 +115,14 @@
     color: #fff;
     background-color: #409eff;
 }
+
+.gv-contract-container {
+    padding: 0px 10px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 1px;
+}
+
+.gv-table-cell-response {
+    min-width: 175px;
+    overflow: hidden;
+}
