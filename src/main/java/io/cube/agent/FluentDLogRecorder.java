@@ -61,14 +61,9 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 				eventBuilder.setPayload(payload);
 				eventBuilder.setRawPayloadString(payload.toString());
 				return jsonMapper.writeValueAsString(eventBuilder.createEvent());}))
-				.orElseGet(()-> {
-					try {
+				.orElseGet(UtilException.rethrowSupplier(()-> {
 						return jsonMapper.writeValueAsString(event);
-					} catch (JsonProcessingException e) {
-						UtilException.throwAsUnchecked(e); //UtilException.rethrowFunction doesn't work hence this
-						return "";
-					}
-				});
+				}));
 
 			// The prefix will be a part of the fluentd parse regex
 			LOGGER.info("[Cube Event]" + jsonSerialized);
