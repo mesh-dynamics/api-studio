@@ -7,6 +7,7 @@ import com.cubeui.backend.domain.EmailDomain;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.EmailDomainRepository;
 import com.cubeui.backend.service.MailService;
+import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
@@ -39,12 +40,14 @@ public class AccountController {
     private UserService userService;
     private MailService mailService;
     private EmailDomainRepository emailDomainRepository;
-    
+    private ReCaptchaAPIService reCaptchaAPIService;
+
     public AccountController(UserService userService,
-        MailService mailService, EmailDomainRepository emailDomainRepository) {
+        MailService mailService, EmailDomainRepository emailDomainRepository, ReCaptchaAPIService reCaptchaAPIService) {
         this.userService = userService;
         this.mailService = mailService;
         this.emailDomainRepository = emailDomainRepository;
+        this.reCaptchaAPIService = reCaptchaAPIService;
     }
 
     Optional<EmailDomain> validateEmailDomain(String email) {
@@ -60,7 +63,7 @@ public class AccountController {
         Optional<User> existingUser = this.userService.getByUsername(userDTO.getEmail());
         // check existing user
         if (existingUser.isPresent()) {
-            throw new DuplicateRecordException("User with username '"
+            throw new DuplicateRecordException("User with email '"
                 + existingUser.get().getUsername() + "' already exists.");
         } else {
             // validate email domain and set customer id from email
@@ -92,7 +95,13 @@ public class AccountController {
         }
     }
 
-    @Secured("ROLE_USER")
+    @GetMapping("/validate-recaptcha")
+    public ResponseEntity validateReCaptcha(HttpServletRequest request) {
+        String response = request.getParameter("g-recaptcha-response");
+        reCaptchaAPIService.processResponse(response);
+    }
+
+        @Secured("ROLE_USER")
     @PostMapping("/update-user")
     public ResponseEntity updateUser(@RequestBody UserDTO userDTO, HttpServletRequest request, @AuthenticationPrincipal UserDetails userDetails) {
         if (!userDTO.getEmail().equalsIgnoreCase(userDetails.getUsername())){
