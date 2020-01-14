@@ -14,7 +14,7 @@ public class ReqRespMatchResult {
 		this.replayReqId = rm.replayReq.map(req -> req.reqId);
 		this.reqMatchRes = reqmt;
 		this.numMatch = size;
-		this.respCompareRes = rm.respMatch;
+		this.respCompareRes = rm.respCompareRes;
 		this.reqCompareRes = rm.reqCompareRes;
 		this.service = rm.recordReq.service;
 		this.path = rm.recordReq.apiPath;
@@ -26,7 +26,7 @@ public class ReqRespMatchResult {
 	public ReqRespMatchResult(Optional<String> recordReqId, Optional<String> replayReqId
 		, Comparator.MatchType reqMatchRes, int numMatch, String replayId
 		, String service, String path, Optional<String> recordTraceId
-		, Optional<String> replayTraceId, Match responseMatch, Optional<Match> reqCompareRes) {
+		, Optional<String> replayTraceId, Match responseMatch, Match reqCompareRes) {
 		this.recordReqId = recordReqId;
 		this.replayReqId = replayReqId;
 		this.reqMatchRes = reqMatchRes;
@@ -49,7 +49,7 @@ public class ReqRespMatchResult {
 
 	public final Comparator.MatchType reqMatchRes;
 	public final Comparator.Match respCompareRes;
-	public final Optional<Comparator.Match> reqCompareRes;
+	public final Comparator.Match reqCompareRes;
 
 	public final int numMatch;
 	public final String service;
