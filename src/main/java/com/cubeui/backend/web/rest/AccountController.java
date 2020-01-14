@@ -98,10 +98,12 @@ public class AccountController {
     @GetMapping("/validate-recaptcha")
     public ResponseEntity validateReCaptcha(HttpServletRequest request) {
         String response = request.getParameter("g-recaptcha-response");
-        reCaptchaAPIService.processResponse(response);
+        String clientIPAddress = request.getRemoteAddr();
+        reCaptchaAPIService.processResponse(response, clientIPAddress);
+        return ok().build();
     }
 
-        @Secured("ROLE_USER")
+    @Secured("ROLE_USER")
     @PostMapping("/update-user")
     public ResponseEntity updateUser(@RequestBody UserDTO userDTO, HttpServletRequest request, @AuthenticationPrincipal UserDetails userDetails) {
         if (!userDTO.getEmail().equalsIgnoreCase(userDetails.getUsername())){

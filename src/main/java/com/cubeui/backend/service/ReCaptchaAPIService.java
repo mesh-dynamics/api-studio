@@ -51,7 +51,7 @@ public class ReCaptchaAPIService {
 
     private static Pattern RESPONSE_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
 
-    public void processResponse(String response) {
+    public void processResponse(String response, String clientIPAddress) {
         if(!responseSanityCheck(response)) {
             throw new InvalidReCaptchaException("Response contains invalid characters");
         }
