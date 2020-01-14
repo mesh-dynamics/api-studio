@@ -651,7 +651,21 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part, ngx
       count ++;
       b->last = ngx_cpymem(b->last, "{" , ngx_strlen("{"));
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
-      b->last = ngx_cpymem(b->last, header_elts[i].key.data , header_elts[i].key.len);
+
+      tmp_buf->start = ngx_palloc(r->pool, header_elts[i].key.len*2);
+      if (tmp_buf->start == NULL) {
+        ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
+            "CUBE :: Could not allocate temporary buffer");
+      }
+      tmp_buf->end = tmp_buf->start + header_elts[i].key.len*2;
+      tmp_buf->pos = tmp_buf->last = tmp_buf->start;
+
+      buf_len = escape_special_char(tmp_buf, header_elts[i].key.data,
+        header_elts[i].key.len);
+
+      b->last = ngx_cpymem(b->last, tmp_buf->pos , buf_len);
+
+      ngx_pfree(r->pool, tmp_buf);
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
       b->last = ngx_cpymem(b->last, ":" , ngx_strlen(":"));
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
@@ -742,7 +756,8 @@ static size_t estimate_copy_size(ngx_list_part_t* part) {
         i = 0;
       }
       count ++;
-      header_size += header_elts[i].key.len + header_elts[i].value.len
+      // key and value * 2 to take into account escaping
+      header_size += header_elts[i].key.len*2 + header_elts[i].value.len*2
         + 4*ngx_strlen("\"") + ngx_strlen(",") + ngx_strlen(":") + ngx_strlen("{}");
     }
 
