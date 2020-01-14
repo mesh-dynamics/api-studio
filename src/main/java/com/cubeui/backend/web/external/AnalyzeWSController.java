@@ -19,12 +19,12 @@ public class AnalyzeWSController {
     }
 
     @GetMapping("**")
-    public ResponseEntity getData(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
+    public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody) {
+        return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("**")
-    public ResponseEntity postData(HttpServletRequest request, Optional<String> postBody) {
+    public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> postBody) {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 }
