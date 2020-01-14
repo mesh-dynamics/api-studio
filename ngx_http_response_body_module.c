@@ -85,6 +85,12 @@ ngx_conf_set_keyval(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 
 static ngx_int_t allocate_buffer_if_already_not(ngx_buf_t *b, size_t buffer_size,ngx_http_request_t *r);
 
+static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part
+  , ngx_http_request_t *r, ngx_buf_t *tmp_buf);
+
+static size_t escape_special_char(ngx_buf_t* target_buf, u_char* source,
+    size_t source_len);
+
 static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
 static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
 
@@ -623,13 +629,12 @@ static ngx_int_t allocate_buffer_if_already_not(ngx_buf_t *b, size_t buffer_size
 static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part, ngx_http_request_t *r, ngx_buf_t *tmp_buf)
 {
     ngx_table_elt_t   *header_elts;
-    ngx_uint_t        i,j;
+    ngx_uint_t        i;
 
     header_elts = part->elts;
     b->last = ngx_cpymem(b->last, "[" , ngx_strlen("["));
     ngx_uint_t count = 0;
     size_t buf_len;
-    u_char* original_value;
 
     for (i = 0; /* void */; i++) {
       if (i >= part->nelts) {
@@ -659,18 +664,8 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part, ngx
       tmp_buf->end = tmp_buf->start + header_elts[i].value.len*2;
       tmp_buf->pos = tmp_buf->last = tmp_buf->start;
 
-      buf_len = 0;
-      original_value = header_elts[i].value.data;
-
-      for (j = 0; j < header_elts[i].value.len; j++) {
-           if (header_elts[i].value.data[j] == '"')  {
-              tmp_buf->last = ngx_cpymem(tmp_buf->last, "\\" , ngx_strlen("\\"));
-              buf_len += ngx_strlen("\\");
-           }
-           tmp_buf->last = ngx_cpymem(tmp_buf->last, original_value, 1);
-           buf_len += 1;
-           original_value++;
-      }
+      buf_len = escape_special_char(tmp_buf, header_elts[i].value.data,
+        header_elts[i].value.len);
 
       b->last = ngx_cpymem(b->last, tmp_buf->pos , buf_len);
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
@@ -683,6 +678,47 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part, ngx
     b->last = ngx_cpymem(b->last, "]" , ngx_strlen("]"));
     return NGX_OK;
 
+}
+
+static size_t escape_special_char(ngx_buf_t* target_buf, u_char* source,
+    size_t source_len) {
+    ngx_uint_t j;
+    size_t escaped_str_len = 0;
+    for (j = 0; j < source_len; j++) {
+      switch(*source) {
+        case '\b':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\b", 2);
+          escaped_str_len += 2;
+          break;
+        case '\f':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\f", 2);
+          escaped_str_len += 2;
+          break;
+        case '\n':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\n", 2);
+          escaped_str_len += 2;
+          break;
+        case '\r':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\r", 2);
+          escaped_str_len += 2;
+          break;
+        case '\t':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\t", 2);
+          escaped_str_len += 2;
+          break;
+        case '"':
+        case '\\':
+        case '/':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\", 1);
+          escaped_str_len += 1;
+        default:
+          target_buf->last = ngx_cpymem(target_buf->last, source, 1);
+          escaped_str_len += 1;
+          break;
+      }
+      source ++;
+    }
+    return escaped_str_len;
 }
 
 static size_t estimate_copy_size(ngx_list_part_t* part) {
