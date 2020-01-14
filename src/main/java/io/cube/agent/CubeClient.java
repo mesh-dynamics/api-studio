@@ -9,6 +9,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 
+import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -36,11 +37,13 @@ public class CubeClient {
 	private WebTarget cubeMockService = null;
 	private final int maxNumberOfAttempts;
 	private ObjectMapper jsonMapper;
+	@Inject
+	CommonConfig config;
+
 
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
 	public CubeClient(ObjectMapper jsonMapper) throws Exception {
-		CommonConfig config = new CommonConfig();
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
 			.property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
