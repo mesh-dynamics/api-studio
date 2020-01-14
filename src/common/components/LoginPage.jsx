@@ -52,7 +52,7 @@ class LoginPage extends React.Component {
                                 <div className="col-md-6 logo-wrapper">
                                     <div>
                                         <img src="/assets/images/md-circle-logo.png" alt="MESHDYNAMICS LOGO"/>
-                                        <span className="comp-name">mesh dynamics</span>
+                                        <span className="comp-name">Mesh Dynamics</span>
                                     </div>
                                     <div className="note">
                                         This is a Restricted Access beta. Read our Disclaimer for limitations

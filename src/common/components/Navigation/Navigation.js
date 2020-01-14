@@ -83,7 +83,7 @@ class Navigation extends Component{
                 <div className="nav-cont h-100">
                     <div className="left-pane text-center">
                         <div className="company-name">
-                            <img className="inline-block" src="/assets/images/md-circle-logo.png" alt="MESHDYNAMICS"/>
+                            <img className="inline-block" src="/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
                         </div>
                         <div className="q-links-top">
                             <Link to="/">
