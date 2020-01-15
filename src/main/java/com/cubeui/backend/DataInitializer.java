@@ -1546,7 +1546,7 @@ public class DataInitializer implements CommandLineRunner {
             JiraUserCredentials jiraUserCredentials = new JiraUserCredentials();
             jiraUserCredentials.setUser(userRepository.getOne(2L));
             jiraUserCredentials.setUserName("siddhant.mutha@meshdynamics.io");
-            jiraUserCredentials.setAPIKey("8cZH9lYXfy5dJZiAeh7eB741");
+            jiraUserCredentials.setAPIKey("fAODfwU3eTmrEDSdz7gM26C4");
             jiraUserCredentials.setJiraBaseURL("https://cubeio.atlassian.net");
             jiraUserCredentialsRepository.save(jiraUserCredentials);
         }
