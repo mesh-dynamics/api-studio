@@ -12,11 +12,14 @@ import {
 } from '../../utils/lib/validation';
 import "./SignUp.css";
 
-const validateReCaptcha = () => {};
+const MESSAGE = {
+    SUCCESS: "Your account has been successfully created. A verifcation link has been sent to your email. Please click on the link to verify and activate your account.",
+    ERROR: "Failed to create user account. Please contact your system administrator and try again later."
+};
 
 const SignUp = (props) => {
 
-    const { createUser, verifyToken } = props;
+    const { createUser, verifyToken, history } = props;
 
     const [firstName, setFirstName] = useState('');
 
@@ -34,6 +37,10 @@ const SignUp = (props) => {
 
     const [reCaptchaToken, setRecaptchaToken] = useState('');
 
+    const [accountCreatedSuccessfully, setAccountCreatedSuccessfully] = useState(false);
+
+    const [hasServerValidated, setHasServerValidated] = useState(false);
+
     const firstNameValidation = validateFirstName(firstName);
 
     const lastNameValidation =  validateLastName(lastName);
@@ -42,22 +49,50 @@ const SignUp = (props) => {
     
     const passwordValidation = validatePassword(password);
 
-    const handleSubmit = (event) => {
+    const isValid = () => {
+        return reCaptchaIsValid
+            && firstNameValidation.isValid
+            && lastNameValidation.isValid
+            && emailValidation.isValid
+            && passwordValidation.isValid
+            && reCaptchaToken !== null
+            && reCaptchaToken !== ''
+    };
+    
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
         setSubmitted(true);
 
+        if(isValid()) {
+            const user = {
+                name: `${firstName} ${lastName}`,
+                email,
+                password,
+            };
+    
+            try {
+                
+                const status = await createUser(user);
+                
+                setHasServerValidated(true);
 
-        const user = {
-            name: `${firstName} ${lastName}`,
-            email,
-            password,
-            // domain: window.location.hostname,
-            // roles: ["ROLE_USER"],
-            // reCaptchaValue,
-        };
+                if(status.ok) {
 
-        createUser(user);
+                    setAccountCreatedSuccessfully(true);
+
+                    setTimeout(() => history.push("/login"), 8000);
+
+                } else {
+                    setAccountCreatedSuccessfully(false);
+                }
+            } catch(e) {
+                setHasServerValidated(true);
+                setAccountCreatedSuccessfully(false);
+            }
+        }
+
+        
     };
 
     const handleReCaptchaChange = async (value) => {
@@ -78,128 +113,147 @@ const SignUp = (props) => {
         }
     };
 
-    const isValid = () => {
-        return reCaptchaIsValid
-            && firstNameValidation.isValid
-            && lastNameValidation.isValid
-            && emailValidation.isValid
-            && passwordValidation.isValid
-            && reCaptchaToken !== null
-            && reCaptchaToken !== ''
-    };
+    
 
     const renderReCaptchaError = () => (
-        (!reCaptchaToken !== null || reCaptchaToken === '')
-        ? (
-            <div className="help-block">
-                <span>Invalid ReCaptcha. Please try again after sometime.</span>
-            </div>        
-        ) : null);
+        // (!reCaptchaToken !== null || reCaptchaToken === '')
+        // ? (
+            <div className="recaptcha-error-text">
+                <span>Invalid ReCaptcha. Please try again.</span>
+            </div>);
+        // ) : null);
 
-    return (
+    const renderFormErrorMessage = () => (
+        <div className="form-error-message">
+            {MESSAGE.ERROR}
+        </div>
+    );
+
+    const renderForm = () => (
         <div className="pull-right" style={{width: "80%"}}>
             <h2 className="create-account-label">Create an account</h2>
             <form name="form" onSubmit={handleSubmit}>
-                <div className={"custom-fg form-group " + (submitted && !firstNameValidation.isValid ? "has-error" : "")}>
-                    <input 
-                        type="text" 
-                        name="firstname" 
-                        value={firstName} 
-                        placeholder="Firstname" 
-                        className="form-control"
-                        onChange={(e) => setFirstName(e.target.value.trim())} 
-                    />
-                    {
-                        submitted && 
-                        !firstNameValidation.isValid && 
-                        <div className="help-block">
-                            {firstNameValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
-                        </div>
-                    }
-                </div>
-                <div className={"custom-fg form-group " + (submitted && !lastNameValidation.isValid ? "has-error" : "")}>
-                    <input 
-                        type="text"
-                        name="lastname" 
-                        value={lastName}
-                        placeholder="Lastname" 
-                        className="form-control"
-                        onChange={(e) => setLastName(e.target.value)} 
-                    />
-                    {
-                        submitted && 
-                        !lastNameValidation.isValid && 
-                        <div className="help-block">
-                            {lastNameValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
-                        </div>
-                    }
-                </div>
-                <div className={"custom-fg form-group " + (submitted && !emailValidation.isValid ? "has-error" : "")}>
-                    <input 
-                        type="email" 
-                        name="email" 
-                        value={email}
-                        placeholder="Email" 
-                        className="form-control"
-                        onChange={(e) => setEmail(e.target.value)} 
-                    />
-                    {
-                        submitted && 
-                        !emailValidation.isValid && 
-                        <div className="help-block">
-                            {emailValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
-                        </div>
-                    }
-                </div>
-                <div className={"custom-fg form-group " + (submitted && !passwordValidation.isValid ? "has-error" : "")}>
-                    <input 
-                        name="password" 
-                        value={password}
-                        placeholder="Password" 
-                        className="form-control"
-                        type={showPassword ? "text" : "password"}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <div className='checkbox-container'>
-                        <input 
-                            type='checkbox' 
-                            name="showPassword" 
-                            checked={showPassword} 
-                            className="checkbox-custom" 
-                            onChange={() => setShowPassword(!showPassword)}
-                        /> 
-                        <span className='checkbox-label'>Show Password</span>
+            <div className={"custom-fg form-group " + (submitted && !firstNameValidation.isValid ? "has-error" : "")}>
+                <input 
+                    type="text" 
+                    name="firstname" 
+                    value={firstName} 
+                    placeholder="Firstname" 
+                    className="form-control"
+                    onChange={(e) => setFirstName(e.target.value.trim())} 
+                />
+                {
+                    submitted && 
+                    !firstNameValidation.isValid && 
+                    <div className="help-block">
+                        {firstNameValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
                     </div>
-                    {
-                        submitted && 
-                        !passwordValidation.isValid && 
-                        <div className="help-block">
-                            {passwordValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
-                        </div>
-                    }
+                }
+            </div>
+            <div className={"custom-fg form-group " + (submitted && !lastNameValidation.isValid ? "has-error" : "")}>
+                <input 
+                    type="text"
+                    name="lastname" 
+                    value={lastName}
+                    placeholder="Lastname" 
+                    className="form-control"
+                    onChange={(e) => setLastName(e.target.value)} 
+                />
+                {
+                    submitted && 
+                    !lastNameValidation.isValid && 
+                    <div className="help-block">
+                        {lastNameValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                    </div>
+                }
+            </div>
+            <div className={"custom-fg form-group " + (submitted && !emailValidation.isValid ? "has-error" : "")}>
+                <input 
+                    type="email" 
+                    name="email" 
+                    value={email}
+                    placeholder="Email" 
+                    className="form-control"
+                    onChange={(e) => setEmail(e.target.value)} 
+                />
+                {
+                    submitted && 
+                    !emailValidation.isValid && 
+                    <div className="help-block">
+                        {emailValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                    </div>
+                }
+            </div>
+            <div className={"custom-fg form-group " + (submitted && !passwordValidation.isValid ? "has-error" : "")}>
+                <input 
+                    name="password" 
+                    value={password}
+                    placeholder="Password" 
+                    className="form-control"
+                    type={showPassword ? "text" : "password"}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <div className='checkbox-container'>
+                    <input 
+                        type='checkbox' 
+                        name="showPassword" 
+                        checked={showPassword} 
+                        className="checkbox-custom" 
+                        onChange={() => setShowPassword(!showPassword)}
+                    /> 
+                    <span className='checkbox-label'>Show Password</span>
                 </div>
-                <div className={"custom-fg form-group recaptcha-container " + (!reCaptchaIsValid ? "has-error" : "")}>
-                    <ReCaptcha 
-                        sitekey="6Lf4x84UAAAAAE1eQicOrCrxVreqAWhpyV3KERpo" 
-                        onChange={handleReCaptchaChange} 
-                    />
-                    {!reCaptchaIsValid ? renderReCaptchaError() : null}
-                </div>
-                <div className="custom-fg form-group">
-                    <button disabled={!isValid()} className="btn btn-custom-auth width-100">Create Account</button>
-                </div>
-                <div className="custom-sign-in-divider" />
-                <div className="create-account-container">
-                    <span>Already have an account?</span>
-                    <Link to="/login" className="btn-link create-account">Log In</Link>
-                </div>
-            </form>
+                {
+                    submitted && 
+                    !passwordValidation.isValid && 
+                    <div className="help-block">
+                        {passwordValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                    </div>
+                }
+            </div>
+            <div className="custom-fg form-group recaptcha-container">
+                <ReCaptcha 
+                    sitekey="6Lf4x84UAAAAAE1eQicOrCrxVreqAWhpyV3KERpo" 
+                    onChange={handleReCaptchaChange} 
+                />
+                {!reCaptchaIsValid ? renderReCaptchaError() : null}
+
+                {submitted && reCaptchaToken === '' && renderReCaptchaError()}
+
+                {!accountCreatedSuccessfully && submitted && hasServerValidated ? renderFormErrorMessage(): null}
+            </div>
+            <div className="custom-fg form-group">
+                <button className="btn btn-custom-auth width-100">Create Account</button>
+            </div>
+            <div className="custom-sign-in-divider" />
+            <div className="create-account-container">
+                <span>Already have an account?</span>
+                <Link to="/login" className="btn-link create-account">Log In</Link>
+            </div>
+        </form>
+    </div>
+    );
+
+    
+
+    const renderSuccessMessage = () => (
+        <div className="form-success-message">
+            {MESSAGE.SUCCESS}
+            <span className="form-redirection-text">
+                You will be redirected to login screen automatically.
+            </span>
         </div>
-    )
+    );
+
+    return (
+        submitted && accountCreatedSuccessfully 
+        ? renderSuccessMessage() 
+        : renderForm()
+    );
 }
 
 const mapDispatchToProps = (dispatch) => ({
-    createUser: (user) => dispatch(userActions.createUser(user)),
+    createUser: (user) => userActions.createUser(user),
 
     verifyToken: (token) => userActions.verifyToken(token),
 });

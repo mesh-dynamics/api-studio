@@ -126,6 +126,12 @@ function handleResponseLogin(response) {
     });
 }
 
+/**
+ * TODO: Remove before merge
+ */
+const success = "http://www.mocky.io/v2/5e1ee6a4310000360018957d";
+const failure = "http://www.mocky.io/v2/5e1ebd30310000780018941d";
+
 function createUser(user){
     const requestOptions = {
         method: 'POST',
@@ -135,11 +141,8 @@ function createUser(user){
         body: JSON.stringify(user)
     };
 
-    return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions).then(handleResponse);
+    return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions);
 }
-
-const success = "http://www.mocky.io/v2/5e1ee6a4310000360018957d";
-const failure = "http://www.mocky.io/v2/5e1ebd30310000780018941d";
 
 /**
  * 
@@ -152,7 +155,7 @@ function validateReCaptcha(token){
             'Content-Type': 'application/json'
         }
     };
-
+    // TODO: Change to actual url
     return fetch(success, requestOptions);
 }
 
