@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { Provider } from "react-redux";
 import App from "./App";
 import { LoginPage } from "./Authentication/LoginPage";
+import ActivationPage from "./Authentication/Activation";
 import { PrivateRoute } from "./PrivateRoute";
 import { history } from '../helpers';
 
@@ -13,7 +14,8 @@ const Root = ( { store } ) => (
         <Router history={history}>
             <div>
                 <Switch>
-                    <Route path="/auth" component={LoginPage} />
+                    <Route path="/login" component={LoginPage} />
+                    <Route path="/activate" component={ActivationPage} />
                     <PrivateRoute path="/*" component={App} />
                     <Route path="/*" component={App} />
                 </Switch>

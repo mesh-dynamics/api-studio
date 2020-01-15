@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { userActions } from "../../actions/user.actions";
 
 const SignIn = (props) => {
+
     const [username, setUsername] = useState('');
 
     const [password, setPassword] = useState('');
@@ -51,7 +52,7 @@ const SignIn = (props) => {
                 <div className="custom-sign-in-divider" />
                 <div className="create-account-container">
                     <span>Don't have account?</span>
-                    <Link to="/auth/register" className="btn-link create-account">Create Account</Link>
+                    <Link to="/login/register" className="btn-link create-account">Create Account</Link>
                 </div>
             </form>
         </div>

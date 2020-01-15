@@ -28,9 +28,9 @@ const LoginPage = (props) => {
                                         </div>
                                         <div className="col-md-6 sign-in-wrapper">
                                                 <Switch>
-                                                    <Route exact path="/auth" component={SignIn} />
-                                                    <Route path="/auth/register" component={SignUp} />
-                                                    <Route path="/auth/*" component={SignIn} />
+                                                    <Route exact path="/login" component={SignIn} />
+                                                    <Route path="/login/register" component={SignUp} />
+                                                    <Route path="/login/*" component={SignIn} />
                                                 </Switch>
                                         </div>
                                 </div>

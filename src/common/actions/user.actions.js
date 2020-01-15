@@ -9,6 +9,7 @@ export const userActions = {
     register,
     getAll,
     createUser,
+    verifyToken,
     delete: _delete
 };
 
@@ -45,7 +46,7 @@ function register(user) {
             .then(
                 user => { 
                     dispatch(success());
-                    history.push('/auth');
+                    history.push('/login');
                     dispatch(alertActions.success('Registration successful'));
                 },
                 error => {
@@ -93,16 +94,15 @@ function _delete(id) {
     function failure(id, error) { return { type: userConstants.DELETE_FAILURE, id, error } }
 }
 
-
 function createUser(user) {
     return dispatch => {
         dispatch(request(user));
 
-        userService.createUser(user)
+        userService.register(user)
             .then(
                 user => { 
                     dispatch(success());
-                    history.push('/auth');
+                    history.push('/login');
                     dispatch(alertActions.success('Registration successful'));
                 },
                 error => {
@@ -115,4 +115,10 @@ function createUser(user) {
     function request(user) { return { type: userConstants.REGISTER_REQUEST, user } }
     function success(user) { return { type: userConstants.REGISTER_SUCCESS, user } }
     function failure(error) { return { type: userConstants.REGISTER_FAILURE, error } }
+}
+
+
+function verifyToken(token){
+    // Wrapped in an action file to implement any future functionality if required
+    return userService.validateReCaptcha(token);
 }

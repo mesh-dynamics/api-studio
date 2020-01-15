@@ -10,6 +10,7 @@
 
 .checkbox-container {
     display: flex;
+    padding-top: 5px;
 }
 
 .checkbox-label {
@@ -28,4 +29,10 @@
 .create-account-container {
 	margin-top: 20px;
 	font-size: 14px;
+}
+
+.recaptcha-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }

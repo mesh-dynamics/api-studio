@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ReCaptcha from 'react-google-recaptcha';
 import { userActions } from '../../actions/user.actions';
+import { 
+    validateFirstName, 
+    validateLastName, 
+    validateEmail, 
+    validatePassword
+} from '../../utils/lib/validation';
 import "./SignUp.css";
+
+const validateReCaptcha = () => {};
 
 const SignUp = (props) => {
 
-    const { createUser } = props;
+    const { createUser, verifyToken } = props;
 
     const [firstName, setFirstName] = useState('');
 
@@ -16,48 +24,100 @@ const SignUp = (props) => {
 
     const [email, setEmail] = useState('');
 
-    const [password, setPassword] = useState('')
+    const [password, setPassword] = useState('');
 
     const [showPassword, setShowPassword] = useState(false);
 
     const [submitted, setSubmitted] = useState(false);
+
+    const [reCaptchaIsValid, setReCaptchaIsValid] = useState(true);
+
+    const [reCaptchaToken, setRecaptchaToken] = useState('');
+
+    const firstNameValidation = validateFirstName(firstName);
+
+    const lastNameValidation =  validateLastName(lastName);
+
+    const emailValidation = validateEmail(email);
     
+    const passwordValidation = validatePassword(password);
+
     const handleSubmit = (event) => {
         event.preventDefault();
 
         setSubmitted(true);
 
+
         const user = {
-            "customerId": 1,
-            "name": "test",
-            "email": "test-user@testcustomer.com",
-            "password": "password",
-            "roles": ["ROLE_USER"]
+            name: `${firstName} ${lastName}`,
+            email,
+            password,
+            // domain: window.location.hostname,
+            // roles: ["ROLE_USER"],
+            // reCaptchaValue,
         };
 
         createUser(user);
     };
 
-    const handleReCaptchaChange = (value) => {
-        console.log("ReCaptcha", value);
+    const handleReCaptchaChange = async (value) => {
+        setRecaptchaToken(value);
+        try {
+            // Verify token returns 200 for success 
+            // and 4xx for failure. Body is empty
+            const status = await verifyToken(value);
+
+            if(status.ok) {
+                setReCaptchaIsValid(true);
+            } else {
+                setReCaptchaIsValid(false);    
+            }
+            
+        } catch(e) {
+            setReCaptchaIsValid(false);
+        }
     };
+
+    const isValid = () => {
+        return reCaptchaIsValid
+            && firstNameValidation.isValid
+            && lastNameValidation.isValid
+            && emailValidation.isValid
+            && passwordValidation.isValid
+            && reCaptchaToken !== null
+            && reCaptchaToken !== ''
+    };
+
+    const renderReCaptchaError = () => (
+        (!reCaptchaToken !== null || reCaptchaToken === '')
+        ? (
+            <div className="help-block">
+                <span>Invalid ReCaptcha. Please try again after sometime.</span>
+            </div>        
+        ) : null);
 
     return (
         <div className="pull-right" style={{width: "80%"}}>
             <h2 className="create-account-label">Create an account</h2>
             <form name="form" onSubmit={handleSubmit}>
-                <div className={"custom-fg form-group " + (submitted && !firstName ? "has-error" : "")}>
+                <div className={"custom-fg form-group " + (submitted && !firstNameValidation.isValid ? "has-error" : "")}>
                     <input 
                         type="text" 
                         name="firstname" 
                         value={firstName} 
                         placeholder="Firstname" 
                         className="form-control"
-                        onChange={(e) => setFirstName(e.target.value)} 
+                        onChange={(e) => setFirstName(e.target.value.trim())} 
                     />
-                    {submitted && !firstName && <div className="help-block">Firstname is required</div>}
+                    {
+                        submitted && 
+                        !firstNameValidation.isValid && 
+                        <div className="help-block">
+                            {firstNameValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                        </div>
+                    }
                 </div>
-                <div className={"custom-fg form-group " + (submitted && !lastName ? "has-error" : "")}>
+                <div className={"custom-fg form-group " + (submitted && !lastNameValidation.isValid ? "has-error" : "")}>
                     <input 
                         type="text"
                         name="lastname" 
@@ -66,9 +126,15 @@ const SignUp = (props) => {
                         className="form-control"
                         onChange={(e) => setLastName(e.target.value)} 
                     />
-                    {submitted && !lastName && <div className="help-block">Lastname is required</div>}
+                    {
+                        submitted && 
+                        !lastNameValidation.isValid && 
+                        <div className="help-block">
+                            {lastNameValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                        </div>
+                    }
                 </div>
-                <div className={"custom-fg form-group " + (submitted && !email ? "has-error" : "")}>
+                <div className={"custom-fg form-group " + (submitted && !emailValidation.isValid ? "has-error" : "")}>
                     <input 
                         type="email" 
                         name="email" 
@@ -77,9 +143,15 @@ const SignUp = (props) => {
                         className="form-control"
                         onChange={(e) => setEmail(e.target.value)} 
                     />
-                    {submitted && !email && <div className="help-block">Email is required</div>}
+                    {
+                        submitted && 
+                        !emailValidation.isValid && 
+                        <div className="help-block">
+                            {emailValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                        </div>
+                    }
                 </div>
-                <div className={"custom-fg form-group " + (submitted && !password ? "has-error" : "")}>
+                <div className={"custom-fg form-group " + (submitted && !passwordValidation.isValid ? "has-error" : "")}>
                     <input 
                         name="password" 
                         value={password}
@@ -88,31 +160,38 @@ const SignUp = (props) => {
                         type={showPassword ? "text" : "password"}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    {submitted && !password && <div className="help-block">Password is required</div>}
+                    <div className='checkbox-container'>
+                        <input 
+                            type='checkbox' 
+                            name="showPassword" 
+                            checked={showPassword} 
+                            className="checkbox-custom" 
+                            onChange={() => setShowPassword(!showPassword)}
+                        /> 
+                        <span className='checkbox-label'>Show Password</span>
+                    </div>
+                    {
+                        submitted && 
+                        !passwordValidation.isValid && 
+                        <div className="help-block">
+                            {passwordValidation.errorMessages.map(message => <Fragment key={message}><span>{message}</span><br /></Fragment>)}
+                        </div>
+                    }
                 </div>
-                <div className='custom-fg form-group checkbox-container'>
-                    <input 
-                        type='checkbox' 
-                        name="showPassword" 
-                        checked={showPassword} 
-                        className="checkbox-custom" 
-                        onChange={() => setShowPassword(!showPassword)}
-                    /> 
-                    <span className='checkbox-label'>Show Password</span>
-                </div>
-                <div className='custom-fg form-group'>
+                <div className={"custom-fg form-group recaptcha-container " + (!reCaptchaIsValid ? "has-error" : "")}>
                     <ReCaptcha 
                         sitekey="6Lf4x84UAAAAAE1eQicOrCrxVreqAWhpyV3KERpo" 
                         onChange={handleReCaptchaChange} 
                     />
+                    {!reCaptchaIsValid ? renderReCaptchaError() : null}
                 </div>
                 <div className="custom-fg form-group">
-                    <button className="btn btn-custom-auth width-100">Create Account</button>
+                    <button disabled={!isValid()} className="btn btn-custom-auth width-100">Create Account</button>
                 </div>
                 <div className="custom-sign-in-divider" />
                 <div className="create-account-container">
                     <span>Already have an account?</span>
-                    <Link to="/auth" className="btn-link create-account">Log In</Link>
+                    <Link to="/login" className="btn-link create-account">Log In</Link>
                 </div>
             </form>
         </div>
@@ -121,14 +200,13 @@ const SignUp = (props) => {
 
 const mapDispatchToProps = (dispatch) => ({
     createUser: (user) => dispatch(userActions.createUser(user)),
+
+    verifyToken: (token) => userActions.verifyToken(token),
 });
 
 SignUp.propTypes = {
     createUser: PropTypes.func.isRequired,
+    
 };
 
 export default connect(null, mapDispatchToProps)(SignUp);
-
-// const mapStateToProps = (state) => ({
-//     authentication: state.authentication,
-// });
