@@ -74,21 +74,19 @@ const Activation = (props) => {
     useEffect(() => {
         if(!search) {
             history.push("/login");
-        } else {
+        }
+        
+        if(search && activationState === ACTIVATION.INIT) {
             triggerActivation();
         }
-        return () => {};
-    }, [search, triggerActivation]);
+
+    }, [search, activationState]);
 
     useEffect(() => {
         if(activationState === ACTIVATION.SUCCESS) {
             setTimeout(() => history.push("/login"), 8000);
         }
-
-        return () => {};
     }, [activationState]);
-
-    console.log(activationState)
 
     return (
         <div className="activation-root">
