@@ -9,6 +9,7 @@ import com.cubeui.backend.repository.EmailDomainRepository;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
+import com.cubeui.backend.service.exception.InvalidReCaptchaException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -98,7 +99,7 @@ public class AccountController {
     @GetMapping("/validate-recaptcha")
     public ResponseEntity validateReCaptcha(HttpServletRequest request) {
         String response = request.getParameter("g-recaptcha-response");
-        String clientIPAddress = request.getRemoteAddr();
+        String clientIPAddress = "14.143.179.162";//request.getRemoteAddr();
         reCaptchaAPIService.processResponse(response, clientIPAddress);
         return ok().build();
     }
