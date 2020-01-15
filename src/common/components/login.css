@@ -277,7 +277,7 @@ form:after {
 }
 .login-widget {
 	font-family: 'Roboto', sans-serif;
-	width: 70%;
+	width: 80%;
 	display: table;
 }
 .logo-wrapper {
@@ -290,12 +290,13 @@ form:after {
 }
 .comp-name {
 	font-weight: 100;
-	font-size: 50px;
+	font-size: 40px;
 	color: #999999 !important;
 }
 .note {
 	font-size: 12px;
 	margin-top: 30px;
+	text-align: center;
 }
 .sign-in-wrapper {
 	height: 100%;

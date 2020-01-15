@@ -51,8 +51,8 @@ class LoginPage extends React.Component {
                             <div className="row">
                                 <div className="col-md-6 logo-wrapper">
                                     <div>
-                                        <img src="/assets/images/cube_star_logo.png" alt="CUBE LOGO"/>
-                                        <span className="comp-name">CUBE IO</span>
+                                        <img src="/assets/images/md-circle-logo.png" alt="MESHDYNAMICS LOGO"/>
+                                        <span className="comp-name">Mesh Dynamics</span>
                                     </div>
                                     <div className="note">
                                         This is a Restricted Access beta. Read our Disclaimer for limitations
