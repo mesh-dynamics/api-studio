@@ -97,7 +97,7 @@ public class MailService {
         context.setVariable("activationUrl", baseUrl + activationEndpoint);
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
-        sendEmail(user.getUsername(), subject, content, true, true);
+        sendEmail("siddhant.mutha@meshdynamics.io", subject, content, true, true);
     }
 
     @Async

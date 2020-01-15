@@ -49,23 +49,23 @@
                     <div style="border: 1px solid #B3B3B3; border-radius: 3px;">
                         <div class="email-box">
                             <h1 style="font-weight: 500">Activate your account</h1>
-                            <div class="m-1"><span th:text="#{email.greeting(${user.getName()})}">Dear</span>, your CubeIO account has been created</div>
+                            <div class="m-1"><span th:text="#{email.greeting(${user.getName()})}">Dear</span>, your Mesh Dynamics account has been created</div>
             <!--                <div class="m-1" th:text="#{email.activation.userName(${user.login})}">-->
             <!--                    Your username to signin to your account is-->
             <!--                </div>-->
-                            <div class="m-1">
-                                It is mandatory to change your password upon activation.
-                            </div>
+<!--                            <div class="m-1">-->
+<!--                                It is mandatory to change your password upon activation.-->
+<!--                            </div>-->
                             <div style="padding: 30px">
                                 <a th:href="@{|${activationUrl}?key=${user.activationKey}|}" class="activation-btn">Activate Now</a>
                             </div>
-                            <div class="m-1">OR COPY-PASTE THE LINK BELOW</div>
+                            <div class="m-1">or copy-paste the link below in your browser:</div>
                             <div class="m-1">
-                                <a th:href="@{|${activationUrl}?key=${user.activationKey}|}" th:text="@{|${activationUrl}?key=${user.activationKey}|}">Activattion link</a>
+                                <a th:href="@{|${activationUrl}?key=${user.activationKey}|}" th:text="@{|${activationUrl}?key=${user.activationKey}|}">Activation link</a>
                             </div>
                             <div class="my-3">
                                 <div class="m-1" th:text="#{email.activation.text2}"> </div>
-                                <div class="m-1"><em th:text="#{email.signature}">CubeIO.</em></div>
+                                <div class="m-1"><em th:text="#{email.signature}">Mesh Dynamics.</em></div>
                             </div>
                             <div class="footer m-1">Note: This is system generated email. Please don't reply to this email</div>
                         </div>
