@@ -94,7 +94,7 @@ const Activation = (props) => {
         <div className="activation-root">
             {renderActivationStatus()}
             <div className="activation-copyright">
-                All rights reserved with CubeCorp.IO &copy; 
+                All rights reserved with meshdynamics.io &copy; 
             </div>
         </div>
     )

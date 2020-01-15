@@ -98,7 +98,7 @@ function createUser(user) {
     return dispatch => {
         dispatch(request(user));
 
-        userService.register(user)
+        userService.createUser(user)
             .then(
                 user => { 
                     dispatch(success());

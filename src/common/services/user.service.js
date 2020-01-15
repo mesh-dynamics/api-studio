@@ -164,5 +164,5 @@ function verifyActivationToken(searchString){
         }
     };
 
-    return fetch(`${config.apiBaseUrl}/account/create-user${searchString}`, requestOptions);
+    return fetch(`${config.apiBaseUrl}/account/activate${searchString}`, requestOptions);
 }
