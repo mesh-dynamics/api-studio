@@ -81,8 +81,8 @@ const Activation = (props) => {
     }, [search, triggerActivation]);
 
     useEffect(() => {
-        if(activationState !== ACTIVATION.INIT) {
-            setTimeout(() => history.push("/login"), 5000);
+        if(activationState === ACTIVATION.SUCCESS) {
+            setTimeout(() => history.push("/login"), 8000);
         }
 
         return () => {};
