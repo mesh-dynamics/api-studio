@@ -34,10 +34,10 @@ spring:
                 # Change timeout if authentication/read exception is being thrown
 
         frontend:
-            baseUrl: http://localhost:8080
+            baseUrl: http://demo.prod.v2.cubecorp.io
             loginEndpoint: /login
             resetEndpoint: /reset
-            activationEndpoint: /api/account/activate
+            activationEndpoint: /activate
 
 security:
     jwt:

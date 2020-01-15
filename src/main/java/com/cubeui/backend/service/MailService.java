@@ -84,7 +84,7 @@ public class MailService {
     }
 
     @Async
-    public void sendEmailFromTemplate(User user, String templateName, String titleKey) {
+    public void sendEmailFromTemplate(User user, String emailId, String templateName, String titleKey) {
         Locale locale = Locale.forLanguageTag(DEFAULT_LANGUAGE);
         Context context = new Context();
         context.setVariable("user", user);
@@ -97,25 +97,31 @@ public class MailService {
         context.setVariable("activationUrl", baseUrl + activationEndpoint);
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
-        sendEmail("siddhant.mutha@meshdynamics.io", subject, content, true, true);
+        sendEmail(emailId, subject, content, true, true);
     }
 
     @Async
     public void sendActivationEmail(User user) {
         log.debug("Sending activation email to '{}'", user.getUsername());
-        sendEmailFromTemplate(user, "activationEmail", "email.activation.title");
+        sendEmailFromTemplate(user, user.getUsername(), "activationEmail", "email.activation.title");
     }
 
     @Async
     public void sendCreationEmail(User user) {
         log.debug("Sending creation email to '{}'", user.getUsername());
-        sendEmailFromTemplate(user, "creationEmail", "email.creation.title");
+        sendEmailFromTemplate(user, user.getUsername(), "creationEmail", "email.creation.title");
+    }
+
+    @Async
+    public void sendCreationEmailAdmin(User user) {
+        String adminEmail = user.getCustomer().getEmail();
+        log.debug("Sending creation notification email to admin at '{}'", adminEmail);
+        sendEmailFromTemplate(user, adminEmail, "creationEmailAdmin", "email.creation.title");
     }
 
     @Async
     public void sendPasswordResetMail(User user) {
         log.debug("Sending password reset email to '{}'", user.getUsername());
-        sendEmailFromTemplate(user, "passwordResetEmail", "email.reset.title");
+        sendEmailFromTemplate(user, user.getUsername(), "passwordResetEmail", "email.reset.title");
     }
-
 }

@@ -136,13 +136,14 @@ public class AccountController {
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
             mailService.sendCreationEmail(optionalUser.get());
+            mailService.sendCreationEmailAdmin(optionalUser.get());
             return ok("User activated");
         } else {
             throw new RecordNotFoundException("No user was found for with this activation key");
         }
     }
 
-    @PostMapping(path = "/account/reset-password/init")
+    @PostMapping(path = "/reset-password/init")
     public ResponseEntity requestPasswordReset(@RequestBody String mail) {
         Optional<User> user = userService.requestPasswordReset(mail);
 
