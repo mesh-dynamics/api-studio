@@ -9,7 +9,9 @@ export const userService = {
     getById,
     update,
     createUser,
-    delete: _delete
+    validateReCaptcha,
+    verifyActivationToken,
+    delete: _delete,
 };
 
 
@@ -124,16 +126,43 @@ function handleResponseLogin(response) {
     });
 }
 
-function createUser(user) {
+function createUser(user){
     const requestOptions = {
         method: 'POST',
         headers: { 
-            ...authHeader(), 
             'Content-Type': 'application/json'
-            // 'Access-Control-Allow-Origin': '*' 
         },
         body: JSON.stringify(user)
     };
 
-    return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions).then(handleResponse);;    
+    return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions).then(handleResponse);
+}
+
+const success = "http://www.mocky.io/v2/5e1ee6a4310000360018957d";
+const failure = "http://www.mocky.io/v2/5e1ebd30310000780018941d";
+
+/**
+ * 
+ * @param {string} token <Recaptcha Token>
+ */
+function validateReCaptcha(token){
+    const requestOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    return fetch(success, requestOptions);
+}
+
+function verifyActivationToken(searchString){
+    const requestOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    return fetch(`${config.apiBaseUrl}/account/create-user${searchString}`, requestOptions);
 }
