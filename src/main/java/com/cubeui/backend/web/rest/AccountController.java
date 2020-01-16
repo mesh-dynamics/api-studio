@@ -10,9 +10,11 @@ import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.service.exception.InvalidReCaptchaException;
+import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -135,9 +137,15 @@ public class AccountController {
     public ResponseEntity activateAccount(@RequestParam(value = "key") String activationKey) {
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
-            mailService.sendCreationEmail(optionalUser.get());
-            mailService.sendCreationEmailAdmin(optionalUser.get());
-            return ok("User activated");
+            User user = optionalUser.get();
+            // check if key has expired (48H)
+            if(user.getCreatedAt().plusHours(48L).isAfter(LocalDateTime.now())) {
+                mailService.sendCreationEmail(user);
+                mailService.sendCreationEmailAdmin(user);
+                return ok("User activated");
+            } else {
+                throw new ActivationKeyExpiredException("Activation key expired");
+            }
         } else {
             throw new RecordNotFoundException("No user was found for with this activation key");
         }
