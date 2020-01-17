@@ -19,7 +19,7 @@ Where to use this token?
 In the fluentd configuration that sends the request/response to the cube server, the token has to be configured
 Example:
 
-  "<match cube.movieinfo.envoy.staging-mn>
+  ```<match cube.movieinfo.envoy.staging-mn>
       @type http
       endpoint https://staging-mn.dev.cubecorp.io/api/cs/rrbatch
       headers { "Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwicmFuZG9tc3RyIjoiYVhGdmFrQzlJMCIsImlhdCI6MTU3OTE3Mjk4MywiZXhwIjoxODk0NTMyOTgzfQ.4ainHhElKLNHqmz5XqWa9HHfErHSTrXJ6W1DNjlTzz0"}
@@ -33,4 +33,4 @@ Example:
         chunk_limit_records 10
         flush_interval 10
       </buffer>
-    </match>"
+    </match>```
