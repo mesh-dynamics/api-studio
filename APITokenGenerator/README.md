@@ -33,4 +33,5 @@ Example:
         chunk_limit_records 10
         flush_interval 10
       </buffer>
-    </match>```
+    </match>
+    ```
