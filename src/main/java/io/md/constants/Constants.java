@@ -142,6 +142,7 @@ public class Constants {
 	public static final String MD_INSTANCE_PROP = "io.md.instance";
 	public static final String MD_SERVICE_PROP = "io.md.service";
 	public static final String MD_INTENT_PROP = "io.md.intent";
+	public static final String MD_ENCRYPTION_CONFIG_PATH = "io.md.encryptionconfig.path";
 
 	//Header Baggage/ Intent
 	public static final String ZIPKIN_HEADER_BAGGAGE_INTENT_KEY = "intent";
