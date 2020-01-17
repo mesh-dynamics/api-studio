@@ -27,6 +27,7 @@ typedef struct {
     // ADDED FOR CUBE : two more buffers for keeping req and resp headers
     ngx_buf_t                            req_header_buffer;
     ngx_buf_t                            resp_header_buffer;
+    ngx_buf_t                            header_value_buffer;
 } ngx_http_response_body_ctx_t;
 
 
@@ -83,6 +84,12 @@ static char *
 ngx_conf_set_keyval(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 
 static ngx_int_t allocate_buffer_if_already_not(ngx_buf_t *b, size_t buffer_size,ngx_http_request_t *r);
+
+static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part
+  , ngx_http_request_t *r, ngx_buf_t *tmp_buf);
+
+static size_t escape_special_char(ngx_buf_t* target_buf, u_char* source,
+    size_t source_len);
 
 static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
 static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
@@ -619,7 +626,7 @@ static ngx_int_t allocate_buffer_if_already_not(ngx_buf_t *b, size_t buffer_size
 }
 
 // ADDED FOR CUBE : copying headers to memory buffer
-static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
+static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part, ngx_http_request_t *r, ngx_buf_t *tmp_buf)
 {
     ngx_table_elt_t   *header_elts;
     ngx_uint_t        i;
@@ -627,6 +634,7 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
     header_elts = part->elts;
     b->last = ngx_cpymem(b->last, "[" , ngx_strlen("["));
     ngx_uint_t count = 0;
+    size_t buf_len;
 
     for (i = 0; /* void */; i++) {
       if (i >= part->nelts) {
@@ -643,20 +651,88 @@ static ngx_int_t copy_headers_to_buffer(ngx_buf_t *b, ngx_list_part_t* part)
       count ++;
       b->last = ngx_cpymem(b->last, "{" , ngx_strlen("{"));
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
-      b->last = ngx_cpymem(b->last, header_elts[i].key.data , header_elts[i].key.len);
+
+      tmp_buf->start = ngx_palloc(r->pool, header_elts[i].key.len*2);
+      if (tmp_buf->start == NULL) {
+        ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
+            "CUBE :: Could not allocate temporary buffer");
+      }
+      tmp_buf->end = tmp_buf->start + header_elts[i].key.len*2;
+      tmp_buf->pos = tmp_buf->last = tmp_buf->start;
+
+      buf_len = escape_special_char(tmp_buf, header_elts[i].key.data,
+        header_elts[i].key.len);
+
+      b->last = ngx_cpymem(b->last, tmp_buf->pos , buf_len);
+
+      ngx_pfree(r->pool, tmp_buf);
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
       b->last = ngx_cpymem(b->last, ":" , ngx_strlen(":"));
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
-      b->last = ngx_cpymem(b->last, header_elts[i].value.data , header_elts[i].value.len);
+
+      tmp_buf->start  = ngx_palloc(r->pool, header_elts[i].value.len*2);
+      if (tmp_buf->start == NULL) {
+        ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
+            "CUBE :: Could not allocate temporary buffer");
+      }
+      tmp_buf->end = tmp_buf->start + header_elts[i].value.len*2;
+      tmp_buf->pos = tmp_buf->last = tmp_buf->start;
+
+      buf_len = escape_special_char(tmp_buf, header_elts[i].value.data,
+        header_elts[i].value.len);
+
+      b->last = ngx_cpymem(b->last, tmp_buf->pos , buf_len);
       b->last = ngx_cpymem(b->last, "\"" , ngx_strlen("\""));
       b->last = ngx_cpymem(b->last, "}" , ngx_strlen("}"));
       b->last = ngx_cpymem(b->last, "," , ngx_strlen(","));
 
+      ngx_pfree(r->pool, tmp_buf);
     }
 
     b->last = ngx_cpymem(b->last, "]" , ngx_strlen("]"));
     return NGX_OK;
 
+}
+
+static size_t escape_special_char(ngx_buf_t* target_buf, u_char* source,
+    size_t source_len) {
+    ngx_uint_t j;
+    size_t escaped_str_len = 0;
+    for (j = 0; j < source_len; j++) {
+      switch(*source) {
+        case '\b':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\b", 2);
+          escaped_str_len += 2;
+          break;
+        case '\f':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\f", 2);
+          escaped_str_len += 2;
+          break;
+        case '\n':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\n", 2);
+          escaped_str_len += 2;
+          break;
+        case '\r':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\r", 2);
+          escaped_str_len += 2;
+          break;
+        case '\t':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\t", 2);
+          escaped_str_len += 2;
+          break;
+        case '"':
+        case '\\':
+        case '/':
+          target_buf->last = ngx_cpymem(target_buf->last, "\\", 1);
+          escaped_str_len += 1;
+        default:
+          target_buf->last = ngx_cpymem(target_buf->last, source, 1);
+          escaped_str_len += 1;
+          break;
+      }
+      source ++;
+    }
+    return escaped_str_len;
 }
 
 static size_t estimate_copy_size(ngx_list_part_t* part) {
@@ -680,7 +756,8 @@ static size_t estimate_copy_size(ngx_list_part_t* part) {
         i = 0;
       }
       count ++;
-      header_size += header_elts[i].key.len + header_elts[i].value.len
+      // key and value * 2 to take into account escaping
+      header_size += header_elts[i].key.len*2 + header_elts[i].value.len*2
         + 4*ngx_strlen("\"") + ngx_strlen(",") + ngx_strlen(":") + ngx_strlen("{}");
     }
 
@@ -733,7 +810,7 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
             // in that case the if condition can be removed
             header_size = estimate_copy_size(&r->headers_in.headers.part);
             if (header_size <= ctx->blcf->header_buffer_size) {
-              copy_headers_to_buffer(&ctx->req_header_buffer, &r->headers_in.headers.part);
+              copy_headers_to_buffer(&ctx->req_header_buffer, &r->headers_in.headers.part,r,&ctx->header_value_buffer);
               ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "CUBE :: Successfully captured request header in context variable");
             } else {
@@ -750,7 +827,7 @@ ngx_http_response_body_filter_header(ngx_http_request_t *r)
           default:
             header_size = estimate_copy_size(&r->headers_out.headers.part);
             if (header_size <= ctx->blcf->header_buffer_size) {
-              copy_headers_to_buffer(&ctx->resp_header_buffer, &r->headers_out.headers.part);
+              copy_headers_to_buffer(&ctx->resp_header_buffer, &r->headers_out.headers.part,r,&ctx->header_value_buffer);
               ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "CUBE :: Successfully captured response headers in context variable");
             } else {
