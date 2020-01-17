@@ -81,8 +81,6 @@ const SignUp = (props) => {
 
                     setAccountCreatedSuccessfully(true);
 
-                    setTimeout(() => history.push("/login"), 8000);
-
                 } else {
                     setAccountCreatedSuccessfully(false);
                 }
@@ -118,7 +116,7 @@ const SignUp = (props) => {
     const renderReCaptchaError = () => (
         // (!reCaptchaToken !== null || reCaptchaToken === '')
         // ? (
-            <div className="recaptcha-error-text">
+            <div className="error-text">
                 <span>Invalid ReCaptcha. Please try again.</span>
             </div>);
         // ) : null);
@@ -169,7 +167,7 @@ const SignUp = (props) => {
             </div>
             <div className={"custom-fg form-group " + (submitted && !emailValidation.isValid ? "has-error" : "")}>
                 <input 
-                    type="email" 
+                    type="text" 
                     name="email" 
                     value={email}
                     placeholder="Email" 
@@ -226,7 +224,7 @@ const SignUp = (props) => {
                 <button className="btn btn-custom-auth width-100">Create Account</button>
             </div>
             <div className="custom-sign-in-divider" />
-            <div className="create-account-container">
+            <div className="account-action-container">
                 <span>Already have an account?</span>
                 <Link to="/login" className="btn-link create-account">Log In</Link>
             </div>

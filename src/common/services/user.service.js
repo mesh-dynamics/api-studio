@@ -1,5 +1,6 @@
 import { authHeader } from '../helpers';
 import config from '../config';
+import {initialize} from 'redux-form'
 
 export const userService = {
     login,
@@ -9,6 +10,8 @@ export const userService = {
     getById,
     update,
     createUser,
+    sendResetLink,
+    resetPassword,
     validateReCaptcha,
     verifyActivationToken,
     delete: _delete,
@@ -131,6 +134,8 @@ function handleResponseLogin(response) {
  */
 const success = "http://www.mocky.io/v2/5e1ee6a4310000360018957d";
 const failure = "http://www.mocky.io/v2/5e1ebd30310000780018941d";
+// reset-password/init
+// reset-password/finish
 
 function createUser(user){
     const requestOptions = {
@@ -168,4 +173,28 @@ function verifyActivationToken(searchString){
     };
 
     return fetch(`${config.apiBaseUrl}/account/activate${searchString}`, requestOptions);
+}
+
+function sendResetLink(email){
+    const requestOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    return fetch(`${config.apiBaseUrl}/account/reset-password/init?email=${email}`, requestOptions);
+}
+
+function resetPassword(key, password){
+
+    const requestOptions = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ key, password })
+    };
+
+    return fetch(`${config.apiBaseUrl}/account/reset-password/finish`, requestOptions);
 }

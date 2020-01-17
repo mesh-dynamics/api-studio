@@ -5,6 +5,8 @@ import { userActions } from "../../actions/user.actions";
 import { Redirect } from "react-router";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
+import ResetLink from "./ResetLink";
+import ResetPassword from "./ResetPassword";
 import "./Login.css";
 
 const LoginPage = (props) => {
@@ -30,6 +32,8 @@ const LoginPage = (props) => {
                                                 <Switch>
                                                     <Route exact path="/login" component={SignIn} />
                                                     <Route path="/login/register" component={SignUp} />
+                                                    <Route path="/login/reset-link" component={ResetLink} />
+                                                    <Route path="/login/reset-password" component={ResetPassword} />
                                                     <Route path="/login/*" component={SignIn} />
                                                 </Switch>
                                         </div>
@@ -141,7 +145,7 @@ export { connectedLoginPage as LoginPage};
                                                 
 //                                             </div>
 //                                             <div className="custom-sign-in-divider" />
-//                                             <div className="create-account-container">
+//                                             <div className="account-action-container">
 //                                                 <span>Don't have account?</span>
 //                                                 <Link to="/register" className="btn-link create-account">Create Account</Link>
 //                                             </div>

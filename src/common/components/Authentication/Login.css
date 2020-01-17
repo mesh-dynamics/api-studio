@@ -344,3 +344,8 @@ form:after {
 	cursor: pointer;
 	color: #fff;
 }
+
+.account-action-container {
+	margin-top: 20px;
+	font-size: 14px;
+}

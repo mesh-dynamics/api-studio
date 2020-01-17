@@ -44,13 +44,13 @@ const SignIn = (props) => {
                     }
                 </div>
                 <div className="btn-link forgot-password">
-                    <Link to="/reset" >Forgot your password?</Link>
+                    <Link to="/login/reset-link">Forgot your password?</Link>
                 </div>
                 <div className="custom-fg form-group">
                     <button className="btn btn-custom-auth width-100">Login</button>
                 </div>
                 <div className="custom-sign-in-divider" />
-                <div className="create-account-container">
+                <div className="account-action-container">
                     <span>Don't have account?</span>
                     <Link to="/login/register" className="btn-link create-account">Create Account</Link>
                 </div>

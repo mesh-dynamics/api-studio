@@ -10,7 +10,7 @@ const ACTIVATION = {
 }
 
 const Activation = (props) => {
-    const { location: { pathname, search }, history }  = props;
+    const { location: { search }, history }  = props;
 
     const [activationState, setActivationState] = useState(ACTIVATION.INIT);
 
@@ -103,11 +103,11 @@ const Activation = (props) => {
 export default Activation;
 
 // const urlParsed = search
-        //                     .substring(search.indexOf("?") + 1)
-        //                     .split("&")
-        //                     .reduce(
-        //                         (memo, param) => ({
-        //                         ...memo,
-        //                         [param.split("=")[0]]: param.split("=")[1]
-        //                     }),{}
-        //                 );
+//                             .substring(search.indexOf("?") + 1)
+//                             .split("&")
+//                             .reduce(
+//                                 (memo, param) => ({
+//                                 ...memo,
+//                                 [param.split("=")[0]]: param.split("=")[1]
+//                             }),{}
+//                         );

@@ -1,0 +1,29 @@
+.reset-link-button {
+    color: #fff;
+}
+
+.reset-link-input-container {
+    padding: 20px 0px;
+}
+
+.reset-link-description {
+    color: #858585;
+    font-size: 14px;
+}
+
+.reset-actions {
+    margin-top: 20px;
+}
+
+.reset-link-message-container {
+    font-size: 14px;
+    color: #525252;
+}
+
+.reset-link {
+    cursor: pointer;
+}
+
+.resend-reset-link {
+    margin-top: 15px;
+}

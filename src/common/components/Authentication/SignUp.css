@@ -26,11 +26,6 @@
 	border: 1px solid #FFA76D;
 }
 
-.create-account-container {
-	margin-top: 20px;
-	font-size: 14px;
-}
-
 .recaptcha-container {
     display: flex;
     flex-direction: column;
@@ -62,6 +57,6 @@
     margin-top: 20px;
 }
 
-.recaptcha-error-text {
+.error-text {
     color: #a94442;
 }
