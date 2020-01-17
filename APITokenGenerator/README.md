@@ -11,7 +11,7 @@ Mesh Dynamics UI is obtains a token by giving username/password and the token ha
   1. Checkout this repo
   2. build the jar by running "mvn clean compile assembly:single"
   3. run the jar "java -jar target/pat-generator-1.0-SNAPSHOT-jar-with-dependencies.jar"
-  Enter the config file path. The file with values pointing to dev/staging DB is available under src/resources
+  Enter the config file path. The file with default values pointing to dev/staging DB is available under src/resources
   4. Feed the customer id for which the token has to be generated. The token will be printed in the console.
 
 # Where to use this token?
