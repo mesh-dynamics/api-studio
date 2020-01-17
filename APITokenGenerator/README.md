@@ -34,5 +34,4 @@ Example:
         flush_interval 10
       </buffer>
     </match>
-    
-    ```
+```   
