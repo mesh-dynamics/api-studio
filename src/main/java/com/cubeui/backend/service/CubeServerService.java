@@ -47,8 +47,8 @@ public class CubeServerService {
         }
     }
 
-    public ResponseEntity fetchGetResponse(HttpServletRequest request) {
-        return fetchResponse(request, Optional.empty(), HttpMethod.GET);
+    public ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<String> requestBody) {
+        return fetchResponse(request, requestBody, HttpMethod.GET);
     }
 
     public ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<String> requestBody) {

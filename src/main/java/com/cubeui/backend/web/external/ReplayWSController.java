@@ -1,7 +1,6 @@
 package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.service.CubeServerService;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,33 +18,14 @@ public class ReplayWSController {
         this.cubeServerService = cubeServerService;
     }
 
-    @GetMapping("/health")
-    public ResponseEntity getData1(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
+    @GetMapping("**")
+    public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody) {
+        return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/status/{customerid}/{app}/{collection}/{replayid}")
-    public ResponseEntity status(HttpServletRequest request) {
-        return cubeServerService.fetchGetResponse(request);
+    @PostMapping("**")
+    public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
     }
 
-    @PostMapping(value = "/init/{customerid}/{app}/{collection}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity init(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping(value = "/transforms/{customerid}/{app}/{collection}/{replayid}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity upsertTransforms(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping("/forcecomplete/{replayid}")
-    public ResponseEntity forceComplete(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
-
-    @PostMapping(value = "/start/{goldenId}", consumes = "application/x-www-form-urlencoded")
-    public ResponseEntity start(HttpServletRequest request, @RequestBody String requestBody) {
-        return cubeServerService.fetchPostResponse(request, Optional.ofNullable(requestBody));
-    }
 }
