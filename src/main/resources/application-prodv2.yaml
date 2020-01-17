@@ -36,7 +36,7 @@ spring:
         frontend:
             baseUrl: http://demo.prod.v2.cubecorp.io
             loginEndpoint: /login
-            resetEndpoint: /reset
+            resetEndpoint: /login/reset-password
             activationEndpoint: /activate
 
 security:
@@ -54,3 +54,8 @@ logging:
 cube:
     server:
         baseUrl: http://demo.prod.v2.cubecorp.io
+
+external:
+    recaptcha:
+        secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr
+

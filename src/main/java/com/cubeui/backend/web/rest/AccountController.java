@@ -151,9 +151,9 @@ public class AccountController {
         }
     }
 
-    @PostMapping(path = "/reset-password/init")
-    public ResponseEntity requestPasswordReset(@RequestBody String mail) {
-        Optional<User> user = userService.requestPasswordReset(mail);
+    @GetMapping(path = "/reset-password/init")
+    public ResponseEntity requestPasswordReset(@RequestParam(value = "email") String email) {
+        Optional<User> user = userService.requestPasswordReset(email);
 
         if (user.isPresent()) {
             mailService.sendPasswordResetMail(user.get());
@@ -169,7 +169,11 @@ public class AccountController {
             throw new InvalidDataException("Password length should be between " + PASSWORD_MIN_LENGTH + " and " + PASSWORD_MAX_LENGTH);
         }
         Optional<User> user = userService.completePasswordReset(keyAndPassword.getPassword(), keyAndPassword.getKey());
-        return user.map(ResponseEntity::ok).orElseThrow(() -> {
+        return user.map(u -> {
+          // send password reset successful mail
+          mailService.sendPasswordResetSuccessfulMail(u);
+          return ok().build();
+        }).orElseThrow(() -> {
             throw new RecordNotFoundException("No user was found for this reset key");
         });
     }
