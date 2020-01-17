@@ -22,7 +22,7 @@ Example:
   ```<match cube.movieinfo.envoy.staging-mn>
       @type http
       endpoint https://staging-mn.dev.cubecorp.io/api/cs/rrbatch
-      headers { "Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwicmFuZG9tc3RyIjoiYVhGdmFrQzlJMCIsImlhdCI6MTU3OTE3Mjk4MywiZXhwIjoxODk0NTMyOTgzfQ.4ainHhElKLNHqmz5XqWa9HHfErHSTrXJ6W1DNjlTzz0"}
+      headers { "Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwicmFuZG9tc3RyIjoiYVhGdmFrQzlJMCIsImlhdCI6MTU3OTE3Mjk4MywiZXhwIjoxODk0NTMyOTgzfQ.4ainHhElKLNHqmz5XqWa9HHfErHSTrXJ6W1DNjlTz10"}
       tls_verify_mode none
       open_timeout 5
       <format>
