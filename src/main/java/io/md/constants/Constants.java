@@ -3,9 +3,11 @@ package io.md.constants;
 public class Constants {
 	public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
 	public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
+	public static final String DEFAULT_REQUEST_ID = "c-request-id";
 	public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
 	public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
 	public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+	public static final String X_REQUEST_ID = "x-request-id";
 
 	public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
@@ -87,6 +89,7 @@ public class Constants {
 	public static final String SERVICE_FIELD = "service";
 	public static final String INSTANCE_ID_FIELD = "instanceId";
 	public static final String COLLECTION_FIELD = "collection";
+	public static final String TYPE_FIELD = "type";
 	public static final String RUN_TYPE_FIELD = "runType";
 	public static final String PATH_FIELD = "path";
 	public static final String API_PATH_FIELD = "apiPath";
@@ -149,6 +152,7 @@ public class Constants {
 	public static final String INTENT_RECORD = "record";
 	public static final String INTENT_MOCK = "mock";
 	public static final String NO_INTENT = "normal";
+	public static final String REPLAY = "replay";
 	public static final String ZIPKIN_TRACE_HEADER = "x-b3-traceid";
 	public static final String ZIPKIN_SPAN_HEADER = "x-b3-spanid";
 	public static final String ZIPKIN_PARENT_SPAN_HEADER = "x-b3-parentspanid";
