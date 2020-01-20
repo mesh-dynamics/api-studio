@@ -53,8 +53,8 @@ logging:
 
 cube:
     server:
-        baseUrl: http://demo.dev.cubecorp.io
+        baseUrl: http://demo.prod.cubecorp.io
 
 external:
     recaptcha:
-        secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr
+        secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr-

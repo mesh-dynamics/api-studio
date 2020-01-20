@@ -101,7 +101,7 @@ public class AccountController {
     @GetMapping("/validate-recaptcha")
     public ResponseEntity validateReCaptcha(HttpServletRequest request) {
         String response = request.getParameter("g-recaptcha-response");
-        String clientIPAddress = "14.143.179.162";//request.getRemoteAddr();
+        String clientIPAddress = request.getRemoteAddr();
         reCaptchaAPIService.processResponse(response, clientIPAddress);
         return ok().build();
     }
