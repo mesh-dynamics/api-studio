@@ -110,8 +110,6 @@ const ResetPassword = (props) => {
         }
     }, [search]);
 
-    console.log({ passwordValidation, submitted, fetching, resetState });
-
     return (
         <div className="pull-right" style={{width: "80%"}}>
             <h2 className="sign-in">Set New Password</h2>

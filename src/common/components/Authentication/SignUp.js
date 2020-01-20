@@ -18,7 +18,7 @@ const MESSAGE = {
 
 const SignUp = (props) => {
 
-    const { createUser, verifyToken, history } = props;
+    const { createUser, verifyToken } = props;
 
     const [firstName, setFirstName] = useState('');
 

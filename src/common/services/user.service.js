@@ -162,7 +162,7 @@ function validateReCaptcha(token){
         }
     };
 
-    return fetch(`${config.apiBaseUrl}/account/validate${searchString}`, requestOptions);
+    return fetch(`${config.apiBaseUrl}/account/validate-recaptcha?g-recaptcha-response=${token}`, requestOptions);
 }
 
 function verifyActivationToken(searchString){
