@@ -1,13 +1,7 @@
 import config from '../config';
 import axios from 'axios';
 
-export const moviebookService = {
-    getMovieList,
-    rentMovie,
-    returnMovie
-};
-
-async function getMovieList(keywords) {
+const getMovieList = async (keywords) => {
     const url = `${config.apiBaseUrl}/listmovies?filmName=${keywords}`;
     const requestHeaders = {
         headers: {
@@ -26,9 +20,9 @@ async function getMovieList(keywords) {
         });
 
     return data;
-}
+};
 
-async function rentMovie(filmId, storeId, duration, custId, staffId) {
+const rentMovie = async (filmId, storeId, duration, custId, staffId) => {
     const url = `${config.apiBaseUrl}/rentmovie`;
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -47,9 +41,9 @@ async function rentMovie(filmId, storeId, duration, custId, staffId) {
     }).catch(function(error){
         throw (error.response);
     });
-}
+};
 
-async function returnMovie(inventoryId, rent, userId, staffId) {
+const returnMovie = async (inventoryId, rent, userId, staffId) => {
     const url = `${config.apiBaseUrl}/returnmovie`;
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -67,4 +61,10 @@ async function returnMovie(inventoryId, rent, userId, staffId) {
     }).catch(function(error){
         throw (error.response);
     });
-}
+};
+
+export const moviebookService = {
+    getMovieList,
+    rentMovie,
+    returnMovie
+};

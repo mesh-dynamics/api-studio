@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import {moviebookActions} from "../actions";
-import RoterComponent from "../routes";
+import RouterComponent from "../routes";
 import Navigation from "./Navigation/Navigation";
 
 class Container extends Component {
@@ -9,14 +9,9 @@ class Container extends Component {
         return (
             <div className="body">
                 <Navigation />
-                <RoterComponent />
+                <RouterComponent />
             </div>
         );
-    }
-
-    simpleAction = (event) => {
-        const {dispatch} = this.props;
-        dispatch(moviebookActions.getMovieList());
     }
 }
 

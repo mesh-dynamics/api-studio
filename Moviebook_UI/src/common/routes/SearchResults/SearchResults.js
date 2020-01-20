@@ -4,7 +4,7 @@ import "./SearchResults.css"
 import {Link} from "react-router-dom";
 
 class SearchResults extends Component {
-    goToMovieDetails = (e, mov) => {
+    goToMovieDetails = (mov) => {
         const { history } = this.props;
         history.push(`/movie?film=${mov}`);
     };
@@ -23,7 +23,7 @@ class SearchResults extends Component {
                         </div>
 
                         <div className="col-md-10">
-                            <h5 onClick={(e) => this.goToMovieDetails(e, mov.title)} className="background-grey cursor-pointer">{mov.title}</h5>
+                            <h5 onClick={() => this.goToMovieDetails(mov.title)} className="background-grey cursor-pointer">{mov.title}</h5>
                             <div className="margin-bottom-10">
                                 <h6>Actors</h6>
                                 {mov.display_actors.map(actor => (<div key={actor}>{actor}</div>))}
@@ -61,12 +61,12 @@ class SearchResults extends Component {
     }
 }
 
-function mapStateToProps(state) {
+const mapStateToProps = (state) => {
     const moviebook = state.moviebook;
     return {
         moviebook
     }
-}
+};
 
 const connectedSearchResults = connect(mapStateToProps)(SearchResults);
 

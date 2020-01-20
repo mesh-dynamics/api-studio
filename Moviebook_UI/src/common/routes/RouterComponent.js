@@ -5,7 +5,7 @@ import SearchResults from "./SearchResults/SearchResults";
 import Stores from "./Stores/Stores";
 import MovieDetails from "./MovieDetails/MovieDetails";
 
-class RoterComponent extends Component {
+class RouterComponent extends Component {
     render() {
         return (
             <div style={{margin:"0 50px", marginTop: "56px"}}>
@@ -18,4 +18,4 @@ class RoterComponent extends Component {
     }
 }
 
-export default RoterComponent
+export default RouterComponent

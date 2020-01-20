@@ -6,10 +6,6 @@ const initialState = {
 
 export function moviebook (state = initialState, action) {
     switch (action.type) {
-        case 'SIMPLE_ACTION':
-            return {
-                result: action.payload
-            };
         case moviebookConstants.LIST_MOVIES:
             return {
                 ...state,

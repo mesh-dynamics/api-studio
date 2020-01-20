@@ -1,3 +1,3 @@
-import RoterComponent from './RoterComponent';
+import RouterComponent from './RouterComponent';
 
-export default RoterComponent
+export default RouterComponent
