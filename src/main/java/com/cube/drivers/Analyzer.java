@@ -10,6 +10,7 @@ import static com.cube.core.Comparator.MatchType.ExactMatch;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -128,7 +129,7 @@ public class Analyzer {
             // fetch response of recording and replay
             // TODO change it back to RecReqNoMatch
             ReqRespMatchWithEvent bestmatch = new ReqRespMatchWithEvent(recordReq, Optional.empty(),
-                Comparator.Match.DEFAULT, Optional.empty(), Optional.empty(), Comparator.Match.DEFAULT);
+                Match.DEFAULT, Optional.empty(), Optional.empty(), Match.DEFAULT);
             MatchType bestReqMt = MatchType.NoMatch;
 
             // matches is ordered in decreasing order of request match score. so exact matches
@@ -157,7 +158,7 @@ public class Analyzer {
             }
 
             switch (bestmatch.getReqCompareResType()) {
-                case ExactMatch:
+                case ExactMatch: case DontCare:
                     analysis.reqCompareMatched++;
                     break;
                 case FuzzyMatch:
@@ -242,13 +243,16 @@ public class Analyzer {
                                                       Optional<Event> recordedResponse ,
                                                      Map<String, Event> replayResponseMap) {
 
-        Comparator.Match reqCompareRes = Match.DEFAULT;
+        Comparator.Match reqCompareRes = Match.NOMATCH;
         try {
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath , Type.RequestCompare);
                 Comparator reqComparator = comparatorCache.getComparator(reqCompareKey, recordreq.eventType);
                 if(reqComparator != JsonComparator.EMPTY_COMPARATOR) {
                     reqCompareRes = reqComparator.compare(recordreq.getPayload(config), replayreq.getPayload(config));
+                } else {
+                    reqCompareRes = new Comparator.Match(MatchType.DontCare, "",
+                        Collections.emptyList());
                 }
         } catch (Exception e) {
 
@@ -259,7 +263,7 @@ public class Analyzer {
                 )), e);
         }
 
-        Comparator.Match respCompareRes = Match.DEFAULT;
+        Comparator.Match respCompareRes = Match.NOMATCH;
         Optional<Event> replayresp = Optional.ofNullable(replayResponseMap.get(replayreq.reqId));
 
         try {
@@ -288,10 +292,7 @@ public class Analyzer {
                                                 MatchType reqm2, MatchType reqComparem2, MatchType respComparem2) {
         // request match has to be better. Only if it is better, check request compare match and if that then response compare match
         if (reqm1.isBetterOrEqual(reqm2)) {
-            if(reqComparem1==MatchType.Default && reqComparem2==MatchType.Default) {
-                return respComparem1.isBetter(respComparem2);
-            }
-             return reqComparem1.isBetter(reqComparem2);
+            return reqComparem1.isBetter(reqComparem2) || respComparem1.isBetter(respComparem2);
         }
         return false;
     }

@@ -47,6 +47,7 @@ public interface Comparator {
         RecReqNoMatch,
         ReplayReqNoMatch,
         MockReqNoMatch,
+	    DontCare,
 		Exception;
 
 		public boolean isNoMatch() {
@@ -83,7 +84,7 @@ public interface Comparator {
 				case FuzzyMatch: return !(other == ExactMatch || other == FuzzyMatch); // Partial Match will not override Partial Match
                 case NoMatch: case RecReqNoMatch: case ReplayReqNoMatch: case MockReqNoMatch:
                     return (other == Exception || other == Default); // NoMatch overrides Default and Exception
-				case Exception: return (other == Default); // Exception only overrides default
+				case Exception: case DontCare: return (other == Default); // DontCare and Exception only overrides default
 				case Default: return false; // the default is only the starting condition and worse than anything
 				default: return false;
 			}
