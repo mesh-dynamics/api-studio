@@ -2,7 +2,7 @@
   {
     "service":"movieinfo",
     "path":"minfo/listmovies",
-    "type":"Request",
+    "type":"RequestMatch",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -79,7 +79,7 @@
   {
     "service":"movieinfo",
     "path":"minfo/rentmovie",
-    "type":"Request",
+    "type":"RequestMatch",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -156,7 +156,7 @@
   {
     "service":"movieinfo",
     "path":"minfo/returnmovie",
-    "type":"Request",
+    "type":"RequestMatch",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -233,7 +233,7 @@
   {
     "service":"movieinfo",
     "path":"minfo/liststores",
-    "type":"Request",
+    "type":"RequestMatch",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -310,7 +310,7 @@
   {
     "path" : "productpage",
     "service" : "productpage",
-    "type":"Response",
+    "type":"ResponseCompare",
     "template" : {
       "prefixPath": "",
       "rules": []
@@ -320,7 +320,7 @@
   {
     "path" : "minfo/returnmovie",
     "service" : "movieinfo",
-    "type":"Response",
+    "type":"ResponseCompare",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -349,7 +349,7 @@
   {
     "path" : "minfo/liststores",
     "service" : "movieinfo",
-    "type":"Response",
+    "type":"ResponseCompare",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -372,7 +372,7 @@
   {
     "path" : "minfo/rentmovie",
     "service" : "movieinfo",
-    "type":"Response",
+    "type":"ResponseCompare",
     "template" : {
       "prefixPath": "",
       "rules": [
@@ -400,7 +400,7 @@
   {
     "path" : "minfo/listmovies",
     "service" : "movieinfo",
-    "type":"Response",
+    "type":"ResponseCompare",
     "template" : {
       "prefixPath": "",
       "rules": [
