@@ -4,6 +4,12 @@ import { validatePassword } from "../../utils/lib/validation";
 import { userService } from '../../services/user.service'
 import "./ResetPassword.css";
 
+const RESET_STATE = {
+    INIT: "INIT",
+    SUCCESS: "SUCCESS",
+    FAILURE: "FAILURE"
+};
+
 const ResetPassword = (props) => {
 
     const { location: { search }, history }  = props;
@@ -20,13 +26,13 @@ const ResetPassword = (props) => {
 
     const [password, setPassword] = useState("");
 
+    const [resetState, setResetState] = useState(RESET_STATE.INIT);
+
     const [fetching, setFetching] = useState(false);
 
     const [showPassword, setShowPassword] = useState(false);
 
     const [submitted, setSubmitted] = useState(false);
-
-    const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
 
     const passwordValidation = validatePassword(password);
 
@@ -42,12 +48,12 @@ const ResetPassword = (props) => {
                 setFetching(false);
                 
                 if (status.ok) {
-                    setPasswordResetSuccess(true);
+                    setResetState(RESET_STATE.SUCCESS);
                 } else {
-                    setPasswordResetSuccess(false);
+                    setResetState(RESET_STATE.FAILURE);
                 }
             } catch(e) {
-                setPasswordResetSuccess(false);
+                setResetState(RESET_STATE.FAILURE);
                 setFetching(false);
             }
         }
@@ -94,7 +100,7 @@ const ResetPassword = (props) => {
 
     const renderResetSuccess = () => (
         <div className="reset-password-message">
-            Your password has been reset successfully <Link className="btn-link" to="/login">Click here </Link> to login.
+            Your password has been reset successfully. <Link className="btn-link" to="/login">Click here </Link> to login.
         </div>
     )
 
@@ -104,12 +110,19 @@ const ResetPassword = (props) => {
         }
     }, [search]);
 
+    console.log({ passwordValidation, submitted, fetching, resetState });
+
     return (
         <div className="pull-right" style={{width: "80%"}}>
             <h2 className="sign-in">Set New Password</h2>
-            {!submitted && !passwordResetSuccess && renderPasswordInput()}
-            {submitted && !fetching && !passwordResetSuccess && renderResetFailure()}
-            {submitted && !fetching && passwordResetSuccess && renderResetSuccess()}
+
+            {!submitted && resetState === RESET_STATE.INIT && renderPasswordInput()}
+
+            {submitted && resetState === RESET_STATE.INIT && renderPasswordInput()}
+
+            {submitted && !fetching && resetState === RESET_STATE.FAILURE && renderResetFailure()}
+            
+            {submitted && !fetching && resetState === RESET_STATE.SUCCESS && renderResetSuccess()}
 
             <div className="reset-actions">
                     <div className="custom-sign-in-divider" />

@@ -35,7 +35,6 @@ const Activation = (props) => {
             <div className="activation-message">
                 Your account is being activated. 
                 Please do not leave or refresh the page until the process is complete. 
-                You will be redirected to login page once the process is complete.
             </div>
         </div>
     );
@@ -47,7 +46,7 @@ const Activation = (props) => {
                     Your account has been activated. You will be automatically redirected to login page.
                 </span>
                 <span>
-                    If you are not redirected <Link to="/login">click here</Link> to continue manually.
+                    <Link to="/login">Click here</Link> to continue manually.
                 </span>
             </div>
         </div>
@@ -101,13 +100,3 @@ const Activation = (props) => {
 
 
 export default Activation;
-
-// const urlParsed = search
-//                             .substring(search.indexOf("?") + 1)
-//                             .split("&")
-//                             .reduce(
-//                                 (memo, param) => ({
-//                                 ...memo,
-//                                 [param.split("=")[0]]: param.split("=")[1]
-//                             }),{}
-//                         );

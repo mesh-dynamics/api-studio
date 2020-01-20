@@ -136,6 +136,7 @@ const success = "http://www.mocky.io/v2/5e1ee6a4310000360018957d";
 const failure = "http://www.mocky.io/v2/5e1ebd30310000780018941d";
 // reset-password/init
 // reset-password/finish
+// return fetch(success, requestOptions);
 
 function createUser(user){
     const requestOptions = {
@@ -160,8 +161,8 @@ function validateReCaptcha(token){
             'Content-Type': 'application/json'
         }
     };
-    // TODO: Change to actual url
-    return fetch(success, requestOptions);
+
+    return fetch(`${config.apiBaseUrl}/account/validate${searchString}`, requestOptions);
 }
 
 function verifyActivationToken(searchString){

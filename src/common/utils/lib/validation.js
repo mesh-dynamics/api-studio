@@ -1,7 +1,7 @@
 /**
  * This file contains field validations for inputs used across the application
  */
-import { isEmail, isEmpty, isAlpha, isLength, isAlphanumeric } from 'validator';
+import { isEmail, isEmpty, isAlpha, isLength, isNumeric } from 'validator';
 
 const validateName = (value, nameType) => {
 
@@ -81,7 +81,8 @@ const validatePassword = (value) => {
         return fieldStatus;
     }
 
-    if(!isAlphanumeric(value)) {
+    if(!(!isAlpha(value) && !isNumeric(value))) {
+
         fieldStatus.isValid =  false;
         fieldStatus.errorMessages.push("Password must contain letters and numbers")
 

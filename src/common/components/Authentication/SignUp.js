@@ -13,7 +13,7 @@ import "./SignUp.css";
 
 const MESSAGE = {
     SUCCESS: "Your account has been successfully created. A verifcation link has been sent to your email. Please click on the link to verify and activate your account.",
-    ERROR: "Failed to create user account. Please contact your system administrator and try again later."
+    ERROR: "Failed to create user account. Please contact your system administrator or try again later."
 };
 
 const SignUp = (props) => {
@@ -236,9 +236,6 @@ const SignUp = (props) => {
     const renderSuccessMessage = () => (
         <div className="form-success-message">
             {MESSAGE.SUCCESS}
-            <span className="form-redirection-text">
-                You will be redirected to login screen automatically.
-            </span>
         </div>
     );
 
