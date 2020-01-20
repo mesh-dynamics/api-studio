@@ -33,6 +33,7 @@ import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
+import com.cube.core.Comparator.Match;
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.JsonComparator;
 import com.cube.dao.Analysis;
@@ -241,7 +242,7 @@ public class Analyzer {
                                                       Optional<Event> recordedResponse ,
                                                      Map<String, Event> replayResponseMap) {
 
-        Comparator.Match reqCompareRes = Comparator.Match.NOMATCH;
+        Comparator.Match reqCompareRes = Match.DEFAULT;
         try {
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath , Type.RequestCompare);
@@ -258,7 +259,7 @@ public class Analyzer {
                 )), e);
         }
 
-        Comparator.Match respCompareRes = Comparator.Match.NOMATCH;
+        Comparator.Match respCompareRes = Match.DEFAULT;
         Optional<Event> replayresp = Optional.ofNullable(replayResponseMap.get(replayreq.reqId));
 
         try {
