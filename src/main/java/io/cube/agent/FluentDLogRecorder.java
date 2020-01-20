@@ -22,8 +22,6 @@ import io.md.utils.CommonUtils;
 
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
-	@Inject
-	CommonConfig commonConfig;
 
 	public FluentDLogRecorder(Gson gson) {
 		super(gson);
@@ -51,6 +49,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 		try {
 			// TODO might wanna explore java fluent logger
 			// https://github.com/fluent/fluent-logger-java
+			CommonConfig commonConfig = CommonConfig.getInstance();
 			Optional<DataObj> payloadOptional = Utils.encryptFields(commonConfig, event);
 
 			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;

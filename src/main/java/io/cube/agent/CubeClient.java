@@ -37,13 +37,12 @@ public class CubeClient {
 	private WebTarget cubeMockService = null;
 	private final int maxNumberOfAttempts;
 	private ObjectMapper jsonMapper;
-	@Inject
-	CommonConfig config;
 
 
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
 	public CubeClient(ObjectMapper jsonMapper) throws Exception {
+		CommonConfig config = CommonConfig.getInstance();
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
 			.property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
