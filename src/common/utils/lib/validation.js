@@ -1,6 +1,9 @@
+/**
+ * This file contains field validations for inputs used across the application
+ */
 import { isEmail, isEmpty, isAlpha, isLength, isAlphanumeric } from 'validator';
 
-const validateFirstName = (value) => {
+const validateName = (value, nameType) => {
 
     const fieldStatus = {
         isValid: true,
@@ -10,14 +13,14 @@ const validateFirstName = (value) => {
     if(isEmpty(value)){
         
         fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Firstname is required");
+        fieldStatus.errorMessages.push(`${nameType || "Name"} is required`);
 
         return fieldStatus;
     }
 
-    if(!isLength(value, { min: 3})) {
+    if(!isLength(value, { min: 2})) {
         fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Minimum 3 characters required")
+        fieldStatus.errorMessages.push("Minimum 2 characters required")
 
         return fieldStatus;
     }
@@ -25,29 +28,6 @@ const validateFirstName = (value) => {
     if(!isAlpha(value)){
         fieldStatus.isValid =  false;
         fieldStatus.errorMessages.push("Firstname must not contain numbers")
-
-        return fieldStatus;
-    }
-
-    return fieldStatus;
-};
-
-const validateLastName = (value) => {
-    const fieldStatus = {
-        isValid: true,
-        errorMessages: []
-    };
-
-    if(!isEmpty(value) && !isLength(value, { min: 3})) {
-        fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Minimum 3 characters required")
-
-        return fieldStatus;
-    }
-
-    if(!isEmpty(value) && !isAlpha(value)){
-        fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Lastname must not contain numbers")
 
         return fieldStatus;
     }
@@ -112,8 +92,7 @@ const validatePassword = (value) => {
 };
 
 export {
-    validateFirstName,
-    validateLastName,
+    validateName,
     validateEmail,
     validatePassword
 };

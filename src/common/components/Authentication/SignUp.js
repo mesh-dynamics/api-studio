@@ -5,8 +5,7 @@ import { connect } from 'react-redux';
 import ReCaptcha from 'react-google-recaptcha';
 import { userActions } from '../../actions/user.actions';
 import { 
-    validateFirstName, 
-    validateLastName, 
+    validateName, 
     validateEmail, 
     validatePassword
 } from '../../utils/lib/validation';
@@ -41,9 +40,9 @@ const SignUp = (props) => {
 
     const [hasServerValidated, setHasServerValidated] = useState(false);
 
-    const firstNameValidation = validateFirstName(firstName);
+    const firstNameValidation = validateName(firstName, "Firstname");
 
-    const lastNameValidation =  validateLastName(lastName);
+    const lastNameValidation =  validateName(lastName, "Lastname");
 
     const emailValidation = validateEmail(email);
     
