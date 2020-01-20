@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ReCaptcha from 'react-google-recaptcha';
-import { userActions } from '../../actions/user.actions';
+import authActions from '../../actions/auth.actions';
 import { 
     validateName, 
     validateEmail, 
@@ -113,12 +113,10 @@ const SignUp = (props) => {
     
 
     const renderReCaptchaError = () => (
-        // (!reCaptchaToken !== null || reCaptchaToken === '')
-        // ? (
-            <div className="error-text">
-                <span>Invalid ReCaptcha. Please try again.</span>
-            </div>);
-        // ) : null);
+        <div className="error-text">
+            <span>Invalid ReCaptcha. Please try again.</span>
+        </div>
+    );
 
     const renderFormErrorMessage = () => (
         <div className="form-error-message">
@@ -247,9 +245,9 @@ const SignUp = (props) => {
 }
 
 const mapDispatchToProps = (dispatch) => ({
-    createUser: (user) => userActions.createUser(user),
+    createUser: (user) => authActions.createUser(user),
 
-    verifyToken: (token) => userActions.verifyToken(token),
+    verifyToken: (token) => authActions.verifyToken(token),
 });
 
 SignUp.propTypes = {

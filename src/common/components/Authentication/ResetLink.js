@@ -1,8 +1,13 @@
 import React, { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
-import { userService } from '../../services/user.service';
+import { sendResetLink } from '../../services/auth.service';
 import { validateEmail } from '../../utils/lib/validation';
 import "./ResetLink.css";
+
+const RESET_LINK_REQUEST = {
+    SUBMITTED: "SUBMITTED",
+    NOT_SUBMITTED: "NOT_SUBMITTED"
+};
 
 const ResetLink = (props) => {
 
@@ -10,9 +15,9 @@ const ResetLink = (props) => {
     
     const [submitted, setSubmitted] = useState(false);
 
-    const [fetching, setFetching] = useState(false);
-
     const [resetLinkGenerated, setResetLinkGenerated] = useState(false);
+
+    const [resetRequestSubmitted, setResetRequestSubmitted] = useState(RESET_LINK_REQUEST.NOT_SUBMITTED);
 
     const emailValidation = validateEmail(activationEmailId);
 
@@ -22,21 +27,23 @@ const ResetLink = (props) => {
         if(emailValidation.isValid) {
 
             try {
-                setFetching(true);
 
-                const status = await userService.sendResetLink(activationEmailId);
-
-                setFetching(false);
+                const status = await sendResetLink(activationEmailId);
 
                 if(status.ok) {
+                    setResetRequestSubmitted(RESET_LINK_REQUEST.SUBMITTED);
+
                     setResetLinkGenerated(true);
                 } else {
+                    setResetRequestSubmitted(RESET_LINK_REQUEST.SUBMITTED);
+
                     setResetLinkGenerated(false);
                 }
             } catch(e) {
-                setResetLinkGenerated(false);
 
-                setFetching(false);
+                setResetRequestSubmitted(RESET_LINK_REQUEST.NOT_SUBMITTED);
+
+                setResetLinkGenerated(false);
             }
             
         }
@@ -46,7 +53,6 @@ const ResetLink = (props) => {
     const renderSuccessMessage = () => (
         <div className="reset-link-message-container">
             <div>If the email id provided is registered with us, a reset link will be sent to your email.</div>
-            <div className="resend-reset-link">To resend activation link, <span onClick={handleResetClick} className="btn-link reset-link">click here.</span></div>
         </div>
     );
 
@@ -85,13 +91,14 @@ const ResetLink = (props) => {
     return (
         <div className="pull-right" style={{width: "80%"}}>
             <h2 className="sign-in">Reset Password</h2>
-            
-            {!submitted && !resetLinkGenerated && renderResetView()}
 
-            {submitted && !fetching && !resetLinkGenerated && renderFailureMessage()}
+            {!submitted && resetRequestSubmitted === RESET_LINK_REQUEST.NOT_SUBMITTED && !resetLinkGenerated && renderResetView()}
 
-            {submitted && !fetching && resetLinkGenerated && renderSuccessMessage()}
-            
+            {submitted && resetRequestSubmitted === RESET_LINK_REQUEST.NOT_SUBMITTED && !resetLinkGenerated && renderResetView()}
+
+            {submitted && resetRequestSubmitted === RESET_LINK_REQUEST.SUBMITTED && !resetLinkGenerated && renderFailureMessage()}
+
+            {submitted && resetRequestSubmitted === RESET_LINK_REQUEST.SUBMITTED && resetLinkGenerated && renderSuccessMessage()}
 
             <div className="reset-actions">
                     <div className="custom-sign-in-divider" />

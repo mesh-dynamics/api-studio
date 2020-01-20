@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { userService } from '../../services/user.service'
+import { verifyActivationToken } from '../../services/auth.service';
 import "./Activation.css";
 
 const ACTIVATION = {
@@ -16,7 +16,7 @@ const Activation = (props) => {
 
     const triggerActivation = async () => {
         try {
-            const status = await userService.verifyActivationToken(search);
+            const status = await verifyActivationToken(search);
 
             if(status.ok) {
                 setActivationState(ACTIVATION.SUCCESS);

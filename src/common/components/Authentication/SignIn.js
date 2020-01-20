@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { userActions } from "../../actions/user.actions";
+import authActions from '../../actions/auth.actions';
 
 const SignIn = (props) => {
 
@@ -12,7 +12,7 @@ const SignIn = (props) => {
 
     const [submitted, setSubmitted] = useState(false);
 
-    const { authentication: { user, loggedIn }, login }  = props;
+    const { authentication: { messages }, login }  = props;
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -21,7 +21,6 @@ const SignIn = (props) => {
 
         if (username && password) {
             login(username, password)
-
         }
     }
 
@@ -46,6 +45,12 @@ const SignIn = (props) => {
                 <div className="btn-link forgot-password">
                     <Link to="/login/reset-link">Forgot your password?</Link>
                 </div>
+                {
+                    messages.length !== 0 &&  
+                    <div className="login-error">
+                        {messages.join("\n")}
+                    </div>
+                }
                 <div className="custom-fg form-group">
                     <button className="btn btn-custom-auth width-100">Login</button>
                 </div>
@@ -64,7 +69,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    login: (username, password) => dispatch(userActions.login(username, password)),
+    login: (username, password) => dispatch(authActions.login(username, password)),
 })
 
 SignIn.propTypes = {

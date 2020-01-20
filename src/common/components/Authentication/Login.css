@@ -349,3 +349,12 @@ form:after {
 	margin-top: 20px;
 	font-size: 14px;
 }
+
+.login-error {
+	display: flex;
+    padding: 10px;
+    color: white;
+    background: #a94442;;
+    border-radius: 3px;
+    margin-bottom: 20px;
+}

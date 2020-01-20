@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Link } from "react-router-dom";
 import { validatePassword } from "../../utils/lib/validation";
-import { userService } from '../../services/user.service'
+import { resetPassword } from '../../services/auth.service';
 import "./ResetPassword.css";
 
 const RESET_STATE = {
@@ -43,7 +43,7 @@ const ResetPassword = (props) => {
             try {
                 setFetching(true);
                 
-                const status = await userService.resetPassword(urlParsed.key || '', password);
+                const status = await resetPassword(urlParsed.key || '', password);
 
                 setFetching(false);
                 

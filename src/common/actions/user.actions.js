@@ -1,42 +1,13 @@
 import { userConstants } from '../constants';
 import { userService } from '../services';
 import { history } from '../helpers';
-import {alertActions} from "./alert.actions";
+import { alertActions } from "./alert.actions";
 
 export const userActions = {
-    login,
-    logout,
-    register,
     getAll,
-    createUser,
-    verifyToken,
+    register,
     delete: _delete
 };
-
-function login(username, password) {
-    return /* There was no async here */ async dispatch => {
-        dispatch(alertActions.clear());
-        try {
-            let user = await userService.login(username, password);
-            console.log("user", user);
-            dispatch(success(user));
-        } catch (error) {
-            dispatch(failure(error.toString()));
-            dispatch(alertActions.error(error.toString()));
-            dispatch(failure("Login incorrect: username or password is wrong"));
-            dispatch(alertActions.error("Login incorrect: username or password is wrong"));
-        }
-    };
-
-    function request(user) { return { type: userConstants.LOGIN_REQUEST, user } }
-    function success(user) { return { type: userConstants.LOGIN_SUCCESS, user } }
-    function failure(error) { return { type: userConstants.LOGIN_FAILURE, error } }
-}
-
-function logout() {
-    userService.logout();
-    return { type: userConstants.LOGOUT };
-}
 
 function register(user) {
     return dispatch => {
@@ -93,34 +64,3 @@ function _delete(id) {
     function success(id) { return { type: userConstants.DELETE_SUCCESS, id } }
     function failure(id, error) { return { type: userConstants.DELETE_FAILURE, id, error } }
 }
-
-function createUser(user) {
-    return userService.createUser(user);
-}
-
-
-function verifyToken(token){
-    // Wrapped in an action file to implement any future functionality if required
-    return userService.validateReCaptcha(token);
-}
-
-    // return dispatch => {
-    //     dispatch(request(user));
-
-    //     userService.createUser(user)
-    //         .then(
-    //             user => { 
-    //                 dispatch(success());
-    //                 history.push('/login');
-    //                 dispatch(alertActions.success('Registration successful'));
-    //             },
-    //             error => {
-    //                 dispatch(failure(error.toString()));
-    //                 dispatch(alertActions.error(error.toString()));
-    //             }
-    //         );
-    // };
-
-    // function request(user) { return { type: userConstants.REGISTER_REQUEST, user } }
-    // function success(user) { return { type: userConstants.REGISTER_SUCCESS, user } }
-    // function failure(error) { return { type: userConstants.REGISTER_FAILURE, error } }
