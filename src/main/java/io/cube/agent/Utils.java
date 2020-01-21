@@ -4,13 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.json.JSONObject;
-
-import com.google.gson.internal.$Gson$Preconditions;
-
-import io.cube.agent.EncryptionConfig.APIPathMeta;
 import io.cube.agent.EncryptionConfig.JSONPathMeta;
-import io.cube.agent.EncryptionConfig.ServiceMeta;
 import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
@@ -36,8 +30,8 @@ public class Utils {
 						Map<String, Object> metaDataMap = algoDetails.getMetaData();
 
 						EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
-							.build(algoName, encryptionConfig.getPassPhrase(), new JSONObject(
-								metaDataMap)); //TODO Remove JSONObject conversion when changes are reflected in commons
+							.build(algoName, encryptionConfig.getPassPhrase(),
+								metaDataMap);
 						eventPayload.encryptField(jsonPath, encryptionAlgorithm);
 					}
 					return Optional.of(eventPayload);

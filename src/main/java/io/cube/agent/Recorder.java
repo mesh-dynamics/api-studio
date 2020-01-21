@@ -1,6 +1,5 @@
 package io.cube.agent;
 
-import java.time.Instant;
 import java.util.Optional;
 
 import io.md.dao.Event;
