@@ -431,6 +431,10 @@ public class Event {
 		}
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
+			if (timestamp.isEmpty()) {
+				LOGGER.debug(new ObjectMessage(
+					Map.of(Constants.MESSAGE, "Timestamp empty, using current instant")));
+			}
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId,
 				runType, timestamp.orElse(Instant.now()), reqId, apiPath,
 				eventType,
