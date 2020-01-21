@@ -107,7 +107,8 @@ public class Event {
 
 		if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (
 			collection == null)
-			|| (traceId == null && eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest) || (runType == null) ||
+			|| (traceId == null && eventType != EventType.ThriftResponse
+			&& eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
 			|| ((rawPayloadBinary == null) == (rawPayloadString == null || rawPayloadString.trim()
 			.isEmpty()))) {
@@ -115,7 +116,6 @@ public class Event {
 		}
 		return true;
 	}
-
 
 	//TODO keep this logic in cube respository
 /*	public void parseAndSetKeyAndCollection(Config config, String collection,
@@ -144,7 +144,7 @@ public class Event {
 			new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
 	}*/
 
-	public DataObj parsePayLoad(Map<String, Object> params)  {
+	public DataObj parsePayLoad(Map<String, Object> params) {
 		// parse if not already parsed
 		if (payload == null) {
 			;
@@ -182,7 +182,7 @@ public class Event {
 		return payload;
 	}
 
-	public String getPayloadAsJsonString(Map<String,Object> params) {
+	public String getPayloadAsJsonString(Map<String, Object> params) {
 		switch (this.eventType) {
 			case HTTPRequest:
 			case HTTPResponse:
@@ -206,12 +206,12 @@ public class Event {
 		}
 	}
 
-
 	// TODO keep this in cube repository
+
 	/**
 	 * Create a new event with transformed payload. While transforming request events, need to send
 	 * the comparator so that payloadKey can be calculated
-	 *
+	 * <p>
 	 * //@param rhs
 	 * //@param operationList
 	 * //@param config
@@ -281,7 +281,7 @@ public class Event {
 		}
 
 		public static EventType fromReplayType(ReplayTypeEnum replayType) {
-			switch(replayType) {
+			switch (replayType) {
 				case THRIFT:
 					return ThriftRequest;
 				case GRPC:
@@ -307,7 +307,7 @@ public class Event {
 	public final String service;
 	public final String instanceId;
 	private String collection;
-	private  String traceId;
+	private String traceId;
 	public final RunType runType;
 
 
@@ -344,7 +344,7 @@ public class Event {
 		return this.traceId;
 	}
 
-	public void setTraceId(String traceId){
+	public void setTraceId(String traceId) {
 		this.traceId = traceId;
 	}
 
@@ -361,7 +361,7 @@ public class Event {
 		private final String spanId;
 		private final String parentSpanId;
 		private final Event.RunType runType;
-		private final Instant timestamp;
+		private final Optional<Instant> timestamp;
 		private final String reqId;
 		private final String apiPath;
 		private final Event.EventType eventType;
@@ -372,7 +372,7 @@ public class Event {
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
 			String collection, String traceId,
-			Event.RunType runType, Instant timestamp, String reqId, String apiPath,
+			Event.RunType runType, Optional<Instant> timestamp, String reqId, String apiPath,
 			Event.EventType eventType) {
 			this.customerId = customerId;
 			this.app = app;
@@ -390,7 +390,8 @@ public class Event {
 		}
 
 		public EventBuilder(CubeMetaInfo cubeMetaInfo, CubeTraceInfo cubeTraceInfo,
-			Event.RunType runType, String apiPath, EventType eventType, Instant timestamp, String reqId, String collection) {
+			Event.RunType runType, String apiPath, EventType eventType, Optional<Instant> timestamp,
+			String reqId, String collection) {
 			this.customerId = cubeMetaInfo.customerId;
 			this.app = cubeMetaInfo.appName;
 			this.instanceId = cubeMetaInfo.instance;
@@ -431,13 +432,13 @@ public class Event {
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId,
-				runType, timestamp, reqId, apiPath,
+				runType, timestamp.orElse(Instant.now()), reqId, apiPath,
 				eventType,
 				rawPayloadBinary, rawPayloadString, payload, payloadKey);
 			if (event.validate()) {
 				return event;
 			} else {
-				throw new  io.md.dao.Event.EventBuilder.InvalidEventException();
+				throw new io.md.dao.Event.EventBuilder.InvalidEventException();
 			}
 		}
 

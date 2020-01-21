@@ -175,7 +175,7 @@ public class Utils {
 		MultivaluedMap<String, String> meta,
 		MultivaluedMap<String, String> hdrs, String body,
 		Optional<String> collection,
-		ObjectMapper jsonMapper, boolean requireCollection)
+		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
 		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
@@ -184,31 +184,22 @@ public class Utils {
 		Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
 		Optional<Event.RunType> runType = getFirst(meta, Constants.RUN_TYPE_FIELD)
 			.flatMap(type -> Utils.valueOf(Event.RunType.class, type));
-		Instant timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
-			.flatMap(Utils::strToTimeStamp)
-			.orElseGet(() -> {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Timestamp missing in event, using current time")));
-				return Instant.now();
-			});
+		Optional<Instant> timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
+			.flatMap(Utils::strToTimeStamp);
 		Optional<String> method = getFirst(meta, Constants.METHOD_FIELD);
 		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
 
-		if (method.isEmpty()) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Method value is missing!")));
-			throw new Event.EventBuilder.InvalidEventException();
-		}
-
-		HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
-			formParams, method.get(), body);
-
-		String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
-
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (!requireCollection
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (!isRecordedAtSource
 			|| collection
-			.isPresent()) && runType.isPresent()) {
+			.isPresent()) && runType.isPresent() && method.isPresent()) {
+
+			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
+				formParams, method.get(), body);
+
+			String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
+
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), !requireCollection ? "NA" : collection.get(),
+				service.get(), instance.orElse("NA"), !isRecordedAtSource ? "NA" : collection.get(),
 				traceId.orElse("NA"), runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest);
@@ -235,7 +226,7 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs,
 		String body,
 		Optional<String> collection,
-		ObjectMapper jsonMapper, boolean requireCollection)
+		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
 		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
@@ -246,13 +237,8 @@ public class Utils {
 		Optional<Event.RunType> runType = getFirst(meta, Constants.RUN_TYPE_FIELD)
 			.flatMap(type -> Utils.valueOf(Event.RunType.class, type));
 		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
-		Instant timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
-			.flatMap(Utils::strToTimeStamp)
-			.orElseGet(() -> {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Timestamp missing in event, using current time")));
-				return Instant.now();
-			});
+		Optional<Instant> timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
+			.flatMap(Utils::strToTimeStamp);
 		Optional<Integer> status = getFirst(meta, Constants.STATUS).flatMap(sval -> {
 			try {
 				return Optional.of(Integer.valueOf(sval));
@@ -262,19 +248,13 @@ public class Utils {
 			}
 		});
 
-		if (status.isEmpty()) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Invalid status")));
-			throw new Event.EventBuilder.InvalidEventException();
-		}
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (!isRecordedAtSource || collection
+			.isPresent()) && runType.isPresent() && status.isPresent()) {
+			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(), body);
+			String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
 
-		HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(), body);
-
-		String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
-
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (!requireCollection || collection
-			.isPresent()) && runType.isPresent()) {
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), !requireCollection ? "NA" : collection.get(),
+				service.get(), instance.orElse("NA"), !isRecordedAtSource ? "NA" : collection.get(),
 				traceId.orElse("NA"), runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
