@@ -283,7 +283,6 @@ form:after {
 .logo-wrapper {
 	border-right: 1px solid #CCCCCC;
 	height: 100%;
-	padding: 40px 0 60px;
 }
 .logo-wrapper img {
 	height: 200px;
@@ -299,16 +298,60 @@ form:after {
 	text-align: center;
 }
 .sign-in-wrapper {
-	height: 100%;
-	padding: 50px 0;
+	display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 .sign-in {
 	text-align: center;
 	font-size: 32px;
 	font-weight: 100;
 	color: #999999;
+	/* color: #FF6600; */
 	margin-bottom: 30px;
 }
 .custom-fg {
 	margin-bottom: 20px !important;
+}
+
+.forgot-password {
+	font-size: 14px;
+	padding-bottom: 15px;
+}
+
+.create-account {
+	margin-left: 10px;
+}
+
+.vertical-align-middle {
+	display: flex;
+	align-items: center;
+}
+
+.btn-custom-auth {
+	background-color: #FF6600;
+	border-color: #FFA76D;
+	cursor: pointer;
+	color: #fff;
+}
+
+.btn-custom-auth:hover {
+	background-color: #FFA76D;
+	cursor: pointer;
+	color: #fff;
+}
+
+.account-action-container {
+	display: flex;
+	margin-top: 20px;
+	font-size: 14px;
+}
+
+.login-error {
+	display: flex;
+    padding: 10px;
+    color: white;
+    background: #a94442;;
+    border-radius: 3px;
+    margin-bottom: 20px;
 }

@@ -27,6 +27,7 @@
     "react-bootstrap": "^0.32.4",
     "react-datepicker": "^2.9.6",
     "react-dom": "^16.6.0",
+    "react-google-recaptcha": "^2.0.1",
     "react-plotly.js": "^2.2.0",
     "react-redux": "^5.0.7",
     "react-router": "^4.3.1",
@@ -43,7 +44,8 @@
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.1.1",
     "styled-components": "^4.3.2",
-    "tippy.js": "^4.3.5"
+    "tippy.js": "^4.3.5",
+    "validator": "^12.1.0"
   },
   "scripts": {
     "start": "PORT=3006 react-scripts start",
