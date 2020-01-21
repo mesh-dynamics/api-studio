@@ -35,7 +35,7 @@ public class PATGenerator {
         dbURL = props.getProperty("url");
         dbUser = props.getProperty("username");
         dbPassword = props.getProperty("password");
-        secretKey = props.getProperty("secret");
+        secretKey = Base64.getEncoder().encodeToString(props.getProperty("secret").getBytes());
         dbConnection = initializeDBConnection();
     }
 
@@ -147,7 +147,6 @@ public class PATGenerator {
         Claims claims = Jwts.claims().setSubject("MeshDAgentUser");
         claims.put("roles", roles);
         claims.put("type", "pat");
-        claims.put("randomstr", getAlphaNumericString(10));
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInSeconds * 1000);
@@ -158,33 +157,6 @@ public class PATGenerator {
             .setExpiration(validity)
             .signWith(SignatureAlgorithm.HS256, secretKey)
             .compact();
-    }
-
-    static String getAlphaNumericString(int n)
-    {
-
-        // chose a Character random from this String
-        String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            + "0123456789"
-            + "abcdefghijklmnopqrstuvxyz";
-
-        // create StringBuffer size of AlphaNumericString
-        StringBuilder sb = new StringBuilder(n);
-
-        for (int i = 0; i < n; i++) {
-
-            // generate a random number between
-            // 0 to AlphaNumericString variable length
-            int index
-                = (int)(AlphaNumericString.length()
-                * Math.random());
-
-            // add Character one by one in end of sb
-            sb.append(AlphaNumericString
-                .charAt(index));
-        }
-
-        return sb.toString();
     }
 
     public static void main(String[] args) throws  Exception {
@@ -231,6 +203,7 @@ public class PATGenerator {
 
         PATGenerator patGenerator = new PATGenerator(prop);
         int userId = patGenerator.checkAndInsertAgentUser(customerId);
+        //TODO: need to get the updateToken boolean from command line to update the token of the existing customer
         patGenerator.insertOrUpdatePAT(userId, false);
     }
 }
