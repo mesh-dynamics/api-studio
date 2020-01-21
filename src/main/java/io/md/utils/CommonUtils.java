@@ -265,7 +265,7 @@ public class CommonUtils {
 	}
 
 	public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId,
-		RunType rrType, Instant timestamp, JsonObject payload) {
+		RunType rrType, Optional<Instant> timestamp, JsonObject payload) {
 
 		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
