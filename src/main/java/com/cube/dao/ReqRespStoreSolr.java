@@ -1881,6 +1881,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     private List<Diff> getDiffFromChildDocs(SolrDocument doc, DiffType diffType) throws Exception {
+        if (doc.getChildDocuments() == null) return Collections.emptyList();
         return doc.getChildDocuments().stream().filter(childDoc ->
             diffType.name().equals(getStrField(childDoc, DIFF_TYPE_F).orElse("")))
             .map(UtilException.rethrowFunction(this::solrDocToDiff))
