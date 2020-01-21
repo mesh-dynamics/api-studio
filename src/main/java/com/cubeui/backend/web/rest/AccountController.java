@@ -135,6 +135,7 @@ public class AccountController {
      */
     @GetMapping("/activate")
     public ResponseEntity activateAccount(@RequestParam(value = "key") String activationKey) {
+        // TODO: the following logic is flawed and will be redone.
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();

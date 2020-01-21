@@ -54,7 +54,18 @@ public class DataInitializer implements CommandLineRunner {
 
     private JiraUserCredentialsRepository jiraUserCredentialsRepository;
 
-    public DataInitializer(UserService userService, CustomerService customerService, AppRepository appRepository, InstanceRepository instanceRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerRepository customerRepository, UserRepository userRepository, InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository, JiraUserCredentialsRepository jiraUserCredentialsRepository) {
+    private EmailDomainRepository emailDomainRepository;
+
+    public DataInitializer(UserService userService, CustomerService customerService,
+        AppRepository appRepository, InstanceRepository instanceRepository,
+        ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository,
+        ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository,
+        TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository,
+        TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository,
+        CustomerRepository customerRepository, UserRepository userRepository,
+        InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository,
+        JiraUserCredentialsRepository jiraUserCredentialsRepository, EmailDomainRepository emailDomainRepository) {
+
         this.userService = userService;
         this.customerService = customerService;
 
@@ -73,6 +84,7 @@ public class DataInitializer implements CommandLineRunner {
         this.instanceUserRepository = instanceUserRepository;
         this.appUserRepository = appUserRepository;
         this.jiraUserCredentialsRepository = jiraUserCredentialsRepository;
+        this.emailDomainRepository = emailDomainRepository;
     }
 
     @Override
@@ -1549,6 +1561,15 @@ public class DataInitializer implements CommandLineRunner {
             jiraUserCredentials.setAPIKey("fAODfwU3eTmrEDSdz7gM26C4");
             jiraUserCredentials.setJiraBaseURL("https://cubeio.atlassian.net");
             jiraUserCredentialsRepository.save(jiraUserCredentials);
+        }
+
+        // Email domain: meshdynamics.io
+        if(!emailDomainRepository.existsById(171L)) {
+            EmailDomain emailDomain = new EmailDomain();
+            emailDomain.setId(171L);
+            emailDomain.setDomain("meshdynamics.io");
+            emailDomain.setCustomer(this.customerService.getById(1L).get());
+            emailDomainRepository.save(emailDomain);
         }
     }
 }
