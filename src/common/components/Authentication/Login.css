@@ -342,6 +342,7 @@ form:after {
 }
 
 .account-action-container {
+	display: flex;
 	margin-top: 20px;
 	font-size: 14px;
 }

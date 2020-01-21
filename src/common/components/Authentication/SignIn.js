@@ -57,7 +57,9 @@ const SignIn = (props) => {
                 <div className="custom-sign-in-divider" />
                 <div className="account-action-container">
                     <span>Don't have account?</span>
-                    <Link to="/login/register" className="btn-link create-account">Create Account</Link>
+                    <div className="btn-link">
+                        <Link to="/login/register" className="create-account">Create Account</Link>
+                    </div>
                 </div>
             </form>
         </div>

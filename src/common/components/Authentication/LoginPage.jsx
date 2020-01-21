@@ -1,7 +1,6 @@
-import React, { Component } from 'react';
-import { Link, Switch, Route } from 'react-router-dom';
+import React from 'react';
+import { Switch, Route } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { userActions } from "../../actions/user.actions";
 import { Redirect } from "react-router";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
