@@ -8,7 +8,6 @@ package com.cube.drivers;
 
 import static com.cube.core.Comparator.MatchType.ExactMatch;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
@@ -268,11 +266,14 @@ public class Analyzer {
             respCompareRes, recordedResponse, replayresp, reqCompareRes);
     }
 
-    private static boolean isReqRespMatchBetter(MatchType reqm1, MatchType reqComparem1, MatchType respComparem1,
-                                                MatchType reqm2, MatchType reqComparem2, MatchType respComparem2) {
-        // request match has to be better. Only if it is better, check request compare match and if that then response compare match
+    private static boolean isReqRespMatchBetter(MatchType reqm1, MatchType reqComparem1
+        , MatchType respComparem1, MatchType reqm2, MatchType reqComparem2
+        , MatchType respComparem2) {
+        // request match has to be better. Only if it is better, check request compare
+        // match and if that then response compare match
         if (reqm1.isBetterOrEqual(reqm2)) {
-            return (reqm1 != reqm2) || reqComparem1.isBetter(reqComparem2) || respComparem1.isBetter(respComparem2);
+            return (reqm1 != reqm2) || reqComparem1.isBetter(reqComparem2) ||
+                ((reqComparem1 == reqComparem2) && respComparem1.isBetter(respComparem2));
         }
         return false;
     }
