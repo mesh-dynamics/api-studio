@@ -94,15 +94,13 @@ public class JwtTokenProvider {
             log.trace("validate token is called ");
             if ("pat".equalsIgnoreCase(claims.getBody().get("type", String.class))) {
                 log.trace("Found that the token is of type API token");
-                String randomStrInPassedToken = claims.getBody().get("randomstr", String.class);
                 //The token is of type personal access token, so check the DB to confirm that it is not revoked
                 Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsername(getUsername(token))
-                    .map(User::getId).map(apiAccessTokenRepository::findByUserId).orElse(Optional.empty());
-
-                return accessToken.map(list -> list.get(0)).map( dbTokenObj -> Jwts.parser().setSigningKey(secretKey)
-                    .parseClaimsJws(dbTokenObj.getToken()).getBody().get("randomstr", String.class))
-                    .filter( randStrInDbToken ->  randStrInDbToken.equals(randomStrInPassedToken)).isPresent();
-
+                    .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
+                return accessToken.flatMap(list -> list.stream().findFirst())
+                    .map(ApiAccessToken::getToken)
+                    .filter(token::equals)
+                    .isPresent();
             } else {
                 log.trace("It is a normal token");
                 return !claims.getBody().getExpiration().before(new Date());
