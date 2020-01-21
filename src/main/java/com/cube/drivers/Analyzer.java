@@ -272,7 +272,7 @@ public class Analyzer {
                                                 MatchType reqm2, MatchType reqComparem2, MatchType respComparem2) {
         // request match has to be better. Only if it is better, check request compare match and if that then response compare match
         if (reqm1.isBetterOrEqual(reqm2)) {
-            return reqComparem1.isBetter(reqComparem2) || respComparem1.isBetter(respComparem2);
+            return (reqm1 != reqm2) || reqComparem1.isBetter(reqComparem2) || respComparem1.isBetter(respComparem2);
         }
         return false;
     }
