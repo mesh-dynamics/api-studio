@@ -145,7 +145,8 @@ public class Analyzer {
                     bestmatch = match;
                     bestReqMt = reqMt;
                     // TODO : Should the break also based on bestmatch.getReqMt() == ExactMatch ?
-                    if (bestmatch.getRespCompareResType() == ExactMatch) {
+                    if (bestmatch.getReqCompareResType() == ExactMatch
+                        || bestmatch.getRespCompareResType() == ExactMatch) {
                         break;
                     }
                 }
@@ -182,41 +183,27 @@ public class Analyzer {
             }
 
 
-            LOGGER.debug(new ObjectMessage(Map.of(
-                Constants.MESSAGE, bestmatch.getReqCompareResType() + " OCCURRED ",
-                Constants.REQ_ID_FIELD, recordReq.reqId
-            )));
-
-            LOGGER.debug(new ObjectMessage(Map.of(
-                Constants.MESSAGE, bestmatch.getRespCompareResType() + " OCCURRED ",
-                Constants.REQ_ID_FIELD, recordReq.reqId
+            try {
+                LOGGER.debug(new ObjectMessage(Map.of(
+                    "recordedReqId",
+                    Optional.ofNullable(recordReq.reqId).orElse(Constants.NOT_PRESENT),
+                    "recordedReqPayload",
+                    bestmatch.getRecordReq(config).orElse(Constants.NOT_PRESENT),
+                    "replayReqPayload",
+                    bestmatch.getReplayReq(config).orElse(Constants.NOT_PRESENT),
+                    "reqCompareResType", bestmatch.getReqCompareResType().name(),
+                    Constants.REQUEST_DIFF, jsonMapper.writeValueAsString(bestmatch.getReqDiffs()),
+                    "recordedRespPayload",
+                    bestmatch.getRecordedResponseBody(config).orElse(Constants.NOT_PRESENT),
+                    "replayRespPayload",
+                    bestmatch.getReplayResponseBody(config).orElse(Constants.NOT_PRESENT),
+                    "respCompareResType", bestmatch.getRespCompareResType().name(),
+                    Constants.RESPONSE_DIFF, jsonMapper.writeValueAsString(bestmatch.getRespDiffs())
                 )));
-
-            LOGGER.debug(new ObjectMessage(Map.of(
-                "REQUEST 1", bestmatch.getRecordReq(config).orElse(" N/A"),
-                "REQUEST 2", bestmatch.getReplayReq(config).orElse(" N/A"),
-                "DOC 1", bestmatch.getRecordedResponseBody(config).orElse(" N/A"),
-                "DOC 2", bestmatch.getReplayResponseBody(config).orElse(" N/A")
-                )));
-
-            bestmatch.getReqDiffs().forEach(
-                diff -> {
-                    try {
-                        LOGGER.debug(new ObjectMessage(Map.of(Constants.REQUEST_DIFF, jsonMapper.writeValueAsString(diff))));
-                    } catch (JsonProcessingException e) {
-                        // DO NOTHING
-                    }
-                });
-
-
-            bestmatch.getRespDiffs().forEach(
-                diff -> {
-                    try {
-                        LOGGER.debug(new ObjectMessage(Map.of(Constants.RESPONSE_DIFF, jsonMapper.writeValueAsString(diff))));
-                    } catch (JsonProcessingException e) {
-                        // DO NOTHING
-                    }
-                });
+            } catch (Exception e) {
+                LOGGER.error(
+                    new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to log debug message")), e);
+            }
 
             ReqRespMatchResult res = new ReqRespMatchResult(bestmatch, bestReqMt,
                 (int) matches.numResults, analysis.replayId);
@@ -244,44 +231,37 @@ public class Analyzer {
                                                      Map<String, Event> replayResponseMap) {
 
         Comparator.Match reqCompareRes = Match.NOMATCH;
+        Comparator.Match respCompareRes = Match.NOMATCH;
+        Optional<Event> replayresp = Optional
+            .ofNullable(replayResponseMap.get(replayreq.reqId));
         try {
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
-                recordreq.app, recordreq.service, recordreq.apiPath , Type.RequestCompare);
-                Comparator reqComparator = comparatorCache.getComparator(reqCompareKey, recordreq.eventType);
-                if(reqComparator != JsonComparator.EMPTY_COMPARATOR) {
-                    reqCompareRes = reqComparator.compare(recordreq.getPayload(config), replayreq.getPayload(config));
-                } else {
-                    reqCompareRes = new Comparator.Match(MatchType.DontCare, "",
-                        Collections.emptyList());
-                }
-        } catch (Exception e) {
-
-            LOGGER.error(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Exception while analyzing request"
-                    + e.getMessage(),
-                Constants.REQ_ID_FIELD, recordreq.reqId
-                )), e);
-        }
-
-        Comparator.Match respCompareRes = Match.NOMATCH;
-        Optional<Event> replayresp = Optional.ofNullable(replayResponseMap.get(replayreq.reqId));
-
-        try {
-            // get appropriate template from solr
+                recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare);
+            Comparator reqComparator = comparatorCache
+                .getComparator(reqCompareKey, recordreq.eventType);
+            if (reqComparator != JsonComparator.EMPTY_COMPARATOR) {
+                reqCompareRes = reqComparator
+                    .compare(recordreq.getPayload(config), replayreq.getPayload(config));
+            } else {
+                reqCompareRes = new Comparator.Match(MatchType.DontCare, "",
+                    Collections.emptyList());
+            }
             TemplateKey respCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
-                recordreq.app, recordreq.service, recordreq.apiPath , Type.ResponseCompare);
+                recordreq.app, recordreq.service, recordreq.apiPath, Type.ResponseCompare);
 
             if (recordedResponse.isPresent() && replayresp.isPresent()) {
                 Event recordedr = recordedResponse.get();
                 Event replayr = replayresp.get();
-                Comparator respComparator = comparatorCache.getComparator(respCompareKey, recordedr.eventType);
-                respCompareRes = respComparator.compare(recordedr.getPayload(config), replayr.getPayload(config));
+                Comparator respComparator = comparatorCache
+                    .getComparator(respCompareKey, recordedr.eventType);
+                respCompareRes = respComparator
+                    .compare(recordedr.getPayload(config), replayr.getPayload(config));
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Exception while analyzing response"
-                    + e.getMessage(),
-                Constants.REQ_ID_FIELD, recordreq.reqId)), e);
+                Constants.MESSAGE, "Exception while analyzing request",
+                Constants.REQ_ID_FIELD, Optional.ofNullable(recordreq.reqId)
+                    .orElse(Constants.NOT_PRESENT))), e);
         }
 
         return new ReqRespMatchWithEvent(recordreq, Optional.of(replayreq),

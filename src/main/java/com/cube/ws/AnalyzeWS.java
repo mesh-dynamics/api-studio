@@ -54,6 +54,7 @@ import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.core.CompareTemplate.CompareTemplateStoreException;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
@@ -291,32 +292,21 @@ public class AnalyzeWS {
             //This is just to see the template is not invalid, and can be parsed according
             // to our class definition , otherwise send error response
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
-            TemplateKey key;
-            if (Type.RequestMatch.toString().equalsIgnoreCase(type)) {
-                key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
-                    serviceName, path, Type.RequestMatch);
-            } else if (Type.RequestCompare.toString().equalsIgnoreCase(type)) {
-		        key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
-			        serviceName, path, Type.RequestCompare);
-            }
-            else if (Type.ResponseCompare.toString().equalsIgnoreCase(type)) {
-	            key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
-		            serviceName, path, Type.RequestCompare);
-            } else {
-                return Response.serverError().type(MediaType.TEXT_PLAIN)
-                    .entity("Invalid template type, should be " +
-                        "either request or response :: " + type).build();
-            }
-
+            TemplateKey.Type templateType = Utils.valueOf(TemplateKey.Type.class, type).orElseThrow(
+	            () -> new CompareTemplateStoreException("Invalid Template Type, should be "
+		            + "either RequestMatch, RequestCompare or ResponseCompare"));
+	        TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+		        serviceName, path, templateType);
             ValidateCompareTemplate validTemplate = template.validate();
             if (!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity(
-                    (new JSONObject(Map.of("Message", validTemplate.getMessage()))).toString())
-                    .build();
+                    (new JSONObject(Map.of("Message", validTemplate.getMessage())))
+	                    .toString()).build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
             comparatorCache.invalidateKey(key);
-            return Response.ok().type(MediaType.TEXT_PLAIN).entity("Json String successfully stored in Solr").build();
+            return Response.ok().type(MediaType.TEXT_PLAIN)
+	            .entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN)
                 .entity("Invalid JSON String sent").build();
@@ -326,8 +316,8 @@ public class AnalyzeWS {
         }
         catch (CompareTemplate.CompareTemplateStoreException e) {
             return Response.serverError().entity((
-                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
-                    e.getMessage()))).build();
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED
+	                , "Unable to save template set: " + e.getMessage()))).build();
         }
     }
 
@@ -341,52 +331,16 @@ public class AnalyzeWS {
      * @return
      */
     @GET
-    @Path("getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}")
+    @Path("getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
     public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
-                                     @PathParam("customerId") String customerId,
-                                     @PathParam("templateVersion") String templateVersion,
-                                     @PathParam("service") String service) {
-
-        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, Type.ResponseCompare);
+	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
+	    @PathParam("service") String service, @PathParam("type") String type) {
+    	return Utils.valueOf(TemplateKey.Type.class, type).map(templateType ->
+		     getCompareTemplate(urlInfo, appId, customerId, templateVersion, service
+			     , templateType))
+		    .orElse(Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE
+			    , "Template type not specified correctly"))).build());
     }
-
-    /**
-     * Endpoint to get registered request match template
-     * @param urlInfo UrlInfo object
-     * @param appId Application Id
-     * @param customerId Customer Id
-     * @param templateVersion Template version
-     * @param service The service id
-     * @return
-     */
-    @GET
-    @Path("getReqMatchTemplate/{customerId}/{appId}/{templateVersion}/{service}")
-    public Response getReqMatchTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
-                                    @PathParam("customerId") String customerId,
-                                    @PathParam("templateVersion") String templateVersion,
-                                    @PathParam("service") String service) {
-
-        return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, Type.RequestMatch);
-    }
-
-	/**
-	 * Endpoint to get registered request compare template
-	 * @param urlInfo UrlInfo object
-	 * @param appId Application Id
-	 * @param customerId Customer Id
-	 * @param templateVersion Template version
-	 * @param service The service id
-	 * @return
-	 */
-	@GET
-	@Path("getReqCompareTemplate/{customerId}/{appId}/{templateVersion}/{service}")
-	public Response getReqCompareTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
-		@PathParam("customerId") String customerId,
-		@PathParam("templateVersion") String templateVersion,
-		@PathParam("service") String service) {
-
-		return getCompareTemplate(urlInfo, appId, customerId, templateVersion, service, Type.RequestCompare);
-	}
 
 
     public Response getCompareTemplate(UriInfo urlInfo, String appId,

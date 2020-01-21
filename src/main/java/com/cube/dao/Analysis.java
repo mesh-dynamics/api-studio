@@ -79,6 +79,7 @@ public class Analysis {
 	 * reqanalyzed = reqmatched + reqpartiallymatched  + reqnotmatched
 	 * reqanalyzed = reqsinglematch + reqmultiplematch + reqnotmatched
 	 * reqanalyzed - reqnotmatched = respmatched + resppartiallymatched + respnotmatched
+	 * reqanalyzed = reqCompareMatched + reqComparePartiallyMatched + reqCompareNotMatched
 	 *
 	 */
 	public int reqAnalyzed;

@@ -221,28 +221,6 @@ public class Utils {
 
     static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?), appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
-    static public Optional<TemplateKey> templateKeyFromSerializedString(String serialized) {
-        Optional<TemplateKey> toReturn = Optional.empty();
-        Matcher m = templateKeyPattern.matcher(serialized);
-        TemplateKey templateKey = null;
-        if (m.matches()) {
-            String customerId = m.group(1);
-            String appId = m.group(2);
-            String service = m.group(3);
-            String path = m.group(4);
-            String version = m.group(5);
-            String type = m.group(6);
-            //System.out.println(customerId + " " + appId + " " + service + " " + path + " " + version + " " + type);
-            // TODO Should RequestMatch template be reutned or RequestCompare if type is request ?
-            templateKey = new TemplateKey(version, customerId, appId, service, path, ("Request".equalsIgnoreCase(type) ?
-                Type.RequestMatch : Type.ResponseCompare));
-            toReturn = Optional.of(templateKey);
-        } else {
-            LOGGER.error("Unable to deserialize template key from string :: " + templateKey);
-        }
-        return toReturn;
-    }
-
     /**
      * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
      * @param baseUrl Base Url
