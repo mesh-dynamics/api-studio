@@ -189,7 +189,7 @@ public class Utils {
 		Optional<String> method = getFirst(meta, Constants.METHOD_FIELD);
 		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
 
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (!isRecordedAtSource
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource
 			|| collection
 			.isPresent()) && runType.isPresent() && method.isPresent()) {
 
@@ -199,7 +199,7 @@ public class Utils {
 			String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), !isRecordedAtSource ? "NA" : collection.get(),
+				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				traceId.orElse("NA"), runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest);
@@ -248,13 +248,13 @@ public class Utils {
 			}
 		});
 
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (!isRecordedAtSource || collection
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource || collection
 			.isPresent()) && runType.isPresent() && status.isPresent()) {
 			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(), body);
 			String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), !isRecordedAtSource ? "NA" : collection.get(),
+				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				traceId.orElse("NA"), runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
