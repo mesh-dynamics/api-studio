@@ -1,0 +1,10 @@
+export const moviebookConstants = {
+    REQ_START: 'REQ_START',
+    REQ_SUCCESS: 'REQ_SUCCESS',
+    REQ_ERROR: 'REQ_ERROR',
+
+    LIST_MOVIES: 'LIST_MOVIES',
+    LIST_STORES: 'LIST_STORES',
+    RENT_MOVIE: 'RENT_MOVIE',
+    RETURN_MOVIE: 'RETURN_MOVIE',
+}
