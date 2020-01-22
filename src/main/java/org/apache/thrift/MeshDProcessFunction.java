@@ -2,16 +2,17 @@ package org.apache.thrift;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.transport.TTransportException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.google.gson.GsonBuilder;
 
@@ -70,13 +71,14 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
 						CommonUtils.cubeTraceInfoFromContext(), RunType.Record,
 						constructApiPath(methodName, args),
-						EventType.ThriftRequest, Instant.now(), reqId, Constants.DEFAULT_COLLECTION)
+						EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
+						Constants.DEFAULT_COLLECTION)
 						.setRawPayloadBinary(serializer.serialize(args));
 					fluentDLogRecorder.record(eventBuilder.createEvent());
 				}
 			} catch (Exception e) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Error while recording event")), e);
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Error while recording event")), e);
 			}
 		} catch (TProtocolException e) {
 			iprot.readMessageEnd();
@@ -97,7 +99,8 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 				EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
 					CommonUtils.cubeTraceInfoFromContext(), RunType.Replay,
 					constructApiPath(methodName, args),
-					EventType.ThriftRequest, Instant.now(), reqId, Constants.DEFAULT_COLLECTION)
+					EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
+					Constants.DEFAULT_COLLECTION)
 					.setRawPayloadBinary(serializer.serialize(args));
 				result = thriftMocker.mockThriftRequest(eventBuilder.createEvent());
 				LOGGER.info(new ObjectMessage(
@@ -108,17 +111,17 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 			}
 		} catch (TTransportException ex) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Transport error while processing", "methodName", getMethodName())), ex);
+				"Transport error while processing", "methodName", getMethodName())), ex);
 			throw ex;
 		} catch (TApplicationException ex) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-                , "Internal application error while processing"
-                , "methodName", getMethodName())), ex);
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
+				, "Internal application error while processing"
+				, "methodName", getMethodName())), ex);
 			result = ex;
 			msgType = TMessageType.EXCEPTION;
 		} catch (Exception ex) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Transport error while processing", "methodName", getMethodName())), ex);
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Transport error while processing", "methodName", getMethodName())), ex);
 			if (rethrowUnhandledExceptions()) {
 				throw new RuntimeException(ex.getMessage(), ex);
 			}
@@ -134,12 +137,13 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 				EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
 					CommonUtils.cubeTraceInfoFromContext(), RunType.Record,
 					constructApiPath(methodName, result),
-					EventType.ThriftResponse, Instant.now(), reqId, Constants.DEFAULT_COLLECTION)
+					EventType.ThriftResponse, Optional.of(Instant.now()), reqId,
+					Constants.DEFAULT_COLLECTION)
 					.setRawPayloadBinary(serializer.serialize(result));
 				fluentDLogRecorder.record(eventBuilder.createEvent());
 			} catch (Exception e) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Error while recording event")), e);
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Error while recording event")), e);
 			}
 		}
 		if (!isOneway()) {

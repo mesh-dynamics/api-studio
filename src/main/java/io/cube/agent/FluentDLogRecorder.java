@@ -56,13 +56,16 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
 
 			String jsonSerialized = payloadOptional.map(UtilException.rethrowFunction(payload -> {
-				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
-				event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType);
+				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
+					event.service, event.instanceId,
+					event.getCollection(), event.getTraceId(), event.runType,
+					Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType);
 				eventBuilder.setPayload(payload);
 				eventBuilder.setRawPayloadString(payload.toString());
-				return jsonMapper.writeValueAsString(eventBuilder.createEvent());}))
-				.orElseGet(UtilException.rethrowSupplier(()-> {
-						return jsonMapper.writeValueAsString(event);
+				return jsonMapper.writeValueAsString(eventBuilder.createEvent());
+			}))
+				.orElseGet(UtilException.rethrowSupplier(() -> {
+					return jsonMapper.writeValueAsString(event);
 				}));
 
 			// The prefix will be a part of the fluentd parse regex
