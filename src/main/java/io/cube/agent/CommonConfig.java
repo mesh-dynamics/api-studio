@@ -164,7 +164,7 @@ public class CommonConfig {
 		} catch (IllegalStateException e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
 		}
-		LOGGER.info("CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI);
+		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
 	}
 
 	//This constructor is called only for updates.
@@ -214,7 +214,8 @@ public class CommonConfig {
 			return Optional.empty();
 		});
 
-		LOGGER.info("CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI);
+		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
+
 	}
 
 	private Optional<String> fromDynamicOREnvORStaticProperties(String propertyName,
