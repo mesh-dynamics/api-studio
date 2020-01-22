@@ -34,10 +34,10 @@ spring:
                 # Change timeout if authentication/read exception is being thrown
 
         frontend:
-            baseUrl: http://localhost:8080
+            baseUrl: http://demo.dev.cubecorp.io
             loginEndpoint: /login
-            resetEndpoint: /reset
-            activationEndpoint: /api/account/activate
+            resetEndpoint: /login/reset-password
+            activationEndpoint: /activate
 
 security:
     jwt:
@@ -53,4 +53,9 @@ logging:
 
 cube:
     server:
-        baseUrl: http://demo.dev.cubecorp.io
+        baseUrl: http://demo.prod.cubecorp.io
+
+external:
+    recaptcha:
+        base-url: https://www.google.com/recaptcha/api/siteverify
+        secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr-

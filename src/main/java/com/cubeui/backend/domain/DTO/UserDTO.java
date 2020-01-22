@@ -21,6 +21,8 @@ public class UserDTO {
 
     private Long customerId;
 
+    private String domain;
+
     private List<String> roles = new ArrayList<>();
 
     private LocalDateTime createdAt;

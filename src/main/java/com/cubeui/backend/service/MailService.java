@@ -88,12 +88,9 @@ public class MailService {
         Locale locale = Locale.forLanguageTag(DEFAULT_LANGUAGE);
         Context context = new Context();
         context.setVariable("user", user);
-        //TODO Get frontend login url and change it
         context.setVariable("baseUrl", baseUrl);
         context.setVariable("loginUrl", baseUrl + loginEndpoint);
-        //TODO Get frontend reset url and change it
         context.setVariable("resetUrl", baseUrl + resetEndpoint);
-        //TODO Get frontend reset url and change it
         context.setVariable("activationUrl", baseUrl + activationEndpoint);
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
@@ -113,9 +110,21 @@ public class MailService {
     }
 
     @Async
+    public void sendCreationEmailAdmin(User user) {
+        String adminEmail = user.getCustomer().getEmail();
+        log.debug("Sending creation notification email to admin at '{}'", adminEmail);
+        sendEmailFromTemplate(user, "creationEmailAdmin", "email.creation.title");
+    }
+
+    @Async
     public void sendPasswordResetMail(User user) {
         log.debug("Sending password reset email to '{}'", user.getUsername());
         sendEmailFromTemplate(user, "passwordResetEmail", "email.reset.title");
     }
 
+  @Async
+  public void sendPasswordResetSuccessfulMail(User user) {
+    log.debug("Sending password reset successful email to '{}'", user.getUsername());
+    sendEmailFromTemplate(user, "passwordResetSuccessfulEmail", "email.reset.success.title");
+  }
 }
