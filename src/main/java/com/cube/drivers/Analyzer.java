@@ -10,6 +10,7 @@ import static com.cube.core.Comparator.MatchType.ExactMatch;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -269,12 +270,25 @@ public class Analyzer {
     private static boolean isReqRespMatchBetter(MatchType reqm1, MatchType reqComparem1
         , MatchType respComparem1, MatchType reqm2, MatchType reqComparem2
         , MatchType respComparem2) {
-        return
-            reqm1.isBetter(reqm1) ||
-                (reqm1 == reqm2 &&
-                    (reqComparem1.isBetter(reqComparem2) ||
-                        (reqComparem1 == reqComparem2 && respComparem1.isBetter(respComparem2))));
+        return isReqRespMatchBetter(List.of(reqm1, reqComparem1, respComparem1),
+            List.of(reqm2, reqComparem2, respComparem2));
     }
+
+    private static boolean isReqRespMatchBetter(List<MatchType> matchResultTuple1
+        , List<MatchType> matchResultTuple2) {
+        if (matchResultTuple1.size() != matchResultTuple2.size()) return false;
+        Iterator<MatchType> iterator1 = matchResultTuple1.iterator();
+        Iterator<MatchType> iterator2 = matchResultTuple2.iterator();
+        while (iterator1.hasNext() && iterator2.hasNext()) {
+            MatchType matchType1 = iterator1.next();
+            MatchType matchType2 = iterator2.next();
+            if (matchType1.isBetter(matchType2)) return true;
+            if (matchType1 != matchType2) return false;
+        }
+        // note for the case when the entire lists are equal till the last element
+        // , the control will reach here and we'll return false
+        return false;
+     }
 
     Stream<Event> expandOnTraceId(List<Event> requestList, String customerId,
                                   String app, String collectionId, ReqRespStore rrstore) {
