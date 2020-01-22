@@ -1,8 +1,8 @@
 package io.cube.agent;
 
-import java.time.Instant;
 import java.util.Optional;
 
+import io.md.dao.Event;
 import io.md.utils.FnKey;
 
 /*
@@ -45,4 +45,6 @@ public interface Recorder {
         Object... args);
 
     boolean record(ReqResp httpReqResp);
+
+    boolean record(Event event);
 }

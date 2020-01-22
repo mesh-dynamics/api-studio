@@ -1,25 +1,17 @@
 package io.cube.agent;
 
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
 
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 
 import io.md.constants.Constants;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
-import io.md.dao.Event.EventType;
-import io.md.dao.Event.RunType;
-import io.md.utils.CommonUtils;
-
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
 
@@ -55,13 +47,16 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
 
 			String jsonSerialized = payloadOptional.map(UtilException.rethrowFunction(payload -> {
-				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
-				event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType);
+				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
+					event.service, event.instanceId,
+					event.getCollection(), event.getTraceId(), event.runType,
+					Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType);
 				eventBuilder.setPayload(payload);
 				eventBuilder.setRawPayloadString(payload.toString());
-				return jsonMapper.writeValueAsString(eventBuilder.createEvent());}))
-				.orElseGet(UtilException.rethrowSupplier(()-> {
-						return jsonMapper.writeValueAsString(event);
+				return jsonMapper.writeValueAsString(eventBuilder.createEvent());
+			}))
+				.orElseGet(UtilException.rethrowSupplier(() -> {
+					return jsonMapper.writeValueAsString(event);
 				}));
 
 			// The prefix will be a part of the fluentd parse regex

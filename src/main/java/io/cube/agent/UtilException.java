@@ -3,13 +3,10 @@
  */
 package io.cube.agent;
 
-import java.sql.SQLException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Taken from https://stackoverflow.com/questions/19757300/java-8-lambda-streams-filter-by-method-with-exception

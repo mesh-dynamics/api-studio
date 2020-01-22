@@ -1,7 +1,6 @@
 package io.cube.agent;
 
 import java.lang.reflect.Type;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.google.gson.JsonDeserializationContext;
