@@ -57,7 +57,6 @@ import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Diff;
 import com.cube.core.Comparator.Match;
-import com.cube.core.Comparator.MatchType;
 import com.cube.core.Comparator.Resolution;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
@@ -1771,7 +1770,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         SolrQuery query = new SolrQuery(queryString);
         query.setFields("*");
-        addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+        // NOT NEEDED
+        // addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
         addFilter(query, REPLAYIDF, matchResQuery.replayId);
         addFilter(query, SERVICEF, matchResQuery.service);
         addFilter(query, PATHF, matchResQuery.apiPath);
@@ -1783,9 +1783,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         matchResQuery.traceId.ifPresent(traceId ->
             query.addFilterQuery("("+RECORDTRACEIDF+":"+traceId+" OR "
                 + REPLAYTRACEIDF+":"+traceId+")" ));
+        addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
+        addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
         query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
             +" childFilter=type_s:"+Types.Diff.toString()+"]");
-        return SolrIterator.getResults(solr, query, matchResQuery.nummatches, this::docToAnalysisMatchResult
+        return SolrIterator.getResults(solr, query, matchResQuery.numMatches, this::docToAnalysisMatchResult
             , matchResQuery.start);
     }
 
@@ -1886,7 +1888,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
             return Optional.of(new ReqRespMatchResult(recordReqId, replayReqId, reqMatchType
                 , numMatch, replayId, service, path, recordTraceId, replayTraceId, respMatch
-                , reqCompResOptional.orElse(new Match(MatchType.DontCare, "" , Collections.emptyList()))));
+                , reqCompResOptional.orElse(Match.DONT_CARE)));
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Unable to convert solr doc to diff")), e);
