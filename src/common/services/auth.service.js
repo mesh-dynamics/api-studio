@@ -75,7 +75,7 @@ const verifyActivationToken = (searchString) => {
 
 const sendResetLink = (email) => {
     const requestOptions = {
-        method: 'GET',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         }
