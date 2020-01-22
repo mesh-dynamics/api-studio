@@ -57,6 +57,7 @@ import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Diff;
 import com.cube.core.Comparator.Match;
+import com.cube.core.Comparator.MatchType;
 import com.cube.core.Comparator.Resolution;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
@@ -1882,7 +1883,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
             return Optional.of(new ReqRespMatchResult(recordReqId, replayReqId, reqMatchType
                 , numMatch, replayId, service, path, recordTraceId, replayTraceId, respMatch
-                , reqCompResOptional.get()));
+                , reqCompResOptional.orElse(new Match(MatchType.DontCare, "" , Collections.emptyList()))));
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Unable to convert solr doc to diff")), e);
