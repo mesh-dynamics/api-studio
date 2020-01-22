@@ -269,13 +269,11 @@ public class Analyzer {
     private static boolean isReqRespMatchBetter(MatchType reqm1, MatchType reqComparem1
         , MatchType respComparem1, MatchType reqm2, MatchType reqComparem2
         , MatchType respComparem2) {
-        // request match has to be better. Only if it is better, check request compare
-        // match and if that then response compare match
-        if (reqm1.isBetterOrEqual(reqm2)) {
-            return (reqm1 != reqm2) || reqComparem1.isBetter(reqComparem2) ||
-                ((reqComparem1 == reqComparem2) && respComparem1.isBetter(respComparem2));
-        }
-        return false;
+        return
+            reqm1.isBetter(reqm1) ||
+                (reqm1 == reqm2 &&
+                    (reqComparem1.isBetter(reqComparem2) ||
+                        (reqComparem1 == reqComparem2 && respComparem1.isBetter(respComparem2))));
     }
 
     Stream<Event> expandOnTraceId(List<Event> requestList, String customerId,
