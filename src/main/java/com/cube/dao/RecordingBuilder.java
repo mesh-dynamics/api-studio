@@ -50,7 +50,7 @@ public class RecordingBuilder {
 		this.templateVersion = Constants.DEFAULT_TEMPLATE_VER;
 		recalculateId();
 		this.parentRecordingId = Optional.empty();
-		this.rootRecordingId = id;
+		this.rootRecordingId = "";
 		this.name = "";
 		this.codeVersion = Optional.empty();
 		this.branch = Optional.empty();
@@ -69,6 +69,9 @@ public class RecordingBuilder {
 	 * @return
 	 */
 	public Recording build() {
+		if (this.rootRecordingId.isEmpty()) {
+			rootRecordingId = id;
+		}
 		return new Recording(id, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
