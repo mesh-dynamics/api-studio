@@ -51,7 +51,6 @@ import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.CompareTemplateStoreException;
@@ -60,6 +59,7 @@ import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
+import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
@@ -589,25 +589,10 @@ public class AnalyzeWS {
     public Response getAnalysisResultsByPath(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional
-            .ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-        Optional<String> path = Optional
-            .ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill down on
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
-            .flatMap(Utils::strToInt); // for paging
-        Optional<Integer> numResults =
-            Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD))
-                .flatMap(Utils::strToInt).or(() -> Optional.of(20)); // for paging
-        Optional<Comparator.MatchType> reqMatchType = Optional
-            .ofNullable(queryParams.getFirst(Constants.REQ_MATCH_TYPE))
-            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
-        Optional<Comparator.MatchType> respMatchType = Optional
-            .ofNullable(queryParams.getFirst(Constants.RESP_MATCH_TYPE))
-            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+	    AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
+		    , queryParams);
         Optional<Boolean> includeDiff = Optional
             .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);
-		Optional<String> resolution = Optional.ofNullable(queryParams
-			.getFirst(Constants.DIFF_RESOLUTION_FIELD));
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
@@ -616,8 +601,7 @@ public class AnalyzeWS {
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
             Result<ReqRespMatchResult> result = rrstore
-                .getAnalysisMatchResults(replayId, service, path,
-                    reqMatchType, respMatchType, start, numResults, resolution);
+                .getAnalysisMatchResults(analysisMatchResultQuery);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
@@ -654,8 +638,10 @@ public class AnalyzeWS {
                         .flatMap(rrstore::getRequestEvent)
                         .map(event -> event.getPayloadAsJsonString(config));
 	                try {
-		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
-		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.reqCompareRes.diffs));
+		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
+			                .respCompareRes.diffs));
+		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
+			                .reqCompareRes.diffs));
 	                } catch (JsonProcessingException e) {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
@@ -668,8 +654,9 @@ public class AnalyzeWS {
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
                     matchRes.reqMatchRes, matchRes.numMatch,
-                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType,
-	                respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse, replayResponse);
+                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
+	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
+	                , replayResponse);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -683,9 +670,9 @@ public class AnalyzeWS {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Error in converting Match results list to Json",
                 Constants.REPLAY_ID_FIELD, replayId,
-                Constants.APP_FIELD, app,
+                Constants.APP_FIELD, app/*,
                 Constants.SERVICE_FIELD, service,
-                Constants.PATH_FIELD, path
+                Constants.PATH_FIELD, path*/
             )
             ));
             return Response.serverError().entity(
