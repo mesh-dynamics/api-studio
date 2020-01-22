@@ -1780,8 +1780,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             matchResQuery.respCompResType.map(Enum::toString));
         addFilter(query, REQ_COMP_RES_TYPE_F,
             matchResQuery.reqCompResType.map(Enum::toString));
-        addFilter(query, RECORDTRACEIDF, matchResQuery.recReqTraceId);
-        addFilter(query, REPLAYTRACEIDF, matchResQuery.replayReqTraceId);
+        matchResQuery.traceId.ifPresent(traceId ->
+            query.addFilterQuery("("+RECORDTRACEIDF+":"+traceId+" OR "
+                + REPLAYTRACEIDF+":"+traceId+")" ));
         query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
             +" childFilter=type_s:"+Types.Diff.toString()+"]");
         return SolrIterator.getResults(solr, query, matchResQuery.nummatches, this::docToAnalysisMatchResult
