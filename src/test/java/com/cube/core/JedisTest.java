@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import com.cube.cache.TemplateKey.Type;
 import com.cube.utils.Constants;
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ public class JedisTest {
         String pingReply = jedis.ping();
         System.out.println(pingReply);
         TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER,"ravivj" , "movieinfo" , "movieinfo"
-            , "/hello/world" , TemplateKey.Type.Request);
+            , "/hello/world" , Type.RequestMatch);
         //jedis.set(key.toString() , "amazing");
 
         System.out.println(jedis.get(key.toString()));

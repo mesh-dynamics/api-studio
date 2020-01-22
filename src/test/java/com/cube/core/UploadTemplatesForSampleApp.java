@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import com.cube.cache.TemplateKey.Type;
 import com.cube.utils.Constants;
 import java.io.File;
 import java.nio.charset.Charset;
@@ -45,7 +46,7 @@ public class UploadTemplatesForSampleApp {
                 String templateAsString = template.toString();
                 try {
                     reqRespStore.saveCompareTemplate(
-                            new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId , app , service , path , TemplateKey.Type.Response)
+                            new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId , app , service , path , Type.ResponseCompare)
                      , templateAsString);
                 } catch (Exception e) {
                     e.printStackTrace();
