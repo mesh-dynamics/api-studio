@@ -466,7 +466,8 @@ public class AnalyzeWS {
 			    matchRes.reqMatchRes, matchRes.numMatch,
 			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
 			    matchRes.reqCompareRes.mt,
-			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse, replayedResponse);
+			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse
+			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId);
 
 		    String resultJson = null;
 		    try {
@@ -656,7 +657,7 @@ public class AnalyzeWS {
                     matchRes.reqMatchRes, matchRes.numMatch,
                     matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
 	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
-	                , replayResponse);
+	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1235,7 +1236,10 @@ public class AnalyzeWS {
                         Optional<String> recordRequest,
                         Optional<String> replayRequest,
                         Optional<String> recordResponse,
-                        Optional<String> replayResponse) {
+                        Optional<String> replayResponse,
+	                    Optional<String> recordTraceId,
+	                    Optional<String> replayTraceId
+	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
             this.reqMatchResType = reqMatchResType;
@@ -1250,6 +1254,8 @@ public class AnalyzeWS {
             this.replayRequest = replayRequest;
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
+            this.recordTraceId = recordTraceId;
+            this.replayTraceId = replayTraceId;
         }
 
         public final Optional<String> recordReqId;
@@ -1260,6 +1266,8 @@ public class AnalyzeWS {
 	    public final Comparator.MatchType reqCompResType;
 	    public final String service;
         public final String path;
+        public final Optional<String> recordTraceId;
+        public final Optional<String> replayTraceId;
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
         @JsonIgnore
