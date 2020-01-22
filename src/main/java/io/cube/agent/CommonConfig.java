@@ -109,15 +109,20 @@ public class CommonConfig {
 		return singleInstance.get();
 	}
 
-	private CommonConfig() throws Exception {
+	static {
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
-			staticProperties.load(this.getClass().getClassLoader().
+			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
 				getResourceAsStream(STATIC_CONFFILE));
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while initializing config")),e);
 		}
+
+	}
+
+	private CommonConfig() throws Exception {
+
 		CUBE_RECORD_SERVICE_URI = fromEnvOrProperties(Constants.MD_RECORD_SERVICE_PROP)
 			.orElseThrow(() -> new Exception("Mesh-D Record Endpoint Not Specified"));
 		CUBE_MOCK_SERVICE_URI = fromEnvOrProperties(Constants.MD_MOCK_SERVICE_PROP)
@@ -208,13 +213,6 @@ public class CommonConfig {
 			}
 			return Optional.empty();
 		});
-
-		Tracer tracer = CommonUtils.init("tracer");
-		try {
-			GlobalTracer.register(tracer);
-		} catch (IllegalStateException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
-		}
 
 		LOGGER.info("CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI);
 	}
