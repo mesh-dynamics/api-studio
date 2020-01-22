@@ -152,7 +152,7 @@ public class AccountController {
         }
     }
 
-    @GetMapping(path = "/reset-password/init")
+    @PostMapping(path = "/reset-password/init")
     public ResponseEntity requestPasswordReset(@RequestParam(value = "email") String email) {
         Optional<User> user = userService.requestPasswordReset(email);
 
