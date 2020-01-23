@@ -26,14 +26,7 @@ class ViewSelectedTestConfig extends React.Component {
             goldenVersionFilter: "",
             selectedGoldenFromFilter: ""
         };
-        this.doReplay = true;
-        this.hideModalForFC = true;
         this.statusInterval;
-        this.handleChangeForTestIds = this.handleChangeForTestIds.bind(this);
-        this.replay = this.replay.bind(this);
-        this.handleChangeForInstance = this.handleChangeForInstance.bind(this);
-        this.getReplayStatus = this.getReplayStatus.bind(this);
-        this.handleFC = this.handleFC.bind(this);
     }
 
     componentDidMount() {
@@ -41,14 +34,14 @@ class ViewSelectedTestConfig extends React.Component {
         dispatch(cubeActions.clear());
     }
   
-    handleChangeForInstance(e) {
+    handleChangeForInstance = (e) => {
         const { dispatch } = this.props;
         if (e && e.target.value) {
             dispatch(cubeActions.setSelectedInstance(e.target.value));
         }
     }
 
-    handleFC() {
+    handleFC = () => {
         const { dispatch, cube } = this.props;
         dispatch(cubeActions.forceCompleteReplay(this.state.fcId));
         setTimeout(() => {
@@ -60,13 +53,12 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({fcId: null});
     };
 
-    getReplayStatus() {
+    getReplayStatus = () => {
         const {cube, dispatch} = this.props;
         dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayId, cube.selectedApp));
-    }
+    };
 
-
-    handleChangeForTestIds (e) {
+    handleChangeForTestIds = (e) => {
         const { user, match, history, dispatch, cube } = this.props;
         cube.selectedTestId = e.target.value;
         if (e) {
@@ -83,8 +75,7 @@ class ViewSelectedTestConfig extends React.Component {
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
         }
-    }
-
+    };
     
     showCT = () => {
         this.setState({showCT: true});
@@ -424,8 +415,10 @@ class ViewSelectedTestConfig extends React.Component {
         this.hideGoldenFilter();
     };
 
-    replay () {
+    replay = () => {
         const {cube, dispatch} = this.props;
+        const { testConfig: { testPaths } } = cube;
+
         cubeActions.clearReplayStatus();
         if (!cube.selectedTestId) {
             alert('select golden to replay');
@@ -441,12 +434,13 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('instanceId', instance);
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
-            if (cube.selectedApp != 'Cube') {
-                searchParams.set('paths', 'minfo/listmovies');
-                searchParams.append('paths', 'minfo/returnmovie');
-                searchParams.append('paths', 'minfo/rentmovie');
-                searchParams.append('paths', 'minfo/liststores');
+            // Append Test Paths
+            if(testPaths && testPaths.length !== 0) {
+                testPaths.map(path => searchParams.append("paths", path))
+            } else {
+                alert("Test Path Not Found");
             }
+
             const configForHTTP = {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -484,13 +478,33 @@ class ViewSelectedTestConfig extends React.Component {
     }
 }
 
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube
+});
 
-const connectedViewSelectedTestConfig = connect(mapStateToProps)(ViewSelectedTestConfig);
+export default connect(mapStateToProps)(ViewSelectedTestConfig);
 
-export default connectedViewSelectedTestConfig
+// function mapStateToProps(state) {
+//     const cube = state.cube;
+//     return {
+//         cube
+//     }
+// }
+
+// const connectedViewSelectedTestConfig = connect(mapStateToProps)(ViewSelectedTestConfig);
+
+// export default connectedViewSelectedTestConfig
+        // this.doReplay = true;
+        // this.hideModalForFC = true;
+        // this.handleChangeForTestIds = this.handleChangeForTestIds.bind(this);
+        // this.replay = this.replay.bind(this);
+        // this.handleChangeForInstance = this.handleChangeForInstance.bind(this);
+        // this.getReplayStatus = this.getReplayStatus.bind(this);
+        // this.handleFC = this.handleFC.bind(this);
+
+                    // if (cube.selectedApp != 'Cube') {
+            //     searchParams.set('paths', 'minfo/listmovies');
+            //     searchParams.append('paths', 'minfo/returnmovie');
+            //     searchParams.append('paths', 'minfo/rentmovie');
+            //     searchParams.append('paths', 'minfo/liststores');
+            // }
