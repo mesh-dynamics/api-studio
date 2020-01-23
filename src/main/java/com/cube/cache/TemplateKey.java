@@ -27,8 +27,9 @@ public class TemplateKey {
     }
 
     public enum Type {
-        Request,
-        Response
+        RequestMatch,
+        RequestCompare,
+        ResponseCompare,
     }
 
     /**
@@ -39,7 +40,7 @@ public class TemplateKey {
         this.appId = "";
         this.serviceId = "";
         this.path = "";
-        this.reqOrResp = Type.Request;
+        this.reqOrResp = Type.RequestMatch;
         this.version = "";
     }
 

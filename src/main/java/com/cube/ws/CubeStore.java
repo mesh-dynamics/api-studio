@@ -52,6 +52,7 @@ import io.cube.agent.UtilException;
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Utils;
 import com.cube.dao.CubeEventMetaInfo;
@@ -228,7 +229,7 @@ public class CubeStore {
             }
 
             TemplateKey tkey = new TemplateKey(templateVersion, customerId.get(),
-                app.get(), service.get(), path, TemplateKey.Type.Request);
+                app.get(), service.get(), path, Type.RequestMatch);
 
             Comparator requestComparator = null;
             try {
@@ -563,7 +564,7 @@ public class CubeStore {
                 }
 
                 event.parseAndSetKey(config,
-                    Utils.getRequestCompareTemplate(config, event,
+                    Utils.getRequestMatchTemplate(config, event,
                         recordOrReplay.get().getTemplateVersion()), classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Compare Template Not Found", event);
@@ -747,7 +748,7 @@ public class CubeStore {
             Event defaultReqEvent = eventBuilder.createEvent();
             try {
                 defaultReqEvent.parseAndSetKey(config, Utils.
-                    getRequestCompareTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+                    getRequestMatchTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
@@ -1050,7 +1051,7 @@ public class CubeStore {
     public Response warmUpCache(@Context UriInfo uriInfo) {
         try {
             TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
-                , "movieinfo", "minfo/listmovies", TemplateKey.Type.Response);
+                , "movieinfo", "minfo/listmovies", Type.ResponseCompare);
             Comparator comparator = this.config.comparatorCache.getComparator(key, Event.EventType.HTTPResponse);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());
         } catch (Exception e) {

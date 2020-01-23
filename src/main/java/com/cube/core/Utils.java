@@ -35,6 +35,7 @@ import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.dao.Event;
 import com.cube.dao.HTTPRequestPayload;
 import com.cube.dao.HTTPResponsePayload;
@@ -220,27 +221,6 @@ public class Utils {
 
     static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?), appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
-    static public Optional<TemplateKey> templateKeyFromSerializedString(String serialized) {
-        Optional<TemplateKey> toReturn = Optional.empty();
-        Matcher m = templateKeyPattern.matcher(serialized);
-        TemplateKey templateKey = null;
-        if (m.matches()) {
-            String customerId = m.group(1);
-            String appId = m.group(2);
-            String service = m.group(3);
-            String path = m.group(4);
-            String version = m.group(5);
-            String type = m.group(6);
-            //System.out.println(customerId + " " + appId + " " + service + " " + path + " " + version + " " + type);
-            templateKey = new TemplateKey(version, customerId, appId, service, path, ("Request".equalsIgnoreCase(type) ?
-                TemplateKey.Type.Request : TemplateKey.Type.Response));
-            toReturn = Optional.of(templateKey);
-        } else {
-            LOGGER.error("Unable to deserialize template key from string :: " + templateKey);
-        }
-        return toReturn;
-    }
-
     /**
      * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
      * @param baseUrl Base Url
@@ -254,11 +234,11 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static CompareTemplate getRequestCompareTemplate(Config config, Event event, String templateVersion)
+    public static CompareTemplate getRequestMatchTemplate(Config config, Event event, String templateVersion)
         throws TemplateNotFoundException {
         TemplateKey tkey =
             new TemplateKey(templateVersion, event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+                event.app, event.service, event.apiPath, Type.RequestMatch);
 
         return config.comparatorCache.getComparator(tkey, event.eventType).getCompareTemplate();
     }
