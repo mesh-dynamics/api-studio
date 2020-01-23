@@ -1,20 +1,20 @@
 package com.cubeui.backend.security.jwt;
 
-import javax.servlet.http.HttpServletResponse;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.GenericFilterBean;
+import java.io.IOException;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.util.Enumeration;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.GenericFilterBean;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JwtTokenFilter extends GenericFilterBean {
@@ -34,6 +34,7 @@ public class JwtTokenFilter extends GenericFilterBean {
 
         try {
             if (token != null && jwtTokenProvider.validateToken(token)) {
+                log.trace("Token validation passed ");
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
 
                 if (auth != null) {
