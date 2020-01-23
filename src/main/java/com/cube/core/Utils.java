@@ -389,7 +389,7 @@ public class Utils {
     private static String generateTraceId() {
         long high = random.nextLong();
         long low = random.nextLong();
-        char[] result = new char[high != 0 ? 32 : 16];
+        char[] result = new char[32];
         int pos = 0;
         writeHexLong(result, pos, high);
         pos += 16;
