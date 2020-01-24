@@ -533,10 +533,9 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
             // Append Test Paths
+            // If not specified, it will run all paths
             if(testPaths && testPaths.length !== 0) {
                 testPaths.map(path => searchParams.append("paths", path))
-            } else {
-                alert("Test Path Not Found");
             }
 
             const configForHTTP = {
@@ -582,38 +581,3 @@ const mapStateToProps = (state) => ({
 });
 
 export default connect(mapStateToProps)(ViewSelectedTestConfig);
-
-// function mapStateToProps(state) {
-//     const cube = state.cube;
-//     return {
-//         cube
-//     }
-// }
-
-// const connectedViewSelectedTestConfig = connect(mapStateToProps)(ViewSelectedTestConfig);
-
-// export default connectedViewSelectedTestConfig
-        // this.doReplay = true;
-        // this.hideModalForFC = true;
-        // this.handleChangeForTestIds = this.handleChangeForTestIds.bind(this);
-        // this.replay = this.replay.bind(this);
-        // this.handleChangeForInstance = this.handleChangeForInstance.bind(this);
-        // this.getReplayStatus = this.getReplayStatus.bind(this);
-        // this.handleFC = this.handleFC.bind(this);
-
-                    // if (cube.selectedApp != 'Cube') {
-            //     searchParams.set('paths', 'minfo/listmovies');
-            //     searchParams.append('paths', 'minfo/returnmovie');
-            //     searchParams.append('paths', 'minfo/rentmovie');
-            //     searchParams.append('paths', 'minfo/liststores');
-            // }
-// const mapStateToProps = (state) => {
-//     const { cube, authentication } = state;
-//     return {
-//         cube, authentication
-//     };
-// }
-
-// const connectedViewSelectedTestConfig = connect(mapStateToProps)(ViewSelectedTestConfig);
-
-// export default connectedViewSelectedTestConfig
