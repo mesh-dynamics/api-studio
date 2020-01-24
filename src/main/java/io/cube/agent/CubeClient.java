@@ -37,42 +37,9 @@ public class CubeClient {
 
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
-	WebTarget getCubeRecordService() {
-		CommonConfig config = null;
-		try {
-			config = CommonConfig.getInstance();
-		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Error while getting Common config instance" )), e);
-		}
-		ClientConfig clientConfig = new ClientConfig()
-			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
-			.property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
-		Client restClient = ClientBuilder.newClient(clientConfig);
-		WebTarget cubeRecordService = restClient.target(config.CUBE_RECORD_SERVICE_URI);
-		return cubeRecordService;
-	}
-
-	WebTarget getCubeMockService()  {
-		CommonConfig config = null;
-		try {
-			config = CommonConfig.getInstance();
-		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Error while getting Common config instance" )), e);
-		}
-		ClientConfig clientConfig = new ClientConfig()
-			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
-			.property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
-		Client restClient = ClientBuilder.newClient(clientConfig);
-		WebTarget cubeMockService = restClient.target(config.CUBE_MOCK_SERVICE_URI);
-		return cubeMockService;
-	}
-
 	public CubeClient(ObjectMapper jsonMapper) throws Exception {
 		this.jsonMapper = jsonMapper;
 	}
-
 
 	private Optional<String> getResponse(Invocation invocation) {
 		CommonConfig config = null;
@@ -145,14 +112,14 @@ public class CubeClient {
 
 
 	public Optional<String> storeFunctionReqResp(FnReqResponse fnReqResponse)  {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder = cubeRecordService.path("cs").path("fr")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, fnReqResponse);
 	}
 
 	public Optional<String> storeSingleReqResp(ReqResp reqResp)  {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder = cubeRecordService.path("cs").path("rr")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, reqResp);
@@ -160,7 +127,7 @@ public class CubeClient {
 
 
 	public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse)  {
-		WebTarget cubeMockService = getCubeMockService();
+		WebTarget cubeMockService = CommonConfig.getInstance().getCubeMockService();
 		Invocation.Builder builder = cubeMockService.path("ms").path("fr")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, fnReqResponse).flatMap(response -> {
@@ -176,7 +143,7 @@ public class CubeClient {
 	}
 
 	public Optional<FnResponse> getMockResponse(Event event) {
-		WebTarget cubeMockService = getCubeMockService();
+		WebTarget cubeMockService = CommonConfig.getInstance().getCubeMockService();
 		Invocation.Builder builder = cubeMockService.path("ms").path("mockFunction")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, event).flatMap(response -> {
@@ -192,7 +159,7 @@ public class CubeClient {
 	}
 
 	public Optional<Event> getMockThriftResponse(Event event)  {
-		WebTarget cubeMockService = getCubeMockService();
+		WebTarget cubeMockService = CommonConfig.getInstance().getCubeMockService();
 		Invocation.Builder builder = cubeMockService.path("ms").path("thrift").request(MediaType.APPLICATION_JSON);
 		return getResponse(builder, event).flatMap(response -> {
 			try {
@@ -208,7 +175,7 @@ public class CubeClient {
 
 	public Optional<String> startRecording(String customerid, String app, String instanceid,
 		String collection) {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("cs").path("start").path(customerid).path(app).path(instanceid)
 				.path(collection)
@@ -218,7 +185,7 @@ public class CubeClient {
 	}
 
 	public Optional<String> stopRecording(String customerid, String app, String collection) {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("cs").path("stop").path(customerid).path(app).path(collection)
 				.request(MediaType.APPLICATION_FORM_URLENCODED);
@@ -229,7 +196,7 @@ public class CubeClient {
 	public Optional<String> initReplay(String customerid, String app, String instanceid,
 		String collection,
 		String endpoint) {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("rs").path("init").path(customerid).path(app).path(collection)
 				.request(MediaType.APPLICATION_FORM_URLENCODED);
@@ -241,7 +208,7 @@ public class CubeClient {
 	}
 
 	public Optional<String> forceStartReplay(String replayid)  {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("rs").path("forcestart").path(replayid).request();
 		CommonUtils.addTraceHeaders(builder, "POST");
@@ -250,7 +217,7 @@ public class CubeClient {
 
 
 	public Optional<String> forceCompleteReplay(String replayid) {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("rs").path("forcecomplete").path(replayid).request();
 		CommonUtils.addTraceHeaders(builder, "POST");
@@ -258,7 +225,7 @@ public class CubeClient {
 	}
 
 	public Optional<String> storeEvent(Event event) {
-		WebTarget cubeRecordService = getCubeRecordService();
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder = cubeRecordService.path("cs").path("storeEvent")
 			.request(MediaType.TEXT_PLAIN);
 		try {
