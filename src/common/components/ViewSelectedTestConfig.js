@@ -515,6 +515,8 @@ class ViewSelectedTestConfig extends React.Component {
 
     replay = () => {
         const { cube, dispatch, authentication } = this.props;
+        const { testConfig: { testPaths }} = cube;
+
         cubeActions.clearReplayStatus();
         if (!cube.selectedTestId) {
             alert('select golden to replay');
