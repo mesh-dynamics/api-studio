@@ -95,7 +95,7 @@ class GoldenPopover extends React.Component {
                 serviceId: cube.pathResultsParams.service,
                 path: cube.pathResultsParams.path,
                 version: cube.pathResultsParams.currentTemplateVer,
-                reqOrResp: "Response"
+                reqOrResp: "ResponseCompare"
             };
             key = JSON.stringify(keyObj);
             dispatch(cubeActions.pushNewOperationKeyToOperations(operationsObj, key));
@@ -511,7 +511,7 @@ class GoldenPopover extends React.Component {
         let { cube, jsonPath } = this.props;
         jsonPath = jsonPath.replace("<BEGIN>", "");
         let response, json;
-        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
+        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}/ResponseCompare?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
 
         let newRule = {};
         try {
