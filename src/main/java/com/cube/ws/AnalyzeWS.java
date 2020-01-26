@@ -858,7 +858,7 @@ public class AnalyzeWS {
             TemplateSetTransformer transformer = new TemplateSetTransformer();
             // transform the template set based on the operations specified
             TemplateSet updated = templateSetOpt.flatMap(templateSet -> updateOperationSetOpt.map(updateOperationSet ->
-                transformer.updateTemplateSet(templateSet, updateOperationSet)))
+                transformer.updateTemplateSet(templateSet, updateOperationSet, config.comparatorCache)))
                 .orElseThrow(() -> new Exception("Missing template set or template update operation set"));
 
             // Validate updated template set
@@ -922,8 +922,16 @@ public class AnalyzeWS {
             }
 
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
-                .templateVersion).orElseThrow(() ->
-                new Exception("Unable to find template set mentioned in the specified golden set"));
+                .templateVersion)
+                .or(() -> {
+                    if ("DEFAULT".equals(originalRec.templateVersion)) {
+                        return Optional.of(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
+                            originalRec.app, Instant.now(), Collections.emptyList()));
+                    }
+                    return Optional.empty();
+                })
+                .orElseThrow(() ->
+                    new Exception("Unable to find template set mentioned in the specified golden set"));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
                     new Exception("Unable to find Template Update Operation Set of specified id"));
