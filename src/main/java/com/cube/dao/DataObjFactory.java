@@ -6,6 +6,9 @@
 
 package com.cube.dao;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
@@ -26,7 +29,8 @@ public class DataObjFactory {
 
     private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);
 
-    public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
+    // Http headers are case insensitive
+    public static final List<String> HTTP_CONTENT_TYPE_PATHS = List.of("/hdrs/content-type/0", "/hdrs/Content-type/0", "/hdrs/Content-Type/0", "/hdrs/content-Type/0");
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
         Config config, Map<String, Object> params) {
@@ -36,11 +40,18 @@ public class DataObjFactory {
             case HTTPResponse:
                 JsonDataObj obj = new JsonDataObj(payloadStr, config.jsonMapper);
                 String mimeType = MediaType.TEXT_PLAIN;
-                try {
-                    mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
-                } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.info("Content-type not found, using default of TEXT_PLAIN for payload: "
-                        + payloadStr);
+                boolean defaultMimeType = true;
+
+                for (String HTTP_CONTENT_TYPE_PATH : HTTP_CONTENT_TYPE_PATHS) {
+                    try {
+                        mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
+                        defaultMimeType = false;
+                    } catch (DataObj.PathNotFoundException e) {
+                        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Content-type not found for field " + HTTP_CONTENT_TYPE_PATH)));
+                    }
+                }
+                if(defaultMimeType) {
+                    LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Content-type not found, using default of TEXT_PLAIN")));
                 }
                 obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
                 return obj;
@@ -66,13 +77,21 @@ public class DataObjFactory {
             case HTTPRequest:
             case HTTPResponse:
                 String mimeType = MediaType.TEXT_PLAIN;
-                try {
-                    mimeType = dataObj.getValAsString(HTTP_CONTENT_TYPE_PATH);
-                } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.info(new ObjectMessage(Map.of(
-                        Constants.MESSAGE, "Content-type not found, using default of TEXT_PLAIN"
-                    )));
+
+                boolean defaultMimeType = true;
+
+                for (String HTTP_CONTENT_TYPE_PATH : HTTP_CONTENT_TYPE_PATHS) {
+                    try {
+                        mimeType = dataObj.getValAsString(HTTP_CONTENT_TYPE_PATH);
+                        defaultMimeType = false;
+                    } catch (DataObj.PathNotFoundException e) {
+                        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Content-type not found for field " + HTTP_CONTENT_TYPE_PATH)));
+                    }
                 }
+                if(defaultMimeType) {
+                    LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Content-type not found, using default of TEXT_PLAIN")));
+                }
+                
                 dataObj.wrapAsString(Constants.BODY_PATH, mimeType);
                 return;
             case JavaRequest:
