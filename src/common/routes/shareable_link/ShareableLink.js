@@ -422,7 +422,7 @@ class ShareableLink extends Component {
                 replayedData = "";
             }
             let diff;
-
+            
             if (item.respCompDiff && item.respCompDiff.length !== 0) {
                 diff = item.respCompDiff;
             } else {
@@ -572,7 +572,7 @@ class ShareableLink extends Component {
     };
 
     render() {
-        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
+        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType, replayId, app, service, apiPath} = this.state;
         let apiPaths = [], services = [], resolutionTypes = [];
         let apiPathIndicators = {};
         const {cube, history} = this.props;
@@ -749,7 +749,12 @@ class ShareableLink extends Component {
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
-                    {item.path}
+                    <div style={{display: "inline-block"}}>{item.path}</div>
+                    <div style={{float: "right", display: "inline-block"}}>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                            <span className=""><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
+                        </Button>
+                    </div>
                 </div>
                 {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders && item.replayedRequestHeaders && (
                     <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
