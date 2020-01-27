@@ -1,8 +1,8 @@
 package io.cube.agent;
 
-import static io.cube.agent.UtilException.rethrowFunction;
 import static io.md.utils.CommonUtils.createEvent;
 import static io.md.utils.CommonUtils.createPayload;
+import static io.md.utils.UtilException.rethrowFunction;
 
 import java.lang.reflect.Type;
 import java.time.Instant;

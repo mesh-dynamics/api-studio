@@ -1,29 +1,19 @@
 package io.cube.agent;
 
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
 
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 
 import io.md.constants.Constants;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
-import io.md.dao.Event.EventType;
-import io.md.dao.Event.RunType;
-import io.md.utils.CommonUtils;
-
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
-	@Inject
-	CommonConfig commonConfig;
 
 	public FluentDLogRecorder(Gson gson) {
 		super(gson);
@@ -51,6 +41,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 		try {
 			// TODO might wanna explore java fluent logger
 			// https://github.com/fluent/fluent-logger-java
+			CommonConfig commonConfig = CommonConfig.getInstance();
 			Optional<DataObj> payloadOptional = Utils.encryptFields(commonConfig, event);
 
 			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
