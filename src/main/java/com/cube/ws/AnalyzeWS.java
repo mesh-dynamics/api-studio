@@ -858,7 +858,7 @@ public class AnalyzeWS {
             TemplateSetTransformer transformer = new TemplateSetTransformer();
             // transform the template set based on the operations specified
             TemplateSet updated = templateSetOpt.flatMap(templateSet -> updateOperationSetOpt.map(updateOperationSet ->
-                transformer.updateTemplateSet(templateSet, updateOperationSet)))
+                transformer.updateTemplateSet(templateSet, updateOperationSet, config.comparatorCache)))
                 .orElseThrow(() -> new Exception("Missing template set or template update operation set"));
 
             // Validate updated template set
@@ -921,14 +921,18 @@ public class AnalyzeWS {
                 throw new Exception("Golden already present for name - " + name + " .Specify unique name");
             }
 
+            // creating a new temporary empty template set against the old version
+	        // (if one doesn't exist already)
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
-                .templateVersion).orElseThrow(() ->
-                new Exception("Unable to find template set mentioned in the specified golden set"));
+                .templateVersion)
+                .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
+	                originalRec.app, Instant.now(), Collections.emptyList()));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
-            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
+            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(
+            	templateSet, templateUpdateOperationSet, config.comparatorCache);
 
 	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
 		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
