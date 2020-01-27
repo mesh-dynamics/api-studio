@@ -61,6 +61,7 @@ import com.cube.core.Utils;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
 import com.cube.dao.CubeMetaInfo;
+import com.cube.dao.DataObj;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
@@ -1206,6 +1207,97 @@ public class AnalyzeWS {
             LOGGER.error("error applying operation set");
             return Response.serverError().build();
         }
+    }
+
+	/**
+	 * API to return Golden insights for a given golden Id, service and path
+	 * @param recordingId
+	 * @param formParams
+	 * @return
+	 */
+	@GET
+    @Path("goldenInsights/{recordingId}")
+	@Consumes("application/x-www-form-urlencoded")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response goldenInsights(@PathParam("recordingId") String recordingId,
+		MultivaluedMap<String, String> formParams) {
+
+		try {
+			Recording recording = rrstore.getRecording(recordingId).orElseThrow(() ->
+				new Exception("Unable to find recording object for the given id"));
+
+			String service = formParams.getFirst(Constants.SERVICE_FIELD);
+			if (service == null) {
+				throw new Exception("Service not specified for golden");
+			}
+
+			String apiPath = formParams.getFirst(Constants.API_PATH_FIELD);
+			if (apiPath == null) {
+				throw new Exception("ApiPath not specified for golden");
+			}
+
+			List<Event> requests = rrstore.getRequests(recording.customerId, recording.app, recording.collection,
+				List.of(service), List.of(apiPath)).getObjects().collect(Collectors.toList());
+
+			if(requests.isEmpty()) throw new Exception("No request found for specified fields");
+
+			// Get the first request for which response is present
+			Event request = requests.get(0);
+			Optional<Event> responseOptional = Optional.empty();
+			for (Event r : requests) {
+				request = r;
+				responseOptional = rrstore.getRespEventForReqEvent(r);
+				if(responseOptional.isPresent()) break;
+			}
+
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put(Constants.RECORDING_ID, recordingId);
+			jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString(config));
+
+			TemplateKey requestCompareTkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
+				Type.RequestCompare);
+
+			Optional<CompareTemplate> requestCompareTemplateOptional = rrstore.getCompareTemplate(requestCompareTkey);
+			Event finalRequest = request;
+			requestCompareTemplateOptional.ifPresentOrElse(UtilException.rethrowConsumer(requestCompareTemplate -> {
+				DataObj requestPayload = finalRequest.getPayload(config);
+				Map<String, TemplateEntry> requestCompareRules = new HashMap<>();
+				requestPayload.getPathRules(requestCompareTemplate, requestCompareRules);
+				jsonObject.put(Constants.REQUEST_COMPARE_RULES, jsonMapper.writeValueAsString(requestCompareRules));
+			}), ()-> jsonObject.put(Constants.REQUEST_COMPARE_RULES, (Collection<?>) null));
+
+
+
+			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
+				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString(config));
+
+				TemplateKey responseCompareTkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
+					Type.ResponseCompare);
+
+				Optional<CompareTemplate> responseCompareTemplateOptional = rrstore.getCompareTemplate(responseCompareTkey);
+				responseCompareTemplateOptional.ifPresentOrElse(UtilException.rethrowConsumer(responseCompareTemplate -> {
+					DataObj responsePayload = response.getPayload(config);
+					Map<String, TemplateEntry> responseCompareRules = new HashMap<>();
+					responsePayload.getPathRules(responseCompareTemplate, responseCompareRules);
+					jsonObject.put(Constants.RESPONSE_COMPARE_RULES, jsonMapper.writeValueAsString(responseCompareRules));
+				}), ()-> jsonObject.put(Constants.RESPONSE_COMPARE_RULES, (Collection<?>) null));
+			})
+				, ()->{
+				jsonObject.put(Constants.RESPONSE, (Collection<?>) null);
+				jsonObject.put(Constants.RESPONSE_COMPARE_RULES, (Collection<?>) null);
+
+			});
+
+			return Response.ok().entity(jsonObject.toString()).build();
+
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while returning golden insights",
+				Constants.RECORDING_ID, recordingId)),e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while returning golden insights",
+					e.getMessage())).build();
+		}
+
     }
 
         /**

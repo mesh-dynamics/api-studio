@@ -135,6 +135,18 @@ public interface ReqRespStore {
     Result<Event> getRequests(String customerId, String app, String collection, List<String> reqids
 			, List<String> paths, Event.RunType runType);
 
+	/**
+	 *
+	 * @param customerId
+	 * @param app
+	 * @param collection
+	 * @param services
+	 * @param paths
+	 * @return
+	 */
+	Result<Event> getRequests(String customerId, String app, String collection, List<String> services,
+		List<String> paths);
+
     Result<Event> getEvents(EventQuery eventQuery);
 
     Optional<Event> getSingleEvent(EventQuery eventQuery);

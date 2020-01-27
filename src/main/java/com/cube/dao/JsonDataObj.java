@@ -32,6 +32,7 @@ import io.cube.agent.UtilException;
 
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateEntry;
 import com.cube.cryptography.EncryptionAlgorithm;
 import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.golden.JsonTransformer;
@@ -105,6 +106,13 @@ public class JsonDataObj implements DataObj {
         // Using json pointer to handle proper escaping in case keys have special characters
         JsonPointer path = JsonPointer.compile("");
         processNode(objRoot, filter, vals, path);
+    }
+
+    @Override
+    public void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals) {
+        // Using json pointer to handle proper escaping in case keys have special characters
+        JsonPointer path = JsonPointer.compile("");
+        getPathRules(objRoot, template, vals, path);
     }
 
     @Override
@@ -245,6 +253,26 @@ public class JsonDataObj implements DataObj {
             }
         }
         return Optional.empty();
+    }
+
+    private void getPathRules(JsonNode node, CompareTemplate template, Map<String, TemplateEntry> vals, JsonPointer path) {
+        if (node.isValueNode()) {
+                vals.put(path.toString(), template.getRule(path.toString()));
+        } else if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> child = fields.next();
+                vals.put(path.toString(), template.getRule(path.toString()));
+                getPathRules(child.getValue(), template, vals, path.append(JsonPointer.compile("/" + child.getKey())));
+            }
+        } else if (node.isArray()) {
+            int idx = 0;
+            for (JsonNode child : node) {
+                vals.put(path.toString(), template.getRule(path.toString()));
+                getPathRules(child, template, vals, path.append(JsonPointer.compile("/" + idx)));
+                idx++;
+            }
+        }
     }
 
 
