@@ -921,17 +921,12 @@ public class AnalyzeWS {
                 throw new Exception("Golden already present for name - " + name + " .Specify unique name");
             }
 
+            // creating a new temporary empty template set against the old version
+	        // (if one doesn't exist already)
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
                 .templateVersion)
-                .or(() -> {
-                    if ("DEFAULT".equals(originalRec.templateVersion)) {
-                        return Optional.of(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
-                            originalRec.app, Instant.now(), Collections.emptyList()));
-                    }
-                    return Optional.empty();
-                })
-                .orElseThrow(() ->
-                    new Exception("Unable to find template set mentioned in the specified golden set"));
+                .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
+	                originalRec.app, Instant.now(), Collections.emptyList()));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
                     new Exception("Unable to find Template Update Operation Set of specified id"));
