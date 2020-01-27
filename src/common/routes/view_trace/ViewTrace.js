@@ -465,7 +465,7 @@ class ViewTrace extends Component {
                 replayedData = "";
             }
             let diff;
-            if (item.respCompDiff) {
+            if (item.respCompDiff && item.respCompDiff.length !== 0) {
                 diff = item.respCompDiff;
             } else {
                 diff = [];
