@@ -70,7 +70,8 @@ public class CommonConfig {
 				InputStream input = new FileInputStream(configFilePath);
 				Properties dynamicProperties = new Properties();
 				dynamicProperties.load(input);
-				singleInstance.compareAndSet(singleInstance.get(), new CommonConfig(dynamicProperties));
+				// Using just set instead of compareAndSet as the value being set is independent of the current value.
+				singleInstance.set(new CommonConfig(dynamicProperties));
 			} catch (Exception e) {
 				LOGGER.error(new ObjectMessage(Map.of(
 					Constants.MESSAGE, "Error in updating common config object in thread")), e);
