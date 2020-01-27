@@ -936,7 +936,8 @@ public class AnalyzeWS {
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
-            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
+            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(
+            	templateSet, templateUpdateOperationSet, config.comparatorCache);
 
 	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
 		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
