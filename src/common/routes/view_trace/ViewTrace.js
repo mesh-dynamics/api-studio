@@ -193,12 +193,6 @@ class ViewTrace extends Component {
         });
     }
 
-    componentDidUpdate(prevProps, prevState) {
-    }
-
-    componentWillUnmount() {
-    }
-
     handleSearchFilterChange(e) {
 
         this.setState({ searchFilterPath: e.target.value });
@@ -231,7 +225,6 @@ class ViewTrace extends Component {
                 }
             }
         }
-        console.log("flattenTree: ", result);
         return result;
     }
 
@@ -310,11 +303,6 @@ class ViewTrace extends Component {
                 fetchedResults = dataList.data.res.length;
                 totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
-                /* this.setState({
-                    app: dataList.data.app,
-                    templateVersion: dataList.data.templateVersion,
-                    fetchedResults: fetchedResults
-                }); */
                 let requestHeaders = {
                     headers: {
                         "cache-control": "no-cache",
@@ -335,12 +323,6 @@ class ViewTrace extends Component {
                         let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
-                    /* this.setState({
-                        fetchComplete: true,
-                        app: dataList.data.app,
-                        templateVersion: dataList.data.templateVersion,
-                        fetchedResults: fetchedResults
-                    }); */
                     this.layoutDataWithDiff.sort((a, b) => {
                         let serviceA = a.service,
                             serviceB = b.service,
@@ -352,15 +334,12 @@ class ViewTrace extends Component {
                             return serviceA < serviceB ? -1 : 1;
                         }
                     });
-                    console.log("this.layoutDataWithDiff: ", this.layoutDataWithDiff);
                     let recordOnlyTree = this.layoutDataWithDiff.filter((item) => {
                         return (item.recordReqId && item.replayReqId) || item.recordReqId; 
                     });
                     let replayOnlyTree = this.layoutDataWithDiff.filter((item) => {
                         return (item.recordReqId && item.replayReqId) || item.replayReqId; 
                     });
-                    console.log("recordOnlyTree: ", recordOnlyTree);
-                    console.log("replayOnlyTree: ", replayOnlyTree);
                     for (let eachElementObject of this.layoutDataWithDiff) {
                         let tempId = eachElementObject.recordReqId + eachElementObject.replayReqId;
                         let isFound = false;
@@ -384,17 +363,12 @@ class ViewTrace extends Component {
                             return serviceA < serviceB ? -1 : 1;
                         }
                     });
-                    console.log("this.uniqueRecordReplayData: ", this.uniqueRecordReplayData);
-                    //let processedTraceDataTree = arrayToTree(this.uniqueRecordReplayData, { customID: 'recordedSpanId', parentProperty: 'recordedParentSpanId' });
+                    
                     let recProcessedTraceDataTree = arrayToTree(recordOnlyTree, { customID: 'recordedSpanId', parentProperty: 'recordedParentSpanId' });
                     let repProcessedTraceDataTree = arrayToTree(replayOnlyTree, { customID: 'replayedSpanId', parentProperty: 'replayedParentSpanId' });
-                    console.log("recProcessedTraceDataTree: ", recProcessedTraceDataTree);
-                    console.log("repProcessedTraceDataTree: ", repProcessedTraceDataTree);
                     let recProcessedTraceDataFlattenTree = this.flattenTree(recProcessedTraceDataTree);
                     let repProcessedTraceDataFlattenTree = this.flattenTree(repProcessedTraceDataTree);
                     this.setState({
-                        //processedTraceDataTree: this.state.processedTraceDataTree.concat(processedTraceDataTree),
-                        //processedTraceDataFlattenTree: this.state.processedTraceDataFlattenTree.concat(processedTraceDataFlattenTree),
                         recProcessedTraceDataTree: this.state.recProcessedTraceDataTree.concat(recProcessedTraceDataTree),
                         repProcessedTraceDataTree: this.state.repProcessedTraceDataTree.concat(repProcessedTraceDataTree),
                         recProcessedTraceDataFlattenTree: this.state.recProcessedTraceDataFlattenTree.concat(recProcessedTraceDataFlattenTree),
@@ -764,26 +738,6 @@ class ViewTrace extends Component {
                             <h4><Glyphicon style={{ visibility:  "visible", paddingRight: "5px", fontSize: "14px" }} glyph="random" /> <span>Selected Diff</span></h4>
                         </div>
                         <FormGroup>
-                            {/* <Checkbox inline value="requestHeaders">Request Headers</Checkbox>
-                            <Checkbox inline value="requestParams">Request Params</Checkbox>
-                            <Checkbox inline value="requestBody">Request Body</Checkbox>
-                            <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                            <Checkbox inline value="responseHeaders">Response Headers</Checkbox>
-                            <Checkbox inline value="responseBody" >Response Body</Checkbox>
-                            
-                            <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
-                            <div style={{display: "inline-block"}}>
-                                <label className="checkbox-inline">
-                                    Resolution Type:
-                                </label>
-                                <div style={{ paddingLeft: "9px", display: "inline-block" }}>
-                                    <DropdownButton id="dropdown-size-medium">
-                                        <MenuItem eventKey="1">
-                                            <Glyphicon style={{ visibility: "visible" }} glyph="ok" /> All
-                                        </MenuItem>
-                                    </DropdownButton>
-                                </div>
-                            </div> */}
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                                 ref={this.inputElementRef}
                                 type="text"
@@ -803,7 +757,7 @@ class ViewTrace extends Component {
                                     splitView={true}
                                     disableWordDiff={false}
                                     diffArray={selectedDiffItem.reductedDiffArray}
-                                    onLineNumberClick={(lineId, e) => { console.log({ lineId, e }); }}
+                                    onLineNumberClick={(lineId, e) => { return lineId; }}
                                     inputElementRef={this.inputElementRef}
                                     showAll={this.state.showAll}
                                     searchFilterPath={this.state.searchFilterPath}
