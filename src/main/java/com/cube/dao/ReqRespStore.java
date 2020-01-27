@@ -526,18 +526,11 @@ public interface ReqRespStore {
 
     /**
      * Get results matching a path and other constraints
-     * @param replayId
-     * @param service
-     * @param path
-     * @param reqmt
-     * @param respmt
-     * @param start
-     * @param nummatches
+     * @param analysisMatchResultQuery
      * @return
      */
     Result<ReqRespMatchResult>
-    getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
-                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches, Optional<String> resolution);
+    getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
     /**
      * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType

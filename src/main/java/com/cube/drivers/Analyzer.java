@@ -6,6 +6,7 @@
 
 package com.cube.drivers;
 
+import static com.cube.core.Comparator.MatchType.DontCare;
 import static com.cube.core.Comparator.MatchType.ExactMatch;
 
 import java.util.Collection;
@@ -144,8 +145,9 @@ public class Analyzer {
                     bestmatch = match;
                     bestReqMt = reqMt;
                     // TODO : Should the break also based on bestmatch.getReqMt() == ExactMatch ?
-                    if (bestmatch.getReqCompareResType() == ExactMatch
-                        || bestmatch.getRespCompareResType() == ExactMatch) {
+                    if ((bestmatch.getReqCompareResType() == ExactMatch
+                        || bestmatch.getReqCompareResType() == DontCare)
+                        && bestmatch.getRespCompareResType() == ExactMatch) {
                         break;
                     }
                 }

@@ -11,6 +11,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -18,6 +20,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
+import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.Event;
 import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetMeta;
@@ -289,13 +292,7 @@ public class RecordingUpdate {
 
      Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId/*, RecordingOperationSetSP recordingOperationSetSP*/) {
         Result<ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
-            replayId,
-            Optional.empty(),//Optional.of(recordingOperationSetSP.service),
-            Optional.empty(),//Optional.of(recordingOperationSetSP.path),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(), Optional.empty()
+            new AnalysisMatchResultQuery(replayId, new MultivaluedHashMap<>())
         );
 
         return matchResults.getObjects();
