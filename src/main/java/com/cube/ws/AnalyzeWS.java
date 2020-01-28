@@ -1247,7 +1247,9 @@ public class AnalyzeWS {
 			for (Event r : requests) {
 				request = r;
 				responseOptional = rrstore.getRespEventForReqEvent(r);
-				if(responseOptional.isPresent()) break;
+				if(responseOptional.isPresent()) {
+					break;
+				}
 			}
 
 			JSONObject jsonObject = new JSONObject();
@@ -1264,7 +1266,10 @@ public class AnalyzeWS {
 				Map<String, TemplateEntry> requestCompareRules = new HashMap<>();
 				requestPayload.getPathRules(requestCompareTemplate, requestCompareRules);
 				jsonObject.put(Constants.REQUEST_COMPARE_RULES, jsonMapper.writeValueAsString(requestCompareRules));
-			}), ()-> jsonObject.put(Constants.REQUEST_COMPARE_RULES, (Collection<?>) null));
+			}),
+				()-> {
+					jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
+				});
 
 
 
@@ -1280,11 +1285,11 @@ public class AnalyzeWS {
 					Map<String, TemplateEntry> responseCompareRules = new HashMap<>();
 					responsePayload.getPathRules(responseCompareTemplate, responseCompareRules);
 					jsonObject.put(Constants.RESPONSE_COMPARE_RULES, jsonMapper.writeValueAsString(responseCompareRules));
-				}), ()-> jsonObject.put(Constants.RESPONSE_COMPARE_RULES, (Collection<?>) null));
+				}), ()-> jsonObject.put(Constants.RESPONSE_COMPARE_RULES, JSONObject.NULL));
 			})
 				, ()->{
-				jsonObject.put(Constants.RESPONSE, (Collection<?>) null);
-				jsonObject.put(Constants.RESPONSE_COMPARE_RULES, (Collection<?>) null);
+				jsonObject.put(Constants.RESPONSE, JSONObject.NULL);
+				jsonObject.put(Constants.RESPONSE_COMPARE_RULES, JSONObject.NULL);
 
 			});
 
