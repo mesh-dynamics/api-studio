@@ -57,6 +57,7 @@ public class Constants {
     public static final String BAD_VALUE_EXCEPTION = "BAD_VALUE_EXCEPTION";
     public static final String GENERIC_EXCEPTION = "GENERIC_EXCEPTION";
     public static final String RECORDING_SAVE_FAILURE_EXCEPTION = "RECORDING_SAVE_FAILURE_EXCEPTION";
+    public static final String RECORDING_SAME_NAME_EXCEPTION = "RECORDING_SAME_NAME_EXCEPTION";
 
 
     // Cryptography
