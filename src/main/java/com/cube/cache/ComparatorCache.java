@@ -34,6 +34,7 @@ import com.cube.core.CompareTemplate.DataType;
 import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.JsonComparator;
 import com.cube.core.TemplateEntry;
+import com.cube.core.Utils;
 import com.cube.dao.Event.EventType;
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;
@@ -108,26 +109,64 @@ public class ComparatorCache {
 
     }
 
+    /**
+     * This function is used during template rule update and get Existing Rule Api
+     * Will return defaults only for Response Compare Template,
+     * otherwise return whatever is find in cache/solr
+     * @param key
+     * @return
+     * @throws TemplateNotFoundException
+     */
     public Comparator getComparator(TemplateKey key) throws  TemplateNotFoundException {
-        String defaultEventType = rrStore.getDefaultEventType(key.getCustomerId()
+        // this will always return request type ... will have to be converted
+        // to Request / Response based on the key type
+        EventType defaultEventType = Utils.valueOf(EventType.class,
+            rrStore.getDefaultEventType(key.getCustomerId()
             , key.getAppId(), key.getServiceId(), key.getPath()).orElseThrow(
-            TemplateNotFoundException::new);
-        if ((HTTPResponse.name().equals(defaultEventType)
-            || HTTPRequest.name().equals(defaultEventType))
-            && Type.ResponseCompare == key.getReqOrResp())
-            return getComparator(key, HTTPResponse);
-        if ((ThriftResponse.name().equals(defaultEventType)
-            || ThriftRequest.name().equals(defaultEventType))
-            && Type.ResponseCompare == key.getReqOrResp())
-            return getComparator(key, ThriftResponse);
-        if ((JavaRequest.name().equals(defaultEventType)
-            || JavaResponse.name().equals(defaultEventType))
-            && Type.ResponseCompare == key.getReqOrResp())
-            return getComparator(key, JavaResponse);
-        throw new TemplateNotFoundException();
+            TemplateNotFoundException::new)).orElseThrow(TemplateNotFoundException::new);
+        EventType eventType;
+        boolean sendDefault = false;
+        switch(defaultEventType) {
+            case HTTPRequest:
+            case HTTPResponse:
+                if (key.getReqOrResp() == Type.ResponseCompare) {
+                    eventType = HTTPResponse;
+                    sendDefault = true;
+                } else {
+                    eventType = HTTPRequest;
+                }
+                break;
+            case ThriftRequest:
+            case ThriftResponse:
+                if (key.getReqOrResp() == Type.ResponseCompare) {
+                    eventType = ThriftResponse;
+                    sendDefault = true;
+                } else {
+                    eventType = ThriftRequest;
+                }
+                break;
+            case JavaRequest:
+            case JavaResponse:
+                if (key.getReqOrResp() == Type.ResponseCompare) {
+                    eventType = JavaResponse;
+                    sendDefault = true;
+                } else {
+                    eventType = JavaRequest;
+                }
+                break;
+            default:
+                throw new TemplateNotFoundException();
+        }
+        return getComparator(key, eventType, sendDefault);
     }
 
-    public Comparator getComparator(TemplateKey key, EventType eventType) throws TemplateNotFoundException {
+
+    public Comparator getComparator(TemplateKey key, EventType eventType) throws
+        TemplateNotFoundException {
+        return getComparator(key, eventType, true);
+    }
+
+    private Comparator getComparator(TemplateKey key, EventType eventType, boolean sendDefault) throws TemplateNotFoundException {
         try {
             return comparatorCache.get(key, () -> {
                 Comparator toReturn = createComparator(key, eventType);
@@ -139,6 +178,9 @@ public class ComparatorCache {
             });
 
         } catch (ExecutionException e) {
+            if (!sendDefault) {
+                throw new TemplateNotFoundException();
+            }
             LOGGER.info(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Unable to find template in cache, using default",
                 "key", key,
