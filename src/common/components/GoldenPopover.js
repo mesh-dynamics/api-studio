@@ -39,10 +39,10 @@ class GoldenPopover extends React.Component {
             },
             newRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
-                "dt": "",
-                "pt": "",
-                "ct": "",
-                "em": "",
+                "dt": "Default",
+                "pt": "Optional",
+                "ct": "Ignore",
+                "em": "Default",
                 "customization": null
             },
             summaryInput: this.getDefaultSummary(this.props.cube),
@@ -61,6 +61,7 @@ class GoldenPopover extends React.Component {
         newRule[tag] = evt.target.value;
         dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule));
         this.setState({ newRule: newRule });
+
     }
 
     getKeyFromTOS = () => {
@@ -160,13 +161,19 @@ class GoldenPopover extends React.Component {
         this.setState({ showGolden: true });
     }
 
-    showRuleModal() {
+    async showRuleModal() {
         const { cube, jsonPath } = this.props;
         if (cube.ruleBook[jsonPath.replace("<BEGIN>", "")]) {
-            let rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
+            const rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
             this.setState({ defaultRule: { ...rule }, newRule: { ...rule } });
         } else {
-            this.getResponseTemplate();
+            
+            try {
+                const newlyFetchedRule = await this.getResponseTemplate();
+                this.setState({ defaultRule: { ...newlyFetchedRule }, newRule: { ...newlyFetchedRule } });
+            } catch (e) {
+                console.log("Failed to fetch rules from api.");
+            }
         }
         this.setState({ showRule: true });
     }
@@ -510,21 +517,19 @@ class GoldenPopover extends React.Component {
         let user = JSON.parse(localStorage.getItem('user'));
         let { cube, jsonPath } = this.props;
         jsonPath = jsonPath.replace("<BEGIN>", "");
-        let response, json;
         let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}/ResponseCompare?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
-
-        let newRule = {};
+        
         try {
-            response = await fetch(url, {
-                method: "get",
-                headers: new Headers({
-                    "cache-control": "no-cache",
-                    "Authorization": "Bearer " + user['access_token']
-                })
-            });
+            const response = await fetch(url, {
+                    method: "get",
+                    headers: new Headers({
+                        "cache-control": "no-cache",
+                        "Authorization": "Bearer " + user['access_token']
+                    })
+                });
+
             if (response.ok) {
-                json = await response.json();
-                newRule = json;
+                return await response.json();
             } else {
                 console.log("Response not ok in fetchTimeline", response);
                 throw new Error("Response not ok fetchTimeline");
@@ -533,7 +538,6 @@ class GoldenPopover extends React.Component {
             console.log("fetchTimeline has errors!", e);
             throw e;
         }
-        this.setState({ defaultRule: { ...newRule }, newRule: { ...newRule } });
     }
 
     async createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath) {

@@ -1096,7 +1096,7 @@ class ShareableLink extends Component {
             data: cube.templateOperationSetObject,
             headers: headers
         });
-
+        
         const goldenUpdate = axios({
             method: 'post',
             url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
