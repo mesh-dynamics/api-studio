@@ -57,7 +57,7 @@ public class AnalysisMatchResultQuery {
 			.flatMap(Utils::strToInt); // for paging
 		this.numMatches =
 			Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD))
-				.flatMap(Utils::strToInt); // for paging
+				.flatMap(Utils::strToInt).or(() -> Optional.of(20)); // for paging
 		this.reqMatchType = Optional
 			.ofNullable(queryParams.getFirst(Constants.REQ_MATCH_TYPE))
 			.flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
