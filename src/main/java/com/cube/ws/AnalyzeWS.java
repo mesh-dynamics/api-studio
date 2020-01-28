@@ -1257,7 +1257,7 @@ public class AnalyzeWS {
 			jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString(config));
 
 			TemplateKey requestCompareTkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
-				Type.RequestCompare);
+				TemplateKey.Type.RequestCompare);
 
 			Optional<CompareTemplate> requestCompareTemplateOptional = rrstore.getCompareTemplate(requestCompareTkey);
 			Event finalRequest = request;
@@ -1267,7 +1267,7 @@ public class AnalyzeWS {
 				requestPayload.getPathRules(requestCompareTemplate, requestCompareRules);
 				jsonObject.put(Constants.REQUEST_COMPARE_RULES, jsonMapper.writeValueAsString(requestCompareRules));
 			}),
-				()-> {
+				() -> {
 					jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
 				});
 
@@ -1277,7 +1277,7 @@ public class AnalyzeWS {
 				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString(config));
 
 				TemplateKey responseCompareTkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
-					Type.ResponseCompare);
+					TemplateKey.Type.ResponseCompare);
 
 				Optional<CompareTemplate> responseCompareTemplateOptional = rrstore.getCompareTemplate(responseCompareTkey);
 				responseCompareTemplateOptional.ifPresentOrElse(UtilException.rethrowConsumer(responseCompareTemplate -> {
