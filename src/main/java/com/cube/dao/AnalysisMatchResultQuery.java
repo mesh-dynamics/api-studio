@@ -26,7 +26,7 @@ public class AnalysisMatchResultQuery {
 	public final Optional<String> replayReqId;
 	//public final Optional<String> replayReqTraceId;
 	/*public final Optional<String> recParentSpanId;
-	public final Optional<String> replayParentSpanId*/;
+	public final Optional<String> replayParentSpanId*/
 
 	public AnalysisMatchResultQuery(String replayId, MultivaluedMap<String, String> queryParams) {
 		this.replayId =replayId;
@@ -38,7 +38,7 @@ public class AnalysisMatchResultQuery {
 			.flatMap(Utils::strToInt); // for paging
 		this.numMatches =
 			Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD))
-				.flatMap(Utils::strToInt).or(() -> Optional.of(20)); // for paging
+				.flatMap(Utils::strToInt); // for paging
 		this.reqMatchType = Optional
 			.ofNullable(queryParams.getFirst(Constants.REQ_MATCH_TYPE))
 			.flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
