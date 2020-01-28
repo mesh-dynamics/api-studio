@@ -154,7 +154,7 @@ public class JsonDataObj implements DataObj {
             if (val != null && val.isTextual()) {
                 // parse it as per mime type
                 // currently handling only json type
-                if (mimetype.equals(MediaType.APPLICATION_JSON)) {
+                if (mimetype.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)) {
                     try {
                         JsonNode parsedVal = jsonMapper.readTree(val.asText());
                         valParentObj.set(fieldName, parsedVal);
