@@ -28,6 +28,25 @@ public class AnalysisMatchResultQuery {
 	/*public final Optional<String> recParentSpanId;
 	public final Optional<String> replayParentSpanId*/
 
+	public AnalysisMatchResultQuery(String replayId) {
+		this.replayId = replayId;
+		service = Optional.empty();
+		apiPath = Optional.empty();
+		reqMatchType = Optional.empty();
+		reqCompResType = Optional.empty();
+		respCompResType = Optional.empty();
+		start = Optional.empty();
+		numMatches = Optional.empty();
+		diffJsonPath = Optional.empty();
+		diffResolution = Optional.empty();
+		diffType = Optional.empty();
+		traceId = Optional.empty();
+		recordReqId = Optional.empty();
+		replayReqId = Optional.empty();
+
+	}
+
+
 	public AnalysisMatchResultQuery(String replayId, MultivaluedMap<String, String> queryParams) {
 		this.replayId =replayId;
 		this.service = Optional
