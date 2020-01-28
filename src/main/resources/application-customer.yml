@@ -53,4 +53,4 @@ logging:
 
 cube:
     server:
-        baseUrl: http://demo.prod.v2.cubecorp.io
+        baseUrl: http://cubews-record.cube.svc.cluster.local
