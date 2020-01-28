@@ -67,18 +67,10 @@ public class TemplateSetTransformer {
                 //construct a new CompareTemplateVersion
                 CompareTemplate template = null;
                 try {
-                    // this is the case when the original Template Set doesn't contain any template for the
-                    // api path being considered .. fetching it from the cache will initialize it to a default
-                    // compare template ... which will be then merged with the update rules and stored in solr
-                    // TODO take care of other event types (Function, Thrift) will have to come from some parameter of
-                    // template key
-                    Event.EventType eventType = Optional.of(key.getReqOrResp()).map(templateType ->
-                    {   if (TemplateKey.Type.RequestMatch == templateType) return Event.EventType.HTTPRequest;
-                        if (TemplateKey.Type.ResponseCompare == templateType) return Event.EventType.HTTPResponse;
-                        return null;
-                    }).orElseThrow(ComparatorCache.TemplateNotFoundException::new);
+                    // try to get default compare template based on event type
+                    // queried from backend store for the given api path
                     template = comparatorCache
-                        .getComparator(key, eventType).getCompareTemplate();
+                        .getComparator(key).getCompareTemplate();
                 } catch (ComparatorCache.TemplateNotFoundException e) {
                     LOGGER.error(new ObjectMessage(Map.of(
                         Constants.MESSAGE, "Unable to fetch DEFAULT template from comparator " +

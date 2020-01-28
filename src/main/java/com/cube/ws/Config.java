@@ -95,7 +95,7 @@ public class Config {
             solr = new HttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
             templateCache = new TemplateCache(rrstore , this);
-            comparatorCache = new ComparatorCache(templateCache, jsonMapper);
+            comparatorCache = new ComparatorCache(templateCache, jsonMapper, rrstore);
             replayResultCache = new ReplayResultCache(rrstore, this);
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);

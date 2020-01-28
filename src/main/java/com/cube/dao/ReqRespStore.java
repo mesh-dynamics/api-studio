@@ -639,4 +639,7 @@ public interface ReqRespStore {
     public void invalidateCurrentCollectionCache(String customerId, String app,
                                                  String instanceId);
 
+    public Optional<String> getDefaultEventType(String customer, String app, String service
+	    , String apiPath);
+
 }
