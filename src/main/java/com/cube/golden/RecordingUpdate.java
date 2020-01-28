@@ -292,7 +292,7 @@ public class RecordingUpdate {
 
      Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId/*, RecordingOperationSetSP recordingOperationSetSP*/) {
         Result<ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
-            new AnalysisMatchResultQuery(replayId, new MultivaluedHashMap<>())
+            new AnalysisMatchResultQuery(replayId)
         );
 
         return matchResults.getObjects();
