@@ -1734,7 +1734,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, RECORDREQIDF, recordReqId);
             addFilter(query, REPLAYIDF, replayId);
             query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
-                +" childFilter=type_s:"+Types.Diff.toString()+"]");
+                +" childFilter=type_s:"+Types.Diff.toString()+" limit=-1]");
             Optional<Integer> maxresults = Optional.of(1);
             return SolrIterator.getStream(solr, query, maxresults).findFirst()
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
@@ -1750,7 +1750,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYREQIDF, replayReqId, true);
         addFilter(query, REPLAYIDF, replayId);
         query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
-            +" childFilter=type_s:"+Types.Diff.toString()+"]");
+            +" childFilter=type_s:"+Types.Diff.toString()+" limit=-1]");
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst()
             .flatMap(doc -> docToAnalysisMatchResult(doc));
@@ -1793,7 +1793,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
         addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
         query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
-            +" childFilter=type_s:"+Types.Diff.toString()+"]");
+            +" childFilter=type_s:"+Types.Diff.toString()+" limit=-1]");
         return SolrIterator.getResults(solr, query, matchResQuery.numMatches, this::docToAnalysisMatchResult
             , matchResQuery.start);
     }
