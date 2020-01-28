@@ -1269,7 +1269,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     private static SolrInputDocument compareTemplateToSolrDoc(TemplateKey key, String jsonCompareTemplate) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String type = getTemplateType(key);
+        String type = key.getReqOrResp().name();
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
                 key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
@@ -1421,7 +1421,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    public static String getTemplateType(TemplateKey key) {
+/*    public static String getTemplateType(TemplateKey key) {
          if (key.getReqOrResp() == Type.RequestMatch) {
              return  Types.RequestMatchTemplate.toString();
          }
@@ -1431,7 +1431,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
          else {
              return Types.ResponseCompareTemplate.toString();
          }
-    }
+    }*/
 
 
     /**
@@ -1443,7 +1443,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<CompareTemplate> getCompareTemplate(TemplateKey key) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
-        addFilter(query, TYPEF, getTemplateType(key));
+        addFilter(query, TYPEF,key.getReqOrResp().name());
         addFilter(query, CUSTOMERIDF, key.getCustomerId());
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());
