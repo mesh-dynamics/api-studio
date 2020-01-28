@@ -25,7 +25,6 @@ import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
