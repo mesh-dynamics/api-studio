@@ -422,8 +422,9 @@ class ShareableLink extends Component {
                 replayedData = "";
             }
             let diff;
-            if (item.diff) {
-                diff = item.diff;
+
+            if (item.respCompDiff && item.respCompDiff.length !== 0) {
+                diff = item.respCompDiff;
             } else {
                 diff = [];
             }
@@ -585,7 +586,7 @@ class ShareableLink extends Component {
             }
             return eachItem.show === true;
         }).filter(function (eachItem) {
-            if (eachItem.reqmt === "NoMatch" || eachItem.respmt === "NoMatch") {
+            if (eachItem.reqCompResType === "NoMatch" || eachItem.respCompResType === "NoMatch") {
                 apiPathIndicators[eachItem.path] = true;
                 if (!selectedAPI) {
                     // set a default selected API path
@@ -608,12 +609,12 @@ class ShareableLink extends Component {
                     // do nothing
                 } else if (selectedReqRespMatchType === "requestMismatch") {
                     // hide non-mismatch
-                    if (eachItem.reqmt !== "NoMatch") {
+                    if (eachItem.reqCompResType !== "NoMatch") {
                         eachItem.show = false;
                     }
                 } else if (selectedReqRespMatchType === "responseMismatch") {
                     // hide non-mismatch
-                    if (eachItem.respmt !== "NoMatch") {
+                    if (eachItem.respCompResType !== "NoMatch") {
                         eachItem.show = false;
                     }
                 }
@@ -1095,7 +1096,7 @@ class ShareableLink extends Component {
             data: cube.templateOperationSetObject,
             headers: headers
         });
-
+        
         const goldenUpdate = axios({
             method: 'post',
             url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
