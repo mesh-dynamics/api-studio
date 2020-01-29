@@ -59,6 +59,7 @@ class ShareableLink extends Component {
             replayId: null,
             recordingId: null,
             currentPageNumber: 1,
+            isFetching: false,
             fetchComplete: false,
             fetchedResults: 0,
             selectedReqRespMatchType: "responseMismatch",
@@ -334,6 +335,7 @@ class ShareableLink extends Component {
                 totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
                 this.setState({
+                    isFetching: true,
                     app: dataList.data.app,
                     templateVersion: dataList.data.templateVersion,
                     fetchedResults: fetchedResults
@@ -358,14 +360,14 @@ class ShareableLink extends Component {
                         let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
-                    this.setState({
-                        fetchComplete: true
-                    });
+                    this.setState({ isFetching: false, fetchComplete: true });
                 });
             } else {
+                this.setState({ isFetching: false, fetchComplete: true });
                 throw new Error("Response not ok fetchTimeline");
             }
         } catch (e) {
+            this.setState({ isFetching: false, fetchComplete: false });
             console.error("fetchTimeline has errors!", e);
             throw e;
         }
@@ -951,14 +953,25 @@ class ShareableLink extends Component {
                             inputRef={ref => { this.input = ref; }}
                         />
                     </FormGroup>
-                    <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
-                        <div style={{textAlign: "left"}}>{pageButtons}</div>
-                    </ButtonGroup>
+                    {
+                        !this.state.isFetching && this.state.fetchComplete && jsxContent.length !== 0 &&
+                        (
+                            <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
+                                <div style={{textAlign: "left"}}>{pageButtons}</div>
+                            </ButtonGroup>
+                        )
+                    }
                 </div>
-                <div>
-                    {jsxContent}
+                <div className={(this.state.isFetching || jsxContent.length === 0) ? "loading-text" : ""}>
+                    {
+                        !this.state.isFetching && this.state.fetchComplete 
+                        ? 
+                            (
+                                () => (jsxContent.length === 0 ? "No Mismatches Found" : (jsxContent))
+                            )() 
+                        : "Loading..."
+                    }
                 </div>
-
                 <Modal show={this.state.showNewGolden}>
                     <Modal.Header>
                         <Modal.Title>{!cube.newGoldenId ? "Saving Golden" : "Golden Saved"}</Modal.Title>
