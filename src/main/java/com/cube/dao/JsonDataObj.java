@@ -189,7 +189,7 @@ public class JsonDataObj implements DataObj {
             if (val != null && !val.isValueNode()) {
                 // convert to string
                 // currently handling only json type
-                if (mimetype.equals(MediaType.APPLICATION_JSON)) {
+                if (mimetype.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)) {
 
                     String newVal = val.toString();
                     valParentObj.set(fieldName, new TextNode(newVal));
