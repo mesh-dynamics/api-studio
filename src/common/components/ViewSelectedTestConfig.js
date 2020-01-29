@@ -496,7 +496,7 @@ class ViewSelectedTestConfig extends React.Component {
 
         let checkStatus = () => {
             let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
-            axios.get(csUrl).then(response => {
+            axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
         };
@@ -515,7 +515,7 @@ class ViewSelectedTestConfig extends React.Component {
         axios.post(url, {}, configForHTTP).then((response) => {
             this.setState({stopDisabled: true, recId: null});
             let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
-            axios.get(csUrl).then(response => {
+            axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
         });
