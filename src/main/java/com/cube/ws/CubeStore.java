@@ -1066,17 +1066,35 @@ public class CubeStore {
                     }
                 }));
 
-                
-                Recording updatedRecording = new Recording(rec.id, rec.customerId, rec.app, rec.instanceId, rec.collection,
-                    rec.status, Optional.of(Instant.now()), rec.templateVersion, rec.parentRecordingId, rec.rootRecordingId,
-                    name.orElse(rec.name), Optional.ofNullable(codeVersion.orElse(rec.codeVersion.orElse(null))),
-                    Optional.ofNullable(branch.orElse(rec.branch.orElse(null))), tags.isEmpty() ? rec.tags : tags, false,
-                    Optional.ofNullable(gitCommitId.orElse(rec.gitCommitId.orElse(null))),
-                    rec.collectionUpdOpSetId, rec.templateUpdOpSetId,
-                    Optional.ofNullable(comment.orElse(rec.comment.orElse(null))), userId.orElse(rec.userId),
-                    rec.generatedClassJarPath, rec.generatedClassLoader
-                );
 
+                RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(rec.customerId, rec.app
+                    , rec.instanceId), rec.collection)
+                    .withStatus(rec.status)
+                    .withTemplateSetVersion(rec.templateVersion)
+                    .withRootRecordingId(rec.rootRecordingId)
+                    .withArchived(false);
+                rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+                name.ifPresentOrElse(recordingBuilder::withName, ()-> {recordingBuilder.withName(rec.name);});
+                userId.ifPresentOrElse(recordingBuilder::withUserId, ()-> {recordingBuilder.withUserId(rec.userId);});
+                codeVersion.ifPresentOrElse(recordingBuilder::withCodeVersion,
+                    ()-> {rec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);});
+                branch.ifPresentOrElse(recordingBuilder::withBranch,
+                    ()-> {rec.branch.ifPresent(recordingBuilder::withBranch);});
+                if(tags.isEmpty()) {
+                    recordingBuilder.withTags(rec.tags);
+                } else {
+                    recordingBuilder.withTags(tags);
+                }
+                gitCommitId.ifPresentOrElse(recordingBuilder::withGitCommitId,
+                    ()-> {rec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);});
+                comment.ifPresentOrElse(recordingBuilder::withComment,
+                    ()-> {rec.comment.ifPresent(recordingBuilder::withComment);});
+                rec.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+                rec.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+                rec.generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+
+                Recording updatedRecording = recordingBuilder.build();
+                
                 rrstore.saveRecording(updatedRecording);
 
                 String json;
@@ -1094,10 +1112,13 @@ public class CubeStore {
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Unable to parse JSON ")).build();
             } catch (RecordingWithSameNamePresent recordingWithSameNamePresent) {
-                recordingWithSameNamePresent.printStackTrace();
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAME_NAME_EXCEPTION,
                         recordingWithSameNamePresent.getMessage())).build();
+            } catch (Exception e) {
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.GENERIC_EXCEPTION,
+                        e.getMessage())).build();
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).
             entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
