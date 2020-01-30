@@ -750,11 +750,11 @@ class ShareableLink extends Component {
         }
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
-                <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
+                <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
                     <div style={{display: "inline-block"}}>{item.path}</div>
-                    <div style={{float: "right", display: "inline-block"}}>
+                    <div style={{ marginTop: "5px" }}>
                         <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
-                            <span className=""><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
+                            <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
                         </Button>
                     </div>
                 </div>
@@ -885,8 +885,8 @@ class ShareableLink extends Component {
         return (
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
-                    <span className="link pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
+                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                    <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                     <Link to="/review_golden_updates" className="hidden">
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
                     </Link>
