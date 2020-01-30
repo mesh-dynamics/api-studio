@@ -85,10 +85,15 @@ public class TemplateSetTransformer {
                             "cache during template set update", Constants.TEMPLATE_KEY_FIELD, key.toString())), e);
                     template = new CompareTemplate();
                 }
-                template.setRules(update.getOperationList().stream().
+                // we need to clone here, as the templated being returned from
+                // Comparator Cache might be the default template ... changing
+                // that will change the default everywhere
+                CompareTemplate cloned = template.cloneWithAdditionalRules(
+                    update.getOperationList().stream().
                     flatMap(op -> op.getNewRule().stream()).collect(Collectors.toList()));
+
                 CompareTemplateVersioned newTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
-                    , Optional.of(key.getPath()), key.getReqOrResp(), template);
+                    , Optional.of(key.getPath()), key.getReqOrResp(), cloned);
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Created New Compare Template"
                     , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateSetUpdateSpec.getTemplateUpdateOperationSetId()
                     , Constants.TEMPLATE_KEY_FIELD , key.toString() , Constants.OLD_TEMPLATE_SET_VERSION,
