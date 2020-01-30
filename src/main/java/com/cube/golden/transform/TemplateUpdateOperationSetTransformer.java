@@ -29,8 +29,10 @@ public class TemplateUpdateOperationSetTransformer {
     private SingleTemplateUpdateOperation mergeTemplateUpdate(SingleTemplateUpdateOperation sourceUpdates,
                                                               SingleTemplateUpdateOperation newUpdates) {
         // first create a fresh copy of all existing rules
-        Map<String, TemplateEntryOperation> sourceUpdateMap = sourceUpdates.getOperationList().stream()
-            .collect(Collectors.toMap(TemplateEntryOperation::getPath, operation -> operation));
+        Map<String, TemplateEntryOperation> sourceUpdateMap = new HashMap<>();
+        sourceUpdates.getOperationList().forEach(sourceUpdate ->
+            sourceUpdateMap.put(sourceUpdate.getPath(), sourceUpdate));
+           /* .collect(Collectors.toMap(TemplateEntryOperation::getPath, operation -> operation));*/
         // for each existing json path in the update set, if new rule exists , just overwrite the existing rule
         // add rules for new paths as well to the update set (which earlier did not exist in the update set)
         newUpdates.getOperationList().forEach(newUpdate -> {
