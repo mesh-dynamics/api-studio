@@ -125,9 +125,12 @@ public class CommonConfig {
 
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
+
 		try {
 			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
 				getResourceAsStream(STATIC_CONFFILE));
+			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
+				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while initializing config")),e);
 		}
@@ -216,7 +219,7 @@ public class CommonConfig {
 			.or(() -> fromEnvOrProperties(propertyName));
 	}
 
-	private Optional<String> fromEnvOrProperties(String propertyName) {
+	private static Optional<String> fromEnvOrProperties(String propertyName) {
 		return CommonUtils.fromEnvOrSystemProperties(propertyName)
 			.or(() -> Optional.ofNullable(staticProperties.getProperty(propertyName)));
 	}
