@@ -100,15 +100,17 @@ public class CommonConfig {
 	}
 
 	static {
-		CommonConfig config = null;
+
+		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
 		try {
-			config = new CommonConfig();
+			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
+				getResourceAsStream(STATIC_CONFFILE));
+			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
+				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error in initialising common config object")), e);
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while initializing config")),e);
 		}
-		singleInstance = new AtomicReference<>();
-		singleInstance.set(config);
 
 		CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_COMMON_CONF_FILE_PROP)
 			.ifPresent(dynamicConfigFilePath -> {
@@ -123,17 +125,18 @@ public class CommonConfig {
 				// serviceExecutor.shutdown();
 			});
 
-		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 
+		CommonConfig config = null;
 		try {
-			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
-				getResourceAsStream(STATIC_CONFFILE));
-			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
-				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
+			config = new CommonConfig();
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while initializing config")),e);
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error in initialising common config object")), e);
 		}
+		singleInstance = new AtomicReference<>();
+		singleInstance.set(config);
+
 
 	}
 
