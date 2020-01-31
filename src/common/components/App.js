@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PageContent, { Menu } from '../routes';
 import { connect } from 'react-redux';
-import {userActions} from "../actions/user.actions";
+import authActions from '../actions/auth.actions'
 import Navigation from "./Navigation/Navigation";
 
 class App extends Component {
@@ -22,7 +22,7 @@ class App extends Component {
     }
     handleLogout() {
         const { dispatch } = this.props;
-        dispatch(userActions.logout());
+        dispatch(authActions.logout());
     }
     render() {
         const { user, left } = this.props;
