@@ -230,7 +230,8 @@ public class Replay {
 	private Result<Event> getEventResult(ReqRespStore rrstore) {
 		EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.fromReplayType(replayType))
 			.withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths)
-			.withCollection(collection).withServices(service.map(List::of).orElse(Collections.emptyList())).build();
+			.withCollection(collection)
+			.withServices(service.map(List::of).orElse(Collections.emptyList())).withSortOrderAsc(true).build();
 		return rrstore.getEvents(eventQuery);
 	}
 
