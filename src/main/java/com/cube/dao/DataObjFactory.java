@@ -6,7 +6,11 @@
 
 package com.cube.dao;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.ws.rs.core.MediaType;
 
@@ -26,7 +30,28 @@ public class DataObjFactory {
 
     private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);
 
-    public static final String HTTP_CONTENT_TYPE_PATH = "/hdrs/content-type/0";
+    // Http headers are case insensitive
+    private static final List<String> HTTP_CONTENT_TYPE_PATHS = List.of("/hdrs/content-type/0"
+        , "/hdrs/Content-type/0", "/hdrs/Content-Type/0", "/hdrs/content-Type/0");
+
+    private static  Optional<String> getMimeType(DataObj obj) {
+        Optional<String> mimeType = Optional.empty();
+        for (String HTTP_CONTENT_TYPE_PATH : HTTP_CONTENT_TYPE_PATHS) {
+            try {
+                mimeType = Optional.of(obj.getValAsString(HTTP_CONTENT_TYPE_PATH));
+                break;
+            } catch (DataObj.PathNotFoundException e) {
+                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Content-type not found for field " + HTTP_CONTENT_TYPE_PATH)));
+            }
+        }
+        if (mimeType.isEmpty()) {
+            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Content-type not found, using default of TEXT_PLAIN")));
+
+        }
+        return mimeType;
+    }
 
     public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
         Config config, Map<String, Object> params) {
@@ -35,13 +60,7 @@ public class DataObjFactory {
             case HTTPRequest:
             case HTTPResponse:
                 JsonDataObj obj = new JsonDataObj(payloadStr, config.jsonMapper);
-                String mimeType = MediaType.TEXT_PLAIN;
-                try {
-                    mimeType = obj.getValAsString(HTTP_CONTENT_TYPE_PATH);
-                } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.info("Content-type not found, using default of TEXT_PLAIN for payload: "
-                        + payloadStr);
-                }
+                String mimeType =  getMimeType(obj).orElse(MediaType.TEXT_PLAIN);
                 obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
                 return obj;
             case JavaRequest:
@@ -65,14 +84,7 @@ public class DataObjFactory {
         switch (eventType) {
             case HTTPRequest:
             case HTTPResponse:
-                String mimeType = MediaType.TEXT_PLAIN;
-                try {
-                    mimeType = dataObj.getValAsString(HTTP_CONTENT_TYPE_PATH);
-                } catch (DataObj.PathNotFoundException e) {
-                    LOGGER.info(new ObjectMessage(Map.of(
-                        Constants.MESSAGE, "Content-type not found, using default of TEXT_PLAIN"
-                    )));
-                }
+                String mimeType = getMimeType(dataObj).orElse(MediaType.TEXT_PLAIN);
                 dataObj.wrapAsString(Constants.BODY_PATH, mimeType);
                 return;
             case JavaRequest:

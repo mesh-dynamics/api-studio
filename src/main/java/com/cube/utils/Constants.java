@@ -153,4 +153,18 @@ public class Constants {
 	public static final String NOT_PRESENT = "Absent";
 	public static final String EVENT_STRING = "eventAsString";
     public static final String PAYLOAD = "payload" ;
+	public static final String DIFF_VALUE_FIELD = "diffVal";
+    public static final String DIFF_FROM_STR_FIELD = "diffFromStr";
+    public static final String DIFF_FROM_VALUE_FIELD = "diffFromVal";
+    public static final String DIFF_OP_FIELD = "diffOp";
+    public static final String DIFF_PATH_FIELD = "diffPath";
+    public static final String DIFF_RESOLUTION_FIELD =  "diffRes";
+    public static final String DIFF_TYPE_FIELD = "diffType";
+    public static final String REQ_COMP_RES_META = "reqCmpResMeta" ;
+    public static final String REQ_COMP_RES_TYPE = "reqCmpResType";
+    public static final String REQUEST_DIFF = "requestDiff";
+    public static final String RESPONSE_DIFF = "responseDiff";
+
+	public static final String REPLAY_TRACE_ID = "replayTraceId";
+	public static final String REC_TRACE_ID = "recordTraceId";
 }

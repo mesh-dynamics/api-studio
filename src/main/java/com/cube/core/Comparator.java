@@ -47,6 +47,7 @@ public interface Comparator {
         RecReqNoMatch,
         ReplayReqNoMatch,
         MockReqNoMatch,
+	    DontCare,
 		Exception;
 
 		public boolean isNoMatch() {
@@ -69,25 +70,34 @@ public interface Comparator {
 			}
 		}
 
-		/**
-		 * Here other is the best so far, we need to decide
-		 * if the current analysis match result should replace
-		 * the best result
-	         * ExactMatch > FuzzyMatch > NoMatch > Exception > Default
-		 * @param other
-		 * @return
-		 */
+	    /**
+	     * Exact Match is better than everything else (except Exact Match itself)
+	     * Fuzzy Match is better than everything else (except Exact Match and Fuzzy Match)
+	     * No Match is better than Exception , Don't Care and Default
+	     * Exception is better than Don't Care and Default
+	     * Don't Care is better than Default
+	     * Default is not better than anything (including Default, we override)
+	     * (Default is just the starting condition, no document pair should finally have
+	     * this Match Type visible in Solr)
+	     * @param other MatchType to compare with
+	     * @return if this matchtype is strictly better than the other Match Type
+	     * Here other is the best so far, we need to decide
+	     * if the current analysis match result should replace
+	     * ExactMatch > FuzzyMatch > NoMatch > Exception > DontCare > Default
+	     */
 		public boolean isBetter(MatchType other) {
-			switch (this) {
+			switch(this) {
 				case ExactMatch: return (other != ExactMatch); // ExactMatch will not override Exact Match, but everything else
-				case FuzzyMatch: return !(other == ExactMatch || other == FuzzyMatch); // Partial Match will not override Partial Match
-                case NoMatch: case RecReqNoMatch: case ReplayReqNoMatch: case MockReqNoMatch:
-                    return (other == Exception || other == Default); // NoMatch overrides Default and Exception
-				case Exception: return (other == Default); // Exception only overrides default
-				case Default: return false; // the default is only the starting condition and worse than anything
+				case FuzzyMatch: return !(other == ExactMatch || other == FuzzyMatch);
+				case NoMatch: case RecReqNoMatch: case ReplayReqNoMatch: case MockReqNoMatch:
+					return (other == Exception || other == Default || other == DontCare);
+				case Exception: return (other == Default || other == DontCare);
+				case DontCare: return (other == Default);
+				case Default:
 				default: return false;
 			}
 		}
+
 
 		/**
 		 * @param other
@@ -206,6 +216,7 @@ public interface Comparator {
 
 		public static Match NOMATCH = new Match(MatchType.NoMatch, "", Collections.emptyList());
 		public static Match DEFAULT = new Match(MatchType.Default, "", Collections.emptyList());
+		public static Match DONT_CARE = new Match(MatchType.DontCare, "", Collections.emptyList());
         public static Match STATUSNOMATCH = new Match(MatchType.NoMatch, "Status not matching",
             Collections.emptyList());
 
@@ -271,8 +282,8 @@ public interface Comparator {
 		}
 
 
-		Diff(String op, String path, Optional<JsonNode> value, Optional<String> from,
-					Optional<JsonNode> fromValue, Resolution resolution) {
+		public Diff(String op, String path, Optional<JsonNode> value, Optional<String> from,
+			Optional<JsonNode> fromValue, Resolution resolution) {
 			super();
 			this.op = op;
 			this.path = path;

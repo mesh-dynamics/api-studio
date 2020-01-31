@@ -329,6 +329,8 @@ public class JsonComparator implements Comparator {
 	private final CompareTemplate template;
 	private final ObjectMapper jsonMapper;
 
+	public static JsonComparator EMPTY_COMPARATOR = new JsonComparator(new CompareTemplate(), null);
+
 	public static void main(String[] args) throws Exception {
 		Config config = new Config();
 		ObjectMapper jsonMapper = config.jsonMapper;

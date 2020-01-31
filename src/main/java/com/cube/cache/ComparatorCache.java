@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
@@ -50,16 +51,16 @@ public class ComparatorCache {
 
 
         // default rules for HTTP Request
-        CompareTemplate defaultHTTPRequestTemplate = new CompareTemplate();
-        defaultHTTPRequestTemplate.addRule(new TemplateEntry(Constants.QUERY_PARAMS_PATH, DataType.Obj,
+        CompareTemplate defaultHTTPRequestMatchTemplate = new CompareTemplate();
+        defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.QUERY_PARAMS_PATH, DataType.Obj,
             PresenceType.Optional, ComparisonType.Equal));
-        defaultHTTPRequestTemplate.addRule(new TemplateEntry(Constants.FORM_PARAMS_PATH, DataType.Obj,
+        defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.FORM_PARAMS_PATH, DataType.Obj,
             PresenceType.Optional, ComparisonType.Equal));
-        defaultHTTPRequestTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
-            PresenceType.Required, ComparisonType.Equal));
-        defaultHTTPRequestTemplate.addRule(new TemplateEntry(Constants.METHOD_PATH, DataType.Str, PresenceType.Required,
+        defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
+            PresenceType.Optional, ComparisonType.Equal));
+        defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.METHOD_PATH, DataType.Str, PresenceType.Required,
             ComparisonType.Equal));
-        defaultHTTPRequestComparator = new JsonComparator(defaultHTTPRequestTemplate, jsonMapper);
+        defaultHTTPRequestMatchComparator = new JsonComparator(defaultHTTPRequestMatchTemplate, jsonMapper);
 
         // default rules for HTTP Response
         CompareTemplate defaultHTTPResponseTemplate = new CompareTemplate();
@@ -105,6 +106,7 @@ public class ComparatorCache {
                 )));
                 return toReturn;
             });
+
         } catch (ExecutionException e) {
             LOGGER.info(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Unable to find template in cache, using default",
@@ -112,7 +114,11 @@ public class ComparatorCache {
                 Constants.REASON, e.getMessage())));
             switch (eventType) {
                 case HTTPRequest:
-                    return defaultHTTPRequestComparator;
+                    if(key.getReqOrResp() == Type.RequestMatch) {
+                        return defaultHTTPRequestMatchComparator;
+                    } else {
+                        return JsonComparator.EMPTY_COMPARATOR;
+                    }
                 case HTTPResponse:
                     return defaultHTTPResponseComparator;
                 case JavaRequest:
@@ -180,7 +186,7 @@ public class ComparatorCache {
         }
     }
 
-    private final Comparator defaultHTTPRequestComparator;
+    private final Comparator defaultHTTPRequestMatchComparator;
     private final Comparator defaultHTTPResponseComparator;
     private final Comparator defaultJavaRequestComparator;
     private final Comparator defaultJavaResponseComparator;

@@ -27,7 +27,6 @@ import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
-import com.cube.dao.Analysis.ReqRespMatchResult;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.TemplateSet;
@@ -92,8 +91,9 @@ public interface ReqRespStore {
 		Analysis,
 		ReqRespMatchResult,
 		Recording,
-		ResponseCompareTemplate,
+		RequestMatchTemplate,
 		RequestCompareTemplate,
+		ResponseCompareTemplate,
 		ReplayStats,
         FuncReqResp,
         TemplateSet,
@@ -101,7 +101,8 @@ public interface ReqRespStore {
         GoldenSet,
         RecordingOperationSetMeta,
         RecordingOperationSet,
-        MatchResultAggregate
+        MatchResultAggregate,
+		Diff
     }
 
     boolean save(Event event);
@@ -525,18 +526,11 @@ public interface ReqRespStore {
 
     /**
      * Get results matching a path and other constraints
-     * @param replayId
-     * @param service
-     * @param path
-     * @param reqmt
-     * @param respmt
-     * @param start
-     * @param nummatches
+     * @param analysisMatchResultQuery
      * @return
      */
     Result<ReqRespMatchResult>
-    getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
-                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches);
+    getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
     /**
      * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType

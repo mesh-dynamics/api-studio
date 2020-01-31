@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +36,7 @@ import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.dao.Event;
 import com.cube.dao.HTTPRequestPayload;
 import com.cube.dao.HTTPResponsePayload;
@@ -50,6 +52,10 @@ import com.cube.ws.Config;
 public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+
+    private static final long traceIdRandomSeed = System.currentTimeMillis();
+
+    private static final Random random = new Random(traceIdRandomSeed);
 
     // Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
@@ -220,27 +226,6 @@ public class Utils {
 
     static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?), appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
-    static public Optional<TemplateKey> templateKeyFromSerializedString(String serialized) {
-        Optional<TemplateKey> toReturn = Optional.empty();
-        Matcher m = templateKeyPattern.matcher(serialized);
-        TemplateKey templateKey = null;
-        if (m.matches()) {
-            String customerId = m.group(1);
-            String appId = m.group(2);
-            String service = m.group(3);
-            String path = m.group(4);
-            String version = m.group(5);
-            String type = m.group(6);
-            //System.out.println(customerId + " " + appId + " " + service + " " + path + " " + version + " " + type);
-            templateKey = new TemplateKey(version, customerId, appId, service, path, ("Request".equalsIgnoreCase(type) ?
-                TemplateKey.Type.Request : TemplateKey.Type.Response));
-            toReturn = Optional.of(templateKey);
-        } else {
-            LOGGER.error("Unable to deserialize template key from string :: " + templateKey);
-        }
-        return toReturn;
-    }
-
     /**
      * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
      * @param baseUrl Base Url
@@ -254,11 +239,11 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static CompareTemplate getRequestCompareTemplate(Config config, Event event, String templateVersion)
+    public static CompareTemplate getRequestMatchTemplate(Config config, Event event, String templateVersion)
         throws TemplateNotFoundException {
         TemplateKey tkey =
             new TemplateKey(templateVersion, event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.Request);
+                event.app, event.service, event.apiPath, Type.RequestMatch);
 
         return config.comparatorCache.getComparator(tkey, event.eventType).getCompareTemplate();
     }
@@ -321,7 +306,7 @@ public class Utils {
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                traceId.orElse("NA"), runType.get(), timestamp,
+                traceId.orElse(generateTraceId()), runType.get(), timestamp,
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPRequest);
             eventBuilder.setRawPayloadString(payloadStr);
@@ -361,7 +346,8 @@ public class Utils {
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                traceId.orElse("NA"), runType.get(), timestamp,
+                traceId.orElse(reqId.flatMap(config.rrstore::getRequestEvent).map(Event::getTraceId).orElse("NA")),
+                runType.get(), timestamp,
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPResponse);
             eventBuilder.setRawPayloadString(payloadStr);
@@ -378,4 +364,39 @@ public class Utils {
         return config.jsonMapper.readValue(payload, HTTPResponsePayload.class);
     }
 
+    //Referred from io.jaegertracing.internal.propagation
+
+    private static String generateTraceId() {
+        long high = random.nextLong();
+        long low = random.nextLong();
+        char[] result = new char[32];
+        int pos = 0;
+        writeHexLong(result, pos, high);
+        pos += 16;
+
+        writeHexLong(result, pos, low);
+        return new String(result);
+    }
+
+    // Taken from io.jaegertracing.internal.propagation
+    /**
+     * Inspired by {@code okio.Buffer.writeLong}
+     */
+    static void writeHexLong(char[] data, int pos, long v) {
+        writeHexByte(data, pos + 0, (byte) ((v >>> 56L) & 0xff));
+        writeHexByte(data, pos + 2, (byte) ((v >>> 48L) & 0xff));
+        writeHexByte(data, pos + 4, (byte) ((v >>> 40L) & 0xff));
+        writeHexByte(data, pos + 6, (byte) ((v >>> 32L) & 0xff));
+        writeHexByte(data, pos + 8, (byte) ((v >>> 24L) & 0xff));
+        writeHexByte(data, pos + 10, (byte) ((v >>> 16L) & 0xff));
+        writeHexByte(data, pos + 12, (byte) ((v >>> 8L) & 0xff));
+        writeHexByte(data, pos + 14, (byte) (v & 0xff));
+    }
+    static final char[] HEX_DIGITS =
+        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    static void writeHexByte(char[] data, int pos, byte b) {
+        data[pos + 0] = HEX_DIGITS[(b >> 4) & 0xf];
+        data[pos + 1] = HEX_DIGITS[b & 0xf];
+    }
 }

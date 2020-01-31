@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.cube.cache.ComparatorCache;
+import com.cube.dao.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -36,7 +38,8 @@ public class TemplateSetTransformer {
      * @param templateSetUpdateSpec Update Operations to arrive at the new Template Set
      * @return Updated Template Set (needs to be stored in backend explicitly later)
      */
-    public TemplateSet updateTemplateSet(TemplateSet sourceTemplateSet, TemplateUpdateOperationSet templateSetUpdateSpec) {
+    public TemplateSet updateTemplateSet(TemplateSet sourceTemplateSet
+        , TemplateUpdateOperationSet templateSetUpdateSpec, ComparatorCache comparatorCache) {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
         String newVersion = UUID.randomUUID().toString();
@@ -62,11 +65,35 @@ public class TemplateSetTransformer {
                     sourceTemplateSet.version)));
             } else {
                 //construct a new CompareTemplateVersion
-                CompareTemplate template = new CompareTemplate();
-                template.setRules(update.getOperationList().stream().
+                CompareTemplate template = null;
+                try {
+                    // this is the case when the original Template Set doesn't contain any template for the
+                    // api path being considered .. fetching it from the cache will initialize it to a default
+                    // compare template ... which will be then merged with the update rules and stored in solr
+                    // TODO take care of other event types (Function, Thrift) will have to come from some parameter of
+                    // template key
+                    Event.EventType eventType = Optional.of(key.getReqOrResp()).map(templateType ->
+                    {   if (TemplateKey.Type.RequestMatch == templateType) return Event.EventType.HTTPRequest;
+                        if (TemplateKey.Type.ResponseCompare == templateType) return Event.EventType.HTTPResponse;
+                        return null;
+                    }).orElseThrow(ComparatorCache.TemplateNotFoundException::new);
+                    template = comparatorCache
+                        .getComparator(key, eventType).getCompareTemplate();
+                } catch (ComparatorCache.TemplateNotFoundException e) {
+                    LOGGER.error(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Unable to fetch DEFAULT template from comparator " +
+                            "cache during template set update", Constants.TEMPLATE_KEY_FIELD, key.toString())), e);
+                    template = new CompareTemplate();
+                }
+                // we need to clone here, as the templated being returned from
+                // Comparator Cache might be the default template ... changing
+                // that will change the default everywhere
+                CompareTemplate cloned = template.cloneWithAdditionalRules(
+                    update.getOperationList().stream().
                     flatMap(op -> op.getNewRule().stream()).collect(Collectors.toList()));
+
                 CompareTemplateVersioned newTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
-                    , Optional.of(key.getPath()), key.getReqOrResp(), template);
+                    , Optional.of(key.getPath()), key.getReqOrResp(), cloned);
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Created New Compare Template"
                     , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateSetUpdateSpec.getTemplateUpdateOperationSetId()
                     , Constants.TEMPLATE_KEY_FIELD , key.toString() , Constants.OLD_TEMPLATE_SET_VERSION,
