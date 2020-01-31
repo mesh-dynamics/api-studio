@@ -1,7 +1,13 @@
 package com.cubeui.backend.security.jwt;
 
-import com.cubeui.backend.security.CustomUserDetailsService;
-import io.jsonwebtoken.*;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -9,13 +15,21 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import com.cubeui.backend.domain.ApiAccessToken;
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.ApiAccessTokenRepository;
+import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.security.CustomUserDetailsService;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class JwtTokenProvider {
 
     @Value("${security.jwt.token.secret-key}")
@@ -26,8 +40,14 @@ public class JwtTokenProvider {
 
     private UserDetailsService userDetailsService;
 
-    public JwtTokenProvider(CustomUserDetailsService customUserDetailsService) {
+    private ApiAccessTokenRepository apiAccessTokenRepository;
+
+    private UserRepository userRepository;
+
+    public JwtTokenProvider(CustomUserDetailsService customUserDetailsService, ApiAccessTokenRepository apiAccessTokenRepository, UserRepository userRepository) {
         this.userDetailsService = customUserDetailsService;
+        this.userRepository = userRepository;
+        this.apiAccessTokenRepository = apiAccessTokenRepository;
     }
 
     @PostConstruct
@@ -71,7 +91,21 @@ public class JwtTokenProvider {
     boolean validateToken(String token) {
         try {
             Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
-            return !claims.getBody().getExpiration().before(new Date());
+            log.trace("validate token is called ");
+            if ("pat".equalsIgnoreCase(claims.getBody().get("type", String.class))) {
+                log.trace("Found that the token is of type API token");
+                //The token is of type personal access token, so check the DB to confirm that it is not revoked
+                Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsername(getUsername(token))
+                    .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
+                return accessToken.flatMap(list -> list.stream().findFirst())
+                    .map(ApiAccessToken::getToken)
+                    .filter(token::equals)
+                    .isPresent();
+            } else {
+                log.trace("It is a normal token");
+                return !claims.getBody().getExpiration().before(new Date());
+            }
+
         } catch (JwtException | IllegalArgumentException e) {
             throw new InvalidJwtAuthenticationException("Expired or invalid authentication token");
         }
