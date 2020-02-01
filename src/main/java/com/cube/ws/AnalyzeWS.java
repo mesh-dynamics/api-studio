@@ -590,7 +590,7 @@ public class AnalyzeWS {
     public Response getAnalysisResultsByPath(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-	    AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
+        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
 		    , queryParams);
         Optional<Boolean> includeDiff = Optional
             .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);

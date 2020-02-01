@@ -57,7 +57,7 @@ public class ComparatorCache {
         defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.FORM_PARAMS_PATH, DataType.Obj,
             PresenceType.Optional, ComparisonType.Equal));
         defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
-            PresenceType.Required, ComparisonType.Equal));
+            PresenceType.Optional, ComparisonType.Equal));
         defaultHTTPRequestMatchTemplate.addRule(new TemplateEntry(Constants.METHOD_PATH, DataType.Str, PresenceType.Required,
             ComparisonType.Equal));
         defaultHTTPRequestMatchComparator = new JsonComparator(defaultHTTPRequestMatchTemplate, jsonMapper);

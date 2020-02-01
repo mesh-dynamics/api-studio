@@ -138,7 +138,7 @@ public class CompareTemplate {
 
 
 	@JsonSetter("rules")
-	public void setRules(Collection<TemplateEntry> rules) {
+	protected void setRules(Collection<TemplateEntry> rules) {
 
 		// Here sorting the rules based on the length of path.
 		// This is needed because let's say there is rule for /body
@@ -190,6 +190,14 @@ public class CompareTemplate {
 			pointer = pointer.tail();
 		}
 		return returnPointer[0];
+	}
+
+	public CompareTemplate cloneWithAdditionalRules(Collection<TemplateEntry> newRules) {
+		CompareTemplate clonedCompareTemplate = new CompareTemplate(this.prefixpath);
+		clonedCompareTemplate.rules = new HashMap<>(this.rules);
+		// this will merge the new rules properly
+		clonedCompareTemplate.setRules(newRules);
+		return clonedCompareTemplate;
 	}
 
 	/*
