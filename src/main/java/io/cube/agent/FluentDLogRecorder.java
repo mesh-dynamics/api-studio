@@ -3,7 +3,6 @@ package io.cube.agent;
 import java.util.Map;
 import java.util.Optional;
 
-
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.gson.Gson;
@@ -12,6 +11,7 @@ import io.md.constants.Constants;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
+
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
 

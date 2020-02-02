@@ -3,7 +3,10 @@ package io.cube.agent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -19,12 +22,16 @@ import javax.ws.rs.client.WebTarget;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.logging.log4j.util.Strings;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.samplers.BoundarySampler;
+import io.cube.agent.samplers.CountingSampler;
+import io.cube.agent.samplers.Sampler;
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
@@ -53,8 +60,11 @@ public class CommonConfig {
 
 	public static String intent;
 
-	public String customerId, app, instance, serviceName;
+	public String customerId, app, instance, serviceName, samplerType;
 	public final Optional<EncryptionConfig> encryptionConfig;
+	public Number samplerRate;
+	public List<String> headerParams;
+	public Sampler sampler;
 
 	private static class Updater implements Runnable {
 
@@ -100,6 +110,14 @@ public class CommonConfig {
 	}
 
 	static {
+		try {
+			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
+				getResourceAsStream(STATIC_CONFFILE));
+		} catch (Exception e) {
+			LOGGER.error(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while initializing config")), e);
+		}
+
 		CommonConfig config = null;
 		try {
 			config = new CommonConfig();
@@ -114,7 +132,8 @@ public class CommonConfig {
 			.ifPresent(dynamicConfigFilePath -> {
 
 				int delay = Integer.parseInt(
-					CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_CONFIG_POLL_DELAY_PROP)
+					CommonUtils.fromEnvOrSystemProperties(
+						io.cube.agent.Constants.MD_CONFIG_POLL_DELAY_PROP)
 						.orElse(io.cube.agent.Constants.DEFAULT_CONFIG_POLL_DELAY));
 				serviceExecutor = Executors.newScheduledThreadPool(1);
 				serviceExecutor.scheduleWithFixedDelay(new Updater(dynamicConfigFilePath), 0, delay,
@@ -124,13 +143,6 @@ public class CommonConfig {
 			});
 
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-		try {
-			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
-				getResourceAsStream(STATIC_CONFFILE));
-		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while initializing config")),e);
-		}
 
 	}
 
@@ -167,6 +179,16 @@ public class CommonConfig {
 			.orElseThrow(() -> new Exception("Mesh-D Service Name Not Specified"));
 		intent = fromDynamicOREnvORStaticProperties(Constants.MD_INTENT_PROP, dynamicProperties)
 			.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
+		samplerType = fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_TYPE,
+			dynamicProperties)
+			.orElse(CountingSampler.TYPE);
+		samplerRate = getPropertyAsNum(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_RATE, dynamicProperties)
+				.orElse(CountingSampler.DEFAULT_SAMPLING_RATE));
+		headerParams = getPropertyAsList(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_HEADER_PARAMS,
+				dynamicProperties)
+				.orElse(Strings.EMPTY));
 		// TODO Replace with constants once it comes in commons
 //        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
 
@@ -182,7 +204,6 @@ public class CommonConfig {
 			return Optional.empty();
 		});
 
-
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
 			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
@@ -190,15 +211,18 @@ public class CommonConfig {
 		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
 		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
 
-
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
 			GlobalTracer.register(tracer);
 		} catch (IllegalStateException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Trying to register a tracer when one is already registered")), e);
 		}
 
-		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
+		sampler = createSampler();
+
+		LOGGER.info(new ObjectMessage(
+			Map.of(Constants.MESSAGE, "CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
 
 	}
 
@@ -226,15 +250,15 @@ public class CommonConfig {
 	}
 
 	public static String getCurrentIntent() {
-		return getCurrentIntentFromScope().orElse(getConfigIntent());
+		String currentIntent = getCurrentIntentFromScope().orElse(getConfigIntent());
+		LOGGER.info("Got intent from trace (in agent) :: " + currentIntent);
+		return currentIntent;
 	}
 
-	private static Optional<String> getCurrentIntentFromScope() {
+	public static Optional<String> getCurrentIntentFromScope() {
 		Optional<String> currentIntent = CommonUtils.getCurrentSpan().flatMap(span -> Optional.
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
 			CommonUtils.fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
-		LOGGER.info("Got intent from trace (in agent) :: " +
-			currentIntent.orElse(" N/A"));
 		return currentIntent;
 	}
 
@@ -244,6 +268,39 @@ public class CommonConfig {
 
 	public static boolean isIntentToMock() {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
+	}
+
+	private static Number getPropertyAsNum(String value) {
+		if (value != null) {
+			try {
+				return NumberFormat.getInstance().parse(value);
+			} catch (ParseException e) {
+				LOGGER.error(
+					"Failed to parse number for property samplerRate with value '" + value + "'",
+					e.getMessage());
+			}
+		}
+		return null;
+	}
+
+	private List<String> getPropertyAsList(String headerParams) {
+		return Arrays.asList(headerParams.split(","));
+	}
+
+	Sampler createSampler() {
+		if (samplerType.equals(CountingSampler.TYPE)) {
+			return CountingSampler.create(samplerRate.floatValue());
+		}
+
+		if (samplerType.equals(BoundarySampler.TYPE)) {
+			if (headerParams.isEmpty()) {
+				throw new IllegalArgumentException(
+					"Requires Header Params, Use CountingSampler instead!");
+			}
+			return BoundarySampler.create(samplerRate.floatValue(), headerParams);
+		}
+
+		throw new IllegalStateException(String.format("Invalid sampling strategy %s", samplerType));
 	}
 
 }
