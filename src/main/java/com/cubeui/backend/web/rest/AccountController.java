@@ -133,24 +133,24 @@ public class AccountController {
      * @param activationKey the activation key
      * @throws RecordNotFoundException if the user couldn't be activated
      */
-    @GetMapping("/activate")
+    @PostMapping("/activate")
     public ResponseEntity activateAccount(@RequestParam(value = "key") String activationKey) {
-        // TODO: the following logic is flawed and will be redone.
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            // check if key has expired (48H)
-            if(user.getCreatedAt().plusHours(48L).isAfter(LocalDateTime.now())) {
-                mailService.sendCreationEmail(user);
-                mailService.sendCreationEmailAdmin(user);
-                return ok("User activated");
-            } else {
-                throw new ActivationKeyExpiredException("Activation key expired");
-            }
+            mailService.sendCreationEmail(user);
+            mailService.sendCreationEmailAdmin(user);
+            return ok("User activated");
         } else {
             throw new RecordNotFoundException("No user was found for with this activation key");
         }
     }
+
+    // todo
+    // resend activation token mail endpoint
+    // write validate flow
+    // test everything!
+
 
     @PostMapping(path = "/reset-password/init")
     public ResponseEntity requestPasswordReset(@RequestParam(value = "email") String email) {

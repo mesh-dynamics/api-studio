@@ -6,7 +6,9 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.service.jwt.JwtActivationTokenProvider;
 import com.cubeui.backend.service.utils.RandomUtil;
+import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,11 +35,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CustomerService customerService;
+    private final JwtActivationTokenProvider jwtTokenProvider;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CustomerService customerService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CustomerService customerService, JwtActivationTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -80,7 +84,7 @@ public class UserService {
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .customer(customer.get())
                     .roles(roles)
-                    .activationKey(RandomUtil.generateActivationKey())
+                    .activationKey(jwtTokenProvider.createActivationToken(userDTO.getEmail()))
                     .activated(isActivated)
                     .build()
             ));
@@ -139,13 +143,17 @@ public class UserService {
 
     public Optional<User> activateUser(String key) {
         log.debug("Activating user for activation key {}", key);
-        return userRepository.findByActivationKey(key)
+        if(jwtTokenProvider.validateToken(key)) {
+            return userRepository.findByActivationKey(key)
                 .map(user -> {
                     user.setActivated(true);
                     user.setActivationKey(null);
 //                    userRepository.save(user);
                     return user;
                 });
+        } else {
+            throw new ActivationKeyExpiredException("Activation key expired");
+        }
     }
 
     @Scheduled(cron = "0 0 1 * * ?")
