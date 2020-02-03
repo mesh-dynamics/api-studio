@@ -53,4 +53,9 @@ logging:
 
 cube:
     server:
-        baseUrl: http://demo.prod.v2.cubecorp.io
+            baseUrl: http://cubews-record.cube.svc.cluster.local:8080
+
+external:
+    recaptcha:
+        base-url: https://www.google.com/recaptcha/api/siteverify
+        secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr-
