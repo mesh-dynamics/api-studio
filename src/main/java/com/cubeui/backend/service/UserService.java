@@ -13,6 +13,7 @@ import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.UserAlreadyActivatedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -163,7 +164,22 @@ public class UserService {
           }
     }
 
-    @Scheduled(cron = "0 0 1 * * ?")
+    public Optional<User> resendActivationMail(String email) {
+        Optional<User> userOptional = userRepository.findByUsername(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (!user.isActivated()) {
+                user.setActivationKey(jwtTokenProvider.createActivationToken(email));
+                return Optional.of(user);
+            } else {
+                throw new UserAlreadyActivatedException("User already activated");
+            }
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
+    }
+
+    //@Scheduled(cron = "0 0 1 * * ?")
     public void removeNotActivatedUsers() {
         List<User> users = userRepository.findAllByActivatedIsFalseAndCreatedAtBefore(LocalDateTime.now().minusDays(30));
         for (User user : users) {

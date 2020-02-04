@@ -149,7 +149,13 @@ public class AccountController {
         }
     }
 
-
+    @PostMapping("/resend-activation-mail")
+    public ResponseEntity resendActivationMail(@RequestParam(value="email") String email) {
+        log.info("Resend activation mail for " + email);
+        Optional<User> user = userService.resendActivationMail(email);
+        mailService.sendActivationEmail(user.get());
+        return ok("User activation mail sent");
+    }
 
     @PostMapping(path = "/reset-password/init")
     public ResponseEntity requestPasswordReset(@RequestParam(value = "email") String email) {
