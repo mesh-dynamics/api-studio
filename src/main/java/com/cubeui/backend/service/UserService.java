@@ -10,6 +10,7 @@ import com.cubeui.backend.service.jwt.JwtActivationTokenProvider;
 import com.cubeui.backend.service.utils.RandomUtil;
 import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.InvalidDataException;
+import com.cubeui.backend.web.exception.UserAlreadyActivatedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -142,18 +143,24 @@ public class UserService {
     }
 
     public Optional<User> activateUser(String key) {
-        log.debug("Activating user for activation key {}", key);
-        if(jwtTokenProvider.validateToken(key)) {
-            return userRepository.findByActivationKey(key)
-                .map(user -> {
-                    user.setActivated(true);
-                    user.setActivationKey(null);
-//                    userRepository.save(user);
-                    return user;
-                });
-        } else {
+        log.debug("Validating and activating user for activation key {}", key);
+        // verify that the token hasn't expired, and extract the user email from it
+        String userEmail = jwtTokenProvider.validateToken(key);
+        if(userEmail != null) {
+            return userRepository.findByUsername(userEmail)
+              .map(user -> {
+                  if(user.isActivated()) {
+                    throw new UserAlreadyActivatedException("User already activated");
+                  }
+                  user.setActivated(true);
+//                  user.setActivationKey(null);
+  //                    userRepository.save(user);
+                  return user;
+              });
+          } else {
+            log.info("Activation key expired");
             throw new ActivationKeyExpiredException("Activation key expired");
-        }
+          }
     }
 
     @Scheduled(cron = "0 0 1 * * ?")

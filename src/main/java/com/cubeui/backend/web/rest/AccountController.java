@@ -17,6 +17,7 @@ import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -36,6 +37,7 @@ import static com.cubeui.backend.security.Constants.PASSWORD_MIN_LENGTH;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.ResponseEntity.*;
 
+@Log
 @RestController()
 @RequestMapping("/api/account")
 public class AccountController {
@@ -128,13 +130,14 @@ public class AccountController {
     }
 
     /**
-     * GET  /activate : activate the registered user.
+     * POST  /activate : activate the registered user.
      *
      * @param activationKey the activation key
      * @throws RecordNotFoundException if the user couldn't be activated
      */
     @PostMapping("/activate")
     public ResponseEntity activateAccount(@RequestParam(value = "key") String activationKey) {
+        log.info("Activate user called with key: " + activationKey);
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -146,10 +149,6 @@ public class AccountController {
         }
     }
 
-    // todo
-    // resend activation token mail endpoint
-    // write validate flow
-    // test everything!
 
 
     @PostMapping(path = "/reset-password/init")
