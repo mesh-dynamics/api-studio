@@ -25,10 +25,31 @@ generate_manifest() {
 		fi
 		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
 		COMMON_DIR=apps/common
+		if [ -z "$CUBE_SERVICE_ENDPOINT" ]; then
+			CUBE_SERVICE_ENDPOINT=null
+		fi
+		if [ -z "$NAMESPACE_HOST" ]; then
+			NAMESPACE_HOST=null
+		fi
+		if [ -z "$CUBE_HOST" ]; then
+			CUBE_HOST=null
+		fi
+		if [ -z "$STAGING_HOST" ]; then
+			STAGING_HOST=null
+		fi
+		if [ -z "$INSTANCEID" ]; then
+			INSTANCEID=null
+		fi
+		if [ -z "$SPRINGBOOT_PROFILE" ]; then
+			SPRINGBOOT_PROFILE=null
+		fi
+		if [ -z "$SOLR_CORE" ]; then
+			SOLR_CORE=null
+		fi
 		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $MASTER_NAMESPACE
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $CUBE_HOST
 	fi
 }
 
@@ -129,14 +150,14 @@ start_record() {
 	else
 		GOLDEN_NAME=$3
 	fi
-
 	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
 
-	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
+kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 
 	RESPONSE="$(curl -X POST \
-  http://$GATEWAY_URL/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
+  http://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'\
   -d "$BODY" )"
@@ -157,8 +178,9 @@ stop_record() {
   echo "Stopping recording for recording ID:" $RECORDING_ID
 
 	curl -X POST \
-	http://$GATEWAY_URL/cs/stop/$RECORDING_ID \
+	http://$CUBE_HOST/api/cs/stop/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
@@ -214,8 +236,9 @@ replay() {
 	fi
 
   REPLAY_ID=$(curl -f -X POST \
-  http://$GATEWAY_URL/rs/start/$RECORDING_ID \
+  http://$CUBE_HOST/api/rs/start/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
   -H 'cache-control: no-cache' \
 	-H "Host: $CUBE_HOST" \
 	-d "$BODY" | sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
@@ -244,8 +267,9 @@ replay_status() {
 		COLLECTION_NAME=$1
 	fi
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
-	curl http://$GATEWAY_URL/rs/status/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
+	curl http://$CUBE_HOST/api/rs/status/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
+	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	  -H 'cache-control: no-cache' \
 		-H "Host: $CUBE_HOST" | jq -r "."
 }
@@ -254,8 +278,9 @@ analyze() {
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
 	echo "Analyzing for replay ID:" $REPLAY_ID
 	curl -X POST \
-	  http://$GATEWAY_URL/as/analyze/$REPLAY_ID \
+	  http://$CUBE_HOST/api/as/analyze/$REPLAY_ID \
 	  -H 'Content-Type: application/x-www-form-urlencoded' \
+		-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	  -H 'cache-control: no-cache' \
 		-H "Host: $CUBE_HOST" | jq -r "."
 }
