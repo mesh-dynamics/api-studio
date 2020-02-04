@@ -39,7 +39,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.zookeeper.Op;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -1072,23 +1071,20 @@ public class CubeStore {
                     .withStatus(rec.status)
                     .withTemplateSetVersion(rec.templateVersion)
                     .withRootRecordingId(rec.rootRecordingId)
-                    .withArchived(false);
+                    .withArchived(rec.archived);
                 rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
-                name.ifPresentOrElse(recordingBuilder::withName, ()-> {recordingBuilder.withName(rec.name);});
-                userId.ifPresentOrElse(recordingBuilder::withUserId, ()-> {recordingBuilder.withUserId(rec.userId);});
-                codeVersion.ifPresentOrElse(recordingBuilder::withCodeVersion,
-                    ()-> {rec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);});
-                branch.ifPresentOrElse(recordingBuilder::withBranch,
-                    ()-> {rec.branch.ifPresent(recordingBuilder::withBranch);});
+                recordingBuilder.withName(name.orElse(rec.name));
+                recordingBuilder.withUserId(userId.orElse(rec.userId));
+                recordingBuilder.withCodeVersion(codeVersion.orElse(rec.codeVersion.orElse(null)));
+                recordingBuilder.withBranch(branch.orElse(rec.branch.orElse(null)));
+
                 if(tags.isEmpty()) {
                     recordingBuilder.withTags(rec.tags);
                 } else {
                     recordingBuilder.withTags(tags);
                 }
-                gitCommitId.ifPresentOrElse(recordingBuilder::withGitCommitId,
-                    ()-> {rec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);});
-                comment.ifPresentOrElse(recordingBuilder::withComment,
-                    ()-> {rec.comment.ifPresent(recordingBuilder::withComment);});
+                recordingBuilder.withGitCommitId(gitCommitId.orElse(rec.gitCommitId.orElse(null)));
+                recordingBuilder.withComment(comment.orElse(rec.comment.orElse(null)));
                 rec.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
                 rec.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
                 rec.generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -1106,16 +1102,21 @@ public class CubeStore {
             } catch (JsonProcessingException ex) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
                     "Error in converting Recording object to Json for recordingId", "RecordingId",
-                    recordingId,
-                    Constants.REASON, ex)));
+                    recordingId)), ex);
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Unable to parse JSON ")).build();
             } catch (RecordingWithSameNamePresent recordingWithSameNamePresent) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                    "Golden with same name present", "RecordingId",
+                    recordingId)), recordingWithSameNamePresent);
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAME_NAME_EXCEPTION,
                         recordingWithSameNamePresent.getMessage())).build();
             } catch (Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                    "Generic exception", "RecordingId",
+                    recordingId)), e);
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.GENERIC_EXCEPTION,
                         e.getMessage())).build();
