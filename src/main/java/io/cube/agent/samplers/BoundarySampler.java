@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -24,7 +23,6 @@ import javax.ws.rs.core.MultivaluedMap;
 public class BoundarySampler extends Sampler {
 
 	public static final String TYPE = "boundary";
-	private static float samplingRateValue;
 
 	public static Sampler create(float samplingRate, List<String> samplingParams) {
 		if (samplingRate == 0) {
@@ -38,7 +36,6 @@ public class BoundarySampler extends Sampler {
 				"The sampling rate must be between 0.0001 and 1.0");
 		}
 		long boundary = (long) (samplingRate * 10000);
-		samplingRateValue = samplingRate;
 		return new BoundarySampler(boundary, samplingParams);
 	}
 
@@ -65,10 +62,6 @@ public class BoundarySampler extends Sampler {
 	@Override
 	public boolean isSampled(MultivaluedMap<String, String> headers) {
 		List<String> samplingStrings = getSamplingStrings(headers);
-		if (samplingStrings.isEmpty()) { //avoid this. Use CountingSampler instead.
-			Random random = new Random(System.currentTimeMillis());
-			return random.nextDouble() > samplingRateValue;
-		}
 		long hashId = Math.abs(Objects.hash(samplingStrings.toArray()));
 		return hashId % 10000 <= boundary;
 	}

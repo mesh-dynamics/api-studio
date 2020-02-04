@@ -110,23 +110,19 @@ public class CommonConfig {
 	}
 
 	static {
+
+		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
 		try {
 			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
 				getResourceAsStream(STATIC_CONFFILE));
+			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
+				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
 		} catch (Exception e) {
 			LOGGER.error(
-				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while initializing config")), e);
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while initializing con fig")),
+				e);
 		}
-
-		CommonConfig config = null;
-		try {
-			config = new CommonConfig();
-		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error in initialising common config object")), e);
-		}
-		singleInstance = new AtomicReference<>();
-		singleInstance.set(config);
 
 		CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_COMMON_CONF_FILE_PROP)
 			.ifPresent(dynamicConfigFilePath -> {
@@ -142,8 +138,15 @@ public class CommonConfig {
 				// serviceExecutor.shutdown();
 			});
 
-		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
+		CommonConfig config = null;
+		try {
+			config = new CommonConfig();
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error in initialising common config object")), e);
+		}
+		singleInstance = new AtomicReference<>();
+		singleInstance.set(config);
 	}
 
 	private CommonConfig() throws Exception {
@@ -162,8 +165,7 @@ public class CommonConfig {
 				orElseThrow(() -> new Exception("Mesh-D Read Timeout Not Specified")));
 		CONNECT_TIMEOUT = Integer.parseInt(
 			fromDynamicOREnvORStaticProperties(Constants.MD_CONNECT_TIMEOUT_PROP, dynamicProperties)
-				.
-					orElseThrow(() -> new Exception("Mesh-D Connection Timeout Not Specified")));
+				.orElseThrow(() -> new Exception("Mesh-D Connection Timeout Not Specified")));
 		RETRIES = Integer.parseInt(
 			fromDynamicOREnvORStaticProperties(Constants.MD_RETRIES_PROP, dynamicProperties).
 				orElseThrow(() -> new Exception("Mesh-D Connection Retry Limit Not Specified")));
@@ -184,7 +186,7 @@ public class CommonConfig {
 			.orElse(CountingSampler.TYPE);
 		samplerRate = getPropertyAsNum(
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_RATE, dynamicProperties)
-				.orElse(CountingSampler.DEFAULT_SAMPLING_RATE));
+				.orElse(CountingSampler.DEFAULT_SAMPLING_RATE)).orElse(1);
 		headerParams = getPropertyAsList(
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_HEADER_PARAMS,
 				dynamicProperties)
@@ -240,7 +242,7 @@ public class CommonConfig {
 			.or(() -> fromEnvOrProperties(propertyName));
 	}
 
-	private Optional<String> fromEnvOrProperties(String propertyName) {
+	private static Optional<String> fromEnvOrProperties(String propertyName) {
 		return CommonUtils.fromEnvOrSystemProperties(propertyName)
 			.or(() -> Optional.ofNullable(staticProperties.getProperty(propertyName)));
 	}
@@ -270,17 +272,17 @@ public class CommonConfig {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
 	}
 
-	private static Number getPropertyAsNum(String value) {
+	private static Optional<Number> getPropertyAsNum(String value) {
 		if (value != null) {
 			try {
-				return NumberFormat.getInstance().parse(value);
+				return Optional.of(NumberFormat.getInstance().parse(value));
 			} catch (ParseException e) {
 				LOGGER.error(
 					"Failed to parse number for property samplerRate with value '" + value + "'",
 					e.getMessage());
 			}
 		}
-		return null;
+		return Optional.empty();
 	}
 
 	private List<String> getPropertyAsList(String headerParams) {
@@ -294,13 +296,18 @@ public class CommonConfig {
 
 		if (samplerType.equals(BoundarySampler.TYPE)) {
 			if (headerParams.isEmpty()) {
-				throw new IllegalArgumentException(
-					"Requires Header Params, Use CountingSampler instead!");
+				//Need Sampling Params for Boundary Sampler
+				return CountingSampler.create(samplerRate.floatValue());
 			}
 			return BoundarySampler.create(samplerRate.floatValue(), headerParams);
 		}
 
-		throw new IllegalStateException(String.format("Invalid sampling strategy %s", samplerType));
+		LOGGER.error(new ObjectMessage(
+			Map.of(
+				Constants.MESSAGE, "Invalid sampling strategy, using default values",
+				Constants.MD_SAMPLER_TYPE, samplerType
+			)));
+		return CountingSampler.create(samplerRate.floatValue());
 	}
 
 }

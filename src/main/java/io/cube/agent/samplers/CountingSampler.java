@@ -26,6 +26,7 @@ import javax.ws.rs.core.MultivaluedMap;
 public class CountingSampler extends Sampler {
 	public static final String TYPE = "counting";
 	public static final String DEFAULT_SAMPLING_RATE = "1";
+	public static final Integer SAMPLING_ACCURACY = 100;
 
 	public static Sampler create(float samplingRate) {
 		if (samplingRate == 0) return Sampler.NEVER_SAMPLE;
@@ -43,15 +44,15 @@ public class CountingSampler extends Sampler {
 
 	CountingSampler(double samplingRate) {
 		this.counter = new AtomicInteger();
-		int cardinality = (int) (samplingRate * 100.0f);
+		int cardinality = (int) (samplingRate * SAMPLING_ACCURACY.floatValue());
 		//can further randomize by resetting this.
-		this.sampleDecisions = randomBitSet(100, cardinality, new Random());
+		this.sampleDecisions = randomBitSet(SAMPLING_ACCURACY, cardinality, new Random());
 	}
 
 	@Override
 	public boolean isSampled(MultivaluedMap<String, String> samplingParams) {
 		synchronized (this) {
-			return sampleDecisions.get(counter.getAndIncrement()%100);
+			return sampleDecisions.get(counter.getAndIncrement()%SAMPLING_ACCURACY);
 		}
 	}
 
