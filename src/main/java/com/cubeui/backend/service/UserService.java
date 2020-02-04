@@ -1,10 +1,18 @@
 package com.cubeui.backend.service;
 
+import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.AppUser;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.Instance;
+import com.cubeui.backend.domain.InstanceUser;
 import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.AppUserRepository;
+import com.cubeui.backend.repository.InstanceRepository;
+import com.cubeui.backend.repository.InstanceUserRepository;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.utils.RandomUtil;
 import com.cubeui.backend.web.exception.InvalidDataException;
@@ -33,11 +41,22 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CustomerService customerService;
+    private final AppRepository appRepository;
+    private final AppUserRepository appUserRepository;
+    private final InstanceRepository instanceRepository;
+    private final InstanceUserRepository instanceUserRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CustomerService customerService) {
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+        CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
+        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
+        this.appRepository = appRepository;
+        this.appUserRepository = appUserRepository;
+        this.instanceRepository = instanceRepository;
+        this.instanceUserRepository = instanceUserRepository;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -84,6 +103,28 @@ public class UserService {
                     .activated(isActivated)
                     .build()
             ));
+
+            Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
+            Optional<User> finalUser = user;
+            appsOptional.ifPresent(apps -> {
+                apps.forEach(app -> {
+                    AppUser appUser = new AppUser();
+                    appUser.setApp(app);
+                    appUser.setUser(finalUser.get());
+
+                    Optional<List<Instance>> instancesOptional = instanceRepository.findByAppId(app.getId());
+                    instancesOptional.ifPresent(instances -> {
+                        instances.forEach(instance -> {
+                            InstanceUser instanceUser = new InstanceUser();
+                            instanceUser.setInstance(instance);
+                            instanceUser.setUser(finalUser.get());
+                            instanceUserRepository.save(instanceUser);
+                        });
+                    });
+
+                    appUserRepository.save(appUser);
+                });
+            });
         }
         return user.get();
     }
