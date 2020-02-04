@@ -13,3 +13,11 @@ spec:
       protocol: HTTP
     hosts:
     - "{{namespace_host}}"
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 443
+      name: https
+      protocol: HTTP
+    hosts:
+    - "{{namespace_host}}"
