@@ -1,6 +1,9 @@
 package com.cubeui.backend.web.external;
 
+import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,19 +15,103 @@ import java.util.Optional;
 @RequestMapping("/api/cs")
 public class CubeStoreController {
 
+    @Autowired
     private CubeServerService cubeServerService;
+    @Autowired
+    private Validation validation;
 
-    public CubeStoreController(CubeServerService cubeServerService) {
-        this.cubeServerService = cubeServerService;
-    }
-
-    @GetMapping("**")
-    public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody) {
+    @GetMapping("/status/{customerId}/{app}/{collection}/{templateSetVersion}")
+    public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
+                                 @PathVariable String app, @PathVariable String collection, @PathVariable String templateSetVersion){
+        validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("**")
-    public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+    @PostMapping("/start/{customerId}/{app}/{instanceId}/{collection}/{templateSetVersion}")
+    public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
+                                  @PathVariable String app, @PathVariable String instanceId, @PathVariable String collection,
+                                  @PathVariable String templateSetVersion) {
+        validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/stop/{recordingId}")
+    public ResponseEntity stop(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/getEvents")
+    public ResponseEntity getEvents(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/rr/{var}")
+    public ResponseEntity storerr(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String var, @RequestParam String customerId) {
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/rrbatch")
+    public ResponseEntity storeRrBatch(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/fr")
+    public ResponseEntity storeFunc(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/storeEventBatch")
+    public ResponseEntity storeEventBatch(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/storeEvent")
+    public ResponseEntity storeEvent(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/frbatch")
+    public ResponseEntity storeFuncBatch(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/event/setDefaultResponse")
+    public ResponseEntity setDefaultRespForEvent(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @GetMapping("/searchRecording")
+    public ResponseEntity searchRecording(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId){
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @GetMapping("/recordings")
+    public ResponseEntity recordings(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId,
+                                     @RequestParam String app){
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @GetMapping("/currentcollection")
+    public ResponseEntity currentcollection(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId){
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/softDelete/{recordingId}")
+    public ResponseEntity softDelete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @GetMapping("/warmupcache")
+    public ResponseEntity warmUpCache(HttpServletRequest request, @RequestBody Optional<String> getBody){
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity health(HttpServletRequest request, @RequestBody Optional<String> getBody){
+        return cubeServerService.fetchGetResponse(request, getBody);
     }
 }

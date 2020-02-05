@@ -47,15 +47,15 @@ public class CubeServerService {
         }
     }
 
-    public ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<String> requestBody) {
+    public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody) {
         return fetchResponse(request, requestBody, HttpMethod.GET);
     }
 
-    public ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<String> requestBody) {
+    public <T> ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<T> requestBody) {
         return fetchResponse(request, requestBody, HttpMethod.POST);
     }
 
-    private ResponseEntity fetchResponse(HttpServletRequest request, Optional<String> requestBody, HttpMethod method){
+    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method){
         String path = cubeServerBaseUrl + request.getRequestURI().replace("/api", "");
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
@@ -66,7 +66,7 @@ public class CubeServerService {
             request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
 //            MultiValueMap<String, String[]> map = new LinkedMultiValueMap<>();
 //            request.getParameterMap().forEach(map::add);
-            HttpEntity<String> entity;
+            HttpEntity<T> entity;
             entity = requestBody.map(body -> new HttpEntity<>(body, headers)).orElseGet(() -> new HttpEntity<>(headers));
 //            return restTemplate.postForEntity(uri, entity, String.class);
             return restTemplate.exchange(uri, method, entity, String.class);
