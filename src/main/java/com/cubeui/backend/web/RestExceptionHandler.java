@@ -1,6 +1,7 @@
 package com.cubeui.backend.web;
 
 import com.cubeui.backend.security.jwt.InvalidJwtAuthenticationException;
+import com.cubeui.backend.web.exception.CustomerIdException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -40,5 +41,11 @@ public class RestExceptionHandler {
     public ResponseEntity invalidData(DuplicateRecordException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse("Record Already Exists", ex.getMessage(), FORBIDDEN.value());
         return status(FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {CustomerIdException.class})
+    public ResponseEntity invalidData(CustomerIdException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse("Inavlid Customer Id", ex.getMessage(), UNAUTHORIZED.value());
+        return status(UNAUTHORIZED).body(errorResponse);
     }
 }
