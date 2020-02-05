@@ -99,7 +99,7 @@ public class RecordingUpdate {
                     , updateRequest.operationSetId, Constants.RECORDING_UPDATE_API_OPERATION_SET_ID
                     , recordingOperationSet.operationSetId)));
                 updateRequest.operationsList.forEach(
-                    newOperation -> operationMap.put(newOperation.hashString(), newOperation)
+                    newOperation -> operationMap.put(newOperation.key(), newOperation)
                 );
                 recordingOperationSet.setOperationsList(new ArrayList<>(operationMap.values()));
                 // store it back
@@ -134,7 +134,7 @@ public class RecordingUpdate {
         operationsList) {
         LOGGER.debug("converting operation set list to map of (jsonpath -> operation)");
         return operationsList.stream()
-            .collect(Collectors.toMap(ReqRespUpdateOperation::hashString, op -> op));
+            .collect(Collectors.toMap(ReqRespUpdateOperation::key, op -> op, (op1, op2) -> op2));
     }
 
     /*
@@ -190,14 +190,12 @@ public class RecordingUpdate {
                     .map(updateOpSet -> updateOpSet.operationsList)
                     .orElse(Collections.emptyList());
 
-                List<ReqRespUpdateOperation> reqOperationList = operationsList.stream()
-                    .filter(op -> op.eventType == ReqRespUpdateOperation.Type.Request).collect(
-                        Collectors.toList());
+                Map<Boolean, List<ReqRespUpdateOperation>> operationTypeVsList
+                    = operationsList.stream().collect(Collectors.partitioningBy(
+                        op -> op.eventType == ReqRespUpdateOperation.Type.Request));
 
-                List<ReqRespUpdateOperation> responseOperationList = operationsList.stream()
-                    .filter(op -> op.eventType == ReqRespUpdateOperation.Type.Response).collect(
-                        Collectors.toList());
-
+                List<ReqRespUpdateOperation> reqOperationList = operationTypeVsList.get(true);
+                List<ReqRespUpdateOperation> responseOperationList = operationTypeVsList.get(false);
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
                 Event transformedResponse = recordResponse.applyTransform(replayResponse
@@ -209,8 +207,7 @@ public class RecordingUpdate {
                 Comparator comparator = config.comparatorCache.getComparator(key
                     , Event.EventType.HTTPRequest);
 
-                // Currently request is not transformed, so send empty operation list and empty
-                // replayRequest
+                // Transform request
                 Event transformedRequest = recordRequest.applyTransform(replayRequest
                     , reqOperationList, config, newCollectionName, newReqId
                     , Optional.of(comparator));

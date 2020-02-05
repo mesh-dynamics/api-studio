@@ -356,13 +356,11 @@ public class AnalyzeWS {
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(new JSONObject(Map.of(Constants.ERROR, "Api Path not Specified"))
-	                .toString()).build();
+                .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
         }
         if (jsonpath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(new JSONObject(Map.of(Constants.ERROR, "Json Path not Specified"))
-	                .toString()).build();
+                .entity(Map.of(Constants.ERROR, "Json Path not Specified")).build();
         }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
@@ -377,12 +375,11 @@ public class AnalyzeWS {
         } catch (JsonProcessingException e) {
 	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 		        .type(MediaType.APPLICATION_JSON)
-		        .entity(new JSONObject(Map.of(Constants.ERROR
-			        , "Not able to convert rule to json")).toString()).build();
+		        .entity(Map.of(Constants.ERROR
+			        , "Not able to convert rule to json")).build();
         } catch (TemplateNotFoundException e) {
 	        return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
-		        .entity(new JSONObject(Map.of(Constants.ERROR, "Assertion rule not found"))
-			        .toString()).build();
+		        .entity(Map.of(Constants.ERROR, "Assertion rule not found")).build();
         }
 
     }

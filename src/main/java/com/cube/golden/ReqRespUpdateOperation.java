@@ -37,11 +37,7 @@ public class ReqRespUpdateOperation {
             '}';
     }
 
-    public int hash() {
-        return Objects.hash(jsonpath , eventType);
-    }
-
-    public String hashString() {
-        return String.valueOf(hash());
+    public String key() {
+        return jsonpath.concat("::").concat(eventType.name());
     }
 }

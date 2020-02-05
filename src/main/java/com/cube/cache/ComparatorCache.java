@@ -124,40 +124,8 @@ public class ComparatorCache {
             rrStore.getDefaultEventType(key.getCustomerId()
             , key.getAppId(), key.getServiceId(), key.getPath()).orElseThrow(
             TemplateNotFoundException::new)).orElseThrow(TemplateNotFoundException::new);
-        EventType eventType;
-        boolean sendDefault = false;
-        switch(defaultEventType) {
-            case HTTPRequest:
-            case HTTPResponse:
-                if (key.getReqOrResp() == Type.ResponseCompare) {
-                    eventType = HTTPResponse;
-                    sendDefault = true;
-                } else {
-                    eventType = HTTPRequest;
-                }
-                break;
-            case ThriftRequest:
-            case ThriftResponse:
-                if (key.getReqOrResp() == Type.ResponseCompare) {
-                    eventType = ThriftResponse;
-                    sendDefault = true;
-                } else {
-                    eventType = ThriftRequest;
-                }
-                break;
-            case JavaRequest:
-            case JavaResponse:
-                if (key.getReqOrResp() == Type.ResponseCompare) {
-                    eventType = JavaResponse;
-                    sendDefault = true;
-                } else {
-                    eventType = JavaRequest;
-                }
-                break;
-            default:
-                throw new TemplateNotFoundException();
-        }
-        return getComparator(key, eventType, sendDefault);
+        return getComparator(key, EventType.mapType(defaultEventType
+            , key.isResponseTemplate()), key.isResponseTemplate());
     }
 
 
