@@ -1058,12 +1058,19 @@ public class CubeStore {
                 List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
                 Optional<String> comment = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_COMMENT_FIELD));
 
-                name.ifPresent(UtilException.rethrowConsumer(nameVal -> {
+
+                if(name.isPresent()) {
+                    String nameVal = name.get();
                     Optional<Recording> recWithSameName = rrstore.getRecordingByName(rec.customerId, rec.app, nameVal);
                     if (recWithSameName.isPresent()) {
-                        throw new RecordingWithSameNamePresent("Golden already present for name - " + nameVal + ". Specify unique name");
+                        String errorMessage = "Golden with same name present " + nameVal;
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                            errorMessage, "RecordingId", recordingId)));
+                        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                            buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAME_NAME_EXCEPTION,
+                                errorMessage)).build();
                     }
-                }));
+                }
 
 
                 RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(rec.customerId, rec.app
@@ -1106,13 +1113,6 @@ public class CubeStore {
                 return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                     buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Unable to parse JSON ")).build();
-            } catch (RecordingWithSameNamePresent recordingWithSameNamePresent) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
-                    "Golden with same name present", "RecordingId",
-                    recordingId)), recordingWithSameNamePresent);
-                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                    buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAME_NAME_EXCEPTION,
-                        recordingWithSameNamePresent.getMessage())).build();
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
                     "Generic exception", "RecordingId",
