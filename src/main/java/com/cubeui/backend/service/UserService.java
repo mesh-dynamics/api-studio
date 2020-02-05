@@ -104,6 +104,7 @@ public class UserService {
                     .build()
             ));
 
+            // assign apps and their instances to the user from the customer
             Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
             Optional<User> finalUser = user;
             appsOptional.ifPresent(apps -> {
