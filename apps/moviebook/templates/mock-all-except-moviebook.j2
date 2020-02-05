@@ -13,12 +13,12 @@ spec:
     - uri:
         prefix: /reviews
     rewrite:
-      uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/reviews/reviews
+      uri: /api/ms/{{customer}}/{{cube_application}}/{{cube_instance}}/reviews/reviews
     route:
     - destination:
-        host: cubews-mock.cube.svc.cluster.local
+        host: cube-proxy
         port:
-          number: 8080
+          number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -35,12 +35,12 @@ spec:
     - uri:
         prefix: /ratings
     rewrite:
-        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/ratings/ratings
+        uri: /api/ms/{{customer}}/{{cube_application}}/{{cube_instance}}/ratings/ratings
     route:
     - destination:
-        host: cubews-mock.cube.svc.cluster.local
+        host: cube-proxy
         port:
-          number: 8080
+          number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -57,12 +57,12 @@ spec:
     - uri:
         prefix: /details
     rewrite:
-        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/details/details
+        uri: /api/ms/{{customer}}/{{cube_application}}/{{cube_instance}}/details/details
     route:
     - destination:
-        host: cubews-mock.cube.svc.cluster.local
+        host: cube-proxy
         port:
-          number: 8080
+          number: 80
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -79,9 +79,9 @@ spec:
     - uri:
         prefix: /restsql
     rewrite:
-        uri: /ms/{{customer}}/{{cube_application}}/{{cube_instance}}/restwrapjdbc/restsql
+        uri: /api/ms/{{customer}}/{{cube_application}}/{{cube_instance}}/restwrapjdbc/restsql
     route:
     - destination:
-        host: cubews-mock.cube.svc.cluster.local
+        host: cube-proxy
         port:
-          number: 8080
+          number: 80
