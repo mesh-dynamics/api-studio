@@ -268,23 +268,26 @@ public class Event {
 		ProtoBufRequest,
 		ProtoBufResponse;
 
-		public static EventType getResponseType(EventType eventType) {
-			switch (eventType) {
-				case HTTPRequest:
-				case HTTPResponse:
-					return HTTPResponse;
+		public static EventType mapType(EventType sourceType, boolean requireResponseType) {
+			switch (sourceType) {
 				case JavaRequest:
 				case JavaResponse:
-					return JavaRequest; // JavaRequest itself has response. Check if JavaResponse can be removed
+					return requireResponseType ? JavaResponse : JavaRequest;
 				case ThriftRequest:
 				case ThriftResponse:
-					return ThriftResponse;
+					return requireResponseType ? ThriftResponse : ThriftRequest;
 				case ProtoBufRequest:
 				case ProtoBufResponse:
-					return ProtoBufResponse;
+					return requireResponseType ? ProtoBufResponse : ProtoBufRequest;
+				case HTTPRequest:
+				case HTTPResponse:
 				default:
-					return HTTPResponse;
+					return requireResponseType ? HTTPResponse : HTTPRequest;
 			}
+		}
+
+		public static EventType getResponseType(EventType eventType) {
+			return mapType(eventType, true);
 		}
 
 		public static EventType fromReplayType(ReplayTypeEnum replayType) {

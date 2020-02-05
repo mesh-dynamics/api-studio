@@ -203,4 +203,12 @@ public class Recording {
 		}
 
 	}
+
+	public static class RecordingWithSameNamePresent extends Exception {
+
+		public RecordingWithSameNamePresent(String message) {
+			super(message);
+		}
+
+	}
 }
