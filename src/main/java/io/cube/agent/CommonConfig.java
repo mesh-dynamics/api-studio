@@ -92,6 +92,7 @@ public class CommonConfig {
 			", instance='" + instance + '\'' +
 			", serviceName='" + serviceName + '\'' +
 			", encryptionConfig=" + encryptionConfig +
+			", intent=" + intent +
 			'}';
 	}
 
@@ -142,6 +143,12 @@ public class CommonConfig {
 
 	private CommonConfig() throws Exception {
 		this(new Properties());
+		Tracer tracer = CommonUtils.init("tracer");
+		try {
+			GlobalTracer.register(tracer);
+		} catch (IllegalStateException e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
+		}
 	}
 
 	private CommonConfig(Properties dynamicProperties) throws Exception {
@@ -177,7 +184,7 @@ public class CommonConfig {
 //        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
 
 		// TODO Should encryptionConfig be made static and not updated every time ?
-		encryptionConfig = fromDynamicOREnvORStaticProperties("io.md.encryptionconfig.path",
+		encryptionConfig = fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.ENCRYPTION_CONF_FILE_PATH,
 			dynamicProperties).flatMap(ecf -> {
 			try {
 				return Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
@@ -196,15 +203,8 @@ public class CommonConfig {
 		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
 		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
 
-
-		Tracer tracer = CommonUtils.init("tracer");
-		try {
-			GlobalTracer.register(tracer);
-		} catch (IllegalStateException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
-		}
-
-		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
+		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"PROPERTIES POLLED :: " + this.toString())));
+//		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
 
 	}
 
