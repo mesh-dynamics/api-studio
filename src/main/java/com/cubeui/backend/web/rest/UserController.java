@@ -33,6 +33,7 @@ public class UserController {
 
     @PostMapping("/save")
     public ResponseEntity save(@RequestBody UserDTO userDTO, HttpServletRequest request) {
+        // todo: check whether the customer is present since it is used in the save call below
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isEmpty()) {
             User saved = this.userService.save(userDTO, false);

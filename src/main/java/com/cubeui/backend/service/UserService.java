@@ -93,9 +93,10 @@ public class UserService {
             u.setRoles(finalRoles);
             u.setActivated(isActivated);
             this.userRepository.save(u);
+            return u;
         } else {
             // else it's a new user, so create new user entry and assign related apps etc to it
-            user = Optional.of(this.userRepository.save(User.builder()
+            User newUser = this.userRepository.save(User.builder()
                     .name(userDTO.getName())
                     .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
@@ -103,25 +104,22 @@ public class UserService {
                     .roles(roles)
                     .activationKey(RandomUtil.generateActivationKey())
                     .activated(isActivated)
-                    .build()
-            ));
-
+                    .build());
             // assign apps and their instances to the user from the customer
             log.debug("assigning apps and instances");
             Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
-            Optional<User> finalUser = user;
             appsOptional.ifPresent(apps -> {
                 apps.forEach(app -> {
                     AppUser appUser = new AppUser();
                     appUser.setApp(app);
-                    appUser.setUser(finalUser.get());
+                    appUser.setUser(newUser);
 
                     Optional<List<Instance>> instancesOptional = instanceRepository.findByAppId(app.getId());
                     instancesOptional.ifPresent(instances -> {
                         instances.forEach(instance -> {
                             InstanceUser instanceUser = new InstanceUser();
                             instanceUser.setInstance(instance);
-                            instanceUser.setUser(finalUser.get());
+                            instanceUser.setUser(newUser);
                             instanceUserRepository.save(instanceUser);
                         });
                     });
@@ -129,8 +127,8 @@ public class UserService {
                     appUserRepository.save(appUser);
                 });
             });
+            return newUser;
         }
-        return user.get();
     }
 
     public boolean deleteUser(Long id) {
