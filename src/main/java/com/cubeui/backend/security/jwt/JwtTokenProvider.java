@@ -8,6 +8,7 @@ import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
+import com.cubeui.backend.domain.Customer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -86,6 +87,12 @@ public class JwtTokenProvider {
             return bearerToken.substring(7);
         }
         return null;
+    }
+
+    public Customer getCustomer(HttpServletRequest req) {
+        final String token = resolveToken((HttpServletRequest) req);
+        final UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token));
+        return ((User)userDetails).getCustomer();
     }
 
     boolean validateToken(String token) {
