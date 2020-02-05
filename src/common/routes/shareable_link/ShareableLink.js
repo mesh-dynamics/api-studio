@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
+import sortJson from "sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
@@ -335,7 +336,8 @@ class ShareableLink extends Component {
                 totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
                 this.setState({
-                    isFetching: true,
+                    isFetching: false,
+                    fetchComplete: true,
                     app: dataList.data.app,
                     templateVersion: dataList.data.templateVersion,
                     fetchedResults: fetchedResults
@@ -360,7 +362,6 @@ class ShareableLink extends Component {
                         let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
-                    this.setState({ isFetching: false, fetchComplete: true });
                 });
             } else {
                 this.setState({ isFetching: false, fetchComplete: true });
@@ -430,8 +431,8 @@ class ShareableLink extends Component {
             } else {
                 diff = [];
             }
-            let actJSON = JSON.stringify(replayedData, undefined, 4),
-                expJSON = JSON.stringify(recordedData, undefined, 4);
+            let actJSON = JSON.stringify(sortJson(replayedData), undefined, 4),
+                expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
             let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
 
             let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
@@ -958,14 +959,9 @@ class ShareableLink extends Component {
                             inputRef={ref => { this.input = ref; }}
                         />
                     </FormGroup>
-                    {
-                        !this.state.isFetching && this.state.fetchComplete && jsxContent.length !== 0 &&
-                        (
-                            <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
-                                <div style={{textAlign: "left"}}>{pageButtons}</div>
-                            </ButtonGroup>
-                        )
-                    }
+                    <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
+                        <div style={{textAlign: "left"}}>{pageButtons}</div>
+                    </ButtonGroup>
                 </div>
                 <div className={(this.state.isFetching || jsxContent.length === 0) ? "loading-text" : ""}>
                     {

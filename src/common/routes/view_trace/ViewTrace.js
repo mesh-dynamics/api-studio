@@ -3,6 +3,7 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import _ from 'lodash';
 import arrayToTree  from 'array-to-tree';
 import axios from "axios";
+import sortJson from "sort-json";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
@@ -444,8 +445,8 @@ class ViewTrace extends Component {
             } else {
                 diff = [];
             }
-            let actJSON = JSON.stringify(replayedData, undefined, 4),
-                expJSON = JSON.stringify(recordedData, undefined, 4);
+            let actJSON = JSON.stringify(sortJson(replayedData), undefined, 4),
+                expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
             let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
 
             let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
