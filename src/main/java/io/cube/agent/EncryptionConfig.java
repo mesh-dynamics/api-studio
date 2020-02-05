@@ -12,6 +12,12 @@ public class EncryptionConfig {
 	@JsonProperty("passPhrase")
 	private final String passPhrase;
 
+	// Default constructor for Jackson
+	private EncryptionConfig() {
+		services = null;
+		passPhrase = null;
+	}
+
 	public EncryptionConfig(
 		Map<String, ServiceMeta> services, String passPhrase) {
 		this.services = services;
@@ -27,7 +33,10 @@ public class EncryptionConfig {
 	}
 
 	static public class JSONPathMeta {
+		@JsonProperty("algorithm")
 		private final String algorithm;
+
+		@JsonProperty("metaData")
 		private final Map<String, Object> metaData;
 
 		public JSONPathMeta(String algorithm,
@@ -44,6 +53,12 @@ public class EncryptionConfig {
 			return metaData;
 		}
 
+		// Default constructor for Jackson
+		private JSONPathMeta() {
+			algorithm = null;
+			metaData = null;
+		}
+
 
 	}
 
@@ -53,11 +68,17 @@ public class EncryptionConfig {
 			return JSONPathMap;
 		}
 
+		@JsonProperty("JSONPathMap")
 		private final Map<String, JSONPathMeta> JSONPathMap;
 
 		public APIPathMeta(
 			Map<String, JSONPathMeta> jsonPathMap) {
 			JSONPathMap = jsonPathMap;
+		}
+
+		// Default constructor for Jackson
+		private APIPathMeta() {
+			JSONPathMap = null;
 		}
 	}
 
@@ -68,10 +89,16 @@ public class EncryptionConfig {
 			this.apiPathMetaMap = apiPathMetaMap;
 		}
 
+		// Default constructor for Jackson
+		private ServiceMeta() {
+			apiPathMetaMap = null;
+		}
+
 		public Optional<APIPathMeta> getApiPathMeta(String apiPath) {
 			return Optional.ofNullable(apiPathMetaMap.get(apiPath));
 		}
 
+		@JsonProperty("apiPathMetaMap")
 		private final Map<String, APIPathMeta> apiPathMetaMap;
 	}
 
