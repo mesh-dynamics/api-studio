@@ -84,15 +84,17 @@ public class UserService {
         final Set<String> finalRoles = roles;
         Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
         Optional<Customer> customer = customerService.getById(userDTO.getCustomerId());
-        user.ifPresent(u -> {
+        if(user.isPresent()) {
+            // if user already exists, update the fields
+            User u = user.get();
             Optional.ofNullable(userDTO.getName()).ifPresent(name -> u.setName(name));
             Optional.ofNullable(userDTO.getPassword()).ifPresent(password -> u.setPassword(this.passwordEncoder.encode(password)));
             Optional.ofNullable(customer).ifPresent(customerOptional -> u.setCustomer(customerOptional.get()));
             u.setRoles(finalRoles);
             u.setActivated(isActivated);
             this.userRepository.save(u);
-        });
-        if (user.isEmpty() && customer.isPresent()){
+        } else {
+            // else it's a new user, so create new user entry and assign related apps etc to it
             user = Optional.of(this.userRepository.save(User.builder()
                     .name(userDTO.getName())
                     .username(userDTO.getEmail())
@@ -105,6 +107,7 @@ public class UserService {
             ));
 
             // assign apps and their instances to the user from the customer
+            log.debug("assigning apps and instances");
             Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
             Optional<User> finalUser = user;
             appsOptional.ifPresent(apps -> {
