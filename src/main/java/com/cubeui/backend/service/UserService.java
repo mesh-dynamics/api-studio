@@ -1,10 +1,18 @@
 package com.cubeui.backend.service;
 
+import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.AppUser;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.Instance;
+import com.cubeui.backend.domain.InstanceUser;
 import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.AppUserRepository;
+import com.cubeui.backend.repository.InstanceRepository;
+import com.cubeui.backend.repository.InstanceUserRepository;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.utils.RandomUtil;
 import com.cubeui.backend.web.exception.InvalidDataException;
@@ -33,11 +41,22 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CustomerService customerService;
+    private final AppRepository appRepository;
+    private final AppUserRepository appUserRepository;
+    private final InstanceRepository instanceRepository;
+    private final InstanceUserRepository instanceUserRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CustomerService customerService) {
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+        CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
+        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
+        this.appRepository = appRepository;
+        this.appUserRepository = appUserRepository;
+        this.instanceRepository = instanceRepository;
+        this.instanceUserRepository = instanceUserRepository;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -65,16 +84,19 @@ public class UserService {
         final Set<String> finalRoles = roles;
         Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
         Optional<Customer> customer = customerService.getById(userDTO.getCustomerId());
-        user.ifPresent(u -> {
+        if(user.isPresent()) {
+            // if user already exists, update the fields
+            User u = user.get();
             Optional.ofNullable(userDTO.getName()).ifPresent(name -> u.setName(name));
             Optional.ofNullable(userDTO.getPassword()).ifPresent(password -> u.setPassword(this.passwordEncoder.encode(password)));
             Optional.ofNullable(customer).ifPresent(customerOptional -> u.setCustomer(customerOptional.get()));
             u.setRoles(finalRoles);
             u.setActivated(isActivated);
             this.userRepository.save(u);
-        });
-        if (user.isEmpty() && customer.isPresent()){
-            user = Optional.of(this.userRepository.save(User.builder()
+            return u;
+        } else {
+            // else it's a new user, so create new user entry and assign related apps etc to it
+            User newUser = this.userRepository.save(User.builder()
                     .name(userDTO.getName())
                     .username(userDTO.getEmail())
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
@@ -82,10 +104,31 @@ public class UserService {
                     .roles(roles)
                     .activationKey(RandomUtil.generateActivationKey())
                     .activated(isActivated)
-                    .build()
-            ));
+                    .build());
+            // assign apps and their instances to the user from the customer
+            log.debug("assigning apps and instances");
+            Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
+            appsOptional.ifPresent(apps -> {
+                apps.forEach(app -> {
+                    AppUser appUser = new AppUser();
+                    appUser.setApp(app);
+                    appUser.setUser(newUser);
+
+                    Optional<List<Instance>> instancesOptional = instanceRepository.findByAppId(app.getId());
+                    instancesOptional.ifPresent(instances -> {
+                        instances.forEach(instance -> {
+                            InstanceUser instanceUser = new InstanceUser();
+                            instanceUser.setInstance(instance);
+                            instanceUser.setUser(newUser);
+                            instanceUserRepository.save(instanceUser);
+                        });
+                    });
+
+                    appUserRepository.save(appUser);
+                });
+            });
+            return newUser;
         }
-        return user.get();
     }
 
     public boolean deleteUser(Long id) {
