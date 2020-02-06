@@ -1,5 +1,5 @@
 const config = {
-    apiBaseUrl: "http://staging-mn.dev.cubecorp.io/minfo",
+    apiBaseUrl: "/minfo",
 };
 
 export default config;
