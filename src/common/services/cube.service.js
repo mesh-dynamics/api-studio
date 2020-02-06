@@ -91,7 +91,8 @@ async function getNewTemplateVerInfo(app, currentTemplateVer) {
             method: "post",
             headers:{
                 'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token']
+                "Authorization": "Bearer " + user['access_token'],
+                "Content-Type": "application/json"
             }
         });
         if (response.ok) {
