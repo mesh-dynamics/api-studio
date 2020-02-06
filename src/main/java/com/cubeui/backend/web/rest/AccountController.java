@@ -1,5 +1,6 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.KeyAndPasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
@@ -17,7 +18,7 @@ import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -37,7 +38,7 @@ import static com.cubeui.backend.security.Constants.PASSWORD_MIN_LENGTH;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.ResponseEntity.*;
 
-@Log
+@Slf4j
 @RestController()
 @RequestMapping("/api/account")
 public class AccountController {
@@ -55,27 +56,30 @@ public class AccountController {
         this.reCaptchaAPIService = reCaptchaAPIService;
     }
 
-    Optional<EmailDomain> validateEmailDomain(String email) {
+    Optional<Customer> validateEmailDomain(String email) {
         // todo validate email string
         String[] emailSplit = email.split("@");
         String domain = emailSplit[1];
         Optional<EmailDomain> emailDomain = emailDomainRepository.findByDomain(domain);
-        return emailDomain;
+        return emailDomain.map(EmailDomain::getCustomer);
     }
 
     @PostMapping("/create-user")
     public ResponseEntity createUser(@RequestBody UserDTO userDTO, HttpServletRequest request) {
+        log.info("Create user called for email: " + userDTO.getEmail());
         Optional<User> existingUser = this.userService.getByUsername(userDTO.getEmail());
         // check existing user
         if (existingUser.isPresent()) {
+            log.error("User already exists");
             throw new DuplicateRecordException("User with email '"
                 + existingUser.get().getUsername() + "' already exists.");
         } else {
             // validate email domain and set customer id from email
-            Optional<EmailDomain> emailDomain = validateEmailDomain(userDTO.getEmail());
-            if (emailDomain.isPresent()) {
-                EmailDomain e = emailDomain.get();
-                userDTO.setCustomerId(e.getCustomer().getId());
+            log.info("Validating email domain");
+            Optional<Customer> customerOptional = validateEmailDomain(userDTO.getEmail());
+            if (customerOptional.isPresent()) {
+                log.info("Customer: " + customerOptional.get().getName());
+                userDTO.setCustomerId(customerOptional.get().getId());
 
                 // set default roles
                 List<String> defaultRoles = Arrays.asList("ROLE_USER");
@@ -85,6 +89,7 @@ public class AccountController {
                 User saved = this.userService.save(userDTO, false);
 
                 // send activation mail
+                log.info("Sending activation mail");
                 mailService.sendActivationEmail(saved);
 
                 return created(
@@ -95,6 +100,7 @@ public class AccountController {
                                 .toUri())
                         .body(saved);
             } else {
+                log.error("Invalid email");
                 throw new InvalidDataException("Invalid email");
             }
         }

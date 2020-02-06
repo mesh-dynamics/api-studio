@@ -16,10 +16,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class JwtActivationTokenProvider {
 
-    @Value("${security.jwt.token.secret-key}")
+    @Value("${services.user.jwt.secret-key}")
     private String secretKey = "secret";
 
-    @Value("${security.jwt.token.expire-length}")
+    @Value("${services.user.jwt.expiry-seconds}")
     private long validityInSeconds = 60 * 60 * 24 * 2; // 2 days
 
     public JwtActivationTokenProvider() { }
