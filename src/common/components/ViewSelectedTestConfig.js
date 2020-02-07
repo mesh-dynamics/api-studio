@@ -295,8 +295,12 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10 row">
-                    <div className="col-sm-6"><div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div></div>
-                    <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
+                    <div className={cube.selectedApp === "MovieInfo" ? "col-sm-6" : "col-sm-6 width-100"}><div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div></div>
+                    {
+                        cube.selectedApp === "MovieInfo" &&
+                        <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
+                    }
+                    
                 </div>
             </Fragment>
         );
