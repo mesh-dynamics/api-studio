@@ -196,8 +196,8 @@ public class UserService {
                     throw new UserAlreadyActivatedException("User already activated");
                   }
                   user.setActivated(true);
-//                  user.setActivationKey(null);
-  //                    userRepository.save(user);
+                  user.setActivationKey(null);
+                  userRepository.save(user);
                   return user;
               });
           } else {
@@ -212,6 +212,7 @@ public class UserService {
             User user = userOptional.get();
             if (!user.isActivated()) {
                 user.setActivationKey(jwtTokenProvider.createActivationToken(email));
+                userRepository.save(user);
                 return Optional.of(user);
             } else {
                 throw new UserAlreadyActivatedException("User already activated");
