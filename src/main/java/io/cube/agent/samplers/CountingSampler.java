@@ -1,14 +1,17 @@
 package io.cube.agent.samplers;
 
 import java.util.BitSet;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.cube.agent.Utils;
+
 /**
- * This sampler is appropriate for low-traffic instrumentation (ex servers that each
- * receive <100K requests). The sampling decision isn't idempotent.
+ * This sampler is appropriate for low-traffic instrumentation (ex servers that each receive <100K
+ * requests). The sampling decision isn't idempotent.
  *
  * <h3>Implementation</h3>
  *
@@ -20,49 +23,48 @@ import javax.ws.rs.core.MultivaluedMap;
  * <p>
  * This counts to see how many out of 100 requests should be retained. This means that it is
  * accurate in units of 100 requests.
- *
  */
 
 public class CountingSampler extends Sampler {
-	public static final String TYPE = "counting";
-	public static final String DEFAULT_SAMPLING_RATE = "1";
-	public static final Integer SAMPLING_ACCURACY = 100;
 
-	public static Sampler create(float samplingRate) {
-		if (samplingRate == 0) return Sampler.NEVER_SAMPLE;
-		if (samplingRate == 1.0) return Sampler.ALWAYS_SAMPLE;
-		if (samplingRate < 0.01f || samplingRate > 1.0) {
-			throw new IllegalArgumentException(
-				"The sampling rate must be between 0.01 and 1.0");
+	public static final String TYPE = "counting";
+
+	public static Sampler create(float samplingRate, int samplingAccuracy) {
+		Optional<Sampler> sampler = Utils.getSampler(samplingRate, samplingAccuracy);
+		if (sampler.isPresent()) {
+			return sampler.get();
 		}
 
-		return new CountingSampler(samplingRate);
+		return new CountingSampler(samplingRate, samplingAccuracy);
 	}
 
 	private final AtomicInteger counter;
 	private final BitSet sampleDecisions;
+	private final int samplingAccuracy;
 
-	CountingSampler(double samplingRate) {
+	CountingSampler(double samplingRate, int samplingAccuracy) {
 		this.counter = new AtomicInteger();
-		int cardinality = (int) (samplingRate * SAMPLING_ACCURACY.floatValue());
+		this.samplingAccuracy = samplingAccuracy;
+		int cardinality = (int) (samplingRate * samplingAccuracy);
 		//can further randomize by resetting this.
-		this.sampleDecisions = randomBitSet(SAMPLING_ACCURACY, cardinality, new Random());
+		this.sampleDecisions = randomBitSet(samplingAccuracy, cardinality, new Random());
 	}
 
 	@Override
 	public boolean isSampled(MultivaluedMap<String, String> samplingParams) {
 		synchronized (this) {
-			return sampleDecisions.get(counter.getAndIncrement()%SAMPLING_ACCURACY);
+			return sampleDecisions.get(counter.getAndIncrement() % samplingAccuracy);
 		}
 	}
 
 	/**
 	 * Reservoir sampling algorithm borrowed from Stack Overflow.
-	 *
+	 * <p>
 	 * https://stackoverflow.com/questions/12817946/generate-a-random-bitset-with-n-1s
-	 * @param size size of the bit set
+	 *
+	 * @param size        size of the bit set
 	 * @param cardinality cardinality of the bit set
-	 * @param rnd random generator
+	 * @param rnd         random generator
 	 * @return a random bitset
 	 */
 	static BitSet randomBitSet(int size, int cardinality, Random rnd) {

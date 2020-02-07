@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
+import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
@@ -62,7 +63,7 @@ public class CommonConfig {
 
 	public String customerId, app, instance, serviceName, samplerType;
 	public final Optional<EncryptionConfig> encryptionConfig;
-	public Number samplerRate;
+	public Number samplerRate, samplerAccuracy;
 	public List<String> headerParams;
 	public Sampler sampler;
 
@@ -186,7 +187,10 @@ public class CommonConfig {
 			.orElse(CountingSampler.TYPE);
 		samplerRate = getPropertyAsNum(
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_RATE, dynamicProperties)
-				.orElse(CountingSampler.DEFAULT_SAMPLING_RATE)).orElse(1);
+				.orElse(SimpleSampler.DEFAULT_SAMPLING_RATE)).orElse(1);
+		samplerAccuracy = getPropertyAsNum(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_ACCURACY, dynamicProperties)
+				.orElse(SimpleSampler.DEFAULT_SAMPLING_ACCURACY)).orElse(10000);
 		headerParams = getPropertyAsList(
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_HEADER_PARAMS,
 				dynamicProperties)
@@ -290,16 +294,21 @@ public class CommonConfig {
 	}
 
 	Sampler createSampler() {
+		if (samplerType.equals(SimpleSampler.TYPE)) {
+			return SimpleSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
+		}
+
 		if (samplerType.equals(CountingSampler.TYPE)) {
-			return CountingSampler.create(samplerRate.floatValue());
+			return CountingSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
 		}
 
 		if (samplerType.equals(BoundarySampler.TYPE)) {
 			if (headerParams.isEmpty()) {
 				//Need Sampling Params for Boundary Sampler
-				return CountingSampler.create(samplerRate.floatValue());
+				return CountingSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
 			}
-			return BoundarySampler.create(samplerRate.floatValue(), headerParams);
+			return BoundarySampler
+				.create(samplerRate.floatValue(), samplerAccuracy.intValue(), headerParams);
 		}
 
 		LOGGER.error(new ObjectMessage(
@@ -307,7 +316,7 @@ public class CommonConfig {
 				Constants.MESSAGE, "Invalid sampling strategy, using default values",
 				Constants.MD_SAMPLER_TYPE, samplerType
 			)));
-		return CountingSampler.create(samplerRate.floatValue());
+		return CountingSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
 	}
 
 }

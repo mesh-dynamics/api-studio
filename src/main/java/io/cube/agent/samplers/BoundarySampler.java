@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedMap;
+
+import io.cube.agent.Utils;
 
 /**
  * This sampler is appropriate for high-traffic instrumentation (ex edge web servers that each
@@ -24,26 +27,23 @@ public class BoundarySampler extends Sampler {
 
 	public static final String TYPE = "boundary";
 
-	public static Sampler create(float samplingRate, List<String> samplingParams) {
-		if (samplingRate == 0) {
-			return Sampler.NEVER_SAMPLE;
+	public static Sampler create(float samplingRate, int samplingAccuracy,
+		List<String> samplingParams) {
+		Optional<Sampler> sampler = Utils.getSampler(samplingRate, samplingAccuracy);
+		if (sampler.isPresent()) {
+			return sampler.get();
 		}
-		if (samplingRate == 1.0) {
-			return Sampler.ALWAYS_SAMPLE;
-		}
-		if (samplingRate < 0.0001f || samplingRate > 1.0) {
-			throw new IllegalArgumentException(
-				"The sampling rate must be between 0.0001 and 1.0");
-		}
-		long boundary = (long) (samplingRate * 10000);
-		return new BoundarySampler(boundary, samplingParams);
+		long boundary = (long) (samplingRate * samplingAccuracy);
+		return new BoundarySampler(boundary, samplingAccuracy, samplingParams);
 	}
 
 	private List<String> samplingParams;
 	private final long boundary;
+	private final int samplingAccuracy;
 
-	public BoundarySampler(long boundary, List<String> samplingParams) {
+	public BoundarySampler(long boundary, int samplingAccuracy, List<String> samplingParams) {
 		this.boundary = boundary;
+		this.samplingAccuracy = samplingAccuracy;
 		this.samplingParams = samplingParams;
 	}
 
@@ -63,6 +63,6 @@ public class BoundarySampler extends Sampler {
 	public boolean isSampled(MultivaluedMap<String, String> headers) {
 		List<String> samplingStrings = getSamplingStrings(headers);
 		long hashId = Math.abs(Objects.hash(samplingStrings.toArray()));
-		return hashId % 10000 <= boundary;
+		return hashId % samplingAccuracy <= boundary;
 	}
 }

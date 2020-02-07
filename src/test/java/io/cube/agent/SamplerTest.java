@@ -16,13 +16,31 @@ import org.junit.jupiter.api.Test;
 import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
+import io.cube.agent.samplers.SimpleSampler;
 
 public class SamplerTest {
 
 	@Test
+	void testSimpleSampler() {
+		int count = 0;
+		Sampler sampler = SimpleSampler.create(0.4f, 10000);
+		//Run 50k requests and check probability criteria
+		for (int i=0; i<50000; i++) {
+			boolean result = sampler.isSampled(new MultivaluedHashMap<>());
+			if (result) {
+				count++;
+			}
+		}
+
+		//System.out.println("Count Value : " + count);
+		float percent = count/50000.0f;
+		Assertions.assertTrue(percent > 0.35 && percent < 0.45);
+	}
+
+	@Test
 	void testCountingSampler() {
 		int count = 0;
-		Sampler sampler = CountingSampler.create(0.4f);
+		Sampler sampler = CountingSampler.create(0.4f, 10000);
 		//Run 50k requests and check probability criteria
 		for (int i=0; i<50000; i++) {
 			boolean result = sampler.isSampled(new MultivaluedHashMap<>());
@@ -39,7 +57,7 @@ public class SamplerTest {
 	void testBoundarySampler() {
 		int count = 0;
 		List<String> headerParams = Arrays.asList("sessionId");
-		Sampler sampler = BoundarySampler.create(0.4f, headerParams);
+		Sampler sampler = BoundarySampler.create(0.4f, 1000, headerParams);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
 		Map<String, Integer> sampledSessionIDs = new HashMap<>();
