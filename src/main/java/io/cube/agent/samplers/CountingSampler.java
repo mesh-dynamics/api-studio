@@ -21,8 +21,8 @@ import io.cube.agent.Utils;
  * </p>
  *
  * <p>
- * This counts to see how many out of 100 requests should be retained. This means that it is
- * accurate in units of 100 requests.
+ * This counts to see how many out of samplingAccuracy requests should be retained. This means that it is
+ * accurate in units of samplingAccuracy requests.
  */
 
 public class CountingSampler extends Sampler {

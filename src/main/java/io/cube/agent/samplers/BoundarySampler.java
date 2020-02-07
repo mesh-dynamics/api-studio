@@ -20,7 +20,7 @@ import io.cube.agent.Utils;
  * Taken from <a href= "https://github.com/openzipkin/zipkin-java/blob/traceid-sampler/
  * zipkin/src/main/java/zipkin/BoundarySampler.java">Zipkin project</a>
  * </p>
- * <p>This uses modulo 10000 arithmetic, which allows a minimum probability of 0.01%.
+ * <p>This uses modulo samplingAccuracy arithmetic, which allows a minimum probability of 1/samplingAccuracy.
  */
 
 public class BoundarySampler extends Sampler {
