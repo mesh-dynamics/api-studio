@@ -20,7 +20,6 @@ import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.UserAlreadyActivatedException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -76,7 +75,8 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User save(UserDTO userDTO, boolean isActivated) {
+    public User save(UserDTO userDTO, boolean isActivated, boolean createUserAppInstanceMapping) {
+    // (createUserAppInstanceMapping is used to avoid a bug in Ubuntu machines)
         Set<String> roles = new HashSet<>();
 //        roles.add("ROLE_USER");
         if (userDTO.getRoles() != null) {
@@ -110,28 +110,33 @@ public class UserService {
                     .activationKey(jwtTokenProvider.createActivationToken(userDTO.getEmail()))
                     .activated(isActivated)
                     .build());
-            // assign apps and their instances to the user from the customer
-            log.debug("assigning apps and instances");
-            Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
-            appsOptional.ifPresent(apps -> {
-                apps.forEach(app -> {
-                    AppUser appUser = new AppUser();
-                    appUser.setApp(app);
-                    appUser.setUser(newUser);
 
-                    Optional<List<Instance>> instancesOptional = instanceRepository.findByAppId(app.getId());
-                    instancesOptional.ifPresent(instances -> {
-                        instances.forEach(instance -> {
-                            InstanceUser instanceUser = new InstanceUser();
-                            instanceUser.setInstance(instance);
-                            instanceUser.setUser(newUser);
-                            instanceUserRepository.save(instanceUser);
+            if (createUserAppInstanceMapping) {
+                // assign apps and their instances to the user from the customer
+                log.debug("assigning apps and instances");
+                Optional<List<App>> appsOptional = appRepository
+                    .findByCustomerId(customer.get().getId());
+                appsOptional.ifPresent(apps -> {
+                    apps.forEach(app -> {
+                        AppUser appUser = new AppUser();
+                        appUser.setApp(app);
+                        appUser.setUser(newUser);
+
+                        Optional<List<Instance>> instancesOptional = instanceRepository
+                            .findByAppId(app.getId());
+                        instancesOptional.ifPresent(instances -> {
+                            instances.forEach(instance -> {
+                                InstanceUser instanceUser = new InstanceUser();
+                                instanceUser.setInstance(instance);
+                                instanceUser.setUser(newUser);
+                                instanceUserRepository.save(instanceUser);
+                            });
                         });
-                    });
 
-                    appUserRepository.save(appUser);
+                        appUserRepository.save(appUser);
+                    });
                 });
-            });
+            }
             return newUser;
         }
     }

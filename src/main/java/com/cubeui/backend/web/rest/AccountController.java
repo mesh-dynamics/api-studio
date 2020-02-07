@@ -86,7 +86,7 @@ public class AccountController {
                 userDTO.setRoles(defaultRoles);
 
                 // save user
-                User saved = this.userService.save(userDTO, false);
+                User saved = this.userService.save(userDTO, false, true);
 
                 // send activation mail
                 log.info("Sending activation mail");
@@ -122,7 +122,7 @@ public class AccountController {
         }
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isPresent()) {
-            User saved = this.userService.save(userDTO, true);
+            User saved = this.userService.save(userDTO, true, true);
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)

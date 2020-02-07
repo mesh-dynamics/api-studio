@@ -36,7 +36,7 @@ public class UserController {
         // todo: check whether the customer is present since it is used in the save call below
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isEmpty()) {
-            User saved = this.userService.save(userDTO, false);
+            User saved = this.userService.save(userDTO, false, true);
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -53,7 +53,7 @@ public class UserController {
     public ResponseEntity update(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isPresent()) {
-            User saved = this.userService.save(userDTO, userDTO.isActivated());
+            User saved = this.userService.save(userDTO, userDTO.isActivated(), true);
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
