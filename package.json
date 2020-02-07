@@ -44,7 +44,6 @@
     "redux-thunk": "^2.3.0",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.1.1",
-    "sort-json": "^2.0.0",
     "styled-components": "^4.3.2",
     "tippy.js": "^4.3.5",
     "validator": "^12.1.0"

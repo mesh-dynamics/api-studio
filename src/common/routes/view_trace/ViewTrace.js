@@ -3,8 +3,8 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import _ from 'lodash';
 import arrayToTree  from 'array-to-tree';
 import axios from "axios";
-import sortJson from "sort-json";
-
+// import sortJson from "sort-json";
+import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";

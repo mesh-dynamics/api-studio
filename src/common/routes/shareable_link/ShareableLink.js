@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
-import sortJson from "sort-json";
+import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
