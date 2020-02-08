@@ -1707,7 +1707,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         inputDocument.setField(DIFF_RESOLUTION_F, diff.resolution.name());
         inputDocument.setField(DIFF_TYPE_F, type.name());
         String id = Types.Diff.toString().concat("-").concat(
-            String.valueOf(Objects.hash(idPrefix, diff.path, type.name())));
+            String.valueOf(Objects.hash(idPrefix, diff.path, diff.op, type.name())));
         inputDocument.setField(IDF, id);
         inputDocument.setField(TYPEF, Types.Diff.toString());
         return inputDocument;
