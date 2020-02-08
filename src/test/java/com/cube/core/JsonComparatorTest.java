@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import com.cube.core.Comparator.Match;
 import com.cube.core.CompareTemplate.ComparisonType;
@@ -109,7 +110,7 @@ class JsonComparatorTest  {
 		JsonComparator comparator = new JsonComparator(template, config.jsonMapper);
 		Match m = comparator.compare(json1, json2);
 		String mjson = config.jsonMapper.writeValueAsString(m);
-		JSONAssert.assertEquals(expected, mjson, false);
+		JSONAssert.assertEquals(expected, mjson, JSONCompareMode.NON_EXTENSIBLE);
 	}
 
 	/**
@@ -286,5 +287,17 @@ class JsonComparatorTest  {
 		JSONObject testData = object.getJSONObject("repeatingArray");
 		compareTest(testData);
 	}
+
+    /**
+     * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+     * @throws JsonProcessingException
+     * @throws JSONException
+     */
+    @Test
+    @DisplayName("Array test")
+    final void arrayTest() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("arrayDiff");
+        compareTest(testData);
+    }
 
 }
