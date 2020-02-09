@@ -632,7 +632,7 @@ public class AnalyzeWS {
                 // empty reqId list would lead to returning of all requests, so check for it
                 Result<Event> requestResult = rrstore
                     .getRequests(replay.customerId, replay.app, replay.collection,
-                        reqIds, Collections.emptyList(), Event.RunType.Record);
+                        reqIds, Collections.emptyList(), Collections.emptyList(), Optional.of(Event.RunType.Record));
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
@@ -1236,8 +1236,8 @@ public class AnalyzeWS {
 				throw new Exception("ApiPath not specified for golden");
 			}
 
-			List<Event> requests = rrstore.getRequests(recording.customerId, recording.app, recording.collection,
-				List.of(service), List.of(apiPath)).getObjects().collect(Collectors.toList());
+			List<Event> requests = rrstore.getRequests(recording.customerId, recording.app, recording.collection, Collections.emptyList(),
+				List.of(service), List.of(apiPath), Optional.empty()).getObjects().collect(Collectors.toList());
 
 			if(requests.isEmpty()) throw new Exception("No request found for specified fields");
 
