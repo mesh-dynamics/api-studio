@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -286,6 +287,10 @@ public class CompareTemplate {
 		TemplateEntry normalisedRule = new TemplateEntry(getNormalisedPath(rule.path).toString(),
 			rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
 		rules.put(normalisedRule.path, normalisedRule);
+	}
+
+	public static String normaliseAPIPath(String apiPath) {
+		return StringUtils.stripStart(StringUtils.stripEnd(apiPath,"/"), "/");
 	}
 
 	public static class CompareTemplateStoreException extends Exception {

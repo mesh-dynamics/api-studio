@@ -38,6 +38,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.solr.common.util.Template;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -54,6 +55,7 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.CompareTemplateStoreException;
+import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
@@ -734,6 +736,13 @@ public class AnalyzeWS {
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
                                     @PathParam("app") String app, TemplateSet templateSet) {
         try {
+	        templateSet.templates.forEach(compareTemplateVersioned -> {
+		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
+		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
+			        "Original APIPath", compareTemplateVersioned.requestPath,
+			        "Normalised APIPath", normalisedAPIPath)));
+		        compareTemplateVersioned.requestPath = normalisedAPIPath;
+	        });
             ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(templateSet);
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
