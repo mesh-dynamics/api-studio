@@ -3,7 +3,10 @@ package io.cube.agent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -19,12 +22,17 @@ import javax.ws.rs.client.WebTarget;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.logging.log4j.util.Strings;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.samplers.BoundarySampler;
+import io.cube.agent.samplers.CountingSampler;
+import io.cube.agent.samplers.Sampler;
+import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
@@ -53,8 +61,11 @@ public class CommonConfig {
 
 	public static String intent;
 
-	public String customerId, app, instance, serviceName;
+	public String customerId, app, instance, serviceName, samplerType;
 	public final Optional<EncryptionConfig> encryptionConfig;
+	public Number samplerRate, samplerAccuracy;
+	public List<String> headerParams;
+	public Sampler sampler;
 
 	private static class Updater implements Runnable {
 
@@ -110,14 +121,17 @@ public class CommonConfig {
 			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
 				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while initializing config")),e);
+			LOGGER.error(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while initializing con fig")),
+				e);
 		}
 
 		CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_COMMON_CONF_FILE_PROP)
 			.ifPresent(dynamicConfigFilePath -> {
 
 				int delay = Integer.parseInt(
-					CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_CONFIG_POLL_DELAY_PROP)
+					CommonUtils.fromEnvOrSystemProperties(
+						io.cube.agent.Constants.MD_CONFIG_POLL_DELAY_PROP)
 						.orElse(io.cube.agent.Constants.DEFAULT_CONFIG_POLL_DELAY));
 				serviceExecutor = Executors.newScheduledThreadPool(1);
 				serviceExecutor.scheduleWithFixedDelay(new Updater(dynamicConfigFilePath), 0, delay,
@@ -125,8 +139,6 @@ public class CommonConfig {
 				// TODO Where to call shutdown from - End of agent code ?
 				// serviceExecutor.shutdown();
 			});
-
-
 
 		CommonConfig config = null;
 		try {
@@ -137,8 +149,6 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
-
-
 	}
 
 	private CommonConfig() throws Exception {
@@ -149,6 +159,7 @@ public class CommonConfig {
 		} catch (IllegalStateException e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
 		}
+		sampler = createSampler();
 	}
 
 	private CommonConfig(Properties dynamicProperties) throws Exception {
@@ -163,8 +174,7 @@ public class CommonConfig {
 				orElseThrow(() -> new Exception("Mesh-D Read Timeout Not Specified")));
 		CONNECT_TIMEOUT = Integer.parseInt(
 			fromDynamicOREnvORStaticProperties(Constants.MD_CONNECT_TIMEOUT_PROP, dynamicProperties)
-				.
-					orElseThrow(() -> new Exception("Mesh-D Connection Timeout Not Specified")));
+				.orElseThrow(() -> new Exception("Mesh-D Connection Timeout Not Specified")));
 		RETRIES = Integer.parseInt(
 			fromDynamicOREnvORStaticProperties(Constants.MD_RETRIES_PROP, dynamicProperties).
 				orElseThrow(() -> new Exception("Mesh-D Connection Retry Limit Not Specified")));
@@ -180,6 +190,19 @@ public class CommonConfig {
 			.orElseThrow(() -> new Exception("Mesh-D Service Name Not Specified"));
 		intent = fromDynamicOREnvORStaticProperties(Constants.MD_INTENT_PROP, dynamicProperties)
 			.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
+		samplerType = fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_TYPE,
+			dynamicProperties)
+			.orElse(CountingSampler.TYPE);
+		samplerRate = getPropertyAsNum(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_RATE, dynamicProperties)
+				.orElse(SimpleSampler.DEFAULT_SAMPLING_RATE)).orElse(1);
+		samplerAccuracy = getPropertyAsNum(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_ACCURACY, dynamicProperties)
+				.orElse(SimpleSampler.DEFAULT_SAMPLING_ACCURACY)).orElse(10000);
+		headerParams = getPropertyAsList(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_HEADER_PARAMS,
+				dynamicProperties)
+				.orElse(Strings.EMPTY));
 		// TODO Replace with constants once it comes in commons
 //        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
 
@@ -195,7 +218,6 @@ public class CommonConfig {
 			return Optional.empty();
 		});
 
-
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
 			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
@@ -204,8 +226,6 @@ public class CommonConfig {
 		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
 
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"PROPERTIES POLLED :: " + this.toString())));
-//		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"CUBE MOCK SERVICE :: " + CUBE_MOCK_SERVICE_URI)));
-
 	}
 
 	public WebTarget getCubeRecordService() {
@@ -232,15 +252,15 @@ public class CommonConfig {
 	}
 
 	public static String getCurrentIntent() {
-		return getCurrentIntentFromScope().orElse(getConfigIntent());
+		String currentIntent = getCurrentIntentFromScope().orElse(getConfigIntent());
+		LOGGER.info("Got intent from trace (in agent) :: " + currentIntent);
+		return currentIntent;
 	}
 
-	private static Optional<String> getCurrentIntentFromScope() {
+	public static Optional<String> getCurrentIntentFromScope() {
 		Optional<String> currentIntent = CommonUtils.getCurrentSpan().flatMap(span -> Optional.
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
 			CommonUtils.fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
-		LOGGER.info("Got intent from trace (in agent) :: " +
-			currentIntent.orElse(" N/A"));
 		return currentIntent;
 	}
 
@@ -250,6 +270,49 @@ public class CommonConfig {
 
 	public static boolean isIntentToMock() {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
+	}
+
+	private static Optional<Number> getPropertyAsNum(String value) {
+		if (value != null) {
+			try {
+				return Optional.of(NumberFormat.getInstance().parse(value));
+			} catch (ParseException e) {
+				LOGGER.error(
+					"Failed to parse number for property samplerRate with value '" + value + "'",
+					e.getMessage());
+			}
+		}
+		return Optional.empty();
+	}
+
+	private List<String> getPropertyAsList(String headerParams) {
+		return Arrays.asList(headerParams.split(","));
+	}
+
+	Sampler createSampler() {
+		if (samplerType.equals(SimpleSampler.TYPE)) {
+			return SimpleSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
+		}
+
+		if (samplerType.equals(CountingSampler.TYPE)) {
+			return CountingSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
+		}
+
+		if (samplerType.equals(BoundarySampler.TYPE)) {
+			if (headerParams.isEmpty()) {
+				//Need Sampling Params for Boundary Sampler
+				return CountingSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
+			}
+			return BoundarySampler
+				.create(samplerRate.floatValue(), samplerAccuracy.intValue(), headerParams);
+		}
+
+		LOGGER.error(new ObjectMessage(
+			Map.of(
+				Constants.MESSAGE, "Invalid sampling strategy, using default values",
+				Constants.MD_SAMPLER_TYPE, samplerType
+			)));
+		return CountingSampler.create(samplerRate.floatValue(), samplerAccuracy.intValue());
 	}
 
 }
