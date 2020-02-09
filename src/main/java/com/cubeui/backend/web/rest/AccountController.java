@@ -86,7 +86,7 @@ public class AccountController {
                 userDTO.setRoles(defaultRoles);
 
                 // save user
-                User saved = this.userService.save(userDTO, false);
+                User saved = this.userService.save(userDTO, false, true);
 
                 // send activation mail
                 log.info("Sending activation mail");
@@ -122,7 +122,7 @@ public class AccountController {
         }
         Optional<User> user = this.userService.getByUsername(userDTO.getEmail());
         if (user.isPresent()) {
-            User saved = this.userService.save(userDTO, true);
+            User saved = this.userService.save(userDTO, true, true);
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
@@ -136,28 +136,31 @@ public class AccountController {
     }
 
     /**
-     * GET  /activate : activate the registered user.
+     * POST  /activate : activate the registered user.
      *
      * @param activationKey the activation key
      * @throws RecordNotFoundException if the user couldn't be activated
      */
-    @GetMapping("/activate")
+    @PostMapping("/activate")
     public ResponseEntity activateAccount(@RequestParam(value = "key") String activationKey) {
-        // TODO: the following logic is flawed and will be redone.
+        log.info("Activate user called with key: " + activationKey);
         Optional<User> optionalUser = userService.activateUser(activationKey);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            // check if key has expired (48H)
-            if(user.getCreatedAt().plusHours(48L).isAfter(LocalDateTime.now())) {
-                mailService.sendCreationEmail(user);
-                mailService.sendCreationEmailAdmin(user);
-                return ok("User activated");
-            } else {
-                throw new ActivationKeyExpiredException("Activation key expired");
-            }
+            mailService.sendCreationEmail(user);
+            mailService.sendCreationEmailAdmin(user);
+            return ok("User activated");
         } else {
             throw new RecordNotFoundException("No user was found for with this activation key");
         }
+    }
+
+    @PostMapping("/resend-activation-mail")
+    public ResponseEntity resendActivationMail(@RequestParam(value="email") String email) {
+        log.info("Resend activation mail for " + email);
+        Optional<User> user = userService.resendActivationMail(email);
+        mailService.sendActivationEmail(user.get());
+        return ok("User activation mail sent");
     }
 
     @PostMapping(path = "/reset-password/init")
