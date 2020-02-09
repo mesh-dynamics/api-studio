@@ -152,6 +152,12 @@ public class Constants {
 	public static final String MD_STATUS_PROP = "io.md.status";
 	public static final String MD_BODY_PROP = "io.md.body";
 	public static final String MD_LOG_STREAM_PROP = "io.md.logStream";
+	//Sampling Related
+	public static final String MD_SAMPLE_REQUEST = "io.md.sampleRequest";
+	public static final String MD_SAMPLER_TYPE = "io.md.sampler.type";
+	public static final String MD_SAMPLER_RATE = "io.md.sampler.rate";
+	public static final String MD_SAMPLER_ACCURACY = "io.md.sampler.accuracy";
+	public static final String MD_SAMPLER_HEADER_PARAMS = "io.md.sampler.headerParams";
 
 	//Header Baggage/ Intent
 	public static final String ZIPKIN_HEADER_BAGGAGE_INTENT_KEY = "intent";
