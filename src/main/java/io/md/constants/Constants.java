@@ -156,6 +156,7 @@ public class Constants {
 	public static final String MD_SAMPLE_REQUEST = "io.md.sampleRequest";
 	public static final String MD_SAMPLER_TYPE = "io.md.sampler.type";
 	public static final String MD_SAMPLER_RATE = "io.md.sampler.rate";
+	public static final String MD_SAMPLER_ACCURACY = "io.md.sampler.accuracy";
 	public static final String MD_SAMPLER_HEADER_PARAMS = "io.md.sampler.headerParams";
 
 	//Header Baggage/ Intent
