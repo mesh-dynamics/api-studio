@@ -22,8 +22,8 @@ spring:
     mail:
         host: smtp.office365.com
         port: 587
-        username: email.sender@cubecorp.io
-        password: Welcome@cube123
+        username: email.sender@meshdynamics.io
+        password: Welcome@md123
         properties:
             mail.smtp:
                 auth: true
