@@ -60,4 +60,9 @@ external:
         base-url: https://www.google.com/recaptcha/api/siteverify
         secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr-
 
+services:
+    user:
+        jwt:
+            secret-key: "prodv2-secret"
+            expiry-seconds: 172800
 
