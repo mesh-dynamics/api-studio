@@ -6,6 +6,8 @@ import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import javax.ws.rs.core.Response;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -101,8 +103,9 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 		}
 
 		@Override
-		public int getSuccessStatusCode() {
-			return 1;
+		public boolean isSuccessStatusCode(int responseCode) {
+
+			return responseCode==1 ? true : false;
 		}
 
 		@Override

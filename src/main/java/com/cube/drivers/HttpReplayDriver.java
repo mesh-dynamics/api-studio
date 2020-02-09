@@ -137,8 +137,12 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		}
 
 		@Override
-		public int getSuccessStatusCode() {
-			return Response.Status.OK.getStatusCode();
+		public boolean isSuccessStatusCode(int responseCode) {
+
+			if(Response.Status.Family.familyOf(responseCode).equals(Response.Status.Family.SUCCESSFUL)){
+				return true;
+			}
+			return false;
 		}
 
 		@Override
