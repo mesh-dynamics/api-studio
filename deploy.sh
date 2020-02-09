@@ -102,7 +102,7 @@ echo "Setting default responses!"
     fi
 
 RESPONSE="$(curl -X POST \
-  http://$GATEWAY_URL/cs/event/setDefaultResponse \
+  https://$GATEWAY_URL/cs/event/setDefaultResponse \
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -H "Host:$CUBE_HOST" \
@@ -155,7 +155,7 @@ start_record() {
 kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 
 	RESPONSE="$(curl -X POST \
-  http://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
+  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	-H "Host:$CUBE_HOST" \
@@ -178,7 +178,7 @@ stop_record() {
   echo "Stopping recording for recording ID:" $RECORDING_ID
 
 	curl -X POST \
-	http://$CUBE_HOST/api/cs/stop/$RECORDING_ID \
+	https://$CUBE_HOST/api/cs/stop/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	-H "Host:$CUBE_HOST" \
@@ -215,9 +215,9 @@ replay() {
 			TEMP_PATH="$TEMP_PATH""paths=$path&"
 		done
 		REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-		BODY="$REPLAY_PATHS&endPoint=http://$REPLAY_ENDPOINT&instanceId=$INSTANCEID&userId=$CUBE_CUSTOMER"
+		BODY="$REPLAY_PATHS&endPoint=https://$REPLAY_ENDPOINT&instanceId=$INSTANCEID&userId=$CUBE_CUSTOMER"
 	else
-		BODY="endPoint=http://$REPLAY_ENDPOINT&instanceId=$INSTANCEID&userId=$CUBE_CUSTOMER"
+		BODY="endPoint=https://$REPLAY_ENDPOINT&instanceId=$INSTANCEID&userId=$CUBE_CUSTOMER"
 	fi
 
 	if [ -e "$RECORDING_ID_TEMP_FILE" ]; then
@@ -236,7 +236,7 @@ replay() {
 	fi
 
   REPLAY_ID=$(curl -f -X POST \
-  http://$CUBE_HOST/api/rs/start/$RECORDING_ID \
+  https://$CUBE_HOST/api/rs/start/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
   -H 'cache-control: no-cache' \
@@ -267,7 +267,7 @@ replay_status() {
 		COLLECTION_NAME=$1
 	fi
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
-	curl http://$CUBE_HOST/api/rs/status/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
+	curl https://$CUBE_HOST/api/rs/status/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	  -H 'cache-control: no-cache' \
@@ -278,7 +278,7 @@ analyze() {
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
 	echo "Analyzing for replay ID:" $REPLAY_ID
 	curl -X POST \
-	  http://$CUBE_HOST/api/as/analyze/$REPLAY_ID \
+	  https://$CUBE_HOST/api/as/analyze/$REPLAY_ID \
 	  -H 'Content-Type: application/x-www-form-urlencoded' \
 		-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
 	  -H 'cache-control: no-cache' \
