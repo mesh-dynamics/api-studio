@@ -1,0 +1,78 @@
+---
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: nginx-config
+    namespace: {{namespace}}
+    labels:
+      app: moviebook
+      component: proxy
+  data:
+    default.conf: |-
+      server {
+      listen 80 default_server;
+      listen [::]:80 default_server ipv6only=on;
+
+      server_name {{cube_host}};
+
+      location / {
+          proxy_http_version 1.1;
+          proxy_set_header Authorization "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk";
+          proxy_pass_header Authorization;
+          proxy_set_header Host {{cube_host}};
+          proxy_pass http://{{cube_host}};
+        }
+      }
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-proxy
+  namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: proxy
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: moviebook
+        component: proxy
+        namespace: moviebook-prod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d/default.conf
+          name: nginx-config
+          subPath: default.conf
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+            memory: "150Mi"
+          requests:
+            cpu: 100m
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cube-proxy
+  namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: proxy
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    component: proxy

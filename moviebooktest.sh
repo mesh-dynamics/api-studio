@@ -12,7 +12,7 @@ CUBE_CUSTOMER=CubeCorp
 INSTANCEID=prod
 MASTER_NAMESPACE=dummy
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-CUBE_SERVICE_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+CUBE_SERVICE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 SPRINGBOOT_PROFILE=prod
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
@@ -29,7 +29,7 @@ STAGING_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_APP=MovieInfo
 CUBE_CUSTOMER=CubeCorp
 INSTANCEID=prod
-CUBE_SERVICE_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+CUBE_SERVICE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 SPRINGBOOT_PROFILE=prod
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
@@ -45,8 +45,8 @@ call_deploy_script() {
 call_replay() {
 	RECORDING_ID=$(cat apps/moviebook/kubernetes/recording_id.temp)
 	REPLAY_PATHS=minfo/listmovies,minfo/returnmovie,minfo/rentmovie,minfo/liststores
-	REPLAY_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-	CUBE_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+	REPLAY_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+	CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 	INSTANCE_ID=prod
 	USER_ID=demo@cubecorp.io
 	REPLAY_PATHS=$(echo $REPLAY_PATHS | tr "," "\n")
@@ -95,7 +95,7 @@ analyze() {
 
 generate_traffic() {
 	for ((i=1;i<=$1;i++)); do
-		curl -X GET "http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
+		curl -X GET "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
 	done
 }
 
@@ -139,3 +139,4 @@ main() {
 }
 
 main "$@"
+https
