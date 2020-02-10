@@ -164,7 +164,7 @@ public abstract class AbstractReplayDriver {
 
 			// count number of errors
 			replay.reqfailed += respcodes.stream()
-				.filter(s -> (client.isSuccessStatusCode(s))).count();
+				.filter(s -> (!client.isSuccessStatusCode(s))).count();
 		});
 
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Completed"
