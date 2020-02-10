@@ -45,7 +45,7 @@ data:
     <match cube.movieinfo.envoy.{{namespace}}>
       @type http
       endpoint https://{{cube_host}}/api/cs/rrbatch
-      headers { "Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk"}
+      headers { "Authorization":" Bearer {{auth_token}}"}
       tls_verify_mode none
       open_timeout 5
       <format>
