@@ -61,7 +61,6 @@ import com.cube.core.Utils;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
 import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.DataObj;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
@@ -1236,76 +1235,73 @@ public class AnalyzeWS {
 				throw new Exception("ApiPath not specified for golden");
 			}
 
-			List<Event> requests = rrstore.getRequests(recording.customerId, recording.app, recording.collection, Collections.emptyList(),
-				List.of(service), List.of(apiPath), Optional.empty()).getObjects().collect(Collectors.toList());
-
-			if(requests.isEmpty()) throw new Exception("No request found for specified fields");
-
-			// Get the first request for which response is present
-			Event request = requests.get(0);
-			Optional<Event> responseOptional = Optional.empty();
-			for (Event r : requests) {
-				request = r;
-				responseOptional = rrstore.getRespEventForReqEvent(r);
-				if(responseOptional.isPresent()) {
-					break;
-				}
-			}
-
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put(Constants.RECORDING_ID, recordingId);
-			jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString(config));
 
-			TemplateKey requestCompareTkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
-				TemplateKey.Type.RequestCompare);
-
-			Optional<CompareTemplate> requestCompareTemplateOptional = rrstore.getCompareTemplate(requestCompareTkey);
-			Event finalRequest = request;
-			requestCompareTemplateOptional.ifPresentOrElse(UtilException.rethrowConsumer(requestCompareTemplate -> {
-				DataObj requestPayload = finalRequest.getPayload(config);
-				Map<String, TemplateEntry> requestCompareRules = new HashMap<>();
-				requestPayload.getPathRules(requestCompareTemplate, requestCompareRules);
-				jsonObject.put(Constants.REQUEST_COMPARE_RULES, jsonMapper.writeValueAsString(requestCompareRules));
-			}),
-				() -> {
-					jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
-				});
-
-
+			Optional<Event> responseOptional = rrstore
+				.getSingleResponseEvent(recording.customerId, recording.app, recording.collection,
+					List.of(service), List.of(apiPath), Optional.empty());
 
 			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
+
+				Map<String, TemplateEntry> responseCompareRules = Utils
+					.getAllPathRules(response, recording, TemplateKey.Type.ResponseCompare,
+						service, apiPath, rrstore, config);
+
 				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString(config));
+				jsonObject.put(Constants.RESPONSE_COMPARE_RULES,
+					jsonMapper.writeValueAsString(responseCompareRules));
 
-				TemplateKey responseCompareTkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
-					TemplateKey.Type.ResponseCompare);
+				Optional<Event> requestOptional = rrstore.getRequestEvent(response.getReqId());
 
-				Optional<CompareTemplate> responseCompareTemplateOptional = rrstore.getCompareTemplate(responseCompareTkey);
-				responseCompareTemplateOptional.ifPresentOrElse(UtilException.rethrowConsumer(responseCompareTemplate -> {
-					DataObj responsePayload = response.getPayload(config);
-					Map<String, TemplateEntry> responseCompareRules = new HashMap<>();
-					responsePayload.getPathRules(responseCompareTemplate, responseCompareRules);
-					jsonObject.put(Constants.RESPONSE_COMPARE_RULES, jsonMapper.writeValueAsString(responseCompareRules));
-				}), ()-> jsonObject.put(Constants.RESPONSE_COMPARE_RULES, JSONObject.NULL));
-			})
-				, ()->{
+				requestOptional.ifPresentOrElse(UtilException.rethrowConsumer(request -> {
+					setRequestAndRules(recording, service, apiPath, jsonObject, request);
+
+				}), () -> {
+					jsonObject.put(Constants.REQUEST, JSONObject.NULL);
+					jsonObject.put(Constants.REQUEST_MATCH_RULES, JSONObject.NULL);
+					jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
+				});
+			}), () -> {
 				jsonObject.put(Constants.RESPONSE, JSONObject.NULL);
 				jsonObject.put(Constants.RESPONSE_COMPARE_RULES, JSONObject.NULL);
+				jsonObject.put(Constants.REQUEST, JSONObject.NULL);
+				jsonObject.put(Constants.REQUEST_MATCH_RULES, JSONObject.NULL);
+				jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
 
 			});
 
 			return Response.ok().entity(jsonObject.toString()).build();
 
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Error while returning golden insights",
-				Constants.RECORDING_ID, recordingId)),e);
+			LOGGER.error(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while returning golden insights",
+					Constants.RECORDING_ID, recordingId)), e);
 			return Response.serverError().entity(
 				buildErrorResponse(Constants.ERROR, "Error while returning golden insights",
 					e.getMessage())).build();
 		}
 
-    }
+	}
 
-        /**
+	private void setRequestAndRules(Recording recording, String service, String apiPath,
+		JSONObject jsonObject, Event request) throws JsonProcessingException {
+		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString(config));
+
+		Map<String, TemplateEntry> requestMatchRules = Utils
+			.getAllPathRules(request, recording, Type.RequestMatch,
+				service, apiPath, rrstore, config);
+
+		Map<String, TemplateEntry> requestCompareRules = Utils
+			.getAllPathRules(request, recording, Type.RequestCompare,
+				service, apiPath, rrstore, config);
+		jsonObject.put(Constants.REQUEST_MATCH_RULES,
+			jsonMapper.writeValueAsString(requestMatchRules));
+		jsonObject.put(Constants.REQUEST_COMPARE_RULES,
+			jsonMapper.writeValueAsString(requestCompareRules));
+	}
+
+	/**
          * @param config
          */
 	@Inject

@@ -256,19 +256,16 @@ public class JsonDataObj implements DataObj {
     }
 
     private void getPathRules(JsonNode node, CompareTemplate template, Map<String, TemplateEntry> vals, JsonPointer path) {
-        if (node.isValueNode()) {
-                vals.put(path.toString(), template.getRule(path.toString()));
-        } else if (node.isObject()) {
+        vals.put(path.toString(), template.getRule(path.toString()));
+        if (node.isObject()) {
             Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> child = fields.next();
-                vals.put(path.toString(), template.getRule(path.toString()));
                 getPathRules(child.getValue(), template, vals, path.append(JsonPointer.compile("/" + child.getKey())));
             }
         } else if (node.isArray()) {
             int idx = 0;
             for (JsonNode child : node) {
-                vals.put(path.toString(), template.getRule(path.toString()));
                 getPathRules(child, template, vals, path.append(JsonPointer.compile("/" + idx)));
                 idx++;
             }

@@ -96,6 +96,7 @@ public class Constants {
     public static final String CLASS_LOADER = "classLoader";
 
 
+    public static final String REQUEST_MATCH_RULES = "requestMatchRules";
     public static final String REQUEST_COMPARE_RULES = "requestCompareRules";
     public static final String RESPONSE_COMPARE_RULES = "responseCompareRules";
 

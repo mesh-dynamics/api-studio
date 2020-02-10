@@ -31,14 +31,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.cube.agent.UtilException;
+
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
+import com.cube.dao.DataObj;
 import com.cube.dao.Event;
 import com.cube.dao.HTTPRequestPayload;
 import com.cube.dao.HTTPResponsePayload;
+import com.cube.dao.Recording;
+import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -356,6 +361,21 @@ public class Utils {
     public static HTTPResponsePayload getResponsePayload(Event event, Config config) throws IOException {
         String payload = event.getPayloadAsJsonString(config);
         return config.jsonMapper.readValue(payload, HTTPResponsePayload.class);
+    }
+
+	public static Map<String, TemplateEntry> getAllPathRules(Event event, Recording recording, TemplateKey.Type templateKeyType,
+		String service, String apiPath, ReqRespStore rrstore, Config config) {
+		TemplateKey tkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
+			templateKeyType);
+
+		Optional<CompareTemplate> requestCompareTemplateOptional = rrstore.getCompareTemplate(tkey);
+		Map<String, TemplateEntry> pathRules = new HashMap<>();
+		requestCompareTemplateOptional.ifPresent(UtilException.rethrowConsumer(compareTemplate -> {
+			DataObj payload = event.getPayload(config);
+			payload.getPathRules(compareTemplate, pathRules);
+		}));
+
+		return pathRules;
     }
 
 }

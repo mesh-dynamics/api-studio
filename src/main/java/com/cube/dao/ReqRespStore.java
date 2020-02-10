@@ -124,7 +124,7 @@ public interface ReqRespStore {
 
 
 	/**
-	 * 
+	 *
 	 * @param customerId
 	 * @param app
 	 * @param collection
@@ -140,6 +140,9 @@ public interface ReqRespStore {
     Result<Event> getEvents(EventQuery eventQuery);
 
     Optional<Event> getSingleEvent(EventQuery eventQuery);
+
+	Optional<Event> getSingleResponseEvent(String customerId, String app, String collection, List<String> services,
+		List<String> paths, Optional<Event.RunType> runType);
 
 	/**
 	 * @param replay

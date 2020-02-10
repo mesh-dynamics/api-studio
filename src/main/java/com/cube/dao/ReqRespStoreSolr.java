@@ -62,6 +62,7 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
+import com.cube.dao.Event.EventType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -211,16 +212,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return getEvents(builder.build());
     }
 
-    public Result<Event> getRequests(String customerId, String app, String collection, List<String> services,
-        List<String> paths) {
+    @Override
+    public Optional<Event> getSingleResponseEvent(String customerId, String app, String collection,
+        List<String> services, List<String> paths, Optional<Event.RunType> runType) {
 
-        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
+        // TODO: Event redesign - change this include all event types
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.RESPONSE_EVENT_TYPES);
         builder.withCollection(collection)
+            .withPaths(paths)
             .withServices(services)
-            .withPaths(paths);
+            .withRunType(runType.orElse(null));
 
-        return  getEvents(builder.build());
+        return getSingleEvent(builder.build());
     }
+
 
     @Override
     public Result<Event> getEvents(EventQuery eventQuery) {
