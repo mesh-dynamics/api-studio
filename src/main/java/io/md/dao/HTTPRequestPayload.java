@@ -10,6 +10,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.md.utils.Utils;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
@@ -29,7 +31,7 @@ public class HTTPRequestPayload {
                               MultivaluedMap<String, String> formParams,
                               String method,
                               String body) {
-	    this.hdrs = hdrs;
+	    this.hdrs = Utils.setLowerCaseKeys(hdrs);
 		this.queryParams = queryParams;
 		this.formParams = formParams;
 		this.method = method;

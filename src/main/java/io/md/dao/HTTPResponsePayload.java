@@ -11,6 +11,8 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.md.utils.Utils;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
@@ -26,7 +28,7 @@ public class HTTPResponsePayload {
 	public HTTPResponsePayload(MultivaluedMap<String, String> hdrs,
                                int status,
                                String body) {
-	    this.hdrs = hdrs;
+	    this.hdrs = Utils.setLowerCaseKeys(hdrs);
 	    this.status = status;
 		this.body = body;
     }
