@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
+import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
@@ -335,7 +336,8 @@ class ShareableLink extends Component {
                 totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
                 this.setState({
-                    isFetching: true,
+                    isFetching: false,
+                    fetchComplete: true,
                     app: dataList.data.app,
                     templateVersion: dataList.data.templateVersion,
                     fetchedResults: fetchedResults
@@ -424,14 +426,14 @@ class ShareableLink extends Component {
                 replayedData = "";
             }
             let diff;
-
+            
             if (item.respCompDiff && item.respCompDiff.length !== 0) {
                 diff = item.respCompDiff;
             } else {
                 diff = [];
             }
-            let actJSON = JSON.stringify(replayedData, undefined, 4),
-                expJSON = JSON.stringify(recordedData, undefined, 4);
+            let actJSON = JSON.stringify(sortJson(replayedData), undefined, 4),
+                expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
             let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
 
             let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
@@ -574,7 +576,7 @@ class ShareableLink extends Component {
     };
 
     render() {
-        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
+        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType, replayId, app, service, apiPath} = this.state;
         let apiPaths = [], services = [], resolutionTypes = [];
         let apiPathIndicators = {};
         const {cube, history} = this.props;
@@ -750,8 +752,13 @@ class ShareableLink extends Component {
         }
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
-                <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
-                    {item.path}
+                <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
+                    <div style={{display: "inline-block"}}>{item.path}</div>
+                    <div style={{ marginTop: "5px" }}>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                            <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
+                        </Button>
+                    </div>
                 </div>
                 {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders && item.replayedRequestHeaders && (
                     <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
@@ -880,8 +887,8 @@ class ShareableLink extends Component {
         return (
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
-                    <span className="link pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
+                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                    <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                     <Link to="/review_golden_updates" className="hidden">
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
                     </Link>

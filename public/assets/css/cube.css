@@ -4434,6 +4434,15 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     color: #666666;
 }
 
+.link-alt {
+    color: #fff;
+}
+
+.link-alt:hover{
+    color: #00B2FF !important;
+    cursor: pointer;
+}
+
 .link:hover {
     color: #00B2FF !important;
     cursor: pointer;
