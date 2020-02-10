@@ -619,6 +619,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return Optional.empty();
     }
 
+    @Override
+    public Optional<String> getDefaultEventType(String customer, String app
+        , String service, String apiPath) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields(EVENTTYPEF);
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, CUSTOMERIDF, customer);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query, PATHF, apiPath);
+        Optional<Integer> maxResults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxResults).findFirst().map(doc
+            -> (String)doc.getFieldValue(EVENTTYPEF));
+    }
+
     private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc) {
         Optional<String> version = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
@@ -835,7 +850,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         {
             pathBuffer.append(((countWrapper.count != 0)? "/" : "") + elem);
             String escapedPath =  SolrIterator.escapeQueryChars(pathBuffer.toString())
-                    .concat((countWrapper.count != pathElements.length -1)? SolrIterator.escapeQueryChars("*") : "") ;
+                    /*.concat((countWrapper.count != pathElements.length -1)? SolrIterator.escapeQueryChars("*") : "")*/ ;
             queryBuffer.append((countWrapper.count !=0)? " OR " : "").append(escapedPath)
                     .append("^").append(++countWrapper.count);
         });
@@ -1286,7 +1301,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     private static SolrInputDocument compareTemplateToSolrDoc(TemplateKey key, String jsonCompareTemplate) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String type = getTemplateType(key);
+        String type = key.getReqOrResp().name();
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
                 key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
@@ -1438,7 +1453,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    public static String getTemplateType(TemplateKey key) {
+/*    public static String getTemplateType(TemplateKey key) {
          if (key.getReqOrResp() == Type.RequestMatch) {
              return  Types.RequestMatchTemplate.toString();
          }
@@ -1448,7 +1463,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
          else {
              return Types.ResponseCompareTemplate.toString();
          }
-    }
+    }*/
 
 
     /**
@@ -1460,7 +1475,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<CompareTemplate> getCompareTemplate(TemplateKey key) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
-        addFilter(query, TYPEF, getTemplateType(key));
+        addFilter(query, TYPEF,key.getReqOrResp().name());
         addFilter(query, CUSTOMERIDF, key.getCustomerId());
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());
@@ -1705,7 +1720,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .setField(DIFF_FROM_VALUE_F, fromVal.toString()));
         diff.from.ifPresent(frm -> inputDocument.setField(DIFF_FROM_STR_F, frm));
         inputDocument.setField(DIFF_OP_F, diff.op);
-        inputDocument.setField(DIFF_PATH_F, diff.path);
+        inputDocument.setField(DIFF_PATH_F, (diff.path != null)? diff.path.strip(): "");
         inputDocument.setField(DIFF_RESOLUTION_F, diff.resolution.name());
         inputDocument.setField(DIFF_TYPE_F, type.name());
         String id = Types.Diff.toString().concat("-").concat(
@@ -1750,8 +1765,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
             addFilter(query, RECORDREQIDF, recordReqId);
             addFilter(query, REPLAYIDF, replayId);
-            query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
-                +" childFilter=type_s:"+Types.Diff.toString()+"]");
+            query.addField(getDiffParentChildFilter());
             Optional<Integer> maxresults = Optional.of(1);
             return SolrIterator.getStream(solr, query, maxresults).findFirst()
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
@@ -1766,36 +1780,55 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RECORDREQIDF, recordReqId, true);
         addFilter(query, REPLAYREQIDF, replayReqId, true);
         addFilter(query, REPLAYIDF, replayId);
-        query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
-            +" childFilter=type_s:"+Types.Diff.toString()+"]");
+        query.addField(getDiffParentChildFilter());
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst()
             .flatMap(doc -> docToAnalysisMatchResult(doc));
     }
 
+    private String getDiffParentChildFilter() {
+        return "[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
+            +" childFilter=type_s:"+Types.Diff.toString()+" limit=-1]";
+    }
 
     @Override
     public Result<ReqRespMatchResult>
-    getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path
-        , Optional<Comparator.MatchType> reqmt, Optional<Comparator.MatchType> respmt
-        , Optional<Integer> start, Optional<Integer> nummatches, Optional<String> resolution) {
+    getAnalysisMatchResults(AnalysisMatchResultQuery matchResQuery) {
 
-        String queryString = resolution.map(res ->
-            "{!parent which="+TYPEF+":"+Types.ReqRespMatchResult.toString()+"} "
-                + "+("+TYPEF+":"+Types.Diff.toString()+") +("+DIFF_RESOLUTION_F+":"+res+")")
-            .orElse("*:*");
+        String queryString  = "{!parent which="+TYPEF+":"+Types.ReqRespMatchResult.toString()+"}";
+
+        if (matchResQuery.diffResolution.isPresent() || matchResQuery.diffJsonPath.isPresent() ||
+            matchResQuery.diffType.isPresent()) {
+            queryString = queryString.concat(" +("+TYPEF+":"+Types.Diff.toString()+")");
+        }
+
+        queryString = queryString.concat(matchResQuery.diffResolution.map(res ->
+            " +("+DIFF_RESOLUTION_F+":"+res+")").orElse(""));
+        queryString = queryString.concat(matchResQuery.diffJsonPath.map(res ->
+            " +("+DIFF_PATH_F+":\""+res+"\")").orElse(""));
+        queryString = queryString.concat(matchResQuery.diffType.map(res ->
+            " +("+DIFF_TYPE_F+":"+res+")").orElse(""));
 
         SolrQuery query = new SolrQuery(queryString);
         query.setFields("*");
-        addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
-        addFilter(query, REPLAYIDF, replayId);
-        addFilter(query, SERVICEF, service);
-        addFilter(query, PATHF, path);
-        addFilter(query, REQMTF, reqmt.map(Enum::toString));
-        addFilter(query, RESP_COMP_RES_TYPE_F, respmt.map(Enum::toString));
-        query.addField("[child parentFilter=type_s:"+Types.ReqRespMatchResult.toString()
-            +" childFilter=type_s:"+Types.Diff.toString()+"]");
-        return SolrIterator.getResults(solr, query, nummatches, this::docToAnalysisMatchResult, start);
+        // NOT NEEDED
+        // addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+        addFilter(query, REPLAYIDF, matchResQuery.replayId);
+        addFilter(query, SERVICEF, matchResQuery.service);
+        addFilter(query, PATHF, matchResQuery.apiPath);
+        addFilter(query, REQMTF, matchResQuery.reqMatchType.map(Enum::toString));
+        addFilter(query, RESP_COMP_RES_TYPE_F,
+            matchResQuery.respCompResType.map(Enum::toString));
+        addFilter(query, REQ_COMP_RES_TYPE_F,
+            matchResQuery.reqCompResType.map(Enum::toString));
+        matchResQuery.traceId.ifPresent(traceId ->
+            query.addFilterQuery("("+RECORDTRACEIDF+":"+traceId+" OR "
+                + REPLAYTRACEIDF+":"+traceId+")" ));
+        addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
+        addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
+        query.addField(getDiffParentChildFilter());
+        return SolrIterator.getResults(solr, query, matchResQuery.numMatches, this::docToAnalysisMatchResult
+            , matchResQuery.start);
     }
 
     @Override
@@ -1895,7 +1928,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
             return Optional.of(new ReqRespMatchResult(recordReqId, replayReqId, reqMatchType
                 , numMatch, replayId, service, path, recordTraceId, replayTraceId, respMatch
-                , reqCompResOptional.get()));
+                , reqCompResOptional.orElse(Match.DONT_CARE)));
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Unable to convert solr doc to diff")), e);

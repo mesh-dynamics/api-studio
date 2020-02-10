@@ -25,7 +25,6 @@ import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
@@ -531,18 +530,11 @@ public interface ReqRespStore {
 
     /**
      * Get results matching a path and other constraints
-     * @param replayId
-     * @param service
-     * @param path
-     * @param reqmt
-     * @param respmt
-     * @param start
-     * @param nummatches
+     * @param analysisMatchResultQuery
      * @return
      */
     Result<ReqRespMatchResult>
-    getAnalysisMatchResults(String replayId, Optional<String> service, Optional<String> path, Optional<Comparator.MatchType> reqmt,
-                            Optional<Comparator.MatchType> respmt, Optional<Integer> start, Optional<Integer> nummatches, Optional<String> resolution);
+    getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
     /**
      * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
@@ -650,5 +642,8 @@ public interface ReqRespStore {
 
     public void invalidateCurrentCollectionCache(String customerId, String app,
                                                  String instanceId);
+
+    public Optional<String> getDefaultEventType(String customer, String app, String service
+	    , String apiPath);
 
 }

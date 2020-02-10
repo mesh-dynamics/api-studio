@@ -50,8 +50,8 @@ import io.cube.agent.UtilException;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
+import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.CompareTemplateStoreException;
@@ -60,6 +60,7 @@ import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.core.ValidateCompareTemplate;
 import com.cube.dao.Analysis;
+import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Event;
 import com.cube.dao.MatchResultAggregate;
@@ -355,30 +356,32 @@ public class AnalyzeWS {
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity("{\"Error\": \"apiPath is mssing\"}").build();
+                .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
         }
         if (jsonpath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity("{\"Error\": \"jsonpath is mssing\"}").build();
+                .entity(Map.of(Constants.ERROR, "Json Path not Specified")).build();
         }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType);
 
-        Optional<TemplateEntry> rule = rrstore.getCompareTemplate(tkey)
-            .map(template -> template.getRule(jsonpath.get()));
+        try {
+	        TemplateEntry rule = comparatorCache.getComparator(tkey).getCompareTemplate()
+		        .getRule(jsonpath.get());
+	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+		        .entity(jsonMapper.writeValueAsString(rule)).build();
 
-        if (rule.isPresent()) {
-            try {
-                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(jsonMapper.writeValueAsString(rule.get())).build();
-            } catch (Exception e) {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
-                    .entity("{\"Error\":\"Not able to convert rule to json\"}").build();
-            }
+        } catch (JsonProcessingException e) {
+	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+		        .type(MediaType.APPLICATION_JSON)
+		        .entity(Map.of(Constants.ERROR
+			        , "Not able to convert rule to json")).build();
+        } catch (TemplateNotFoundException e) {
+	        return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
+		        .entity(Map.of(Constants.ERROR, "Assertion rule not found")).build();
         }
-        return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
-            .entity("{\"Error\":\"Assertion rule not found\"}").build();
+
     }
 
     /**
@@ -466,7 +469,8 @@ public class AnalyzeWS {
 			    matchRes.reqMatchRes, matchRes.numMatch,
 			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
 			    matchRes.reqCompareRes.mt,
-			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse, replayedResponse);
+			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse
+			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId);
 
 		    String resultJson = null;
 		    try {
@@ -589,25 +593,10 @@ public class AnalyzeWS {
     public Response getAnalysisResultsByPath(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> service = Optional
-            .ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-        Optional<String> path = Optional
-            .ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill down on
-        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
-            .flatMap(Utils::strToInt); // for paging
-        Optional<Integer> numResults =
-            Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD))
-                .flatMap(Utils::strToInt).or(() -> Optional.of(20)); // for paging
-        Optional<Comparator.MatchType> reqMatchType = Optional
-            .ofNullable(queryParams.getFirst(Constants.REQ_MATCH_TYPE))
-            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
-        Optional<Comparator.MatchType> respMatchType = Optional
-            .ofNullable(queryParams.getFirst(Constants.RESP_MATCH_TYPE))
-            .flatMap(v -> Utils.valueOf(Comparator.MatchType.class, v));
+        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
+		    , queryParams);
         Optional<Boolean> includeDiff = Optional
             .ofNullable(queryParams.getFirst(Constants.INCLUDE_DIFF)).flatMap(Utils::strToBool);
-		Optional<String> resolution = Optional.ofNullable(queryParams
-			.getFirst(Constants.DIFF_RESOLUTION_FIELD));
 
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
@@ -616,8 +605,7 @@ public class AnalyzeWS {
         List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
             Result<ReqRespMatchResult> result = rrstore
-                .getAnalysisMatchResults(replayId, service, path,
-                    reqMatchType, respMatchType, start, numResults, resolution);
+                .getAnalysisMatchResults(analysisMatchResultQuery);
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
@@ -654,8 +642,10 @@ public class AnalyzeWS {
                         .flatMap(rrstore::getRequestEvent)
                         .map(event -> event.getPayloadAsJsonString(config));
 	                try {
-		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.respCompareRes.diffs));
-		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes.reqCompareRes.diffs));
+		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
+			                .respCompareRes.diffs));
+		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
+			                .reqCompareRes.diffs));
 	                } catch (JsonProcessingException e) {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
@@ -668,8 +658,9 @@ public class AnalyzeWS {
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
                     matchRes.reqMatchRes, matchRes.numMatch,
-                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType,
-	                respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse, replayResponse);
+                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
+	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
+	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -683,9 +674,9 @@ public class AnalyzeWS {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Error in converting Match results list to Json",
                 Constants.REPLAY_ID_FIELD, replayId,
-                Constants.APP_FIELD, app,
+                Constants.APP_FIELD, app/*,
                 Constants.SERVICE_FIELD, service,
-                Constants.PATH_FIELD, path
+                Constants.PATH_FIELD, path*/
             )
             ));
             return Response.serverError().entity(
@@ -870,7 +861,7 @@ public class AnalyzeWS {
             TemplateSetTransformer transformer = new TemplateSetTransformer();
             // transform the template set based on the operations specified
             TemplateSet updated = templateSetOpt.flatMap(templateSet -> updateOperationSetOpt.map(updateOperationSet ->
-                transformer.updateTemplateSet(templateSet, updateOperationSet)))
+                transformer.updateTemplateSet(templateSet, updateOperationSet, config.comparatorCache)))
                 .orElseThrow(() -> new Exception("Missing template set or template update operation set"));
 
             // Validate updated template set
@@ -933,14 +924,18 @@ public class AnalyzeWS {
                 throw new Exception("Golden already present for name - " + name + " .Specify unique name");
             }
 
+            // creating a new temporary empty template set against the old version
+	        // (if one doesn't exist already)
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
-                .templateVersion).orElseThrow(() ->
-                new Exception("Unable to find template set mentioned in the specified golden set"));
+                .templateVersion)
+                .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
+	                originalRec.app, Instant.now(), Collections.emptyList()));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
-            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(templateSet, templateUpdateOperationSet);
+            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(
+            	templateSet, templateUpdateOperationSet, config.comparatorCache);
 
 	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
 		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
@@ -957,7 +952,8 @@ public class AnalyzeWS {
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
             String newCollectionName = UUID.randomUUID().toString();
-            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
+            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName
+	            , collectionUpdateOpSetId, originalRec, updatedTemplateSet.version);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
 
@@ -1289,11 +1285,11 @@ public class AnalyzeWS {
 		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString(config));
 
 		Map<String, TemplateEntry> requestMatchRules = Utils
-			.getAllPathRules(request, recording, Type.RequestMatch,
+			.getAllPathRules(request, recording, TemplateKey.Type.RequestMatch,
 				service, apiPath, rrstore, config);
 
 		Map<String, TemplateEntry> requestCompareRules = Utils
-			.getAllPathRules(request, recording, Type.RequestCompare,
+			.getAllPathRules(request, recording, TemplateKey.Type.RequestCompare,
 				service, apiPath, rrstore, config);
 		jsonObject.put(Constants.REQUEST_MATCH_RULES,
 			jsonMapper.writeValueAsString(requestMatchRules));
@@ -1341,7 +1337,10 @@ public class AnalyzeWS {
                         Optional<String> recordRequest,
                         Optional<String> replayRequest,
                         Optional<String> recordResponse,
-                        Optional<String> replayResponse) {
+                        Optional<String> replayResponse,
+	                    Optional<String> recordTraceId,
+	                    Optional<String> replayTraceId
+	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
             this.reqMatchResType = reqMatchResType;
@@ -1356,6 +1355,8 @@ public class AnalyzeWS {
             this.replayRequest = replayRequest;
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
+            this.recordTraceId = recordTraceId;
+            this.replayTraceId = replayTraceId;
         }
 
         public final Optional<String> recordReqId;
@@ -1366,6 +1367,8 @@ public class AnalyzeWS {
 	    public final Comparator.MatchType reqCompResType;
 	    public final String service;
         public final String path;
+        public final Optional<String> recordTraceId;
+        public final Optional<String> replayTraceId;
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
         @JsonIgnore

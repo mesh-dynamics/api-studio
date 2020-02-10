@@ -64,7 +64,8 @@
         ],
         "output": {
             "mt":           "ExactMatch",
-            "matchmeta":    "JsonDiff"
+            "matchmeta":    "JsonDiff",
+            "diffs": []
         }
     },
 
@@ -370,7 +371,8 @@
         ],
         "output": {
             "mt":           "ExactMatch",
-            "matchmeta":    "JsonDiff"
+            "matchmeta":    "JsonDiff",
+            "diffs":[]
         }
     },
 
@@ -454,9 +456,40 @@
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
             "diffs": [
-                { "op": "replace",  "path": "/rptArr1/2",   "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     },
                 { "op": "replace",  "path": "/rptArr2/2",   "value": 5,         "fromValue":"Joey", "resolution": "ERR_ValTypeMismatch" },
+                { "op": "replace",  "path": "/rptArr1/2",   "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     },
                 { "op": "replace",  "path": "/rptArr3/1",   "value": "Monica",  "fromValue":6.5,    "resolution": "ERR_ValTypeMismatch" }
+            ]
+        }
+    },
+
+    "arrayDiff" : {
+        "json1": {
+            "display_actors": [
+                "BERRY, KARL",
+                "WILSON, WILL",
+                "ZELLWEGER, MINNIE"
+            ]
+        },
+
+        "json2": {
+            "display_actors": [
+                "ZELLWEGER, MINNIE",
+                "WILSON, WILL",
+                "BERRY, KARL"
+            ]
+        },
+
+        "rules": [
+
+        ],
+        "output": {
+            "mt":"FuzzyMatch",
+            "matchmeta":"JsonDiff",
+            "diffs":[
+                {"op":"add","path":"/display_actors/0","value":"ZELLWEGER, MINNIE","resolution":"OK_DefaultCT"},
+                {"op":"add","path":"/display_actors/1","value":"WILSON, WILL","resolution":"OK_DefaultCT"},
+                {"op":"remove","path":"/display_actors/3","value":"ZELLWEGER, MINNIE","resolution":"OK_DefaultPT"}
             ]
         }
     }

@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +57,10 @@ import com.cube.ws.Config;
 public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+
+    private static final long traceIdRandomSeed = System.currentTimeMillis();
+
+    private static final Random random = new Random(traceIdRandomSeed);
 
     // Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
@@ -306,7 +311,7 @@ public class Utils {
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                traceId.orElse("NA"), runType.get(), timestamp,
+                traceId.orElse(generateTraceId()), runType.get(), timestamp,
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPRequest);
             eventBuilder.setRawPayloadString(payloadStr);
@@ -346,7 +351,8 @@ public class Utils {
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                traceId.orElse("NA"), runType.get(), timestamp,
+                traceId.orElse(reqId.flatMap(config.rrstore::getRequestEvent).map(Event::getTraceId).orElse("NA")),
+                runType.get(), timestamp,
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPResponse);
             eventBuilder.setRawPayloadString(payloadStr);
@@ -378,4 +384,39 @@ public class Utils {
 		return pathRules;
     }
 
+    //Referred from io.jaegertracing.internal.propagation
+
+    private static String generateTraceId() {
+        long high = random.nextLong();
+        long low = random.nextLong();
+        char[] result = new char[32];
+        int pos = 0;
+        writeHexLong(result, pos, high);
+        pos += 16;
+
+        writeHexLong(result, pos, low);
+        return new String(result);
+    }
+
+    // Taken from io.jaegertracing.internal.propagation
+    /**
+     * Inspired by {@code okio.Buffer.writeLong}
+     */
+    static void writeHexLong(char[] data, int pos, long v) {
+        writeHexByte(data, pos + 0, (byte) ((v >>> 56L) & 0xff));
+        writeHexByte(data, pos + 2, (byte) ((v >>> 48L) & 0xff));
+        writeHexByte(data, pos + 4, (byte) ((v >>> 40L) & 0xff));
+        writeHexByte(data, pos + 6, (byte) ((v >>> 32L) & 0xff));
+        writeHexByte(data, pos + 8, (byte) ((v >>> 24L) & 0xff));
+        writeHexByte(data, pos + 10, (byte) ((v >>> 16L) & 0xff));
+        writeHexByte(data, pos + 12, (byte) ((v >>> 8L) & 0xff));
+        writeHexByte(data, pos + 14, (byte) (v & 0xff));
+    }
+    static final char[] HEX_DIGITS =
+        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    static void writeHexByte(char[] data, int pos, byte b) {
+        data[pos + 0] = HEX_DIGITS[(b >> 4) & 0xf];
+        data[pos + 1] = HEX_DIGITS[b & 0xf];
+    }
 }

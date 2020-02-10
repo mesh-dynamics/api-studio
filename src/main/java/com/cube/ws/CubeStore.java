@@ -66,6 +66,7 @@ import com.cube.dao.EventQuery;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.dao.Recording.RecordingStatus;
+import com.cube.dao.Recording.RecordingWithSameNamePresent;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
@@ -1040,6 +1041,91 @@ public class CubeStore {
         return resp;
     }
 
+
+    @POST
+    @Path("updateGoldenFields/{recordingId}")
+    @Consumes("application/x-www-form-urlencoded")
+    public Response updateGoldenFields(@PathParam("recordingId") String recordingId,
+        MultivaluedMap<String, String> formParams) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        Response resp = recording.map(rec -> {
+            try {
+                Optional<String> name = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_NAME_FIELD));
+                Optional<String> userId = Optional.ofNullable(formParams.getFirst(Constants.USER_ID_FIELD));
+                Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst(Constants.CODE_VERSION_FIELD));
+                Optional<String> branch = Optional.ofNullable(formParams.getFirst(Constants.BRANCH_FIELD));
+                Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst(Constants.GIT_COMMIT_ID_FIELD));
+                List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
+                Optional<String> comment = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_COMMENT_FIELD));
+
+
+                if(name.isPresent()) {
+                    String nameVal = name.get();
+                    Optional<Recording> recWithSameName = rrstore.getRecordingByName(rec.customerId, rec.app, nameVal);
+                    if (recWithSameName.isPresent()) {
+                        String errorMessage = "Golden with same name present " + nameVal;
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                            errorMessage, "RecordingId", recordingId)));
+                        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                            buildErrorResponse(Constants.ERROR, Constants.RECORDING_SAME_NAME_EXCEPTION,
+                                errorMessage)).build();
+                    }
+                }
+
+
+                RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(rec.customerId, rec.app
+                    , rec.instanceId), rec.collection)
+                    .withStatus(rec.status)
+                    .withTemplateSetVersion(rec.templateVersion)
+                    .withRootRecordingId(rec.rootRecordingId)
+                    .withArchived(rec.archived);
+                rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+                recordingBuilder.withName(name.orElse(rec.name));
+                recordingBuilder.withUserId(userId.orElse(rec.userId));
+                recordingBuilder.withCodeVersion(codeVersion.orElse(rec.codeVersion.orElse(null)));
+                recordingBuilder.withBranch(branch.orElse(rec.branch.orElse(null)));
+
+                if(tags.isEmpty()) {
+                    recordingBuilder.withTags(rec.tags);
+                } else {
+                    recordingBuilder.withTags(tags);
+                }
+                recordingBuilder.withGitCommitId(gitCommitId.orElse(rec.gitCommitId.orElse(null)));
+                recordingBuilder.withComment(comment.orElse(rec.comment.orElse(null)));
+                rec.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+                rec.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+                rec.generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+
+                Recording updatedRecording = recordingBuilder.build();
+                
+                rrstore.saveRecording(updatedRecording);
+
+                String json;
+                LOGGER.info(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "Recording updated", "RecordingId",
+                        recordingId)));
+                json = jsonMapper.writeValueAsString(updatedRecording);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                    "Error in converting Recording object to Json for recordingId", "RecordingId",
+                    recordingId)), ex);
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Unable to parse JSON ")).build();
+            } catch (Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                    "Generic exception", "RecordingId",
+                    recordingId)), e);
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.GENERIC_EXCEPTION,
+                        e.getMessage())).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
+                "Recording not found for recordingId" + recordingId)).build());
+        return resp;
+    }
 
     /**
      * This is just a test api

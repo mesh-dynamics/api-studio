@@ -3,6 +3,7 @@ package com.cube.golden.transform;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -29,8 +30,9 @@ public class TemplateUpdateOperationSetTransformer {
     private SingleTemplateUpdateOperation mergeTemplateUpdate(SingleTemplateUpdateOperation sourceUpdates,
                                                               SingleTemplateUpdateOperation newUpdates) {
         // first create a fresh copy of all existing rules
-        Map<String, TemplateEntryOperation> sourceUpdateMap = sourceUpdates.getOperationList().stream()
-            .collect(Collectors.toMap(TemplateEntryOperation::getPath, operation -> operation));
+        Map<String, TemplateEntryOperation> sourceUpdateMap =
+            sourceUpdates.getOperationList().stream().collect(Collectors.toMap(
+            TemplateEntryOperation::getPath, Function.identity(), (value1 , value2) -> value2));
         // for each existing json path in the update set, if new rule exists , just overwrite the existing rule
         // add rules for new paths as well to the update set (which earlier did not exist in the update set)
         newUpdates.getOperationList().forEach(newUpdate -> {

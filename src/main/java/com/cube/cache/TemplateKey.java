@@ -99,4 +99,8 @@ public class TemplateKey {
     }
 
     public String getVersion() { return version; }
+
+    public boolean isResponseTemplate() {
+        return this.reqOrResp == Type.ResponseCompare;
+    }
 }
