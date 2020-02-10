@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1669,14 +1670,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(NUMMATCHF, res.numMatch);
         doc.setField(RESP_COMP_RES_TYPE_F, res.respCompareRes.mt.toString());
         doc.setField(RESP_COMP_RES_META_F, res.respCompareRes.matchmeta);
+        AtomicInteger counter = new AtomicInteger(0);
         doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
                 diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
-                    .concat(res.service).concat(res.path)))
+                    .concat(res.service).concat(res.path).concat(String
+                        .valueOf(counter.getAndIncrement()))))
             .collect(Collectors.toList()));
-
+        counter.getAndSet(0);
         doc.addChildDocuments(res.reqCompareRes.diffs.stream().map(diff ->
         diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
-            .concat(res.service).concat(res.path)))
+            .concat(res.service).concat(res.path).concat(String
+                .valueOf(counter.getAndIncrement()))))
             .collect(Collectors.toList()));
         doc.addField(REQ_COMP_RES_TYPE_F, res.reqCompareRes.mt.toString());
         doc.addField(REQ_COMP_RES_META_F, res.reqCompareRes.matchmeta);
