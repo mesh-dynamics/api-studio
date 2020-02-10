@@ -46,8 +46,8 @@ generate_manifest() {
 		if [ -z "$SOLR_CORE" ]; then
 			SOLR_CORE=null
 		fi
-		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG
+		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG $AUTH_TOKEN
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG $AUTH_TOKEN
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $CUBE_HOST
 	fi
@@ -102,7 +102,8 @@ echo "Setting default responses!"
     fi
 
 RESPONSE="$(curl -X POST \
-  https://$GATEWAY_URL/cs/event/setDefaultResponse \
+  https://$GATEWAY_URL/api/cs/event/setDefaultResponse \
+	-H "Authorization: Bearer $AUTH_TOKEN"
   -H 'Content-Type: application/json' \
   -H 'cache-control: no-cache' \
   -H "Host:$CUBE_HOST" \
@@ -157,7 +158,7 @@ kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 	RESPONSE="$(curl -X POST \
   https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
+	-H "Authorization: Bearer $AUTH_TOKEN" \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'\
   -d "$BODY" )"
@@ -180,7 +181,7 @@ stop_record() {
 	curl -X POST \
 	https://$CUBE_HOST/api/cs/stop/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
+	-H "Authorization: Bearer $AUTH_TOKEN" \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
@@ -238,7 +239,7 @@ replay() {
   REPLAY_ID=$(curl -f -X POST \
   https://$CUBE_HOST/api/rs/start/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
+	-H "Authorization: Bearer $AUTH_TOKEN" \
   -H 'cache-control: no-cache' \
 	-H "Host: $CUBE_HOST" \
 	-d "$BODY" | sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
@@ -269,7 +270,7 @@ replay_status() {
 	REPLAY_ID=$(cat $APP_DIR/kubernetes/replayid.temp)
 	curl https://$CUBE_HOST/api/rs/status/$CUBE_CUSTOMER/$CUBE_APP/$COLLECTION_NAME/$REPLAY_ID \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
-	-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
+	-H "Authorization: Bearer $AUTH_TOKEN" \
 	  -H 'cache-control: no-cache' \
 		-H "Host: $CUBE_HOST" | jq -r "."
 }
@@ -280,7 +281,7 @@ analyze() {
 	curl -X POST \
 	  https://$CUBE_HOST/api/as/analyze/$REPLAY_ID \
 	  -H 'Content-Type: application/x-www-form-urlencoded' \
-		-H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5ODY0MDE3LCJleHAiOjE4OTUyMjQwMTd9.JjTcDlf8EB_iueDWSollLrr1kn7a9e3Yr0kQ2BtdLAk' \
+		-H "Authorization: Bearer $AUTH_TOKEN" \
 	  -H 'cache-control: no-cache' \
 		-H "Host: $CUBE_HOST" | jq -r "."
 }
