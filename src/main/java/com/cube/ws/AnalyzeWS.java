@@ -50,6 +50,7 @@ import io.cube.agent.UtilException;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
+import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
@@ -355,30 +356,32 @@ public class AnalyzeWS {
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity("{\"Error\": \"apiPath is mssing\"}").build();
+                .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
         }
         if (jsonpath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity("{\"Error\": \"jsonpath is mssing\"}").build();
+                .entity(Map.of(Constants.ERROR, "Json Path not Specified")).build();
         }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType);
 
-        Optional<TemplateEntry> rule = rrstore.getCompareTemplate(tkey)
-            .map(template -> template.getRule(jsonpath.get()));
+        try {
+	        TemplateEntry rule = comparatorCache.getComparator(tkey).getCompareTemplate()
+		        .getRule(jsonpath.get());
+	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+		        .entity(jsonMapper.writeValueAsString(rule)).build();
 
-        if (rule.isPresent()) {
-            try {
-                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(jsonMapper.writeValueAsString(rule.get())).build();
-            } catch (Exception e) {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
-                    .entity("{\"Error\":\"Not able to convert rule to json\"}").build();
-            }
+        } catch (JsonProcessingException e) {
+	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+		        .type(MediaType.APPLICATION_JSON)
+		        .entity(Map.of(Constants.ERROR
+			        , "Not able to convert rule to json")).build();
+        } catch (TemplateNotFoundException e) {
+	        return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
+		        .entity(Map.of(Constants.ERROR, "Assertion rule not found")).build();
         }
-        return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
-            .entity("{\"Error\":\"Assertion rule not found\"}").build();
+
     }
 
     /**
@@ -949,7 +952,8 @@ public class AnalyzeWS {
             String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
             // TODO With similar update logic find the updated collection id
             String newCollectionName = UUID.randomUUID().toString();
-            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName, collectionUpdateOpSetId, originalRec);
+            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName
+	            , collectionUpdateOpSetId, originalRec, updatedTemplateSet.version);
             if (!b) throw new Exception("Unable to create an updated collection from existing golden");
 
 

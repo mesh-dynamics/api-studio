@@ -100,7 +100,7 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withUpdateTimestamp(Instant timestamp) {
-		this.timestamp = Optional.of(timestamp);
+		this.timestamp = Optional.ofNullable(timestamp);
 		return this;
 	}
 
@@ -111,7 +111,7 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withParentRecordingId(String parentRecordingId) {
-		this.parentRecordingId = Optional.of(parentRecordingId);
+		this.parentRecordingId = Optional.ofNullable(parentRecordingId);
 		return this;
 	}
 
@@ -126,12 +126,12 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withCodeVersion(String codeVersion) {
-		this.codeVersion = Optional.of(codeVersion);
+		this.codeVersion = Optional.ofNullable(codeVersion);
 		return this;
 	}
 
 	public RecordingBuilder withBranch(String branchName) {
-		this.branch = Optional.of(branchName);
+		this.branch = Optional.ofNullable(branchName);
 		return this;
 	}
 
@@ -146,22 +146,22 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withGitCommitId(String commitId) {
-		this.gitCommitId = Optional.of(commitId);
+		this.gitCommitId = Optional.ofNullable(commitId);
 		return this;
 	}
 
 	public RecordingBuilder withCollectionUpdateOpSetId(String collectionUpdateOpSetId) {
-		this.collectionUpdOpSetId = Optional.of(collectionUpdateOpSetId);
+		this.collectionUpdOpSetId = Optional.ofNullable(collectionUpdateOpSetId);
 		return this;
 	}
 
 	public RecordingBuilder withTemplateUpdateOpSetId(String templateUpdateOpSetId) {
-		this.templateUpdOpSetId = Optional.of(templateUpdateOpSetId);
+		this.templateUpdOpSetId = Optional.ofNullable(templateUpdateOpSetId);
 		return this;
 	}
 
 	public RecordingBuilder withComment(String comment) {
-		this.comment = Optional.of(comment);
+		this.comment = Optional.ofNullable(comment);
 		return this;
 	}
 
@@ -171,7 +171,7 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withGeneratedClassJarPath(String generatedClassJarPath) throws  Exception {
-		this.generatedClassJarPath = Optional.of(generatedClassJarPath);
+		this.generatedClassJarPath = Optional.ofNullable(generatedClassJarPath);
 		populateClassLoader();
 		return this;
 	}

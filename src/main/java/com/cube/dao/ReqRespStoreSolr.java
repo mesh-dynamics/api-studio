@@ -602,6 +602,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return Optional.empty();
     }
 
+    @Override
+    public Optional<String> getDefaultEventType(String customer, String app
+        , String service, String apiPath) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields(EVENTTYPEF);
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, CUSTOMERIDF, customer);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query, PATHF, apiPath);
+        Optional<Integer> maxResults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxResults).findFirst().map(doc
+            -> (String)doc.getFieldValue(EVENTTYPEF));
+    }
+
     private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc) {
         Optional<String> version = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
