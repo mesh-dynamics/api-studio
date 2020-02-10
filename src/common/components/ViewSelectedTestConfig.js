@@ -462,8 +462,7 @@ class ViewSelectedTestConfig extends React.Component {
     startRecord = () => {
         const { cube, authentication } = this.props;
         let user = authentication.user;
-        let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
-        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/${instance}/${this.state.recName}/RespPartialMatch`;
+        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/record/${this.state.recName}/RespPartialMatch`;
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
