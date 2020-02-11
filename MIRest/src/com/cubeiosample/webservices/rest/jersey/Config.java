@@ -10,7 +10,9 @@ import org.apache.log4j.Logger;
 @Singleton
 public class Config {
 
-    final static Logger LOGGER = Logger.getLogger(Config.class);
+
+
+  final static Logger LOGGER = Logger.getLogger(Config.class);
     private static final String CONFFILE = "/MIRest.conf";
 
 	final Properties properties;
@@ -33,6 +35,8 @@ public class Config {
     public boolean GET_BOOK_REVIEWS = false;
     public boolean USE_CACHING = false;
     public boolean USE_TOKEN_AUTHENTICATION = false;
+    public static boolean ADD_FIELD_RANDOM = false;
+    public static boolean SHUFFLE_VALUES = false;
     
     public boolean ADD_TRACING_HEADERS = false;
     
@@ -160,11 +164,24 @@ public class Config {
         if (timeBetweenRuns != null) {
             TIME_BETWEEN_RUNS = Long.parseLong(timeBetweenRuns);
         }
-        
+
+        String shuffleValues = this.getProperty("SHUFFLE_VALUES");
+        if (shuffleValues == null || !shuffleValues.equalsIgnoreCase("false")) {
+            SHUFFLE_VALUES = true;
+        } else {
+            SHUFFLE_VALUES = false;
+        }
+
+        String addFieldRandom = this.getProperty("ADD_FIELD_RANDOM");
+        if (addFieldRandom == null || !addFieldRandom.equalsIgnoreCase("false")) {
+          ADD_FIELD_RANDOM = true;
+        } else {
+          ADD_FIELD_RANDOM = false;
+        }
+
         if (USE_KUBE) {
         	overrideConfigWithKubeSettings();
         }
-
 
         LOGGER.info("final value for concat bug is :: " + CONCAT_BUG);
         LOGGER.info("final value for number of actors to display is :: " + NUM_ACTORS_TO_DISPLAY);
@@ -316,7 +333,25 @@ public class Config {
         String numActorsToDisplay = System.getenv("NUM_ACTORS_TO_DISPLAY");
         if (numActorsToDisplay != null) {
         	NUM_ACTORS_TO_DISPLAY = Integer.parseInt(numActorsToDisplay);
-        } 
+        }
+
+        String shuffleValues = System.getenv("SHUFFLE_VALUES");
+        if (shuffleValues != null ) {
+          if (shuffleValues.equalsIgnoreCase("true")) {
+            SHUFFLE_VALUES = true;
+          } else {
+            SHUFFLE_VALUES = false;
+          }
+        }
+
+        String addFieldRandom = System.getenv("ADD_FIELD_RANDOM");
+        if (addFieldRandom != null ) {
+          if (addFieldRandom.equalsIgnoreCase("true")) {
+            ADD_FIELD_RANDOM = true;
+          } else {
+            ADD_FIELD_RANDOM = false;
+          }
+    }
 	}
 	
 
