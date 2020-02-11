@@ -239,12 +239,8 @@ public class Analyzer {
         Optional<Event> replayresp = Optional
             .ofNullable(replayResponseMap.get(replayreq.reqId));
         try {
-            String normalisedAPIPath = CompareTemplate.normaliseAPIPath(recordreq.apiPath);
-            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath for template fetching/comparator catch ",
-                "Original APIPath", recordreq.apiPath,
-                "Normalised APIPath", normalisedAPIPath)));
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
-                recordreq.app, recordreq.service, normalisedAPIPath, Type.RequestCompare);
+                recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare);
             Comparator reqComparator = comparatorCache
                 .getComparator(reqCompareKey, recordreq.eventType);
             if (reqComparator != JsonComparator.EMPTY_COMPARATOR) {
@@ -255,7 +251,7 @@ public class Analyzer {
                     Collections.emptyList());
             }
             TemplateKey respCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
-                recordreq.app, recordreq.service, normalisedAPIPath, Type.ResponseCompare);
+                recordreq.app, recordreq.service, recordreq.apiPath, Type.ResponseCompare);
 
             if (recordedResponse.isPresent() && replayresp.isPresent()) {
                 Event recordedr = recordedResponse.get();
