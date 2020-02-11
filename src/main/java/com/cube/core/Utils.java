@@ -374,11 +374,11 @@ public class Utils {
 		TemplateKey tkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
 			templateKeyType);
 
-		Optional<CompareTemplate> requestCompareTemplateOptional = rrstore.getCompareTemplate(tkey);
+		Optional<CompareTemplate> templateOptional = rrstore.getCompareTemplate(tkey);
 		Map<String, TemplateEntry> pathRules = new HashMap<>();
-		requestCompareTemplateOptional.ifPresent(UtilException.rethrowConsumer(compareTemplate -> {
+		templateOptional.ifPresent(UtilException.rethrowConsumer(template -> {
 			DataObj payload = event.getPayload(config);
-			payload.getPathRules(compareTemplate, pathRules);
+			payload.getPathRules(template, pathRules);
 		}));
 
 		return pathRules;

@@ -221,7 +221,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         builder.withCollection(collection)
             .withPaths(paths)
             .withServices(services)
-            .withRunType(runType.orElse(null));
+            .withLimit(1);
+        
+            runType.ifPresent(builder::withRunType);
 
         return getSingleEvent(builder.build());
     }
