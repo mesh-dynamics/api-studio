@@ -3,6 +3,7 @@ package io.md.utils;
 import java.io.IOException;
 import java.sql.Connection;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -213,6 +215,16 @@ public class Utils {
 			throw new Event.EventBuilder.InvalidEventException();
 		}
 
+	}
+
+	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
+		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
+		for (String key : new ArrayList<String>(mvMap.keySet())) {
+			String lowerCase = key.toLowerCase();
+			for (String value : mvMap.remove(key))
+				lowerCaseMVMap.add(lowerCase, value);
+		}
+		return lowerCaseMVMap;
 	}
 
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
