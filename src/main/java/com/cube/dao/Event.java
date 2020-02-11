@@ -69,7 +69,7 @@ public class Event {
 		this.runType = runType;
 		this.timestamp = timestamp;
 		this.reqId = reqId;
-		this.apiPath = apiPath;
+		this.apiPath = CompareTemplate.normaliseAPIPath(apiPath);
 		this.eventType = eventType;
 		this.rawPayloadBinary = rawPayloadBinary;
 		this.rawPayloadString = rawPayloadString;
