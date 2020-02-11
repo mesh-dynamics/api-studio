@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -217,12 +218,13 @@ public class Utils {
 	}
 
 	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
+		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
 		for (String key : new ArrayList<String>(mvMap.keySet())) {
 			String lowerCase = key.toLowerCase();
 			for (String value : mvMap.remove(key))
-				mvMap.add(lowerCase, value);
+				lowerCaseMVMap.add(lowerCase, value);
 		}
-		return mvMap;
+		return lowerCaseMVMap;
 	}
 
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
