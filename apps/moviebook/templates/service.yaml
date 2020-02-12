@@ -470,3 +470,58 @@ spec:
             cpu: "250m"
         ports:
         - containerPort: 8080
+
+##################################################################################################
+# Movieinfo UI
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: moviebookui
+  namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: moviebookui
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    component: moviebookui
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: moviebookui
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: moviebook
+        component: moviebookui
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: moviebookui
+        image: cubeiocorp/movieinfoui:ce9081a7e5a906aa749e9e7ac84ef8e63ec8757b
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "200m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred

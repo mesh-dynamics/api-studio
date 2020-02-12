@@ -17,7 +17,7 @@ generate_traffic() {
 	#for ((i=1;i<=$1;i++)); do
 	#	curl -X GET "http://$NAMESPACE_HOST/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
 	#done
-	java -jar lib/MIClient-V1-SNAPSHOT-jar-with-dependencies.jar http://$NAMESPACE_HOST/minfo $1
+	java -jar lib/MIClient-V1-SNAPSHOT-jar-with-dependencies.jar https://$NAMESPACE_HOST/minfo $1
 }
 
 main() {

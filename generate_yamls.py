@@ -32,19 +32,20 @@ def init_files(base_dir, template_dir, namespace, cube_application, cube_custome
     cubeui_tag=sys.argv[14]
     cubeui_backend_tag=sys.argv[15]
     movieinfo_tag=sys.argv[16]
+    auth_token=sys.argv[17]
     env = Environment(loader=FileSystemLoader(template_dir))
     for file in os.listdir(template_dir):
         if file.endswith(".yaml") or file.endswith(".json"):
             template = env.get_template(file)
             outfile = base_dir + "/kubernetes/" + file
             with open(outfile, "w") as out:
-                output_from_template = template.render(namespace=namespace, namespace_host=namespace_host, cube_application=cube_application, customer=cube_customer, record_host=host, cube_host=cube_host, staging_host=staging_host, cube_instance=cube_instance, springboot_profile=springboot_profile, solr_core=solr_core, cubeio_tag=cubeio_tag, cubeui_tag=cubeui_tag, cubeui_backend_tag=cubeui_backend_tag, movieinfo_tag=movieinfo_tag)
+                output_from_template = template.render(namespace=namespace, namespace_host=namespace_host, cube_application=cube_application, customer=cube_customer, record_host=host, cube_host=cube_host, staging_host=staging_host, cube_instance=cube_instance, springboot_profile=springboot_profile, solr_core=solr_core, cubeio_tag=cubeio_tag, cubeui_tag=cubeui_tag, cubeui_backend_tag=cubeui_backend_tag, movieinfo_tag=movieinfo_tag, auth_token=auth_token)
                 out.write(output_from_template)
                 out.close()
 
 def recap_files(operation, base_dir, template_dir, namespace, cube_application, cube_customer):
     cube_instanceid = sys.argv[6]
-    master_namespace = sys.argv[7]
+    cube_host = sys.argv[7]
     env = Environment(loader=FileSystemLoader(template_dir))
     if operation == "record":
         outfile = base_dir + "/kubernetes/envoy-record-cs.yaml"
@@ -58,7 +59,7 @@ def recap_files(operation, base_dir, template_dir, namespace, cube_application, 
     dataMap = yaml.safe_load(data_stream)
     with open(outfile, "w") as out:
         for service in dataMap['services']:
-            output_from_template = template.render(service_name=service, customer=cube_customer, cube_application=cube_application, cube_instanceid=cube_instanceid, master_namespace=master_namespace, namespace=namespace)
+            output_from_template = template.render(service_name=service, customer=cube_customer, cube_application=cube_application, cube_instanceid=cube_instanceid, cube_host=cube_host, namespace=namespace)
             out.write("---\n")
             out.write(output_from_template + "\n" * 2)
     out.close()
@@ -69,7 +70,7 @@ def recap_files(operation, base_dir, template_dir, namespace, cube_application, 
             outfile = base_dir + "/kubernetes/mock-all-except-" + app[1] + ".yaml"
             template = env.get_template("mock-all-except-" + app[1] + ".j2")
             with open(outfile, "w") as out:
-                output_from_template = template.render(namespace=namespace, customer=cube_customer, cube_application=cube_application, cube_instance=cube_instanceid, master_namespace=master_namespace)
+                output_from_template = template.render(namespace=namespace, customer=cube_customer, cube_application=cube_application, cube_instance=cube_instanceid, cube_host=cube_host)
                 out.write(output_from_template)
                 out.close()
 

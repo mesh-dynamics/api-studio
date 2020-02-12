@@ -67,7 +67,9 @@ data:
     # http output for cube dogfooding (envoy)
     <match cube.cubews.envoy.{{namespace}}>
       @type http
-      endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/rrbatch
+      endpoint https://{{cube_host}}/api/cs/rrbatch
+      headers { "Authorization":" Bearer {{auth_token}}"}
+      tls_verify_mode none
       open_timeout 5
       <format>
         @type json
@@ -86,7 +88,9 @@ data:
     # http output for cube dogfooding (agent)
     <match cube.cubews.agent.{{namespace}}>
       @type http
-      endpoint http://cubews-record.{{master_namespace}}.svc:8080/cs/frbatch
+      endpoint https://{{cube_host}}/api/cs/rrbatch
+      headers { "Authorization":" Bearer {{auth_token}}"}
+      tls_verify_mode none
       open_timeout 5
       <format>
         @type json
