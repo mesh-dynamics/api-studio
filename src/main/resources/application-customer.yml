@@ -22,8 +22,8 @@ spring:
     mail:
         host: smtp.office365.com
         port: 587
-        username: email.sender@cubecorp.io
-        password: Welcome@cube123
+        username: email.sender@meshdynamics.io
+        password: Welcome@md123
         properties:
             mail.smtp:
                 auth: true
@@ -34,7 +34,7 @@ spring:
                 # Change timeout if authentication/read exception is being thrown
 
         frontend:
-            baseUrl: http://localhost:8080
+            baseUrl: https://app.meshdynamics.io
             loginEndpoint: /login
             resetEndpoint: /reset
             activationEndpoint: /api/account/activate
