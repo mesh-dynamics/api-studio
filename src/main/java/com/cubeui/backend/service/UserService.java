@@ -14,10 +14,13 @@ import com.cubeui.backend.repository.AppUserRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.InstanceUserRepository;
 import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.service.jwt.JwtActivationTokenProvider;
 import com.cubeui.backend.service.utils.RandomUtil;
+import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.InvalidDataException;
+import com.cubeui.backend.web.exception.UserAlreadyActivatedException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,18 +44,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CustomerService customerService;
+    private final JwtActivationTokenProvider jwtTokenProvider;
     private final AppRepository appRepository;
     private final AppUserRepository appUserRepository;
     private final InstanceRepository instanceRepository;
     private final InstanceUserRepository instanceUserRepository;
 
-
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
         CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
-        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository) {
+        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, JwtActivationTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
+        this.jwtTokenProvider = jwtTokenProvider;
         this.appRepository = appRepository;
         this.appUserRepository = appUserRepository;
         this.instanceRepository = instanceRepository;
@@ -71,7 +75,8 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User save(UserDTO userDTO, boolean isActivated) {
+    public User save(UserDTO userDTO, boolean isActivated, boolean createUserAppInstanceMapping) {
+    // (createUserAppInstanceMapping is used to avoid a bug in Ubuntu machines)
         Set<String> roles = new HashSet<>();
 //        roles.add("ROLE_USER");
         if (userDTO.getRoles() != null) {
@@ -102,31 +107,36 @@ public class UserService {
                     .password(this.passwordEncoder.encode(userDTO.getPassword()))
                     .customer(customer.get())
                     .roles(roles)
-                    .activationKey(RandomUtil.generateActivationKey())
+                    .activationKey(jwtTokenProvider.createActivationToken(userDTO.getEmail()))
                     .activated(isActivated)
                     .build());
-            // assign apps and their instances to the user from the customer
-            log.debug("assigning apps and instances");
-            Optional<List<App>> appsOptional = appRepository.findByCustomerId(customer.get().getId());
-            appsOptional.ifPresent(apps -> {
-                apps.forEach(app -> {
-                    AppUser appUser = new AppUser();
-                    appUser.setApp(app);
-                    appUser.setUser(newUser);
 
-                    Optional<List<Instance>> instancesOptional = instanceRepository.findByAppId(app.getId());
-                    instancesOptional.ifPresent(instances -> {
-                        instances.forEach(instance -> {
-                            InstanceUser instanceUser = new InstanceUser();
-                            instanceUser.setInstance(instance);
-                            instanceUser.setUser(newUser);
-                            instanceUserRepository.save(instanceUser);
+            if (createUserAppInstanceMapping) {
+                // assign apps and their instances to the user from the customer
+                log.debug("assigning apps and instances");
+                Optional<List<App>> appsOptional = appRepository
+                    .findByCustomerId(customer.get().getId());
+                appsOptional.ifPresent(apps -> {
+                    apps.forEach(app -> {
+                        AppUser appUser = new AppUser();
+                        appUser.setApp(app);
+                        appUser.setUser(newUser);
+
+                        Optional<List<Instance>> instancesOptional = instanceRepository
+                            .findByAppId(app.getId());
+                        instancesOptional.ifPresent(instances -> {
+                            instances.forEach(instance -> {
+                                InstanceUser instanceUser = new InstanceUser();
+                                instanceUser.setInstance(instance);
+                                instanceUser.setUser(newUser);
+                                instanceUserRepository.save(instanceUser);
+                            });
                         });
-                    });
 
-                    appUserRepository.save(appUser);
+                        appUserRepository.save(appUser);
+                    });
                 });
-            });
+            }
             return newUser;
         }
     }
@@ -181,17 +191,43 @@ public class UserService {
     }
 
     public Optional<User> activateUser(String key) {
-        log.debug("Activating user for activation key {}", key);
-        return userRepository.findByActivationKey(key)
-                .map(user -> {
-                    user.setActivated(true);
-                    user.setActivationKey(null);
-//                    userRepository.save(user);
-                    return user;
-                });
+        log.debug("Validating and activating user for activation key {}", key);
+        // verify that the token hasn't expired, and extract the user email from it
+        String userEmail = jwtTokenProvider.validateToken(key);
+        if(userEmail != null) {
+            return userRepository.findByUsername(userEmail)
+              .map(user -> {
+                  if(user.isActivated()) {
+                    throw new UserAlreadyActivatedException("User already activated");
+                  }
+                  user.setActivated(true);
+                  user.setActivationKey(null);
+                  userRepository.save(user);
+                  return user;
+              });
+          } else {
+            log.info("Activation key expired");
+            throw new ActivationKeyExpiredException("Activation key expired");
+          }
     }
 
-    @Scheduled(cron = "0 0 1 * * ?")
+    public Optional<User> resendActivationMail(String email) {
+        Optional<User> userOptional = userRepository.findByUsername(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (!user.isActivated()) {
+                user.setActivationKey(jwtTokenProvider.createActivationToken(email));
+                userRepository.save(user);
+                return Optional.of(user);
+            } else {
+                throw new UserAlreadyActivatedException("User already activated");
+            }
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
+    }
+
+    //@Scheduled(cron = "0 0 1 * * ?")
     public void removeNotActivatedUsers() {
         List<User> users = userRepository.findAllByActivatedIsFalseAndCreatedAtBefore(LocalDateTime.now().minusDays(30));
         for (User user : users) {

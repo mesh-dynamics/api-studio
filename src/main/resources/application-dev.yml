@@ -22,8 +22,8 @@ spring:
     mail:
         host: smtp.office365.com
         port: 587
-        username: email.sender@cubecorp.io
-        password: Welcome@cube123
+        username: email.sender@meshdynamics.io
+        password: Welcome@md123
         properties:
             mail.smtp:
                 auth: true
@@ -53,10 +53,16 @@ logging:
 
 cube:
     server:
-        baseUrl: http://demo.dev.cubecorp.io
+        baseUrl: https://demo.dev.cubecorp.io
 
 external:
     recaptcha:
         base-url: https://www.google.com/recaptcha/api/siteverify
         secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr-
+
+services:
+    user:
+        jwt:
+            secret-key: "dev-secret"
+            expiry-seconds: 172800
 

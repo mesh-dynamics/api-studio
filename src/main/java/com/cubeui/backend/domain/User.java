@@ -67,8 +67,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean activated = false;
 
-    @Size(max = 20)
-    @Column(name = "activation_key", length = 20)
+    @Column(name = "activation_key")
     @JsonIgnore
     private String activationKey;
 

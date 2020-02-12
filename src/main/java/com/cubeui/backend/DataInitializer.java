@@ -94,8 +94,8 @@ public class DataInitializer implements CommandLineRunner {
         if(!customerRepository.existsById(1L)) {
             CustomerDTO customerDTO = new CustomerDTO();
             customerDTO.setId(1L);
-            customerDTO.setName("CubeCorp");
-            customerDTO.setEmail("admin@cubecorp.io");
+            customerDTO.setName("MeshDynamics");
+            customerDTO.setEmail("admin@meshdynamics.io");
             customerDTO.setDomainURL("cube.cubecorp.io");
             Customer customer = this.customerService.save(customerDTO);
         }
@@ -109,7 +109,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setCustomerId(1L);
             userDTO.setRoles(Arrays.asList("ROLE_USER"));
             userDTO.setActivated(true);
-            User user = this.userService.save(userDTO, true);
+            User user = this.userService.save(userDTO, true, false);
             log.info("User with email '{}' created", user.getUsername());
         }
 
@@ -122,7 +122,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setCustomerId(1L);
             userDTO.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTO.setActivated(true);
-            this.userService.save(userDTO, true);
+            this.userService.save(userDTO, true, false);
             log.info("User with username '{}' created", userDTO.getEmail());
         }
 
@@ -1362,7 +1362,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setCustomerId(1L);
             userDTO.setRoles(Arrays.asList("ROLE_USER"));
             userDTO.setActivated(true);
-            User user = this.userService.save(userDTO, true);
+            User user = this.userService.save(userDTO, true, false);
             log.info("User with email '{}' created", user.getUsername());
         }
 
@@ -1473,7 +1473,7 @@ public class DataInitializer implements CommandLineRunner {
             userDTO.setCustomerId(1L);
             userDTO.setRoles(Arrays.asList("ROLE_USER"));
             userDTO.setActivated(true);
-            User user = this.userService.save(userDTO, true);
+            User user = this.userService.save(userDTO, true, false);
             log.info("User with email '{}' created", user.getUsername());
         }
 
