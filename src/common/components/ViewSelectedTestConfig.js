@@ -209,11 +209,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     showRecordModal = () => {
         const { cube } = this.props;
-        if (!cube.selectedTestId) {
-            alert('select golden to replay');
-        } else {
-            this.setState({recordModalVisible: true});
-        }
+        this.setState({recordModalVisible: true});
     };
 
     handleCloseRecModal = () => {
@@ -295,8 +291,12 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10 row">
-                    <div className="col-sm-6"><div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div></div>
-                    <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
+                    <div className={cube.selectedApp === "MovieInfo" ? "col-sm-6" : "col-sm-6 width-100"}><div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div></div>
+                    {
+                        cube.selectedApp === "MovieInfo" &&
+                        <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
+                    }
+                    
                 </div>
             </Fragment>
         );
@@ -462,8 +462,7 @@ class ViewSelectedTestConfig extends React.Component {
     startRecord = () => {
         const { cube, authentication } = this.props;
         let user = authentication.user;
-        let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
-        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/${instance}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
+        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/record/${this.state.recName}/RespPartialMatch`;
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -487,7 +486,7 @@ class ViewSelectedTestConfig extends React.Component {
         });
 
         let checkStatus = () => {
-            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
+            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/RespPartialMatch`;
             axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
@@ -506,7 +505,7 @@ class ViewSelectedTestConfig extends React.Component {
         };
         axios.post(url, {}, configForHTTP).then((response) => {
             this.setState({stopDisabled: true, recId: null});
-            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
+            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/RespPartialMatch`;
             axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });

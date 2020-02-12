@@ -1,21 +1,21 @@
-.reset-link-button {
+.activation-resend-button {
     color: #fff;
 }
 
-.reset-link-input-container {
+.activation-resend-input-container {
     padding: 20px 0px;
 }
 
-.reset-link-description {
+.activation-resend-description {
     color: #858585;
     font-size: 14px;
 }
 
-.reset-actions {
+.activation-actions {
     margin-top: 20px;
 }
 
-.reset-link-message-container {
+.activation-resend-message-container {
     font-size: 14px;
     color: #525252;
     padding-bottom: 18px;
