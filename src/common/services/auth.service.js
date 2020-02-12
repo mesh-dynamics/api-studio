@@ -64,14 +64,25 @@ const validateReCaptcha = (token) => {
 
 const verifyActivationToken = (searchString) => {
     const requestOptions = {
-        method: 'GET',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    return fetch(`${config.apiBaseUrl}/account/activate${searchString}`, requestOptions);
+}
+
+const resendActivationToken = (email) => {
+    const requestOptions = {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         }
     };
     
-    return fetch(`${config.apiBaseUrl}/account/activate${searchString}`, requestOptions);
-}
+    return fetch(`${config.apiBaseUrl}/account/resend-activation-mail?email=${email}`, requestOptions);
+};
 
 const sendResetLink = (email) => {
     const requestOptions = {
@@ -103,5 +114,6 @@ export {
     sendResetLink,
     validateReCaptcha,
     validateCredentials,
+    resendActivationToken,
     verifyActivationToken,
 };
