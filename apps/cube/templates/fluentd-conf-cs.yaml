@@ -89,7 +89,7 @@ data:
     <match cube.cubews.agent.{{namespace}}>
       @type http
       endpoint https://{{cube_host}}/api/cs/rrbatch
-      headers { "Authorization": Bearer "{{auth_token}}"}
+      headers { "Authorization":" Bearer {{auth_token}}"}
       tls_verify_mode none
       open_timeout 5
       <format>
