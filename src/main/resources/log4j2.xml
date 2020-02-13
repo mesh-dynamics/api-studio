@@ -23,8 +23,41 @@
     </File>
   </Appenders>
  
-  <Loggers> 
-    <Root level="debug">
+  <Loggers>
+    <Logger name="com.cube.agent" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.cache" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.core" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.cryptography" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.dao" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.drivers" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.exception" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.golden" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.serialize" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.utils" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Logger name="com.cube.ws" level="debug">
+      <AppenderRef ref="ConsoleJSONAppender"/>
+    </Logger>
+    <Root level="info">
        <!-- AppenderRef ref="STDOUT"/ -->
       <!-- Useful docs https://logging.apache.org/log4j/2.x/manual/customconfig.html-->
       <AppenderRef ref="ConsoleJSONAppender"/>

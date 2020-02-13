@@ -8,11 +8,16 @@ package com.cube.dao;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import com.cube.core.Comparator.MatchType;
 import com.cube.core.CompareTemplate;
+import com.cube.core.TemplateEntry;
 import com.cube.cryptography.EncryptionAlgorithm;
 import com.cube.golden.ReqRespUpdateOperation;
 
@@ -45,6 +50,8 @@ public interface DataObj {
     Optional<String> encryptField(String path, EncryptionAlgorithm encrypter);
 
     Optional<String> decryptField(String path, EncryptionAlgorithm decrypter);
+
+    void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals);
 
     class PathNotFoundException extends Exception{
 

@@ -8,6 +8,7 @@ package com.cube.drivers;
 
 import static com.cube.core.Comparator.MatchType.DontCare;
 import static com.cube.core.Comparator.MatchType.ExactMatch;
+import static com.cube.core.Comparator.MatchType.NoMatch;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +37,8 @@ import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Match;
 import com.cube.core.Comparator.MatchType;
+import com.cube.core.CompareTemplate;
+import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.JsonComparator;
 import com.cube.dao.Analysis;
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
@@ -213,7 +216,7 @@ public class Analyzer {
         } else {
             // TODO change it back to RecReqNoMatch
             ReqRespMatchResult res = new ReqRespMatchResult(new ReqRespMatchWithEvent(recordReq,
-                Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Comparator.Match.NOMATCH),
+                Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Comparator.Match.DONT_CARE),
                 MatchType.NoMatch, (int)matches.numResults, analysis.replayId);
             rrstore.saveResult(res);
             analysis.reqNotMatched++;

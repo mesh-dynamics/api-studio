@@ -24,7 +24,9 @@ public class CompareTemplateVersioned extends CompareTemplate {
                             CompareTemplate contained) {
         super(contained.prefixpath);
         this.service = service.orElse("");
-        this.requestPath = requestPath.orElse("");
+        this.requestPath = requestPath.map(reqPath -> {
+            return CompareTemplate.normaliseAPIPath(reqPath);
+        }).orElse("");
         this.type = type;
         setRules(contained.getRules());
     }
@@ -36,7 +38,7 @@ public class CompareTemplateVersioned extends CompareTemplate {
     public CompareTemplateVersioned(CompareTemplateVersioned source, Collection<TemplateEntry> newRules) {
         super(source.prefixpath);
         this.service = source.service;
-        this.requestPath = source.requestPath;
+        this.requestPath = CompareTemplate.normaliseAPIPath(source.requestPath);
         this.type = source.type;
         setRules(newRules);
     }

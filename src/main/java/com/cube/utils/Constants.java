@@ -97,6 +97,11 @@ public class Constants {
     public static final String CLASS_LOADER = "classLoader";
 
 
+    public static final String REQUEST_MATCH_RULES = "requestMatchRules";
+    public static final String REQUEST_COMPARE_RULES = "requestCompareRules";
+    public static final String RESPONSE_COMPARE_RULES = "responseCompareRules";
+
+
     //COMMON STRINGS
     public static final String CUSTOMER_ID_FIELD = "customerId";
     public static final String APP_FIELD = "app";

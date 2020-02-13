@@ -84,7 +84,7 @@ public abstract class AbstractReplayDriver {
 		IReplayRequest build(Replay replay, Event reqEvent, Config config)
 			throws IOException;
 
-		int getSuccessStatusCode();
+		boolean isSuccessStatusCode(int statusCode);
 
 		int getErrorStatusCode();
 
@@ -164,7 +164,7 @@ public abstract class AbstractReplayDriver {
 
 			// count number of errors
 			replay.reqfailed += respcodes.stream()
-				.filter(s -> (s != client.getSuccessStatusCode())).count();
+				.filter(s -> (!client.isSuccessStatusCode(s))).count();
 		});
 
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Completed"
@@ -215,7 +215,7 @@ public abstract class AbstractReplayDriver {
 				logUpdate();
 				int ret = client.send(request);
 				// for debugging - can remove later
-				if (ret != client.getSuccessStatusCode()) {
+				if (!client.isSuccessStatusCode(ret)) {
 					LOGGER.error(new ObjectMessage(
 						Map.of(Constants.MESSAGE, "Got Error Status while Replaying Request",
 							Constants.REQUEST, request.toString(), "Return Status", ret
