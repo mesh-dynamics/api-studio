@@ -116,9 +116,9 @@ main() {
 	NO_OF_REQUEST=10
 	VERSION="v1"
 	call_deploy_script cube init $CONFIG_FILE
-	sleep 60
+	kubectl get deploy -o name -l app=cube -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status
 	call_deploy_script moviebook init $CONFIG_FILE
-	sleep 60
+	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status
 	call_deploy_script moviebook record $CONFIG_FILE moviebook-$DRONE_BUILD_NUMBER RespPartialMatch moviebook-$DRONE_BUILD_NUMBER
 	sleep 5
 	generate_traffic $NO_OF_REQUEST
@@ -126,6 +126,8 @@ main() {
 	call_deploy_script moviebook stop_record $CONFIG_FILE
 	call_deploy_script moviebook setup_replay $CONFIG_FILE $VERSION
 	sleep 10
+	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout restart
+	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status
 
 	call_replay
 	sleep 20
