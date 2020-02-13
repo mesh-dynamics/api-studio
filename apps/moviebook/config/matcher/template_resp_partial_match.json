@@ -42,7 +42,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/listmovies",
-      "type":"Request"
+      "type":"RequestMatch"
     },
     {
       "rules":[
@@ -82,7 +82,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/rentmovie",
-      "type":"Request"
+      "type":"RequestMatch"
     },
     {
       "rules":[
@@ -122,7 +122,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/returnmovie",
-      "type":"Request"
+      "type":"RequestMatch"
     },
     {
       "rules":[
@@ -162,7 +162,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/liststores",
-      "type":"Request"
+      "type":"RequestMatch"
     },
     {
       "rules":[
@@ -226,7 +226,71 @@
       "prefixPath":"",
       "service":"restwrapjdbc",
       "requestPath":"restsql/query",
-      "type":"Request"
+      "type":"RequestMatch"
+    },
+    {
+      "rules":[
+        {
+          "path":"/formParams",
+          "dt":"Obj",
+          "pt":"Optional",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/queryParams",
+          "dt":"Obj",
+          "pt":"Optional",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/body",
+          "dt":"Default",
+          "pt":"Optional",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/method",
+          "dt":"Default",
+          "pt":"Optional",
+          "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/body/params/0",
+          "dt":"Obj",
+          "pt":"Optional",
+          "ct":"Ignore",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/body/params/3",
+          "dt":"Obj",
+          "pt":"Optional",
+          "ct":"Ignore",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/body/params/4",
+          "dt":"Obj",
+          "pt":"Optional",
+          "ct":"Ignore",
+          "em":"Default",
+          "customization":null
+        }
+      ],
+      "prefixPath":"",
+      "service":"restwrapjdbc",
+      "requestPath":"restsql/update",
+      "type":"RequestMatch"
     },
     {
       "rules":[
@@ -235,7 +299,7 @@
       "prefixPath":"",
       "service":"productpage",
       "requestPath":"productpage",
-      "type":"Response"
+      "type":"ResponseCompare"
     },
     {
       "rules":[
@@ -275,7 +339,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/returnmovie",
-      "type":"Response"
+      "type":"ResponseCompare"
     },
     {
       "rules":[
@@ -299,7 +363,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/liststores",
-      "type":"Response"
+      "type":"ResponseCompare"
     },
     {
       "rules":[
@@ -339,7 +403,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/rentmovie",
-      "type":"Response"
+      "type":"ResponseCompare"
     },
     {
       "rules":[
@@ -427,7 +491,7 @@
       "prefixPath":"",
       "service":"movieinfo",
       "requestPath":"minfo/listmovies",
-      "type":"Response"
+      "type":"ResponseCompare"
     }
   ]
 }
