@@ -66,7 +66,7 @@ call_replay() {
 
 	#Status Check
 	COUNT=0
-	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "20" ]; do
+	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
 		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/CubeCorp/MovieInfo/moviebook-$DRONE_BUILD_NUMBER/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | sed 's/^.*"status":"\([^"]*\)".*/\1/')
 		sleep 5
 		COUNT=$((COUNT+1))
