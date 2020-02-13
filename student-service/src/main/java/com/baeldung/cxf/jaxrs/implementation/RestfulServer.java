@@ -13,7 +13,7 @@ public class RestfulServer {
     factoryBean.setResourceClasses(StudentRepository.class);
     factoryBean.setResourceProvider(new SingletonResourceProvider(new StudentRepository()));
     factoryBean.setProvider(new JacksonJaxbJsonProvider());
-    factoryBean.setAddress("http://localhost:8080/");
+    factoryBean.setAddress("http://localhost:8081/");
     Server server = factoryBean.create();
 
     System.out.println("Server ready...");

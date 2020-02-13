@@ -1,4 +1,4 @@
-package com.baeldung.cxf.jaxrs.implementation;
+package com.meshd.cxf.jaxrs.implementation;
 
 import javax.xml.bind.annotation.XmlRootElement;
 

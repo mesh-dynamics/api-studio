@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Path("baeldung")
+@Path("meshd")
 @Produces("application/json")
 public class StudentRepository {
   private Map<Integer, Student> students = new HashMap<>();
@@ -26,8 +26,31 @@ public class StudentRepository {
 
   @GET
   @Path("students/{studentId}")
-  public Student getCourse(@PathParam("studentId") int studentId) {
-    return findById(studentId);
+  public Student getStudent(@PathParam("studentId") int studentId) {
+    Student student = findById(studentId);
+    if (student == null) {
+      throw new NotFoundException();
+    } else {
+      return student;
+    }
+  }
+
+  @POST
+  @Path("students")
+  public Response createStudent(Student student) {
+    students.put(student.getId(), student);
+    return Response.ok(student).build();
+  }
+
+  @DELETE
+  @Path("students/{studentId}")
+  public Response deleteStudent (@PathParam("studentId") int studentId) {
+    Student student = findById(studentId);
+    if (student == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    students.remove(studentId);
+    return Response.ok().build();
   }
 
   private Student findById(int id) {

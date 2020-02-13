@@ -1,4 +1,4 @@
-package com.baeldung.cxf.jaxrs.implementation;
+package com.meshd.cxf.jaxrs.implementation;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -7,28 +7,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Path("baeldung")
+@Path("meshd")
 @Produces("application/json")
 public class CourseRepository {
     private Map<Integer, Course> courses = new HashMap<>();
 
     {
-        Student student1 = new Student();
-        Student student2 = new Student();
-        student1.setId(1);
-        student1.setName("Student A");
-        student2.setId(2);
-        student2.setName("Student B");
-
-        List<Student> course1Students = new ArrayList<>();
-        course1Students.add(student1);
-        course1Students.add(student2);
+        List<Integer> studentIds = new ArrayList<>();
+        studentIds.add(1);
+        studentIds.add(2);
+        studentIds.add(2);
 
         Course course1 = new Course();
         Course course2 = new Course();
         course1.setId(1);
         course1.setName("REST with Spring");
-        course1.setStudents(course1Students);
+        course1.setStudents(studentIds);
         course2.setId(2);
         course2.setName("Learn Spring Security");
 
