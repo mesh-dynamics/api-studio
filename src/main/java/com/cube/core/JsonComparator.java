@@ -122,7 +122,8 @@ public class JsonComparator implements Comparator {
             }
 
             // remove duplicates
-            result.removeIf(d -> d.path.equalsIgnoreCase(diff.path) && d.resolution == diff.resolution);
+            result.removeIf(d -> d.path.equalsIgnoreCase(diff.path)
+	            && d.resolution == diff.resolution && Diff.NOOP.equals(d.op));
             result.add(diff);
         }
 

@@ -489,7 +489,8 @@
             "diffs":[
                 {"op":"add","path":"/display_actors/0","value":"ZELLWEGER, MINNIE","resolution":"OK_DefaultCT"},
                 {"op":"add","path":"/display_actors/1","value":"WILSON, WILL","resolution":"OK_DefaultCT"},
-                {"op":"remove","path":"/display_actors/3","value":"ZELLWEGER, MINNIE","resolution":"OK_DefaultPT"}
+                {"op":"remove","path":"/display_actors/3","value":"ZELLWEGER, MINNIE","resolution":"OK_DefaultPT"},
+                {"op":"remove","path":"/display_actors/3","value":"WILSON, WILL","resolution":"OK_DefaultPT"}
             ]
         }
     }
