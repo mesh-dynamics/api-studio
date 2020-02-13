@@ -121,7 +121,7 @@ public class MovieRentals {
         }
     }
 
-    private String arrayifyOrRemoveRandomly(JSONObject jsonObject , String fieldName  , Random forShuffle) {
+    private String arrayifyOrRemoveRandomly(JSONObject jsonObject , String fieldName  , Random forShuffle, boolean alwaysHide) {
 		String value = jsonObject.getString(fieldName);
 
 		jsonObject.remove(fieldName);
@@ -143,10 +143,11 @@ public class MovieRentals {
 			Collections.shuffle(valueList, forShuffle);
 		}
 
-			LOGGER.debug("Values after shuffle" + valueList);
+		LOGGER.debug("Values after shuffle" + valueList);
 
 		if ((config.ADD_FIELD_RANDOM && valueFate >= 0.5) || !config.ADD_FIELD_RANDOM) {
-			jsonObject.put(fieldName, valueList);
+			if (!alwaysHide)
+				jsonObject.put(fieldName, valueList);
 		}
 
 		return value;
@@ -175,8 +176,8 @@ public class MovieRentals {
     		JSONObject film = films.getJSONObject(i);
 			long seed = System.nanoTime();
 			// having the same seed for shuffling all the arrays in the same order
-    		String firstNames  = arrayifyOrRemoveRandomly(film, FIRST_NAMES , new Random(seed));
-    		String lastNames = arrayifyOrRemoveRandomly(film, LAST_NAMES , new Random(seed));
+    		String firstNames  = arrayifyOrRemoveRandomly(film, FIRST_NAMES , new Random(seed), config.ALWAYS_HIDE_FIRST_NAME);
+    		String lastNames = arrayifyOrRemoveRandomly(film, LAST_NAMES , new Random(seed), config.ALWAYS_HIDE_LAST_NAME);
     		String filmCounts = arrayifyToNumbers(film, FILM_COUNTS , new Random(seed));
     		List<String> displayActors = displayActors(firstNames, lastNames, filmCounts);
     		JSONArray array = new JSONArray();

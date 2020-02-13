@@ -10,8 +10,6 @@ import org.apache.log4j.Logger;
 @Singleton
 public class Config {
 
-
-
   final static Logger LOGGER = Logger.getLogger(Config.class);
     private static final String CONFFILE = "/MIRest.conf";
 
@@ -37,6 +35,8 @@ public class Config {
     public boolean USE_TOKEN_AUTHENTICATION = false;
     public static boolean ADD_FIELD_RANDOM = false;
     public static boolean SHUFFLE_VALUES = false;
+    public static boolean ALWAYS_HIDE_FIRST_NAME = false;
+    public static boolean ALWAYS_HIDE_LAST_NAME = false;
     
     public boolean ADD_TRACING_HEADERS = false;
     
@@ -177,6 +177,20 @@ public class Config {
           ADD_FIELD_RANDOM = true;
         } else {
           ADD_FIELD_RANDOM = false;
+        }
+
+        String alwaysHideFirstName = this.getProperty("ALWAYS_HIDE_FIRST_NAME");
+        if (alwaysHideFirstName == null || !alwaysHideFirstName.equalsIgnoreCase("true")) {
+          ALWAYS_HIDE_FIRST_NAME = false;
+        } else {
+          ALWAYS_HIDE_FIRST_NAME = true;
+        }
+
+        String alwaysHideLastName = this.getProperty("ALWAYS_HIDE_LAST_NAME");
+        if (alwaysHideLastName == null || !alwaysHideLastName.equalsIgnoreCase("true")) {
+          ALWAYS_HIDE_LAST_NAME = false;
+        } else {
+          ALWAYS_HIDE_LAST_NAME = true;
         }
 
         if (USE_KUBE) {
@@ -351,7 +365,25 @@ public class Config {
           } else {
             ADD_FIELD_RANDOM = false;
           }
-    }
+        }
+
+        String alwaysHideFirstName = System.getenv("ALWAYS_HIDE_FIRST_NAME");
+        if (alwaysHideFirstName != null ) {
+          if (alwaysHideFirstName.equalsIgnoreCase("true")) {
+            ALWAYS_HIDE_FIRST_NAME = true;
+          } else {
+            ALWAYS_HIDE_FIRST_NAME = false;
+          }
+        }
+
+        String alwaysHideLastName = System.getenv("ALWAYS_HIDE_LAST_NAME");
+        if (alwaysHideLastName != null ) {
+          if (alwaysHideLastName.equalsIgnoreCase("true")) {
+            ALWAYS_HIDE_LAST_NAME = true;
+          } else {
+            ALWAYS_HIDE_LAST_NAME = false;
+          }
+        }
 	}
 	
 
