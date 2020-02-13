@@ -62,6 +62,7 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
+import com.cube.dao.Event.EventType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -198,17 +199,36 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Result<Event> getRequests(String customerId, String app, String collection,
-                                       List<String> reqids, List<String> paths, Event.RunType runType) {
+                                       List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType) {
 
         // TODO: Event redesign - change this include all event types
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
         builder.withCollection(collection)
             .withReqIds(reqids)
             .withPaths(paths)
-            .withRunType(runType);
+            .withServices(services);
+
+        runType.ifPresent(builder::withRunType);
 
         return getEvents(builder.build());
     }
+
+    @Override
+    public Optional<Event> getSingleResponseEvent(String customerId, String app, String collection,
+        List<String> services, List<String> paths, Optional<Event.RunType> runType) {
+
+        // TODO: Event redesign - change this include all event types
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.RESPONSE_EVENT_TYPES);
+        builder.withCollection(collection)
+            .withPaths(paths)
+            .withServices(services)
+            .withLimit(1);
+        
+            runType.ifPresent(builder::withRunType);
+
+        return getSingleEvent(builder.build());
+    }
+
 
     @Override
     public Result<Event> getEvents(EventQuery eventQuery) {

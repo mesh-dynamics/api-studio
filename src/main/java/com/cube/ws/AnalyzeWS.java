@@ -619,7 +619,7 @@ public class AnalyzeWS {
                 // empty reqId list would lead to returning of all requests, so check for it
                 Result<Event> requestResult = rrstore
                     .getRequests(replay.customerId, replay.app, replay.collection,
-                        reqIds, Collections.emptyList(), Event.RunType.Record);
+                        reqIds, Collections.emptyList(), Collections.emptyList(), Optional.of(Event.RunType.Record));
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
@@ -1204,7 +1204,100 @@ public class AnalyzeWS {
         }
     }
 
-        /**
+	/**
+	 * API to return Golden insights for a given golden Id, service and path
+	 * @param recordingId
+	 * @param formParams
+	 * @return
+	 */
+	@GET
+    @Path("goldenInsights/{recordingId}")
+	@Consumes("application/x-www-form-urlencoded")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response goldenInsights(@PathParam("recordingId") String recordingId,
+		MultivaluedMap<String, String> formParams) {
+
+		try {
+			Recording recording = rrstore.getRecording(recordingId).orElseThrow(() ->
+				new Exception("Unable to find recording object for the given id"));
+
+			String service = formParams.getFirst(Constants.SERVICE_FIELD);
+			if (service == null) {
+				throw new Exception("Service not specified for golden");
+			}
+
+			String apiPath = formParams.getFirst(Constants.API_PATH_FIELD);
+			if (apiPath == null) {
+				throw new Exception("ApiPath not specified for golden");
+			}
+
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put(Constants.RECORDING_ID, recordingId);
+
+			Optional<Event> responseOptional = rrstore
+				.getSingleResponseEvent(recording.customerId, recording.app, recording.collection,
+					List.of(service), List.of(apiPath), Optional.empty());
+
+			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
+
+				Map<String, TemplateEntry> responseCompareRules = Utils
+					.getAllPathRules(response, recording, TemplateKey.Type.ResponseCompare,
+						service, apiPath, rrstore, config);
+
+				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString(config));
+				jsonObject.put(Constants.RESPONSE_COMPARE_RULES,
+					jsonMapper.writeValueAsString(responseCompareRules));
+
+				Optional<Event> requestOptional = rrstore.getRequestEvent(response.getReqId());
+
+				requestOptional.ifPresentOrElse(UtilException.rethrowConsumer(request -> {
+					setRequestAndRules(recording, service, apiPath, jsonObject, request);
+
+				}), () -> {
+					jsonObject.put(Constants.REQUEST, JSONObject.NULL);
+					jsonObject.put(Constants.REQUEST_MATCH_RULES, JSONObject.NULL);
+					jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
+				});
+			}), () -> {
+				jsonObject.put(Constants.RESPONSE, JSONObject.NULL);
+				jsonObject.put(Constants.RESPONSE_COMPARE_RULES, JSONObject.NULL);
+				jsonObject.put(Constants.REQUEST, JSONObject.NULL);
+				jsonObject.put(Constants.REQUEST_MATCH_RULES, JSONObject.NULL);
+				jsonObject.put(Constants.REQUEST_COMPARE_RULES, JSONObject.NULL);
+
+			});
+
+			return Response.ok().entity(jsonObject.toString()).build();
+
+		} catch (Exception e) {
+			LOGGER.error(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while returning golden insights",
+					Constants.RECORDING_ID, recordingId)), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while returning golden insights",
+					e.getMessage())).build();
+		}
+
+	}
+
+	private void setRequestAndRules(Recording recording, String service, String apiPath,
+		JSONObject jsonObject, Event request) throws JsonProcessingException {
+		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString(config));
+
+		Map<String, TemplateEntry> requestMatchRules = Utils
+			.getAllPathRules(request, recording, TemplateKey.Type.RequestMatch,
+				service, apiPath, rrstore, config);
+
+		Map<String, TemplateEntry> requestCompareRules = Utils
+			.getAllPathRules(request, recording, TemplateKey.Type.RequestCompare,
+				service, apiPath, rrstore, config);
+		jsonObject.put(Constants.REQUEST_MATCH_RULES,
+			jsonMapper.writeValueAsString(requestMatchRules));
+		jsonObject.put(Constants.REQUEST_COMPARE_RULES,
+			jsonMapper.writeValueAsString(requestCompareRules));
+	}
+
+	/**
          * @param config
          */
 	@Inject

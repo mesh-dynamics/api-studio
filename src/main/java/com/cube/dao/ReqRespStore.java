@@ -123,20 +123,25 @@ public interface ReqRespStore {
 
 
 	/**
+	 *
 	 * @param customerId
 	 * @param app
 	 * @param collection
 	 * @param reqids
+	 * @param services
 	 * @param paths
 	 * @param runType
 	 * @return
 	 */
-    Result<Event> getRequests(String customerId, String app, String collection, List<String> reqids
-			, List<String> paths, Event.RunType runType);
+	public Result<Event> getRequests(String customerId, String app, String collection,
+		List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType);
 
     Result<Event> getEvents(EventQuery eventQuery);
 
     Optional<Event> getSingleEvent(EventQuery eventQuery);
+
+	Optional<Event> getSingleResponseEvent(String customerId, String app, String collection, List<String> services,
+		List<String> paths, Optional<Event.RunType> runType);
 
 	/**
 	 * @param replay
