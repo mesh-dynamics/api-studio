@@ -55,8 +55,9 @@ call_replay() {
 	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=DEFAULT&userId=$USER_ID"
 
 	REPLAY_ID=$(curl -X POST \
-		$CUBE_ENDPOINT/rs/start/$RECORDING_ID \
+		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
 		-d $BODY \
 	| sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
@@ -66,14 +67,14 @@ call_replay() {
 	#Status Check
 	COUNT=0
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "20" ]; do
-		STATUS=$(curl -X GET $CUBE_ENDPOINT/rs/status/CubeCorp/MovieInfo/moviebook-$DRONE_BUILD_NUMBER/$REPLAY_ID | sed 's/^.*"status":"\([^"]*\)".*/\1/')
+		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/CubeCorp/MovieInfo/moviebook-$DRONE_BUILD_NUMBER/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | sed 's/^.*"status":"\([^"]*\)".*/\1/')
 		sleep 5
 		COUNT=$((COUNT+1))
 	done
 }
 
 analyze() {
-	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache')
+	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
 	REQNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"reqNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
 	RESPNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"respNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
 
@@ -108,6 +109,7 @@ check_test_status() {
 
 main() {
 	set -x
+	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5NTg3OTQyLCJleHAiOjE4OTQ5NDc5NDJ9.vompv79MxgNhJnPSXMfNVsxSN1hQD1z0dgC2GxjEX9U"
 	check_test_status
 	generate_config_file
 	CONFIG_FILE="temp"
@@ -123,8 +125,10 @@ main() {
 	sleep 5
 	call_deploy_script moviebook stop_record $CONFIG_FILE
 	call_deploy_script moviebook setup_replay $CONFIG_FILE $VERSION
-	sleep 20
+	sleep 10
+
 	call_replay
+	sleep 20
 	analyze
 	call_deploy_script moviebook clean $CONFIG_FILE
 	call_deploy_script cube clean $CONFIG_FILE
