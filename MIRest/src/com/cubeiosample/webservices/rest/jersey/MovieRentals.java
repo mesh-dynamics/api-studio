@@ -1,21 +1,23 @@
 package com.cubeiosample.webservices.rest.jersey;
 
-import io.cube.utils.ConnectionPool;
-import io.opentracing.Tracer;
-
-import java.sql.*;
-import java.util.*;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.gson.JsonArray;
+import io.opentracing.Tracer;
 
 
 public class MovieRentals {
@@ -119,18 +121,35 @@ public class MovieRentals {
         }
     }
 
-    private String arrayifyOrRemoveRandomly(JSONObject jsonObject , String fieldName  , Random forShuffle) {
+    private String arrayifyOrRemoveRandomly(JSONObject jsonObject , String fieldName  , Random forShuffle, boolean alwaysHide) {
 		String value = jsonObject.getString(fieldName);
-		double valueFate = random.nextDouble();
+
 		jsonObject.remove(fieldName);
-		if (valueFate >= 0.5) {
-			String[] valueArr = value.split(",");
-			List<String> valueList = Arrays.asList(valueArr);
-			if (config.CONCAT_BUG) {
-				Collections.shuffle(valueList, forShuffle);
-			}
-			jsonObject.put(fieldName , valueList);
+
+		double valueFate = 1;
+
+		if (config.ADD_FIELD_RANDOM) {
+			valueFate = random.nextDouble();
 		}
+
+		String[] valueArr = value.split(",");
+		LOGGER.debug("Name value " + value);
+		List<String> valueList = Arrays.asList(valueArr);
+
+		LOGGER.debug("Values before shuffle :" + valueList);
+
+		if (config.SHUFFLE_VALUES) {
+			LOGGER.debug("Values to be shuffled");
+			Collections.shuffle(valueList, forShuffle);
+		}
+
+		LOGGER.debug("Values after shuffle" + valueList);
+
+		if ( valueFate >= 0.5 ) {
+			if (!alwaysHide)
+				jsonObject.put(fieldName, valueList);
+		}
+
 		return value;
 	}
 
@@ -140,7 +159,8 @@ public class MovieRentals {
 		List<String> valueList = Arrays.asList(valueArr);
 		jsonObject.remove(fieldName);
 		if (config.CONCAT_BUG) {
-		    Collections.shuffle(valueList , forShuffle);
+				if (config.SHUFFLE_VALUES)
+		    	Collections.shuffle(valueList , forShuffle);
 		    jsonObject.put(fieldName , valueList);
 		} else {
 		    List<Integer> valuesAsIntegerList =
@@ -151,12 +171,13 @@ public class MovieRentals {
 	}
 
     private void processActorNamesForDisplay(JSONArray films) {
+    	LOGGER.debug("Entered into processActorNamesForDisplay");
     	for (int i = 0; i < films.length(); ++i) {
     		JSONObject film = films.getJSONObject(i);
 			long seed = System.nanoTime();
 			// having the same seed for shuffling all the arrays in the same order
-    		String firstNames  = arrayifyOrRemoveRandomly(film, FIRST_NAMES , new Random(seed));
-    		String lastNames = arrayifyOrRemoveRandomly(film, LAST_NAMES , new Random(seed));
+    		String firstNames  = arrayifyOrRemoveRandomly(film, FIRST_NAMES , new Random(seed), config.ALWAYS_HIDE_FIRST_NAME);
+    		String lastNames = arrayifyOrRemoveRandomly(film, LAST_NAMES , new Random(seed), config.ALWAYS_HIDE_LAST_NAME);
     		String filmCounts = arrayifyToNumbers(film, FILM_COUNTS , new Random(seed));
     		List<String> displayActors = displayActors(firstNames, lastNames, filmCounts);
     		JSONArray array = new JSONArray();

@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 @Singleton
 public class Config {
 
-    final static Logger LOGGER = Logger.getLogger(Config.class);
+  final static Logger LOGGER = Logger.getLogger(Config.class);
     private static final String CONFFILE = "/MIRest.conf";
 
 	final Properties properties;
@@ -33,6 +33,10 @@ public class Config {
     public boolean GET_BOOK_REVIEWS = false;
     public boolean USE_CACHING = false;
     public boolean USE_TOKEN_AUTHENTICATION = false;
+    public static boolean ADD_FIELD_RANDOM = true;
+    public static boolean SHUFFLE_VALUES = true;
+    public static boolean ALWAYS_HIDE_FIRST_NAME = false;
+    public static boolean ALWAYS_HIDE_LAST_NAME = false;
     
     public boolean ADD_TRACING_HEADERS = false;
     
@@ -160,11 +164,38 @@ public class Config {
         if (timeBetweenRuns != null) {
             TIME_BETWEEN_RUNS = Long.parseLong(timeBetweenRuns);
         }
-        
+
+        String shuffleValues = this.getProperty("SHUFFLE_VALUES");
+        if (shuffleValues == null || !shuffleValues.equalsIgnoreCase("false")) {
+            SHUFFLE_VALUES = true;
+        } else {
+            SHUFFLE_VALUES = false;
+        }
+
+        String addFieldRandom = this.getProperty("ADD_FIELD_RANDOM");
+        if (addFieldRandom == null || !addFieldRandom.equalsIgnoreCase("false")) {
+          ADD_FIELD_RANDOM = true;
+        } else {
+          ADD_FIELD_RANDOM = false;
+        }
+
+        String alwaysHideFirstName = this.getProperty("ALWAYS_HIDE_FIRST_NAME");
+        if (alwaysHideFirstName == null || !alwaysHideFirstName.equalsIgnoreCase("true")) {
+          ALWAYS_HIDE_FIRST_NAME = false;
+        } else {
+          ALWAYS_HIDE_FIRST_NAME = true;
+        }
+
+        String alwaysHideLastName = this.getProperty("ALWAYS_HIDE_LAST_NAME");
+        if (alwaysHideLastName == null || !alwaysHideLastName.equalsIgnoreCase("true")) {
+          ALWAYS_HIDE_LAST_NAME = false;
+        } else {
+          ALWAYS_HIDE_LAST_NAME = true;
+        }
+
         if (USE_KUBE) {
         	overrideConfigWithKubeSettings();
         }
-
 
         LOGGER.info("final value for concat bug is :: " + CONCAT_BUG);
         LOGGER.info("final value for number of actors to display is :: " + NUM_ACTORS_TO_DISPLAY);
@@ -316,7 +347,43 @@ public class Config {
         String numActorsToDisplay = System.getenv("NUM_ACTORS_TO_DISPLAY");
         if (numActorsToDisplay != null) {
         	NUM_ACTORS_TO_DISPLAY = Integer.parseInt(numActorsToDisplay);
-        } 
+        }
+
+        String shuffleValues = System.getenv("SHUFFLE_VALUES");
+        if (shuffleValues != null ) {
+          if (shuffleValues.equalsIgnoreCase("true")) {
+            SHUFFLE_VALUES = true;
+          } else {
+            SHUFFLE_VALUES = false;
+          }
+        }
+
+        String addFieldRandom = System.getenv("ADD_FIELD_RANDOM");
+        if (addFieldRandom != null ) {
+          if (addFieldRandom.equalsIgnoreCase("true")) {
+            ADD_FIELD_RANDOM = true;
+          } else {
+            ADD_FIELD_RANDOM = false;
+          }
+        }
+
+        String alwaysHideFirstName = System.getenv("ALWAYS_HIDE_FIRST_NAME");
+        if (alwaysHideFirstName != null ) {
+          if (alwaysHideFirstName.equalsIgnoreCase("true")) {
+            ALWAYS_HIDE_FIRST_NAME = true;
+          } else {
+            ALWAYS_HIDE_FIRST_NAME = false;
+          }
+        }
+
+        String alwaysHideLastName = System.getenv("ALWAYS_HIDE_LAST_NAME");
+        if (alwaysHideLastName != null ) {
+          if (alwaysHideLastName.equalsIgnoreCase("true")) {
+            ALWAYS_HIDE_LAST_NAME = true;
+          } else {
+            ALWAYS_HIDE_LAST_NAME = false;
+          }
+        }
 	}
 	
 
