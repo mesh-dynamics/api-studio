@@ -79,6 +79,8 @@ public class ComparatorCache {
         CompareTemplate defaultHTTPResponseTemplate = new CompareTemplate();
         defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
             PresenceType.Required, ComparisonType.Equal));
+        defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.HDR_PATH, DataType.Default,
+            PresenceType.Optional, ComparisonType.Ignore));
         defaultHTTPResponseComparator = new JsonComparator(defaultHTTPResponseTemplate, jsonMapper);
 
         // default rules for Java Request
