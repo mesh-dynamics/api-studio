@@ -441,8 +441,8 @@ class ShareableLink extends Component {
                     recordedData = item.recordResponse.body ? item.recordResponse.body : '""';
                 }
             } else {
-                recordedResponseHeaders = null;
-                recordedData = null;
+                recordedResponseHeaders = "";
+                recordedData = "";
             }
 
             // same as above but for replayed response
@@ -463,7 +463,7 @@ class ShareableLink extends Component {
                     replayedData = item.replayResponse.body ? item.replayResponse.body : '""';
                 }
             } else {
-                replayedResponseHeaders = null;
+                replayedResponseHeaders = "";
                 replayedData = "";
             }
             let diff;
@@ -863,7 +863,7 @@ class ShareableLink extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && item.recordedResponseHeaders && item.replayedResponseHeaders && (
+                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && (
                     <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                         <div className="headers-diff-wrapper">
