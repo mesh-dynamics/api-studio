@@ -274,7 +274,7 @@ public class CubeStore {
             Event responseEvent;
             try {
                 responseEvent = Utils
-                    .createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
+                    .createHTTPResponseEvent(path, rid, status, meta, hdrs, rr.body,
                         collection, timestamp, runType, customerId, app, config);
             } catch (JsonProcessingException | InvalidEventException e) {
                 throw new CubeStoreException(e, "Invalid Event"
