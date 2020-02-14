@@ -33,8 +33,8 @@ public class Config {
     public boolean GET_BOOK_REVIEWS = false;
     public boolean USE_CACHING = false;
     public boolean USE_TOKEN_AUTHENTICATION = false;
-    public static boolean ADD_FIELD_RANDOM = false;
-    public static boolean SHUFFLE_VALUES = false;
+    public static boolean ADD_FIELD_RANDOM = true;
+    public static boolean SHUFFLE_VALUES = true;
     public static boolean ALWAYS_HIDE_FIRST_NAME = false;
     public static boolean ALWAYS_HIDE_LAST_NAME = false;
     

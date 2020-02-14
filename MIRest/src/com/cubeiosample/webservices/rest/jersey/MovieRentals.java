@@ -145,7 +145,7 @@ public class MovieRentals {
 
 		LOGGER.debug("Values after shuffle" + valueList);
 
-		if ((config.ADD_FIELD_RANDOM && valueFate >= 0.5) || !config.ADD_FIELD_RANDOM) {
+		if ( valueFate >= 0.5 ) {
 			if (!alwaysHide)
 				jsonObject.put(fieldName, valueList);
 		}
