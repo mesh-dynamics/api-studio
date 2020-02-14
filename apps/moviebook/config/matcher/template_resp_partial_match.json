@@ -334,6 +334,14 @@
           "ct":"Equal",
           "em":"Default",
           "customization":null
+        },
+        {
+          "path":"/hdrs",
+          "dt":"Default",
+          "pt":"Optional",
+          "ct":"Ignore",
+          "em":"Default",
+          "customization":null
         }
       ],
       "prefixPath":"",
@@ -356,6 +364,14 @@
           "dt":"Int",
           "pt":"Optional",
           "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/hdrs",
+          "dt":"Default",
+          "pt":"Optional",
+          "ct":"Ignore",
           "em":"Default",
           "customization":null
         }
@@ -396,6 +412,14 @@
           "dt":"Int",
           "pt":"Required",
           "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/hdrs",
+          "dt":"Default",
+          "pt":"Optional",
+          "ct":"Ignore",
           "em":"Default",
           "customization":null
         }
@@ -484,6 +508,14 @@
           "dt":"RptArray",
           "pt":"Required",
           "ct":"Equal",
+          "em":"Default",
+          "customization":null
+        },
+        {
+          "path":"/hdrs",
+          "dt":"Default",
+          "pt":"Optional",
+          "ct":"Ignore",
           "em":"Default",
           "customization":null
         }
