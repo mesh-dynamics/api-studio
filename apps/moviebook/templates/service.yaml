@@ -284,6 +284,11 @@ metadata:
   namespace: {{namespace}}
 spec:
   replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -302,10 +307,36 @@ spec:
             cpu: "100m"
           limits:
             memory: "250Mi"
-            cpu: "150m"
+            cpu: "500m"
         ports:
         - containerPort: 8080
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minfo/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minfo/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
         env:
+          - name: SHUFFLE_VALUES
+            value: "false"
+          - name: ADD_FIELD_RANDOM
+            value: "false"
+          - name: ALWAYS_HIDE_FIRST_NAME
+            value: "true"
           - name: USE_KUBE
             value: "true"
           - name: MYSQL_HOST
@@ -349,6 +380,11 @@ metadata:
   namespace: {{namespace}}
 spec:
   replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -367,11 +403,37 @@ spec:
             cpu: "100m"
           limits:
             memory: "250Mi"
-            cpu: "150m"
+            cpu: "500m"
         ports:
         - containerPort: 8080
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minfo/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minfo/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
         env:
           - name: USE_KUBE
+            value: "true"
+          - name: SHUFFLE_VALUES
+            value: "false"
+          - name: ADD_FIELD_RANDOM
+            value: "false"
+          - name: ALWAYS_HIDE_LAST_NAME
             value: "true"
           - name: MYSQL_HOST
             value: sakila2.cnt3lftdrpew.us-west-2.rds.amazonaws.com
