@@ -66,9 +66,9 @@ call_replay() {
 
 	#Status Check
 	COUNT=0
-	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "20" ]; do
+	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
 		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/CubeCorp/MovieInfo/moviebook-$DRONE_BUILD_NUMBER/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | sed 's/^.*"status":"\([^"]*\)".*/\1/')
-		sleep 5
+		sleep 20
 		COUNT=$((COUNT+1))
 	done
 }
@@ -98,7 +98,7 @@ generate_traffic() {
 
 check_test_status() {
 	COUNT=0
-	while [ "$STATUS" != 1 ] && [ "$COUNT" != "30" ]; do
+	while [ "$STATUS" != 1 ] && [ "$COUNT" != "20" ]; do
 		kubectl get ns $DRONE_COMMIT_AUTHOR
 		STATUS=$(echo $?)
 		COUNT=$((COUNT+1))
@@ -113,7 +113,7 @@ main() {
 	check_test_status
 	generate_config_file
 	CONFIG_FILE="temp"
-	NO_OF_REQUEST=10
+	NO_OF_REQUEST=5
 	VERSION="v1"
 	call_deploy_script cube init $CONFIG_FILE
 	kubectl get deploy -o name -l app=cube -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
@@ -128,6 +128,7 @@ main() {
 	sleep 10
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout restart -n $DRONE_COMMIT_AUTHOR
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
+	sleep 60
 
 	call_replay
 	sleep 20
