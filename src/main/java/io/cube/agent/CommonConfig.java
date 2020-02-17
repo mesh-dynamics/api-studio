@@ -260,7 +260,9 @@ public class CommonConfig {
 	public static Optional<String> getCurrentIntentFromScope() {
 		Optional<String> currentIntent = CommonUtils.getCurrentSpan().flatMap(span -> Optional.
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
-			CommonUtils.fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
+			Optional.ofNullable(CommonConfig.intent));
+		LOGGER.info("Got intent from trace (in agent) :: " +
+			currentIntent.orElse(" N/A"));
 		return currentIntent;
 	}
 
