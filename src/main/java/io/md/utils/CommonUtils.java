@@ -29,23 +29,26 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import io.jaegertracing.Configuration;
+import io.jaegertracing.Configuration.CodecConfiguration;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.md.constants.Constants;
 import io.md.dao.CubeMetaInfo;
-import io.md.dao.CubeTraceInfo;
+import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.RunType;
+import io.md.tracer.MDTextMapCodec;
+import io.md.tracer.MDTracer;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
+import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.propagation.TextMapExtractAdapter;
 import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 
 
 public class CommonUtils {
@@ -67,8 +70,8 @@ public class CommonUtils {
 	}
 
 	public static void addTraceHeaders(Invocation.Builder requestBuilder, String requestType) {
-		if (GlobalTracer.isRegistered()) {
-			Tracer tracer = GlobalTracer.get();
+		if (MDTracer.isRegistered()) {
+			Tracer tracer = MDTracer.get();
 
 			Scope scope = null;
 			//Added for the JDBC init case, but also to segregate
@@ -102,8 +105,8 @@ public class CommonUtils {
 
 	public static Optional<Span> getCurrentSpan() {
 		Optional<Span> currentSpan = Optional.empty();
-		if (GlobalTracer.isRegistered()) {
-			Tracer tracer = GlobalTracer.get();
+		if (MDTracer.isRegistered()) {
+			Tracer tracer = MDTracer.get();
 			currentSpan = Optional.ofNullable(tracer.activeSpan());
 		}
 		return currentSpan;
@@ -139,7 +142,7 @@ public class CommonUtils {
 	}*/
 
 	public static Scope startClientSpan(String operationName) {
-		Tracer tracer = GlobalTracer.get();
+		Tracer tracer = MDTracer.get();
 		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
 			.startActive(true);
@@ -148,7 +151,7 @@ public class CommonUtils {
 	public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders,
 		String operationName) {
 		// format the headers for extraction
-		Tracer tracer = GlobalTracer.get();
+		Tracer tracer = MDTracer.get();
 		final HashMap<String, String> headers = new HashMap<String, String>();
 		rawHeaders.forEach((k, v) -> {
 			if (v.size() > 0) {
@@ -182,8 +185,11 @@ public class CommonUtils {
 			.fromEnv()
 			.withLogSpans(true);
 
-		Configuration.CodecConfiguration codecConfiguration = Configuration.CodecConfiguration
-			.fromString("B3");
+//		Configuration.CodecConfiguration codecConfiguration = Configuration.CodecConfiguration
+//			.fromString("B3");
+
+		Configuration.CodecConfiguration codecConfiguration = new CodecConfiguration().withCodec(
+			Builtin.HTTP_HEADERS, MDTextMapCodec.builder().build());
 
 		Configuration config = new Configuration(service)
 			.withSampler(samplerConfig)
@@ -192,8 +198,8 @@ public class CommonUtils {
 	}
 
 	private static Optional<JaegerSpanContext> getCurrentContext() {
-		if (GlobalTracer.isRegistered()) {
-			Tracer currentTracer = GlobalTracer.get();
+		if (MDTracer.isRegistered()) {
+			Tracer currentTracer = MDTracer.get();
 			if (currentTracer.activeSpan() != null
 				&& currentTracer.activeSpan().context() != null) {
 				return Optional.of((JaegerSpanContext) currentTracer.activeSpan().context());
@@ -264,12 +270,12 @@ public class CommonUtils {
 		return payloadObj;
 	}
 
-	public static Optional<Event> createEvent(FnKey fnKey, Optional<String> traceId,
+	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
 		RunType rrType, Optional<Instant> timestamp, JsonObject payload) {
 
 		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
-			traceId.orElse(null), rrType, timestamp, "NA",
+			mdTraceInfo, rrType, timestamp, "NA",
 			fnKey.signature, Event.EventType.JavaRequest);
 		eventBuilder.setRawPayloadString(payload.toString());
 		return eventBuilder.createEventOpt();
@@ -298,13 +304,13 @@ public class CommonUtils {
 		return new CubeMetaInfo(customerId, instance, appName, serviceName);
 	}
 
-	public static CubeTraceInfo cubeTraceInfoFromContext() {
-		return new CubeTraceInfo(getCurrentTraceId().orElse(null)
+	public static MDTraceInfo mdTraceInfoFromContext() {
+		return new MDTraceInfo(getCurrentTraceId().orElse(null)
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
 	}
 
 	public static Scope startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
-		Tracer tracer = GlobalTracer.get();
+		Tracer tracer = MDTracer.get();
 		Tracer.SpanBuilder spanBuilder;
 		try {
 			//span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});

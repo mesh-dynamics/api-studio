@@ -1,7 +1,6 @@
 package io.md.utils;
 
 import java.io.IOException;
-import java.sql.Connection;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,7 +21,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +28,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.constants.Constants;
-import io.md.core.Comparator;
+import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
@@ -175,7 +173,7 @@ public class Utils {
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
 		MultivaluedMap<String, String> meta,
-		MultivaluedMap<String, String> hdrs, String body,
+		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, String body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
@@ -183,7 +181,7 @@ public class Utils {
 		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
 		Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
 		Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-		Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
+		//Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
 		Optional<Event.RunType> runType = getFirst(meta, Constants.RUN_TYPE_FIELD)
 			.flatMap(type -> Utils.valueOf(Event.RunType.class, type));
 		Optional<Instant> timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
@@ -202,7 +200,7 @@ public class Utils {
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
-				traceId.orElse("NA"), runType.get(), timestamp,
+				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest);
 			eventBuilder.setRawPayloadString(payloadStr);
@@ -236,6 +234,7 @@ public class Utils {
 	public static Event createHTTPResponseEvent(String apiPath,
 		MultivaluedMap<String, String> meta,
 		MultivaluedMap<String, String> hdrs,
+		MDTraceInfo mdTraceInfo,
 		String body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
@@ -245,7 +244,7 @@ public class Utils {
 		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
 		Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
 		Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+		//Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 		Optional<Event.RunType> runType = getFirst(meta, Constants.RUN_TYPE_FIELD)
 			.flatMap(type -> Utils.valueOf(Event.RunType.class, type));
 		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
@@ -260,14 +259,16 @@ public class Utils {
 			}
 		});
 
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource || collection
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource
+			|| collection
 			.isPresent()) && runType.isPresent() && status.isPresent()) {
-			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(), body);
+			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(),
+				body);
 			String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
-				traceId.orElse("NA"), runType.get(), timestamp,
+				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
 			eventBuilder.setRawPayloadString(payloadStr);
