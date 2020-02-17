@@ -220,10 +220,19 @@ const SignUp = (props) => {
             <div className="custom-fg form-group">
                 <button className="btn btn-custom-auth width-100">Create Account</button>
             </div>
+            
             <div className="custom-sign-in-divider" />
-            <div className="account-action-container">
-                <span>Already have an account?</span>
-                <Link to="/login" className="btn-link create-account">Log In</Link>
+            <div className="account-action-container flex-column">
+                <div>
+                    <span>Already have an account?</span>
+                    <Link to="/login" className="btn-link create-account">Log In</Link>
+                </div>
+                <div className="resend-container">
+                    <span>
+                        Account not activated?
+                    </span>
+                    <Link to="/login/resend-activation-link" className="btn-link create-account">Click Here</Link>
+                </div>    
             </div>
         </form>
     </div>
