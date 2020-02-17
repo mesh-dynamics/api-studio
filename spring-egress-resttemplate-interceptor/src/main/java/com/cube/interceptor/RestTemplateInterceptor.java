@@ -1,4 +1,4 @@
-package com.cube.interceptor.spring;
+package com.cube.interceptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,9 +21,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
 import io.md.constants.Constants;
-
-import com.cube.interceptor.config.Config;
-import com.cube.interceptor.utils.Utils;
 
 /**
  * Reference : https://stackoverflow.com/a/52698745/2761431

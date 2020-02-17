@@ -1,2 +1,2 @@
-# jersey-interceptor
-Jersey Interceptor for REST Http Requests
+# jersey-ingress-interceptor
+Jersey Ingress Interceptor for REST Http Requests

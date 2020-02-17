@@ -1,2 +1,2 @@
-# spring-reactive-interceptor
-Spring Reactive Interceptor for REST Http Requests
+# spring-reactive-ingress-interceptor
+Spring Reactive Ingress Interceptor for REST Http Requests

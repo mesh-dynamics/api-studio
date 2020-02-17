@@ -1,4 +1,4 @@
-package com.cube.interceptor.utils;
+package com.cube.interceptor;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -25,8 +25,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
-
-import com.cube.interceptor.config.Config;
 
 public class Utils {
 

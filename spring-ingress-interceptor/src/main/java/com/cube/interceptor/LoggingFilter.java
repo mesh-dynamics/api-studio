@@ -19,7 +19,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -147,7 +146,6 @@ public class LoggingFilter extends OncePerRequestFilter {
 		return headerMap;
 	}
 
-	@NotNull
 	public static MultivaluedMap<String, String> getTraceInfoMetaMap(
 		ContentCachingRequestWrapper requestWrapper) {
 		String traceId = requestWrapper.getHeader(Constants.DEFAULT_TRACE_FIELD);
