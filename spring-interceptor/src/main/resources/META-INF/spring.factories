@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.cube.interceptor.config.SpringLoggingAutoConfiguration

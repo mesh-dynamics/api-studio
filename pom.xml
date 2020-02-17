@@ -6,9 +6,13 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>spring-interceptor</module>
-        <module>spring-reactive-interceptor</module>
-        <module>jersey-interceptor</module>
+        <module>spring-ingress-interceptor</module>
+        <module>spring-egress-okhttp3-interceptor</module>
+        <module>spring-egress-resttemplate-interceptor</module>
+        <module>spring-egress-webclient-interceptor</module>
+        <module>spring-reactive-ingress-interceptor</module>
+        <module>jersey-ingress-interceptor</module>
+        <module>jersey-egress-interceptor</module>
     </modules>
 
 </project>
