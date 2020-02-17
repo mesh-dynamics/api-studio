@@ -13,10 +13,18 @@ spec:
   http:
   - match:
     - uri:
-        prefix: /minfo
+        prefix: /minfo/
     route:
     - destination:
         host: movieinfo
         subset: v2
         port:
           number: 8080
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: moviebookui
+        port:
+          number: 80

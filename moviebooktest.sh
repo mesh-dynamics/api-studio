@@ -1,41 +1,37 @@
 #!/usr/bin/env bash
 
 generate_config_file() {
-
 	echo "
 NAMESPACE=$DRONE_COMMIT_AUTHOR
 NAMESPACE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-STAGING_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_APP=Cube
 CUBE_CUSTOMER=CubeCorp
 INSTANCEID=prod
-MASTER_NAMESPACE=dummy
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-CUBE_SERVICE_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+CUBE_SERVICE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 SPRINGBOOT_PROFILE=prod
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
 CUBEUI_BACKEND_TAG=master-latest
 MOVIEINFO_TAG=master-latest
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5NTg3OTQyLCJleHAiOjE4OTQ5NDc5NDJ9.vompv79MxgNhJnPSXMfNVsxSN1hQD1z0dgC2GxjEX9U"
 SOLR_CORE=cube" > apps/cube/config/temp.conf
 
 echo "
 NAMESPACE=$DRONE_COMMIT_AUTHOR
-MASTER_NAMESPACE=$DRONE_COMMIT_AUTHOR
 NAMESPACE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-STAGING_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_APP=MovieInfo
 CUBE_CUSTOMER=CubeCorp
 INSTANCEID=prod
-CUBE_SERVICE_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-SPRINGBOOT_PROFILE=prod
+REPLAY_PATHS=minfo/listmovies,minfo/liststores,minfo/rentmovie,minfo/returnmovie
+REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5NTg3OTQyLCJleHAiOjE4OTQ5NDc5NDJ9.vompv79MxgNhJnPSXMfNVsxSN1hQD1z0dgC2GxjEX9U"
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
 CUBEUI_BACKEND_TAG=master-latest
-MOVIEINFO_TAG=master-latest
-SOLR_CORE=cube" > apps/moviebook/config/temp.conf
+MOVIEINFO_TAG=master-latest" > apps/moviebook/config/temp.conf
 }
 
 call_deploy_script() {
@@ -45,8 +41,8 @@ call_deploy_script() {
 call_replay() {
 	RECORDING_ID=$(cat apps/moviebook/kubernetes/recording_id.temp)
 	REPLAY_PATHS=minfo/listmovies,minfo/returnmovie,minfo/rentmovie,minfo/liststores
-	REPLAY_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-	CUBE_ENDPOINT=http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+	REPLAY_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+	CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 	INSTANCE_ID=prod
 	USER_ID=demo@cubecorp.io
 	REPLAY_PATHS=$(echo $REPLAY_PATHS | tr "," "\n")
@@ -78,8 +74,8 @@ call_replay() {
 
 analyze() {
 	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache')
-	REQNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"reqnotmatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
-	RESPNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"respnotmatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
+	REQNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"reqNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
+	RESPNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"respNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
 
 	#Display replay ID
 	echo "Replay ID:" $REPLAY_ID
@@ -95,7 +91,7 @@ analyze() {
 
 generate_traffic() {
 	for ((i=1;i<=$1;i++)); do
-		curl -X GET "http://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
+		curl -X GET "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
 	done
 }
 

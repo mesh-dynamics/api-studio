@@ -40,7 +40,7 @@ spec:
       containers:
       - name: cubews
         image: cubeiocorp/cubews:{{cubeio_tag}}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         resources:
           requests:
             memory: "512Mi"
@@ -178,7 +178,7 @@ spec:
       containers:
       - name: cubews
         image: cubeiocorp/cubews:{{cubeio_tag}}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         resources:
           requests:
             memory: "512Mi"
@@ -316,7 +316,7 @@ spec:
       containers:
       - name: cubews
         image: cubeiocorp/cubews:{{cubeio_tag}}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         resources:
           requests:
             memory: "512Mi"
@@ -453,7 +453,7 @@ spec:
       containers:
       - name: cubeui
         image: cubeiocorp/cubeui:{{cubeui_tag}}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         resources:
           requests:
             memory: "128Mi"
@@ -507,7 +507,7 @@ spec:
       containers:
       - name: cubeui-backend
         image: cubeiocorp/cubeuibackend:{{cubeui_backend_tag}}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "{{springboot_profile}}"
@@ -542,77 +542,6 @@ spec:
           timeoutSeconds: 1
       imagePullSecrets:
       - name: regcred
-
-################################################
-# Redis
-################################################
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis
-  namespace: {{namespace}}
-spec:
-  ports:
-  - port: 6379
-    name: peer
-  clusterIP: None
-  selector:
-    component: redis
-
----
-apiVersion: apps/v1beta1
-kind: StatefulSet
-metadata:
-  name: redis
-  namespace: {{namespace}}
-  labels:
-    app: cube
-    component: redis
-spec:
-  replicas: 1
-  serviceName: redis
-  template:
-    metadata:
-      labels:
-        app: cube
-        component: redis
-    spec:
-      containers:
-      - command: [sh, -c, source /redis-config/init.sh ]
-        image: redis:5.0.5-alpine
-        name: redis
-        ports:
-        - containerPort: 6379
-          name: redis
-        volumeMounts:
-        - mountPath: /redis-config
-          name: config
-        - mountPath: /redis-data
-          name: data
-        resources:
-          requests:
-            memory: "64Mi"
-          limits:
-            cpu: "0.1"
-            memory: "128Mi"
-      - command: [sh, -c, cp /redis-config/sentinel.conf /redis-sentinel-conf/sentinel.conf  && source /redis-config/sentinel.sh]
-        image: redis:5.0.5-alpine
-        name: sentinel
-        volumeMounts:
-        - mountPath: /redis-config
-          name: config
-        - mountPath: /redis-sentinel-conf
-          name: redis-sentinel
-      volumes:
-      - configMap:
-          defaultMode: 0666
-          name: redis-config
-        name: config
-      - emptyDir:
-        name: data
-      - emptyDir:
-        name: redis-sentinel
 
 # TODO: the following exernalname didn't work for a service that didn't go through port 80
 # apiVersion: v1
