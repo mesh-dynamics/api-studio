@@ -6,7 +6,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(UNAUTHORIZED)
+@ResponseStatus(BAD_REQUEST)
 public class ActivationKeyExpiredException extends RuntimeException {
 
     public ActivationKeyExpiredException(String exception) {
