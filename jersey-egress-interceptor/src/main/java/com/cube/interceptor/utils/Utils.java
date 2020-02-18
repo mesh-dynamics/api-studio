@@ -5,9 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -22,9 +20,9 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.md.constants.Constants;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.MDTraceInfo;
 
 import com.cube.interceptor.config.Config;
 

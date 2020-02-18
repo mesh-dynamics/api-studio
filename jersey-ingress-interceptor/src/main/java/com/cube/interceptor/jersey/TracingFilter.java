@@ -3,7 +3,6 @@ package com.cube.interceptor.jersey;
 import java.io.IOException;
 
 import javax.annotation.Priority;
-//import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
@@ -16,6 +15,8 @@ import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
+
+//import javax.ws.rs.Priorities;
 
 @Provider
 //@Priority(Priorities.HEADER_DECORATOR + 9)
