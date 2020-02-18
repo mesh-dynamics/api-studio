@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey;
+package com.cube.interceptor.apachecxf;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +12,6 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
-import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;

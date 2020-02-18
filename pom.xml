@@ -12,6 +12,7 @@
         <module>spring-egress-webclient-interceptor</module>
         <module>spring-reactive-ingress-interceptor</module>
         <module>jersey-ingress-interceptor</module>
+        <module>apache-cxf-ingress-interceptor</module>
         <module>jersey-egress-interceptor</module>
     </modules>
 

@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey;
+package com.cube.interceptor.apachecxf;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -22,6 +21,11 @@ import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.cxf.jaxrs.impl.ContainerRequestContextImpl;
+import org.apache.cxf.jaxrs.impl.MetadataMap;
+import org.apache.cxf.jaxrs.impl.WriterInterceptorContextImpl;
+import org.apache.cxf.jaxrs.utils.JAXRSUtils;
+import org.apache.cxf.message.Message;
 import org.apache.logging.log4j.util.Strings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +42,7 @@ import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
 
 @Provider
-@Priority(Priorities.HEADER_DECORATOR + 10)
+@Priority(3000)
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
 	WriterInterceptor {
 
@@ -99,8 +103,17 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	@Override
 	public void aroundWriteTo(WriterInterceptorContext context)
 		throws IOException, WebApplicationException {
-		if (context.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
-			logResponse(context);
+		ContainerRequestContext reqContext = null;
+		//for Apache cxf
+		if (context instanceof WriterInterceptorContextImpl) {
+			Message message = JAXRSUtils.getCurrentMessage();
+			reqContext = new ContainerRequestContextImpl(message.getExchange().getInMessage(),
+				false, true);
+		}
+
+		if (reqContext != null
+			&& reqContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
+			logResponse(context, reqContext);
 		} else {
 			context.proceed();
 		}
@@ -123,21 +136,21 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			requestBody);
 	}
 
-	private void logResponse(WriterInterceptorContext context)
+	private void logResponse(WriterInterceptorContext context, ContainerRequestContext reqContext)
 		throws IOException {
-		Object apiPathObj = context.getProperty(Constants.MD_API_PATH_PROP);
-		Object traceMetaMapObj = context.getProperty(Constants.MD_TRACE_META_MAP_PROP);
-		Object respHeadersObj = context.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
-		Object statusObj = context.getProperty(Constants.MD_STATUS_PROP);
-		Object traceInfo = context.getProperty(Constants.MD_TRACE_INFO);
+		Object apiPathObj = reqContext.getProperty(Constants.MD_API_PATH_PROP);
+		Object traceMetaMapObj = reqContext.getProperty(Constants.MD_TRACE_META_MAP_PROP);
+		Object respHeadersObj = reqContext.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
+		Object statusObj = reqContext.getProperty(Constants.MD_STATUS_PROP);
+		Object traceInfo = reqContext.getProperty(Constants.MD_TRACE_INFO);
 
 		ObjectMapper mapper = new ObjectMapper();
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ? mapper
-			.convertValue(respHeadersObj, MultivaluedMap.class) : Utils.createEmptyMultivaluedMap();
+			.convertValue(respHeadersObj, MetadataMap.class) : Utils.createEmptyMultivaluedMap();
 
 		MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
-			.convertValue(traceMetaMapObj, MultivaluedMap.class)
+			.convertValue(traceMetaMapObj, MetadataMap.class)
 			: Utils.createEmptyMultivaluedMap();
 		String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
 		//meta
@@ -154,11 +167,11 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
-		closeScope(context);
-		removeSetContextProperty(context);
+		closeScope(reqContext);
+		removeSetContextProperty(reqContext);
 	}
 
-	private void closeScope(WriterInterceptorContext context) {
+	private void closeScope(ContainerRequestContext context) {
 		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 
 		Object obj = context.getProperty(scopeKey);
@@ -168,7 +181,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		}
 	}
 
-	private void removeSetContextProperty(WriterInterceptorContext context) {
+	private void removeSetContextProperty(ContainerRequestContext context) {
 		context.removeProperty(Constants.MD_API_PATH_PROP);
 		context.removeProperty(Constants.MD_TRACE_META_MAP_PROP);
 		context.removeProperty(Constants.MD_RESPONSE_HEADERS_PROP);

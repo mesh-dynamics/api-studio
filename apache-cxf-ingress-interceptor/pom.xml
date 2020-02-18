@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.cube.interceptor</groupId>
-	<artifactId>md-jersey-egress-interceptor</artifactId>
+	<artifactId>md-apache-cxf-ingress-interceptor</artifactId>
 	<version>0.0.1</version>
 	<packaging>jar</packaging>
 
-	<name>jersey-egress-interceptor</name>
-	<description>Jersey Egress Interceptors for HTTP Requests</description>
+	<name>apache-cxf-ingress-interceptor</name>
+	<description>Apache CXF Ingress Interceptors for HTTP Requests</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -47,12 +47,12 @@
 			<version>0.32.0</version>
 		</dependency>
 
-		<dependency>
-			<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
-			<groupId>javax.ws.rs</groupId>
-			<artifactId>javax.ws.rs-api</artifactId>
-			<version>2.1</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			&lt;!&ndash; Needed for ClientBuilder; version is not aligned with version.apachecxf &ndash;&gt;-->
+<!--			<groupId>javax.ws.rs</groupId>-->
+<!--			<artifactId>javax.ws.rs-api</artifactId>-->
+<!--			<version>2.1</version>-->
+<!--		</dependency>-->
 
 		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
 		<dependency>
@@ -60,6 +60,13 @@
 			<artifactId>httpclient</artifactId>
 			<version>4.5.10</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-frontend-jaxrs</artifactId>
+			<version>2.7.18</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

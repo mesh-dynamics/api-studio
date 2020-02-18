@@ -1,9 +1,9 @@
-package com.cube.interceptor.jersey;
+package com.cube.interceptor.apachecxf;
 
 import java.io.IOException;
 
 import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
+//import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
@@ -18,7 +18,8 @@ import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
 
 @Provider
-@Priority(Priorities.HEADER_DECORATOR + 9)
+//@Priority(Priorities.HEADER_DECORATOR + 9)
+@Priority(1000)
 public class TracingFilter implements ContainerRequestFilter {
 
 	private static final Config config;
