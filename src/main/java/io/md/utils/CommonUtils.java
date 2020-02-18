@@ -107,9 +107,9 @@ public class CommonUtils {
 	public static void injectContext(MultivaluedMap<String, String> headers) {
 		if (MDTracer.isRegistered()) {
 			Tracer tracer = MDTracer.get();
-			Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
 			Span activeSpan = tracer.activeSpan();
 			if (activeSpan != null) {
+				Tags.SPAN_KIND.set(activeSpan, Tags.SPAN_KIND_CLIENT);
 				tracer.inject(activeSpan.context(),
 					Format.Builtin.HTTP_HEADERS, new HTTPHeadersCarrier(headers));
 			}
