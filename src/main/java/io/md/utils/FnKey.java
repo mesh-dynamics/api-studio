@@ -1,7 +1,6 @@
 package io.md.utils;
 
 import java.lang.reflect.Method;
-import io.md.utils.CommonUtils;
 
 /*
  * Created by IntelliJ IDEA.

@@ -35,10 +35,11 @@ import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.md.constants.Constants;
 import io.md.dao.CubeMetaInfo;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.RunType;
+import io.md.dao.MDTraceInfo;
+import io.md.tracer.HTTPHeadersCarrier;
 import io.md.tracer.MDTextMapCodec;
 import io.md.tracer.MDTracer;
 import io.opentracing.Scope;
@@ -100,6 +101,18 @@ public class CommonUtils {
 				scope.close();
 			}
 
+		}
+	}
+
+	public static void injectContext(MultivaluedMap<String, String> headers) {
+		if (MDTracer.isRegistered()) {
+			Tracer tracer = MDTracer.get();
+			Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
+			Span activeSpan = tracer.activeSpan();
+			if (activeSpan != null) {
+				tracer.inject(activeSpan.context(),
+					Format.Builtin.HTTP_HEADERS, new HTTPHeadersCarrier(headers));
+			}
 		}
 	}
 

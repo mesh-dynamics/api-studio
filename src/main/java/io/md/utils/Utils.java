@@ -28,10 +28,10 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.constants.Constants;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
+import io.md.dao.MDTraceInfo;
 
 public class Utils {
 
