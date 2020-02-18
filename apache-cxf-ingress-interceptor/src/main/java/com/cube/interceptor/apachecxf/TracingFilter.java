@@ -8,6 +8,8 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import org.apache.commons.lang3.BooleanUtils;
+
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;

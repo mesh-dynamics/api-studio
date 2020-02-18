@@ -1,4 +1,4 @@
-package com.cube.interceptor.apachecxf;
+package com.cube.interceptor.jersey;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,8 +49,13 @@ public class ClientFilter implements ClientRequestFilter, ClientResponseFilter, 
 		{
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED))
-				|| config.commonConfig.samplerVeto;
+				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+
+			//check veto if upstream service decides to NOT SAMPLE
+			if (!isSampled && config.commonConfig.samplerVeto) {
+				isSampled = Utils.isSampled(requestContext.getStringHeaders());
+			}
+
 			if (isSampled) {
 				URI uri = requestContext.getUri();
 

@@ -60,8 +60,13 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		{
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED))
-				|| config.commonConfig.samplerVeto;
+				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+
+			//check veto if upstream service decides to NOT SAMPLE
+			if (!isSampled && config.commonConfig.samplerVeto) {
+				isSampled = Utils.isSampled(reqContext.getHeaders());
+			}
+
 			if (isSampled) {
 				URI uri = reqContext.getUriInfo().getRequestUri();
 
