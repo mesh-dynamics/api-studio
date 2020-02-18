@@ -11,9 +11,9 @@
         <module>spring-egress-resttemplate-interceptor</module>
         <module>spring-egress-webclient-interceptor</module>
         <module>spring-reactive-ingress-interceptor</module>
-        <module>jersey-ingress-interceptor</module>
+        <module>jaxrs-ingress-interceptor</module>
         <module>apache-cxf-ingress-interceptor</module>
-        <module>jersey-egress-interceptor</module>
+        <module>jaxrs-egress-interceptor</module>
     </modules>
 
 </project>

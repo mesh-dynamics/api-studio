@@ -39,8 +39,7 @@ public class Utils {
 	}
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return (config.commonConfig.samplerVeto
-			|| (config.intentResolver.isIntentToRecord()
+		return ((config.intentResolver.isIntentToRecord()
 			&& config.commonConfig.sampler.isSampled(requestHeaders))
 			|| config.intentResolver.isIntentToMock());
 	}

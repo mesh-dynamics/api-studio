@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.cube.interceptor</groupId>
-	<artifactId>md-jersey-ingress-interceptor</artifactId>
+	<artifactId>md-jaxrs-egress-interceptor</artifactId>
 	<version>0.0.1</version>
 	<packaging>jar</packaging>
 
-	<name>jersey-ingress-interceptor</name>
-	<description>Jersey Ingress Interceptors for HTTP Requests</description>
+	<name>jaxrs-egress-interceptor</name>
+	<description>JAX-RS Egress Interceptors for HTTP Requests</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -60,7 +60,6 @@
 			<artifactId>httpclient</artifactId>
 			<version>4.5.10</version>
 		</dependency>
-
 	</dependencies>
 
 	<build>
