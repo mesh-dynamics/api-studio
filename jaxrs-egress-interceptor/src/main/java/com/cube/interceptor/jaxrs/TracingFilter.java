@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey;
+package com.cube.interceptor.jaxrs;
 
 import java.io.IOException;
 
