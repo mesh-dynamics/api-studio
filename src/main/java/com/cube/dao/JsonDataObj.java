@@ -165,7 +165,9 @@ public class JsonDataObj implements DataObj {
                 if (mimetype.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)) {
                     try {
                         JsonNode parsedVal = jsonMapper.readTree(val.asText());
-                        valParentObj.set(fieldName, parsedVal);
+                        if (parsedVal != null) {
+                            valParentObj.set(fieldName, parsedVal);
+                        }
                         return true;
                     } catch (IOException e) {
                         LOGGER.error(String.format("Exception in parsing json string at path: %s, val: %s",
