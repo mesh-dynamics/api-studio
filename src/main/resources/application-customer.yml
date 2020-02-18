@@ -63,5 +63,5 @@ external:
 services:
     user:
         jwt:
-            secret-key: "prod-app-secret"
+            secret-key: "prod-secret"
             expiry-seconds: 172800
