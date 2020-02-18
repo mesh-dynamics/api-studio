@@ -63,7 +63,7 @@ class OperationSet extends React.Component {
         return this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0 ? (
             <div onMouseOver={this.handleShow} onMouseOut={this.handleClose} onClick={this.handleClick}>
                 <span ref={this.props.elementRef} style={{ visibility: this.state.show || this.state.popover ? "visible" : "hidden" }} >
-                    <Tippy hideOnClick={false} visible={this.state.visible} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"click"} appendTo={"parent"} flipOnUpdate={false} maxWidth={700}
+                    <Tippy flip={false} hideOnClick={false} visible={this.state.visible} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"click"} appendTo={"parent"} maxWidth={700}
                     content={
                             <div style={{padding: 0, width: "auto", maxWidth: "700px", maxHeight:"800px", fontSize: "14px"}} className="grey" id={`tooltip-${this.props.jsonPath}`}>
                                 <GoldenPopover {...props} hideTippy={this.hideTippy} />
