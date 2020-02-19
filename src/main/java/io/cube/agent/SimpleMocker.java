@@ -25,9 +25,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 import io.cube.agent.FnReqResponse.RetStatus;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
+import io.md.dao.MDTraceInfo;
 import io.md.utils.FnKey;
 
 /*

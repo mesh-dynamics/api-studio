@@ -20,9 +20,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import io.md.dao.MDTraceInfo;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
+import io.md.dao.MDTraceInfo;
 import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {

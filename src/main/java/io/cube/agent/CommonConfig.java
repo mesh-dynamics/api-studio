@@ -35,10 +35,9 @@ import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
-import io.md.tracer.MDTracer;
+import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 public class CommonConfig {
 
@@ -158,8 +157,7 @@ public class CommonConfig {
 		this(new Properties());
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
-			//GlobalTracer.register(tracer);
-			MDTracer.register(tracer);
+			MDGlobalTracer.register(tracer);
 		} catch (IllegalStateException e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 				"Trying to register a tracer when one is already registered")), e);

@@ -8,10 +8,10 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.google.gson.Gson;
 
 import io.md.constants.Constants;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
+import io.md.dao.MDTraceInfo;
 
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
