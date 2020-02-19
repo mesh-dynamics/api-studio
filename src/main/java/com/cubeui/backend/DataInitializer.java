@@ -94,7 +94,7 @@ public class DataInitializer implements CommandLineRunner {
         if(!customerRepository.existsById(1L)) {
             CustomerDTO customerDTO = new CustomerDTO();
             customerDTO.setId(1L);
-            customerDTO.setName("MeshDynamics");
+            customerDTO.setName("CubeCorp");
             customerDTO.setEmail("admin@meshdynamics.io");
             customerDTO.setDomainURL("cube.cubecorp.io");
             Customer customer = this.customerService.save(customerDTO);
@@ -134,11 +134,12 @@ public class DataInitializer implements CommandLineRunner {
             this.appRepository.save(app);
         }
 
+        // todo: remove this app while refactoring
         if(!appRepository.existsById(5L)) {
             App app = new App();
             app.setId(5L);
             app.setName("Cube");
-            app.setCustomer(this.customerService.getById(1L).get());
+            //app.setCustomer(this.customerService.getById(1L).get());
             this.appRepository.save(app);
         }
 
