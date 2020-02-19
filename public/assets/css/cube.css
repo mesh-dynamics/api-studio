@@ -4683,3 +4683,6 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     height: 50vh;
     align-items: center;
 }
+.pointer {
+    cursor: pointer;
+}

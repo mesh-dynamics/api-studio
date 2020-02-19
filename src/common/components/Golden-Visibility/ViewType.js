@@ -1,5 +1,6 @@
-import React from 'react';
-import { VIEW_TYPE } from "./GoldenVisibility";
+import React from "react";
+import PropTypes from "prop-types";
+import { VIEW_TYPE } from "../../utils/enums/golden-visibility";
 import "./ViewType.css";
 
 const ViewType = (props) => {
@@ -22,5 +23,10 @@ const ViewType = (props) => {
         </div>
     )
 }
+
+ViewType.propType = {
+    viewType: PropTypes.string.isRequired,
+    setViewType: PropTypes.func.isRequired
+};
 
 export default ViewType;

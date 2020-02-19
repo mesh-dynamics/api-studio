@@ -1,17 +1,43 @@
 import { goldenConstants } from "../constants/golden.constants";
 
 const initialState = {
+    isFetching: false,
+    fetchComplete: false,
+    message: "",
     selectedService: "",
     selectedApi: "",
-    requestContract: {},
-    responseContract: {},
-    requestExamples: {},
+    selectedGolden: {},
+    requestContract: {
+        params: {},
+        body: {}
+    },
+    responseContract: {
+        body: {
+            table: [],
+            json: {}
+        }
+    },
+    requestExamples: {
+        params: {},
+        body: {},
+    },
     responseExamples: {}
 }
 
 export const golden = (state = initialState, { type, data }) => {
     switch (type) {
-
+    case goldenConstants.BEGIN_FETCH:
+        return {
+            ...state,
+            isFetching: true,
+            fetchComplete: false,
+        };
+    case goldenConstants.FETCH_COMPLETE:
+        return {
+            ...state,
+            isFetching: false,
+            fetchComplete: true,
+        };
     case goldenConstants.SET_SELECTED_SERVICE:
         return { 
             ...state,  
@@ -34,11 +60,31 @@ export const golden = (state = initialState, { type, data }) => {
             requestExamples: data.request,
             responseExamples: data.response
         };
+    case goldenConstants.SET_SELECTED_GOLDEN:
+        return {
+            ...state,
+            selectedGolden: {
+                ...state.selectedGolden,
+                ...data
+            }
+        };
     case goldenConstants.RESET_GOLDEN_API_PATH_AND_SERVICE:
         return {
             ...state,
             selectedService: "",
             selectedApi: "",
+            isFetching: false,
+            fetchComplete: false
+        };
+    case goldenConstants.SET_MESSAGE:
+        return {
+            ...state,
+            message: data,
+        };
+    case goldenConstants.RESET_MESSAGE:
+        return {
+            ...state,
+            message: ""
         };
     default:
         return state

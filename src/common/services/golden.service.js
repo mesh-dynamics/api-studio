@@ -1,29 +1,60 @@
+import config from '../config';
 
-const fetchGoldenContract = async (goldenId, service, api) => {
+const fetchGoldenInsights = async (goldenId, service, apiPath, token) => {
+    const requestOptions = {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": `Bearer ${token}`
+        }
+    };
+
     try {
-        const response = await fetch("http://www.mocky.io/v2/5e1460b42d00006c00166fb4");
-        const data = await response.json();
-    
-        return data;
-    } catch(e) {
-        console.log("Error Fetching Data From Server", e);
+        const response = await fetch(`${config.analyzeBaseUrl}/goldenInsights/${goldenId}?service=${service}&apiPath=${apiPath}`, requestOptions);
+
+        if(response.ok) {
+            const data = await response.json();
+
+            return data;
+        } else {
+            throw new Error("Error Fetching Golden Details");
+        }
+    } catch (error) {
+        console.log("Error Caught", error)
     }
     
 };
 
-const fetchGoldenExamples = async (goldenId, service, api, selectedPageNumber) => {
-    try {
-        const response = await fetch("http://www.mocky.io/v2/5dfc54bb3100006d00d2be1e");
+const postGoldenMeta = async (goldenDetails, token) => {
+    const { id, goldenName, branchName, codeVersionNumber, commitId } = goldenDetails;
+    //userId, golden_comment, tags to be added in later iterations
+    const urlencoded = new URLSearchParams();
+    urlencoded.append("golden_name", goldenName);
+    urlencoded.append("branch", branchName);
+    urlencoded.append("git_commit_id", commitId);
+    urlencoded.append("code_version", codeVersionNumber);
+
+    const requestOptions = {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": `Bearer ${token}`
+        },
+        body: urlencoded
+    };
+
+    const response = await fetch(`${config.recordBaseUrl}/updateGoldenFields/${id}`, requestOptions);
+
+    if(response.ok) {
         const data = await response.json();
-    
+
         return data;
-    } catch(e) {
-        console.log("Error Fetching Data From Server", e);
+    } else {
+        throw new Error("Error Updating Golden Details");
     }
-    
 };
 
 export {
-    fetchGoldenContract,
-    fetchGoldenExamples
+    postGoldenMeta,
+    fetchGoldenInsights
 };
