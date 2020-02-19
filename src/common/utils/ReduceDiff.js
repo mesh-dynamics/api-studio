@@ -40,7 +40,7 @@ class ReduceDiff {
         return null;
     }
 
-    _updateReducedDiffArray(diffReason, currentDiffReason, jsonStringLine, tempReducedDiffArray, reducedDiffArray, serverSideDiff, currentJsonPath) {
+    _updateReducedDiffArray(diffReason, currentDiffReason, jsonStringLine, tempReducedDiffArray, reducedDiffArray, serverSideDiff, currentJsonPath, isLast=false) {
         /*
             This method updates the pre-final result to final result. The pre-final result (tempReducedDiffArray) has line by line diff changes and once a diff reason changes, empty this pre-final result to combine similar groups and add to the final result.
             This method is to combine similar diffed blocks (removed or added or no changes) to the final result. 
@@ -53,13 +53,16 @@ class ReduceDiff {
             diffReason = currentDiffReason;
             tempReducedDiffArray.push(jsonStringLine);
         }
+    // author: siddhant.mutha@meshdynamics.io
+    // using isLastRemoved to handle the alignment of two objects                
         reducedDiffArray.push({
             value: jsonStringLine,
             removed: currentDiffReason === NA ? false : currentDiffReason === REMOVED ? true : false,
             added: currentDiffReason === NA ? false : currentDiffReason === ADDED ? true : false,
             count: 1,
             serverSideDiff: serverSideDiff,
-            jsonPath: currentJsonPath
+            jsonPath: currentJsonPath,
+            isLastRemoved : currentDiffReason === REMOVED && isLast,
         });
         return [diffReason, tempReducedDiffArray];
     }
@@ -76,7 +79,11 @@ class ReduceDiff {
             jsonPath = jsonPathArray[iter] ? jsonPathArray[iter][0] : "";
             jsonPathWOEND = jsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, "");
         }
-        [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray, null, jsonPath);
+        // author: siddhant.mutha@meshdynamics.io
+        // This is a fix to align two arrays/objects (one removed and other added right after) which were overlapping and showing an incorrect diff (see CUBE-1413 & CUBE-1414).   
+        // Since this is the last line in the object, we pass the isLast flag as true, which sets the isLastRemoved flag if it's part of a removed object, and is used later while rendering the lines.
+        [diffReason, tempReducedDiffArray] = this._updateReducedDiffArray(diffReason, currentDiffReason, prettyPrintedJSONLines[iter], tempReducedDiffArray, reducedDiffArray, null, jsonPath, true);
+        
         return [diffReason, tempReducedDiffArray, iter];
     }
 
