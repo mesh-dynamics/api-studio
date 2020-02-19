@@ -160,7 +160,6 @@ export function cube (state = initialState, action) {
             return {
                 ...state,
                 instances: action.data,
-                selectedInstance: action.data[0].name
             };
         case cubeConstants.SET_SELECTED_INSTANCE:
             return {

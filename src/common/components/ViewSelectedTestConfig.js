@@ -521,20 +521,23 @@ class ViewSelectedTestConfig extends React.Component {
     replay = () => {
         const { cube, dispatch, authentication } = this.props;
         const { testConfig: { testPaths }} = cube;
-
+        const selectedInstances = cube.instances
+            .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
         cubeActions.clearReplayStatus();
-        if (!cube.selectedTestId) {
+         if(!cube.selectedInstance){
+            alert('select an instance to replay')
+        } else if (!cube.selectedTestId) {
             alert('select golden to replay');
+        } else if(selectedInstances.length === 0) {
+            alert('Gateway endpoint is unavailable')
         } else {
             this.setState({show: true});
             let user = authentication.user;
             let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
-            let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
-            let selectedInstances = cube.instances.filter((item) => item.name == instance && item.app.name == cube.selectedApp);
-            let gatewayEndpoint = selectedInstances.length > 0 ? selectedInstances[0].gatewayEndpoint : "http://demo.dev.cubecorp.io";
+            
             const searchParams = new URLSearchParams();
-            searchParams.set('endPoint', gatewayEndpoint);
-            searchParams.set('instanceId', instance);
+            searchParams.set('endPoint', selectedInstances[0].gatewayEndpoint);
+            searchParams.set('instanceId', cube.selectedInstance);
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
             // Append Test Paths
