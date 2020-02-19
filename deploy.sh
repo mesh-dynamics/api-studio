@@ -90,10 +90,8 @@ echo "Setting default responses!"
 	else
 		FILE_NAME=$1
 	fi
-
     FILE_PATH=$APP_DIR/default_responses/$FILE_NAME
     echo "Checking the file path : $FILE_PATH"
-
     if [ -f $FILE_PATH ]; then
         FILE_DATA=`jq '.' $FILE_PATH`
     else
