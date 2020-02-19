@@ -94,7 +94,7 @@ public class MailService {
         Context context = new Context();
         context.setVariable("user", user);
         context.setVariable("baseUrl", baseUrl);
-        context.setVariable("loginUrl", baseUrl + loginEndpoint);
+        context.setVariable("loginUrl", baseUrl);
         context.setVariable("resetUrl", baseUrl + resetEndpoint);
         context.setVariable("activationUrl", baseUrl + activationEndpoint);
         String content = templateEngine.process(templateName, context);
