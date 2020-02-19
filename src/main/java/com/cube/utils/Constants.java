@@ -46,6 +46,7 @@ public class Constants {
     public static final String SERVICE_HEALTH_STATUS = "SERVICE_HEALTH_STATUS";
     public static final String SOLR_STATUS_CODE = "SOLR_STATUS_CODE";
     public static final String SOLR_STATUS_MESSAGE = "SOLR_STATUS_MESSAGE";
+    public static final String REPLAY_NOT_FOUND = "REPLAY_NOT_FOUND";
 
 
     //EXCEPTIONS

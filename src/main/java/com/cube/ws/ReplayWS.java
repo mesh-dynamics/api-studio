@@ -46,6 +46,9 @@ import com.cube.drivers.ReplayDriverFactory;
 import com.cube.utils.Constants;
 import com.cube.utils.ReplayTypeEnum;
 
+import static com.cube.core.Utils.buildErrorResponse;
+import static com.cube.core.Utils.buildSuccessResponse;
+
 /**
  * @author prasad
  * The replay service
@@ -326,6 +329,39 @@ public class ReplayWS {
                     }
                 }).orElse(Response.serverError().build());
         }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
+    }
+
+    /**
+     * Used to getReplay object from replay id
+     * @param replayId
+     * @return
+     */
+    @GET
+    @Path("/{replayId}")
+    public Response getReplayObjectFromReplayId(@PathParam("replayId") String replayId) {
+        Optional<Replay> replay = rrstore.getReplay(replayId);
+        if(replay.isPresent()) {
+            try {
+                String json = jsonMapper.writeValueAsString(replay.get());
+                return Response.ok()
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(json)))
+                    .build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Error in converting Replay object to Json "
+                        + e.getMessage(),
+                    Constants.REPLAY_ID_FIELD, replayId
+                )));
+                return Response.serverError()
+                    .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION, e.getMessage()))
+                    .build();
+            }
+        }
+        return Response.status(Response.Status.NOT_FOUND)
+            .entity(buildErrorResponse(Constants.FAIL, Constants.REPLAY_NOT_FOUND,
+                "Replay not found for replayId: " + replayId))
+            .build();
     }
 
 
