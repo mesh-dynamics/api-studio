@@ -64,14 +64,20 @@ var DiffViewer = /** @class */ (function (_super) {
                     var rightContent;
                     var removed = obj.removed;
                     var added = obj.added;
-                    if (obj.added && diffArray[i - 1] && diffArray[i - 1].removed) {
+                    // author: siddhant.mutha@meshdynamics.io
+                    // using isLastRemoved to handle the alignment of two objects
+                    // avoid skipping the first line of the right side (added) object
+                    if (obj.added && diffArray[i - 1] && diffArray[i - 1].removed && !diffArray[i-1].isLastRemoved) {
                         var preValueCount = diffArray[i - 1].count;
                         if (num <= (preValueCount - 1))
                             return undefined;
                         rightLineNumber = rightLineNumber + 1;
                         rightContent = ch;
                     }
-                    else if (obj.removed && diffArray[i + 1] && !diffArray[i + 1].added) {
+                    // author: siddhant.mutha@meshdynamics.io
+                    // using isLastRemoved to handle the alignment of two objects
+                    // show only the left side line if this is the last line of the first object 
+                    else if (obj.removed && diffArray[i + 1] && (!diffArray[i + 1].added || obj.isLastRemoved)) {
                         leftLineNumber = leftLineNumber + 1;
                         leftContent = ch;
                     }
