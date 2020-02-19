@@ -30,7 +30,6 @@ import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
-import io.opentracing.Scope;
 import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
@@ -57,13 +56,12 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
 				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+			boolean isVetoed = BooleanUtils.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
-			//check veto if upstream service decides to NOT SAMPLE
-			if (!isSampled && config.commonConfig.samplerVeto) {
-				isSampled = Utils.isSampled(reqContext.getHeaders());
-			}
+			if (isSampled || isVetoed) {
+				//this is local baggage item
+				span.setBaggageItem(Constants.MD_IS_VETOED, null);
 
-			if (isSampled) {
 				URI uri = reqContext.getUriInfo().getRequestUri();
 
 				//query params
@@ -78,7 +76,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				MultivaluedMap<String, String> traceMetaMap = getTraceInfoMetaMap(reqContext,
 					mdTraceInfo);
 
-				reqContext.setProperty(Constants.MD_SAMPLE_REQUEST, isSampled);
+				reqContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
 				reqContext.setProperty(Constants.MD_TRACE_META_MAP_PROP, traceMetaMap);
 				reqContext.setProperty(Constants.MD_API_PATH_PROP, apiPath);
 				reqContext.setProperty(Constants.MD_TRACE_INFO, mdTraceInfo);
@@ -159,18 +157,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
-		closeScope(context);
 		removeSetContextProperty(context);
-	}
-
-	private void closeScope(WriterInterceptorContext context) {
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
-
-		Object obj = context.getProperty(scopeKey);
-		if (obj != null) {
-			((Scope) obj).close();
-			context.removeProperty(scopeKey);
-		}
 	}
 
 	private void removeSetContextProperty(WriterInterceptorContext context) {

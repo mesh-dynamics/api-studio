@@ -3,20 +3,14 @@ package com.cube.interceptor.jaxrs;
 import java.io.IOException;
 
 import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientResponseContext;
-import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.client.ClientRequestFilter;
 
-import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 
-public class TracingFilter implements ClientResponseFilter {
-
-	public static final String CLIENT_SPAN = "md-client-span";
+public class TracingFilter implements ClientRequestFilter {
 
 	@Override
-	public void filter(ClientRequestContext clientRequestContext,
-		ClientResponseContext clientResponseContext) throws IOException {
-		//CommonUtils.startClientSpan(Constants.SERVICE_FIELD.concat(CLIENT_SPAN));
+	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		CommonUtils.injectContext(clientRequestContext.getStringHeaders());
 	}
 }
