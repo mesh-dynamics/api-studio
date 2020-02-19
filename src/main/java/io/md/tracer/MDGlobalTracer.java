@@ -11,12 +11,12 @@ import io.opentracing.noop.NoopTracer;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.propagation.Format;
 
-public class MDTracer implements Tracer {
-	private static final Logger LOGGER = Logger.getLogger(MDTracer.class.getName());
-	private static final MDTracer INSTANCE = new MDTracer();
+public class MDGlobalTracer implements Tracer {
+	private static final Logger LOGGER = Logger.getLogger(MDGlobalTracer.class.getName());
+	private static final MDGlobalTracer INSTANCE = new MDGlobalTracer();
 	private static volatile Tracer tracer = NoopTracerFactory.create();
 
-	private MDTracer() {
+	private MDGlobalTracer() {
 	}
 
 	public static Tracer get() {
@@ -25,13 +25,13 @@ public class MDTracer implements Tracer {
 
 	public static synchronized void register(Tracer tracer) {
 		if (tracer == null) {
-			throw new NullPointerException("Cannot register MDTracer <null>.");
-		} else if (tracer instanceof MDTracer) {
-			LOGGER.log(Level.FINE, "Attempted to register the MDTracer as delegate of itself.");
-		} else if (isRegistered() && !MDTracer.tracer.equals(tracer)) {
+			throw new NullPointerException("Cannot register MDGlobalTracer <null>.");
+		} else if (tracer instanceof MDGlobalTracer) {
+			LOGGER.log(Level.FINE, "Attempted to register the MDGlobalTracer as delegate of itself.");
+		} else if (isRegistered() && !MDGlobalTracer.tracer.equals(tracer)) {
 			throw new IllegalStateException("There is already a current MD Tracer registered.");
 		} else {
-			MDTracer.tracer = tracer;
+			MDGlobalTracer.tracer = tracer;
 		}
 	}
 

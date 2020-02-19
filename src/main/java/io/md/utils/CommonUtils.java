@@ -40,8 +40,8 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.tracer.HTTPHeadersCarrier;
+import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
-import io.md.tracer.MDTracer;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -71,8 +71,8 @@ public class CommonUtils {
 	}
 
 	public static void addTraceHeaders(Invocation.Builder requestBuilder, String requestType) {
-		if (MDTracer.isRegistered()) {
-			Tracer tracer = MDTracer.get();
+		if (MDGlobalTracer.isRegistered()) {
+			Tracer tracer = MDGlobalTracer.get();
 
 			Scope scope = null;
 			//Added for the JDBC init case, but also to segregate
@@ -105,8 +105,8 @@ public class CommonUtils {
 	}
 
 	public static void injectContext(MultivaluedMap<String, String> headers) {
-		if (MDTracer.isRegistered()) {
-			Tracer tracer = MDTracer.get();
+		if (MDGlobalTracer.isRegistered()) {
+			Tracer tracer = MDGlobalTracer.get();
 			Span activeSpan = tracer.activeSpan();
 			if (activeSpan != null) {
 				Tags.SPAN_KIND.set(activeSpan, Tags.SPAN_KIND_CLIENT);
@@ -118,8 +118,8 @@ public class CommonUtils {
 
 	public static Optional<Span> getCurrentSpan() {
 		Optional<Span> currentSpan = Optional.empty();
-		if (MDTracer.isRegistered()) {
-			Tracer tracer = MDTracer.get();
+		if (MDGlobalTracer.isRegistered()) {
+			Tracer tracer = MDGlobalTracer.get();
 			currentSpan = Optional.ofNullable(tracer.activeSpan());
 		}
 		return currentSpan;
@@ -155,7 +155,7 @@ public class CommonUtils {
 	}*/
 
 	public static Scope startClientSpan(String operationName) {
-		Tracer tracer = MDTracer.get();
+		Tracer tracer = MDGlobalTracer.get();
 		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
 			.startActive(true);
@@ -164,7 +164,7 @@ public class CommonUtils {
 	public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders,
 		String operationName) {
 		// format the headers for extraction
-		Tracer tracer = MDTracer.get();
+		Tracer tracer = MDGlobalTracer.get();
 		final HashMap<String, String> headers = new HashMap<String, String>();
 		rawHeaders.forEach((k, v) -> {
 			if (v.size() > 0) {
@@ -211,8 +211,8 @@ public class CommonUtils {
 	}
 
 	private static Optional<JaegerSpanContext> getCurrentContext() {
-		if (MDTracer.isRegistered()) {
-			Tracer currentTracer = MDTracer.get();
+		if (MDGlobalTracer.isRegistered()) {
+			Tracer currentTracer = MDGlobalTracer.get();
 			if (currentTracer.activeSpan() != null
 				&& currentTracer.activeSpan().context() != null) {
 				return Optional.of((JaegerSpanContext) currentTracer.activeSpan().context());
@@ -323,7 +323,7 @@ public class CommonUtils {
 	}
 
 	public static Scope startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
-		Tracer tracer = MDTracer.get();
+		Tracer tracer = MDGlobalTracer.get();
 		Tracer.SpanBuilder spanBuilder;
 		try {
 			//span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
