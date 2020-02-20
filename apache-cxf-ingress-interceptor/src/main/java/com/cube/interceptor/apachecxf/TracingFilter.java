@@ -44,7 +44,8 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			boolean isSampled = Utils.isSampled(requestHeaders);
 			currentSpan.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
 		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && config.commonConfig.samplerVeto) {
-			currentSpan.setBaggageItem(Constants.MD_IS_VETOED, String.valueOf(true));
+			currentSpan.setBaggageItem(Constants.MD_IS_VETOED,
+				String.valueOf(Utils.isSampled(requestHeaders)));
 		}
 
 		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
