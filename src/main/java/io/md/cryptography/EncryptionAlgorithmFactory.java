@@ -2,8 +2,6 @@ package io.md.cryptography;
 
 import java.util.Map;
 
-import org.json.JSONObject;
-
 import io.md.constants.Constants;
 
 public class EncryptionAlgorithmFactory {

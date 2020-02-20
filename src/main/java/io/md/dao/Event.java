@@ -371,7 +371,7 @@ public class Event {
 		private int payloadKey = 0;
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
-			String collection, String traceId,
+			String collection, MDTraceInfo mdTraceInfo,
 			Event.RunType runType, Optional<Instant> timestamp, String reqId, String apiPath,
 			Event.EventType eventType) {
 			this.customerId = customerId;
@@ -379,9 +379,11 @@ public class Event {
 			this.service = service;
 			this.instanceId = instanceId;
 			this.collection = collection;
-			this.traceId = traceId;
-			this.spanId = null;
-			this.parentSpanId = null;
+
+			this.traceId = mdTraceInfo.traceId;
+			this.spanId = mdTraceInfo.spanId;
+			this.parentSpanId = mdTraceInfo.parentSpanId;
+
 			this.runType = runType;
 			this.timestamp = timestamp;
 			this.reqId = reqId;
@@ -389,7 +391,7 @@ public class Event {
 			this.eventType = eventType;
 		}
 
-		public EventBuilder(CubeMetaInfo cubeMetaInfo, CubeTraceInfo cubeTraceInfo,
+		public EventBuilder(CubeMetaInfo cubeMetaInfo, MDTraceInfo mdTraceInfo,
 			Event.RunType runType, String apiPath, EventType eventType, Optional<Instant> timestamp,
 			String reqId, String collection) {
 			this.customerId = cubeMetaInfo.customerId;
@@ -397,9 +399,9 @@ public class Event {
 			this.instanceId = cubeMetaInfo.instance;
 			this.service = cubeMetaInfo.serviceName;
 
-			this.traceId = cubeTraceInfo.traceId;
-			this.spanId = cubeTraceInfo.spanId;
-			this.parentSpanId = cubeTraceInfo.parentSpanId;
+			this.traceId = mdTraceInfo.traceId;
+			this.spanId = mdTraceInfo.spanId;
+			this.parentSpanId = mdTraceInfo.parentSpanId;
 
 			this.runType = runType;
 			this.apiPath = apiPath;

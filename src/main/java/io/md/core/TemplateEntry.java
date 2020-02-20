@@ -18,7 +18,6 @@ import static io.md.core.CompareTemplate.ComparisonType.Equal;
 import static io.md.core.CompareTemplate.DataType.Default;
 
 import java.util.Optional;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
