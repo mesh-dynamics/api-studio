@@ -1,0 +1,19 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.cube.interceptor</groupId>
+    <artifactId>root</artifactId>
+    <version>V1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>spring-ingress-interceptor</module>
+        <module>spring-egress-okhttp3-interceptor</module>
+        <module>spring-egress-resttemplate-interceptor</module>
+        <module>spring-egress-webclient-interceptor</module>
+        <module>spring-reactive-ingress-interceptor</module>
+        <module>jaxrs-ingress-interceptor</module>
+        <module>apache-cxf-ingress-interceptor</module>
+        <module>jaxrs-egress-interceptor</module>
+    </modules>
+
+</project>
