@@ -278,9 +278,6 @@ public class CubeStore {
             	if (!reqApiPath.isEmpty()) {
 		            URIBuilder uriBuilder = new URIBuilder(reqApiPath);
 		            reqApiPath = uriBuilder.getPath();
-		            if (!reqApiPath.isEmpty() && reqApiPath.startsWith("/")) {
-			            reqApiPath = reqApiPath.substring(1);
-		            }
 	            }
 	            responseEvent = Utils
                     .createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
@@ -308,9 +305,6 @@ public class CubeStore {
         // extract path and query params
         URIBuilder uriBuilder = new URIBuilder(rr.pathwparams);
         String path = uriBuilder.getPath();
-        if(path.startsWith("/")){
-            path = path.substring(1);
-        }
         List<NameValuePair> queryParams = uriBuilder.getQueryParams();
         MultivaluedHashMap queryParamsMap = new MultivaluedHashMap();
         queryParams.forEach(nameValuePair -> {
