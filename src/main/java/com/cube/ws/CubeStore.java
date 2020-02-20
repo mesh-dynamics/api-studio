@@ -8,6 +8,7 @@ import static com.cube.core.Utils.buildSuccessResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -271,12 +272,21 @@ public class CubeStore {
             // pick apiPath from meta fields
             String reqApiPath = Optional
                 .ofNullable(meta.getFirst(Constants.API_PATH_FIELD)).orElse("");
+
             Event responseEvent;
             try {
-                responseEvent = Utils
-                    .createHTTPResponseEvent(path, rid, status, meta, hdrs, rr.body,
+            	if (!reqApiPath.isEmpty()) {
+		            URIBuilder uriBuilder = new URIBuilder(reqApiPath);
+		            reqApiPath = uriBuilder.getPath();
+		            if (!reqApiPath.isEmpty() && reqApiPath.startsWith("/")) {
+			            reqApiPath = reqApiPath.substring(1);
+		            }
+	            }
+	            responseEvent = Utils
+                    .createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
                         collection, timestamp, runType, customerId, app, config);
-            } catch (JsonProcessingException | InvalidEventException e) {
+
+            } catch (JsonProcessingException | InvalidEventException | URISyntaxException e) {
                 throw new CubeStoreException(e, "Invalid Event"
                     , cubeEventMetaInfo);
             }
