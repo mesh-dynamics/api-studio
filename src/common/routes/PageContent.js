@@ -37,7 +37,7 @@ class PageContent extends Component {
         </div>
         {TestResults}
         {PathResults}
-        {DiffResults}
+        {/* {DiffResults} */}
         {ReviewGolden}
         {replay}
         {TestConfig}
