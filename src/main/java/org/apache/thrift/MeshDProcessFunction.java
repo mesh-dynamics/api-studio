@@ -69,7 +69,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 			try {
 				if (CommonConfig.isIntentToRecord()) {
 					EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
-						CommonUtils.cubeTraceInfoFromContext(), RunType.Record,
+						CommonUtils.mdTraceInfoFromContext(), RunType.Record,
 						constructApiPath(methodName, args),
 						EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
 						Constants.DEFAULT_COLLECTION)
@@ -97,7 +97,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 		try {
 			if (CommonConfig.isIntentToMock()) {
 				EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
-					CommonUtils.cubeTraceInfoFromContext(), RunType.Replay,
+					CommonUtils.mdTraceInfoFromContext(), RunType.Replay,
 					constructApiPath(methodName, args),
 					EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
 					Constants.DEFAULT_COLLECTION)
@@ -135,7 +135,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 		if (CommonConfig.isIntentToRecord()) {
 			try {
 				EventBuilder eventBuilder = new EventBuilder(CommonUtils.cubeMetaInfoFromEnv(),
-					CommonUtils.cubeTraceInfoFromContext(), RunType.Record,
+					CommonUtils.mdTraceInfoFromContext(), RunType.Record,
 					constructApiPath(methodName, result),
 					EventType.ThriftResponse, Optional.of(Instant.now()), reqId,
 					Constants.DEFAULT_COLLECTION)

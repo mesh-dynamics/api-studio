@@ -27,6 +27,7 @@ import com.google.gson.reflect.TypeToken;
 import io.cube.agent.FnReqResponse.RetStatus;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
+import io.md.dao.MDTraceInfo;
 import io.md.utils.FnKey;
 
 /*
@@ -140,8 +141,10 @@ public class SimpleMocker implements Mocker {
 			.concat(parentSpanId.orElse(""))
 			.concat(fnKey.signature).hashCode();
 
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null), spanId.orElse(null),
+			parentSpanId.orElse(null));
 		JsonObject payload = createPayload(null, gson, args);
-		Optional<Event> event = createEvent(fnKey, traceId, RunType.Replay,
+		Optional<Event> event = createEvent(fnKey, mdTraceInfo, RunType.Replay,
 			Optional.of(prevRespTS.orElse(fnMap.get(key))), payload);
 
 		return event.map(eve -> {

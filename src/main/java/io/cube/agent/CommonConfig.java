@@ -19,6 +19,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -34,9 +35,9 @@ import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
+import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 public class CommonConfig {
 
@@ -64,6 +65,7 @@ public class CommonConfig {
 	public String customerId, app, instance, serviceName, samplerType;
 	public final Optional<EncryptionConfig> encryptionConfig;
 	public Number samplerRate, samplerAccuracy;
+	public boolean samplerVeto;
 	public List<String> headerParams;
 	public Sampler sampler;
 
@@ -155,9 +157,10 @@ public class CommonConfig {
 		this(new Properties());
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
-			GlobalTracer.register(tracer);
+			MDGlobalTracer.register(tracer);
 		} catch (IllegalStateException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,"Trying to register a tracer when one is already registered")),e);
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Trying to register a tracer when one is already registered")), e);
 		}
 		sampler = createSampler();
 	}
@@ -203,11 +206,15 @@ public class CommonConfig {
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_HEADER_PARAMS,
 				dynamicProperties)
 				.orElse(Strings.EMPTY));
+		samplerVeto = BooleanUtils.toBoolean(
+			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_VETO, dynamicProperties)
+				.orElse("false"));
 		// TODO Replace with constants once it comes in commons
 //        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
 
 		// TODO Should encryptionConfig be made static and not updated every time ?
-		encryptionConfig = fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.ENCRYPTION_CONF_FILE_PATH,
+		encryptionConfig = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.ENCRYPTION_CONF_FILE_PATH,
 			dynamicProperties).flatMap(ecf -> {
 			try {
 				return Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
@@ -225,7 +232,8 @@ public class CommonConfig {
 		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
 		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
 
-		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,"PROPERTIES POLLED :: " + this.toString())));
+		LOGGER.info(new ObjectMessage(
+			Map.of(Constants.MESSAGE, "PROPERTIES POLLED :: " + this.toString())));
 	}
 
 	public WebTarget getCubeRecordService() {

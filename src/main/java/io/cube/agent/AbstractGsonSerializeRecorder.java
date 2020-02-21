@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
+import io.md.dao.MDTraceInfo;
 import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
@@ -101,7 +102,9 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 		Object... args) {
 		try {
 			JsonObject payload = createPayload(responseOrException, gson, args);
-			Optional<Event> event = createEvent(fnKey, traceId, RunType.Record,
+			MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null),
+				spanId.orElse(null), parentSpanId.orElse(null));
+			Optional<Event> event = createEvent(fnKey, mdTraceInfo, RunType.Record,
 				Optional.of(Instant.now()), payload);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
 				LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName, "trace_id",

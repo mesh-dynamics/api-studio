@@ -11,6 +11,7 @@ import io.md.constants.Constants;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
+import io.md.dao.MDTraceInfo;
 
 public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
@@ -46,10 +47,12 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
 			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
 
+			MDTraceInfo mdTraceInfo = new MDTraceInfo(event.getTraceId(), null, null);
+
 			String jsonSerialized = payloadOptional.map(UtilException.rethrowFunction(payload -> {
 				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
 					event.service, event.instanceId,
-					event.getCollection(), event.getTraceId(), event.runType,
+					event.getCollection(), mdTraceInfo, event.runType,
 					Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType);
 				eventBuilder.setPayload(payload);
 				eventBuilder.setRawPayloadString(payload.toString());
