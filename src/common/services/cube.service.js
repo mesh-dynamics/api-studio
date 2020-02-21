@@ -91,7 +91,8 @@ async function getNewTemplateVerInfo(app, currentTemplateVer) {
             method: "post",
             headers:{
                 'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token']
+                "Authorization": "Bearer " + user['access_token'],
+                "Content-Type": "application/json"
             }
         });
         if (response.ok) {
@@ -280,7 +281,7 @@ async function getTestIds (options) {
 async function fetchCollectionList(app) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.recordBaseUrl}/recordings?customerid=${user.customer_name}&app=${app}`;
+    let url = `${config.recordBaseUrl}/recordings?customerId=${user.customer_name}&app=${app}`;
     let collections = [];
     try {
         response = await fetch(url, {

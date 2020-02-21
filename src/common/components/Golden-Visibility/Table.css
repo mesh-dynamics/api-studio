@@ -30,3 +30,9 @@
 .gv-table-row {
     display: flex
 }
+
+.gv-table-empty {
+    padding: 5px;
+    font-size: 12px;
+    font-weight: 500;
+}

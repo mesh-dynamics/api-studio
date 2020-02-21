@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
+import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
@@ -40,8 +41,10 @@ class ShareableLink extends Component {
             shownResponseMessageBody: true,
             showRequestMessageHeaders: false,
             shownRequestMessageHeaders: false,
-            showRequestMessageParams: false,
-            shownRequestMessageParams: false,
+            showRequestMessageQParams: false,
+            shownRequestMessageQParams: false,
+            showRequestMessageFParams: false,
+            shownRequestMessageFParams: false,
             showRequestMessageBody: false,
             shownRequestMessageBody: false,
             selectedService: "All",
@@ -59,6 +62,7 @@ class ShareableLink extends Component {
             replayId: null,
             recordingId: null,
             currentPageNumber: 1,
+            isFetching: true,
             fetchComplete: false,
             fetchedResults: 0,
             selectedReqRespMatchType: "responseMismatch",
@@ -104,7 +108,8 @@ class ShareableLink extends Component {
         const selectedResolutionType = urlParameters["selectedResolutionType"];
         const searchFilterPath = urlParameters["searchFilterPath"];
         const requestHeaders = urlParameters["requestHeaders"];
-        const requestParams = urlParameters["requestParams"];
+        const requestQParams = urlParameters["requestQParams"];
+        const requestFParams = urlParameters["requestFParams"];
         const requestBody = urlParameters["requestBody"];
         const responseHeaders = urlParameters["responseHeaders"];
         const responseBody = urlParameters["responseBody"];
@@ -134,9 +139,12 @@ class ShareableLink extends Component {
             // request header
             showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
             shownRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
-            // request params
-            showRequestMessageParams: requestParams ? JSON.parse(requestParams) : false,
-            shownRequestMessageParams: requestParams ? JSON.parse(requestParams) : false,
+            // request query params
+            showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+            shownRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+            // request form params
+            showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
+            shownRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
             // request body
             showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
             shownRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
@@ -237,13 +245,14 @@ class ShareableLink extends Component {
         if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
         if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
         if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
-        if (e.target.value === "requestParams") this.setState({ showRequestMessageParams: e.target.checked, shownRequestMessageParams: true });
+        if (e.target.value === "requestQParams") this.setState({ showRequestMessageQParams: e.target.checked, shownRequestMessageQParams: true });
+        if (e.target.value === "requestFParams") this.setState({ showRequestMessageFParams: e.target.checked, shownRequestMessageFParams: true });
         if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
 
         setTimeout(() => {
-            const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageParams, showRequestMessageBody } = this.state;
+            const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody } = this.state;
 
-            if(showResponseMessageHeaders === false && showResponseMessageBody === false && showRequestMessageHeaders === false &&  showRequestMessageParams === false && showRequestMessageBody === false) {
+            if(showResponseMessageHeaders === false && showResponseMessageBody === false && showRequestMessageHeaders === false &&  showRequestMessageQParams === false && showRequestMessageFParams === false && showRequestMessageBody === false) {
                 this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
             }
         });
@@ -359,24 +368,60 @@ class ShareableLink extends Component {
                         let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
-                    this.setState({
-                        fetchComplete: true
-                    });
+                    this.setState({ isFetching: false, fetchComplete: true });
                 });
             } else {
+                this.setState({ isFetching: false, fetchComplete: true });
                 throw new Error("Response not ok fetchTimeline");
             }
         } catch (e) {
+            this.setState({ isFetching: false, fetchComplete: false });
             console.error("fetchTimeline has errors!", e);
             throw e;
         }
     }
 
+    validateAndCleanHTTPMessageParts (messagePart) {
+        let cleanedMessagepart = "";
+        if (messagePart &&_.isObject(messagePart)) {
+            cleanedMessagepart = messagePart;
+        } else if (messagePart) {
+            try {
+                cleanedMessagepart = JSON.parse(messagePart);
+            } catch (e) {
+                cleanedMessagepart = JSON.parse('"' + cleanEscapedString(_.escape(messagePart)) + '"')
+            }
+        } else {
+            cleanedMessagepart = JSON.parse('""');
+        }
+
+        return cleanedMessagepart;
+    }
+
+    getDiffForMessagePart(replayedPart, recordedPart, serverSideDiff, prefix, service, path) {
+        if (!serverSideDiff || serverSideDiff.length === 0) return null; 
+        let actpart = JSON.stringify(replayedPart, undefined, 4);
+        let expPart = JSON.stringify(recordedPart, undefined, 4);
+        let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
+        let reductedDiffArrayMsgPart = reducedDiffArrayMsgPart.computeDiffArray()
+        let updatedReductedDiffArrayMsgPart = reductedDiffArrayMsgPart && reductedDiffArrayMsgPart.map((eachItem) => {
+            return {
+                ...eachItem,
+                service,
+                app: this.state.app,
+                templateVersion: this.state.templateVersion,
+                apiPath: path,
+                replayId: this.state.replayId,
+                recordingId: this.state.recordingId
+            }
+        });
+        return updatedReductedDiffArrayMsgPart;
+    }
+
     validateAndCreateDiffLayoutData(replayList) {
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
-                recordedRequestHeaders, replayedRequestHeaders, recordedRequestParams, replayedRequestParams, recordedRequestBody,
-                replayedRequestBody;
+                recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
             let isJson = true;
             // processing Response    
             // recorded response body and headers
@@ -397,8 +442,8 @@ class ShareableLink extends Component {
                     recordedData = item.recordResponse.body ? item.recordResponse.body : '""';
                 }
             } else {
-                recordedResponseHeaders = null;
-                recordedData = null;
+                recordedResponseHeaders = "";
+                recordedData = "";
             }
 
             // same as above but for replayed response
@@ -419,18 +464,18 @@ class ShareableLink extends Component {
                     replayedData = item.replayResponse.body ? item.replayResponse.body : '""';
                 }
             } else {
-                replayedResponseHeaders = null;
+                replayedResponseHeaders = "";
                 replayedData = "";
             }
             let diff;
-
+            
             if (item.respCompDiff && item.respCompDiff.length !== 0) {
                 diff = item.respCompDiff;
             } else {
                 diff = [];
             }
-            let actJSON = JSON.stringify(replayedData, undefined, 4),
-                expJSON = JSON.stringify(recordedData, undefined, 4);
+            let actJSON = JSON.stringify(sortJson(replayedData), undefined, 4),
+                expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
             let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
 
             let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
@@ -487,44 +532,36 @@ class ShareableLink extends Component {
             // recorded request header and body
             // parse and clean up body string
             if (item.recordRequest) {
-                recordedRequestHeaders = item.recordRequest.hdrs ? item.recordRequest.hdrs : {};
-                recordedRequestParams = item.recordRequest.queryParams ? item.recordRequest.queryParams : {};
-                if (item.recordRequest.body) {
-                    try {
-                        recordedRequestBody = JSON.parse(item.recordRequest.body);
-                    } catch (e) {
-                        recordedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.recordRequest.body)) + '"')
-                    }
-                }
-                else {
-                    recordedRequestBody = JSON.parse('""');
-                }
+                recordedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
+                recordedRequestBody = this.validateAndCleanHTTPMessageParts(item.recordRequest.body);
+                recordedRequestQParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
+                recordedRequestFParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
             } else {
-                recordedRequestHeaders = null;
+                recordedRequestHeaders = "";
                 recordedRequestBody = "";
-                recordedRequestParams = null;
+                recordedRequestQParams = "";
+                recordedRequestFParams = "";
             }
 
             // replayed request header and body
             // same as above
-            if (item.replayRequest) { 
-                replayedRequestHeaders = item.replayRequest.hdrs ? item.replayRequest.hdrs : {};
-                replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
-                if (item.replayRequest.body) {
-                    try {
-                        replayedRequestBody = JSON.parse(item.replayRequest.body);
-                    } catch (e) {
-                        replayedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.replayRequest.body)) + '"')
-                    }
-                }
-                else {
-                    replayedRequestBody = JSON.parse('""');
-                }
+            if (item.replayRequest) {
+                replayedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
+                replayedRequestBody = this.validateAndCleanHTTPMessageParts(item.replayRequest.body);
+                replayedRequestQParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
+                replayedRequestFParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
             } else {
                 replayedRequestHeaders = "";
                 replayedRequestBody = "";
-                replayedRequestParams = "";
+                replayedRequestQParams = "";
+                replayedRequestFParams = "";
             }
+
+            reductedDiffArrayReqHeaders = this.getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path);
+            reductedDiffArrayReqQParams = this.getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path);
+            reductedDiffArrayReqFParams = this.getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path);
+            reductedDiffArrayReqBody = this.getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path);
+
             return {
                 ...item,
                 recordedResponseHeaders,
@@ -539,11 +576,17 @@ class ShareableLink extends Component {
                 show: true,
                 recordedRequestHeaders,
                 replayedRequestHeaders,
-                recordedRequestParams,
-                replayedRequestParams,
+                recordedRequestQParams,
+                replayedRequestQParams,
+                recordedRequestFParams,
+                replayedRequestFParams,
                 recordedRequestBody,
                 replayedRequestBody,
-                updatedReducedDiffArrayRespHdr
+                updatedReducedDiffArrayRespHdr,
+                reductedDiffArrayReqHeaders,
+                reductedDiffArrayReqQParams,
+                reductedDiffArrayReqFParams,
+                reductedDiffArrayReqBody
             }
         });
         return diffLayoutData;
@@ -573,7 +616,7 @@ class ShareableLink extends Component {
     };
 
     render() {
-        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType} = this.state;
+        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType, replayId, app, service, apiPath} = this.state;
         let apiPaths = [], services = [], resolutionTypes = [];
         let apiPathIndicators = {};
         const {cube, history} = this.props;
@@ -786,10 +829,15 @@ class ShareableLink extends Component {
         }
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
-                <div style={{ backgroundColor: "#EAEAEA", paddingTop: "18px", paddingBottom: "18px", paddingLeft: "10px" }}>
-                    {item.path}
+                <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
+                    <div style={{display: "inline-block"}}>{item.path}</div>
+                    <div style={{ marginTop: "5px" }}>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                            <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
+                        </Button>
+                    </div>
                 </div>
-                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && item.recordedRequestHeaders && item.replayedRequestHeaders && (
+                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && (
                     <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -799,31 +847,47 @@ class ShareableLink extends Component {
                                 newValue={JSON.stringify(item.replayedRequestHeaders, undefined, 4)}
                                 splitView={true}
                                 disableWordDiff={false}
-                                diffArray={null}
+                                diffArray={item.reductedDiffArrayReqHeaders}
                                 onLineNumberClick={(lineId, e) => { return; }}
                             />
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageParams || this.state.shownRequestMessageParams) && item.recordedRequestParams && item.replayedRequestParams && (
-                    <div style={{ display: this.state.showRequestMessageParams ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Params</Label></h4>
+                {(this.state.showRequestMessageQParams || this.state.shownRequestMessageQParams) && (
+                    <div style={{ display: this.state.showRequestMessageQParams ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Query Params</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
                                 styles={newStyles}
-                                oldValue={JSON.stringify(item.recordedRequestParams, undefined, 4)}
-                                newValue={JSON.stringify(item.replayedRequestParams, undefined, 4)}
+                                oldValue={JSON.stringify(item.recordedRequestQParams, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestQParams, undefined, 4)}
                                 splitView={true}
                                 disableWordDiff={false}
-                                diffArray={null}
+                                diffArray={item.reductedDiffArrayReqQParams}
                                 onLineNumberClick={(lineId, e) => { return; }}
                             />
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && item.recordedRequestBody && item.replayedRequestBody && (
+                {(this.state.showRequestMessageFParams || this.state.shownRequestMessageFParams) && (
+                    <div style={{ display: this.state.showRequestMessageFParams ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Form Params</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestFParams, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestFParams, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={item.reductedDiffArrayReqFParams}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && (
                     <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
-                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body (Includes Form Params)</Label></h4>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
                                 styles={newStyles}
@@ -831,13 +895,13 @@ class ShareableLink extends Component {
                                 newValue={JSON.stringify(item.replayedRequestBody, undefined, 4)}
                                 splitView={true}
                                 disableWordDiff={false}
-                                diffArray={null}
+                                diffArray={item.reductedDiffArrayReqBody}
                                 onLineNumberClick={(lineId, e) => { return; }}
                             />
                         </div>
                     </div>
                 )}
-                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && item.recordedResponseHeaders && item.replayedResponseHeaders && (
+                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && (
                     <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                         <div className="headers-diff-wrapper">
@@ -916,8 +980,8 @@ class ShareableLink extends Component {
         return (
             <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
-                    <span className="link pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
+                    <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                    <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                     <Link to="/review_golden_updates" className="hidden">
                         <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
                     </Link>
@@ -953,7 +1017,8 @@ class ShareableLink extends Component {
                     </div>
                     <FormGroup>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={this.state.showRequestMessageHeaders}>Request Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestParams" checked={this.state.showRequestMessageParams}>Request Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={this.state.showRequestMessageQParams}>Request Query Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={this.state.showRequestMessageFParams}>Request Form Params</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={this.state.showRequestMessageBody}>Request Body</Checkbox>
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
@@ -989,14 +1054,25 @@ class ShareableLink extends Component {
                             inputRef={ref => { this.input = ref; }}
                         />
                     </FormGroup>
-                    <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
-                        <div style={{textAlign: "left"}}>{pageButtons}</div>
-                    </ButtonGroup>
+                    {
+                        !this.state.isFetching && this.state.fetchComplete && jsxContent.length !== 0 &&
+                        (
+                            <ButtonGroup style={{marginBottom: "9px", width: "100%"}}>
+                                <div style={{textAlign: "left"}}>{pageButtons}</div>
+                            </ButtonGroup>
+                        )
+                    }
                 </div>
-                <div>
-                    {jsxContent}
+                <div className={(this.state.isFetching || jsxContent.length === 0) ? "loading-text" : ""}>
+                    {
+                        !this.state.isFetching && this.state.fetchComplete 
+                        ? 
+                            (
+                                () => (jsxContent.length === 0 ? "No Mismatches Found" : (jsxContent))
+                            )() 
+                        : "Loading..."
+                    }
                 </div>
-
                 <Modal show={this.state.showNewGolden}>
                     <Modal.Header>
                         <Modal.Title>{!cube.newGoldenId ? "Saving Golden" : "Golden Saved"}</Modal.Title>

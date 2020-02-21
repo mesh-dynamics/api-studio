@@ -36,6 +36,17 @@
     color: #828282;
 }
 
-.activation-success {
+.activation-link {
+    color: #000;
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+.activation-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.flex-column {
     flex-direction: column;
 }

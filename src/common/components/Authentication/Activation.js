@@ -9,23 +9,32 @@ const ACTIVATION = {
     FAILURE: "FAILURE"
 }
 
+const STATUS_ERROR_CODE = {
+    ACCOUNT_ACTIVATED: 409,
+    SERVER_ERROR: 500
+};
+
 const Activation = (props) => {
     const { location: { search }, history }  = props;
+
+    const [statusErrorCode, setStatusErrorCode] = useState(null);
 
     const [activationState, setActivationState] = useState(ACTIVATION.INIT);
 
     const triggerActivation = async () => {
         try {
-            const status = await verifyActivationToken(search);
+            const response = await verifyActivationToken(search);
 
-            if(status.ok) {
+            if(response.ok) {
                 setActivationState(ACTIVATION.SUCCESS);
             } else {
                 setActivationState(ACTIVATION.FAILURE);
+                setStatusErrorCode(response.status);
             }
 
         } catch(e) {
-            setActivationState(ACTIVATION.FAILURE)
+            setActivationState(ACTIVATION.FAILURE);
+            setStatusErrorCode(STATUS_ERROR_CODE.SERVER_ERROR);
         }
         
     }
@@ -41,12 +50,12 @@ const Activation = (props) => {
 
     const renderActivationSuccess = () => (
         <div className="activation-message-container">
-            <div className="activation-message activation-success">
+            <div className="activation-message flex-column">
                 <span>
                     Your account has been activated. You will be automatically redirected to login page.
                 </span>
                 <span>
-                    <Link to="/login">Click here</Link> to continue manually.
+                    <Link to="/login" className="activation-link">Click here</Link> to continue manually.
                 </span>
             </div>
         </div>
@@ -54,9 +63,27 @@ const Activation = (props) => {
 
     const renderActivationFailure = () => (
         <div className="activation-message-container">
-            <div className="activation-message">
-                We could not activate your account. Please contact your system administrator for further instructions.
-            </div>
+            {
+                statusErrorCode === STATUS_ERROR_CODE.ACCOUNT_ACTIVATED 
+                ?
+                <div className="activation-message flex-column">
+                    <span>
+                        Account already activated.
+                    </span>
+                    <span>
+                        <Link className="activation-link" to="/login">Click here</Link> to login.
+                    </span>
+                </div>
+                :
+                <div className="activation-message flex-column">
+                    <span>
+                        We could not activate your account. Please contact your system administrator for further instructions
+                    </span>
+                    <span>
+                        or <Link className="activation-link" to="/login/resend-activation-link">click here</Link> to resend activation link.
+                    </span>
+                </div>
+            }
         </div>
     );
 

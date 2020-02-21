@@ -5,10 +5,10 @@ import {cubeActions} from "../actions";
 import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
+// import { history } from "../helpers";
 import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
-import {authentication} from "../reducers/authentication.reducer";
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -84,6 +84,7 @@ class ViewSelectedTestConfig extends React.Component {
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
+            dispatch(goldenActions.setSelectedGolden({ collec: e.target.value, testIds: cube.testIds }));
         }
     };
     
@@ -209,11 +210,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     showRecordModal = () => {
         const { cube } = this.props;
-        if (!cube.selectedTestId) {
-            alert('select golden to replay');
-        } else {
-            this.setState({recordModalVisible: true});
-        }
+        this.setState({recordModalVisible: true});
     };
 
     handleCloseRecModal = () => {
@@ -225,6 +222,7 @@ class ViewSelectedTestConfig extends React.Component {
         
         this.setState({ showGoldenMeta: true });
         dispatch(cubeActions.hideGoldenVisibility(false))
+        // history.push({ pat}"/test_config_view/`");
     };
 
     handleBackToTestInfoClick = () => {
@@ -237,7 +235,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     renderTestInfo = () => {
-        const { cube } = this.props;
+        const { cube, authentication: { user: { username } } } = this.props;
 
         return(
             <Fragment>
@@ -284,7 +282,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
                         {
                             cube.selectedInstance && cube.selectedTestId &&
-                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer", visibility: "hidden" }}>
+                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
                                         <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
                                     </span>
                         }
@@ -295,8 +293,19 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10 row">
-                    <div className="col-sm-6"><div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div></div>
-                    <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
+                    <div className={
+                        (cube.selectedApp === "MovieInfo" && !username.includes("guest@meshdynamics.io"))
+                        ? "col-sm-6" 
+                        : "col-sm-6 width-100"
+                        }
+                    >
+                        <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
+                    </div>
+                    {
+                        (cube.selectedApp === "MovieInfo" && !username.includes("guest@meshdynamics.io"))
+                        &&
+                        <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
+                    }
                 </div>
             </Fragment>
         );
@@ -462,8 +471,7 @@ class ViewSelectedTestConfig extends React.Component {
     startRecord = () => {
         const { cube, authentication } = this.props;
         let user = authentication.user;
-        let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
-        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/${instance}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
+        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/record/${this.state.recName}/RespPartialMatch`;
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -487,8 +495,8 @@ class ViewSelectedTestConfig extends React.Component {
         });
 
         let checkStatus = () => {
-            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
-            axios.get(csUrl).then(response => {
+            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/RespPartialMatch`;
+            axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
         };
@@ -506,8 +514,8 @@ class ViewSelectedTestConfig extends React.Component {
         };
         axios.post(url, {}, configForHTTP).then((response) => {
             this.setState({stopDisabled: true, recId: null});
-            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${cube.selectedTestId}/${cube.collectionTemplateVersion}`;
-            axios.get(csUrl).then(response => {
+            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/RespPartialMatch`;
+            axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
         });
@@ -516,20 +524,23 @@ class ViewSelectedTestConfig extends React.Component {
     replay = () => {
         const { cube, dispatch, authentication } = this.props;
         const { testConfig: { testPaths }} = cube;
-
+        const selectedInstances = cube.instances
+            .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
         cubeActions.clearReplayStatus();
-        if (!cube.selectedTestId) {
+         if(!cube.selectedInstance){
+            alert('select an instance to replay')
+        } else if (!cube.selectedTestId) {
             alert('select golden to replay');
+        } else if(selectedInstances.length === 0) {
+            alert('Gateway endpoint is unavailable')
         } else {
             this.setState({show: true});
             let user = authentication.user;
             let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
-            let instance = cube.selectedInstance ? cube.selectedInstance : 'prod';
-            let selectedInstances = cube.instances.filter((item) => item.name == instance && item.app.name == cube.selectedApp);
-            let gatewayEndpoint = selectedInstances.length > 0 ? selectedInstances[0].gatewayEndpoint : "http://demo.dev.cubecorp.io";
+            
             const searchParams = new URLSearchParams();
-            searchParams.set('endPoint', gatewayEndpoint);
-            searchParams.set('instanceId', instance);
+            searchParams.set('endPoint', selectedInstances[0].gatewayEndpoint);
+            searchParams.set('instanceId', cube.selectedInstance);
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
             // Append Test Paths

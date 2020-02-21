@@ -6,6 +6,7 @@ import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import ResetLink from "./ResetLink";
 import ResetPassword from "./ResetPassword";
+import ResendActivation from './ResendActivation'
 import "./Login.css";
 
 const LoginPage = (props) => {
@@ -32,6 +33,7 @@ const LoginPage = (props) => {
                                                     <Route exact path="/login" component={SignIn} />
                                                     <Route path="/login/register" component={SignUp} />
                                                     <Route path="/login/reset-link" component={ResetLink} />
+                                                    <Route path="/login/resend-activation-link" component={ResendActivation} />
                                                     <Route path="/login/reset-password" component={ResetPassword} />
                                                     <Route path="/login/*" component={SignIn} />
                                                 </Switch>

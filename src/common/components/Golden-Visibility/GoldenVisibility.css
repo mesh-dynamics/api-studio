@@ -126,3 +126,39 @@
     min-width: 175px;
     overflow: hidden;
 }
+
+.gv-edit-icon-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 5px;
+}
+
+.gv-message-text-generic {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    font-size: 12px;
+    text-align: center;
+}
+
+.gv-table-key {
+    min-width: 300px;
+    word-break: break-word;
+}
+
+.gv-sub-section-banner {
+    padding: 5px 10px;
+    background: #d6d1d1;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;   
+    margin-top: 10px;
+}
+
+.gv-insights-prompt {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+}
