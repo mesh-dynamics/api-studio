@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
+import ReactDiffViewer from '../../utils/diff/diff-main';
 
 export default class DiffResultsList extends Component {
     constructor(props) {
@@ -15,6 +16,7 @@ export default class DiffResultsList extends Component {
         }
         this.selectedResolutionType = "All";
         this.resolutionTypes = [{value: "ERR", count: 2}];
+        this.pagedDiffLayoutData = [];
     }
 
     handleMetaDataSelect = (metaDataType, value) => {
@@ -112,12 +114,174 @@ export default class DiffResultsList extends Component {
         )
     }
 
+    renderResultsList = () => {
+        const newStyles = {
+            variables: {
+                addedBackground: '#e6ffed !important',
+                addedColor: '#24292e  !important',
+                removedBackground: '#ffeef0  !important',
+                removedColor: '#24292e  !important',
+                wordAddedBackground: '#acf2bd  !important',
+                wordRemovedBackground: '#fdb8c0  !important',
+                addedGutterBackground: '#cdffd8  !important',
+                removedGutterBackground: '#ffdce0  !important',
+                gutterBackground: '#f7f7f7  !important',
+                gutterBackgroundDark: '#f3f1f1  !important',
+                highlightBackground: '#fffbdd  !important',
+                highlightGutterBackground: '#fff5b1  !important',
+            },
+            line: {
+                padding: '10px 2px',
+                '&:hover': {
+                    background: '#f7f7f7',
+                },
+            }
+        };
+        return this.pagedDiffLayoutData.map((item, index) => {
+            return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
+                <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
+                    <div style={{display: "inline-block"}}>{item.path}</div>
+                    <div style={{ marginTop: "5px" }}>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                            <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
+                        </Button>
+                    </div>
+                </div>
+                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && (
+                    <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestHeaders, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestHeaders, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={item.reductedDiffArrayReqHeaders}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showRequestMessageQParams || this.state.shownRequestMessageQParams) && (
+                    <div style={{ display: this.state.showRequestMessageQParams ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Query Params</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestQParams, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestQParams, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={item.reductedDiffArrayReqQParams}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showRequestMessageFParams || this.state.shownRequestMessageFParams) && (
+                    <div style={{ display: this.state.showRequestMessageFParams ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Form Params</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestFParams, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestFParams, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={item.reductedDiffArrayReqFParams}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && (
+                    <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedRequestBody, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedRequestBody, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={item.reductedDiffArrayReqBody}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && (
+                    <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
+                        <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
+                        <div className="headers-diff-wrapper">
+                            < ReactDiffViewer
+                                styles={newStyles}
+                                oldValue={JSON.stringify(item.recordedResponseHeaders, undefined, 4)}
+                                newValue={JSON.stringify(item.replayedResponseHeaders, undefined, 4)}
+                                splitView={true}
+                                disableWordDiff={false}
+                                diffArray={item.updatedReducedDiffArrayRespHdr}
+                                onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={this.state.showAll}
+                                searchFilterPath={this.state.searchFilterPath}
+                                filterPaths={item.filterPaths}
+                                inputElementRef={this.inputElementRef}
+                            />
+                        </div>
+                    </div>
+                )}
+                {(
+                    <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
+                        <div className="row">
+                            <div className="col-md-6">
+                                <h4>
+                                    <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
+                                    {item.recordResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.recordResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Recorded Data</span>}
+                                </h4>
+                            </div>
+
+                            <div className="col-md-6">
+                                <h4 style={{marginLeft: "18%"}}>
+                                {item.replayResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(item.replayResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Replayed Data</span>}
+                                </h4>
+                            </div>
+                        </div>
+                        <div>
+                            {item.missedRequiredFields.map((eachMissedField) => {
+                                return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
+                            })}
+                        </div>
+                        {(item.recordedData || item.replayedData) && (
+                            <div className="diff-wrapper">
+                                < ReactDiffViewer
+                                    styles={newStyles}
+                                    oldValue={item.expJSON}
+                                    newValue={item.actJSON}
+                                    splitView={true}
+                                    disableWordDiff={false}
+                                    diffArray={item.reductedDiffArray}
+                                    filterPaths={item.filterPaths}
+                                    onLineNumberClick={(lineId, e) => { return; }}
+                                    inputElementRef={this.inputElementRef}
+                                    showAll={this.state.showAll}
+                                    searchFilterPath={this.state.searchFilterPath}
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div >);
+        });
+    }
+
     render() {
         // TODO
         
         return (
             <div>
                 {this.renderToggleRibbon()}
+                {this.renderResultsList()}
             </div>
         )
     }
