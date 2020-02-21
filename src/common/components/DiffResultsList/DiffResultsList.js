@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 
@@ -63,13 +63,12 @@ export default class DiffResultsList extends Component {
         }
     }
 
-
-    render() {
-        //TODO
+    renderToggleRibbon = () => {
+        // TODO
         let selectedResolutionType = this.selectedResolutionType;
 
         return (
-            <div>
+            <Fragment>
                 <FormGroup>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={this.state.showRequestMessageHeaders}>Request Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={this.state.showRequestMessageQParams}>Request Query Params</Checkbox>
@@ -109,6 +108,16 @@ export default class DiffResultsList extends Component {
                             inputRef={ref => { this.input = ref; }}
                         /> */}
                     </FormGroup>
+            </Fragment>
+        )
+    }
+
+    render() {
+        // TODO
+        
+        return (
+            <div>
+                {this.renderToggleRibbon()}
             </div>
         )
     }
