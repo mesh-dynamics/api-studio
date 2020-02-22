@@ -48,7 +48,7 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.Format.Builtin;
-import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 
 
@@ -74,12 +74,13 @@ public class CommonUtils {
 		if (MDGlobalTracer.isRegistered()) {
 			Tracer tracer = MDGlobalTracer.get();
 
-			Scope scope = null;
+			Span span = null;
 			//Added for the JDBC init case, but also to segregate
 			//any calls without a span to a default span.
 			if (tracer.activeSpan() == null) {
 				MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
-				scope = CommonUtils.startServerSpan(headers, "dummy-span");
+				span = startServerSpan(headers, "dummy-span");
+				Scope scope = activateSpan(span);
 			}
 
 			Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
@@ -97,8 +98,8 @@ public class CommonUtils {
 					.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY, currentIntent);
 			}
 
-			if (scope != null) {
-				scope.close();
+			if (span != null) {
+				span.finish();
 			}
 
 		}
@@ -154,15 +155,39 @@ public class CommonUtils {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
 	}*/
 
-	public static Scope startClientSpan(String operationName) {
+	public static Scope activateSpan(Span span) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
 		Tracer tracer = MDGlobalTracer.get();
-		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
-		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-			.startActive(true);
+		return tracer.scopeManager().activate(span);
 	}
 
-	public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders,
+	public static Span startClientSpan(String operationName, Map<String, String> tags) {
+		Tracer tracer = MDGlobalTracer.get();
+		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
+		tags.forEach(spanBuilder::withTag);
+		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT).start();
+	}
+
+	public static Span startClientChildSpan(String operationName, SpanContext parentContext,
+		Map<String, String> tags) {
+		LOGGER.info("PARENT SPAN CONTEXT WAS PASSED FROM REQUEST TO RESPONSE");
+		Tracer tracer = MDGlobalTracer.get();
+		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName).
+			asChildOf(parentContext);
+		tags.forEach(spanBuilder::withTag);
+		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+			.withTag("runId" , "async-log")
+			.start();
+	}
+
+	public static Span startClientSpan(String operationName) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
+		return startClientSpan(operationName, Collections.emptyMap());
+	}
+
+	public static Span startServerSpan(MultivaluedMap<String, String> rawHeaders,
 		String operationName) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
 		// format the headers for extraction
 		Tracer tracer = MDGlobalTracer.get();
 		final HashMap<String, String> headers = new HashMap<String, String>();
@@ -174,9 +199,9 @@ public class CommonUtils {
 		Tracer.SpanBuilder spanBuilder;
 		try {
 			SpanContext parentSpanCtx = tracer
-				.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headers));
+				.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headers));
 			if (parentSpanCtx == null) {
-				spanBuilder = tracer.buildSpan(operationName);
+				spanBuilder = tracer.buildSpan(operationName).ignoreActiveSpan();
 			} else {
 				spanBuilder = tracer.buildSpan(operationName).asChildOf(parentSpanCtx);
 			}
@@ -185,7 +210,8 @@ public class CommonUtils {
 		}
 		// TODO could add more tags like http.url
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.startActive(true);
+			.withTag("runId" , "async-log")
+			.start();
 	}
 
 	public static JaegerTracer init(String service) {
@@ -322,7 +348,7 @@ public class CommonUtils {
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
 	}
 
-	public static Scope startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
+	public static Span startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
 		Tracer tracer = MDGlobalTracer.get();
 		Tracer.SpanBuilder spanBuilder;
 		try {
@@ -336,8 +362,7 @@ public class CommonUtils {
 			spanBuilder = tracer.buildSpan(methodName);
 		}
 		// TODO could add more tags like http.url
-		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.startActive(true);
+		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).start();
 	}
 
 	//TODO assuming that the name of the field/argument containing will always be span

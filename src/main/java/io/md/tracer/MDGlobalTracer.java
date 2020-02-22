@@ -3,6 +3,7 @@ package io.md.tracer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -50,6 +51,11 @@ public class MDGlobalTracer implements Tracer {
 	}
 
 	@Override
+	public Scope activateSpan(Span span) {
+		return tracer.activateSpan(span);
+	}
+
+	@Override
 	public SpanBuilder buildSpan(String s) {
 		return tracer.buildSpan(s);
 	}
@@ -62,5 +68,10 @@ public class MDGlobalTracer implements Tracer {
 	@Override
 	public <C> SpanContext extract(Format<C> format, C c) {
 		return tracer.extract(format, c);
+	}
+
+	@Override
+	public void close() {
+		tracer.close();
 	}
 }

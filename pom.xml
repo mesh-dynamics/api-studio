@@ -13,7 +13,7 @@
     <version.httpcomponents>4.5.8</version.httpcomponents>
     <version.jersey>2.27</version.jersey>
     <version.gson>2.8.5</version.gson>
-    <version.jaeger>0.32.0</version.jaeger>
+    <version.jaeger>1.1.0</version.jaeger>
   </properties>
   <!--    <distributionManagement>-->
   <!--      <repository>-->
@@ -120,6 +120,13 @@
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20180813</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.11</version>
     </dependency>
 
   </dependencies>
