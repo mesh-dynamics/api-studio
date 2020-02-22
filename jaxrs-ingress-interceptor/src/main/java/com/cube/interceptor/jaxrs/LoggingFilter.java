@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -30,6 +31,7 @@ import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
+import io.opentracing.Scope;
 import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
@@ -112,52 +114,73 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	private void logRequest(ContainerRequestContext reqContext, String apiPath,
 		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
 		throws IOException {
-		//hdrs
-		MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
+		final Span span = CommonUtils.startClientSpan("reqLog");
+		try (Scope scope = CommonUtils.activateSpan(span)){
+			//hdrs
+			MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
 
-		//meta
-		MultivaluedMap<String, String> meta = Utils
-			.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
+			//meta
+			MultivaluedMap<String, String> meta = Utils
+				.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
 
-		//body
-		String requestBody = getRequestBody(reqContext);
+			//body
+			String requestBody = getRequestBody(reqContext);
 
-		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
-			requestBody);
+			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
+				requestBody);
+		} finally {
+			span.finish();
+		}
 	}
 
 	private void logResponse(WriterInterceptorContext context)
 		throws IOException {
-		Object apiPathObj = context.getProperty(Constants.MD_API_PATH_PROP);
-		Object traceMetaMapObj = context.getProperty(Constants.MD_TRACE_META_MAP_PROP);
-		Object respHeadersObj = context.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
-		Object statusObj = context.getProperty(Constants.MD_STATUS_PROP);
-		Object traceInfo = context.getProperty(Constants.MD_TRACE_INFO);
+		Object parentSpanObj = context.getProperty(TracingFilter.spanKey);
+		Span span = null;
+		if (parentSpanObj != null) {
+			span = CommonUtils.startClientChildSpan("respLog"
+				, ((Span) parentSpanObj).context(), Collections.emptyMap());
+		} else {
+			span = CommonUtils.startClientSpan("respLog");
+		}
 
-		ObjectMapper mapper = new ObjectMapper();
-		//hdrs
-		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ? mapper
-			.convertValue(respHeadersObj, MultivaluedMap.class) : Utils.createEmptyMultivaluedMap();
+		try (Scope scope = CommonUtils.activateSpan(span)) {
+			Object apiPathObj = context.getProperty(Constants.MD_API_PATH_PROP);
+			Object traceMetaMapObj = context.getProperty(Constants.MD_TRACE_META_MAP_PROP);
+			Object respHeadersObj = context.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
+			Object statusObj = context.getProperty(Constants.MD_STATUS_PROP);
+			Object traceInfo = context.getProperty(Constants.MD_TRACE_INFO);
 
-		MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
-			.convertValue(traceMetaMapObj, MultivaluedMap.class)
-			: Utils.createEmptyMultivaluedMap();
-		String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
-		//meta
-		MultivaluedMap<String, String> meta = Utils
-			.getResponseMeta(apiPath,
-				String.valueOf(statusObj != null ? statusObj.toString() : Strings.EMPTY),
-				Optional.empty());
-		meta.putAll(traceMetaMap);
 
-		MDTraceInfo mdTraceInfo = traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
+			ObjectMapper mapper = new ObjectMapper();
+			//hdrs
+			MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ? mapper
+				.convertValue(respHeadersObj, MultivaluedMap.class)
+				: Utils.createEmptyMultivaluedMap();
 
-		//body
-		String responseBody = getResponseBody(context);
+			MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
+				.convertValue(traceMetaMapObj, MultivaluedMap.class)
+				: Utils.createEmptyMultivaluedMap();
+			String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
+			//meta
+			MultivaluedMap<String, String> meta = Utils
+				.getResponseMeta(apiPath,
+					String.valueOf(statusObj != null ? statusObj.toString() : Strings.EMPTY),
+					Optional.empty());
+			meta.putAll(traceMetaMap);
 
-		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
+			MDTraceInfo mdTraceInfo =
+				traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 
-		removeSetContextProperty(context);
+			//body
+			String responseBody = getResponseBody(context);
+
+			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
+
+			removeSetContextProperty(context);
+		} finally {
+			span.finish();
+		}
 	}
 
 	private void removeSetContextProperty(WriterInterceptorContext context) {
@@ -186,27 +209,37 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	}
 
 	private String getRequestBody(ContainerRequestContext reqContext) throws IOException {
-		String json = IOUtils.toString(reqContext.getEntityStream(), StandardCharsets.UTF_8);
-		InputStream in = IOUtils.toInputStream(json, StandardCharsets.UTF_8);
-		reqContext.setEntityStream(in);
+		final Span span = CommonUtils.startClientSpan("reqBody");
+		try (Scope scope = CommonUtils.activateSpan(span)) {
+			String json = IOUtils.toString(reqContext.getEntityStream(), StandardCharsets.UTF_8);
+			InputStream in = IOUtils.toInputStream(json, StandardCharsets.UTF_8);
+			reqContext.setEntityStream(in);
 
-		return json;
+			return json;
+		} finally {
+			span.finish();
+		}
 	}
 
 	private String getResponseBody(WriterInterceptorContext context) throws IOException {
-		OutputStream originalStream = context.getOutputStream();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		String responseBody;
-		context.setOutputStream(baos);
-		try {
-			context.proceed();
-		} finally {
-			responseBody = baos.toString("UTF-8");
-			baos.writeTo(originalStream);
-			baos.close();
-			context.setOutputStream(originalStream);
-		}
+		final Span span = CommonUtils.startClientSpan("respBody");
+		try (Scope scope = CommonUtils.activateSpan(span)) {
+			OutputStream originalStream = context.getOutputStream();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			String responseBody;
+			context.setOutputStream(baos);
+			try {
+				context.proceed();
+			} finally {
+				responseBody = baos.toString("UTF-8");
+				baos.writeTo(originalStream);
+				baos.close();
+				context.setOutputStream(originalStream);
+			}
 
-		return responseBody;
+			return responseBody;
+		} finally {
+			span.finish();
+		}
 	}
 }
