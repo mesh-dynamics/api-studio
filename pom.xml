@@ -12,7 +12,7 @@
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.jersey>2.27</version.jersey>
         <version.gson>2.8.5</version.gson>
-        <version.jaeger>0.32.0</version.jaeger>
+        <version.jaeger>1.1.0</version.jaeger>
     </properties>
     <distributionManagement>
       <repository>
@@ -183,8 +183,15 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0.6</version>
+      <version>1.0.7</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.lmax/disruptor -->
+    <dependency>
+      <groupId>com.lmax</groupId>
+      <artifactId>disruptor</artifactId>
+      <version>3.4.2</version>
+    </dependency>
+
   </dependencies>
 
 </project>

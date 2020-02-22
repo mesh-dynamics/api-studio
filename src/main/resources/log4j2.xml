@@ -12,11 +12,11 @@
     <Console name="FLOW">
       <PatternLayout pattern="%C{1}.%M %m %ex%n"/><!-- class and line number -->
     </Console>
-    <Console name="ConsoleJSONAppender" target="SYSTEM_OUT">
-      <CustomJsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
+    <Console name="ConsoleJSONAppender" target="SYSTEM_OUT"  direct="true">
+      <JsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
                         propertiesAsList="false" compact="true" properties="false"  includeStackTrace="true"
                         locationInfo="false">
-      </CustomJsonLayout>
+      </JsonLayout>
     </Console>
     <File name="File" fileName="${filename}">
       <PatternLayout pattern="%d %p %C{1.} [%t] %m%n" />
@@ -24,12 +24,12 @@
   </Appenders>
 
   <Loggers>
-    <Root level="info">
+    <AsyncRoot level="info">
       <!-- <AppenderRef ref="STDOUT"/> -->
       <!-- Useful docs https://logging.apache.org/log4j/2.x/manual/customconfig.html-->
       <AppenderRef ref="ConsoleJSONAppender"/>
-      <AppenderRef ref="File"/>
-    </Root>
+     <!-- <AppenderRef ref="File"/>-->
+    </AsyncRoot>
   </Loggers>
 
 </Configuration>
