@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react'
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import ReactDiffViewer from '../../utils/diff/diff-main';
+import statusCodeList from "../../StatusCodeList"
 
 export default class DiffResultsList extends Component {
     constructor(props) {
@@ -16,7 +17,6 @@ export default class DiffResultsList extends Component {
         }
         this.selectedResolutionType = "All";
         this.resolutionTypes = [{value: "ERR", count: 2}];
-        this.pagedDiffLayoutData = [];
     }
 
     handleMetaDataSelect = (metaDataType, value) => {
@@ -64,6 +64,16 @@ export default class DiffResultsList extends Component {
                 return resolutionsIconMap[resolutionType].description;
         }
     }
+
+    getHttpStatus = (code) => {
+        for (let httpStatus of statusCodeList) {
+            if (code == httpStatus.status) {
+                return httpStatus.value;
+            }
+        }
+
+        return code;
+    };
 
     renderToggleRibbon = () => {
         // TODO
@@ -137,7 +147,9 @@ export default class DiffResultsList extends Component {
                 },
             }
         };
-        return this.pagedDiffLayoutData.map((item, index) => {
+
+        const { diffLayoutData } = this.props;
+        return diffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
                     <div style={{display: "inline-block"}}>{item.path}</div>
