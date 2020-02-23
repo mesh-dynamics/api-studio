@@ -131,7 +131,7 @@ public class Utils {
 
 		if (requestEvent != null) {
 			final Span reqLog = CommonUtils.startClientSpan("reqEventLog");
-			try (Scope scope = CommonUtils.activateSpan(span)) {
+			try (Scope scope = CommonUtils.activateSpan(reqLog)) {
 				config.recorder.record(requestEvent);
 			} finally {
 				reqLog.finish();
@@ -165,7 +165,7 @@ public class Utils {
 
 		if (responseEvent != null) {
 			final Span respLog = CommonUtils.startClientSpan("respEventLog");
-			try (Scope scope = CommonUtils.activateSpan(span)) {
+			try (Scope scope = CommonUtils.activateSpan(respLog)) {
 				config.recorder.record(responseEvent);
 			} finally {
 				respLog.finish();
