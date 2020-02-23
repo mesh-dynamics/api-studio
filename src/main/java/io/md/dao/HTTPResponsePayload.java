@@ -11,7 +11,12 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 import io.md.utils.Utils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 
 /*
  * Created by IntelliJ IDEA.
@@ -27,7 +32,7 @@ public class HTTPResponsePayload {
      */
 	public HTTPResponsePayload(MultivaluedMap<String, String> hdrs,
                                int status,
-                               String body) {
+                               byte[] body) {
 	    this.hdrs = Utils.setLowerCaseKeys(hdrs);
 	    this.status = status;
 		this.body = body;
@@ -43,14 +48,16 @@ public class HTTPResponsePayload {
 		super();
 		this.hdrs = new MultivaluedHashMap<String, String>();
 		this.status = Response.Status.OK.getStatusCode();
-		this.body = "";
+		this.body = new byte[]{0};
 	}
 
 
     @JsonDeserialize(as=MultivaluedHashMap.class)
     public final MultivaluedMap<String, String> hdrs;
 	public final int status;
-    public final String body;
+	@JsonSerialize(using = ByteArraySerializer.class)
+	@JsonDeserialize(as = byte[].class)
+    public final byte[] body;
 
 	private static MultivaluedHashMap<String, String> emptyMap () {
 		return new MultivaluedHashMap<String, String>();

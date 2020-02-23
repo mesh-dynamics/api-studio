@@ -51,7 +51,7 @@ public class Event {
 		String collection, String traceId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
 		byte[] rawPayloadBinary,
-		String rawPayloadString, DataObj payload, int payloadKey) {
+		String rawPayloadString, DataObj payload, int payloadKey, Object rawPayloadObject) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -67,6 +67,7 @@ public class Event {
 		this.rawPayloadString = rawPayloadString;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
+		this.rawPayloadObject = rawPayloadObject;
 	}
 
 	/**
@@ -88,7 +89,7 @@ public class Event {
 		this.rawPayloadString = null;
 		this.payload = null;
 		this.payloadKey = 0;
-
+		this.rawPayloadObject = null;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -110,8 +111,8 @@ public class Event {
 			|| (traceId == null && eventType != EventType.ThriftResponse
 			&& eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-			|| ((rawPayloadBinary == null) == (rawPayloadString == null || rawPayloadString.trim()
-			.isEmpty()))) {
+			|| ((rawPayloadBinary == null) && (rawPayloadString == null || rawPayloadString.trim()
+			.isEmpty()) && (rawPayloadObject == null))) {
 			return false;
 		}
 		return true;
@@ -327,6 +328,8 @@ public class Event {
 	public final byte[] rawPayloadBinary;
 	public final String rawPayloadString;
 
+	public final Object rawPayloadObject;
+
 	@JsonIgnore
 	DataObj payload;
 
@@ -367,6 +370,7 @@ public class Event {
 		private final Event.EventType eventType;
 		private byte[] rawPayloadBinary;
 		private String rawPayloadString;
+		private Object rawPayloadObject;
 		private DataObj payload;
 		private int payloadKey = 0;
 
@@ -432,6 +436,11 @@ public class Event {
 			return this;
 		}
 
+		public EventBuilder setRawPayloadObject(Object rawPayload) {
+			this.rawPayloadObject = rawPayload;
+			return this;
+		}
+
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			if (timestamp.isEmpty()) {
 				LOGGER.info(new ObjectMessage(
@@ -440,7 +449,7 @@ public class Event {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId,
 				runType, timestamp.orElse(Instant.now()), reqId, apiPath,
 				eventType,
-				rawPayloadBinary, rawPayloadString, payload, payloadKey);
+				rawPayloadBinary, rawPayloadString, payload, payloadKey,rawPayloadObject);
 			if (event.validate()) {
 				return event;
 			} else {

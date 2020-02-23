@@ -1,6 +1,7 @@
 package io.md.utils;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -243,7 +244,7 @@ public class Utils {
 		MultivaluedMap<String, String> meta,
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo,
-		String body,
+		byte[] body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
@@ -272,19 +273,19 @@ public class Utils {
 			.isPresent()) && runType.isPresent() && status.isPresent()) {
 			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(),
 				body);
-			String payloadStr = null;
+			/*String payloadStr = null;
 			final Span span = CommonUtils.startClientSpan("respPayload");
 			try (Scope scope = CommonUtils.activateSpan(span)) {
 				payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
 			} finally {
 				span.finish();
-			}
+			}*/
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
-			eventBuilder.setRawPayloadString(payloadStr);
+			eventBuilder.setRawPayloadObject(httpResponsePayload);
 			Event event = eventBuilder.createEvent();
 			return event;
 		} else {
