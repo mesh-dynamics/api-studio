@@ -32,6 +32,8 @@ import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
+import io.opentracing.Scope;
+import io.opentracing.Span;
 
 public class Utils {
 
@@ -196,7 +198,13 @@ public class Utils {
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
 				formParams, method.get(), body);
 
-			String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
+			String payloadStr = null;
+			final Span span = CommonUtils.startClientSpan("reqPayload");
+			try (Scope scope = CommonUtils.activateSpan(span)) {
+				payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
+			} finally {
+				span.finish();
+			}
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
@@ -264,8 +272,13 @@ public class Utils {
 			.isPresent()) && runType.isPresent() && status.isPresent()) {
 			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(),
 				body);
-			String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
-
+			String payloadStr = null;
+			final Span span = CommonUtils.startClientSpan("respPayload");
+			try (Scope scope = CommonUtils.activateSpan(span)) {
+				payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
+			} finally {
+				span.finish();
+			}
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
