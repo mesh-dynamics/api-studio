@@ -13,11 +13,11 @@
       <PatternLayout pattern="%C{1}.%M %m %ex%n"/>&lt;!&ndash; class and line number &ndash;&gt;
     </Console>-->
     <Console name="ConsolePatternAppender" target="SYSTEM_OUT"  direct="true">
-      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
-      <!--<JsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
-                        propertiesAsList="false" compact="true" properties="false"  includeStackTrace="true"
+      <!--<PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>-->
+      <JsonLayout complete="false" objectMessageAsJsonObject="true" eventEol="true"
+                        propertiesAsList="false" compact="true" properties="false"  includeStackTrace="false"
                         locationInfo="false">
-      </JsonLayout>-->
+      </JsonLayout>
     </Console>
 <!--    <File name="File" fileName="${filename}">
       <PatternLayout pattern="%d %p %C{1.} [%t] %m%n" />

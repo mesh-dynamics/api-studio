@@ -45,7 +45,7 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 		try {
 			// TODO might wanna explore java fluent logger
 			// https://github.com/fluent/fluent-logger-java
-			CommonConfig commonConfig = CommonConfig.getInstance();
+			/*CommonConfig commonConfig = CommonConfig.getInstance();
 			Optional<DataObj> payloadOptional = Optional.empty();
 
 			final Span span = CommonUtils.startClientSpan("encryptEvent");
@@ -74,12 +74,12 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 					}));
 			} finally {
 				serializeSpan.finish();
-			}
+			}*/
 
 			// The prefix will be a part of the fluentd parse regex
 			final Span logSpan = CommonUtils.startClientSpan("log4jLog");
 			try (Scope scope = CommonUtils.activateSpan(logSpan)) {
-				LOGGER.info("[Cube Event]" + jsonSerialized);
+				LOGGER.info(new ObjectMessage(Map.of("Cube Event" , event)));
 			} finally {
 				logSpan.finish();
 			}
