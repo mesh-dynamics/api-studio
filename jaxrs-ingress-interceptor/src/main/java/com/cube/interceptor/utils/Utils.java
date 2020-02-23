@@ -1,5 +1,6 @@
 package com.cube.interceptor.utils;
 
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -141,7 +142,7 @@ public class Utils {
 
 	public static void createAndLogRespEvent(String apiPath,
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
-		MDTraceInfo mdTraceInfo, String responseBody) {
+		MDTraceInfo mdTraceInfo, byte[] responseBody) {
 		Event responseEvent = null;
 		final Span span = CommonUtils.startClientSpan("respEventCreate");
 		try (Scope scope = CommonUtils.activateSpan(span)) {

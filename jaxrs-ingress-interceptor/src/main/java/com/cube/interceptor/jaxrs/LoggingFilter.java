@@ -173,7 +173,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 
 			//body
-			String responseBody = getResponseBody(context);
+			byte[] responseBody = getResponseBody(context);
 
 			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
@@ -221,23 +221,23 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		}
 	}
 
-	private String getResponseBody(WriterInterceptorContext context) throws IOException {
+	private byte[] getResponseBody(WriterInterceptorContext context) throws IOException {
 		final Span span = CommonUtils.startClientSpan("respBody");
 		try (Scope scope = CommonUtils.activateSpan(span)) {
 			OutputStream originalStream = context.getOutputStream();
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			String responseBody;
+			//String responseBody;
 			context.setOutputStream(baos);
 			try {
 				context.proceed();
 			} finally {
-				responseBody = baos.toString("UTF-8");
+				//responseBody = baos.toString("UTF-8");
 				baos.writeTo(originalStream);
 				baos.close();
 				context.setOutputStream(originalStream);
 			}
 
-			return responseBody;
+			return baos.toByteArray();
 		} finally {
 			span.finish();
 		}
