@@ -3,11 +3,11 @@ package io.cube.agent;
 public class TraceIntentResolver implements IntentResolver {
     @Override
     public boolean isIntentToMock() {
-        return CommonUtils.isIntentToMock();
+        return CommonConfig.isIntentToMock();
     }
 
     @Override
     public boolean isIntentToRecord() {
-        return CommonUtils.isIntentToRecord();
+        return CommonConfig.isIntentToRecord();
     }
 }

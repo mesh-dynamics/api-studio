@@ -1,0 +1,41 @@
+{
+	"services": {
+		"OrderReceiver": {
+			"apiPathMetaMap": {
+				"/orders/getOrders/": {
+					"JSONPathMap": {
+						"/body/orderList/0/customer/firstName": {
+							"algorithm": "AES/CBC/PKCS5Padding",
+							"metaData": {
+								"cipherKeyType": "AES"
+							}
+						},
+
+						"/body/orderList/0/customer/lastName": {
+							"algorithm": "AES/CBC/PKCS5Padding",
+							"metaData": {
+								"cipherKeyType": "AES"
+							}
+						},
+
+						"/body/orderList/1/customer/firstName": {
+							"algorithm": "AES/CBC/PKCS5Padding",
+							"metaData": {
+								"cipherKeyType": "AES"
+							}
+						},
+
+						"/body/orderList/1/customer/lastName": {
+							"algorithm": "AES/CBC/PKCS5Padding",
+							"metaData": {
+								"cipherKeyType": "AES"
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+
+	"passPhrase" : "pAsSwOrD@!#!"
+}

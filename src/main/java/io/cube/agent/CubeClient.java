@@ -1,16 +1,8 @@
 package io.cube.agent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
@@ -19,36 +11,40 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import java.util.Map;
-import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.md.constants.Constants;
+import io.md.dao.Event;
+import io.md.utils.CommonUtils;
 
 /**
  * Client to connect to cube service
  */
 public class CubeClient {
 
-	private Client restClient = null;
-	private WebTarget cubeRecordService = null;
-	private WebTarget cubeMockService = null;
-	private final int maxNumberOfAttempts;
 	private ObjectMapper jsonMapper;
+
 
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
 	public CubeClient(ObjectMapper jsonMapper) throws Exception {
-		CommonConfig config = new CommonConfig();
-		ClientConfig clientConfig = new ClientConfig()
-			.property(ClientProperties.READ_TIMEOUT, config.READ_TIMEOUT)
-			.property(ClientProperties.CONNECT_TIMEOUT, config.CONNECT_TIMEOUT);
-		restClient = ClientBuilder.newClient(clientConfig);
-		cubeRecordService = restClient.target(config.CUBE_RECORD_SERVICE_URI);
-		cubeMockService = restClient.target(config.CUBE_MOCK_SERVICE_URI);
-		maxNumberOfAttempts = config.RETRIES;
 		this.jsonMapper = jsonMapper;
 	}
 
-
 	private Optional<String> getResponse(Invocation invocation) {
+		CommonConfig config = null;
+		try {
+			config = CommonConfig.getInstance();
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Error while getting Common config instance" )), e);
+		}
+		int maxNumberOfAttempts = config.RETRIES;
 		int numberOfAttempts = 0;
 		while (numberOfAttempts < maxNumberOfAttempts) {
 			try {
@@ -88,11 +84,15 @@ public class CubeClient {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE,
 					"Error while serializing single HTTP req/resp object")),e);
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(
+				Map.of(Constants.MESSAGE,
+					"Error while getting response")),e);
 		}
 		return Optional.empty();
 	}
 
-	private Optional<String> getResponse(Invocation.Builder builder, Event event) {
+	private Optional<String> getResponse(Invocation.Builder builder, Event event)  {
 		try {
 			String jsonEntity = jsonMapper.writeValueAsString(event);
 			CommonUtils.addTraceHeaders(builder, "POST");
@@ -106,20 +106,23 @@ public class CubeClient {
 	}
 
 
-	public Optional<String> storeFunctionReqResp(FnReqResponse fnReqResponse) {
+	public Optional<String> storeFunctionReqResp(FnReqResponse fnReqResponse)  {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder = cubeRecordService.path("cs").path("fr")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, fnReqResponse);
 	}
 
-	public Optional<String> storeSingleReqResp(ReqResp reqResp) {
+	public Optional<String> storeSingleReqResp(ReqResp reqResp)  {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder = cubeRecordService.path("cs").path("rr")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, reqResp);
 	}
 
 
-	public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
+	public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse)  {
+		WebTarget cubeMockService = CommonConfig.getInstance().getCubeMockService();
 		Invocation.Builder builder = cubeMockService.path("ms").path("fr")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, fnReqResponse).flatMap(response -> {
@@ -135,6 +138,7 @@ public class CubeClient {
 	}
 
 	public Optional<FnResponse> getMockResponse(Event event) {
+		WebTarget cubeMockService = CommonConfig.getInstance().getCubeMockService();
 		Invocation.Builder builder = cubeMockService.path("ms").path("mockFunction")
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, event).flatMap(response -> {
@@ -149,7 +153,8 @@ public class CubeClient {
 		});
 	}
 
-	public Optional<Event> getMockThriftResponse(Event event) {
+	public Optional<Event> getMockThriftResponse(Event event)  {
+		WebTarget cubeMockService = CommonConfig.getInstance().getCubeMockService();
 		Invocation.Builder builder = cubeMockService.path("ms").path("thrift").request(MediaType.APPLICATION_JSON);
 		return getResponse(builder, event).flatMap(response -> {
 			try {
@@ -165,6 +170,7 @@ public class CubeClient {
 
 	public Optional<String> startRecording(String customerid, String app, String instanceid,
 		String collection) {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("cs").path("start").path(customerid).path(app).path(instanceid)
 				.path(collection)
@@ -174,6 +180,7 @@ public class CubeClient {
 	}
 
 	public Optional<String> stopRecording(String customerid, String app, String collection) {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("cs").path("stop").path(customerid).path(app).path(collection)
 				.request(MediaType.APPLICATION_FORM_URLENCODED);
@@ -184,6 +191,7 @@ public class CubeClient {
 	public Optional<String> initReplay(String customerid, String app, String instanceid,
 		String collection,
 		String endpoint) {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("rs").path("init").path(customerid).path(app).path(collection)
 				.request(MediaType.APPLICATION_FORM_URLENCODED);
@@ -194,7 +202,8 @@ public class CubeClient {
 		return getResponse(builder.buildPost(Entity.form(params)));
 	}
 
-	public Optional<String> forceStartReplay(String replayid) {
+	public Optional<String> forceStartReplay(String replayid)  {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("rs").path("forcestart").path(replayid).request();
 		CommonUtils.addTraceHeaders(builder, "POST");
@@ -203,6 +212,7 @@ public class CubeClient {
 
 
 	public Optional<String> forceCompleteReplay(String replayid) {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder =
 			cubeRecordService.path("rs").path("forcecomplete").path(replayid).request();
 		CommonUtils.addTraceHeaders(builder, "POST");
@@ -210,6 +220,7 @@ public class CubeClient {
 	}
 
 	public Optional<String> storeEvent(Event event) {
+		WebTarget cubeRecordService = CommonConfig.getInstance().getCubeRecordService();
 		Invocation.Builder builder = cubeRecordService.path("cs").path("storeEvent")
 			.request(MediaType.TEXT_PLAIN);
 		try {
