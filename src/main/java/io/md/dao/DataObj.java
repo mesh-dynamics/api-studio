@@ -1,7 +1,6 @@
 package io.md.dao;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 

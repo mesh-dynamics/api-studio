@@ -3,9 +3,11 @@ package io.md.constants;
 public class Constants {
 	public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
 	public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
+	public static final String DEFAULT_REQUEST_ID = "c-request-id";
 	public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
 	public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
 	public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+	public static final String X_REQUEST_ID = "x-request-id";
 
 	public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
@@ -87,6 +89,7 @@ public class Constants {
 	public static final String SERVICE_FIELD = "service";
 	public static final String INSTANCE_ID_FIELD = "instanceId";
 	public static final String COLLECTION_FIELD = "collection";
+	public static final String TYPE_FIELD = "type";
 	public static final String RUN_TYPE_FIELD = "runType";
 	public static final String PATH_FIELD = "path";
 	public static final String API_PATH_FIELD = "apiPath";
@@ -107,7 +110,7 @@ public class Constants {
 	public static final String OFFSET_FIELD = "offset";
 	public static final String JAR_PATH_FIELD = "jarPath";
 	public static final String REPLAY_TYPE_FIELD = "replayType";
-	public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path"  ;
+	public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path";
 
 	public static final String ROOT_RECORDING_FIELD = "root_recording_id";
 	public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
@@ -142,15 +145,35 @@ public class Constants {
 	public static final String MD_INSTANCE_PROP = "io.md.instance";
 	public static final String MD_SERVICE_PROP = "io.md.service";
 	public static final String MD_INTENT_PROP = "io.md.intent";
+	public static final String MD_ENCRYPTION_CONFIG_PATH = "io.md.encryptionconfig.path";
+	public static final String MD_API_PATH_PROP = "io.md.apiPath";
+	public static final String MD_TRACE_META_MAP_PROP = "io.md.traceMetaMap" ;
+	public static final String MD_RESPONSE_HEADERS_PROP = "io.md.responseHeaders";
+	public static final String MD_STATUS_PROP = "io.md.status";
+	public static final String MD_BODY_PROP = "io.md.body";
+	public static final String MD_LOG_STREAM_PROP = "io.md.logStream";
+	//Sampling Related
+	public static final String MD_SAMPLE_REQUEST = "io.md.sampleRequest";
+	public static final String MD_SAMPLER_TYPE = "io.md.sampler.type";
+	public static final String MD_SAMPLER_RATE = "io.md.sampler.rate";
+	public static final String MD_SAMPLER_ACCURACY = "io.md.sampler.accuracy";
+	public static final String MD_SAMPLER_HEADER_PARAMS = "io.md.sampler.headerParams";
+	public static final String MD_SAMPLER_VETO = "io.md.sampler.veto";
 
 	//Header Baggage/ Intent
 	public static final String ZIPKIN_HEADER_BAGGAGE_INTENT_KEY = "intent";
 	public static final String INTENT_RECORD = "record";
 	public static final String INTENT_MOCK = "mock";
 	public static final String NO_INTENT = "normal";
+	public static final String REPLAY = "replay";
 	public static final String ZIPKIN_TRACE_HEADER = "x-b3-traceid";
 	public static final String ZIPKIN_SPAN_HEADER = "x-b3-spanid";
 	public static final String ZIPKIN_PARENT_SPAN_HEADER = "x-b3-parentspanid";
+	public static final String MD_SCOPE = "md-scope";
+	public static final String MD_CHILD_SPAN = "md-childspan";
+	public static final String MD_TRACE_INFO = "traceInfo";
+	public static final String MD_IS_SAMPLED = "md-sampled";
+	public static final String MD_IS_VETOED = "md-vetoed";
 
 	//Thrift Related
 	public static final String THRIFT_SPAN_ARGUMENT_NAME = "meshd_span";

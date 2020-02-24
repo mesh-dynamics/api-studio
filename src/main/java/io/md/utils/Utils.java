@@ -2,6 +2,7 @@ package io.md.utils;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -26,10 +28,10 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.constants.Constants;
-import io.md.core.Comparator;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
+import io.md.dao.MDTraceInfo;
 
 public class Utils {
 
@@ -167,31 +169,38 @@ public class Utils {
 		return Optional.ofNullable(fieldMap.getFirst(fieldname));
 	}
 
-	public static Event createHTTPRequestEvent(String apiPath, Optional<String> reqId,
+	public static Event createHTTPRequestEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
 		MultivaluedMap<String, String> meta,
-		MultivaluedMap<String, String> hdrs, String method, String body,
-		Optional<String> collection, Instant timestamp,
-		Optional<Event.RunType> runType, Optional<String> customerId,
-		Optional<String> app,
-		ObjectMapper jsonMapper,
-		Comparator comparator)
+		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, String body,
+		Optional<String> collection,
+		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
-		HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
-			formParams, method, body);
-
-		String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
-
+		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
+		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
 		Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
 		Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-		Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
+		//Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
+		Optional<Event.RunType> runType = getFirst(meta, Constants.RUN_TYPE_FIELD)
+			.flatMap(type -> Utils.valueOf(Event.RunType.class, type));
+		Optional<Instant> timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
+			.flatMap(Utils::strToTimeStamp);
+		Optional<String> method = getFirst(meta, Constants.METHOD_FIELD);
+		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
 
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection
-			.isPresent() && runType.isPresent()) {
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource
+			|| collection
+			.isPresent()) && runType.isPresent() && method.isPresent()) {
+
+			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
+				formParams, method.get(), body);
+
+			String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
+
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), collection.get(),
-				traceId.orElse("NA"), runType.get(), timestamp,
+				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
+				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest);
 			eventBuilder.setRawPayloadString(payloadStr);
@@ -206,36 +215,60 @@ public class Utils {
 
 	}
 
+	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
+		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
+		for (String key : new ArrayList<String>(mvMap.keySet())) {
+			String lowerCase = key.toLowerCase();
+			for (String value : mvMap.remove(key))
+				lowerCaseMVMap.add(lowerCase, value);
+		}
+		return lowerCaseMVMap;
+	}
+
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
 		throws IOException {
 		String payload = event.getPayloadAsJsonString(Map.of(Constants.OBJECT_MAPPER, jsonMapper));
 		return jsonMapper.readValue(payload, HTTPRequestPayload.class);
 	}
 
-
-	public static Event createHTTPResponseEvent(String apiPath, Optional<String> reqId,
-		Integer status,
+	public static Event createHTTPResponseEvent(String apiPath,
 		MultivaluedMap<String, String> meta,
 		MultivaluedMap<String, String> hdrs,
+		MDTraceInfo mdTraceInfo,
 		String body,
-		Optional<String> collection, Instant timestamp,
-		Optional<Event.RunType> runType, Optional<String> customerId,
-		Optional<String> app,
-		ObjectMapper jsonMapper)
+		Optional<String> collection,
+		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
-		HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status, body);
 
-		String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
-
+		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
+		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
 		Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
 		Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+		//Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+		Optional<Event.RunType> runType = getFirst(meta, Constants.RUN_TYPE_FIELD)
+			.flatMap(type -> Utils.valueOf(Event.RunType.class, type));
+		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
+		Optional<Instant> timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
+			.flatMap(Utils::strToTimeStamp);
+		Optional<Integer> status = getFirst(meta, Constants.STATUS).flatMap(sval -> {
+			try {
+				return Optional.of(Integer.valueOf(sval));
+			} catch (Exception e) {
+				LOGGER.error(String.format("Expecting integer status, got %s", sval));
+				return Optional.empty();
+			}
+		});
 
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection
-			.isPresent() && runType.isPresent()) {
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource
+			|| collection
+			.isPresent()) && runType.isPresent() && status.isPresent()) {
+			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(),
+				body);
+			String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
+
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), collection.get(),
-				traceId.orElse("NA"), runType.get(), timestamp,
+				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
+				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
 			eventBuilder.setRawPayloadString(payloadStr);
