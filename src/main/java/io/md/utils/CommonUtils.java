@@ -176,7 +176,7 @@ public class CommonUtils {
 			asChildOf(parentContext);
 		tags.forEach(spanBuilder::withTag);
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-			.withTag("runId" , "async-log")
+			.withTag("runId" , "async-log-10k")
 			.start();
 	}
 
@@ -210,7 +210,7 @@ public class CommonUtils {
 		}
 		// TODO could add more tags like http.url
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.withTag("runId" , "async-log")
+			.withTag("runId" , "async-log-10k")
 			.start();
 	}
 

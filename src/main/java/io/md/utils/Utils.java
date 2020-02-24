@@ -176,7 +176,7 @@ public class Utils {
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
 		MultivaluedMap<String, String> meta,
-		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, String body,
+		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, byte[] body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
@@ -199,20 +199,20 @@ public class Utils {
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
 				formParams, method.get(), body);
 
-			String payloadStr = null;
+			/*String payloadStr = null;
 			final Span span = CommonUtils.startClientSpan("reqPayload");
 			try (Scope scope = CommonUtils.activateSpan(span)) {
 				payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
 			} finally {
 				span.finish();
-			}
+			}*/
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest);
-			eventBuilder.setRawPayloadString(payloadStr);
+			eventBuilder.setRawPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 			//TODO keep this logic on cube end
 			//event.parseAndSetKey(config, comparator.getCompareTemplate());
@@ -285,7 +285,7 @@ public class Utils {
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
-			eventBuilder.setRawPayloadObject(httpResponsePayload);
+			eventBuilder.setRawPayload(httpResponsePayload);
 			Event event = eventBuilder.createEvent();
 			return event;
 		} else {

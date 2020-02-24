@@ -22,7 +22,7 @@ import java.io.OutputStream;
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
  */
-public class HTTPResponsePayload {
+public class HTTPResponsePayload extends AbstractMDPayload {
 
     /**
      *
@@ -48,7 +48,7 @@ public class HTTPResponsePayload {
 		super();
 		this.hdrs = new MultivaluedHashMap<String, String>();
 		this.status = Response.Status.OK.getStatusCode();
-		this.body = new byte[]{0};
+		this.body = new byte[]{};
 	}
 
 

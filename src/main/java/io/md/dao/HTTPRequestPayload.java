@@ -9,6 +9,8 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.utils.Utils;
 
@@ -16,7 +18,7 @@ import io.md.utils.Utils;
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
  */
-public class HTTPRequestPayload {
+public class HTTPRequestPayload extends AbstractMDPayload {
 
     /**
      *
@@ -30,7 +32,7 @@ public class HTTPRequestPayload {
                               MultivaluedMap<String, String> queryParams,
                               MultivaluedMap<String, String> formParams,
                               String method,
-                              String body) {
+                              byte[] body) {
 	    this.hdrs = Utils.setLowerCaseKeys(hdrs);
 		this.queryParams = queryParams;
 		this.formParams = formParams;
@@ -50,7 +52,7 @@ public class HTTPRequestPayload {
 		this.queryParams = new MultivaluedHashMap<String, String>();
 		this.formParams = new MultivaluedHashMap<String, String>();
 		this.method = "";
-		this.body = "";
+		this.body = new byte[]{};
 	}
 
 
@@ -62,7 +64,9 @@ public class HTTPRequestPayload {
     @JsonDeserialize(as=MultivaluedHashMap.class)
 	public final MultivaluedMap<String, String> formParams; // form params
 	public final String method;
-    public final String body;
+	@JsonSerialize(using = ByteArraySerializer.class)
+	@JsonDeserialize(as = byte[].class)
+    public final byte[] body;
 
 
 

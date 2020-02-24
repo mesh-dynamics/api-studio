@@ -51,7 +51,7 @@ public class Event {
 		String collection, String traceId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
 		byte[] rawPayloadBinary,
-		String rawPayloadString, DataObj payload, int payloadKey, Object rawPayloadObject) {
+		String rawPayloadString, DataObj payload, int payloadKey, AbstractMDPayload rawPayloadObject) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -316,6 +316,7 @@ public class Event {
 		this.collection = collection;
 	}
 
+	@JsonIgnore
 	public final Instant timestamp;
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
@@ -328,7 +329,7 @@ public class Event {
 	public final byte[] rawPayloadBinary;
 	public final String rawPayloadString;
 
-	public final Object rawPayloadObject;
+	public final AbstractMDPayload rawPayloadObject;
 
 	@JsonIgnore
 	DataObj payload;
@@ -370,7 +371,7 @@ public class Event {
 		private final Event.EventType eventType;
 		private byte[] rawPayloadBinary;
 		private String rawPayloadString;
-		private Object rawPayloadObject;
+		private AbstractMDPayload rawPayloadObject;
 		private DataObj payload;
 		private int payloadKey = 0;
 
@@ -436,7 +437,7 @@ public class Event {
 			return this;
 		}
 
-		public EventBuilder setRawPayloadObject(Object rawPayload) {
+		public EventBuilder setRawPayload(AbstractMDPayload rawPayload) {
 			this.rawPayloadObject = rawPayload;
 			return this;
 		}
