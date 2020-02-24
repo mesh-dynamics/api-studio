@@ -9,7 +9,14 @@ import ReduceDiff from '../../utils/ReduceDiff';
 import generator from '../../utils/generator/json-path-generator';
 import statusCodeList from "../../StatusCodeList"
 
-const respData = [
+const respData = {
+    facets: {
+        services: [{value: "s1", count: 2}, {value: "s2", count: 2}],
+        apiPaths: [{value: "a1", count: 2}, {value: "a2", count: 2}],
+        resolutionTypes: [{value: "ERR_", count: 2}],
+        pages: 10,
+    },
+    results: [
     {
         "recordReqId": "gu--1789970137",
         "recordResponse": {
@@ -1535,29 +1542,38 @@ const respData = [
         "numMatch": 1,
         "reqMatchResType": "ExactMatch"
     }
-    
-]
+    ]
+}
 
 export default class DiffResults extends Component {
     constructor(props) {
         super(props);
         this.state = {
             filter : {
-                service: "",
-                apiPath: "",
-                reqRespMatchType: "",
-                resolutionType: "",
-                pageNumber: 1,
+                selectedService: "s1",
+                selectedAPI: "a1",
+                selectedReqRespMatchType: "responseMismatch",
+                selectedResolutionType: "All",
+                currentPageNumber: 1,
             },
             diffLayoutData : [],
+            facetListData: {},
         }
     }
 
     componentDidMount = () => {
+        console.log("aaa")
         this.fetchResults();
     }
 
-    handleFilterChange = () => {
+    handleFilterChange = (metaData, value) => {
+        console.log("filter changed " + metaData + " : " + value)
+        this.setState({
+            filter : {
+                ...this.state.filter,
+                [metaData] : value,
+            }
+        })
         this.fetchResults();
     }
 
@@ -1788,6 +1804,7 @@ export default class DiffResults extends Component {
     }
 
     fetchResults() {
+        console.log("fetching replay list")
         // let dataList = {}
         // //let url = "https://app.meshdynamics.io/api/as/analysisResByPath/a48fd5a0-fc01-443b-a2db-685d2cc72b2c-753a5807-84e8-4c00-b3c9-e053bd10ff0f?start=20&includeDiff=true&path=%2A";
         // let url = "http://www.mocky.io/v2/5e5116f23100006400415919";
@@ -1817,10 +1834,12 @@ export default class DiffResults extends Component {
         //     // todo
         // }
 
-        let diffLayoutData = this.validateAndCreateDiffLayoutData(respData);
-        this.setState({diffLayoutData: diffLayoutData});
+        console.log(respData.facets)
+        let diffLayoutData = this.validateAndCreateDiffLayoutData(respData.results);
+        this.setState({diffLayoutData: diffLayoutData, facetListData: respData.facets});
     }
 
+    
     render() {
         return (
             <div className="content-wrapper">
@@ -1832,7 +1851,7 @@ export default class DiffResults extends Component {
                     </Link>
                 </div>
                 <div>
-                    <DiffResultsFilter filter={this.state.filter}></DiffResultsFilter>
+                    <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={"app"}></DiffResultsFilter>
                     <DiffResultsList diffLayoutData={this.state.diffLayoutData}></DiffResultsList>
                 </div>
             </div>

@@ -1,73 +1,37 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import {cubeActions} from "../../actions";
+import _ from 'lodash';
 
 export default class DiffResultsFilter extends Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            app: "test",
-            currentPageNumber: 1,
+
         }
-        // TODO: props
-        this.services = [{value: "s1", count: 2}, {value: "s2", count: 2}];
-        this.selectedService = "s1";
-
-        this.apiPaths = [{value: "s1", count: 2}, {value: "s2", count: 2}];
-        this.selectedAPI = "s1";
-
-        this.selectedReqRespMatchType = "responseMismatch";
-
-        this.pages = 10;
-        //this.currentPageNumber = 1;
     }
 
-    serviceMenuItems = () => {
-        //const { services } = this.props;
-        //const { selectedService } = this.props;
-        const services = this.services; // todo: props
-        const selectedService = this.selectedService; // TODO
-        return services.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedService", item.value)}>
-                <Glyphicon style={{ visibility: selectedService === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
-            </MenuItem>);
-        });
+    componentDidMount() {
     }
 
-    apiPathMenuItems = () => {
-        //const { apiPaths } = this.props;
-        //const { selectedAPI } = this.props;
-        const apiPaths = this.apiPaths; // todo: props
-        const selectedAPI = this.selectedAPI; // TODO
-        return apiPaths.map((item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedAPI", item.value)}>
-                <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
-            </MenuItem>);
-        });
-    }
 
     renderPageButtons = () => {
+        let pages = _.isEmpty(this.props.facetListData) ? 1 : this.props.facetListData.pages; // todo: props
         let pageButtons = [];
-        for(let idx = 1; idx <= this.pages; idx++) {
+        for(let idx = 1; idx <= pages; idx++) {
             pageButtons.push(
-                <Button onClick={this.changePageNumber} bsStyle={this.state.currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
+                <Button onClick={() => this.handleMetaDataSelect("currentPageNumber", idx)} bsStyle={this.props.filter.currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
             );
         }
         return pageButtons;
     }
     
     handleMetaDataSelect = (metaDataType, value) => {
+        this.props.filterChangeHandler(metaDataType, value);
     }
 
     toggleMessageContents = (e) => {    
-    }
-
-    handleReqRespMtChange = (e) => {
-    }
-    
-    changePageNumber = (e) => {
-        this.setState({currentPageNumber : +e.target.innerHTML.trim()});
     }
 
     handleBackToDashboardClick = () => {
@@ -75,46 +39,89 @@ export default class DiffResultsFilter extends Component {
         dispatch(cubeActions.clearPathResultsParams());
     }
 
-    render() {
-        let selectedService = this.selectedService;
-        let selectedAPI = this.selectedAPI;
-        let apiPaths = this.apiPaths;
+    renderServiceDropdown() {
+        const services = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.services;
+        const selectedService = this.props.filter.selectedService;
 
         return (
-            <div>
-                <Breadcrumb style={{}}>
-                    <Breadcrumb.Item href="/">{this.state.app}</Breadcrumb.Item>
+            <Fragment>
+                <DropdownButton title={selectedService} id="dropdown-size-medium">
+                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
+                        <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
+                    </MenuItem>
+                    <MenuItem divider />
+                    {services.map((item, index) => {return (
+                    <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedService", item.value)}>
+                        <Glyphicon style={{ visibility: selectedService === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
+                    </MenuItem>);
+                    })}
+                </DropdownButton>
+            </Fragment>
+        )
+    }
+    
+    renderAPIPathDropdown() {
+        const apiPaths = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.apiPaths; 
+        const selectedAPI = this.props.filter.selectedAPI; 
 
-                    <Breadcrumb.Item href="javascript:void(0);">
+        return (
+            <Fragment>
+                <DropdownButton title={selectedAPI ? selectedAPI : "Select API Path"} id="dropdown-size-medium">
+                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
+                        <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
+                    </MenuItem>
+                    <MenuItem divider />
+                    {apiPaths.map((item, index) => {return (
+                        <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedAPI", item.value)}>
+                            <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
+                        </MenuItem>);
+                    })}
+                </DropdownButton>
+            </Fragment>
+        )
+    }
+
+    renderServiceAPIBreadcrumb() {
+        return (
+            <Fragment>
+                <Breadcrumb.Item href="javascript:void(0);">
                         <strong>Service:&nbsp;</strong>
-                        <DropdownButton title={selectedService} id="dropdown-size-medium">
-                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
-                                <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({this.services.reduce((accumulator, item) => accumulator += item.count, 0)})
-                        </MenuItem>
-                            <MenuItem divider />
-                            {this.serviceMenuItems()}
-                        </DropdownButton>
+                        {this.renderServiceDropdown()}
                     </Breadcrumb.Item>
 
                     <Breadcrumb.Item active>
                         <strong>API Path:&nbsp;</strong>
-                        <DropdownButton title={selectedAPI ? selectedAPI : "Select API Path"} id="dropdown-size-medium">
-                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
-                                <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
-                        </MenuItem>
-                            <MenuItem divider />
-                            {this.apiPathMenuItems()}
-                        </DropdownButton>
+                        {this.renderAPIPathDropdown()}
                     </Breadcrumb.Item>
+            </Fragment>
+        );
+    }
+
+    renderSelectReqRespRadio() {
+        return (
+            <Fragment>
+                <Radio inline value="responseMismatch" checked={this.props.filter.selectedReqRespMatchType === "responseMismatch"} onChange={() => this.handleMetaDataSelect("selectedReqRespMatchType", "responseMismatch")}> Response Mismatches only </Radio>
+                <Radio inline value="requestMismatch" checked={this.props.filter.selectedReqRespMatchType === "requestMismatch"} onChange={() => this.handleMetaDataSelect("selectedReqRespMatchType", "requestMismatch")}> Request Mismatches only </Radio>
+                <Radio inline value="All" checked={this.props.filter.selectedReqRespMatchType === "All"} onChange={() => this.handleMetaDataSelect("selectedReqRespMatchType", "All")}> All </Radio>
+            </Fragment>
+        )
+    }
+
+    render() {
+        return (
+            <div>
+                <Breadcrumb style={{}}>
+                    <Breadcrumb.Item href="/">{this.props.app}</Breadcrumb.Item>
+                    {this.renderServiceAPIBreadcrumb()}
                 </Breadcrumb>
 
                 <div style={{ marginBottom: "18px" }}>
-                    <Radio inline value="responseMismatch" checked={this.selectedReqRespMatchType === "responseMismatch"} onChange={this.handleReqRespMtChange}> Response Mismatches only </Radio>
-                    <Radio inline value="requestMismatch" checked={this.selectedReqRespMatchType === "requestMismatch"} onChange={this.handleReqRespMtChange}> Request Mismatches only </Radio>
-                    <Radio inline value="All" checked={this.selectedReqRespMatchType === "All"} onChange={this.handleReqRespMtChange}> All </Radio>
+                    {this.renderSelectReqRespRadio()}
                 </div>
                 <ButtonGroup style={{ marginBottom: "9px", width: "100%" }}>
-                    <div style={{ textAlign: "left" }}>{this.renderPageButtons()}</div>
+                    <div style={{ textAlign: "left" }}>
+                        {this.renderPageButtons()}
+                    </div>
                 </ButtonGroup>
             </div>
         )
