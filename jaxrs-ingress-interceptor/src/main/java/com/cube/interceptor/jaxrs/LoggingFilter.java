@@ -1,5 +1,6 @@
 package com.cube.interceptor.jaxrs;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,7 +125,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
 
 			//body
-			String requestBody = getRequestBody(reqContext);
+			byte[] requestBody = getRequestBody(reqContext);
 
 			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
 				requestBody);
@@ -208,14 +209,16 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		return Utils.buildTraceInfoMap(mdTraceInfo, xRequestId);
 	}
 
-	private String getRequestBody(ContainerRequestContext reqContext) throws IOException {
+	private byte[] getRequestBody(ContainerRequestContext reqContext) throws IOException {
 		final Span span = CommonUtils.startClientSpan("reqBody");
 		try (Scope scope = CommonUtils.activateSpan(span)) {
-			String json = IOUtils.toString(reqContext.getEntityStream(), StandardCharsets.UTF_8);
-			InputStream in = IOUtils.toInputStream(json, StandardCharsets.UTF_8);
+			byte[] reqBytes = reqContext.getEntityStream().readAllBytes();
+			//String json = IOUtils.toString(reqContext.getEntityStream(), StandardCharsets.UTF_8);
+			new ByteArrayInputStream(reqBytes);
+			InputStream in = new ByteArrayInputStream(reqBytes);
 			reqContext.setEntityStream(in);
 
-			return json;
+			return reqBytes;
 		} finally {
 			span.finish();
 		}
@@ -226,7 +229,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		try (Scope scope = CommonUtils.activateSpan(span)) {
 			OutputStream originalStream = context.getOutputStream();
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			//String responseBody;
 			context.setOutputStream(baos);
 			try {
 				context.proceed();
@@ -236,7 +238,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				baos.close();
 				context.setOutputStream(originalStream);
 			}
-
 			return baos.toByteArray();
 		} finally {
 			span.finish();

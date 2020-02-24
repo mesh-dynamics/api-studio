@@ -108,7 +108,7 @@ public class Utils {
 
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
-		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, String requestBody) {
+		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		final Span span = CommonUtils.startClientSpan("reqEventCreate");
 		Event requestEvent = null;
 		try (Scope scope = CommonUtils.activateSpan(span)) {
