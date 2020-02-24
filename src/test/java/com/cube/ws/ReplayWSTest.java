@@ -27,6 +27,7 @@ public class ReplayWSTest {
 
     /**
      * Simple test to retrieve Replay Object for replayId
+     * we can validate customer Id in cubeUi-backend
      */
     @Test
     public void testReplayObjectFromReplayId() {
