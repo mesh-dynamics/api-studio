@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import {cubeActions} from "../../actions";
 import _ from 'lodash';
+import {resolutionsIconMap} from '../../components/Resolutions.js'
 
 export default class DiffResultsFilter extends Component {
 
@@ -107,6 +108,61 @@ export default class DiffResultsFilter extends Component {
         )
     }
 
+    getResolutionTypeDescription = (resolutionType) => {
+        switch (resolutionType) {
+            case "All":
+                return "All"
+            
+            case "ERR":
+                return "All Errors"
+            
+            default:
+                return resolutionsIconMap[resolutionType].description;
+        }
+    }
+
+    resolutionTypeMenuItems = (resolutionTypes, kind) => {
+        let resTypeMenuJsx = (item, index) => {
+            return (
+            <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
+                <Glyphicon style={{ visibility: this.state.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
+            </MenuItem>);
+        }
+
+        return resolutionTypes.filter((item) => {
+            return ((kind == "error") ? item.value.indexOf("ERR_") > -1 : item.value.indexOf("ERR_") == -1);
+        }).map(resTypeMenuJsx);
+    }
+
+    renderResolutionTypesDropdown = () => {
+        let selectedResolutionType = this.props.filter.selectedResolutionType;
+        let resolutionTypes = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.resolutionTypes;
+        
+        return (
+            <Fragment>
+                <div style={{display: "inline-block"}}>
+                    <label class="checkbox-inline">
+                        Resolution Type:
+                    </label>
+                    <div style={{ paddingLeft: "9px", display: "inline-block" }}>
+                        <DropdownButton title={this.getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
+                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
+                                <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
+                            </MenuItem>
+                            <MenuItem divider />
+                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
+                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                            </MenuItem>
+                            {this.resolutionTypeMenuItems(resolutionTypes, "error")}
+                            <MenuItem divider />
+                            {this.resolutionTypeMenuItems(resolutionTypes, "other")}
+                        </DropdownButton>
+                    </div>
+                </div>
+            </Fragment>
+        )
+    }
+
     render() {
         return (
             <div>
@@ -117,6 +173,9 @@ export default class DiffResultsFilter extends Component {
 
                 <div style={{ marginBottom: "18px" }}>
                     {this.renderSelectReqRespRadio()}
+                <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        
+                {this.renderResolutionTypesDropdown()}
                 </div>
                 <ButtonGroup style={{ marginBottom: "9px", width: "100%" }}>
                     <div style={{ textAlign: "left" }}>

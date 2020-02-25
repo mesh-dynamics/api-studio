@@ -13,7 +13,7 @@ const respData = {
     facets: {
         services: [{value: "s1", count: 2}, {value: "s2", count: 2}],
         apiPaths: [{value: "a1", count: 2}, {value: "a2", count: 2}],
-        resolutionTypes: [{value: "ERR_", count: 2}],
+        resolutionTypes: [{value: "ERR_ValTypeMismatch", count: 2}],
         pages: 10,
     },
     results: [
@@ -1562,7 +1562,6 @@ export default class DiffResults extends Component {
     }
 
     componentDidMount = () => {
-        console.log("aaa")
         this.fetchResults();
     }
 
@@ -1852,7 +1851,7 @@ export default class DiffResults extends Component {
                 </div>
                 <div>
                     <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={"app"}></DiffResultsFilter>
-                    <DiffResultsList diffLayoutData={this.state.diffLayoutData}></DiffResultsList>
+                    <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData}></DiffResultsList>
                 </div>
             </div>
         )

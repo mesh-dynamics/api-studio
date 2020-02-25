@@ -3,6 +3,7 @@ import {resolutionsIconMap} from '../../components/Resolutions.js'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import statusCodeList from "../../StatusCodeList"
+import _ from 'lodash';
 
 export default class DiffResultsList extends Component {
     constructor(props) {
@@ -14,23 +15,33 @@ export default class DiffResultsList extends Component {
             showRequestMessageBody: false,
             showResponseMessageHeaders: false,
             showResponseMessageBody: true,
+            searchFilterPath: "",
+            showAll: false, // todo
+            //selectedResolutionType: "All",
         }
-        this.selectedResolutionType = "All";
-        this.resolutionTypes = [{value: "ERR", count: 2}];
+        //this.selectedResolutionType = "All";
+        //this.resolutionTypes = [{value: "ERR", count: 2}];
+        this.inputElementRef = React.createRef();
+
     }
 
     handleMetaDataSelect = (metaDataType, value) => {
     }
 
-    resolutionTypeMenuItems = (type) => {
+    // todo: remove
+    resolutionTypeMenuItems = (kind) => {
         let resTypeMenuJsx = (item, index) => {
-            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
-                <Glyphicon style={{ visibility: this.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
+            return (
+            <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
+                <Glyphicon style={{ visibility: this.state.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
             </MenuItem>);
         }
 
-        return this.resolutionTypes.filter((item) => {
-            return ((type == "error") ? item.value.indexOf("ERR_") > -1 : item.value.indexOf("ERR_") == -1);
+        let resolutionTypes = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.resolutionTypes;
+
+
+        return resolutionTypes.filter((item) => {
+            return ((kind == "error") ? item.value.indexOf("ERR_") > -1 : item.value.indexOf("ERR_") == -1);
         }).map(resTypeMenuJsx);
     }
 
@@ -52,6 +63,7 @@ export default class DiffResultsList extends Component {
 
     }
 
+    // todo: remove
     getResolutionTypeDescription = (resolutionType) => {
         switch (resolutionType) {
             case "All":
@@ -75,10 +87,52 @@ export default class DiffResultsList extends Component {
         return code;
     };
 
-    renderToggleRibbon = () => {
-        // TODO
-        let selectedResolutionType = this.selectedResolutionType;
 
+    // todo: remove
+    renderResolutionTypesDropdown = () => {
+        let selectedResolutionType = this.state.selectedResolutionType;
+        let resolutionTypes = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.resolutionTypes;
+        console.log(resolutionTypes)
+        
+        return (
+            <Fragment>
+                <div style={{display: "inline-block"}}>
+                    <label class="checkbox-inline">
+                        Resolution Type:
+                    </label>
+                    <div style={{ paddingLeft: "9px", display: "inline-block" }}>
+                        <DropdownButton title={this.getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
+                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
+                                <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
+                            </MenuItem>
+                            <MenuItem divider />
+                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
+                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                            </MenuItem>
+                            {this.resolutionTypeMenuItems("error")}
+                            <MenuItem divider />
+                            {this.resolutionTypeMenuItems("other")}
+                        </DropdownButton>
+                    </div>
+                </div>
+            </Fragment>
+        )
+    }
+
+    handleSearchFilterChange = (e) => {
+        //const { history } = this.props;
+
+        this.setState({ searchFilterPath: e.target.value });
+
+        //this.historySearchParams = updateSearchHistoryParams("searchFilterPath", e.target.value, this.state);
+
+        // history.push({
+        //     pathname: '/shareable_link',
+        //     search: this.historySearchParams
+        // });
+    }
+
+    renderToggleRibbon = () => {
         return (
             <Fragment>
                 <FormGroup>
@@ -90,35 +144,20 @@ export default class DiffResultsList extends Component {
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
                         
-                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
-                        <div style={{display: "inline-block"}}>
-                            <label class="checkbox-inline">
-                                Resolution Type:
-                            </label>
-                            <div style={{ paddingLeft: "9px", display: "inline-block" }}>
-                                <DropdownButton title={this.getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
-                                        <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({this.resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    <MenuItem divider />
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
-                                        <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({this.resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
-                                    </MenuItem>
-                                    {this.resolutionTypeMenuItems("error")}
-                                    <MenuItem divider />
-                                    {this.resolutionTypeMenuItems("other")}
-                                </DropdownButton>
-                            </div>
-                        </div>
-                        {/* <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
+                        {/* todo: remove */}
+                        {/* <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        
+                        {this.renderResolutionTypesDropdown()} */}
+
+                        <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                             ref={this.inputElementRef}
                             type="text"
                             value={this.state.searchFilterPath}
                             placeholder="Search"
                             onChange={this.handleSearchFilterChange}
                             id="filterPathInputId"
-                            inputRef={ref => { this.input = ref; }}
-                        /> */}
+                            //inputRef={ref => { this.input = ref; }}
+                        />
                     </FormGroup>
             </Fragment>
         )
