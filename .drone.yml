@@ -63,6 +63,9 @@ steps:
       event:
         include:
         - pull_request
+  image_pull_secrets:
+  - dockerconfigjson
+
 
   - name: deploy_cubeServices_cube_dev
     image: quay.io/honestbee/drone-kubernetes
