@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.thrift.TBase;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;

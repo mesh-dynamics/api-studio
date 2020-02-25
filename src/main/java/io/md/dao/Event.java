@@ -10,7 +10,6 @@ package io.md.dao;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -27,7 +26,6 @@ import io.md.constants.Constants;
 import io.md.core.ReplayTypeEnum;
 import io.md.dao.DataObj.PathNotFoundException;
 import io.md.utils.UtilException;
-import io.md.utils.Utils;
 
 
 /*
@@ -317,7 +315,6 @@ public class Event {
 		this.collection = collection;
 	}
 
-	@JsonIgnore
 	public final Instant timestamp;
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc

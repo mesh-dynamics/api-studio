@@ -8,8 +8,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.logging.log4j.util.ReadOnlyStringMap;
-import org.glassfish.jersey.internal.guava.MoreObjects.ToStringHelper;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;

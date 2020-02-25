@@ -11,20 +11,19 @@
     <version.log4j>2.13.0</version.log4j>
     <version.java>11</version.java>
     <version.httpcomponents>4.5.11</version.httpcomponents>
-    <version.jersey>2.27</version.jersey>
-    <version.gson>2.8.5</version.gson>
+    <version.jax>2.0</version.jax>
     <version.jaeger>1.1.0</version.jaeger>
     <version.jackson>2.9.9</version.jackson>
     <version.apachecommons>1.8</version.apachecommons>
-    <version.json>20190722</version.json>
+    <version.commonslang>3.9</version.commonslang>
   </properties>
-  <!--    <distributionManagement>-->
-  <!--      <repository>-->
-  <!--        <id>github</id>-->
-  <!--        <name>GitHub CubeIO Apache Maven Packages</name>-->
-  <!--        <url>https://maven.pkg.github.com/cube-io-corp/agent</url>-->
-  <!--      </repository>-->
-  <!--    </distributionManagement>-->
+<!--      <distributionManagement>
+        <repository>
+          <id>github</id>
+          <name>GitHub CubeIO Apache Maven Packages</name>
+          <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+        </repository>
+      </distributionManagement>-->
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -93,10 +92,11 @@
       <version>${version.jackson}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+    <!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
     <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <version>${version.jersey}</version>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.0</version>
     </dependency>
 
     <dependency>
@@ -117,17 +117,9 @@
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
-      <version>${version.apachecommons}</version>
+      <artifactId>commons-lang3</artifactId>
+      <version>${version.commonslang}</version>
     </dependency>
-
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>${version.json}</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
