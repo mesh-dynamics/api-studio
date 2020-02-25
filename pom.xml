@@ -8,12 +8,8 @@
   <version>1.0.0</version>
   <packaging>jar</packaging>
   <properties>
-    <version.log4j>2.11.1</version.log4j>
     <version.java>11</version.java>
-    <version.httpcomponents>4.5.8</version.httpcomponents>
-    <version.jersey>2.27</version.jersey>
-    <version.gson>2.8.5</version.gson>
-    <version.jaeger>0.32.0</version.jaeger>
+    <version.mdcommons>1.0.7</version.mdcommons>
   </properties>
   <!--    <distributionManagement>-->
   <!--      <repository>-->
@@ -68,64 +64,11 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jdk8</artifactId>
-    </dependency>
-    <!-- for dealing with Instant objects -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-parameter-names</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.9.8</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
-    <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <version>${version.jersey}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.jaegertracing</groupId>
-      <artifactId>jaeger-client</artifactId>
-      <version>${version.jaeger}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
-      <version>1.6</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20180813</version>
-    </dependency>
 
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0.0</version>
+      <version>${version.mdcommons}</version>
     </dependency>
 
   </dependencies>

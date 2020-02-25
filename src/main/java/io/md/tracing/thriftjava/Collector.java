@@ -238,7 +238,8 @@ public class Collector {
 
   }
 
-  public static class submitBatches_args implements org.apache.thrift.TBase<submitBatches_args, submitBatches_args._Fields>, java.io.Serializable, Cloneable, Comparable<submitBatches_args>   {
+  public static class submitBatches_args implements org.apache.thrift.TBase<submitBatches_args, submitBatches_args._Fields>, java.io.Serializable,
+	  Cloneable, Comparable<submitBatches_args> {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("submitBatches_args");
 
     private static final org.apache.thrift.protocol.TField BATCHES_FIELD_DESC = new org.apache.thrift.protocol.TField("batches", org.apache.thrift.protocol.TType.LIST, (short)1);
@@ -660,7 +661,8 @@ public class Collector {
     }
   }
 
-  public static class submitBatches_result implements org.apache.thrift.TBase<submitBatches_result, submitBatches_result._Fields>, java.io.Serializable, Cloneable, Comparable<submitBatches_result>   {
+  public static class submitBatches_result implements org.apache.thrift.TBase<submitBatches_result, submitBatches_result._Fields>, java.io.Serializable,
+	  Cloneable, Comparable<submitBatches_result> {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("submitBatches_result");
 
     private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.LIST, (short)0);
