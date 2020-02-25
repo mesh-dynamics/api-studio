@@ -1,12 +1,10 @@
 package io.md.utils;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -33,8 +31,6 @@ import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
-import io.opentracing.Scope;
-import io.opentracing.Span;
 
 public class Utils {
 
@@ -155,17 +151,7 @@ public class Utils {
 	}
 
 
-	public static Map<String, Object> extractThriftParams(String thriftApiPath) {
-		Map<String, Object> params = new HashMap<>();
-		if (thriftApiPath != null) {
-			String[] splitResult = thriftApiPath.split("::");
-			String methodName = splitResult[0];
-			String argsClassName = splitResult[1];
-			params.put(Constants.THRIFT_METHOD_NAME, methodName);
-			params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
-		}
-		return params;
-	}
+
 
 	public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap,
 		String fieldname) {

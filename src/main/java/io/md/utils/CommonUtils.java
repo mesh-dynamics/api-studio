@@ -176,7 +176,7 @@ public class CommonUtils {
 			asChildOf(parentContext);
 		tags.forEach(spanBuilder::withTag);
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-			.withTag("runId" , "async-log-10k")
+			.withTag("runId" , "async-log-100k")
 			.start();
 	}
 
@@ -210,7 +210,7 @@ public class CommonUtils {
 		}
 		// TODO could add more tags like http.url
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.withTag("runId" , "async-log-10k")
+			.withTag("runId" , "async-log-100k")
 			.start();
 	}
 
@@ -348,41 +348,7 @@ public class CommonUtils {
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
 	}
 
-	public static Span startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
-		Tracer tracer = MDGlobalTracer.get();
-		Tracer.SpanBuilder spanBuilder;
-		try {
-			//span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
-			JaegerSpanContext parentSpanCtx = new JaegerSpanContext(span.traceIdHigh,
-				span.traceIdLow, span.spanId, span.parentSpanId,
-				(byte) span.flags);
-			parentSpanCtx = parentSpanCtx.withBaggage(span.baggage);
-			spanBuilder = tracer.buildSpan(methodName).asChildOf(parentSpanCtx);
-		} catch (Exception e) {
-			spanBuilder = tracer.buildSpan(methodName);
-		}
-		// TODO could add more tags like http.url
-		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).start();
-	}
 
-	//TODO assuming that the name of the field/argument containing will always be span
-	//this might again require extra config to indicate the field containing span
-	public static String traceIdFromThriftSpan(TBase spanContainingObject) {
-		try {
-			Class<?> clazz = spanContainingObject.getClass();
-			Field field = clazz.getField(
-				Constants.THRIFT_SPAN_ARGUMENT_NAME); //Note, this can throw an exception if the field doesn't exist.
-			io.md.tracing.thriftjava.Span span = (io.md.tracing.thriftjava.Span) field
-				.get(spanContainingObject);
-			JaegerSpanContext spanContext = new JaegerSpanContext(span.traceIdHigh, span.traceIdLow,
-				span.spanId, span.parentSpanId,
-				(byte) span.flags);
-			return spanContext.getTraceId();
-		} catch (Exception e) {
-			return null;
-		}
-		//spanContainingObject.getFieldValue()
-	}
 
 }
 

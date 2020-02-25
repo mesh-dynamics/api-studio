@@ -62,7 +62,6 @@ public class DataObjFactory {
 				return new JsonDataObj(payloadStr, jsonMapper);
 			case ThriftRequest:
 			case ThriftResponse:
-				return new ThriftDataObject.ThriftDataObjectBuilder().build(payloadBin, params);
 			case ProtoBufRequest:
 			case ProtoBufResponse:
 			default:

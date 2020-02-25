@@ -8,12 +8,15 @@
   <version>1.0.7</version>
   <packaging>jar</packaging>
   <properties>
-    <version.log4j>2.11.1</version.log4j>
+    <version.log4j>2.13.0</version.log4j>
     <version.java>11</version.java>
-    <version.httpcomponents>4.5.8</version.httpcomponents>
+    <version.httpcomponents>4.5.11</version.httpcomponents>
     <version.jersey>2.27</version.jersey>
     <version.gson>2.8.5</version.gson>
     <version.jaeger>1.1.0</version.jaeger>
+    <version.jackson>2.9.9</version.jackson>
+    <version.apachecommons>1.8</version.apachecommons>
+    <version.json>20190722</version.json>
   </properties>
   <!--    <distributionManagement>-->
   <!--      <repository>-->
@@ -71,16 +74,23 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
+      <version>${version.jackson}</version>
     </dependency>
     <!-- for dealing with Instant objects -->
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-parameter-names</artifactId>
+      <version>${version.jackson}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.9.8</version>
+      <version>${version.jackson}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-smile</artifactId>
+      <version>${version.jackson}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
     <dependency>
@@ -99,11 +109,6 @@
       <artifactId>log4j-core</artifactId>
       <version>${version.log4j}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
 
     <dependency>
       <groupId>io.jaegertracing</groupId>
@@ -113,20 +118,20 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.6</version>
+      <version>${version.apachecommons}</version>
     </dependency>
 
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20180813</version>
+      <version>${version.json}</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.5.11</version>
+      <version>${version.httpcomponents}</version>
     </dependency>
 
   </dependencies>

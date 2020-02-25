@@ -162,7 +162,8 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 	}
 
 
-	private CustomJsonLayout(final Configuration config, final boolean locationInfo, final boolean properties,
+	private CustomJsonLayout(final Configuration config, final boolean locationInfo,
+		final boolean properties,
 		final boolean encodeThreadContextAsList,
 		final boolean complete, final boolean compact, final boolean eventEol,
 		final String headerPattern, final String footerPattern, final Charset charset,
@@ -170,10 +171,15 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 		final boolean includeNullDelimiter, final boolean objectMessageAsJsonObject,
 		final KeyValuePair[] extras) {
 
-		super(config, getObjectWriter(encodeThreadContextAsList, includeStacktrace, stacktraceAsString,
-			true, locationInfo, properties, compact), charset, compact, complete, eventEol,
-			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(headerPattern).setDefaultPattern(DEFAULT_HEADER).build(),
-			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(footerPattern).setDefaultPattern(DEFAULT_FOOTER).build(),
+		// TODO putting end of line string as empty here, need to find a proper replacement for it
+		super(config,
+			getObjectWriter(encodeThreadContextAsList, includeStacktrace, stacktraceAsString,
+				true, locationInfo, properties, compact)
+			, charset, compact, complete, eventEol, "",
+			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(headerPattern)
+				.setDefaultPattern(DEFAULT_HEADER).build(),
+			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(footerPattern)
+				.setDefaultPattern(DEFAULT_FOOTER).build(),
 			includeNullDelimiter, extras);
 
 		if (extras != null && extras.length > 0) {

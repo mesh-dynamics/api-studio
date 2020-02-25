@@ -149,14 +149,15 @@ public class Event {
 		// parse if not already parsed
 		if (payload == null) {
 			;
-			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
-				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
-				Map<String, Object> newParams = Utils.extractThriftParams(this.apiPath);
-				params.putAll(newParams);
-				// TODO push the class loader from outside
-				/*  classLoader.ifPresent(urlClassLoader -> finalParams
-					.put(Constants.CLASS_LOADER, urlClassLoader));*/
-			}
+			// TODO commenting this out from here need to put this logic in md-thrift-commons
+//			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
+//				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
+//				Map<String, Object> newParams = Utils.extractThriftParams(this.apiPath);
+//				params.putAll(newParams);
+//				// TODO push the class loader from outside
+//				/*  classLoader.ifPresent(urlClassLoader -> finalParams
+//					.put(Constants.CLASS_LOADER, urlClassLoader));*/
+//			}
 			payload = DataObjFactory
 				.build(eventType, rawPayloadBinary, rawPayloadString, params);
 		}
