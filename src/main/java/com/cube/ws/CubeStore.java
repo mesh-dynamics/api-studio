@@ -8,6 +8,7 @@ import static com.cube.core.Utils.buildSuccessResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -271,12 +272,18 @@ public class CubeStore {
             // pick apiPath from meta fields
             String reqApiPath = Optional
                 .ofNullable(meta.getFirst(Constants.API_PATH_FIELD)).orElse("");
+
             Event responseEvent;
             try {
-                responseEvent = Utils
-                    .createHTTPResponseEvent(path, rid, status, meta, hdrs, rr.body,
+            	if (!reqApiPath.isEmpty()) {
+		            URIBuilder uriBuilder = new URIBuilder(reqApiPath);
+		            reqApiPath = uriBuilder.getPath();
+	            }
+	            responseEvent = Utils
+                    .createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
                         collection, timestamp, runType, customerId, app, config);
-            } catch (JsonProcessingException | InvalidEventException e) {
+
+            } catch (JsonProcessingException | InvalidEventException | URISyntaxException e) {
                 throw new CubeStoreException(e, "Invalid Event"
                     , cubeEventMetaInfo);
             }
@@ -298,9 +305,6 @@ public class CubeStore {
         // extract path and query params
         URIBuilder uriBuilder = new URIBuilder(rr.pathwparams);
         String path = uriBuilder.getPath();
-        if(path.startsWith("/")){
-            path = path.substring(1);
-        }
         List<NameValuePair> queryParams = uriBuilder.getQueryParams();
         MultivaluedHashMap queryParamsMap = new MultivaluedHashMap();
         queryParams.forEach(nameValuePair -> {
