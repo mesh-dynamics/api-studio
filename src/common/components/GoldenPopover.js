@@ -169,7 +169,16 @@ class GoldenPopover extends React.Component {
         } else {
             
             try {
-                const newlyFetchedRule = await this.getResponseTemplate();
+                const { path, dt, pt, ct, em , customization } = await this.getResponseTemplate();
+                const newlyFetchedRule = {
+                    path,
+                    dt, 
+                    pt: pt === "Default" ? "Optional" : pt, 
+                    ct: ct === "Default" ? "Ignore": ct, 
+                    em, 
+                    customization  
+                };
+
                 this.setState({ defaultRule: { ...newlyFetchedRule }, newRule: { ...newlyFetchedRule } });
             } catch (e) {
                 console.log("Failed to fetch rules from api.");
