@@ -98,7 +98,7 @@ class OperationSet extends Component {
                     >
                         {
                             /* TODO: temporary workaround; cleanup when removing shareable_link page */
-                        (history.location.pathname === "/diff_results") && 
+                        (history.location.pathname.includes("/diff_results")) && 
                         <DiffResultsContext.Consumer>
                             {(context) => this.renderOperationalSet(context)}
                         </DiffResultsContext.Consumer> 
