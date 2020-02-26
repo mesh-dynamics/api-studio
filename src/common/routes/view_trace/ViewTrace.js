@@ -14,6 +14,8 @@ import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
 import {Link} from "react-router-dom";
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
+import statusCodeList from "../../StatusCodeList";
+import {resolutionsIconMap} from '../../components/Resolutions.js';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -90,8 +92,10 @@ class ViewTrace extends Component {
             shownResponseMessageBody: true,
             showRequestMessageHeaders: false,
             shownRequestMessageHeaders: false,
-            showRequestMessageParams: false,
-            shownRequestMessageParams: false,
+            showRequestMessageQParams: false,
+            shownRequestMessageQParams: false,
+            showRequestMessageFParams: false,
+            shownRequestMessageFParams: false,
             showRequestMessageBody: false,
             shownRequestMessageBody: false,
             selectedService: "All",
@@ -119,6 +123,7 @@ class ViewTrace extends Component {
         this.uniqueRecordReplayData = [];
 
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
+        this.toggleMessageContents = this.toggleMessageContents.bind(this);
     }
 
     componentDidMount() {
@@ -140,7 +145,8 @@ class ViewTrace extends Component {
         const selectedResolutionType = urlParameters["selectedResolutionType"];
         const searchFilterPath = urlParameters["searchFilterPath"];
         const requestHeaders = urlParameters["requestHeaders"];
-        const requestParams = urlParameters["requestParams"];
+        const requestQParams = urlParameters["requestQParams"];
+        const requestFParams = urlParameters["requestFParams"];
         const requestBody = urlParameters["requestBody"];
         const responseHeaders = urlParameters["responseHeaders"];
         const responseBody = urlParameters["responseBody"];
@@ -172,9 +178,12 @@ class ViewTrace extends Component {
             // request header
             showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
             shownRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
-            // request params
-            showRequestMessageParams: requestParams ? JSON.parse(requestParams) : false,
-            shownRequestMessageParams: requestParams ? JSON.parse(requestParams) : false,
+            // request query params
+            showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+            shownRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+            // request form params
+            showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
+            shownRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
             // request body
             showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
             shownRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
@@ -197,6 +206,33 @@ class ViewTrace extends Component {
     handleSearchFilterChange(e) {
 
         this.setState({ searchFilterPath: e.target.value });
+    }
+
+    handleMetaDataSelect(metaDataType, value) {
+        const { history, dispatch } = this.props;
+        this.setState({
+            selectedResolutionType : value, 
+            showAll : (value ===  "All")
+        });
+    }
+
+    toggleMessageContents(e) {
+        const { history } = this.props;
+
+        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
+        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
+        if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
+        if (e.target.value === "requestQParams") this.setState({ showRequestMessageQParams: e.target.checked, shownRequestMessageQParams: true });
+        if (e.target.value === "requestFParams") this.setState({ showRequestMessageFParams: e.target.checked, shownRequestMessageFParams: true });
+        if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
+
+        setTimeout(() => {
+            const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody } = this.state;
+
+            if(showResponseMessageHeaders === false && showResponseMessageBody === false && showRequestMessageHeaders === false &&  showRequestMessageQParams === false && showRequestMessageFParams === false && showRequestMessageBody === false) {
+                this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
+            }
+        });
     }
 
     flattenTree(traceDataTree) {
@@ -389,12 +425,48 @@ class ViewTrace extends Component {
         }
     }
 
+    validateAndCleanHTTPMessageParts (messagePart) {
+        let cleanedMessagepart = "";
+        if (messagePart &&_.isObject(messagePart)) {
+            cleanedMessagepart = messagePart;
+        } else if (messagePart) {
+            try {
+                cleanedMessagepart = JSON.parse(messagePart);
+            } catch (e) {
+                cleanedMessagepart = JSON.parse('"' + cleanEscapedString(_.escape(messagePart)) + '"')
+            }
+        } else {
+            cleanedMessagepart = JSON.parse('""');
+        }
+
+        return cleanedMessagepart;
+    }
+
+    getDiffForMessagePart(replayedPart, recordedPart, serverSideDiff, prefix, service, path) {
+        if (!serverSideDiff || serverSideDiff.length === 0) return null; 
+        let actpart = JSON.stringify(replayedPart, undefined, 4);
+        let expPart = JSON.stringify(recordedPart, undefined, 4);
+        let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
+        let reductedDiffArrayMsgPart = reducedDiffArrayMsgPart.computeDiffArray()
+        let updatedReductedDiffArrayMsgPart = reductedDiffArrayMsgPart && reductedDiffArrayMsgPart.map((eachItem) => {
+            return {
+                ...eachItem,
+                service,
+                app: this.state.app,
+                templateVersion: this.state.templateVersion,
+                apiPath: path,
+                replayId: this.state.replayId,
+                recordingId: this.state.recordingId
+            }
+        });
+        return updatedReductedDiffArrayMsgPart;
+    }
+
     validateAndCreateDiffLayoutData(replayList) {
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
-                recordedRequestHeaders, replayedRequestHeaders, recordedRequestParams, replayedRequestParams, recordedRequestBody,
-                replayedRequestBody;
-            let isJson = true, recordedSpanId = null, recordedParentSpanId = null, replayedSpanId = null, replayedParentSpanId = null;
+                recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
+            let isJson = true;
             // processing Response    
             // recorded response body and headers
             if (item.recordResponse) {
@@ -414,8 +486,8 @@ class ViewTrace extends Component {
                     recordedData = item.recordResponse.body ? item.recordResponse.body : '""';
                 }
             } else {
-                recordedResponseHeaders = null;
-                recordedData = null;
+                recordedResponseHeaders = "";
+                recordedData = "";
             }
 
             // same as above but for replayed response
@@ -436,10 +508,11 @@ class ViewTrace extends Component {
                     replayedData = item.replayResponse.body ? item.replayResponse.body : '""';
                 }
             } else {
-                replayedResponseHeaders = null;
+                replayedResponseHeaders = "";
                 replayedData = "";
             }
             let diff;
+            
             if (item.respCompDiff && item.respCompDiff.length !== 0) {
                 diff = item.respCompDiff;
             } else {
@@ -503,53 +576,37 @@ class ViewTrace extends Component {
             // recorded request header and body
             // parse and clean up body string
             if (item.recordRequest) {
-                recordedRequestHeaders = item.recordRequest.hdrs ? item.recordRequest.hdrs : {};
-                recordedRequestParams = item.recordRequest.queryParams ? item.recordRequest.queryParams : {};
-                recordedSpanId = recordedRequestHeaders["x-b3-spanid"] ? recordedRequestHeaders["x-b3-spanid"][0] : null;
-                recordedParentSpanId = recordedRequestHeaders["x-b3-parentspanid"] ? recordedRequestHeaders["x-b3-parentspanid"][0] : null;
-                if (item.recordRequest.body) {
-                    try {
-                        recordedRequestBody = JSON.parse(item.recordRequest.body);
-                    } catch (e) {
-                        recordedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.recordRequest.body)) + '"')
-                    }
-                }
-                else {
-                    recordedRequestBody = JSON.parse('""');
-                }
+                recordedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
+                recordedRequestBody = this.validateAndCleanHTTPMessageParts(item.recordRequest.body);
+                recordedRequestQParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
+                recordedRequestFParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
             } else {
-                recordedRequestHeaders = null;
+                recordedRequestHeaders = "";
                 recordedRequestBody = "";
-                recordedRequestParams = null;
+                recordedRequestQParams = "";
+                recordedRequestFParams = "";
             }
 
             // replayed request header and body
             // same as above
-            if (item.replayRequest) { 
-                replayedRequestHeaders = item.replayRequest.hdrs ? item.replayRequest.hdrs : {};
-                replayedRequestParams = item.replayRequest.queryParams ? item.replayRequest.queryParams : {};
-                replayedSpanId = replayedRequestHeaders["x-b3-spanid"] ? replayedRequestHeaders["x-b3-spanid"][0] : null;
-                replayedParentSpanId = replayedRequestHeaders["x-b3-parentspanid"] ? replayedRequestHeaders["x-b3-parentspanid"][0] : null;
-                if (item.replayRequest.body) {
-                    try {
-                        replayedRequestBody = JSON.parse(item.replayRequest.body);
-                    } catch (e) {
-                        replayedRequestBody = JSON.parse('"' + cleanEscapedString(_.escape(item.replayRequest.body)) + '"')
-                    }
-                }
-                else {
-                    replayedRequestBody = JSON.parse('""');
-                }
+            if (item.replayRequest) {
+                replayedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
+                replayedRequestBody = this.validateAndCleanHTTPMessageParts(item.replayRequest.body);
+                replayedRequestQParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
+                replayedRequestFParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
             } else {
                 replayedRequestHeaders = "";
                 replayedRequestBody = "";
-                replayedRequestParams = "";
+                replayedRequestQParams = "";
+                replayedRequestFParams = "";
             }
+
+            reductedDiffArrayReqHeaders = this.getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path);
+            reductedDiffArrayReqQParams = this.getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path);
+            reductedDiffArrayReqFParams = this.getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path);
+            reductedDiffArrayReqBody = this.getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path);
+
             return {
-                recordedParentSpanId,
-                recordedSpanId,
-                replayedParentSpanId,
-                replayedSpanId,
                 ...item,
                 recordedResponseHeaders,
                 replayedResponseHeaders,
@@ -563,18 +620,118 @@ class ViewTrace extends Component {
                 show: true,
                 recordedRequestHeaders,
                 replayedRequestHeaders,
-                recordedRequestParams,
-                replayedRequestParams,
+                recordedRequestQParams,
+                replayedRequestQParams,
+                recordedRequestFParams,
+                replayedRequestFParams,
                 recordedRequestBody,
                 replayedRequestBody,
-                updatedReducedDiffArrayRespHdr
+                updatedReducedDiffArrayRespHdr,
+                reductedDiffArrayReqHeaders,
+                reductedDiffArrayReqQParams,
+                reductedDiffArrayReqFParams,
+                reductedDiffArrayReqBody
             }
         });
         return diffLayoutData;
     }
 
+    getErrResoultionCount(resolutionType, eachMessage) {
+        let givenResType = eachMessage.resolutionTypes.filter( resType => resType.value === resolutionType);
+        return givenResType.length > 0 ? {count : givenResType[0].count, label: givenResType[0].count} : {count : 0, label: ""};
+    }
+
+    getHttpStatus = (code) => {
+        for (let httpStatus of statusCodeList) {
+            if (code == httpStatus.status) {
+                return httpStatus.value;
+            }
+        }
+
+        return code;
+    };
+
     render() {
-        let { recProcessedTraceDataFlattenTree, repProcessedTraceDataFlattenTree, app, service, apiPath, selectedDiffItem } = this.state;
+        let { recProcessedTraceDataFlattenTree, repProcessedTraceDataFlattenTree, app, service, apiPath, selectedDiffItem, selectedResolutionType } = this.state;
+        let resolutionTypesForMenu = [];
+        const filterFunction = (item, index, itself) => {
+            item.count = itself.reduce((counter, currentItem, currentIndex) => {
+                if(item.value === currentItem.value) return (counter + 1);
+                else return (counter + 0);
+            }, 0);
+            let idx = -1;
+            for(let i = 0; i < itself.length; i++) {
+                if(itself[i].value === item.value) {
+                    idx = i;
+                    break; 
+                }
+            }
+            return idx === index;
+        };
+        let recProcessedTraceDataFlattenTreeResCount = recProcessedTraceDataFlattenTree.map(eachItem => {
+            let resolutionTypes = [];
+            for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
+            }
+            resolutionTypes = resolutionTypes.filter(filterFunction);
+            return {
+                ...eachItem,
+                resolutionTypes
+            };
+        });
+        let repProcessedTraceDataFlattenTreeResCount = repProcessedTraceDataFlattenTree.map(eachItem => {
+            let resolutionTypes = [];
+            for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
+            }
+            resolutionTypes = resolutionTypes.filter(filterFunction);
+            return {
+                ...eachItem,
+                resolutionTypes
+            };
+        });
+        let filterPaths = [];
+        if(selectedDiffItem) {
+            for (let eachJsonPathParsedDiff of selectedDiffItem.parsedDiff) {
+                resolutionTypesForMenu.push({value: eachJsonPathParsedDiff.resolution, count: 0});
+                if (selectedResolutionType === "All"
+                || selectedResolutionType === eachJsonPathParsedDiff.resolution
+                || (selectedResolutionType === "ERR" && eachJsonPathParsedDiff.resolution.indexOf("ERR_") > -1)) {
+                    // add only the json paths we want to show in the diff
+                    filterPaths.push(eachJsonPathParsedDiff.path);
+                }
+            }
+        }
+        resolutionTypesForMenu = resolutionTypesForMenu.filter(filterFunction);
+        let resTypeMenuJsx = (item, index) => {
+            return (<MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
+                <Glyphicon style={{ visibility: selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
+            </MenuItem>);
+        };
+        
+        let resolutionTypeErrorMenuItems 
+                    = resolutionTypesForMenu.filter((item) => {
+                        return item.value.indexOf("ERR_") > -1;
+                    })
+                    .map(resTypeMenuJsx);
+        
+        let resolutionTypeOtherMenuItems 
+                    = resolutionTypesForMenu.filter((item) => {
+                        return item.value.indexOf("ERR_") == -1;
+                    })
+                    .map(resTypeMenuJsx);
+        let getResolutionTypeDescription = function (resolutionType) {
+            switch (resolutionType) {
+                case "All":
+                    return "All"
+                
+                case "ERR":
+                    return "All Errors"
+                
+                default:
+                    return resolutionsIconMap[resolutionType].description;
+            }
+        };
         return (
             <div className="content-wrapper">
                 <div style={{opacity: 0.6}}><h4><Glyphicon style={{ visibility:  "visible" }} glyph="search" /> <span>TRACE REQUEST</span></h4></div>
@@ -626,39 +783,39 @@ class ViewTrace extends Component {
                                             <div style={{width: "54px", textAlign: "center", display: "inline-block"}}>GLD ERR</div>
                                         </td>
                                     </tr>
-                                    {recProcessedTraceDataFlattenTree.map((item, index) => {
+                                    {recProcessedTraceDataFlattenTreeResCount.map((item, index) => {
                                         return (<tr key={item.recordReqId + item.replayReqId} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
-                                                {item.children && item.children.length > 0 ? (<span><i className={item.showChildren ? "far fa-minus-square" : "far fa-plus-square"} style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}} onClick={(evt) => {evt.stopPropagation(); this.toggleShowChildren(item, recProcessedTraceDataFlattenTree); return false;}}></i></span>) : ("")}
+                                                {item.children && item.children.length > 0 ? (<span><i className={item.showChildren ? "far fa-minus-square" : "far fa-plus-square"} style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}} onClick={(evt) => {evt.stopPropagation(); this.toggleShowChildren(item, recProcessedTraceDataFlattenTreeResCount); return false;}}></i></span>) : ("")}
                                                 <span>{item.service}</span>
                                             </td>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>{item.path}</td>
                                             <td style={{verticalAlign: "middle", padding: "12px"}} className="text-center">
                                                 
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: item.reqMatchResType === "NoMatch" ? "red" : "green", lineHeight: "30px", margin: "0 auto", textAlign: "center", opacity: 0.7}}></div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: item.respCompResType === "NoMatch" ? "red" : "green", lineHeight: "30px", margin: "0 auto", textAlign: "center", opacity: 0.7}}></div>
                                                 </div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_ValTypeMismatch", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_ValTypeMismatch", item).label}</div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_ValMismatch", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_ValMismatch", item).label}</div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_Required", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_Required", item).label}</div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_RequiredGolden", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_RequiredGolden", item).label}</div>
                                                 </div>
                                             </td>
                                         </tr>)
@@ -691,39 +848,39 @@ class ViewTrace extends Component {
                                             <div style={{width: "54px", textAlign: "center", display: "inline-block"}}>GLD ERR</div>
                                         </td>
                                     </tr>
-                                    {repProcessedTraceDataFlattenTree.map((item, index) => {
+                                    {repProcessedTraceDataFlattenTreeResCount.map((item, index) => {
                                         return (<tr key={item.recordReqId + item.replayReqId} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
-                                    {item.children && item.children.length > 0 ? (<span><i className={item.showChildren ? "far fa-minus-square" : "far fa-plus-square"} style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}} onClick={(evt) => {evt.stopPropagation(); this.toggleShowChildren(item, repProcessedTraceDataFlattenTree); return false;}}></i></span>) : ("")}
+                                    {item.children && item.children.length > 0 ? (<span><i className={item.showChildren ? "far fa-minus-square" : "far fa-plus-square"} style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}} onClick={(evt) => {evt.stopPropagation(); this.toggleShowChildren(item, repProcessedTraceDataFlattenTreeResCount); return false;}}></i></span>) : ("")}
                                                 <span>{item.service}</span>
                                             </td>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>{item.path}</td>
                                             <td style={{verticalAlign: "middle", padding: "12px"}} className="text-center">
                                                 
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: item.reqMatchResType === "NoMatch" ? "red" : "green", lineHeight: "30px", margin: "0 auto", textAlign: "center", opacity: 0.7}}></div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: item.respCompResType === "NoMatch" ? "red" : "green", lineHeight: "30px", margin: "0 auto", textAlign: "center", opacity: 0.7}}></div>
                                                 </div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_ValTypeMismatch", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_ValTypeMismatch", item).label}</div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_ValMismatch", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_ValMismatch", item).label}</div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_Required", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_Required", item).label}</div>
                                                 </div>
                                                 <div style={{height: "30px", width: "12px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}></div>
                                                 <div style={{height: "30px", width: "54px", backgroundColor: "transparent", display: "inline-block", verticalAlign: "top"}}>
-                                                    <div style={{height: "30px", width: "40px", backgroundColor: "grey", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>0</div>
+                                                    <div style={{height: "30px", width: "40px", backgroundColor: this.getErrResoultionCount("ERR_RequiredGolden", item).count > 0 ? "#fdb8c0" : "#acf2bd", lineHeight: "30px", margin: "0 auto", textAlign: "center"}}>{this.getErrResoultionCount("ERR_RequiredGolden", item).label}</div>
                                                 </div>
                                             </td>
                                         </tr>)
@@ -739,6 +896,33 @@ class ViewTrace extends Component {
                             <h4><Glyphicon style={{ visibility:  "visible", paddingRight: "5px", fontSize: "14px" }} glyph="random" /> <span>Selected Diff</span></h4>
                         </div>
                         <FormGroup>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={this.state.showRequestMessageHeaders}>Request Headers</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={this.state.showRequestMessageQParams}>Request Query Params</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={this.state.showRequestMessageFParams}>Request Form Params</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={this.state.showRequestMessageBody}>Request Body</Checkbox>
+                            <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
+                            <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                            <div style={{display: "inline-block"}}>
+                                <label class="checkbox-inline">
+                                    Resolution Type:
+                                </label>
+                                <div style={{ paddingLeft: "9px", display: "inline-block" }}>
+                                    <DropdownButton title={getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
+                                        <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
+                                            <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypesForMenu.reduce((accumulator, item) => accumulator += item.count, 0)})
+                                        </MenuItem>
+                                        <MenuItem divider />
+                                        <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
+                                            <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypesForMenu.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                                        </MenuItem>
+                                        {resolutionTypeErrorMenuItems}
+                                        <MenuItem divider />
+                                        {resolutionTypeOtherMenuItems}
+                                    </DropdownButton>
+                                </div>
+                            </div>
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                                 ref={this.inputElementRef}
                                 type="text"
@@ -750,20 +934,130 @@ class ViewTrace extends Component {
                             />
                         </FormGroup>
                         <div style={{marginTop: "9px"}}>
-                            <div className="diff-wrapper">
-                                < ReactDiffViewer
-                                    styles={newStyles}
-                                    oldValue={selectedDiffItem.expJSON}
-                                    newValue={selectedDiffItem.actJSON}
-                                    splitView={true}
-                                    disableWordDiff={false}
-                                    diffArray={selectedDiffItem.reductedDiffArray}
-                                    onLineNumberClick={(lineId, e) => { return lineId; }}
-                                    inputElementRef={this.inputElementRef}
-                                    showAll={this.state.showAll}
-                                    searchFilterPath={this.state.searchFilterPath}
-                                />
-                            </div>
+                            {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && (
+                                <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
+                                    <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
+                                    <div className="headers-diff-wrapper">
+                                        < ReactDiffViewer
+                                            styles={newStyles}
+                                            oldValue={JSON.stringify(selectedDiffItem.recordedRequestHeaders, undefined, 4)}
+                                            newValue={JSON.stringify(selectedDiffItem.replayedRequestHeaders, undefined, 4)}
+                                            splitView={true}
+                                            disableWordDiff={false}
+                                            diffArray={selectedDiffItem.reductedDiffArrayReqHeaders}
+                                            onLineNumberClick={(lineId, e) => { return; }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {(this.state.showRequestMessageQParams || this.state.shownRequestMessageQParams) && (
+                                <div style={{ display: this.state.showRequestMessageQParams ? "" : "none" }}>
+                                    <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Query Params</Label></h4>
+                                    <div className="headers-diff-wrapper">
+                                        < ReactDiffViewer
+                                            styles={newStyles}
+                                            oldValue={JSON.stringify(selectedDiffItem.recordedRequestQParams, undefined, 4)}
+                                            newValue={JSON.stringify(selectedDiffItem.replayedRequestQParams, undefined, 4)}
+                                            splitView={true}
+                                            disableWordDiff={false}
+                                            diffArray={selectedDiffItem.reductedDiffArrayReqQParams}
+                                            onLineNumberClick={(lineId, e) => { return; }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {(this.state.showRequestMessageFParams || this.state.shownRequestMessageFParams) && (
+                                <div style={{ display: this.state.showRequestMessageFParams ? "" : "none" }}>
+                                    <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Form Params</Label></h4>
+                                    <div className="headers-diff-wrapper">
+                                        < ReactDiffViewer
+                                            styles={newStyles}
+                                            oldValue={JSON.stringify(selectedDiffItem.recordedRequestFParams, undefined, 4)}
+                                            newValue={JSON.stringify(selectedDiffItem.replayedRequestFParams, undefined, 4)}
+                                            splitView={true}
+                                            disableWordDiff={false}
+                                            diffArray={selectedDiffItem.reductedDiffArrayReqFParams}
+                                            onLineNumberClick={(lineId, e) => { return; }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && (
+                                <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
+                                    <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body</Label></h4>
+                                    <div className="headers-diff-wrapper">
+                                        < ReactDiffViewer
+                                            styles={newStyles}
+                                            oldValue={JSON.stringify(selectedDiffItem.recordedRequestBody, undefined, 4)}
+                                            newValue={JSON.stringify(selectedDiffItem.replayedRequestBody, undefined, 4)}
+                                            splitView={true}
+                                            disableWordDiff={false}
+                                            diffArray={selectedDiffItem.reductedDiffArrayReqBody}
+                                            onLineNumberClick={(lineId, e) => { return; }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && (
+                                <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
+                                    <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
+                                    <div className="headers-diff-wrapper">
+                                        < ReactDiffViewer
+                                            styles={newStyles}
+                                            oldValue={JSON.stringify(selectedDiffItem.recordedResponseHeaders, undefined, 4)}
+                                            newValue={JSON.stringify(selectedDiffItem.replayedResponseHeaders, undefined, 4)}
+                                            splitView={true}
+                                            disableWordDiff={false}
+                                            diffArray={selectedDiffItem.updatedReducedDiffArrayRespHdr}
+                                            onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            {(
+                                <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <h4>
+                                                <Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Body</Label>&nbsp;&nbsp;
+                                                {selectedDiffItem.recordResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(selectedDiffItem.recordResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Recorded Data</span>}
+                                            </h4>
+                                        </div>
+
+                                        <div className="col-md-6">
+                                            <h4 style={{marginLeft: "18%"}}>
+                                            {selectedDiffItem.replayResponse ? <span className="font-12">Status:&nbsp;<span className="green">{this.getHttpStatus(selectedDiffItem.replayResponse.status)}</span></span> : <span className="font-12" style={{"color": "magenta"}}>No Replayed Data</span>}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        {selectedDiffItem.missedRequiredFields.map((eachMissedField) => {
+                                            return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
+                                        })}
+                                    </div>
+                                    {(selectedDiffItem.recordedData || selectedDiffItem.replayedData) && (
+                                        <div className="diff-wrapper">
+                                            < ReactDiffViewer
+                                                styles={newStyles}
+                                                oldValue={selectedDiffItem.expJSON}
+                                                newValue={selectedDiffItem.actJSON}
+                                                splitView={true}
+                                                disableWordDiff={false}
+                                                diffArray={selectedDiffItem.reductedDiffArray}
+                                                filterPaths={filterPaths}
+                                                onLineNumberClick={(lineId, e) => { return; }}
+                                                inputElementRef={this.inputElementRef}
+                                                showAll={this.state.showAll}
+                                                searchFilterPath={this.state.searchFilterPath}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

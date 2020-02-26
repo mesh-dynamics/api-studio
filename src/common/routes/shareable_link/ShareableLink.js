@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, createContext } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
@@ -13,7 +13,9 @@ import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
-import statusCodeList from "../../StatusCodeList"
+import statusCodeList from "../../StatusCodeList";
+
+const ShareableLinkContext = createContext();
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -75,6 +77,7 @@ class ShareableLink extends Component {
             commitId: "",
             saveGoldenError: "",
             timeStamp: "",
+            popoverCurrentPath: "",
         };
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.handleReqRespMtChange = this.handleReqRespMtChange.bind(this)
@@ -86,6 +89,7 @@ class ShareableLink extends Component {
         this.pages = 0;
         this.layoutDataWithDiff = [];
         this.getSearchHistoryParams = getSearchHistoryParams();
+        this.pageNumberVsDataIndex = []
     }
 
     componentDidMount() {
@@ -233,6 +237,8 @@ class ShareableLink extends Component {
             search: this.historySearchParams
         });
     }
+
+    handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
 
     changePageNumber(e) {
         this.setState({ currentPageNumber: +e.target.innerHTML.trim()});
@@ -607,10 +613,10 @@ class ShareableLink extends Component {
     getHttpStatus = (code) => {
         for (let httpStatus of statusCodeList) {
             if (code == httpStatus.status) {
+
                 return httpStatus.value;
             }
         }
-
         return code;
     };
 
@@ -705,9 +711,46 @@ class ShareableLink extends Component {
         
         let pagedDiffLayoutData = [];
         this.pages = Math.ceil(diffLayoutDataFiltered.length / this.pageSize);
+
+        let accumulatedObjectSize = 0;
+        let startIndex = 0;
+
+        this.pageNumberVsDataIndex = [];
+        for (let i = 0; i < diffLayoutDataFiltered.length; i++) {
+            if (diffLayoutDataFiltered) {
+                let oneAPIInstanceDiffSize = roughSizeOfObject(diffLayoutDataFiltered[i]);
+                accumulatedObjectSize = accumulatedObjectSize + oneAPIInstanceDiffSize;
+                if (accumulatedObjectSize > 1000000) {
+                    let pgVsIndexMap = {
+                        startIndex: startIndex,
+                        endIndex: i
+                    };
+                    console.log (JSON.stringify(pgVsIndexMap));
+                    this.pageNumberVsDataIndex.push(pgVsIndexMap);
+                    startIndex =  i  + 1;
+                    accumulatedObjectSize=0;
+                }
+            }
+        }
+
+        if (diffLayoutDataFiltered && diffLayoutDataFiltered.length > 0 && this.pageNumberVsDataIndex.length ==0) {
+            let pgVsIndexMap = {
+                startIndex: 0,
+                endIndex: diffLayoutDataFiltered.length-1
+            };
+            this.pageNumberVsDataIndex.push(pgVsIndexMap);
+        }
+
+        this.pages = this.pageNumberVsDataIndex.length;
+
         if(fetchedResults > 0 && this.pages > 0 && diffLayoutDataFiltered.length > 0) {
-            let startCount = (currentPageNumber - 1 ) * (this.pageSize);
-            for(let i = startCount; i < this.pageSize + startCount; i++) {
+            // let startCount = (currentPageNumber - 1 ) * (this.pageSize);
+            //
+            // for(let i = startCount; i < this.pageSize + startCount; i++) {
+            //     diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
+            //     }
+            // }
+            for (let i = this.pageNumberVsDataIndex[currentPageNumber-1].startIndex; i <= this.pageNumberVsDataIndex[currentPageNumber-1].endIndex; i++) {
                 diffLayoutDataFiltered[i] && pagedDiffLayoutData.push(diffLayoutDataFiltered[i]);
             }
         }
@@ -786,7 +829,7 @@ class ShareableLink extends Component {
         let pageButtons = [];
         for(let idx = 1; idx <= this.pages; idx++) {
             pageButtons.push(
-                <Button onClick={this.changePageNumber} bsStyle={currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
+                <Button key={idx} onClick={this.changePageNumber} bsStyle={currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
             );
         }
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
@@ -940,7 +983,12 @@ class ShareableLink extends Component {
         }
 
         return (
-            <div className="content-wrapper">
+            <ShareableLinkContext.Provider 
+                value={{ 
+                    popoverCurrentPath: this.state.popoverCurrentPath, 
+                    setPopoverCurrentPath: this.handleCurrentPopoverPathChange 
+                }}>
+                <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
                     <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
                     <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
@@ -1123,7 +1171,7 @@ class ShareableLink extends Component {
                     </Modal.Footer>
                 </Modal>
             </div>
-
+            </ShareableLinkContext.Provider>
         );
     }
 
@@ -1243,6 +1291,41 @@ function mapStateToProps(state) {
     }
 }
 
+function roughSizeOfObject( object ) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+}
+
 const connectedShareableLink = connect(mapStateToProps)(ShareableLink);
 
 export default connectedShareableLink;
+export { connectedShareableLink as ShareableLink, ShareableLinkContext };

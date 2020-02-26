@@ -106,7 +106,7 @@ class GoldenPopover extends React.Component {
     }
 
     updateGolden() {
-        const {dispatch, serverSideDiff, cube, hideTippy} = this.props;
+        const {dispatch, serverSideDiff, cube, handleHidePopoverClick} = this.props;
         if (serverSideDiff) {
             let operation = {
                 op: serverSideDiff.op.toUpperCase(),
@@ -133,7 +133,7 @@ class GoldenPopover extends React.Component {
             this.hideGR();
             alert("Can't update golden for this line");
         }
-        hideTippy();
+        handleHidePopoverClick();
     }
 
     createIssue() {
@@ -169,7 +169,16 @@ class GoldenPopover extends React.Component {
         } else {
             
             try {
-                const newlyFetchedRule = await this.getResponseTemplate();
+                const { path, dt, pt, ct, em , customization } = await this.getResponseTemplate();
+                const newlyFetchedRule = {
+                    path,
+                    dt, 
+                    pt: pt === "Default" ? "Optional" : pt, 
+                    ct: ct === "Default" ? "Ignore": ct, 
+                    em, 
+                    customization  
+                };
+
                 this.setState({ defaultRule: { ...newlyFetchedRule }, newRule: { ...newlyFetchedRule } });
             } catch (e) {
                 console.log("Failed to fetch rules from api.");
@@ -194,11 +203,11 @@ class GoldenPopover extends React.Component {
     }
 
     openJiraLink() {
-        const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
+        const { cube: { jiraBugs }, jsonPath, handleHidePopoverClick } = this.props;
         const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
         window.open(issueUrl)
-        hideTippy();
+        handleHidePopoverClick();
     }
 
     refreshList() {
@@ -284,7 +293,7 @@ class GoldenPopover extends React.Component {
 
     closeTippy() {
         this.hideGR();
-        this.props.hideTippy();
+        this.props.handleHidePopoverClick();
     }
 
     renderDescription() {
