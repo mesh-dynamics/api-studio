@@ -16,14 +16,36 @@ export default class DiffResultsList extends Component {
             showResponseMessageHeaders: false,
             showResponseMessageBody: true,
             searchFilterPath: "",
-            showAll: false, // todo
+            showAll: true, // todo
             //selectedResolutionType: "All",
         }
         //this.selectedResolutionType = "All";
         //this.resolutionTypes = [{value: "ERR", count: 2}];
         this.inputElementRef = React.createRef();
-
     }
+
+    newStyles = {
+        variables: {
+            addedBackground: '#e6ffed !important',
+            addedColor: '#24292e  !important',
+            removedBackground: '#ffeef0  !important',
+            removedColor: '#24292e  !important',
+            wordAddedBackground: '#acf2bd  !important',
+            wordRemovedBackground: '#fdb8c0  !important',
+            addedGutterBackground: '#cdffd8  !important',
+            removedGutterBackground: '#ffdce0  !important',
+            gutterBackground: '#f7f7f7  !important',
+            gutterBackgroundDark: '#f3f1f1  !important',
+            highlightBackground: '#fffbdd  !important',
+            highlightGutterBackground: '#fff5b1  !important',
+        },
+        line: {
+            padding: '10px 2px',
+            '&:hover': {
+                background: '#f7f7f7',
+            },
+        }
+    };
 
     handleMetaDataSelect = (metaDataType, value) => {
     }
@@ -164,28 +186,7 @@ export default class DiffResultsList extends Component {
     }
 
     renderResultsList = () => {
-        const newStyles = {
-            variables: {
-                addedBackground: '#e6ffed !important',
-                addedColor: '#24292e  !important',
-                removedBackground: '#ffeef0  !important',
-                removedColor: '#24292e  !important',
-                wordAddedBackground: '#acf2bd  !important',
-                wordRemovedBackground: '#fdb8c0  !important',
-                addedGutterBackground: '#cdffd8  !important',
-                removedGutterBackground: '#ffdce0  !important',
-                gutterBackground: '#f7f7f7  !important',
-                gutterBackgroundDark: '#f3f1f1  !important',
-                highlightBackground: '#fffbdd  !important',
-                highlightGutterBackground: '#fff5b1  !important',
-            },
-            line: {
-                padding: '10px 2px',
-                '&:hover': {
-                    background: '#f7f7f7',
-                },
-            }
-        };
+        const newStyles = this.newStyles;
 
         const { diffLayoutData } = this.props;
         return diffLayoutData.map((item, index) => {
