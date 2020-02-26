@@ -486,7 +486,6 @@ class ShareableLink extends Component {
             let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
             let expRespHdrJSON = JSON.stringify(recordedResponseHeaders, undefined, 4);
             
-
             // use the backend diff and the two JSONs to generate diff array that will be passed to the diff renderer
             if (diff && diff.length > 0) {
                 // skip calculating the diff array in case of non json data 
@@ -496,10 +495,14 @@ class ShareableLink extends Component {
                     reductedDiffArray = reduceDiff.computeDiffArray();
                 }
                 let expJSONPaths = generator(recordedData, "", "", prefix);
-                missedRequiredFields = diff.filter((eachItem) => {
-                    return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
-                })
-
+                missedRequiredFields = diff.filter(
+                    (eachItem) => (
+                        eachItem.op === "noop" 
+                        && eachItem.resolution.includes("ERR_Required") 
+                        && !expJSONPaths.has(eachItem.path)
+                        )
+                    )
+                
                 let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
                 reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
 
@@ -942,11 +945,25 @@ class ShareableLink extends Component {
                                 </h4>
                             </div>
                         </div>
-                        <div>
-                            {item.missedRequiredFields.map((eachMissedField) => {
-                                return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
-                            })}
-                        </div>
+                        {
+                            item.missedRequiredFields.length > 0 &&
+                            <div style={{ padding: "10px 0" }}>
+                                <strong>Missing expected items in Test and Golden:</strong>
+                                {
+                                    item.missedRequiredFields.map(
+                                        (eachMissedField) => 
+                                            (
+                                                <div style={{ padding: "3px 0"}}>
+                                                    <Glyphicon style={{ color: "red" }} glyph="remove-circle" />
+                                                    <span style={{ padding: "3px 0" }}>{eachMissedField.path}</span>
+                                                    {eachMissedField.fromValue && <span>` : ${eachMissedField.fromValue}`</span>}
+                                                </div>
+                                            )
+                                    )
+                                }
+                            </div>
+                        }
+                        
                         {(item.recordedData || item.replayedData) && (
                             <div className="diff-wrapper">
                                 < ReactDiffViewer
