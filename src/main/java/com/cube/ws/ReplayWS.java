@@ -337,7 +337,7 @@ public class ReplayWS {
      * @return
      */
     @GET
-    @Path("/getReplay/{replayId}")
+    @Path("/{replayId}")
     public Response getReplayObjectFromReplayId(@PathParam("replayId") String replayId) {
         Optional<Replay> replay = rrstore.getReplay(replayId);
         if(replay.isPresent()) {
