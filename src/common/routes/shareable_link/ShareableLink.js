@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, createContext } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
@@ -13,7 +13,9 @@ import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
-import statusCodeList from "../../StatusCodeList"
+import statusCodeList from "../../StatusCodeList";
+
+const ShareableLinkContext = createContext();
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -75,6 +77,7 @@ class ShareableLink extends Component {
             commitId: "",
             saveGoldenError: "",
             timeStamp: "",
+            popoverCurrentPath: "",
         };
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.handleReqRespMtChange = this.handleReqRespMtChange.bind(this)
@@ -234,6 +237,8 @@ class ShareableLink extends Component {
             search: this.historySearchParams
         });
     }
+
+    handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
 
     changePageNumber(e) {
         this.setState({ currentPageNumber: +e.target.innerHTML.trim()});
@@ -824,7 +829,7 @@ class ShareableLink extends Component {
         let pageButtons = [];
         for(let idx = 1; idx <= this.pages; idx++) {
             pageButtons.push(
-                <Button onClick={this.changePageNumber} bsStyle={currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
+                <Button key={idx} onClick={this.changePageNumber} bsStyle={currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
             );
         }
         let jsxContent = pagedDiffLayoutData.map((item, index) => {
@@ -978,7 +983,12 @@ class ShareableLink extends Component {
         }
 
         return (
-            <div className="content-wrapper">
+            <ShareableLinkContext.Provider 
+                value={{ 
+                    popoverCurrentPath: this.state.popoverCurrentPath, 
+                    setPopoverCurrentPath: this.handleCurrentPopoverPathChange 
+                }}>
+                <div className="content-wrapper">
                 <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
                     <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
                     <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
@@ -1161,7 +1171,7 @@ class ShareableLink extends Component {
                     </Modal.Footer>
                 </Modal>
             </div>
-
+            </ShareableLinkContext.Provider>
         );
     }
 
@@ -1318,3 +1328,4 @@ function roughSizeOfObject( object ) {
 const connectedShareableLink = connect(mapStateToProps)(ShareableLink);
 
 export default connectedShareableLink;
+export { connectedShareableLink as ShareableLink, ShareableLinkContext };

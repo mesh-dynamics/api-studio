@@ -106,7 +106,7 @@ class GoldenPopover extends React.Component {
     }
 
     updateGolden() {
-        const {dispatch, serverSideDiff, cube, hideTippy} = this.props;
+        const {dispatch, serverSideDiff, cube, handleHidePopoverClick} = this.props;
         if (serverSideDiff) {
             let operation = {
                 op: serverSideDiff.op.toUpperCase(),
@@ -133,7 +133,7 @@ class GoldenPopover extends React.Component {
             this.hideGR();
             alert("Can't update golden for this line");
         }
-        hideTippy();
+        handleHidePopoverClick();
     }
 
     createIssue() {
@@ -203,11 +203,11 @@ class GoldenPopover extends React.Component {
     }
 
     openJiraLink() {
-        const { cube: { jiraBugs }, jsonPath, hideTippy } = this.props;
+        const { cube: { jiraBugs }, jsonPath, handleHidePopoverClick } = this.props;
         const { issueUrl } = jiraBugs.find(bug => bug.jsonPath === jsonPath.replace("<BEGIN>", ""));
 
         window.open(issueUrl)
-        hideTippy();
+        handleHidePopoverClick();
     }
 
     refreshList() {
@@ -293,7 +293,7 @@ class GoldenPopover extends React.Component {
 
     closeTippy() {
         this.hideGR();
-        this.props.hideTippy();
+        this.props.handleHidePopoverClick();
     }
 
     renderDescription() {
