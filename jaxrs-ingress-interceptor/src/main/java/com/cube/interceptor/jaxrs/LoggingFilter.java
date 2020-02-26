@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -21,12 +20,12 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.util.Strings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.CommonConfig;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
@@ -115,8 +114,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	private void logRequest(ContainerRequestContext reqContext, String apiPath,
 		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
 		throws IOException {
-		final Span span = CommonUtils.startClientSpan("reqLog");
-		try (Scope scope = CommonUtils.activateSpan(span)){
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqProcess");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
 			//hdrs
 			MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
 
@@ -139,13 +138,13 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		Object parentSpanObj = context.getProperty(TracingFilter.spanKey);
 		Span span = null;
 		if (parentSpanObj != null) {
-			span = CommonUtils.startClientChildSpan("respLog"
-				, ((Span) parentSpanObj).context(), Collections.emptyMap());
+			span = io.cube.agent.Utils.createPerformanceSpan("respProcess",
+				((Span)parentSpanObj).context());
 		} else {
-			span = CommonUtils.startClientSpan("respLog");
+			span = io.cube.agent.Utils.createPerformanceSpan("respProcess");
 		}
 
-		try (Scope scope = CommonUtils.activateSpan(span)) {
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			Object apiPathObj = context.getProperty(Constants.MD_API_PATH_PROP);
 			Object traceMetaMapObj = context.getProperty(Constants.MD_TRACE_META_MAP_PROP);
 			Object respHeadersObj = context.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
@@ -195,7 +194,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	private MDTraceInfo getTraceInfo(Span currentSpan) {
 		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
-
 		String traceId = spanContext.getTraceId();
 		String spanId = String.valueOf(spanContext.getSpanId());
 		String parentSpanId = String.valueOf(spanContext.getParentId());
@@ -210,8 +208,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	}
 
 	private byte[] getRequestBody(ContainerRequestContext reqContext) throws IOException {
-		final Span span = CommonUtils.startClientSpan("reqBody");
-		try (Scope scope = CommonUtils.activateSpan(span)) {
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqBody");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
 			byte[] reqBytes = reqContext.getEntityStream().readAllBytes();
 			//String json = IOUtils.toString(reqContext.getEntityStream(), StandardCharsets.UTF_8);
 			new ByteArrayInputStream(reqBytes);
@@ -225,8 +223,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	}
 
 	private byte[] getResponseBody(WriterInterceptorContext context) throws IOException {
-		final Span span = CommonUtils.startClientSpan("respBody");
-		try (Scope scope = CommonUtils.activateSpan(span)) {
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("respBody");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
 			OutputStream originalStream = context.getOutputStream();
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			context.setOutputStream(baos);

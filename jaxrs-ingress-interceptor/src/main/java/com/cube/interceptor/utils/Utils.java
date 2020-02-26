@@ -1,6 +1,5 @@
 package com.cube.interceptor.utils;
 
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -24,7 +23,6 @@ import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.MDTraceInfo;
-import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
@@ -109,9 +107,9 @@ public class Utils {
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
 		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
-		final Span span = CommonUtils.startClientSpan("reqEventCreate");
 		Event requestEvent = null;
-		try (Scope scope = CommonUtils.activateSpan(span)) {
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqEventCreate");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
@@ -131,8 +129,8 @@ public class Utils {
 		}
 
 		if (requestEvent != null) {
-			final Span reqLog = CommonUtils.startClientSpan("reqEventLog");
-			try (Scope scope = CommonUtils.activateSpan(reqLog)) {
+			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan("reqEventLog");
+			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)){
 				config.recorder.record(requestEvent);
 			} finally {
 				reqLog.finish();
@@ -144,8 +142,8 @@ public class Utils {
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
 		MDTraceInfo mdTraceInfo, byte[] responseBody) {
 		Event responseEvent = null;
-		final Span span = CommonUtils.startClientSpan("respEventCreate");
-		try (Scope scope = CommonUtils.activateSpan(span)) {
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("respEventCreate");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
 			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
@@ -165,8 +163,8 @@ public class Utils {
 		}
 
 		if (responseEvent != null) {
-			final Span respLog = CommonUtils.startClientSpan("respEventLog");
-			try (Scope scope = CommonUtils.activateSpan(respLog)) {
+			final Span respLog = io.cube.agent.Utils.createPerformanceSpan("respEventLog");
+			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)){
 				config.recorder.record(responseEvent);
 			} finally {
 				respLog.finish();
