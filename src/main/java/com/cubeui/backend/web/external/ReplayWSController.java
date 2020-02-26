@@ -21,16 +21,14 @@ public class ReplayWSController {
     @Autowired
     private Validation validation;
 
-    @GetMapping("/status/{customerId}/{app}/{collection}/{replayId}")
-    public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
-                                 @PathVariable String app, @PathVariable String collection, @PathVariable String replayId) {
+    @GetMapping("/status/{replayId}")
+    public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
         validation.validateCustomerName(request,replay.get().customerId);
-        validation.validateCustomerName(request,customerId);
-        return cubeServerService.fetchGetResponse(request, getBody);
+        return ResponseEntity.ok(replay);
     }
 
     @PostMapping("/start/{recordingId}")
