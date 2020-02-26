@@ -2,7 +2,9 @@ package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
-import org.apache.commons.lang3.StringUtils;
+import io.md.dao.DefaultEvent;
+import io.md.dao.Event;
+import io.md.dao.EventQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,8 +43,9 @@ public class CubeStoreController {
     }
 
     @PostMapping("/getEvents")
-    public ResponseEntity getEvents(HttpServletRequest request, @RequestBody Optional<String> postBody) {
-        return cubeServerService.fetchPostResponse(request, postBody);
+    public ResponseEntity getEvents(HttpServletRequest request, @RequestBody EventQuery postBody) {
+        validation.validateCustomerName(request,postBody.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/rr/{var}")
@@ -67,8 +70,9 @@ public class CubeStoreController {
     }
 
     @PostMapping("/storeEvent")
-    public ResponseEntity storeEvent(HttpServletRequest request, @RequestBody Optional<String> postBody) {
-        return cubeServerService.fetchPostResponse(request, postBody);
+    public ResponseEntity storeEvent(HttpServletRequest request, @RequestBody Event postBody) {
+        validation.validateCustomerName(request, postBody.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/frbatch")
@@ -77,8 +81,9 @@ public class CubeStoreController {
     }
 
     @PostMapping("/event/setDefaultResponse")
-    public ResponseEntity setDefaultRespForEvent(HttpServletRequest request, @RequestBody Optional<String> postBody) {
-        return cubeServerService.fetchPostResponse(request, postBody);
+    public ResponseEntity setDefaultRespForEvent(HttpServletRequest request, @RequestBody DefaultEvent postBody) {
+        validation.validateCustomerName(request, postBody.event.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @GetMapping("/searchRecording")
