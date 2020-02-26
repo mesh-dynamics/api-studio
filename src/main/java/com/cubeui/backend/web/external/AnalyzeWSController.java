@@ -25,11 +25,11 @@ public class AnalyzeWSController {
 
     @GetMapping("/status/{replayId}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId){
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
@@ -40,32 +40,32 @@ public class AnalyzeWSController {
 
     @PostMapping("/analyze/{replayId}")
     public ResponseEntity analyze(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @GetMapping("/aggrresult/{replayId}")
     public ResponseEntity getResultAggregate(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId){
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @GetMapping("/replayRes/{customerId}/{app}/{service}/{replayId}")
     public ResponseEntity replayResult(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
                                        @PathVariable String app, @PathVariable String service, @PathVariable String replayId){
-        final Replay replay =cubeServerService.getReplay(replayId);
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay == null)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
@@ -96,22 +96,22 @@ public class AnalyzeWSController {
     @GetMapping("/analysisRes/{replayId}/{recordReqId}")
     public ResponseEntity getAnalysisResult(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId,
                                           @PathVariable String recordReqId){
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @GetMapping("/analysisResNoTrace/{replayId}/{recordReqId}")
     public ResponseEntity getAnalysisResultWithoutTrace(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId,
                                             @PathVariable String recordReqId){
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
@@ -124,21 +124,21 @@ public class AnalyzeWSController {
 
     @GetMapping("/analysisResByPath/{replayId}")
     public ResponseEntity getAnalysisResultsByPath(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId){
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @GetMapping("/analysisResByReq/{replayId}")
     public ResponseEntity getResultByReq(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId){
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
@@ -175,22 +175,22 @@ public class AnalyzeWSController {
     @PostMapping("/updateGoldenSet/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
     public ResponseEntity updateGoldenSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId,
                                           @PathVariable String replayId, @PathVariable String collectionUpdOpSetId, @PathVariable String templateUpdOpSetId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/sanitizeGoldenSet")
     public ResponseEntity sanitizeRecording(HttpServletRequest request, @RequestBody Optional<String> postBody, @RequestParam String recordingId,
                                             @RequestParam String replayId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
@@ -224,11 +224,11 @@ public class AnalyzeWSController {
     @PostMapping("/goldenUpdate/recordingOperationSet/apply")
     public ResponseEntity applyRecordingOperationSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @RequestParam String operationSetId,
                                                      @RequestParam String replayId, @RequestParam String collectionName) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
