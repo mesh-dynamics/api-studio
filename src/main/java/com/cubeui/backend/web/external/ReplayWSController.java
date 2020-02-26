@@ -24,11 +24,11 @@ public class ReplayWSController {
     @GetMapping("/status/{customerId}/{app}/{collection}/{replayId}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
                                  @PathVariable String app, @PathVariable String collection, @PathVariable String replayId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
@@ -41,32 +41,32 @@ public class ReplayWSController {
     @PostMapping("/transforms/{customerId}/{app}/{collection}/{replayId}")
     public ResponseEntity transforms(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
                                      @PathVariable String app, @PathVariable String collection, @PathVariable String replayId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/forcecomplete/{replayId}")
     public ResponseEntity forceComplete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/forcestart/{replayId}")
     public ResponseEntity forceStart(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
-        final Replay replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.customerId);
+        validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 

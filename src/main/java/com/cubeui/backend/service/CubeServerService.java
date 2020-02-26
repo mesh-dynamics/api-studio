@@ -53,19 +53,19 @@ public class CubeServerService {
         }
     }
 
-    public Replay getReplay(String replayId) {
-        final String path  = cubeServerBaseUrl + "/rs/getReplay/" + replayId;
+    public Optional<Replay> getReplay(String replayId) {
+        final String path  = cubeServerBaseUrl + "/rs/status/" + replayId;
         final ResponseEntity  response = fetchGetResponse(path);
-        Replay replay = null;
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
-                replay = jsonMapper.readValue(body, Replay.class);
+                final Replay replay = jsonMapper.readValue(body, Replay.class);
+                return Optional.of(replay);
             } catch (Exception e) {
                 log.info("Error in converting Json to Replay" + replayId + " message"  + e.getMessage());
             }
         }
-        return replay;
+        return Optional.empty();
     }
 
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody) {
