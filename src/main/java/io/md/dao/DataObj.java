@@ -31,7 +31,7 @@ public interface DataObj {
 	//TODO leaving it out from here
 	//DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
 
-	Event.RawPayload toRawPayload();
+	AbstractRawPayload toRawPayload();
 
 	boolean wrapAsString(String path, String mimetype);
 

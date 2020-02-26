@@ -43,7 +43,7 @@ public class DataObjFactory {
 	}
 
 
-	public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
+	public static DataObj build(Event.EventType type, AbstractRawPayload rawPayload,
 		 Map<String, Object> params) {
 		ObjectMapper jsonMapper;
 		switch (type) {
@@ -51,7 +51,7 @@ public class DataObjFactory {
 			case HTTPResponse:
 				jsonMapper = (ObjectMapper) params.get(Constants.OBJECT_MAPPER);
 				if (jsonMapper == null) throw new RuntimeException("Json Mapper Not Provided");
-				JsonDataObj obj = new JsonDataObj(payloadStr, jsonMapper);
+				JsonDataObj obj = new JsonDataObj(rawPayload.payloadAsString(), jsonMapper);
 				String mimeType =  getMimeType(obj).orElse(MediaType.TEXT_PLAIN);
 				obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
 				return obj;
@@ -59,7 +59,7 @@ public class DataObjFactory {
 			case JavaResponse:
 				jsonMapper = (ObjectMapper) params.get(Constants.OBJECT_MAPPER);
 				if (jsonMapper == null) throw new RuntimeException("Json Mapper Not Provided");
-				return new JsonDataObj(payloadStr, jsonMapper);
+				return new JsonDataObj(rawPayload.payloadAsString(), jsonMapper);
 			case ThriftRequest:
 			case ThriftResponse:
 			case ProtoBufRequest:

@@ -118,9 +118,8 @@ public class JsonDataObj implements DataObj {
 	}*/
 
 	@Override
-	public Event.RawPayload toRawPayload() {
-
-		return new Event.RawPayload(null, toString());
+	public AbstractRawPayload toRawPayload() {
+		return new StringPayload(toString());
 	}
 
 	/**

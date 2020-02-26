@@ -1,6 +1,5 @@
 package io.md.utils;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -38,6 +37,7 @@ import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.StringPayload;
 import io.md.tracer.HTTPHeadersCarrier;
 import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
@@ -45,6 +45,7 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.propagation.TextMapAdapter;
@@ -54,6 +55,8 @@ import io.opentracing.tag.Tags;
 public class CommonUtils {
 
 	private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
+
+	private static final Tracer NOOPTracer = NoopTracerFactory.create();
 
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
 		return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
@@ -154,41 +157,56 @@ public class CommonUtils {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
 	}*/
 
-	public static Scope activateSpan(Span span) {
+
+	public static Scope activateSpan(Span span, boolean noop) {
 		// TODO assuming that a tracer has been registered already with MDGlobalTracer
-		Tracer tracer = MDGlobalTracer.get();
+		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
 		return tracer.scopeManager().activate(span);
 	}
 
-	public static Span startClientSpan(String operationName, Map<String, String> tags) {
-		Tracer tracer = MDGlobalTracer.get();
-		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
-		tags.forEach(spanBuilder::withTag);
-		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT).start();
+	public static Scope activateSpan(Span span) {
+		return activateSpan(span, false);
 	}
 
-	public static Span startClientChildSpan(String operationName, SpanContext parentContext,
-		Map<String, String> tags) {
-		LOGGER.info("PARENT SPAN CONTEXT WAS PASSED FROM REQUEST TO RESPONSE");
-		Tracer tracer = MDGlobalTracer.get();
-		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName).
-			asChildOf(parentContext);
-		tags.forEach(spanBuilder::withTag);
+
+	public static Span startClientSpan(String operationName, SpanContext parentContext,
+		Map<String, String> tags , boolean noop) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
+		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
+		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
+		if (parentContext != null) spanBuilder.asChildOf(parentContext);
+		if (tags != null) tags.forEach(spanBuilder::withTag);
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-			.withTag("runId" , "async-log-100k")
 			.start();
 	}
 
 	public static Span startClientSpan(String operationName) {
-		// TODO assuming that a tracer has been registered already with MDGlobalTracer
-		return startClientSpan(operationName, Collections.emptyMap());
+		return startClientSpan(operationName, null, null, false);
+	}
+
+	public static Span startClientSpan(String operationName, boolean noop) {
+		return startClientSpan(operationName, null, null, noop);
+	}
+
+	public static Span startClientSpan(String operationName, Map<String, String> tags,
+		boolean noop) {
+		return startClientSpan(operationName, null, tags, noop);
+	}
+
+	public static Span startClientSpan(String operationName, SpanContext parentContext,
+		boolean noop) {
+		return startClientSpan(operationName, parentContext, null, noop);
+	}
+
+	public static Span startClientSpan(String operationName, Map<String, String> tags) {
+		return startClientSpan(operationName, null, tags,  false);
 	}
 
 	public static Span startServerSpan(MultivaluedMap<String, String> rawHeaders,
-		String operationName) {
+		String operationName, boolean noop) {
 		// TODO assuming that a tracer has been registered already with MDGlobalTracer
 		// format the headers for extraction
-		Tracer tracer = MDGlobalTracer.get();
+		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
 		final HashMap<String, String> headers = new HashMap<String, String>();
 		rawHeaders.forEach((k, v) -> {
 			if (v.size() > 0) {
@@ -209,8 +227,12 @@ public class CommonUtils {
 		}
 		// TODO could add more tags like http.url
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.withTag("runId" , "async-log-100k")
 			.start();
+	}
+
+	public static Span startServerSpan(MultivaluedMap<String, String> rawHeaders,
+		String operationName) {
+		return startServerSpan(rawHeaders, operationName, false);
 	}
 
 	public static JaegerTracer init(String service) {
@@ -232,6 +254,7 @@ public class CommonUtils {
 		Configuration config = new Configuration(service)
 			.withSampler(samplerConfig)
 			.withReporter(reporterConfig).withCodec(codecConfiguration);
+
 		return config.getTracer();
 	}
 
@@ -315,7 +338,7 @@ public class CommonUtils {
 			fnKey.service, fnKey.instanceId, "NA",
 			mdTraceInfo, rrType, timestamp, "NA",
 			fnKey.signature, Event.EventType.JavaRequest);
-		eventBuilder.setRawPayloadString(payload.toString());
+		eventBuilder.setRawPayload(new StringPayload(payload.toString()));
 		return eventBuilder.createEventOpt();
 	}
 

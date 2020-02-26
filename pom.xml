@@ -8,14 +8,13 @@
   <version>1.0.7</version>
   <packaging>jar</packaging>
   <properties>
-    <version.log4j>2.13.0</version.log4j>
     <version.java>11</version.java>
-    <version.httpcomponents>4.5.11</version.httpcomponents>
+    <version.log4j>2.13.0</version.log4j>
     <version.jax>2.0</version.jax>
     <version.jaeger>1.1.0</version.jaeger>
     <version.jackson>2.9.9</version.jackson>
-    <version.apachecommons>1.8</version.apachecommons>
-    <version.commonslang>3.9</version.commonslang>
+    <version.commonstext>1.8</version.commonstext>
+    <version.httpcomponents>4.5.11</version.httpcomponents>
   </properties>
 <!--      <distributionManagement>
         <repository>
@@ -117,8 +116,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>${version.commonslang}</version>
+      <artifactId>commons-text</artifactId>
+      <version>${version.commonstext}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>

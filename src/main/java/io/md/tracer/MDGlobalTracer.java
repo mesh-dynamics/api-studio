@@ -28,7 +28,8 @@ public class MDGlobalTracer implements Tracer {
 		if (tracer == null) {
 			throw new NullPointerException("Cannot register MDGlobalTracer <null>.");
 		} else if (tracer instanceof MDGlobalTracer) {
-			LOGGER.log(Level.FINE, "Attempted to register the MDGlobalTracer as delegate of itself.");
+			LOGGER.log(Level.FINE, "Attempted to register the MDGlobalTracer as delegate"
+				+ " of itself.");
 		} else if (isRegistered() && !MDGlobalTracer.tracer.equals(tracer)) {
 			throw new IllegalStateException("There is already a current MD Tracer registered.");
 		} else {

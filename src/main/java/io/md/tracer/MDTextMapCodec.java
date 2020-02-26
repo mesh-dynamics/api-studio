@@ -109,7 +109,6 @@ public class MDTextMapCodec implements Codec<TextMap> {
 
 	@Override
 	public void inject(JaegerSpanContext spanContext, TextMap carrier) {
-		LOGGER.info("INJECTING SPAN INTO CARRIER " + contextAsString(spanContext));
 		carrier.put(contextKey, encodedValue(contextAsString(spanContext)));
 		for (Map.Entry<String, String> entry : spanContext.baggageItems()) {
 			carrier.put(keys.prefixedKey(entry.getKey(), baggagePrefix), encodedValue(entry.getValue()));

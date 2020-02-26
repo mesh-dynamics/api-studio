@@ -18,9 +18,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.constants.Constants;
 import io.md.core.ReplayTypeEnum;
@@ -47,9 +44,9 @@ public class Event {
 
 	private Event(String customerId, String app, String service, String instanceId,
 		String collection, String traceId,
-		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
+		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType/*,
 		byte[] rawPayloadBinary,
-		String rawPayloadString, DataObj payload, int payloadKey, AbstractMDPayload rawPayloadObject) {
+		String rawPayloadString*/, DataObj payload, int payloadKey, AbstractRawPayload rawPayload) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -61,11 +58,11 @@ public class Event {
 		this.reqId = reqId;
 		this.apiPath = apiPath;
 		this.eventType = eventType;
-		this.rawPayloadBinary = rawPayloadBinary;
-		this.rawPayloadString = rawPayloadString;
+		//this.rawPayloadBinary = rawPayloadBinary;
+		//this.rawPayloadString = rawPayloadString;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
-		this.rawPayloadObject = rawPayloadObject;
+		this.rawPayload = rawPayload;
 	}
 
 	/**
@@ -83,11 +80,11 @@ public class Event {
 		this.reqId = null;
 		this.apiPath = null;
 		this.eventType = null;
-		this.rawPayloadBinary = null;
-		this.rawPayloadString = null;
+	/*	this.rawPayloadBinary = null;
+		this.rawPayloadString = null;*/
 		this.payload = null;
 		this.payloadKey = 0;
-		this.rawPayloadObject = null;
+		this.rawPayload = null;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -109,8 +106,7 @@ public class Event {
 			|| (traceId == null && eventType != EventType.ThriftResponse
 			&& eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-			|| ((rawPayloadBinary == null) && (rawPayloadString == null || rawPayloadString.trim()
-			.isEmpty()) && (rawPayloadObject == null))) {
+			|| (rawPayload == null)) {
 			return false;
 		}
 		return true;
@@ -157,7 +153,7 @@ public class Event {
 //					.put(Constants.CLASS_LOADER, urlClassLoader));*/
 //			}
 			payload = DataObjFactory
-				.build(eventType, rawPayloadBinary, rawPayloadString, params);
+				.build(eventType, rawPayload, params);
 		}
 
 		return payload;
@@ -186,7 +182,7 @@ public class Event {
 		switch (this.eventType) {
 			case HTTPRequest:
 			case HTTPResponse:
-				return rawPayloadString;
+				return rawPayload.payloadAsString();
 			case JavaRequest:
 			case JavaResponse:
 				try {
@@ -322,12 +318,7 @@ public class Event {
 
 	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
 	// as base64. For debugging its easier if the string is readable.
-	@JsonSerialize(using = ByteArraySerializer.class)
-	@JsonDeserialize(as = byte[].class)
-	public final byte[] rawPayloadBinary;
-	public final String rawPayloadString;
-
-	public final AbstractMDPayload rawPayloadObject;
+	public final AbstractRawPayload rawPayload;
 
 	@JsonIgnore
 	DataObj payload;
@@ -367,9 +358,7 @@ public class Event {
 		private final String reqId;
 		private final String apiPath;
 		private final Event.EventType eventType;
-		private byte[] rawPayloadBinary;
-		private String rawPayloadString;
-		private AbstractMDPayload rawPayloadObject;
+		private AbstractRawPayload rawPayload;
 		private DataObj payload;
 		private int payloadKey = 0;
 
@@ -415,7 +404,7 @@ public class Event {
 		}
 
 
-		public EventBuilder setRawPayloadBinary(byte[] rawPayloadBinary) {
+		/*public EventBuilder setRawPayloadBinary(byte[] rawPayloadBinary) {
 			this.rawPayloadBinary = rawPayloadBinary;
 			return this;
 		}
@@ -423,7 +412,7 @@ public class Event {
 		public EventBuilder setRawPayloadString(String rawPayloadString) {
 			this.rawPayloadString = rawPayloadString;
 			return this;
-		}
+		}*/
 
 		public EventBuilder setPayload(DataObj payload) {
 			this.payload = payload;
@@ -435,8 +424,8 @@ public class Event {
 			return this;
 		}
 
-		public EventBuilder setRawPayload(AbstractMDPayload rawPayload) {
-			this.rawPayloadObject = rawPayload;
+		public EventBuilder setRawPayload(AbstractRawPayload rawPayload) {
+			this.rawPayload = rawPayload;
 			return this;
 		}
 
@@ -447,8 +436,8 @@ public class Event {
 			}
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId,
 				runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType,
-				rawPayloadBinary, rawPayloadString, payload, payloadKey,rawPayloadObject);
+				eventType/*,
+				rawPayloadBinary, rawPayloadString*/, payload, payloadKey, rawPayload);
 			if (event.validate()) {
 				return event;
 			} else {
@@ -471,16 +460,4 @@ public class Event {
 
 		}
 	}
-
-	public static class RawPayload {
-
-		public final byte[] rawPayloadBinary;
-		public final String rawPayloadString;
-
-		public RawPayload(byte[] rawPayloadBinary, String rawPayloadString) {
-			this.rawPayloadBinary = rawPayloadBinary;
-			this.rawPayloadString = rawPayloadString;
-		}
-	}
-
 }

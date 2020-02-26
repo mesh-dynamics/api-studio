@@ -23,15 +23,20 @@ import org.apache.logging.log4j.core.config.plugins.PluginBuilderAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginBuilderFactory;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
+import org.apache.logging.log4j.core.jackson.Log4jJsonObjectMapper;
 import org.apache.logging.log4j.core.util.KeyValuePair;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.core.PrettyPrinter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-
-import io.md.utils.CommonUtils;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 
 /**
@@ -39,33 +44,34 @@ import io.md.utils.CommonUtils;
  *
  * <h3>Complete well-formed JSON vs. fragment JSON</h3>
  * <p>
- * If you configure {@code complete="true"}, the appender outputs a well-formed JSON document. By default, with
- * {@code complete="false"}, you should include the output as an <em>external file</em> in a separate file to form a
- * well-formed JSON document.
+ * If you configure {@code complete="true"}, the appender outputs a well-formed JSON document. By
+ * default, with {@code complete="false"}, you should include the output as an <em>external
+ * file</em> in a separate file to form a well-formed JSON document.
  * </p>
  * <p>
- * If {@code complete="false"}, the appender does not write the JSON open array character "[" at the start
- * of the document, "]" and the end, nor comma "," between records.
+ * If {@code complete="false"}, the appender does not write the JSON open array character "[" at the
+ * start of the document, "]" and the end, nor comma "," between records.
  * </p>
  * <h3>Encoding</h3>
  * <p>
- * Appenders using this layout should have their {@code charset} set to {@code UTF-8} or {@code UTF-16}, otherwise
- * events containing non ASCII characters could result in corrupted log files.
+ * Appenders using this layout should have their {@code charset} set to {@code UTF-8} or {@code
+ * UTF-16}, otherwise events containing non ASCII characters could result in corrupted log files.
  * </p>
  * <h3>Pretty vs. compact JSON</h3>
  * <p>
- * By default, the JSON layout is not compact (a.k.a. "pretty") with {@code compact="false"}, which means the
- * appender uses end-of-line characters and indents lines to format the text. If {@code compact="true"}, then no
- * end-of-line or indentation is used. Message content may contain, of course, escaped end-of-lines.
+ * By default, the JSON layout is not compact (a.k.a. "pretty") with {@code compact="false"}, which
+ * means the appender uses end-of-line characters and indents lines to format the text. If {@code
+ * compact="true"}, then no end-of-line or indentation is used. Message content may contain, of
+ * course, escaped end-of-lines.
  * </p>
  * <h3>Additional Fields</h3>
  * <p>
- * This property allows addition of custom fields into generated JSON.
- * {@code <JsonLayout><KeyValuePair key="foo" value="bar"/></JsonLayout>} inserts {@code "foo":"bar"} directly
- * into JSON output. Supports Lookup expressions.
+ * This property allows addition of custom fields into generated JSON. {@code
+ * <JsonLayout><KeyValuePair key="foo" value="bar"/></JsonLayout>} inserts {@code "foo":"bar"}
+ * directly into JSON output. Supports Lookup expressions.
  * </p>
  */
-@Plugin(name = "org.apache.logging.log4j.core.layout.CustomJsonLayout", category = Node.CATEGORY, elementType = Layout.ELEMENT_TYPE, printObject = true)
+@Plugin(name = "CustomJsonLayout", category = Node.CATEGORY, elementType = Layout.ELEMENT_TYPE, printObject = true)
 public final class CustomJsonLayout extends AbstractJacksonLayout {
 
 	private static final String DEFAULT_FOOTER = "]";
@@ -81,7 +87,8 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
             footerSerializer, includeNullDelimiter, additionalFields);
     }*/
 
-	private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+	private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+		"yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
 	public static class Builder<B extends Builder<B>> extends AbstractJacksonLayout.Builder<B>
 		implements org.apache.logging.log4j.core.util.Builder<CustomJsonLayout> {
@@ -102,10 +109,11 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 			final boolean encodeThreadContextAsList = isProperties() && propertiesAsList;
 			final String headerPattern = toStringOrNull(getHeader());
 			final String footerPattern = toStringOrNull(getFooter());
-			return new CustomJsonLayout(getConfiguration(), isLocationInfo(), isProperties(), encodeThreadContextAsList,
-				isComplete(), isCompact(), getEventEol(), headerPattern, footerPattern, getCharset(),
-				isIncludeStacktrace(), isStacktraceAsString(), isIncludeNullDelimiter(), true,
-				getExtras());
+			return new CustomJsonLayout(getConfiguration(), isLocationInfo(), isProperties(),
+				encodeThreadContextAsList, isComplete(), isCompact(), getEventEol(), getEndOfLine()
+				, headerPattern, footerPattern, getCharset(),
+				isIncludeStacktrace(), isStacktraceAsString(), isIncludeNullDelimiter()
+				, true, getExtras());
 		}
 
 		public boolean isPropertiesAsList() {
@@ -133,30 +141,37 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 	 * @deprecated Use {@link #newBuilder()} instead
 	 */
 	@Deprecated
-	protected CustomJsonLayout(final Configuration config, final boolean locationInfo, final boolean properties,
+	protected CustomJsonLayout(final Configuration config, final boolean locationInfo,
+		final boolean properties,
 		final boolean encodeThreadContextAsList,
-		final boolean complete, final boolean compact, final boolean eventEol, final String headerPattern,
+		final boolean complete, final boolean compact, final boolean eventEol,
+		final String headerPattern,
 		final String footerPattern, final Charset charset, final boolean includeStacktrace) {
 
 		super(config, getObjectWriter(encodeThreadContextAsList, includeStacktrace, false,
 			true, locationInfo, properties, compact),
 			charset, compact, complete, eventEol,
-			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(headerPattern).setDefaultPattern(DEFAULT_HEADER).build(),
-			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(footerPattern).setDefaultPattern(DEFAULT_FOOTER).build(),
+			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(headerPattern)
+				.setDefaultPattern(DEFAULT_HEADER).build(),
+			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(footerPattern)
+				.setDefaultPattern(DEFAULT_FOOTER).build(),
 			false);
 
 		extras = null;
 	}
 
-	private static ObjectWriter getObjectWriter(boolean encodeThreadContextAsList, boolean includeStacktrace,
+	private static ObjectWriter getObjectWriter(boolean encodeThreadContextAsList,
+		boolean includeStacktrace,
 		boolean stacktraceAsString, boolean objectMessageAsJsonObject,
 		boolean locationInfo, boolean properties, boolean compact) {
 		final SimpleFilterProvider filters = new SimpleFilterProvider();
-		SimpleBeanPropertyFilter simpleBeanPropertyFilter = SimpleBeanPropertyFilter.serializeAllExcept(
-			Set
-				.of("loggerFqcn" , "endOfBatch" , "contextMap" , "threadId" , "threadPriority" , "source" , "nanoTime" , "instant"));
+		SimpleBeanPropertyFilter simpleBeanPropertyFilter = SimpleBeanPropertyFilter
+			.serializeAllExcept(
+				Set.of("loggerFqcn", "endOfBatch", "contextMap", "threadId", "threadPriority",
+					"source", "nanoTime", "instant"));
 		filters.addFilter(Log4jLogEvent.class.getName(), simpleBeanPropertyFilter);
-		return new JacksonFactory.JSON(encodeThreadContextAsList, includeStacktrace, stacktraceAsString , objectMessageAsJsonObject).newWriter(
+		return new  MD_JACKSON_FACTORY(encodeThreadContextAsList, includeStacktrace,
+			stacktraceAsString, objectMessageAsJsonObject).newWriter(
 			locationInfo, properties, compact).with(filters);
 
 	}
@@ -166,16 +181,16 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 		final boolean properties,
 		final boolean encodeThreadContextAsList,
 		final boolean complete, final boolean compact, final boolean eventEol,
+		final String endOfLine,
 		final String headerPattern, final String footerPattern, final Charset charset,
 		final boolean includeStacktrace, final boolean stacktraceAsString,
 		final boolean includeNullDelimiter, final boolean objectMessageAsJsonObject,
 		final KeyValuePair[] extras) {
 
-		// TODO putting end of line string as empty here, need to find a proper replacement for it
 		super(config,
 			getObjectWriter(encodeThreadContextAsList, includeStacktrace, stacktraceAsString,
-				true, locationInfo, properties, compact)
-			, charset, compact, complete, eventEol, "",
+				objectMessageAsJsonObject, locationInfo, properties, compact)
+			, charset, compact, complete, eventEol, endOfLine,
 			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(headerPattern)
 				.setDefaultPattern(DEFAULT_HEADER).build(),
 			PatternLayout.newSerializerBuilder().setConfiguration(config).setPattern(footerPattern)
@@ -267,11 +282,13 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 	@Override
 	protected Object wrapLogEvent(LogEvent event) {
 		Object result = super.wrapLogEvent(event);
-		return new AbstractJacksonLayout.LogEventWithAdditionalFields(result, Map.of("traceId",
-			CommonUtils.getCurrentTraceId().orElse("N/A") , "timestamp" , simpleDateFormat.format(new Date())));
+		return new AbstractJacksonLayout.LogEventWithAdditionalFields(result, Map.of(/*"traceId",
+			CommonUtils.getCurrentTraceId().orElse("N/A"),*/  "timestamp",
+			simpleDateFormat.format(new Date())));
         /*
         return new LogEventWithExtras(result, Map.of("traceId",
-            CommonUtils.getCurrentTraceId().orElse("N/A") , "timestamp" , simpleDateFormat.format(new Date())));
+            CommonUtils.getCurrentTraceId().orElse("N/A") , "timestamp"
+            , simpleDateFormat.format(new Date())));
         */
 	}
 
@@ -293,6 +310,47 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 		@JsonAnyGetter
 		public Map<String, Object> getExtras() {
 			return extras;
+		}
+	}
+
+	static class MD_JACKSON_FACTORY extends JacksonFactory {
+		private final boolean encodeThreadContextAsList;
+		private final boolean includeStacktrace;
+		private final boolean stacktraceAsString;
+		private final boolean objectMessageAsJsonObject;
+
+		public MD_JACKSON_FACTORY(boolean encodeThreadContextAsList, boolean includeStacktrace
+			, boolean stacktraceAsString, boolean objectMessageAsJsonObject) {
+			this.encodeThreadContextAsList = encodeThreadContextAsList;
+			this.includeStacktrace = includeStacktrace;
+			this.stacktraceAsString = stacktraceAsString;
+			this.objectMessageAsJsonObject = objectMessageAsJsonObject;
+		}
+
+		protected String getPropertNameForContextMap() {
+			return "contextMap";
+		}
+
+		protected String getPropertNameForSource() {
+			return "source";
+		}
+
+		protected String getPropertNameForNanoTime() {
+			return "nanoTime";
+		}
+
+		protected PrettyPrinter newCompactPrinter() {
+			return new MinimalPrettyPrinter();
+		}
+
+		protected ObjectMapper newObjectMapper() {
+			return new Log4jJsonObjectMapper(this.encodeThreadContextAsList,
+				this.includeStacktrace, this.stacktraceAsString, this.objectMessageAsJsonObject)
+				.registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+		}
+
+		protected PrettyPrinter newPrettyPrinter() {
+			return new DefaultPrettyPrinter();
 		}
 	}
 

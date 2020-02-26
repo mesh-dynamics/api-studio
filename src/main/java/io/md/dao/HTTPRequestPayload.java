@@ -8,6 +8,8 @@ package io.md.dao;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
@@ -18,7 +20,7 @@ import io.md.utils.Utils;
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
  */
-public class HTTPRequestPayload extends AbstractMDPayload {
+public class HTTPRequestPayload extends AbstractRawPayload {
 
     /**
      *
@@ -73,6 +75,20 @@ public class HTTPRequestPayload extends AbstractMDPayload {
 
 	private static MultivaluedHashMap<String, String> emptyMap () {
 		return new MultivaluedHashMap<String, String>();
+	}
+
+	@Override
+	public String payloadAsString() {
+		return null;
+	}
+
+	@Override
+	public String payloadAsString(ObjectMapper mapper) throws JsonProcessingException {
+		return mapper.writeValueAsString(this);
+	}
+
+	public String bodyAsString() {
+		return  (body != null)? new String(body) : null;
 	}
 
 }
