@@ -22,6 +22,7 @@ import javax.ws.rs.client.WebTarget;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.logging.log4j.util.Strings;
 import org.glassfish.jersey.client.ClientConfig;
@@ -30,6 +31,7 @@ import org.glassfish.jersey.client.ClientProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.logging.MDConfigurationFactory;
 import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
@@ -116,7 +118,7 @@ public class CommonConfig {
 	}
 
 	static {
-
+		ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {

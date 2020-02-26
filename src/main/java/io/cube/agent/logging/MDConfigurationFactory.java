@@ -37,7 +37,7 @@ public class MDConfigurationFactory extends ConfigurationFactory {
 		 */
 		LayoutComponentBuilder layoutBuilder = builder.newLayout("CustomJsonLayout")
 			.addAttribute("complete", "false")
-			.addAttribute("objectMessageAsJsonObject", "true")
+			//.addAttribute("objectMessageAsJsonObject", "true")
 			.addAttribute("eventEol", "true")
 			.addAttribute("propertiesAsList", "false")
 			.addAttribute("compact", "true")
