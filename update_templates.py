@@ -8,11 +8,11 @@ import json
 import requests
 import os
 
-host_header = sys.argv[6]
+auth_token = sys.argv[6]
 app_dir = sys.argv[7]
 templateset_filename_prefix = app_dir + "/config/matcher/template_"
 json_file_suffix = ".json"
-headers = {'Content-type': 'application/json', 'Host': host_header}
+headers = {'Content-type': 'application/json', 'Authorization':'Bearer ' + auth_token}
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
     print(template_scenario + " " + gateway + " " + customer + " " + app)
     templateset_filename = templateset_filename_prefix + template_scenario + json_file_suffix
     # defining the api-endpoint
-    save_template_endpoint = "http://" + gateway + "/as/saveTemplateSet/" + customer + "/" + app
+    save_template_endpoint = "https://" + gateway + "/api/as/saveTemplateSet/" + customer + "/" + app
     template_version = register_templates_from_file(templateset_filename, save_template_endpoint, customer, app)
     if template_version == None:
         print("Cannot write template version to file")
@@ -45,6 +45,7 @@ def register_templates_from_file(templateset_filename, api_endpoint, customer, a
             print("Registered template json for " + customer + \
                   " :: " + app)
             print(api_endpoint)
+            print(r.json())
             response_json = r.json()
             print("Parsed json response")
             print("Got Response :: " + response_json["Message"])
