@@ -219,7 +219,7 @@ public class Utils {
 		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
 		for (String key : new ArrayList<String>(mvMap.keySet())) {
 			String lowerCase = key.toLowerCase();
-			for (String value : mvMap.remove(key))
+			for (String value : mvMap.get(key))
 				lowerCaseMVMap.add(lowerCase, value);
 		}
 		return lowerCaseMVMap;
