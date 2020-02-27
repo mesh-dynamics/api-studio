@@ -11,11 +11,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,6 +40,19 @@ public class CubeServerService {
 
     @Autowired
     private ObjectMapper jsonMapper;
+
+    @PostConstruct
+    protected void init()  {
+
+        SimpleClientHttpRequestFactory clientHttpRequestFactory
+                = new SimpleClientHttpRequestFactory();
+        //Connect timeout
+        clientHttpRequestFactory.setConnectTimeout(5000);
+
+        //Read timeout
+        clientHttpRequestFactory.setReadTimeout(600000);
+        restTemplate.setRequestFactory(clientHttpRequestFactory);
+    }
 
     public ResponseEntity fetchGetResponse(String path){
         try {
