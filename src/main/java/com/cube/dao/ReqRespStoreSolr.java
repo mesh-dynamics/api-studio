@@ -2598,6 +2598,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return getObjFromNL(namedlist, name).flatMap(v -> {
             if (v instanceof Integer) {
                 return Optional.of((Integer) v);
+            } else if (v instanceof Long) {
+                return Optional.of(((Long) v).intValue());
             }
             return Optional.empty();
         });
