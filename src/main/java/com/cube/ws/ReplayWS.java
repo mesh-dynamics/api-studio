@@ -103,11 +103,8 @@ public class ReplayWS {
     }
 
 	@GET
-	@Path("status/{customerId}/{app}/{collection}/{replayId}")
-    public Response status(@Context UriInfo ui, @PathParam("collection") String collection,
-                           @PathParam("replayId") String replayId,
-                           @PathParam("customerId") String customerId,
-                           @PathParam("app") String app) {
+	@Path("status/{replayId}")
+    public Response status(@Context UriInfo ui, @PathParam("replayId") String replayId) {
         Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, rrstore);
         Response resp = replay.map(r -> {
             String json;
