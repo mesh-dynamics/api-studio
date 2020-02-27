@@ -153,17 +153,16 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 		ObjectMapper mapper = new ObjectMapper();
 		//hdrs
-		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ? mapper
-			.convertValue(respHeadersObj, MultivaluedMap.class) : Utils.createEmptyMultivaluedMap();
+		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ?
+				(MultivaluedMap <String, String>) respHeadersObj : Utils.createEmptyMultivaluedMap();
 
-		MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
-			.convertValue(traceMetaMapObj, MultivaluedMap.class)
-			: Utils.createEmptyMultivaluedMap();
+		MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ?
+				(MultivaluedMap<String, String>)traceMetaMapObj : Utils.createEmptyMultivaluedMap();
+
 		String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
 		//meta
 		MultivaluedMap<String, String> meta = Utils
-			.getResponseMeta(apiPath,
-				String.valueOf(statusObj != null ? statusObj.toString() : Strings.EMPTY),
+			.getResponseMeta(apiPath, statusObj != null ? statusObj.toString() : Strings.EMPTY,
 				Optional.empty());
 		meta.putAll(traceMetaMap);
 
@@ -212,7 +211,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				containerResponse.getAnnotations(), containerResponse.getMediaType());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		String responseBody;
-		responseBody = baos.toString("UTF-8");
 		writer.writeTo(containerResponse.getEntity(), containerResponse.getEntity().getClass(),
 				containerResponse.getEntityType(), containerResponse.getAnnotations(),
 				containerResponse.getMediaType(), containerResponse.getHttpHeaders(), baos);
