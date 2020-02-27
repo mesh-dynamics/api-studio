@@ -101,8 +101,9 @@ public class JwtTokenProvider {
             log.trace("validate token is called ");
             if ("pat".equalsIgnoreCase(claims.getBody().get("type", String.class))) {
                 log.trace("Found that the token is of type API token");
+                long customerId = claims.getBody().get("customer_id", Long.class);
                 //The token is of type personal access token, so check the DB to confirm that it is not revoked
-                Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsername(getUsername(token))
+                Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameAndCustomerId(getUsername(token), customerId)
                     .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
                 return accessToken.flatMap(list -> list.stream().findFirst())
                     .map(ApiAccessToken::getToken)
