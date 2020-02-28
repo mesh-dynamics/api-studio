@@ -47,7 +47,7 @@ var DiffViewer = /** @class */ (function (_super) {
     __extends(DiffViewer, _super);
     function DiffViewer() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.splitView = function (filterPaths, diffArray, styles, inputElementRef, showAll, searchFilterPath) {
+        _this.splitView = function (filterPaths, diffArray, styles, inputElementRef, showAll, searchFilterPath, disableOperationSet) {
             var leftLineNumber = 0;
             var rightLineNumber = 0;
             return function () { return diffArray.map(function (obj, i) {
@@ -58,7 +58,7 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightLineNumber = rightLineNumber + 1;
                         leftLineNumber = leftLineNumber + 1;
                         // author raj.maddireddy@cubecorp.io
-                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll: showAll, searchFilterPath: searchFilterPath});
+                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll, searchFilterPath, disableOperationSet});
                     }
                     var leftContent;
                     var rightContent;
@@ -102,7 +102,7 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightContent = ch;
                     }
                     // author raj.maddireddy@cubecorp.io
-                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll: showAll, searchFilterPath: searchFilterPath });
+                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll, searchFilterPath, disableOperationSet });
                 }));
             }); };
         };
@@ -152,7 +152,7 @@ var DiffViewer = /** @class */ (function (_super) {
         _this.computeStyles = memoize(styles_1.default);
         _this.render = function () {
             var _a = _this.props, oldValue = _a.oldValue, newValue = _a.newValue, splitView = _a.splitView, 
-            inputElementRef = _a.inputElementRef;
+            inputElementRef = _a.inputElementRef, disableOperationSet = _a.disableOperationSet;
             // author raj.maddireddy@cubecorp.io
             var diffArray = _a.diffArray;
             if (typeof oldValue !== 'string' || typeof newValue !== 'string') {
@@ -172,7 +172,7 @@ var DiffViewer = /** @class */ (function (_super) {
             let searchFilterPath = _a.searchFilterPath;
             if(!filterPaths) filterPaths = [];
             var nodes = splitView
-                ? _this.splitView(filterPaths, diffArray, newStyles, inputElementRef, showAll, searchFilterPath)()
+                ? _this.splitView(filterPaths, diffArray, newStyles, inputElementRef, showAll, searchFilterPath, disableOperationSet)()
                 : _this.inlineView(filterPaths, diffArray, newStyles, inputElementRef)();
             return (React.createElement("table", { className: newStyles.diffContainer },
                 React.createElement("tbody", null, nodes)));

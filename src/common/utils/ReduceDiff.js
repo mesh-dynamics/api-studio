@@ -140,7 +140,7 @@ class ReduceDiff {
                 }
                 expIter++;
                 actIter++;
-            } else if(tempExpJsonPath && tempActJsonPath && tempExpJsonPath !==  tempActJsonPath) {
+            } else if(tempExpJsonPath !==  tempActJsonPath) {
                 /*
                     if the paths are not same, then check whether a jsonpath is added or removed.
                     Either the case, check a simple key and value is added or an object is added or removed

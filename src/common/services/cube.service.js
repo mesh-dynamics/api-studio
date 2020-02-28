@@ -323,7 +323,7 @@ async function forceCompleteReplay(fcId) {
 async function checkStatusForReplay(collectionId, replayId, app) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.replayBaseUrl}/status/${user.customer_name}/${app}/${collectionId}/${replayId}`;
+    let url = `${config.replayBaseUrl}/status/${replayId}`;
     let status = {};
     try {
         response = await fetch(url, {
