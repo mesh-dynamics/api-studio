@@ -23,6 +23,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 
 public class PATGenerator {
 
+    private static String MESHD_AGENT_USER = "MeshDAgentUser";
     private long validityInSeconds = 60 * 60 * 24 * 365 * 10; // 10 years
     private String secretKey = Base64.getEncoder().encodeToString("prod-secret".getBytes());
     private String dbURL = "jdbc:postgresql://cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com:5432/cubeproddb?schema=qui";
@@ -56,11 +57,35 @@ public class PATGenerator {
         }
     }
 
-    private int checkAndInsertAgentUser(int customerId) throws Exception {
+    private String getMeshDAgentUser(String domain) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(MESHD_AGENT_USER)
+                .append("@")
+                .append(domain);
+        return builder.toString();
+    }
+
+    private String getDomain(int customerId) throws Exception {
         try {
-            String sql ="SELECT * FROM public.users WHERE name = ? AND customer_id = ?";
+            String sql ="SELECT * FROM public.email_domains WHERE customer_id = ?";
             PreparedStatement preparedStatement = dbConnection.prepareStatement(sql);
-            preparedStatement.setString(1, "MeshDAgentUser");
+            preparedStatement.setInt(1, customerId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next() == true) {
+                System.out.println("Agent user Domain is present");
+                return resultSet.getString("domain");
+            }
+        }catch (SQLException sqe) {
+            throw sqe;
+        }
+        return "";
+    }
+
+    private int checkAndInsertAgentUser(int customerId, String domain) throws Exception {
+        try {
+            String sql ="SELECT * FROM public.users WHERE username = ? AND customer_id = ?";
+            PreparedStatement preparedStatement = dbConnection.prepareStatement(sql);
+            preparedStatement.setString(1, getMeshDAgentUser(domain));
             preparedStatement.setInt(2, customerId);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next() == true) {
@@ -72,8 +97,8 @@ public class PATGenerator {
                 String insertPStmt = "INSERT INTO public.users ( activated,  name, username, customer_id)" + "VALUES (?, ?, ? , ?)";
                 preparedStatement = dbConnection.prepareStatement(insertPStmt, generatedColumns);
                 preparedStatement.setBoolean(1, false);
-                preparedStatement.setString(2, "MeshDAgentUser");
-                preparedStatement.setString(3, "MeshDAgentUser");
+                preparedStatement.setString(2, MESHD_AGENT_USER);
+                preparedStatement.setString(3, getMeshDAgentUser(domain));
                 preparedStatement.setInt(4, customerId);
                 int row = preparedStatement.executeUpdate();
                 if (row == 1 ) {
@@ -94,7 +119,7 @@ public class PATGenerator {
         }
     }
 
-    private int insertOrUpdatePAT(int userId, boolean updateToken) throws Exception {
+    private int insertOrUpdatePAT(int userId, boolean updateToken, String domain, int customerId) throws Exception {
         try {
             String sql = "SELECT * FROM public.api_access_tokens WHERE user_id = ?";
             PreparedStatement preparedStatement = dbConnection.prepareStatement(sql);
@@ -104,9 +129,9 @@ public class PATGenerator {
                 System.out.println("There is an existing token : " + resultSet.getString("token"));
                 if (updateToken) {
                     String updateSql = "UPDATE public.api_access_tokens SET token = ? WHERE user_id = ?";
-                    String token = generateToken();
-                    preparedStatement = dbConnection.prepareStatement(token);
-                    preparedStatement.setString(1, generateToken());
+                    String token = generateToken(domain, customerId);
+                    preparedStatement = dbConnection.prepareStatement(updateSql);
+                    preparedStatement.setString(1, token);
                     preparedStatement.setInt(2, userId);
                     int row = preparedStatement.executeUpdate();
                     if (row == 1 ) {
@@ -122,7 +147,7 @@ public class PATGenerator {
             } else {
                 String generatedColumns[] = { "ID" };
                 String insertPStmt = "INSERT INTO public.api_access_tokens ( token , user_id)" + "VALUES (?, ?)";
-                String token = generateToken();
+                String token = generateToken(domain, customerId);
                 preparedStatement = dbConnection.prepareStatement(insertPStmt);
                 preparedStatement.setString(1, token);
                 preparedStatement.setInt(2, userId);
@@ -140,13 +165,14 @@ public class PATGenerator {
         return 0;
     }
 
-    public String generateToken() {
+    public String generateToken(String domain, int customerId) {
 
         Set<String> roles = new HashSet<String>();
         roles.add("ROLE_USER");
-        Claims claims = Jwts.claims().setSubject("MeshDAgentUser");
+        Claims claims = Jwts.claims().setSubject(getMeshDAgentUser(domain));
         claims.put("roles", roles);
         claims.put("type", "pat");
+        claims.put("customer_id", customerId);
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInSeconds * 1000);
@@ -202,8 +228,14 @@ public class PATGenerator {
         }
 
         PATGenerator patGenerator = new PATGenerator(prop);
-        int userId = patGenerator.checkAndInsertAgentUser(customerId);
+        String domain = patGenerator.getDomain(customerId);
+        //check for empty domain;
+        if (domain.isEmpty()) {
+            System.out.println("No domain value available for given customerId=" + customerId);
+            System.exit(1);
+        }
+        int userId = patGenerator.checkAndInsertAgentUser(customerId, domain);
         //TODO: need to get the updateToken boolean from command line to update the token of the existing customer
-        patGenerator.insertOrUpdatePAT(userId, false);
+        patGenerator.insertOrUpdatePAT(userId, false, domain,customerId);
     }
 }
