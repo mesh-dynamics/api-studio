@@ -117,7 +117,7 @@ export default class DiffResultsFilter extends Component {
                 return "All Errors"
             
             default:
-                return resolutionsIconMap[resolutionType].description;
+                return resolutionsIconMap[resolutionType] ? resolutionsIconMap[resolutionType].description : "(Unknown)";
         }
     }
 
