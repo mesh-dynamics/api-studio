@@ -9,6 +9,9 @@ import ReduceDiff from '../../utils/ReduceDiff';
 import generator from '../../utils/generator/json-path-generator';
 import Modal from "react-bootstrap/lib/Modal";
 import {connect} from "react-redux";
+import axios from "axios";
+import {cubeActions} from "../../actions";
+import config from "../../config";
 
 const respData = {
     facets: {
@@ -20,7 +23,6 @@ const respData = {
 }
 
 const DiffResultsContext = createContext();
-
 
 class DiffResults extends Component {
     constructor(props) {
@@ -35,13 +37,107 @@ class DiffResults extends Component {
             },
             diffLayoutData : [],
             facetListData: {},
+            
+            // golden
+            showNewGolden: false,
+            showSaveGoldenModal: false,
+            nameG: "",
+            branch: "",
+            version: "",
+            tag: "",
+            commitId: "",
+            saveGoldenError: "",
+
         }
     }
 
-    componentDidMount = () => {
-        this.fetchResults();
+    componentDidMount() {
+        const {dispatch} = this.props;
+        let urlParameters = _.chain(window.location.search)
+            .replace('?', '')
+            .split('&')
+            .map(_.partial(_.split, _, '=', 2))
+            .fromPairs()
+            .value();
+        
+        //let url = new URL(window.location.search);
+        //let urlSearchParams = url.searchParams;
+
+        const app = urlParameters["app"];
+        const selectedAPI = urlParameters["selectedAPI"] ? urlParameters["selectedAPI"]  : "%2A";
+        const replayId = urlParameters["replayId"];
+        const recordingId = urlParameters["recordingId"];
+        const currentTemplateVer = urlParameters["currentTemplateVer"];
+        const selectedService = urlParameters["selectedService"];
+        const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
+        const selectedResolutionType = urlParameters["selectedResolutionType"];
+        const searchFilterPath = urlParameters["searchFilterPath"];
+        const requestHeaders = urlParameters["requestHeaders"];
+        const requestQParams = urlParameters["requestQParams"];
+        const requestFParams = urlParameters["requestFParams"];
+        const requestBody = urlParameters["requestBody"];
+        const responseHeaders = urlParameters["responseHeaders"];
+        const responseBody = urlParameters["responseBody"];
+        const timeStamp = decodeURI(urlParameters["timeStamp"]);
+        const currentPageNumber = urlParameters["currentPageNumber"]
+
+        dispatch(cubeActions.setSelectedApp(app));
+        this.setState({
+            filter : {
+                selectedService: selectedService || "All",
+                selectedAPI: selectedAPI || "All",
+                selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
+                selectedResolutionType: selectedResolutionType || "All",
+                currentPageNumber: currentPageNumber || 1,
+            },
+            replayId: replayId,
+            recordingId: recordingId,
+            currentTemplateVer: currentTemplateVer,
+            app: app,
+            searchFilterPath: searchFilterPath || "",
+            timeStamp: timeStamp || "",
+            showAll: (selectedResolutionType === "All"),
+            
+            // TODO: improve
+            // response headers
+            showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
+            shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
+            // response body
+            showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
+            shownResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
+            // request header
+            showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
+            shownRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
+            // request query params
+            showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+            shownRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+            // request form params
+            showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
+            shownRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
+            // request body
+            showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
+            shownRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
+        });
+        setTimeout(() => {
+            const { dispatch, history, cube } = this.props;
+            dispatch(cubeActions.setPathResultsParams({
+                path: selectedAPI,
+                service: selectedService,
+                replayId: replayId,
+                recordingId: recordingId,
+                currentTemplateVer: currentTemplateVer,
+                timeStamp: timeStamp
+            }));
+            dispatch(cubeActions.getCollectionUpdateOperationSet(app));
+            dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
+            dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
+            this.fetchResults();
+        });
     }
 
+
+    //
     handleFilterChange = (metaData, value) => {
         console.log("filter changed " + metaData + " : " + value)
         this.setState({
@@ -331,6 +427,133 @@ class DiffResults extends Component {
         });
     }
 
+    handleClose = () => {
+        const { history, dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+        setTimeout(() => {
+            history.push("/test_config");
+        })
+    }
+
+    handleCloseDone = () => {
+        let { dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+    };
+    
+    changeGoldenMetaData = (meta, ev) => {
+        this.setState({[meta]: ev.target.value});
+    };
+    
+
+    showSaveGoldenModal = () => {
+        this.setState({
+            nameG: (this.state.recordingId + '_' + Date.now()),
+            branch: "",
+            version: "",
+            tag: "",
+            commitId: "",
+            saveGoldenError: "",
+            showSaveGoldenModal: true
+        });
+    }
+
+    handleCloseSG = () => {
+        this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+    }
+
+    handleSaveGolden = () => {
+        if (!this.state.nameG.trim()) {
+            this.setState({saveGoldenError: "Name is a Required Field, cannot be Empty.",})
+        } else {
+            this.updateGolden();
+        }
+    }
+
+    updateGolden = () => {
+        const { cube, dispatch } = this.props;
+
+        let user = JSON.parse(localStorage.getItem('user'));
+
+        const headers = {
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*',
+            "Authorization": "Bearer " + user['access_token']
+        };
+
+        const updateTemplateOperationSet = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/updateTemplateOperationSet/${cube.newTemplateVerInfo['ID']}`,
+            data: cube.templateOperationSetObject,
+            headers: headers
+        });
+        
+        const goldenUpdate = axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
+            data: cube.multiOperationsSet,
+            headers: headers
+        });
+        const _self = this;
+        axios.all([updateTemplateOperationSet, goldenUpdate]).then(axios.spread(function (r1, r2) {
+            dispatch(cubeActions.updateRecordingOperationSet());
+            _self.updateGoldenSet();
+            // dispatch(cubeActions.updateGoldenSet(_self.state.nameG, _self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
+        }));
+    }
+
+    updateGoldenSet = () => {
+        const {cube, dispatch} = this.props;
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        const url = `${config.analyzeBaseUrl}/updateGoldenSet/${this.state.recordingId}/${this.state.replayId}/${cube.collectionUpdateOperationSetId.operationSetId}/${cube.newTemplateVerInfo['ID']}`;
+        const headers = {
+            'Access-Control-Allow-Origin': '*',
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": "Bearer " + user['access_token']
+        };
+
+        let searchParams = new URLSearchParams();
+        searchParams.set('name', this.state.nameG);
+        searchParams.set('userId', user.username);
+
+        if (this.state.version.trim()) {
+            searchParams.set('codeVersion', this.state.version.trim());
+        }
+
+        if (this.state.branch.trim()) {
+            searchParams.set('branch', this.state.branch.trim());
+        }
+
+        if (this.state.commitId.trim()) {
+            searchParams.set('gitCommitId', this.state.commitId.trim());
+        }
+
+        if (this.state.tag.trim()) {
+            let tagList = this.state.tag.split(",");
+            for (let tag of tagList) {
+                tag = tag.trim();
+            }
+            searchParams.set('tags', JSON.stringify(tagList));
+        }
+
+
+        axios.post(url, searchParams, {headers: headers})
+            .then((result) => {
+                this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+                dispatch(cubeActions.updateGoldenSet(result.data));
+                dispatch(cubeActions.getTestIds(this.state.app));
+            })
+            .catch((err) => {
+                dispatch(cubeActions.clearGolden());
+                this.setState({saveGoldenError: err.response.data["Error"]});
+            })
+    }
+
+    handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
+
+
     // todo: move these to a separate component in the next refactor
     renderModals = () => {
         const {cube} = this.props;
@@ -445,7 +668,7 @@ class DiffResults extends Component {
                     </div>
                     
                     <div>
-                        <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={"app"}></DiffResultsFilter>
+                        <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={this.state.app ? this.state.app : "(Unknown)"}></DiffResultsFilter>
                         <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData}></DiffResultsList>
                     </div>
                     
