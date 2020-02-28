@@ -53,7 +53,7 @@ logging:
 
 cube:
     server:
-            baseUrl: http://cubews-record.cube.svc.cluster.local:8080
+            baseUrl: http://istio-pvt-ingressgateway.istio-system.svc.cluster.local
 
 external:
     recaptcha:
