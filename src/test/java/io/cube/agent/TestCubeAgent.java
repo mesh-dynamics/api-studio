@@ -17,8 +17,8 @@ public class TestCubeAgent {
         Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
                 .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
         try {
-            SimpleHttpRecorder recorder = new SimpleHttpRecorder(gson);
-            SimpleMocker mocker = new SimpleMocker(gson);
+            ConsoleRecorder recorder = new ConsoleRecorder(gson);
+            //SimpleMocker mocker = new SimpleMocker(gson);
             Class classzz = CubeClient.class;
             FnKey fnKey = new FnKey("ravivj", "movieinfo", "dev", "movieinfo"
                     , classzz.getMethod("getMockResponse" , FnReqResponse.class));
@@ -26,9 +26,10 @@ public class TestCubeAgent {
 //                    , "Simple Response 3" , new Object[] {"1" , "5"});
 
 //            System.out.println(Instant.ofEpochSecond(1557489786L).toString());
-            Object returnVal = mocker.mock(fnKey, Optional.of("trace_1") , Optional.empty() , Optional.empty() ,
+
+            /*Object returnVal = mocker.mock(fnKey, Optional.of("trace_1") , Optional.empty() , Optional.empty() ,
                     Optional.of(Instant.ofEpochSecond(1557489555)), Optional.empty(), new Object[] {"1" , "5"});
-            System.out.println(returnVal.toString());
+            System.out.println(returnVal.toString());*/
         } catch (Exception e) {
             e.printStackTrace();
         }

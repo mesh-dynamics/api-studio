@@ -11,8 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import io.md.dao.ByteArrayPayload;
 import io.md.dao.Event;
+import io.md.dao.StringAsByteArrayPayload;
 
 public class ThriftMocker {
 
@@ -40,7 +40,7 @@ public class ThriftMocker {
 		Class<?> clazz = Class.forName(className);
 		Constructor<?> constructor = clazz.getConstructor();
 		Object obj1 = constructor.newInstance();
-		tDeserializer.deserialize((TBase) obj1, ((ByteArrayPayload)event.rawPayload).payload);
+		tDeserializer.deserialize((TBase) obj1, ((StringAsByteArrayPayload)event.payload).payload);
 		return (TBase) obj1;
 	}
 

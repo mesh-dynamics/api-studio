@@ -14,17 +14,16 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.transport.TTransportException;
 
-import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
 import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.ThriftMocker;
 import io.md.constants.Constants;
-import io.md.dao.ByteArrayPayload;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
+import io.md.dao.StringAsByteArrayPayload;
 import io.md.utils.CommonUtils;
 
 // MESH-D Mostly overriding the process function in
@@ -75,7 +74,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 						constructApiPath(methodName, args),
 						EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
 						Constants.DEFAULT_COLLECTION)
-						.setRawPayload(new ByteArrayPayload(serializer.serialize(args)));
+						.setPayload(new StringAsByteArrayPayload(serializer.serialize(args)));
 					fluentDLogRecorder.record(eventBuilder.createEvent());
 				}
 			} catch (Exception e) {
@@ -103,7 +102,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					constructApiPath(methodName, args),
 					EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
 					Constants.DEFAULT_COLLECTION)
-					.setRawPayload(new ByteArrayPayload(serializer.serialize(args)));
+					.setPayload(new StringAsByteArrayPayload(serializer.serialize(args)));
 				result = thriftMocker.mockThriftRequest(eventBuilder.createEvent());
 				LOGGER.info(new ObjectMessage(
 					Map.of(Constants.MESSAGE,
@@ -141,7 +140,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					constructApiPath(methodName, result),
 					EventType.ThriftResponse, Optional.of(Instant.now()), reqId,
 					Constants.DEFAULT_COLLECTION)
-					.setRawPayload(new ByteArrayPayload(serializer.serialize(result)));
+					.setPayload(new StringAsByteArrayPayload(serializer.serialize(result)));
 				fluentDLogRecorder.record(eventBuilder.createEvent());
 			} catch (Exception e) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
