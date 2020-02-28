@@ -151,7 +151,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		Object statusObj = request.getProperties().get(Constants.MD_STATUS_PROP);
 		Object traceInfo = request.getProperties().get(Constants.MD_TRACE_INFO);
 
-		ObjectMapper mapper = new ObjectMapper();
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ?
 				(MultivaluedMap <String, String>) respHeadersObj : Utils.createEmptyMultivaluedMap();
