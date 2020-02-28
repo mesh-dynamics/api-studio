@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,10 +23,10 @@ import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.cryptography.EncryptionAlgorithm;
-import io.md.utils.UtilException;
 
 public class JsonDataObj implements DataObj {
 
@@ -39,7 +40,7 @@ public class JsonDataObj implements DataObj {
 		this(jsonStrToObj(json, jsonMapper), jsonMapper);
 	}
 
-	private JsonDataObj(JsonNode root, ObjectMapper jsonMapper) {
+	public JsonDataObj(JsonNode root, ObjectMapper jsonMapper) {
 		this.objRoot = root;
 		this.jsonMapper = jsonMapper;
 	}
@@ -50,7 +51,7 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@Override
-	public boolean isEmpty() {
+	public boolean isDataObjEmpty() {
 		return objRoot.isMissingNode();
 	}
 
@@ -70,9 +71,12 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@Override
-	public String serialize() {
-		// TODO: Not yet implemented
-		return null;
+	public String serializeDataObj() throws DataObjProcessingException {
+		try {
+			return jsonMapper.writeValueAsString(objRoot);
+		} catch (JsonProcessingException e) {
+			throw  new DataObjProcessingException(e);
+		}
 	}
 
 	@Override
@@ -82,6 +86,7 @@ public class JsonDataObj implements DataObj {
 		} catch (JsonProcessingException e) {
 			LOGGER.error(new ObjectMessage(Map.of("message", "Not able to serialize json",
 				"value", objRoot.toString())));
+			// TODO .. isn't this prone to errors ?
 			return objRoot.toString();
 		}
 	}
@@ -95,7 +100,6 @@ public class JsonDataObj implements DataObj {
 
 	@Override
 	public Comparator.MatchType compare(DataObj rhs, CompareTemplate template) {
-
 		return null;
 	}
 
@@ -117,10 +121,11 @@ public class JsonDataObj implements DataObj {
 		return new JsonDataObj(transformedRoot, jsonMapper);
 	}*/
 
-	@Override
-	public AbstractRawPayload toRawPayload() {
+
+
+/*	public RawPayload toRawPayload() {
 		return new StringPayload(toString());
-	}
+	}*/
 
 	/**
 	 * Unwrap the string at path into a json object. The type for interpreting the string is given by mimetype
@@ -147,8 +152,9 @@ public class JsonDataObj implements DataObj {
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (IOException e) {
-						LOGGER.error(String.format("Exception in parsing json string at path: %s, val: %s",
-							path, val.asText()), e.getMessage(), UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"Exception in parsing json string", Constants.PATH_FIELD, path
+							, "value" , val.asText())) , e);
 					}
 				}
 			}
@@ -177,7 +183,6 @@ public class JsonDataObj implements DataObj {
 				// convert to string
 				// currently handling only json type
 				if (mimetype.equals(MediaType.APPLICATION_JSON)) {
-
 					String newVal = val.toString();
 					valParentObj.set(fieldName, new TextNode(newVal));
 					return true;
@@ -213,6 +218,22 @@ public class JsonDataObj implements DataObj {
 	@Override
 	public Optional<String> decryptField(String path, EncryptionAlgorithm encrypter) {
 		return decryptField(objRoot, path, encrypter);
+	}
+
+	@Override
+	public <T> T getValAsObject(String path, Class<T> className) throws PathNotFoundException
+		, DataObjProcessingException {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valueNode = objRoot.at(pathPtr);
+		if (valueNode != null) {
+			try {
+				return jsonMapper.treeToValue(valueNode, className);
+			} catch (Exception e) {
+				throw  new DataObjProcessingException(e);
+			}
+		} else {
+			throw  new PathNotFoundException();
+		}
 	}
 
 	private Optional<String> decryptField(JsonNode root, String path, EncryptionAlgorithm decrypter) {
@@ -280,8 +301,9 @@ public class JsonDataObj implements DataObj {
 		}
 	}
 
-
+	@JsonIgnore
 	private final JsonNode objRoot;
+	@JsonIgnore
 	private final ObjectMapper jsonMapper;
 
 	public JsonNode getRoot() {

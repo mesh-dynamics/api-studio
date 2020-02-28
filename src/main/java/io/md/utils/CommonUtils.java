@@ -331,7 +331,7 @@ public class CommonUtils {
 		return payloadObj;
 	}
 
-	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
+	/*public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
 		RunType rrType, Optional<Instant> timestamp, JsonObject payload) {
 
 		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
@@ -340,7 +340,7 @@ public class CommonUtils {
 			fnKey.signature, Event.EventType.JavaRequest);
 		eventBuilder.setRawPayload(new StringPayload(payload.toString()));
 		return eventBuilder.createEventOpt();
-	}
+	}*/
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
 		JsonArray argsArray = new JsonArray();
