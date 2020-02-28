@@ -1,47 +1,29 @@
-import React from 'react'
-import { Glyphicon } from 'react-bootstrap'
-import Tippy from '@tippy.js/react'
-import 'tippy.js/themes/light.css';
+import React, { Component } from 'react';
+import { Glyphicon } from 'react-bootstrap';
+import Popover, { ArrowContainer } from 'react-tiny-popover';
 import GoldenPopover from "../GoldenPopover";
+import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
+import "./OperationalSet.css";
 
-class OperationSet extends React.Component {
-    constructor(props, context) {
-        super(props, context);
-        this.handleShow = this.handleShow.bind(this);
-        this.handleClose = this.handleClose.bind(this);
-        this.handleClick = this.handleClick.bind(this);
-        this.handleTippyHide = this.handleTippyHide.bind(this);
-        this.handleTippyShow = this.handleTippyShow.bind(this);
-        this.state = {
-            show: false,
-            popover: false,
-            visible: false
-        };
+class OperationSet extends Component {
+    constructor(props) {
+        super(props);
         this.inputElementRef = this.props.inputElementRef;
-        this.filterPath = this.filterPath.bind(this);
+        this.state = {
+            showPopoverTrigger: false,
+            showPopover: false  
+        };
     }
 
-    handleClose() {
-        this.setState({ show: false });
-    }
+    handleShowPopoverTrigger = () => this.setState({ showPopoverTrigger: true });
 
-    handleShow() {
-        this.setState({ show: true });
-    }
+    handleHidePopoverTrigger = () => this.setState({ showPopoverTrigger: false });
 
-    handleClick() {
-        this.setState({ show: true });
-    }
+    handleShowPopoverClick = () => this.setState({ showPopover: true });
 
-    handleTippyHide() {
-        this.setState({popover: false});
-    }
+    handleHidePopoverClick = () => this.setState({ showPopover: false });
 
-    handleTippyShow() {
-        this.setState({popover: true});
-    }
-
-    filterPath() {
+    filterPath = () => {
         let inputElement = document.getElementById("filterPathInputId");
         inputElement.value = this.props.jsonPath.replace("<BEGIN>", "");
         let event = new Event("change");
@@ -49,32 +31,75 @@ class OperationSet extends React.Component {
         this.inputElementRef.current.props.onChange(event);
     }
 
-    showTippy = () => {
-        this.setState({visible: true});
-    };
+    renderOperationalSet = (context) => {
+        const { popoverCurrentPath, setPopoverCurrentPath } = context;
+        const { showPopover, showPopoverTrigger } = this.state;
 
-    hideTippy = () => {
-        this.setState({visible: false, show: false, popover: false});
+        return (
+            (showPopover || showPopoverTrigger) 
+            &&
+                <span className="os-actions-container"ref={this.props.elementRef}>
+                    <Popover
+                        isOpen={showPopover && popoverCurrentPath === this.props.jsonPath}
+                        position={['top', 'bottom', 'left', 'right']}
+                        padding={10}
+                        content={({ position, targetRect, popoverRect }) => (
+                            <ArrowContainer
+                                position={position}
+                                targetRect={targetRect}
+                                popoverRect={popoverRect}
+                                arrowColor={'grey'}
+                                arrowSize={10}
+                                arrowStyle={{ opacity: 0.7 }}
+                            >
+                                <div 
+                                    className="os-popover-wrapper grey" 
+                                    id={`tooltip-${this.props.jsonPath}`}
+                                >
+                                    <GoldenPopover 
+                                        {...this.props} 
+                                        handleHidePopoverClick={this.handleHidePopoverClick} 
+                                    />
+                                </div>
+                            </ArrowContainer>
+                        )}
+                    >
+                        <span 
+                            className="pointer" 
+                            onClick={
+                                () => 
+                                {
+                                        this.handleShowPopoverClick();
+                                        setPopoverCurrentPath(this.props.jsonPath);
+                                }
+                            }
+                        >
+                            <Glyphicon glyph="plus" />
+                        </span>
+                    </Popover>
+                    <span className="pointer" onClick={this.filterPath}><Glyphicon glyph="search" /></span>
+                </span>
+        );
     };
 
 
     render() {
-        let props = this.props;
-        return this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0 ? (
-            <div onMouseOver={this.handleShow} onMouseOut={this.handleClose} onClick={this.handleClick}>
-                <span ref={this.props.elementRef} style={{ visibility: this.state.show || this.state.popover ? "visible" : "hidden" }} >
-                    <Tippy flip={false} hideOnClick={false} visible={this.state.visible} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light"} trigger={"click"} appendTo={"parent"} maxWidth={700}
-                    content={
-                            <div style={{padding: 0, width: "auto", maxWidth: "700px", maxHeight:"800px", fontSize: "14px"}} className="grey" id={`tooltip-${this.props.jsonPath}`}>
-                                <GoldenPopover {...props} hideTippy={this.hideTippy} />
-                            </div>
-                        }>
-                        <span onClick={this.showTippy} style={{ paddingRight: "3px", cursor: "pointer" }}><Glyphicon glyph="plus" /></span>
-                    </Tippy>
-                    <span style={{cursor: "pointer"}} onClick={this.filterPath}><Glyphicon glyph="search" /></span>
-                </span>
-            </div>
-        ) : "";
+        return (
+            (this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0)
+            ? 
+                (
+                    <div 
+                        onMouseEnter={this.handleShowPopoverTrigger} 
+                        onMouseLeave={this.handleHidePopoverTrigger} 
+                        onClick={this.handlePopoverTriggerClick}
+                        className="os-root-container"
+                    >
+                        <ShareableLinkContext.Consumer>
+                            {(context) => this.renderOperationalSet(context)}
+                        </ShareableLinkContext.Consumer>
+                    </div>
+                )
+            : "");
     }
 }
 

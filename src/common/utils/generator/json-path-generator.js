@@ -1,5 +1,5 @@
 function isEmpty(obj) {
-	if (typeof obj === 'array') {
+	if (Array.isArray(obj)) {
 		return obj.length === 0;
 	}
 	return !obj || Object.keys(obj).length === 0;

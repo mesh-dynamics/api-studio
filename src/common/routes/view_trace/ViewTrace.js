@@ -905,7 +905,7 @@ class ViewTrace extends Component {
                             <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
                             <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
                             <div style={{display: "inline-block"}}>
-                                <label class="checkbox-inline">
+                                <label className="checkbox-inline">
                                     Resolution Type:
                                 </label>
                                 <div style={{ paddingLeft: "9px", display: "inline-block" }}>
@@ -946,6 +946,7 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqHeaders}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            disableOperationSet={true}
                                         />
                                     </div>
                                 </div>
@@ -962,6 +963,7 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqQParams}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            disableOperationSet={true}
                                         />
                                     </div>
                                 </div>
@@ -978,6 +980,7 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqFParams}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            disableOperationSet={true}
                                         />
                                     </div>
                                 </div>
@@ -994,6 +997,7 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqBody}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            disableOperationSet={true}
                                         />
                                     </div>
                                 </div>
@@ -1014,6 +1018,7 @@ class ViewTrace extends Component {
                                             inputElementRef={this.inputElementRef}
                                             showAll={this.state.showAll}
                                             searchFilterPath={this.state.searchFilterPath}
+                                            disableOperationSet={true}
                                         />
                                     </div>
                                 </div>
@@ -1053,6 +1058,7 @@ class ViewTrace extends Component {
                                                 inputElementRef={this.inputElementRef}
                                                 showAll={this.state.showAll}
                                                 searchFilterPath={this.state.searchFilterPath}
+                                                disableOperationSet={true}
                                             />
                                         </div>
                                     )}
@@ -1062,7 +1068,6 @@ class ViewTrace extends Component {
                     </div>
                 )}
             </div>
-
         );
     }
 }
