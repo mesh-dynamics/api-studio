@@ -1,16 +1,23 @@
 package com.cubeui.backend.service;
 
+import io.md.dao.Replay;
 import com.cubeui.backend.web.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,15 +29,29 @@ import static org.springframework.http.ResponseEntity.*;
 
 @Service
 @Transactional
+@Slf4j
 public class CubeServerService {
 
     @Value("${cube.server.baseUrl}")
     private String cubeServerBaseUrl = CUBE_SERVER_HREF;
 
+    @Autowired
     private RestTemplate restTemplate;
 
-    public CubeServerService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    @Autowired
+    private ObjectMapper jsonMapper;
+
+    @PostConstruct
+    protected void init()  {
+
+        SimpleClientHttpRequestFactory clientHttpRequestFactory
+                = new SimpleClientHttpRequestFactory();
+        //Connect timeout
+        clientHttpRequestFactory.setConnectTimeout(5000);
+
+        //Read timeout
+        clientHttpRequestFactory.setReadTimeout(600000);
+        restTemplate.setRequestFactory(clientHttpRequestFactory);
     }
 
     public ResponseEntity fetchGetResponse(String path){
@@ -45,6 +66,21 @@ public class CubeServerService {
         } catch (Exception e){
             return status(NOT_FOUND).body(e);
         }
+    }
+
+    public Optional<Replay> getReplay(String replayId) {
+        final String path  = cubeServerBaseUrl + "/rs/status/" + replayId;
+        final ResponseEntity  response = fetchGetResponse(path);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            try {
+                final String body = response.getBody().toString();
+                final Replay replay = jsonMapper.readValue(body, Replay.class);
+                return Optional.of(replay);
+            } catch (Exception e) {
+                log.info("Error in converting Json to Replay" + replayId + " message"  + e.getMessage());
+            }
+        }
+        return Optional.empty();
     }
 
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody) {
