@@ -12,7 +12,6 @@ import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +49,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 
 	static String HEADERS = "hdrs";
 	static String STATUS = "method";
+	static String BODY = "body";
 	/**
 	 *
 	 * @param hdrs
@@ -65,7 +65,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 		this.body = body;
 	}
 
-	static String BODY = "body";
+
 
 	@Override
 	public byte[] rawPayloadAsByteArray() throws NotImplementedException {

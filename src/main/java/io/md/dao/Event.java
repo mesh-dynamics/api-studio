@@ -105,7 +105,7 @@ public class Event {
 	}
 
 	//TODO keep this logic in cube respository
-/*	public void parseAndSetKeyAndCollection(Config config, String collection,
+	/*	public void parseAndSetKeyAndCollection(Config config, String collection,
 		CompareTemplate template)
 		throws DataObjCreationException {
 		this.collection = collection;
@@ -173,6 +173,7 @@ public class Event {
 		return payload;
 	}
 
+	//TODO this function will be removed
 	public String getPayloadAsJsonString(Map<String, Object> params) {
 		switch (this.eventType) {
 			case HTTPRequest:

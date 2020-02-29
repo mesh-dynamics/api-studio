@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.Constants;
 
+// TODO this class will eventually go away
 public class DataObjFactory {
 
 	private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);

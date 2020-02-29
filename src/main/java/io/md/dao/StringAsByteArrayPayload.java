@@ -24,12 +24,6 @@ public class StringAsByteArrayPayload extends LazyParseAbstractPayload {
 	@JsonProperty("payload")
 	public byte[] payload;
 
-	// for Jackson
-	private StringAsByteArrayPayload() {
-		super();
-		this.payload = new byte[]{};
-	}
-
 	public StringAsByteArrayPayload(byte[] payload) {
 		super();
 		this.payload = payload;

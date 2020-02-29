@@ -1,5 +1,6 @@
 package io.md.dao;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -14,5 +15,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 	@Type(value = StringAsByteArrayPayload.class),
 })
 public interface Payload extends DataObj, RawPayload {
+
+	@JsonIgnore
+	public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
 
 }

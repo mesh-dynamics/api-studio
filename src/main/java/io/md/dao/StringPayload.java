@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,20 +18,13 @@ import io.md.constants.Constants;
 
 public class StringPayload extends LazyParseAbstractPayload {
 
-	private static final Logger LOGGER = LogManager.getLogger(StringPayload.class);;
+	private static final Logger LOGGER = LogManager.getLogger(StringPayload.class);
+
 	@JsonSerialize(using = StringSerializer.class)
-	@JsonDeserialize(as = String.class)
-	@JsonProperty("payload")
 	public String payload;
 
-	// for Jackson
-	private StringPayload() {
-		super(null);
-		this.payload = "";
-	}
-
-	public StringPayload(String payload, ObjectMapper mapper) {
-		super(mapper);
+	@JsonCreator
+	public StringPayload(@JsonProperty("payload") String payload) {
 		this.payload = payload;
 	}
 

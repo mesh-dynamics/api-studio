@@ -8,13 +8,11 @@ import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
 import io.md.cryptography.EncryptionAlgorithm;
-import io.md.utils.LazyParseAbstractPayloadConverter;
-import io.md.utils.LazyParseAbstractPayloadSerializer;
+import io.md.utils.CubeObjectMapperProvider;
 
 //@JsonSerialize(using = LazyParseAbstractPayloadSerializer.class)
 //@JsonSerialize(converter = LazyParseAbstractPayloadConverter.class)
@@ -25,17 +23,8 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	@JsonIgnore
 	protected ObjectMapper mapper;
 
-	@JsonIgnore
-	public void setObjectMapper(ObjectMapper mapper) {
-		this.mapper = mapper;
-	}
-
 	public LazyParseAbstractPayload() {
-
-	}
-
-	public LazyParseAbstractPayload(ObjectMapper mapper) {
-		this.mapper = mapper;
+		this.mapper = CubeObjectMapperProvider.getInstance();
 	}
 
 	@Override

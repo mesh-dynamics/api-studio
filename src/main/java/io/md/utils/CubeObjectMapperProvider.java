@@ -3,6 +3,8 @@
  */
 package io.md.utils;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -16,26 +18,25 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  * @author prasad
  * This was needed for json support for java 8 objects in jackson
  */
-@Provider
-public class CubeObjectMapperProvider implements ContextResolver<ObjectMapper> {
+public class CubeObjectMapperProvider  {
 
-    final ObjectMapper defaultObjectMapper;
 
-    public CubeObjectMapperProvider() {
-        defaultObjectMapper = createDefaultMapper();
+    private static AtomicReference<ObjectMapper> singleInstance = new AtomicReference<>();
+
+    static {
+        singleInstance.set(createDefaultMapper());
+    }
+    public static ObjectMapper getInstance() {
+        return singleInstance.get();
     }
 
-    @Override
-    public ObjectMapper getContext(Class<?> type) {
-            return defaultObjectMapper;
-    }
-
-    public static ObjectMapper createDefaultMapper() {
+    private static ObjectMapper createDefaultMapper() {
         final ObjectMapper result = new ObjectMapper();
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         SimpleModule module = new SimpleModule();
+        module.setSerializerModifier(new PayloadSerializerModifier());
         result.registerModule(module);
         return result;
     }
