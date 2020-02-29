@@ -55,6 +55,13 @@ public interface DataObj {
 
 	class PathNotFoundException extends Exception{
 
+		public PathNotFoundException() {
+			super();
+		}
+
+		public PathNotFoundException(String path) {
+			super("Path doesn't exist :: " + path);
+		}
 	}
 
 	class DataObjProcessingException extends Exception {

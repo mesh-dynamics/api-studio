@@ -1,6 +1,11 @@
 package io.md.utils;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
@@ -9,9 +14,12 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 
+import io.md.constants.Constants;
 import io.md.dao.Payload;
 
 public class PayloadSerializer extends JsonSerializer<Payload> {
+
+	private static final Logger LOGGER = LogManager.getLogger(PayloadSerializer.class);
 
 	private final JsonSerializer<Object> serializer;
 
@@ -26,7 +34,8 @@ public class PayloadSerializer extends JsonSerializer<Payload> {
 			try {
 				o.syncFromDataObj();
 			} catch (Exception e) {
-
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Error while syncing payload with parsed json tree")),e);
 			}
 		// delegating the default serializer
 		serializer.serialize(o, jsonGenerator, serializerProvider);

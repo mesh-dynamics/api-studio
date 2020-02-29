@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
@@ -108,10 +109,14 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 				properties.put(QUERY_PARAMS, mapper.valueToTree(queryParams));
 				properties.put(FORM_PARAMS, mapper.valueToTree(formParams));
 				properties.put(METHOD, new TextNode(method));
-				if (hdrs != null && Utils.isJsonMimeType(hdrs)) {
-					properties.put(BODY, mapper.readTree(new String(body, StandardCharsets.UTF_8)));
-				} else {
-					properties.put(BODY, new TextNode(new String(body, StandardCharsets.UTF_8)));
+				if (body != null && body.length != 0) {
+					if (hdrs != null && Utils.isJsonMimeType(hdrs)) {
+						properties.put(BODY,
+							mapper.readTree(new String(body, StandardCharsets.UTF_8)));
+					} else {
+						properties.put(BODY,
+							new TextNode(new String(body, StandardCharsets.UTF_8)));
+					}
 				}
 				final JsonNodeFactory factory = JsonNodeFactory.instance;
 				ObjectNode rootNode = factory.objectNode();

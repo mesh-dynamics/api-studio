@@ -1,8 +1,13 @@
 package io.md.tracer;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
+import io.md.constants.Constants;
 import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
@@ -13,7 +18,7 @@ import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.propagation.Format;
 
 public class MDGlobalTracer implements Tracer {
-	private static final Logger LOGGER = Logger.getLogger(MDGlobalTracer.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(MDGlobalTracer.class);
 	private static final MDGlobalTracer INSTANCE = new MDGlobalTracer();
 	private static volatile Tracer tracer = NoopTracerFactory.create();
 
@@ -28,8 +33,9 @@ public class MDGlobalTracer implements Tracer {
 		if (tracer == null) {
 			throw new NullPointerException("Cannot register MDGlobalTracer <null>.");
 		} else if (tracer instanceof MDGlobalTracer) {
-			LOGGER.log(Level.FINE, "Attempted to register the MDGlobalTracer as delegate"
-				+ " of itself.");
+			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Attempted to register the MDGlobalTracer as delegate"
+				+ " of itself.")));
 		} else if (isRegistered() && !MDGlobalTracer.tracer.equals(tracer)) {
 			throw new IllegalStateException("There is already a current MD Tracer registered.");
 		} else {

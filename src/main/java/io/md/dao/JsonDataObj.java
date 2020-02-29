@@ -66,7 +66,7 @@ public class JsonDataObj implements DataObj {
 		if (!node.isMissingNode()) {
 			return nodeToString(getNode(path));
 		} else {
-			throw new PathNotFoundException();
+			throw new PathNotFoundException(path);
 		}
 	}
 
