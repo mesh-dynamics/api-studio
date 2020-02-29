@@ -103,6 +103,16 @@
             <artifactId>okhttp</artifactId>
             <version>3.9.0</version>
         </dependency>
+        <dependency>
+        <groupId>com.md.interceptor</groupId>
+        <artifactId>md-apache-cxf-ingress-interceptor</artifactId>
+        <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.md.interceptor</groupId>
+            <artifactId>md-apache-cxf-egress-interceptor</artifactId>
+            <version>0.0.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -112,7 +122,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>com.meshd.cxf.jaxrs.implementation.RestfulServer</mainClass>
+                    <mainClass>com.meshd.cxf.jaxrs.implementation.CourseServer</mainClass>
                 </configuration>
             </plugin>
             <plugin>

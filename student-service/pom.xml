@@ -98,6 +98,11 @@
             <artifactId>jackson-jaxrs-json-provider</artifactId>
             <version>2.10.2.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.md.interceptor</groupId>
+            <artifactId>md-apache-cxf-ingress-interceptor</artifactId>
+            <version>0.0.1</version>
+        </dependency>
 
     </dependencies>
 
@@ -108,7 +113,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>com.baeldung.cxf.jaxrs.implementation.RestfulServer</mainClass>
+                    <mainClass>com.baeldung.cxf.jaxrs.implementation.StudentServer</mainClass>
                 </configuration>
             </plugin>
         </plugins>

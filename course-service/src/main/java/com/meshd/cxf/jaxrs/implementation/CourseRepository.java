@@ -1,11 +1,17 @@
 package com.meshd.cxf.jaxrs.implementation;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 
 @Path("meshd")
 @Produces("application/json")
@@ -48,6 +54,23 @@ public class CourseRepository {
         }
         courses.put(courseId, course);
         return Response.ok().build();
+    }
+
+    @POST
+    @Path("courses/{courseId}/student")
+    public Response addStudent(@PathParam("courseId") int courseId, Student student) {
+        Course existingCourse = findById(courseId);
+        if (existingCourse == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        try {
+            return existingCourse.createStudent(student);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return Response.serverError().build();
     }
 
     @Path("courses/{courseId}/students")

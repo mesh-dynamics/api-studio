@@ -1,17 +1,26 @@
 package com.meshd.cxf.jaxrs.implementation;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
-import javax.xml.bind.annotation.XmlRootElement;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Response;
+import javax.xml.bind.annotation.XmlRootElement;
 
-import okhttp3.MediaType;
+import org.apache.cxf.jaxrs.client.WebClient;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.md.interceptor.apachecxf.egress.ClientFilter;
+import com.md.interceptor.apachecxf.egress.TracingFilter;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+
 
 @XmlRootElement(name = "Course")
 public class Course {
@@ -20,6 +29,8 @@ public class Course {
     private List<Integer> studentIds = new ArrayList<>();
     private String URL = "http://localhost:8081/meshd/students/";
     private OkHttpClient httpClient = new OkHttpClient();
+    private WebClient webClient = WebClient.create(URL, List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        javax.ws.rs.core.MediaType.APPLICATION_JSON);
 
     public int getId() {
         return id;
@@ -59,18 +70,14 @@ public class Course {
             }
         }
         ObjectMapper objectMapper = new ObjectMapper();
-        Request.Builder requestBuilder = new Request.Builder().url(URL);
-        requestBuilder.post(okhttp3.RequestBody.create(MediaType.parse("application/json"),
-            objectMapper.writeValueAsString(student)));
-
-        try (okhttp3.Response response = httpClient.newCall(requestBuilder.build()).execute()) {
-            int code = response.code();
-            if (code >= 200 && code <= 299) {
-                return Response.ok(student).build();
-            } else {
-                throw new IllegalArgumentException(
-                    "HTTP error response returned by Transformer service " + code);
-            }
+        Response response = webClient.post(objectMapper.writeValueAsString(student));
+        int responseCode = response.getStatus();
+        if (responseCode >= 200 && responseCode <= 299) {
+            studentIds.add(student.getId());
+            return Response.ok(student).build();
+        } else {
+            throw new IllegalArgumentException(
+                "HTTP error response returned by Transformer service " + responseCode);
         }
     }
 
