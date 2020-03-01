@@ -1,0 +1,22 @@
+.os-root-container {
+    min-height: 20px;
+    display: flex;
+    cursor: pointer;
+}
+
+.os-actions-container {
+    flex: 1;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    cursor: "pointer";
+}
+
+.os-popover-wrapper {
+    padding: 3px; 
+    width: auto; 
+    max-width: 700px;
+    max-height: 800px;
+    font-size: 14px;
+    border-radius: 3px;
+}

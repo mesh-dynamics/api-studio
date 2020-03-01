@@ -281,7 +281,7 @@ async function getTestIds (options) {
 async function fetchCollectionList(app) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.recordBaseUrl}/recordings?customerid=${user.customer_name}&app=${app}`;
+    let url = `${config.recordBaseUrl}/recordings?customerId=${user.customer_name}&app=${app}`;
     let collections = [];
     try {
         response = await fetch(url, {
@@ -323,7 +323,7 @@ async function forceCompleteReplay(fcId) {
 async function checkStatusForReplay(collectionId, replayId, app) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.replayBaseUrl}/status/${user.customer_name}/${app}/${collectionId}/${replayId}`;
+    let url = `${config.replayBaseUrl}/status/${replayId}`;
     let status = {};
     try {
         response = await fetch(url, {

@@ -1,25 +1,40 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { connect } from "react-redux";
 import { generateServiceOptionsFromTimeLine, generateApiOptionsFromTimeLine } from '../../utils/lib/golden-utils';
 import {goldenActions} from '../../actions/golden.actions'
 
 const GoldenMeta = (props) => {
-    const { 
-        testIds, 
-        selectedTestId, 
-        timelineData: { timelineResults }, 
+
+    const {
+        golden: { 
+            message, 
+            selectedApi,
+            selectedGolden, 
+            selectedService, 
+        },
+        cube: { 
+            timelineData: { 
+                timelineResults 
+            } 
+        }, 
         handleBackToTestInfoClick, 
         setSelectedService, 
-        setSelectedApiPath 
+        setSelectedApiPath,
+        updateGoldenMeta,
+        getGoldenData,
     } = props;
 
-    const selectedTestIdItem = testIds.find(items => items.collec === selectedTestId);
+    const { id, name, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId } = selectedGolden;
 
-    const { id, name, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId } = selectedTestIdItem;
-    
-    const [shouldEditName, setShouldEditName] = useState(false);
+    const [editable, setEditable] = useState(false);
 
-    const [selectedGoldenName, setSelectedGoldenName] = useState(name);
+    const [goldenName, setGoldenName] = useState(name);
+
+    const [branchName, setBranchName] = useState(branch);
+
+    const [codeVersionNumber, setCodeVersionNumber] = useState(codeVersion);
+
+    const [commitId, setCommitId] = useState(gitCommitId);
 
     const [apiPathOptions, setApiPathOptions] = useState([]);
 
@@ -27,7 +42,15 @@ const GoldenMeta = (props) => {
 
     const serviceOptions = generateServiceOptionsFromTimeLine(timelineResult);
 
-    const handleKeyPress = (event) => (event.key === "Enter" && setShouldEditName(false));
+    const handleUpdateClick = () => {
+        if(goldenName === name) {
+            alert("Golden name cannot be the same.");   
+        } else {
+            setEditable(false);
+            updateGoldenMeta({ id, goldenName, branchName, codeVersionNumber, commitId });
+        }
+    };
+
 
     const handleServiceChange = (e) => {
         setSelectedService(e.target.value);
@@ -37,17 +60,35 @@ const GoldenMeta = (props) => {
 
     const handleApiPathChange = (e) => setSelectedApiPath(e.target.value);
 
+    useEffect(() => {
+        setGoldenName(name);
+        setBranchName(branch);
+        setCodeVersionNumber(codeVersion);
+        setCommitId(gitCommitId);
+    }, [message])
+
+    useEffect(() => {
+        if(selectedApi !== "" && selectedService !== "" && selectedGolden.id) {
+            getGoldenData(selectedGolden.id, selectedService, selectedApi);
+        }
+    }, [selectedGolden.id, selectedService, selectedApi])
+    
     return (
         <div>
             <div className="margin-top-10">
-                <p><strong>Golden:</strong></p>
-                {!shouldEditName && <span style={{ width: "100%"}} onClick={() => setShouldEditName(true)}>{selectedGoldenName}</span>}
-                {shouldEditName && 
+                {!editable &&
+                    <div className="gv-edit-icon-container">
+                        <i class="fa fa-pencil-square-o pointer" aria-hidden="true" onClick={() => setEditable(true)}></i>
+                    </div>
+                }
+                <span className="margin-right-10"><strong>Golden:</strong></span>
+                {!editable && <span>{goldenName}</span>}
+                {editable && 
                     <input 
                         style={{ width: "100%"}} 
-                        value={selectedGoldenName} 
-                        onChange={(e) => setSelectedGoldenName(e.target.value)} 
-                        onKeyPress={(e) => handleKeyPress(e)}
+                        name="name"
+                        value={goldenName} 
+                        onChange={(e) => setGoldenName(e.target.value)}
                     />
                 }
             </div>
@@ -69,17 +110,54 @@ const GoldenMeta = (props) => {
             </div>
             <div className="margin-top-10">
                 <span className="margin-right-10"><strong>Branch:</strong></span>
-                <span>{branch}</span>
+                {!editable && <span>{branchName}</span>}
+                {editable && 
+                    <input 
+                        style={{ width: "100%"}} 
+                        name="branchName"
+                        value={branchName} 
+                        onChange={(e) => setBranchName(e.target.value)} 
+                    />
+                }
             </div>
             <div className="margin-top-10">
                 <span className="margin-right-10"><strong>Version:</strong></span>
-                <span>{codeVersion}</span>
+                {!editable && <span>{codeVersionNumber}</span>}
+                {editable && 
+                    <input 
+                        style={{ width: "100%"}} 
+                        name="codeVersion"
+                        value={codeVersionNumber} 
+                        onChange={(e) => setCodeVersionNumber(e.target.value)} 
+                    />
+                }
             </div>
             <div className="margin-top-10">
                 <span className="margin-right-10"><strong>Commit Id:</strong></span>
-                <span>{gitCommitId}</span>
+                {!editable && <span>{commitId}</span>}
+                {editable && 
+                    <input 
+                        style={{ width: "100%"}} 
+                        name="commitId"
+                        value={commitId} 
+                        onChange={(e) => setCommitId(e.target.value)} 
+                    />
+                }
             </div>
-            <div className="margin-top-10">
+            {message && <div className="gv-message-text-generic">{message}</div>}
+            {
+                editable && 
+                <Fragment>
+                    <div 
+                        className="margin-top-10 cube-btn width-100 text-center" 
+                        onClick={handleUpdateClick}
+                    >
+                        Update
+                    </div>
+                    <div className="divider" />
+                </Fragment>
+            }
+            <div className="margin-top-20">
                 <strong>Service</strong>
                 <select className="r-att" placeholder={'Select...'} onChange={handleServiceChange}>
                     <option value="">Select Service</option>
@@ -100,10 +178,21 @@ const GoldenMeta = (props) => {
     )
 }
 
+const mapStateToProps = (state) => ({
+    golden: state.golden,
+    cube: state.cube
+});
+
 const mapDispatchToProps = (dispatch) => ({
     setSelectedService: (data) => { dispatch(goldenActions.setSelectedService(data)) },
 
-    setSelectedApiPath: (data) => { dispatch(goldenActions.setSelectedApiPath(data)) }
+    setSelectedApiPath: (data) => { dispatch(goldenActions.setSelectedApiPath(data)) },
+
+    updateGoldenMeta: (data) => { dispatch(goldenActions.updateGoldenMeta(data))},
+
+    getGoldenData: (goldenId, service, apiPath) => { 
+        dispatch(goldenActions.getGoldenData(goldenId, service, apiPath));
+    }
 });
 
-export default connect(null, mapDispatchToProps)(GoldenMeta);
+export default connect(mapStateToProps, mapDispatchToProps)(GoldenMeta);
