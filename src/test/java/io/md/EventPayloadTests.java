@@ -41,8 +41,8 @@ public class EventPayloadTests {
 		@Before
 		/**
 		 * public EventBuilder(CubeMetaInfo cubeMetaInfo, MDTraceInfo mdTraceInfo,
-		 * 			Event.RunType runType, String apiPath, EventType eventType, Optional<Instant> timestamp,
-		 * 			String reqId, String collection)
+		 * 			Event.RunType runType, String apiPath, EventType eventType,
+		 * 			Optional<Instant> timestamp, String reqId, String collection)
 		 */
 		public void setUp() throws InvalidEventException {
 			CubeMetaInfo cubeMetaInfo = new CubeMetaInfo("random-user"
@@ -83,14 +83,13 @@ public class EventPayloadTests {
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPResponse
 				, Optional.empty(), "random-req-id", "random-collection");
-			eventBuilder.setPayload(new JsonPayload("{\"name\" : \"foo\" , \"age\" : { \"bar\" : 2} }"));
+			eventBuilder.setPayload(new JsonPayload("{\"name\" : \"foo\" , \"age\" : "
+				+ "{ \"bar\" : 2} }"));
 			stringEvent = eventBuilder.createEvent();
 
 
 			eventBuilder.setPayload(new JsonByteArrayPayload(sampleJson.getBytes()));
 			byteArrayEvent = eventBuilder.createEvent();
-
-
 			objectMapper = CubeObjectMapperProvider.getInstance();
 
 		}
@@ -166,18 +165,18 @@ public class EventPayloadTests {
 			System.out.println("INITIAL :: " + jsonRespEventSerialized);
 			Event event = objectMapper.readValue(jsonRespEventSerialized, Event.class);
 			JsonPayload payload =  (JsonPayload) event.payload;
-			Assert.assertEquals(new String(payload.getValAsString("/name")),
+			Assert.assertEquals(payload.getValAsString("/name"),
 				"foo");
-			Assert.assertEquals(new String(payload.getValAsString("/age/bar")),
+			Assert.assertEquals(payload.getValAsString("/age/bar"),
 				"2");
 			payload.encryptField("/name" , new JcaEncryption());
 			String reSerialized = objectMapper.writeValueAsString(event);
 			System.out.println("POST ENCRYPTION :: " + reSerialized);
 			Event encrypted = objectMapper.readValue(reSerialized , Event.class);
 			JsonPayload encryptedPayload  = (JsonPayload) encrypted.payload;
-			Assert.assertNotEquals(new String(encryptedPayload.getValAsString("/name"))
+			Assert.assertNotEquals(encryptedPayload.getValAsString("/name")
 				, "foo");
-			Assert.assertEquals(new String(payload.getValAsString("/age/bar")),
+			Assert.assertEquals(payload.getValAsString("/age/bar"),
 				"2");
 		}
 
@@ -187,18 +186,18 @@ public class EventPayloadTests {
 			System.out.println("INITIAL :: " + jsonRespEventSerialized);
 			Event event = objectMapper.readValue(jsonRespEventSerialized, Event.class);
 			JsonByteArrayPayload payload =  (JsonByteArrayPayload) event.payload;
-			Assert.assertEquals(new String(payload.getValAsString("/name")),
+			Assert.assertEquals(payload.getValAsString("/name"),
 				"foo");
-			Assert.assertEquals(new String(payload.getValAsString("/age/bar")),
+			Assert.assertEquals(payload.getValAsString("/age/bar"),
 				"2");
 			payload.encryptField("/name" , new JcaEncryption());
 			String reSerialized = objectMapper.writeValueAsString(event);
 			System.out.println("POST ENCRYPTION :: " + reSerialized);
 			Event encrypted = objectMapper.readValue(reSerialized , Event.class);
 			JsonByteArrayPayload encryptedPayload  = (JsonByteArrayPayload) encrypted.payload;
-			Assert.assertNotEquals(new String(encryptedPayload.getValAsString("/name"))
+			Assert.assertNotEquals(encryptedPayload.getValAsString("/name")
 				, "foo");
-			Assert.assertEquals(new String(payload.getValAsString("/age/bar")),
+			Assert.assertEquals(payload.getValAsString("/age/bar"),
 				"2");
 	}
 

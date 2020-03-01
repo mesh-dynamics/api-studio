@@ -317,10 +317,6 @@ public class Event {
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
-
-	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
-	// as base64. For debugging its easier if the string is readable.
-
 	public final Payload payload;
 
 	@JsonIgnore

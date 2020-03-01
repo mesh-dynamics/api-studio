@@ -33,10 +33,13 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import io.md.utils.PayloadSerializerModifier;
 
 
 /**
@@ -344,9 +347,12 @@ public final class CustomJsonLayout extends AbstractJacksonLayout {
 		}
 
 		protected ObjectMapper newObjectMapper() {
+			SimpleModule simpleModule = new SimpleModule();
+			simpleModule.setSerializerModifier(new PayloadSerializerModifier());
 			return new Log4jJsonObjectMapper(this.encodeThreadContextAsList,
 				this.includeStacktrace, this.stacktraceAsString, this.objectMessageAsJsonObject)
-				.registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+				.registerModule(new Jdk8Module()).
+					registerModule(new JavaTimeModule()).registerModule(simpleModule);
 		}
 
 		protected PrettyPrinter newPrettyPrinter() {

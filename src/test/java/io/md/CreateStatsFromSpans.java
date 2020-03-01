@@ -53,13 +53,13 @@ public class CreateStatsFromSpans {
 					trace.spans.forEach(span -> {
 						//if (span.operationName.equals("respBody"))
 						System.out.println("Span ID :: " + span.spanID + " operationName :: " + span.operationName);
-						if (span.operationName.equals("reqLog")) {
+						if (span.operationName.equals("respLog")) {
 							respProcessingSpans.add(span.duration);
-						} else if (span.operationName.equals("reqEventCreate")) {
+						} else if (span.operationName.equals("respEventCreate")) {
 							respCreateEventSpans.add(span.duration);
-						} else if (span.operationName.equals("reqEventLog")) {
+						} else if (span.operationName.equals("respEventLog")) {
 							respLogSpans.add(span.duration);
-						} else if (span.operationName.equals("reqBody")) {
+						} else if (span.operationName.equals("respBody")) {
 							respBodySpans.add(span.duration);
 						}
 					});
@@ -73,10 +73,10 @@ public class CreateStatsFromSpans {
 			Collections.sort(respProcessingSpans);
 
 
-			System.out.println("Req Body Copy :: " + createStats(respBodySpans));
-			System.out.println("Req Event Create :: " + createStats(respCreateEventSpans));
-			System.out.println("Req Logging :: " + createStats(respLogSpans));
-			System.out.println("Req Total Processing :: " + createStats(respProcessingSpans));
+			System.out.println("Resp Body Copy :: " + createStats(respBodySpans));
+			System.out.println("Resp Event Create :: " + createStats(respCreateEventSpans));
+			System.out.println("Resp Logging :: " + createStats(respLogSpans));
+			System.out.println("Resp Total Processing :: " + createStats(respProcessingSpans));
 			System.out.println("Object count ::" + objectCount);
 			parser.nextToken();
 			// end array

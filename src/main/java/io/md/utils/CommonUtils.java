@@ -72,12 +72,13 @@ public class CommonUtils {
 			Tracer tracer = MDGlobalTracer.get();
 
 			Span span = null;
+			Scope scope = null;
 			//Added for the JDBC init case, but also to segregate
 			//any calls without a span to a default span.
 			if (tracer.activeSpan() == null) {
 				MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 				span = startServerSpan(headers, "dummy-span");
-				Scope scope = activateSpan(span);
+				scope = activateSpan(span);
 			}
 
 			Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
@@ -95,6 +96,9 @@ public class CommonUtils {
 					.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY, currentIntent);
 			}
 
+			if (scope != null) {
+				scope.close();
+			}
 			if (span != null) {
 				span.finish();
 			}
@@ -213,7 +217,7 @@ public class CommonUtils {
 			SpanContext parentSpanCtx = tracer
 				.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headers));
 			if (parentSpanCtx == null) {
-				spanBuilder = tracer.buildSpan(operationName).ignoreActiveSpan();
+				spanBuilder = tracer.buildSpan(operationName);
 			} else {
 				spanBuilder = tracer.buildSpan(operationName).asChildOf(parentSpanCtx);
 			}
