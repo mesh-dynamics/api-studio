@@ -14,8 +14,6 @@ import io.md.core.CompareTemplate;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.CubeObjectMapperProvider;
 
-//@JsonSerialize(using = LazyParseAbstractPayloadSerializer.class)
-//@JsonSerialize(converter = LazyParseAbstractPayloadConverter.class)
 public abstract class LazyParseAbstractPayload implements Payload {
 
 	@JsonIgnore
@@ -38,7 +36,14 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	@Override
 	public abstract  boolean isRawPayloadEmpty();
 
-	abstract public void parseIfRequired();
+	public abstract  void postParse();
+
+	public void parseIfRequired() {
+		if (this.dataObj == null) {
+			this.dataObj = new JsonDataObj(this, mapper);
+			postParse();
+		}
+	}
 
 	@JsonIgnore
 	abstract public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
@@ -51,7 +56,6 @@ public abstract class LazyParseAbstractPayload implements Payload {
 
 	@Override
 	public boolean isDataObjEmpty() {
-		parseIfRequired();
 		return dataObj == null || dataObj.isDataObjEmpty();
 	}
 
@@ -65,6 +69,11 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	public String getValAsString(String path) throws PathNotFoundException {
 		parseIfRequired();
 		return dataObj.getValAsString(path);
+	}
+
+	public byte[] getValAsByteArray(String path) throws PathNotFoundException {
+		parseIfRequired();
+		return dataObj.getValAsByteArray(path);
 	}
 
 	@Override
@@ -89,6 +98,12 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
+	public boolean wrapAsByteArray(String path, String mimetype) {
+		parseIfRequired();
+		return dataObj.wrapAsByteArray(path, mimetype);
+	}
+
+	@Override
 	public Optional<String> encryptField(String path, EncryptionAlgorithm encrypter) {
 		parseIfRequired();
 		return dataObj.encryptField(path, encrypter);
@@ -103,15 +118,22 @@ public abstract class LazyParseAbstractPayload implements Payload {
 
 	@Override
 	public String serializeDataObj() throws DataObjProcessingException {
-		parseIfRequired();
-		return dataObj.serializeDataObj();
+		if (dataObj != null) {
+			return dataObj.serializeDataObj();
+		} else {
+			throw new DataObjProcessingException("Data Object is null");
+		}
 	}
 
 	@Override
-	public <T> T getValAsObject(String path, Class<T> className)
-		throws DataObjProcessingException, PathNotFoundException {
+	public <T> Optional<T> getValAsObject(String path, Class<T> className) {
 		parseIfRequired();
 		return dataObj.getValAsObject(path , className);
 	}
 
+	@Override
+	public <T> T convertToType(Class<T> tClass) {
+		parseIfRequired();
+		return dataObj.convertToType(tClass);
+	}
 }

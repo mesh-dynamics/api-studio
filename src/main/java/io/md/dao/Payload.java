@@ -11,12 +11,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 @JsonSubTypes({
 	@Type(value = HTTPRequestPayload.class),
 	@Type(value = HTTPResponsePayload.class),
-	@Type(value = StringPayload.class),
-	@Type(value = StringAsByteArrayPayload.class),
+	@Type(value = JsonPayload.class),
+	@Type(value = JsonByteArrayPayload.class),
 })
 public interface Payload extends DataObj, RawPayload {
 
 	@JsonIgnore
-	public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
+	void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
 
 }

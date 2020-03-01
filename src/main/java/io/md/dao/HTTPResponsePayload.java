@@ -5,31 +5,18 @@
  */
 package io.md.dao;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
-import io.md.constants.Constants;
 import io.md.utils.Utils;
 
 /*
@@ -38,8 +25,6 @@ import io.md.utils.Utils;
  */
 public class HTTPResponsePayload extends LazyParseAbstractPayload {
 
-	private static final Logger LOGGER = LogManager.getLogger(HTTPResponsePayload.class);
-
 	@JsonDeserialize(as=MultivaluedHashMap.class)
 	public MultivaluedMap<String, String> hdrs;
 	public int status;
@@ -47,8 +32,6 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	@JsonDeserialize(as = byte[].class)
 	public byte[] body;
 
-	static String HEADERS = "hdrs";
-	static String STATUS = "method";
 	static String BODY = "body";
 	/**
 	 *
@@ -82,40 +65,28 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	}
 
 	@Override
+	public void postParse() {
+		if (!this.dataObj.isDataObjEmpty()) {
+			this.dataObj.unwrapAsJson("/".concat(BODY),
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+		}
+	}
+
+	@Override
 	public boolean isRawPayloadEmpty() {
 		return false;
 	}
 
 	@Override
-	public void parseIfRequired() {
-		if (this.dataObj == null) {
-			try {
-				Map<String, JsonNode> properties = new HashMap<>();
-				properties.put(HEADERS, mapper.valueToTree(hdrs));
-				properties.put(STATUS, new IntNode(status));
-				if (hdrs != null && Utils.isJsonMimeType(hdrs)) {
-					properties.put(BODY, mapper.readTree(new String(body, StandardCharsets.UTF_8)));
-				} else {
-					properties.put(BODY, new TextNode(new String(body, StandardCharsets.UTF_8)));
-				}
-				final JsonNodeFactory factory = JsonNodeFactory.instance;
-				ObjectNode rootNode = factory.objectNode();
-				rootNode.setAll(properties);
-				this.dataObj = new JsonDataObj(rootNode, mapper);
-			} catch (IOException e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while "
-					+ "creating json data obj for http request payload")), e);
-				this.dataObj = (JsonDataObj.createEmptyObject(mapper));
-			}
-		}
-	}
-
-	@Override
-	public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException {
+	public void syncFromDataObj() {
 		if (!isDataObjEmpty()) {
-			hdrs = dataObj.getValAsObject("/".concat(HEADERS), MultivaluedHashMap.class);
-			status = dataObj.getValAsObject("/".concat(STATUS) , Integer.class);
-			body = (dataObj.getValAsString("/".concat(BODY))).getBytes();
+			this.dataObj.wrapAsByteArray("/".concat(BODY),
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+			HTTPResponsePayload requestPayload = this.dataObj
+				.convertToType(HTTPResponsePayload.class);
+			this.hdrs = requestPayload.hdrs;
+			this.body = requestPayload.body;
+			this.status = requestPayload.status;
 		}
 	}
 }

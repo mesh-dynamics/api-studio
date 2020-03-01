@@ -15,9 +15,8 @@ import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import io.md.constants.Constants;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
-import io.md.dao.Payload;
-import io.md.dao.StringAsByteArrayPayload;
-import io.md.dao.StringPayload;
+import io.md.dao.JsonByteArrayPayload;
+import io.md.dao.JsonPayload;
 
 public class PayloadSerializerModifier extends BeanSerializerModifier {
 
@@ -26,7 +25,7 @@ public class PayloadSerializerModifier extends BeanSerializerModifier {
 	//NOTE as we implement more classes which implement payload, we'll need to add
 	//them here
 	Set<Class> payloadClasses = Set.of(HTTPResponsePayload.class, HTTPRequestPayload.class,
-		StringAsByteArrayPayload.class , StringPayload.class);
+		JsonByteArrayPayload.class , JsonPayload.class);
 
 	@Override
 	public JsonSerializer<?> modifySerializer(

@@ -44,14 +44,20 @@ public interface DataObj {
 	boolean wrapAsString(String path, String mimetype);
 
 	@JsonIgnore
+	boolean wrapAsByteArray(String path, String mimetype);
+
+	@JsonIgnore
 	Optional<String> encryptField(String path, EncryptionAlgorithm encrypter);
 
 	@JsonIgnore
 	Optional<String> decryptField(String path, EncryptionAlgorithm decrypter);
 
 	@JsonIgnore
-	<T> T getValAsObject(String path, Class<T> className) throws PathNotFoundException
-		, DataObjProcessingException;
+	<T> Optional<T> getValAsObject(String path, Class<T> className);
+
+	<T> T convertToType(Class<T> tClass);
+
+	byte[] getValAsByteArray(String path) throws PathNotFoundException;
 
 	class PathNotFoundException extends Exception{
 
@@ -75,17 +81,6 @@ public interface DataObj {
 
 		public DataObjProcessingException(String msg, Throwable e) {
 			super(msg,e);
-		}
-	}
-
-
-	class DataObjCreationException extends RuntimeException {
-		public DataObjCreationException(String msg, Throwable e) {
-			super (msg,e);
-		}
-
-		public DataObjCreationException(Throwable e) {
-			super(e);
 		}
 	}
 }

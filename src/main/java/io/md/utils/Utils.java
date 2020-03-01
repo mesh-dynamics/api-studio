@@ -215,8 +215,9 @@ public class Utils {
 	}
 
 	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
+		if (mvMap == null) return null;
 		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
-		for (String key : new ArrayList<String>(mvMap.keySet())) {
+		for (String key : new ArrayList<>(mvMap.keySet())) {
 			String lowerCase = key.toLowerCase();
 			for (String value : mvMap.get(key))
 				lowerCaseMVMap.add(lowerCase, value);
@@ -297,6 +298,11 @@ public class Utils {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).findFirst().filter(x ->
 			x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
+	}
+
+	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
+		return HTTP_CONTENT_TYPE_HEADERS.stream()
+			.map(headers::getFirst).findFirst().map(x -> x.toLowerCase().stripLeading());
 	}
 
 

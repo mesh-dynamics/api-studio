@@ -1,13 +1,11 @@
 package io.md;
 
-import java.nio.charset.StandardCharsets;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.cryptography.JcaEncryption;
 import io.md.dao.Event;
 import io.md.dao.HTTPResponsePayload;
-import io.md.dao.StringPayload;
+import io.md.dao.JsonPayload;
 import io.md.utils.CubeObjectMapperProvider;
 
 public class TestEventDeserialization {
@@ -24,14 +22,14 @@ public class TestEventDeserialization {
 				+ "\"hdrs\":{\"content-type\":[\"application/json\"]},\"status\":200"
 				+ ",\"body\":\"eyJNSVJlc3Qgc3RhdHVzIjogIk1vdmllSW5mbyBpcyBoZWFsdGh5In0=\"}]}";
 			Event event = jsonMapper.readValue(cubeEventJson, Event.class);
-			StringPayload map =  (StringPayload) event.payload;
+			HTTPResponsePayload map =  (HTTPResponsePayload) event.payload;
 			System.out.println(map.getValAsString("/body"));
 			map.encryptField("/body" , new JcaEncryption());
 			//System.out.println(new String(map.body));
 			String reSerialized = jsonMapper.writeValueAsString(event);
 			System.out.println(reSerialized);
 			Event encrypted = jsonMapper.readValue(reSerialized , Event.class);
-			StringPayload encryptedPayload  = (StringPayload) encrypted.payload;
+			HTTPResponsePayload encryptedPayload  = (HTTPResponsePayload) encrypted.payload;
 			System.out.println(encryptedPayload);
 		} catch (Exception e) {
 			e.printStackTrace();
