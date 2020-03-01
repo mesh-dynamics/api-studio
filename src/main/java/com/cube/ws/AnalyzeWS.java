@@ -1216,42 +1216,43 @@ public class AnalyzeWS {
 	/**
 	 * API to return Golden insights for a given golden Id, service and path
 	 * @param recordingId
-	 * @param formParams
 	 * @return
 	 */
 	@GET
     @Path("goldenInsights/{recordingId}")
 	@Consumes("application/x-www-form-urlencoded")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response goldenInsights(@PathParam("recordingId") String recordingId,
-		MultivaluedMap<String, String> formParams) {
+	public Response goldenInsights(@Context UriInfo urlInfo,
+		@PathParam("recordingId") String recordingId) {
 
 		try {
 			Recording recording = rrstore.getRecording(recordingId).orElseThrow(() ->
 				new Exception("Unable to find recording object for the given id"));
 
-			String service = formParams.getFirst(Constants.SERVICE_FIELD);
+			MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
+			String service = queryParams.getFirst(Constants.SERVICE_FIELD);
 			if (service == null) {
 				throw new Exception("Service not specified for golden");
 			}
 
-			String apiPath = formParams.getFirst(Constants.API_PATH_FIELD);
+			String apiPath = queryParams.getFirst(Constants.API_PATH_FIELD);
 			if (apiPath == null) {
 				throw new Exception("ApiPath not specified for golden");
 			}
+			String normalisedApiPath = CompareTemplate.normaliseAPIPath(apiPath);
 
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put(Constants.RECORDING_ID, recordingId);
 
 			Optional<Event> responseOptional = rrstore
 				.getSingleResponseEvent(recording.customerId, recording.app, recording.collection,
-					List.of(service), List.of(apiPath), Optional.empty());
+					List.of(service), List.of(normalisedApiPath), Optional.empty());
 
 			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
 
 				Map<String, TemplateEntry> responseCompareRules = Utils
 					.getAllPathRules(response, recording, TemplateKey.Type.ResponseCompare,
-						service, apiPath, rrstore, config);
+						service, normalisedApiPath, rrstore, config);
 
 				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString(config));
 				jsonObject.put(Constants.RESPONSE_COMPARE_RULES,
@@ -1260,7 +1261,7 @@ public class AnalyzeWS {
 				Optional<Event> requestOptional = rrstore.getRequestEvent(response.getReqId());
 
 				requestOptional.ifPresentOrElse(UtilException.rethrowConsumer(request -> {
-					setRequestAndRules(recording, service, apiPath, jsonObject, request);
+					setRequestAndRules(recording, service, normalisedApiPath, jsonObject, request);
 
 				}), () -> {
 					jsonObject.put(Constants.REQUEST, JSONObject.NULL);
