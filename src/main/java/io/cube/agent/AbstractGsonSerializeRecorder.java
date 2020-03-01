@@ -21,9 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import io.md.dao.Event;
-import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
-import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
@@ -106,15 +104,16 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 			MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null),
 				spanId.orElse(null), parentSpanId.orElse(null));
 
-			Optional<Event> event = CommonUtils.creacreateEvent(fnKey, mdTraceInfo, RunType.Record,
+			//TODO this has to be corrected with a payload FnReqRespPayload
+			/*Optional<Event> event = CommonUtils.creacreateEvent(fnKey, mdTraceInfo, RunType.Record,
 				Optional.of(Instant.now()), payload);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
 				LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName, "trace_id",
 					traceId.orElse("NA"), "operation", "Record Event", "response",
 					"Event is empty!")));
 				return false;
-			});
-
+			});*/
+			return false;
 		} catch (Exception e) {
 			// encode can throw UnsupportedEncodingException
 			String stackTraceError = UtilException
