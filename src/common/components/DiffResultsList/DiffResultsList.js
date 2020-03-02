@@ -4,6 +4,7 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import statusCodeList from "../../StatusCodeList"
 import _ from 'lodash';
+import "../../components/Diff.css"
 
 export default class DiffResultsList extends Component {
     constructor(props) {

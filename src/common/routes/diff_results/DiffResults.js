@@ -64,7 +64,7 @@ class DiffResults extends Component {
         //let urlSearchParams = url.searchParams;
 
         const app = urlParameters["app"];
-        const selectedAPI = urlParameters["selectedAPI"] ? urlParameters["selectedAPI"]  : "%2A";
+        const selectedAPI = urlParameters["selectedAPI"] ? urlParameters["selectedAPI"]  : "All"; //"%2A";
         const replayId = urlParameters["replayId"];
         const recordingId = urlParameters["recordingId"];
         const currentTemplateVer = urlParameters["currentTemplateVer"];
@@ -132,7 +132,7 @@ class DiffResults extends Component {
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
-            this.fetchResults();
+            this.fetchResults(replayId, this.state.filter, 0, 5);
         });
     }
 
@@ -146,7 +146,7 @@ class DiffResults extends Component {
                 [metaData] : value,
             }
         })
-        this.fetchResults();
+        this.fetchResults(this.state.replayId, this.state.filter, 0, 5); // todo
     }
 
     // todo: move to utils
@@ -380,26 +380,46 @@ class DiffResults extends Component {
         return diffLayoutData;
     }
 
-    async fetchResults() {
+    async fetchResults(replayId, filter, start, numResults) {
         console.log("fetching replay list")
         let dataList = {}
+        //let start = 0; //todo
+        let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
+        /*
+                selectedService: "s1",
+                selectedAPI: "a1",
+                selectedReqRespMatchType: "responseMismatch",
+                selectedResolutionType: "All",
+                currentPageNumber: 1,
+        */
+
+        let service = filter.selectedService === "All" ? "*" : filter.selectedService;
+        let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
+        let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+
+        let u = new URL(analysisResUrl);
+        u.searchParams.set("start", start);
+        u.searchParams.set("numResults", numResults);
+        u.searchParams.set("includeDiff", true);
+        u.searchParams.set("service", service);
+        u.searchParams.set("path", path);
+        u.searchParams.set("diffRes", resolutionType); 
+        u.searchParams.set("reqMatchType", "");
+        u.searchParams.set("respMatchType", "");
+
+        console.log("fetch url " + u)
+        console.log(u)
+
         //let url = "https://app.meshdynamics.io/api/as/analysisResByPath/a48fd5a0-fc01-443b-a2db-685d2cc72b2c-753a5807-84e8-4c00-b3c9-e053bd10ff0f?start=20&includeDiff=true&path=%2A";
-        let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
+        //let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
         try {
         
-            let response = await fetch(url, { 
-                "credentials": "include", 
-                "headers": { 
-                    "accept": "application/json, text/plain, */*", 
-                    "accept-language": "en-US,en;q=0.9", 
-                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MjE3MTA5MSwiZXhwIjoxNTgyNzc1ODkxfQ.N5ZUkK29_B588MWMeezK1bRb_7l26t7ti_2k2T8E0pE", 
-                    "cache-control": "no-cache", 
-                    "sec-fetch-mode": "cors", 
-                    "sec-fetch-site": "same-origin" 
+            let response = await fetch(u, { 
+                //"credentials": "include", 
+                headers: { 
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
                 }, 
-                "body": null, 
                 "method": "GET", 
-                "mode": "cors" 
             });
             
             if (response.ok) {
