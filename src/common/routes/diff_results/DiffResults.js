@@ -415,7 +415,6 @@ class DiffResults extends Component {
         try {
         
             let response = await fetch(u, { 
-                //"credentials": "include", 
                 headers: { 
                     "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
                 }, 
@@ -668,6 +667,11 @@ class DiffResults extends Component {
                 </Modal>
             </Fragment>
         );
+    }
+
+    handleBackToDashboardClick = () => {
+        const { history, dispatch } = this.props;
+        dispatch(cubeActions.clearPathResultsParams());
     }
 
     render() {

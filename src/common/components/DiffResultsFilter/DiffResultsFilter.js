@@ -8,21 +8,37 @@ export default class DiffResultsFilter extends Component {
 
     constructor(props) {
         super(props);
-        this.state = {
-
-        }
     }
-
-    componentDidMount() {
-    }
-
 
     renderPageButtons = () => {
         let pages = _.isEmpty(this.props.facetListData) ? 1 : this.props.facetListData.pages; // todo: props
         let pageButtons = [];
+
+        /* todo: use this for refactor
+        const { 
+            facetListData: { pages },
+            filter: { currentPageNumber }
+        } = this.props;
+    
+        return pages && _.isEmpty(pages) 
+            ? 
+            <Button
+                onClick={() => this.handleMetaDataSelect("currentPageNumber", 1)} 		
+                bsStyle="primary"
+            />
+            :
+            <Fragment>
+                pages.map(pageNumber => 
+                        <Button 
+                            onClick={() => this.handleMetaDataSelect("currentPageNumber",1)} 
+                            bsStyle={currentPageNumber === pageNumber ? "primary" : "default"}
+                        />
+                    );
+            </Fragment>
+        */
         for(let idx = 1; idx <= pages; idx++) {
             pageButtons.push(
-                <Button onClick={() => this.handleMetaDataSelect("currentPageNumber", idx)} bsStyle={this.props.filter.currentPageNumber === idx ? "primary" : "default"} style={{}}>{idx}</Button>
+                <Button onClick={() => this.handleMetaDataSelect("currentPageNumber", idx)} bsStyle={this.props.filter.currentPageNumber === idx ? "primary" : "default"}>{idx}</Button>
             );
         }
         return pageButtons;
@@ -30,14 +46,6 @@ export default class DiffResultsFilter extends Component {
     
     handleMetaDataSelect = (metaDataType, value) => {
         this.props.filterChangeHandler(metaDataType, value);
-    }
-
-    toggleMessageContents = (e) => {    
-    }
-
-    handleBackToDashboardClick = () => {
-        const { history, dispatch } = this.props;
-        dispatch(cubeActions.clearPathResultsParams());
     }
 
     renderServiceDropdown() {
@@ -117,7 +125,7 @@ export default class DiffResultsFilter extends Component {
                 return "All Errors"
             
             default:
-                return resolutionsIconMap[resolutionType] ? resolutionsIconMap[resolutionType].description : "(Unknown)";
+                return resolutionsIconMap[resolutionType] ? resolutionsIconMap[resolutionType].description : "(Unknown) [" + resolutionType + "]";
         }
     }
 
@@ -125,7 +133,7 @@ export default class DiffResultsFilter extends Component {
         let resTypeMenuJsx = (item, index) => {
             return (
             <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
-                <Glyphicon style={{ visibility: this.state.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
+                <Glyphicon style={{ visibility: this.props.filter.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {this.getResolutionTypeDescription(item.value)} ({item.count})
             </MenuItem>);
         }
 

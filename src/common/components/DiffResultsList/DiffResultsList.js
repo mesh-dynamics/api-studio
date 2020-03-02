@@ -69,13 +69,32 @@ export default class DiffResultsList extends Component {
     }
 
     toggleMessageContents = (e) => {
-        if (e.target.value === "responseHeaders") this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });
-        if (e.target.value === "responseBody") this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
-        if (e.target.value === "requestHeaders") this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
-        if (e.target.value === "requestQParams") this.setState({ showRequestMessageQParams: e.target.checked, shownRequestMessageQParams: true });
-        if (e.target.value === "requestFParams") this.setState({ showRequestMessageFParams: e.target.checked, shownRequestMessageFParams: true });
-        if (e.target.value === "requestBody") this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
+        switch (e.target.value) {
+            case "responseHeaders":
+                this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });       
+                break;
+        
+            case "responseBody":
+                this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
+                break;
 
+            case "requestHeaders":
+                this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
+                break;
+
+            case "requestQParams":
+                this.setState({ showRequestMessageQParams: e.target.checked, shownRequestMessageQParams: true });
+                break;
+
+            case "requestFParams":
+                this.setState({ showRequestMessageFParams: e.target.checked, shownRequestMessageFParams: true });
+                break;
+
+            case "requestBody":
+                this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
+                break;
+        }
+        
         setTimeout(() => {
             const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody } = this.state;
 
