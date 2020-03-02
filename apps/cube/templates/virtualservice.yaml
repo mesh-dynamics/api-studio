@@ -22,12 +22,6 @@ spec:
           number: 8080
   - match:
     - uri:
-        exact: /
-    - uri:
-        prefix: /assets
-    - uri:
-        regex: ^.*\.(ico|png|jpg|js|css)$
-    - uri:
         prefix: /
     route:
     - destination:
