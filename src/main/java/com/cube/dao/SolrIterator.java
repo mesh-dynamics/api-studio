@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -25,6 +26,8 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.util.Pair;
 
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse.RetStatus;
@@ -44,7 +47,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
     private static Config config;
 
-    public static void setConfig(Config config) {
+	public static void setConfig(Config config) {
         SolrIterator.config = config;
     }
 
@@ -66,7 +69,13 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 		query.setRows(toread);
 		query.setStart(this.start);
-		results = query();
+		Optional<QueryResponse> queryResponse = SolrIterator.runQuery(solr, query);
+		queryResponse.ifPresentOrElse(response -> {
+				facets = (NamedList) response.getResponse().get("facets");
+			}, () -> {
+			facets = new NamedList();
+		});
+		results = queryResponse.map(r -> r.getResults());
 		results.ifPresent(r -> {
 			numresults = maxresults.map(mr -> Math.min(r.getNumFound(), mr)).orElse(r.getNumFound());
 			numFound = r.getNumFound();
@@ -127,6 +136,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	int start;
 	Optional<SolrDocumentList> results;
 	Optional<Iterator<SolrDocument>> iterator;
+	private NamedList facets;
 	long numresults;
 	final Optional<Integer> maxresults;
 	int numread;
@@ -152,7 +162,17 @@ public class SolrIterator implements Iterator<SolrDocument> {
 				iter.numFound);
 	}
 
-    static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
+	static public <R> Pair< Result<R>, NamedList> getResultsWithFacets(SolrClient solr, SolrQuery query,
+		Optional<Integer> maxresults,
+		Function<SolrDocument, Optional<R>> transform, Optional<Integer> start) {
+		SolrIterator iter = new SolrIterator(solr, query, maxresults, start);
+		Result result = new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults,
+			iter.numFound);
+		return new Pair<>(result, iter.facets);
+	}
+
+
+	static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
                                            Optional<Integer> maxresults,
                                            Function<SolrDocument, Optional<R>> transform) {
 	    return getResults(solr, query, maxresults, transform, Optional.empty());

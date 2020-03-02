@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.apache.solr.common.util.Pair;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -528,20 +530,21 @@ public interface ReqRespStore {
     Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
                                                         String replayId);
 
-    /**
-     * Get results matching a path and other constraints
-     * @param analysisMatchResultQuery
-     * @return
-     */
-    Result<ReqRespMatchResult>
-    getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
+	/**
+	 * Get results matching a path and other constraints
+	 * @param analysisMatchResultQuery
+	 * @return
+	 */
+	Pair<Result<ReqRespMatchResult>, List>
+	getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
-    /**
-     * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
-     * as NoMatch
-     * @param replayId
-     * @return
-     */
+
+	/**
+	 * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
+	 * as NoMatch
+	 * @param replayId
+	 * @return
+	 */
     Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
 
     /**

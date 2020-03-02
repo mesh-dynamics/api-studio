@@ -32,10 +32,12 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.util.Pair;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -1799,22 +1801,23 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<ReqRespMatchResult>
+    public Pair<Result<ReqRespMatchResult>, List>
     getAnalysisMatchResults(AnalysisMatchResultQuery matchResQuery) {
 
-        String queryString  = "{!parent which="+TYPEF+":"+Types.ReqRespMatchResult.toString()+"}";
+        String queryString =
+            "{!parent which=" + TYPEF + ":" + Types.ReqRespMatchResult.toString() + "}";
 
         if (matchResQuery.diffResolution.isPresent() || matchResQuery.diffJsonPath.isPresent() ||
             matchResQuery.diffType.isPresent()) {
-            queryString = queryString.concat(" +("+TYPEF+":"+Types.Diff.toString()+")");
+            queryString = queryString.concat(" +(" + TYPEF + ":" + Types.Diff.toString() + ")");
         }
 
         queryString = queryString.concat(matchResQuery.diffResolution.map(res ->
-            " +("+DIFF_RESOLUTION_F+":"+res+")").orElse(""));
+            " +(" + DIFF_RESOLUTION_F + ":" + res + ")").orElse(""));
         queryString = queryString.concat(matchResQuery.diffJsonPath.map(res ->
-            " +("+DIFF_PATH_F+":\""+res+"\")").orElse(""));
+            " +(" + DIFF_PATH_F + ":\"" + res + "\")").orElse(""));
         queryString = queryString.concat(matchResQuery.diffType.map(res ->
-            " +("+DIFF_TYPE_F+":"+res+")").orElse(""));
+            " +(" + DIFF_TYPE_F + ":" + res + ")").orElse(""));
 
         SolrQuery query = new SolrQuery(queryString);
         query.setFields("*");
@@ -1829,13 +1832,34 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REQ_COMP_RES_TYPE_F,
             matchResQuery.reqCompResType.map(Enum::toString));
         matchResQuery.traceId.ifPresent(traceId ->
-            query.addFilterQuery("("+RECORDTRACEIDF+":"+traceId+" OR "
-                + REPLAYTRACEIDF+":"+traceId+")" ));
+            query.addFilterQuery("(" + RECORDTRACEIDF + ":" + traceId + " OR "
+                + REPLAYTRACEIDF + ":" + traceId + ")"));
         addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
         addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
         query.addField(getDiffParentChildFilter());
-        return SolrIterator.getResults(solr, query, matchResQuery.numMatches, this::docToAnalysisMatchResult
-            , matchResQuery.start);
+
+        String childFacet = "{\n"
+            + DIFFRESOLUTIONFACETFIELD + " : {\n"
+            + "    type: terms,\n"
+            + "    field: " + DIFF_RESOLUTION_F + ",\n"
+            + "    domain: { blockChildren : \"type_s: " + Types.ReqRespMatchResult.toString()
+            + "\" } \n"
+            + "  }\n"
+            + "}";
+        query.add(SOLRJSONFACETPARAM, childFacet);
+        Pair<Result<ReqRespMatchResult>, NamedList> resultsWithFacets = SolrIterator
+            .getResultsWithFacets(solr, query, matchResQuery.numMatches,
+                this::docToAnalysisMatchResult
+                , matchResQuery.start);
+
+        ArrayList diffResolutionFacetsNamedList = (ArrayList) resultsWithFacets.second()
+            .findRecursive(DIFFRESOLUTIONFACETFIELD, BUCKETFIELD);
+        ArrayList diffResolutionFacets = new ArrayList();
+        // Required for Jackson serialization. Jackson is failing to serialize namedList directly
+        diffResolutionFacetsNamedList.forEach(diffResFacet -> {
+            diffResolutionFacets.add((((NamedList) diffResFacet).asMap(2)));
+        });
+        return new Pair<>(resultsWithFacets.first(), diffResolutionFacets);
     }
 
     @Override
@@ -2217,6 +2241,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String VALFIELD = "val"; // term in solr facet results indicating a distinct value of the field
     private static final String COUNTFIELD = "count"; // term in solr facet results indicating aggregate value computed
     private static final String FACETSFIELD = "facets"; // term in solr facet results indicating the facet results block
+    private static final String DIFFRESOLUTIONFACETFIELD = "diff_resolution";
 
 
     /**

@@ -38,7 +38,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.solr.common.util.Template;
+import org.apache.solr.common.util.Pair;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -56,7 +56,6 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.Comparator;
 import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.CompareTemplateStoreException;
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.TemplateEntry;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
@@ -603,11 +602,12 @@ public class AnalyzeWS {
         /* using array as container for value to be updated since lambda function cannot update outer variables */
         Long[] numFound = {0L};
         String[] app = {"", ""};
-
-        List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
-
-            Result<ReqRespMatchResult> result = rrstore
-                .getAnalysisMatchResults(analysisMatchResultQuery);
+	    final ArrayList[] diffResFacets = {new ArrayList()};
+	    List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
+	        Pair<Result<ReqRespMatchResult>, List> resultsWithDiffResFacets = rrstore
+		        .getAnalysisMatchResults(analysisMatchResultQuery);
+	        Result<ReqRespMatchResult> result = resultsWithDiffResFacets.first();
+	        diffResFacets[0] = (ArrayList) resultsWithDiffResFacets.second();
             numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
@@ -670,8 +670,11 @@ public class AnalyzeWS {
         try {
             json = jsonMapper
                 .writeValueAsString(new MatchResults(matchResList, numFound[0], app[0], app[1]));
+	        JSONObject jsonObject = new JSONObject(json);
+	        jsonObject.put(Constants.DIFF_RES_FACET, jsonMapper.writeValueAsString(diffResFacets[0]));
+
             return Response.ok().type(MediaType.APPLICATION_JSON)
-                .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(json))).build();
+                .entity(buildSuccessResponse(Constants.SUCCESS, jsonObject)).build();
         } catch (JsonProcessingException e) {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Error in converting Match results list to Json",
