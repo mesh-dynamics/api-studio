@@ -59,6 +59,7 @@ init() {
 	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
+	kubectl apply -f $COMMON_DIR/kubernetes/gateway-pvt.yaml
 	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
 	kubectl apply -f $APP_DIR/kubernetes || :
 	#Check if route exist
