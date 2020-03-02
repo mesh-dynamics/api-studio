@@ -17,6 +17,7 @@ const initialState = {
     operations:[],
     templateOperationSetObject: {},
     ruleBook: {},
+    defaultRuleBook: {},
     newTemplateVerInfo: null,
 
     testConfigList: [],
@@ -314,18 +315,31 @@ export function cube (state = initialState, action) {
                 pathResultsParams: null,
             };
         case cubeConstants.ADD_TO_RULE_BOOK:
-            let ruleB = state.ruleBook;
-            ruleB[action.data.key] = action.data.val;
             return {
                 ...state,
-                ruleBook: ruleB
+                ruleBook: {
+                    ...state.ruleBook,
+                    [action.data.key]: action.data.val
+                }
+            };
+        case cubeConstants.ADD_TO_DEFAULT_RULE_BOOK:
+            return {
+                ...state,
+                defaultRuleBook: {
+                    ...state.defaultRuleBook,
+                    [action.data.key]: action.data.val
+                },
             };
         case cubeConstants.REMOVE_FROM_RULE_BOOK:
             let ruleBDel = state.ruleBook;
+            let defRuleBDel =  state.defaultRuleBook;
             delete ruleBDel[action.data];
+            delete defRuleBDel[action.data];
+
             return {
                 ...state,
-                ruleBook: ruleBDel
+                ruleBook: ruleBDel,
+                defaultRuleBook: defRuleBDel
             };
         case cubeConstants.PUSH_TO_OS:
             let mos = state.multiOperationsSet;
