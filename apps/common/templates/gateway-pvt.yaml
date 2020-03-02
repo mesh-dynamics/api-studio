@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: {{namespace}}-pvt-gateway
-  namespace: namespace
+  namespace: {{namespace}}
 spec:
   selector:
     istio: pvt-ingressgateway # use istio default controller
