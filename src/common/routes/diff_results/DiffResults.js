@@ -48,6 +48,7 @@ class DiffResults extends Component {
             commitId: "",
             saveGoldenError: "",
 
+            showAll: false,
         }
     }
 
@@ -132,21 +133,25 @@ class DiffResults extends Component {
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
-            this.fetchResults(replayId, this.state.filter, 0, 5);
+            this.fetchAndUpdateResults();
         });
     }
 
 
-    //
+    // update the filter, which will update the values in the DiffResultsFilter component,
+    // and then fetch the new set of results    
     handleFilterChange = (metaData, value) => {
         console.log("filter changed " + metaData + " : " + value)
+        // todo: set the states per hierarchy (see handleMetaDataSelect in ShareableLink)
+
         this.setState({
-            filter : {
-                ...this.state.filter,
-                [metaData] : value,
-            }
-        })
-        this.fetchResults(this.state.replayId, this.state.filter, 0, 5); // todo
+                filter : {
+                    ...this.state.filter,
+                    [metaData] : value,
+                }
+            },
+            this.fetchAndUpdateResults
+        );    
     }
 
     // todo: move to utils
@@ -380,7 +385,31 @@ class DiffResults extends Component {
         return diffLayoutData;
     }
 
-    async fetchResults(replayId, filter, start, numResults) {
+    updateResolutionFilterPaths = (diffLayoutData) => {
+        const selectedResolutionType = this.state.filter.selectedResolutionType;
+        diffLayoutData && diffLayoutData.forEach(item => {
+            item.filterPaths = [];
+            for (let jsonPathParsedDiff of item.parsedDiff) {
+                // TODO: count of ERR/non-ERR types
+                // add non error types to resolutionTypes list
+                //resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
+
+                // add path to the filter list if the resolution is All or matches the current selected one,
+                // and if the selected type is 'All Errors' it is an error type
+                if (selectedResolutionType === "All"
+                || selectedResolutionType === jsonPathParsedDiff.resolution
+                || (selectedResolutionType === "ERR" && jsonPathParsedDiff.resolution.indexOf("ERR_") > -1)) {
+                    // add only the json paths we want to show in the diff
+                    let path = jsonPathParsedDiff.path;
+                    item.filterPaths.push(path);
+                }
+            }
+        });
+    }
+
+    // fetch the analysis results
+    // todo: move to service file 
+    async fetchAnalysisResults(replayId, filter, start, numResults) {
         console.log("fetching replay list")
         let dataList = {}
         //let start = 0; //todo
@@ -404,8 +433,8 @@ class DiffResults extends Component {
         u.searchParams.set("service", service);
         u.searchParams.set("path", path);
         u.searchParams.set("diffRes", resolutionType); 
-        u.searchParams.set("reqMatchType", "");
-        u.searchParams.set("respMatchType", "");
+        u.searchParams.set("reqMatchType", ""); // todo
+        u.searchParams.set("respMatchType", ""); // todo
 
         console.log("fetch url " + u)
         console.log(u)
@@ -415,6 +444,7 @@ class DiffResults extends Component {
         try {
         
             let response = await fetch(u, { 
+                // todo
                 headers: { 
                     "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
                 }, 
@@ -426,9 +456,16 @@ class DiffResults extends Component {
                 dataList = json;
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
                     console.log("results list is empty")
-                }
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
-                this.setState({diffLayoutData: diffLayoutData});
+                    return [];
+                } 
+                return dataList.data.res;
+                // let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
+                // return diffLayoutData;
+
+                // add filter paths based on the selected resolution type 
+                //this.updateResolutionFilterPaths(diffLayoutData); 
+                //console.log(diffLayoutData)
+                //this.setState({diffLayoutData: diffLayoutData});
             } else {
                 console.error("unable to fetch analysis results");
                 throw new Error("unable to fetch analysis results");
@@ -438,13 +475,40 @@ class DiffResults extends Component {
             throw e;
         }
 
-        //console.log(respData.facets)
-        //let diffLayoutData = this.validateAndCreateDiffLayoutData(respData.results);
-        this.setState({
-            //diffLayoutData: diffLayoutData, 
-            facetListData: respData.facets,
-        });
+        // this.setState({
+        //     //diffLayoutData: diffLayoutData, 
+        //     //facetListData: respData.facets,
+        // });
     }
+
+    fetchAndUpdateResults() {
+        console.log("fetching results and updating")
+        console.log(this.state.filter)
+        // fetch results from the backend
+        // todo: is this pattern (using `then`) right?
+        let diffLayoutData = this.fetchAnalysisResults(this.state.replayId, this.state.filter, 0, 5)
+            .then(
+                (diffLayoutData) => {
+                    diffLayoutData = this.validateAndCreateDiffLayoutData(diffLayoutData);
+                    this.updateResolutionFilterPaths(diffLayoutData);
+                    console.log(diffLayoutData)
+                    this.setState({
+                        diffLayoutData: diffLayoutData,
+                        facetListData: respData.facets,
+                    });
+                }
+        ); //todo: page number
+        // create the diff layout formatted data
+        //diffLayoutData = this.validateAndCreateDiffLayoutData(diffLayoutData);
+        // add filter paths based on the selected resolution type 
+        //this.updateResolutionFilterPaths(diffLayoutData);
+        
+        //this.setState({
+        //    diffLayoutData: diffLayoutData,
+        //    facetListData: respData.facets,
+        //});
+    }
+
 
     handleClose = () => {
         const { history, dispatch } = this.props;
@@ -675,6 +739,7 @@ class DiffResults extends Component {
     }
 
     render() {
+        const showAll = (this.state.filter.selectedResolutionType === "All")
         return (
             <DiffResultsContext.Provider 
                 value={{ 
@@ -693,7 +758,7 @@ class DiffResults extends Component {
                     
                     <div>
                         <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={this.state.app ? this.state.app : "(Unknown)"}></DiffResultsFilter>
-                        <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData}></DiffResultsList>
+                        <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData} showAll={showAll}></DiffResultsList>
                     </div>
                     
                     {this.renderModals()}

@@ -17,7 +17,6 @@ export default class DiffResultsList extends Component {
             showResponseMessageHeaders: false,
             showResponseMessageBody: true,
             searchFilterPath: "",
-            showAll: true, // todo
             //selectedResolutionType: "All",
         }
         //this.selectedResolutionType = "All";
@@ -49,23 +48,6 @@ export default class DiffResultsList extends Component {
     };
 
     handleMetaDataSelect = (metaDataType, value) => {
-    }
-
-    // todo: remove
-    resolutionTypeMenuItems = (kind) => {
-        let resTypeMenuJsx = (item, index) => {
-            return (
-            <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
-                <Glyphicon style={{ visibility: this.state.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {resolutionsIconMap[item.value].description} ({item.count})
-            </MenuItem>);
-        }
-
-        let resolutionTypes = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.resolutionTypes;
-
-
-        return resolutionTypes.filter((item) => {
-            return ((kind == "error") ? item.value.indexOf("ERR_") > -1 : item.value.indexOf("ERR_") == -1);
-        }).map(resTypeMenuJsx);
     }
 
     toggleMessageContents = (e) => {
@@ -105,20 +87,6 @@ export default class DiffResultsList extends Component {
 
     }
 
-    // todo: remove
-    getResolutionTypeDescription = (resolutionType) => {
-        switch (resolutionType) {
-            case "All":
-                return "All"
-            
-            case "ERR":
-                return "All Errors"
-            
-            default:
-                return resolutionsIconMap[resolutionType].description;
-        }
-    }
-
     getHttpStatus = (code) => {
         for (let httpStatus of statusCodeList) {
             if (code == httpStatus.status) {
@@ -128,38 +96,6 @@ export default class DiffResultsList extends Component {
 
         return code;
     };
-
-
-    // todo: remove
-    renderResolutionTypesDropdown = () => {
-        let selectedResolutionType = this.state.selectedResolutionType;
-        let resolutionTypes = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.resolutionTypes;
-        console.log(resolutionTypes)
-        
-        return (
-            <Fragment>
-                <div style={{display: "inline-block"}}>
-                    <label class="checkbox-inline">
-                        Resolution Type:
-                    </label>
-                    <div style={{ paddingLeft: "9px", display: "inline-block" }}>
-                        <DropdownButton title={this.getResolutionTypeDescription(selectedResolutionType)} id="dropdown-size-medium">
-                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "All")}>
-                                <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
-                            </MenuItem>
-                            <MenuItem divider />
-                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
-                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
-                            </MenuItem>
-                            {this.resolutionTypeMenuItems("error")}
-                            <MenuItem divider />
-                            {this.resolutionTypeMenuItems("other")}
-                        </DropdownButton>
-                    </div>
-                </div>
-            </Fragment>
-        )
-    }
 
     handleSearchFilterChange = (e) => {
         //const { history } = this.props;
@@ -295,7 +231,7 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.updatedReducedDiffArrayRespHdr}
                                 onLineNumberClick={(lineId, e) => { return; }}
-                                showAll={this.state.showAll}
+                                showAll={this.props.showAll}
                                 searchFilterPath={this.state.searchFilterPath}
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
@@ -336,7 +272,7 @@ export default class DiffResultsList extends Component {
                                     filterPaths={item.filterPaths}
                                     onLineNumberClick={(lineId, e) => { return; }}
                                     inputElementRef={this.inputElementRef}
-                                    showAll={this.state.showAll}
+                                    showAll={this.props.showAll}
                                     searchFilterPath={this.state.searchFilterPath}
                                 />
                             </div>
