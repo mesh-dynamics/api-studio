@@ -1808,6 +1808,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         String queryString =
             "{!parent which=" + TYPEF + ":" + Types.ReqRespMatchResult.toString() + "}";
 
+        String queryStringSansDiffFilter = queryString;
+
         if (matchResQuery.diffResolution.isPresent() || matchResQuery.diffJsonPath.isPresent() ||
             matchResQuery.diffType.isPresent()) {
             queryString = queryString.concat(" +(" + TYPEF + ":" + Types.Diff.toString() + ")");
@@ -1867,12 +1869,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
 
 
-        List<Count> serviceFacetResults = response.getFacetField(SERVICEF).getValues();
+        query.setQuery(queryStringSansDiffFilter);
+
+        Pair<Result<ReqRespMatchResult>, QueryResponse> resultsWithSolrResponseServPath = SolrIterator
+            .getResultsWithSolrResponse(solr, query, matchResQuery.numMatches,
+                this::docToAnalysisMatchResult, matchResQuery.start);
+
+        QueryResponse responseForServPath = resultsWithSolrResponseServPath.second();
+
+
+        List<Count> serviceFacetResults = responseForServPath.getFacetField(SERVICEF).getValues();
         Map serviceFacetResultsMap = new HashMap();
         serviceFacetResults.forEach(serviceFacet -> {
             serviceFacetResultsMap.put(serviceFacet.getName(), serviceFacet.getCount());
         });
-        List<Count> pathFacetResults = response.getFacetField(PATHF).getValues();
+        List<Count> pathFacetResults = responseForServPath.getFacetField(PATHF).getValues();
         Map pathFacetResultsMap = new HashMap();
         pathFacetResults.forEach(pathFacet -> {
             pathFacetResultsMap.put(pathFacet.getName(), pathFacet.getCount());
