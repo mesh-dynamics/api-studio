@@ -74,7 +74,17 @@ public class MovieRentalRest {
 	public Response health() {
 	  return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"MIRest status\": \"MovieInfo is healthy\"}").build();
   }
-	
+
+
+	@Path("/secure/health")
+	@GET
+	@Secured
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response secure_health() {
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"MIRest status\": \"MovieInfo is healthy\"}").build();
+	}
+
+
 	// TODO: createuser API
 	
 	@Path("/authenticate")
