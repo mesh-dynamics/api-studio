@@ -43,7 +43,7 @@ public class CubeServerService {
 
     @PostConstruct
     protected void init()  {
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        //System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
         SimpleClientHttpRequestFactory clientHttpRequestFactory
                 = new SimpleClientHttpRequestFactory();
