@@ -66,6 +66,7 @@ public class ReplayWS {
     }
 
 
+    /*
 	@POST
     @Path("transforms/{customerId}/{app}/{collection}/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
@@ -101,6 +102,7 @@ public class ReplayWS {
         }
 
     }
+    */
 
 	@GET
 	@Path("status/{replayId}")
@@ -196,32 +198,6 @@ public class ReplayWS {
     public Response start(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         MultivaluedMap<String, String> formParams) {
-        /**
-         // Block for testing -- we need to initialize the auth token to inject
-         List<String> xfmsParam = Optional.ofNullable(formParams.get("requestTransforms"))
-         .orElse(new ArrayList<String>());
-         Optional<Replay> replay = Optional.ofNullable(null);
-         if (xfmsParam.size() == 0) {
-         LOGGER.sinfo(String.format("No transformation strings found %s",  xfmsParam));
-         return Response.ok("{}", MediaType.APPLICATION_JSON).build();
-         }
-         try {
-         String xfms = "";
-         // expect only one JSON String.
-         if (xfmsParam.size() > 1) {
-         LOGGER.error("Expected only one json string but got multiple: "
-         + xfmsParam.size() + "; Only considering the first.");
-         }
-         xfms = xfmsParam.get(0);
-         replay = Replay.getStatus(replayId, this.rrstore);
-         if (replay.isPresent()) {
-         replay.get().updateXfmsFromJSONString(xfms);
-         }
-         } catch (Exception e) {
-
-         }
-         /// end block for testing
-         */
 
         // TODO: move all these constant strings to a file so we can easily change them.
         boolean async = Optional.ofNullable(formParams.getFirst("async"))
@@ -244,10 +220,13 @@ public class ReplayWS {
         String replayType = formParams.getFirst("replayType");
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
 
+        // Request transformations - for injecting tokens and such
+        Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
+
         if (userId == null) {
-            return Response.status(Status.BAD_REQUEST)
-                .entity((new JSONObject(Map.of("Message", "userId Not Specified"))).toString())
-                .build();
+        return Response.status(Status.BAD_REQUEST)
+            .entity((new JSONObject(Map.of("Message", "userId Not Specified"))).toString())
+            .build();
         }
 
         if (instanceId == null) {
@@ -287,6 +266,7 @@ public class ReplayWS {
                     .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP);
             sampleRate.ifPresent(replayBuilder::withSampleRate);
             service.ifPresent(replayBuilder::withServiceToReplay);
+            xfms.ifPresent(replayBuilder::withXfms);
             try {
                 recording.generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
