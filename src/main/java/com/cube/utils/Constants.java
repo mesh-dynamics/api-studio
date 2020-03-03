@@ -171,6 +171,8 @@ public class Constants {
     public static final String REQUEST_DIFF = "requestDiff";
     public static final String RESPONSE_DIFF = "responseDiff";
     public static final String DIFF_RES_FACET = "diffResFacet";
+    public static final String SERVICE_FACET = "serviceFacet";
+    public static final String PATH_FACET = "pathFacet";
 
 	public static final String REPLAY_TRACE_ID = "replayTraceId";
 	public static final String REC_TRACE_ID = "recordTraceId";

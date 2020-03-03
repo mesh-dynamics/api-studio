@@ -535,8 +535,7 @@ public interface ReqRespStore {
 	 * @param analysisMatchResultQuery
 	 * @return
 	 */
-	Pair<Result<ReqRespMatchResult>, List>
-	getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
+	List getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
 
 	/**

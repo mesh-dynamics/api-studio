@@ -342,9 +342,9 @@ public class RecordingUpdate {
 
      private Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId
          /*, RecordingOperationSetSP recordingOperationSetSP*/) {
-        Result<ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
+        Result<ReqRespMatchResult> matchResults = (Result<ReqRespMatchResult>) config.rrstore.getAnalysisMatchResults(
             new AnalysisMatchResultQuery(replayId)
-        ).first();
+        ).get(0);
 
         return matchResults.getObjects();
     }

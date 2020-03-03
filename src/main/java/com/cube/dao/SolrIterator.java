@@ -71,9 +71,9 @@ public class SolrIterator implements Iterator<SolrDocument> {
 		query.setStart(this.start);
 		Optional<QueryResponse> queryResponse = SolrIterator.runQuery(solr, query);
 		queryResponse.ifPresentOrElse(response -> {
-				facets = (NamedList) response.getResponse().get("facets");
+			solrResponse = response;
 			}, () -> {
-			facets = new NamedList();
+			solrResponse = new QueryResponse();
 		});
 		results = queryResponse.map(r -> r.getResults());
 		results.ifPresent(r -> {
@@ -136,7 +136,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	int start;
 	Optional<SolrDocumentList> results;
 	Optional<Iterator<SolrDocument>> iterator;
-	private NamedList facets;
+	private QueryResponse solrResponse;
 	long numresults;
 	final Optional<Integer> maxresults;
 	int numread;
@@ -162,13 +162,13 @@ public class SolrIterator implements Iterator<SolrDocument> {
 				iter.numFound);
 	}
 
-	static public <R> Pair< Result<R>, NamedList> getResultsWithFacets(SolrClient solr, SolrQuery query,
+	static public <R> Pair< Result<R>, QueryResponse> getResultsWithSolrResponse(SolrClient solr, SolrQuery query,
 		Optional<Integer> maxresults,
 		Function<SolrDocument, Optional<R>> transform, Optional<Integer> start) {
 		SolrIterator iter = new SolrIterator(solr, query, maxresults, start);
 		Result result = new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults,
 			iter.numFound);
-		return new Pair<>(result, iter.facets);
+		return new Pair<>(result, iter.solrResponse);
 	}
 
 

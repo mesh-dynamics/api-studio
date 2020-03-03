@@ -603,12 +603,18 @@ public class AnalyzeWS {
         Long[] numFound = {0L};
         String[] app = {"", ""};
 	    final ArrayList[] diffResFacets = {new ArrayList()};
+	    final Map[] serviceFacets = {new HashMap()};
+	    final Map[] pathFacets = {new HashMap()};
 	    List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
-	        Pair<Result<ReqRespMatchResult>, List> resultsWithDiffResFacets = rrstore
-		        .getAnalysisMatchResults(analysisMatchResultQuery);
-	        Result<ReqRespMatchResult> result = resultsWithDiffResFacets.first();
-	        diffResFacets[0] = (ArrayList) resultsWithDiffResFacets.second();
-            numFound[0] = result.numFound;
+
+		    List resultWithFacets = rrstore
+			    .getAnalysisMatchResults(analysisMatchResultQuery);
+
+		    Result<ReqRespMatchResult> result = (Result<ReqRespMatchResult>) resultWithFacets.get(0);
+	        diffResFacets[0] = (ArrayList) resultWithFacets.get(1);
+	        serviceFacets[0] = (Map) resultWithFacets.get(2);
+		    pathFacets[0] = (Map) resultWithFacets.get(3);
+		    numFound[0] = result.numFound;
             app[0] = replay.app;
             app[1] = replay.templateVersion;
             List<ReqRespMatchResult> res = result.getObjects()
@@ -672,6 +678,8 @@ public class AnalyzeWS {
                 .writeValueAsString(new MatchResults(matchResList, numFound[0], app[0], app[1]));
 	        JSONObject jsonObject = new JSONObject(json);
 	        jsonObject.put(Constants.DIFF_RES_FACET, jsonMapper.writeValueAsString(diffResFacets[0]));
+	        jsonObject.put(Constants.SERVICE_FACET, jsonMapper.writeValueAsString(serviceFacets[0]));
+	        jsonObject.put(Constants.PATH_FACET, jsonMapper.writeValueAsString(pathFacets[0]));
 
             return Response.ok().type(MediaType.APPLICATION_JSON)
                 .entity(buildSuccessResponse(Constants.SUCCESS, jsonObject)).build();
@@ -689,6 +697,7 @@ public class AnalyzeWS {
                     e.getMessage())).build();
         }
     }
+
 
     /**
      * Api to access analysis result for a given recorded request and related replay.

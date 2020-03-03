@@ -33,6 +33,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.FacetField.Count;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
@@ -1801,7 +1802,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Pair<Result<ReqRespMatchResult>, List>
+    public List<Object>
     getAnalysisMatchResults(AnalysisMatchResultQuery matchResQuery) {
 
         String queryString =
@@ -1837,6 +1838,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
         addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
         query.addField(getDiffParentChildFilter());
+        query.addFacetField(SERVICEF);
+        query.addFacetField(PATHF);
+        query.setFacetMinCount(1);
+
 
         String childFacet = "{\n"
             + DIFFRESOLUTIONFACETFIELD + " : {\n"
@@ -1847,19 +1852,32 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             + "  }\n"
             + "}";
         query.add(SOLRJSONFACETPARAM, childFacet);
-        Pair<Result<ReqRespMatchResult>, NamedList> resultsWithFacets = SolrIterator
-            .getResultsWithFacets(solr, query, matchResQuery.numMatches,
-                this::docToAnalysisMatchResult
-                , matchResQuery.start);
+        Pair<Result<ReqRespMatchResult>, QueryResponse> resultsWithSolrResponse = SolrIterator
+            .getResultsWithSolrResponse(solr, query, matchResQuery.numMatches,
+                this::docToAnalysisMatchResult, matchResQuery.start);
 
-        ArrayList diffResolutionFacetsNamedList = (ArrayList) resultsWithFacets.second()
-            .findRecursive(DIFFRESOLUTIONFACETFIELD, BUCKETFIELD);
+        QueryResponse response = resultsWithSolrResponse.second();
+        ArrayList diffResolutionFacetsNamedList = (ArrayList) response.getResponse().
+            findRecursive(FACETSFIELD, DIFFRESOLUTIONFACETFIELD, BUCKETFIELD);
+
         ArrayList diffResolutionFacets = new ArrayList();
         // Required for Jackson serialization. Jackson is failing to serialize namedList directly
         diffResolutionFacetsNamedList.forEach(diffResFacet -> {
             diffResolutionFacets.add((((NamedList) diffResFacet).asMap(2)));
         });
-        return new Pair<>(resultsWithFacets.first(), diffResolutionFacets);
+
+
+        List<Count> serviceFacetResults = response.getFacetField(SERVICEF).getValues();
+        Map serviceFacetResultsMap = new HashMap();
+        serviceFacetResults.forEach(serviceFacet -> {
+            serviceFacetResultsMap.put(serviceFacet.getName(), serviceFacet.getCount());
+        });
+        List<Count> pathFacetResults = response.getFacetField(PATHF).getValues();
+        Map pathFacetResultsMap = new HashMap();
+        pathFacetResults.forEach(pathFacet -> {
+            pathFacetResultsMap.put(pathFacet.getName(), pathFacet.getCount());
+        });
+        return List.of(resultsWithSolrResponse.first(), diffResolutionFacets, serviceFacetResultsMap, pathFacetResultsMap);
     }
 
     @Override
