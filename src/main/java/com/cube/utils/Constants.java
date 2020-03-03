@@ -170,7 +170,7 @@ public class Constants {
     public static final String REQ_COMP_RES_TYPE = "reqCmpResType";
     public static final String REQUEST_DIFF = "requestDiff";
     public static final String RESPONSE_DIFF = "responseDiff";
-    public static final String FACETS = "Facets";
+    public static final String FACETS = "facets";
     public static final String DIFF_RES_FACET = "diffResFacets";
     public static final String SERVICE_FACET = "serviceFacets";
     public static final String PATH_FACET = "pathFacets";
