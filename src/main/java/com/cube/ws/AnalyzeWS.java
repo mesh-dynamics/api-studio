@@ -46,6 +46,7 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import io.cube.agent.UtilException;
 import redis.clients.jedis.Jedis;
@@ -471,7 +472,8 @@ public class AnalyzeWS {
 			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
 			    matchRes.reqCompareRes.mt,
 			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse
-			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId);
+			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+			    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
 
 		    String resultJson = null;
 		    try {
@@ -605,6 +607,19 @@ public class AnalyzeWS {
 	    final ArrayList[] diffResFacets = {new ArrayList()};
 	    final Map[] serviceFacets = {new HashMap()};
 	    final Map[] pathFacets = {new HashMap()};
+	    var recordReqTimeRef = new Object() {
+		    Optional<Long> recordReqTime = Optional.empty();
+	    };
+	    var recordRespTimeRef = new Object() {
+		    Optional<Long> recordRespTime = Optional.empty();
+	    };
+	    var replayReqTimeRef = new Object() {
+		    Optional<Long> replayReqTime = Optional.empty();
+	    };
+	    final Instant[] replayReqTime = new Instant[1];
+	    var replayRespTimeRef = new Object() {
+		    Optional<Long> replayRespTime = Optional.empty();
+	    };
 	    List<MatchRes> matchResList = rrstore.getReplay(replayId).map(replay -> {
 
 		    List resultWithFacets = rrstore
@@ -635,7 +650,10 @@ public class AnalyzeWS {
                 Optional<String> request =
                     matchRes.recordReqId
                         .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
-                        .map(event -> event.getPayloadAsJsonString(config));
+                        .map(event -> {
+	                        recordReqTimeRef.recordReqTime = Optional.of(event.timestamp.toEpochMilli());
+                        	return event.getPayloadAsJsonString(config);
+                        });
 
                 Optional<String> recordedRequest = Optional.empty();
                 Optional<String> replayedRequest = Optional.empty();
@@ -648,7 +666,10 @@ public class AnalyzeWS {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequestEvent)
-                        .map(event -> event.getPayloadAsJsonString(config));
+                        .map(event -> {
+	                        replayReqTime[0] = event.timestamp;
+                        	return event.getPayloadAsJsonString(config);
+                        });
 	                try {
 		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
 			                .respCompareRes.diffs));
@@ -659,16 +680,24 @@ public class AnalyzeWS {
 			                "Unable to convert diff to json string")), e);
 	                }
 	                recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponseEvent)
-                        .map(event -> event.getPayloadAsJsonString(config));
+                        .map(event -> {
+	                        recordRespTimeRef.recordRespTime = Optional.of(event.timestamp.toEpochMilli());
+                        	return event.getPayloadAsJsonString(config);
+                        });
                     replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
-                        .map(event -> event.getPayloadAsJsonString(config));
+                        .map(event -> {
+	                        replayRespTimeRef.replayRespTime = Optional.of(event.timestamp.toEpochMilli());
+                        	return event.getPayloadAsJsonString(config);
+                        });
                 }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
                     matchRes.reqMatchRes, matchRes.numMatch,
                     matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
 	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
-	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId);
+	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+	                recordReqTimeRef.recordReqTime, recordRespTimeRef.recordRespTime,
+	                replayReqTimeRef.replayReqTime, replayRespTimeRef.replayRespTime);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -677,9 +706,11 @@ public class AnalyzeWS {
             json = jsonMapper
                 .writeValueAsString(new MatchResults(matchResList, numFound[0], app[0], app[1]));
 	        JSONObject jsonObject = new JSONObject(json);
-	        jsonObject.put(Constants.DIFF_RES_FACET, jsonMapper.writeValueAsString(diffResFacets[0]));
-	        jsonObject.put(Constants.SERVICE_FACET, jsonMapper.writeValueAsString(serviceFacets[0]));
-	        jsonObject.put(Constants.PATH_FACET, jsonMapper.writeValueAsString(pathFacets[0]));
+	        Map facetMap = new HashMap();
+	        facetMap.put(Constants.DIFF_RES_FACET, diffResFacets[0]);
+	        facetMap.put(Constants.SERVICE_FACET, serviceFacets[0]);
+	        facetMap.put(Constants.PATH_FACET, pathFacets[0]);
+	        jsonObject.put(Constants.FACETS, facetMap);
 
             return Response.ok().type(MediaType.APPLICATION_JSON)
                 .entity(buildSuccessResponse(Constants.SUCCESS, jsonObject)).build();
@@ -1345,8 +1376,7 @@ public class AnalyzeWS {
      */
 	static class MatchRes {
 
-
-        public MatchRes(Optional<String> recordReqId,
+	    public MatchRes(Optional<String> recordReqId,
                         Optional<String> replayReqId,
                         Comparator.MatchType reqMatchResType,
                         int numMatch,
@@ -1361,7 +1391,11 @@ public class AnalyzeWS {
                         Optional<String> recordResponse,
                         Optional<String> replayResponse,
 	                    Optional<String> recordTraceId,
-	                    Optional<String> replayTraceId
+	                    Optional<String> replayTraceId,
+	                    Optional<Long> recordReqTime,
+					    Optional<Long> recordRespTime,
+		                Optional<Long> replayReqTime,
+		                Optional<Long> replayRespTime
 	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
@@ -1379,7 +1413,12 @@ public class AnalyzeWS {
             this.replayResponse = replayResponse;
             this.recordTraceId = recordTraceId;
             this.replayTraceId = replayTraceId;
-        }
+            this.recordReqTime = recordReqTime;
+		    this.recordRespTime = recordReqTime;
+		    this.replayReqTime = recordReqTime;
+		    this.replayRespTime = recordReqTime;
+
+	    }
 
         public final Optional<String> recordReqId;
         public final Optional<String> replayReqId;
@@ -1391,6 +1430,11 @@ public class AnalyzeWS {
         public final String path;
         public final Optional<String> recordTraceId;
         public final Optional<String> replayTraceId;
+	    public final Optional<Long> recordReqTime;
+	    public final Optional<Long> recordRespTime;
+	    public final Optional<Long> replayReqTime;
+	    public final Optional<Long> replayRespTime;
+
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
         @JsonIgnore
