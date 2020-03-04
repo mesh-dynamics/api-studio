@@ -34,6 +34,7 @@ class DiffResults extends Component {
                 selectedReqRespMatchType: "responseMismatch",
                 selectedResolutionType: "All",
                 currentPageNumber: 1,
+                pageSize: 5,
             },
             diffLayoutData : [],
             facetListData: {},
@@ -81,6 +82,8 @@ class DiffResults extends Component {
         const responseBody = urlParameters["responseBody"];
         const timeStamp = decodeURI(urlParameters["timeStamp"]);
         const currentPageNumber = urlParameters["currentPageNumber"]
+        const pageSize = urlParameters["pageSize"]
+        
 
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
@@ -90,6 +93,7 @@ class DiffResults extends Component {
                 selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
                 selectedResolutionType: selectedResolutionType || "All",
                 currentPageNumber: currentPageNumber || 1,
+                pageSize: pageSize || 5,
             },
             replayId: replayId,
             recordingId: recordingId,
@@ -142,13 +146,29 @@ class DiffResults extends Component {
     // and then fetch the new set of results    
     handleFilterChange = (metaData, value) => {
         console.log("filter changed " + metaData + " : " + value)
-        // todo: set the states per hierarchy (see handleMetaDataSelect in ShareableLink)
-
+        let { filter: newFilter } = this.state;
+        
+        // utilize the fallthrough mechanism to set hierarchical defaults for filters
+        switch(metaData){
+            case "selectedService":
+                newFilter["selectedService"] = "All";
+            case "selectedAPI":
+                newFilter["selectedAPI"] = "All";
+            case "selectedReqRespMatchType":
+                newFilter["selectedReqRespMatchType"] = "responseMismatch";
+            case "selectedResolutionType":
+                newFilter["selectedResolutionType"] = "All";
+            case "currentPageNumber":
+                newFilter["currentPageNumber"] = 1;
+            default:
+                newFilter[metaData] = value;       
+        }
         this.setState({
-                filter : {
-                    ...this.state.filter,
-                    [metaData] : value,
-                }
+                //filter : {
+                //    ...this.state.filter,
+                //    [metaData] : value,
+                //}
+                filter: newFilter,
             },
             this.fetchAndUpdateResults
         );    
@@ -435,7 +455,7 @@ class DiffResults extends Component {
         u.searchParams.set("diffRes", resolutionType); 
         u.searchParams.set("reqMatchType", ""); // todo
         u.searchParams.set("respMatchType", ""); // todo
-
+        // todo: timestamp field
         console.log("fetch url " + u)
         console.log(u)
 
@@ -456,9 +476,9 @@ class DiffResults extends Component {
                 dataList = json;
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
                     console.log("results list is empty")
-                    return [];
+                    return {};
                 } 
-                return dataList.data.res;
+                return dataList;
                 // let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
                 // return diffLayoutData;
 
@@ -486,13 +506,23 @@ class DiffResults extends Component {
         console.log(this.state.filter)
         // fetch results from the backend
         // todo: is this pattern (using `then`) right?
-        let diffLayoutData = this.fetchAnalysisResults(this.state.replayId, this.state.filter, 0, 5)
-            .then(
-                (diffLayoutData) => {
-                    diffLayoutData = this.validateAndCreateDiffLayoutData(diffLayoutData);
+        const { filter : { 
+            currentPageNumber, pageSize 
+        } } = this.state;
+        
+        let start = (currentPageNumber - 1) * pageSize;
+
+        this.fetchAnalysisResults(this.state.replayId, this.state.filter, start, pageSize)
+            .then(  
+                (dataList) => {
+                    const results = dataList.data && dataList.data.res || [];
+                    let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
                     this.updateResolutionFilterPaths(diffLayoutData);
-                    console.log(diffLayoutData)
+                    
+                    const numFound = dataList.data && dataList.data.numFound || 0;
+                    const pages = Math.ceil(numFound/pageSize);
                     this.setState({
+                        pages: pages,
                         diffLayoutData: diffLayoutData,
                         facetListData: respData.facets,
                     });
@@ -508,7 +538,6 @@ class DiffResults extends Component {
         //    facetListData: respData.facets,
         //});
     }
-
 
     handleClose = () => {
         const { history, dispatch } = this.props;
@@ -757,7 +786,7 @@ class DiffResults extends Component {
                     </div>
                     
                     <div>
-                        <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={this.state.app ? this.state.app : "(Unknown)"}></DiffResultsFilter>
+                        <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={this.state.app ? this.state.app : "(Unknown)"} pages={this.state.pages}></DiffResultsFilter>
                         <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData} showAll={showAll}></DiffResultsList>
                     </div>
                     

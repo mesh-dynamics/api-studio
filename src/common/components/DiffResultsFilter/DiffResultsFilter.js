@@ -11,7 +11,7 @@ export default class DiffResultsFilter extends Component {
     }
 
     renderPageButtons = () => {
-        let pages = _.isEmpty(this.props.facetListData) ? 1 : this.props.facetListData.pages; // todo: props
+        const { pages = 1 } = this.props;
         let pageButtons = [];
 
         /* todo: use this for refactor
