@@ -14,18 +14,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BinaryNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.cryptography.EncryptionAlgorithm;
-import io.md.utils.UtilException;
 
 public class JsonDataObj implements DataObj {
 
@@ -36,10 +40,21 @@ public class JsonDataObj implements DataObj {
 	}
 
 	JsonDataObj(String json, ObjectMapper jsonMapper) {
-		this(jsonStrToObj(json, jsonMapper), jsonMapper);
+		this(jsonStrToTreeNode(json, jsonMapper), jsonMapper);
 	}
 
-	private JsonDataObj(JsonNode root, ObjectMapper jsonMapper) {
+	JsonDataObj(byte[] jsonByteArray, ObjectMapper jsonMapper) {
+		this(jsonBinaryToTreeNode(jsonByteArray, jsonMapper), jsonMapper);
+	}
+
+	JsonDataObj(Payload obj, ObjectMapper jsonMapper) {
+		ArrayNode payloadTreeMap   = jsonMapper.valueToTree(obj);
+		this.typeInfo = payloadTreeMap.get(0);
+		this.objRoot = payloadTreeMap.get(1);
+		this.jsonMapper = jsonMapper;
+	}
+
+	public JsonDataObj(JsonNode root, ObjectMapper jsonMapper) {
 		this.objRoot = root;
 		this.jsonMapper = jsonMapper;
 	}
@@ -50,7 +65,7 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@Override
-	public boolean isEmpty() {
+	public boolean isDataObjEmpty() {
 		return objRoot.isMissingNode();
 	}
 
@@ -65,14 +80,43 @@ public class JsonDataObj implements DataObj {
 		if (!node.isMissingNode()) {
 			return nodeToString(getNode(path));
 		} else {
-			throw new PathNotFoundException();
+			throw new PathNotFoundException(path);
 		}
 	}
 
 	@Override
-	public String serialize() {
-		// TODO: Not yet implemented
-		return null;
+	public byte[] getValAsByteArray(String path) throws PathNotFoundException{
+		JsonNode node = getNode(path);
+		if (!node.isMissingNode()) {
+			return nodeToByteArray(node);
+		} else {
+			throw new PathNotFoundException(path);
+		}
+	}
+
+	private byte[] nodeToByteArray(JsonNode node) {
+		try {
+			if (node.isBinary()) {
+				return ((BinaryNode) node).binaryValue();
+			}
+			if (node.isTextual()) {
+				return node.asText().getBytes();
+			}
+			return jsonMapper.writeValueAsString(node).getBytes();
+		} catch (JsonProcessingException e) {
+			LOGGER.error("Error in converting json node to byte array: " + node.toString());
+			//TODO maybe make the return type of this function as Optional
+			return node.toString().getBytes();
+		}
+	}
+
+	@Override
+	public String serializeDataObj() throws DataObjProcessingException {
+		try {
+			return jsonMapper.writeValueAsString(objRoot);
+		} catch (JsonProcessingException e) {
+			throw  new DataObjProcessingException(e);
+		}
 	}
 
 	@Override
@@ -82,6 +126,7 @@ public class JsonDataObj implements DataObj {
 		} catch (JsonProcessingException e) {
 			LOGGER.error(new ObjectMessage(Map.of("message", "Not able to serialize json",
 				"value", objRoot.toString())));
+			// TODO .. isn't this prone to errors ?
 			return objRoot.toString();
 		}
 	}
@@ -95,7 +140,6 @@ public class JsonDataObj implements DataObj {
 
 	@Override
 	public Comparator.MatchType compare(DataObj rhs, CompareTemplate template) {
-
 		return null;
 	}
 
@@ -111,20 +155,17 @@ public class JsonDataObj implements DataObj {
 			return this;
 		}
 		JsonTransformer jsonTransformer = new JsonTransformer(jsonMapper);
-		JsonNode transformedRoot = jsonTransformer.transform(this.objRoot, ((JsonDataObj)rhs).getRoot(),
+		JsonNode transformedRoot = jsonTransformer.transform(this.objRoot,
+		 ((JsonDataObj)rhs).getRoot(),
 			operationList);
 
 		return new JsonDataObj(transformedRoot, jsonMapper);
 	}*/
 
-	@Override
-	public Event.RawPayload toRawPayload() {
-
-		return new Event.RawPayload(null, toString());
-	}
 
 	/**
-	 * Unwrap the string at path into a json object. The type for interpreting the string is given by mimetype
+	 * Unwrap the string at path into a json object. The type for interpreting the
+	 * string is given by mimetype
 	 * @param path
 	 * @param mimetype
 	 */
@@ -139,17 +180,19 @@ public class JsonDataObj implements DataObj {
 			ObjectNode valParentObj = (ObjectNode) valParent;
 			String fieldName = pathPtr.last().getMatchingProperty();
 			JsonNode val = valParentObj.get(fieldName);
-			if (val != null && val.isTextual()) {
+			if (val != null && (val.isTextual() || val.isBinary())) {
 				// parse it as per mime type
 				// currently handling only json type
-				if (mimetype.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)) {
+				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
 					try {
-						JsonNode parsedVal = jsonMapper.readTree(val.asText());
+						JsonNode parsedVal = (val.isTextual()) ? jsonMapper.readTree(val.asText()) :
+							jsonMapper.readTree(val.binaryValue());
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (IOException e) {
-						LOGGER.error(String.format("Exception in parsing json string at path: %s, val: %s",
-							path, val.asText()), e.getMessage(), UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"Exception in parsing json string", Constants.PATH_FIELD, path
+							, "value" , val.toString())) , e);
 					}
 				}
 			}
@@ -164,10 +207,20 @@ public class JsonDataObj implements DataObj {
 	 */
 	@Override
 	public boolean wrapAsString(String path, String mimetype) {
-		return wrapAsString(objRoot, path, mimetype);
+		return wrap(objRoot, path, mimetype, false);
 	}
 
-	private boolean wrapAsString(JsonNode root, String path, String mimetype) {
+	/**
+	 * wrap the value at path into a byte array
+	 * @param path
+	 * @param mimetype
+	 */
+	@Override
+	public boolean wrapAsByteArray(String path, String mimetype) {
+		return wrap(objRoot, path, mimetype, true);
+	}
+
+	private boolean wrap(JsonNode root, String path, String mimetype, boolean asByteArray) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = root.at(pathPtr.head());
 		if (valParent != null &&  valParent.isObject()) {
@@ -178,9 +231,11 @@ public class JsonDataObj implements DataObj {
 				// convert to string
 				// currently handling only json type
 				if (mimetype.equals(MediaType.APPLICATION_JSON)) {
-
-					String newVal = val.toString();
-					valParentObj.set(fieldName, new TextNode(newVal));
+					if (asByteArray) {
+						valParentObj.set(fieldName, new BinaryNode(val.toString().getBytes()));
+					} else {
+						valParentObj.set(fieldName, new TextNode(val.toString()));
+					}
 					return true;
 				}
 			}
@@ -201,6 +256,9 @@ public class JsonDataObj implements DataObj {
 			String fieldName = pathPtr.last().getMatchingProperty();
 			JsonNode val = valParentObj.get(fieldName);
 			if (val != null && val.isValueNode()) {
+				// TODO if the original node is binary, we can't blindly convert to a TextNode
+				// we might need to have encrypt functions which directly ingest byte array
+				// and return byte array
 				return encrypter.encrypt(val.toString()).map(newVal -> {
 					valParentObj.set(fieldName, new TextNode(newVal));
 					return newVal;
@@ -214,6 +272,25 @@ public class JsonDataObj implements DataObj {
 	@Override
 	public Optional<String> decryptField(String path, EncryptionAlgorithm encrypter) {
 		return decryptField(objRoot, path, encrypter);
+	}
+
+	@Override
+	public <T> Optional<T> getValAsObject(String path, Class<T> className) {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valueNode = objRoot.at(pathPtr);
+		if (valueNode != null && ! valueNode.isMissingNode()) {
+			try {
+				return Optional.of(jsonMapper.treeToValue(valueNode, className));
+			} catch (Exception e) {
+				LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Unable to convert path to desired object" , Constants.PATH_FIELD,
+					path , "className" , className.getName())));
+			}
+		} else {
+			LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "path does not exist",
+				Constants.PATH_FIELD, path)));
+		}
+		return Optional.empty();
 	}
 
 	private Optional<String> decryptField(JsonNode root, String path, EncryptionAlgorithm decrypter) {
@@ -236,7 +313,8 @@ public class JsonDataObj implements DataObj {
 
 
 
-	private void processNode(JsonNode node, Function<String, Boolean> filter, Collection<String> vals, JsonPointer path) {
+	private void processNode(JsonNode node, Function<String, Boolean> filter,
+		Collection<String> vals, JsonPointer path) {
 		if (node.isValueNode()) {
 			if (filter.apply(path.toString())) {
 				vals.add(path + "=" + node.asText());
@@ -245,7 +323,8 @@ public class JsonDataObj implements DataObj {
 			Iterator<Entry<String, JsonNode>> fields = node.fields();
 			while (fields.hasNext()) {
 				Map.Entry<String, JsonNode> child = fields.next();
-				processNode(child.getValue(), filter, vals, path.append(JsonPointer.compile("/" + child.getKey())));
+				processNode(child.getValue(), filter, vals, path.append(JsonPointer
+					.compile("/" + child.getKey())));
 			}
 		} else if (node.isArray()) {
 			int idx = 0;
@@ -256,7 +335,16 @@ public class JsonDataObj implements DataObj {
 		}
 	}
 
-	private static JsonNode jsonStrToObj(String json, ObjectMapper jsonMapper) {
+	private static JsonNode jsonStrToTreeNode(String json, ObjectMapper jsonMapper) {
+		try {
+			return jsonMapper.readTree(json);
+		} catch (IOException e) {
+			LOGGER.error("Not able to parse json: " + json);
+			return MissingNode.getInstance();
+		}
+	}
+
+	private static JsonNode jsonBinaryToTreeNode(byte[] json, ObjectMapper jsonMapper) {
 		try {
 			return jsonMapper.readTree(json);
 		} catch (IOException e) {
@@ -281,8 +369,20 @@ public class JsonDataObj implements DataObj {
 		}
 	}
 
+	@Override
+	public  Payload convertToPayload() {
+		final JsonNodeFactory factory = JsonNodeFactory.instance;
+		ArrayNode arrayNode = factory.arrayNode();
+		arrayNode.add(typeInfo);
+		arrayNode.add(objRoot);
+		return jsonMapper.convertValue(arrayNode, Payload.class);
+	}
 
+	@JsonIgnore
 	private final JsonNode objRoot;
+	@JsonIgnore
+	private JsonNode typeInfo;
+	@JsonIgnore
 	private final ObjectMapper jsonMapper;
 
 	public JsonNode getRoot() {

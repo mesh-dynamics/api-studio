@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.Constants;
 
+// TODO this class will eventually go away
 public class DataObjFactory {
 
 	private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);
@@ -43,7 +44,7 @@ public class DataObjFactory {
 	}
 
 
-	public static DataObj build(Event.EventType type, byte[] payloadBin, String payloadStr,
+	public static DataObj build(Event.EventType type, Payload payload,
 		 Map<String, Object> params) {
 		ObjectMapper jsonMapper;
 		switch (type) {
@@ -51,18 +52,29 @@ public class DataObjFactory {
 			case HTTPResponse:
 				jsonMapper = (ObjectMapper) params.get(Constants.OBJECT_MAPPER);
 				if (jsonMapper == null) throw new RuntimeException("Json Mapper Not Provided");
-				JsonDataObj obj = new JsonDataObj(payloadStr, jsonMapper);
-				String mimeType =  getMimeType(obj).orElse(MediaType.TEXT_PLAIN);
-				obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
-				return obj;
+				try {
+					JsonDataObj obj = new JsonDataObj(payload.rawPayloadAsString(), jsonMapper);
+					String mimeType = getMimeType(obj).orElse(MediaType.TEXT_PLAIN);
+					obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
+					return obj;
+				} catch (Exception e) {
+					LOGGER.error(new ObjectMessage("Error Occurred while creating data object")
+						,e);
+				}
+
 			case JavaRequest:
 			case JavaResponse:
-				jsonMapper = (ObjectMapper) params.get(Constants.OBJECT_MAPPER);
-				if (jsonMapper == null) throw new RuntimeException("Json Mapper Not Provided");
-				return new JsonDataObj(payloadStr, jsonMapper);
+				try {
+					jsonMapper = (ObjectMapper) params.get(Constants.OBJECT_MAPPER);
+					if (jsonMapper == null)
+						throw new RuntimeException("Json Mapper Not Provided");
+					return new JsonDataObj(payload.rawPayloadAsString(), jsonMapper);
+				} catch (Exception e) {
+					LOGGER.error(new ObjectMessage("Error Occurred while creating data object")
+						,e);
+				}
 			case ThriftRequest:
 			case ThriftResponse:
-				return new ThriftDataObject.ThriftDataObjectBuilder().build(payloadBin, params);
 			case ProtoBufRequest:
 			case ProtoBufResponse:
 			default:

@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -14,6 +14,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,10 +30,13 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.constants.Constants;
+import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.RawPayload.RawPayloadEmptyException;
+import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 public class Utils {
 
@@ -152,17 +157,7 @@ public class Utils {
 	}
 
 
-	public static Map<String, Object> extractThriftParams(String thriftApiPath) {
-		Map<String, Object> params = new HashMap<>();
-		if (thriftApiPath != null) {
-			String[] splitResult = thriftApiPath.split("::");
-			String methodName = splitResult[0];
-			String argsClassName = splitResult[1];
-			params.put(Constants.THRIFT_METHOD_NAME, methodName);
-			params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
-		}
-		return params;
-	}
+
 
 	public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap,
 		String fieldname) {
@@ -173,7 +168,7 @@ public class Utils {
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
 		MultivaluedMap<String, String> meta,
-		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, String body,
+		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, byte[] body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
@@ -196,14 +191,20 @@ public class Utils {
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
 				formParams, method.get(), body);
 
-			String payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
+			/*String payloadStr = null;
+			final Span span = CommonUtils.startClientSpan("reqPayload");
+			try (Scope scope = CommonUtils.activateSpan(span)) {
+				payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
+			} finally {
+				span.finish();
+			}*/
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest);
-			eventBuilder.setRawPayloadString(payloadStr);
+			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 			//TODO keep this logic on cube end
 			//event.parseAndSetKey(config, comparator.getCompareTemplate());
@@ -216,8 +217,9 @@ public class Utils {
 	}
 
 	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
+		if (mvMap == null) return null;
 		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
-		for (String key : new ArrayList<String>(mvMap.keySet())) {
+		for (String key : new ArrayList<>(mvMap.keySet())) {
 			String lowerCase = key.toLowerCase();
 			for (String value : mvMap.get(key))
 				lowerCaseMVMap.add(lowerCase, value);
@@ -226,8 +228,8 @@ public class Utils {
 	}
 
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
-		throws IOException {
-		String payload = event.getPayloadAsJsonString(Map.of(Constants.OBJECT_MAPPER, jsonMapper));
+		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
+		String payload = event.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPRequestPayload.class);
 	}
 
@@ -235,7 +237,7 @@ public class Utils {
 		MultivaluedMap<String, String> meta,
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo,
-		String body,
+		byte[] body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
@@ -264,14 +266,19 @@ public class Utils {
 			.isPresent()) && runType.isPresent() && status.isPresent()) {
 			HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status.get(),
 				body);
-			String payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
-
+			/*String payloadStr = null;
+			final Span span = CommonUtils.startClientSpan("respPayload");
+			try (Scope scope = CommonUtils.activateSpan(span)) {
+				payloadStr = jsonMapper.writeValueAsString(httpResponsePayload);
+			} finally {
+				span.finish();
+			}*/
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPResponse);
-			eventBuilder.setRawPayloadString(payloadStr);
+			eventBuilder.setPayload(httpResponsePayload);
 			Event event = eventBuilder.createEvent();
 			return event;
 		} else {
@@ -281,9 +288,24 @@ public class Utils {
 	}
 
 	public static HTTPResponsePayload getResponsePayload(Event event, ObjectMapper jsonMapper)
-		throws IOException {
-		String payload = event.getPayloadAsJsonString(Map.of(Constants.OBJECT_MAPPER, jsonMapper));
+		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
+		String payload = event.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPResponsePayload.class);
 	}
+
+	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type"
+		/*, "Content-type", "Content-Type", "content-Type"*/);
+
+	public  static  boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
+		return HTTP_CONTENT_TYPE_HEADERS.stream()
+			.map(headers::getFirst).findFirst().filter(x ->
+			x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
+	}
+
+	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
+		return HTTP_CONTENT_TYPE_HEADERS.stream()
+			.map(headers::getFirst).findFirst().map(x -> x.toLowerCase().stripLeading());
+	}
+
 
 }

@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
 import io.md.cryptography.EncryptionAlgorithm;
@@ -14,42 +16,71 @@ import io.md.cryptography.EncryptionAlgorithm;
  */
 public interface DataObj {
 
+	@JsonIgnore
 	boolean isLeaf();
 
-	boolean isEmpty();
+	@JsonIgnore
+	boolean isDataObjEmpty();
 
+	@JsonIgnore
 	DataObj getVal(String path);
 
+	@JsonIgnore
 	String getValAsString(String path) throws PathNotFoundException;
 
-	String serialize();
+	@JsonIgnore
+	String serializeDataObj() throws DataObjProcessingException;
 
+	@JsonIgnore
 	void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
 
+	@JsonIgnore
 	MatchType compare(DataObj rhs, CompareTemplate template);
 
 	//TODO leaving it out from here
 	//DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
 
-	Event.RawPayload toRawPayload();
-
+	@JsonIgnore
 	boolean wrapAsString(String path, String mimetype);
 
+	@JsonIgnore
+	boolean wrapAsByteArray(String path, String mimetype);
+
+	@JsonIgnore
 	Optional<String> encryptField(String path, EncryptionAlgorithm encrypter);
 
+	@JsonIgnore
 	Optional<String> decryptField(String path, EncryptionAlgorithm decrypter);
+
+	@JsonIgnore
+	<T> Optional<T> getValAsObject(String path, Class<T> className);
+
+	byte[] getValAsByteArray(String path) throws PathNotFoundException;
+
+	Payload convertToPayload();
 
 	class PathNotFoundException extends Exception{
 
-	}
-
-	class DataObjCreationException extends RuntimeException {
-		public DataObjCreationException(String msg, Throwable e) {
-			super (msg,e);
+		public PathNotFoundException() {
+			super();
 		}
 
-		public DataObjCreationException(Throwable e) {
-			super(e);
+		public PathNotFoundException(String path) {
+			super("Path doesn't exist :: " + path);
+		}
+	}
+
+	class DataObjProcessingException extends Exception {
+		public DataObjProcessingException(Throwable rootCause) {
+			super(rootCause);
+		}
+
+		public DataObjProcessingException(String msg) {
+			super(msg);
+		}
+
+		public DataObjProcessingException(String msg, Throwable e) {
+			super(msg,e);
 		}
 	}
 }

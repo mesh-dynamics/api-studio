@@ -1,9 +1,7 @@
 package io.md.utils;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -22,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.thrift.TBase;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -35,9 +32,6 @@ import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.md.constants.Constants;
 import io.md.dao.CubeMetaInfo;
-import io.md.dao.Event;
-import io.md.dao.Event.EventBuilder;
-import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.tracer.HTTPHeadersCarrier;
 import io.md.tracer.MDGlobalTracer;
@@ -46,15 +40,18 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.Format.Builtin;
-import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 
 
 public class CommonUtils {
 
 	private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
+
+	private static final Tracer NOOPTracer = NoopTracerFactory.create();
 
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
 		return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
@@ -74,12 +71,14 @@ public class CommonUtils {
 		if (MDGlobalTracer.isRegistered()) {
 			Tracer tracer = MDGlobalTracer.get();
 
+			Span span = null;
 			Scope scope = null;
 			//Added for the JDBC init case, but also to segregate
 			//any calls without a span to a default span.
 			if (tracer.activeSpan() == null) {
 				MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
-				scope = CommonUtils.startServerSpan(headers, "dummy-span");
+				span = startServerSpan(headers, "dummy-span");
+				scope = activateSpan(span);
 			}
 
 			Tags.SPAN_KIND.set(tracer.activeSpan(), Tags.SPAN_KIND_CLIENT);
@@ -99,6 +98,9 @@ public class CommonUtils {
 
 			if (scope != null) {
 				scope.close();
+			}
+			if (span != null) {
+				span.finish();
 			}
 
 		}
@@ -154,17 +156,56 @@ public class CommonUtils {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
 	}*/
 
-	public static Scope startClientSpan(String operationName) {
-		Tracer tracer = MDGlobalTracer.get();
-		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
-		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
-			.startActive(true);
+
+	public static Scope activateSpan(Span span, boolean noop) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
+		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
+		return tracer.scopeManager().activate(span);
 	}
 
-	public static Scope startServerSpan(MultivaluedMap<String, String> rawHeaders,
-		String operationName) {
+	public static Scope activateSpan(Span span) {
+		return activateSpan(span, false);
+	}
+
+
+	public static Span startClientSpan(String operationName, SpanContext parentContext,
+		Map<String, String> tags , boolean noop) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
+		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
+		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
+		if (parentContext != null) spanBuilder.asChildOf(parentContext);
+		if (tags != null) tags.forEach(spanBuilder::withTag);
+		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+			.start();
+	}
+
+	public static Span startClientSpan(String operationName) {
+		return startClientSpan(operationName, null, null, false);
+	}
+
+	public static Span startClientSpan(String operationName, boolean noop) {
+		return startClientSpan(operationName, null, null, noop);
+	}
+
+	public static Span startClientSpan(String operationName, Map<String, String> tags,
+		boolean noop) {
+		return startClientSpan(operationName, null, tags, noop);
+	}
+
+	public static Span startClientSpan(String operationName, SpanContext parentContext,
+		boolean noop) {
+		return startClientSpan(operationName, parentContext, null, noop);
+	}
+
+	public static Span startClientSpan(String operationName, Map<String, String> tags) {
+		return startClientSpan(operationName, null, tags,  false);
+	}
+
+	public static Span startServerSpan(MultivaluedMap<String, String> rawHeaders,
+		String operationName, boolean noop) {
+		// TODO assuming that a tracer has been registered already with MDGlobalTracer
 		// format the headers for extraction
-		Tracer tracer = MDGlobalTracer.get();
+		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
 		final HashMap<String, String> headers = new HashMap<String, String>();
 		rawHeaders.forEach((k, v) -> {
 			if (v.size() > 0) {
@@ -174,7 +215,7 @@ public class CommonUtils {
 		Tracer.SpanBuilder spanBuilder;
 		try {
 			SpanContext parentSpanCtx = tracer
-				.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headers));
+				.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headers));
 			if (parentSpanCtx == null) {
 				spanBuilder = tracer.buildSpan(operationName);
 			} else {
@@ -185,7 +226,12 @@ public class CommonUtils {
 		}
 		// TODO could add more tags like http.url
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.startActive(true);
+			.start();
+	}
+
+	public static Span startServerSpan(MultivaluedMap<String, String> rawHeaders,
+		String operationName) {
+		return startServerSpan(rawHeaders, operationName, false);
 	}
 
 	public static JaegerTracer init(String service) {
@@ -207,6 +253,7 @@ public class CommonUtils {
 		Configuration config = new Configuration(service)
 			.withSampler(samplerConfig)
 			.withReporter(reporterConfig).withCodec(codecConfiguration);
+
 		return config.getTracer();
 	}
 
@@ -283,16 +330,16 @@ public class CommonUtils {
 		return payloadObj;
 	}
 
-	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
+	/*public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
 		RunType rrType, Optional<Instant> timestamp, JsonObject payload) {
 
 		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
 			mdTraceInfo, rrType, timestamp, "NA",
 			fnKey.signature, Event.EventType.JavaRequest);
-		eventBuilder.setRawPayloadString(payload.toString());
+		eventBuilder.setRawPayload(new StringPayload(payload.toString()));
 		return eventBuilder.createEventOpt();
-	}
+	}*/
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
 		JsonArray argsArray = new JsonArray();
@@ -322,42 +369,7 @@ public class CommonUtils {
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
 	}
 
-	public static Scope startServerSpan(io.md.tracing.thriftjava.Span span, String methodName) {
-		Tracer tracer = MDGlobalTracer.get();
-		Tracer.SpanBuilder spanBuilder;
-		try {
-			//span.getBaggage().forEach((x,y) -> {System.out.println("Baggage Key :: " +  x + " :: Baggage Value :: "  +y);});
-			JaegerSpanContext parentSpanCtx = new JaegerSpanContext(span.traceIdHigh,
-				span.traceIdLow, span.spanId, span.parentSpanId,
-				(byte) span.flags);
-			parentSpanCtx = parentSpanCtx.withBaggage(span.baggage);
-			spanBuilder = tracer.buildSpan(methodName).asChildOf(parentSpanCtx);
-		} catch (Exception e) {
-			spanBuilder = tracer.buildSpan(methodName);
-		}
-		// TODO could add more tags like http.url
-		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-			.startActive(true);
-	}
 
-	//TODO assuming that the name of the field/argument containing will always be span
-	//this might again require extra config to indicate the field containing span
-	public static String traceIdFromThriftSpan(TBase spanContainingObject) {
-		try {
-			Class<?> clazz = spanContainingObject.getClass();
-			Field field = clazz.getField(
-				Constants.THRIFT_SPAN_ARGUMENT_NAME); //Note, this can throw an exception if the field doesn't exist.
-			io.md.tracing.thriftjava.Span span = (io.md.tracing.thriftjava.Span) field
-				.get(spanContainingObject);
-			JaegerSpanContext spanContext = new JaegerSpanContext(span.traceIdHigh, span.traceIdLow,
-				span.spanId, span.parentSpanId,
-				(byte) span.flags);
-			return spanContext.getTraceId();
-		} catch (Exception e) {
-			return null;
-		}
-		//spanContainingObject.getFieldValue()
-	}
 
 }
 

@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import io.jaegertracing.internal.JaegerObjectFactory;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.exceptions.EmptyTracerStateStringException;
@@ -15,9 +18,13 @@ import io.jaegertracing.internal.exceptions.MalformedTracerStateStringException;
 import io.jaegertracing.internal.exceptions.TraceIdOutOfBoundException;
 import io.jaegertracing.internal.propagation.PrefixedKeys;
 import io.jaegertracing.spi.Codec;
+import io.md.utils.CommonUtils;
 import io.opentracing.propagation.TextMap;
 
 public class MDTextMapCodec implements Codec<TextMap> {
+
+
+	private static final Logger LOGGER = LogManager.getLogger(MDTextMapCodec    .class);
 
 	/**
 	 * Key used to store serialized span context representation
