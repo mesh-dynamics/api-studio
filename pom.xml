@@ -5,23 +5,24 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>commons</artifactId>
-  <version>1.0.7</version>
+  <version>1.0.9</version>
   <packaging>jar</packaging>
   <properties>
-    <version.log4j>2.11.1</version.log4j>
     <version.java>11</version.java>
-    <version.httpcomponents>4.5.8</version.httpcomponents>
-    <version.jersey>2.27</version.jersey>
-    <version.gson>2.8.5</version.gson>
-    <version.jaeger>0.32.0</version.jaeger>
+    <version.log4j>2.13.0</version.log4j>
+    <version.jax>2.0</version.jax>
+    <version.jaeger>1.1.0</version.jaeger>
+    <version.jackson>2.9.9</version.jackson>
+    <version.commonstext>1.8</version.commonstext>
+    <version.httpcomponents>4.5.11</version.httpcomponents>
   </properties>
-  <!--    <distributionManagement>-->
-  <!--      <repository>-->
-  <!--        <id>github</id>-->
-  <!--        <name>GitHub CubeIO Apache Maven Packages</name>-->
-  <!--        <url>https://maven.pkg.github.com/cube-io-corp/agent</url>-->
-  <!--      </repository>-->
-  <!--    </distributionManagement>-->
+<!--      <distributionManagement>
+        <repository>
+          <id>github</id>
+          <name>GitHub CubeIO Apache Maven Packages</name>
+          <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+        </repository>
+      </distributionManagement>-->
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -55,9 +56,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.0</version>
-        <configuration>
-          <skipTests>true</skipTests>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -71,22 +69,30 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
+      <version>${version.jackson}</version>
     </dependency>
     <!-- for dealing with Instant objects -->
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-parameter-names</artifactId>
+      <version>${version.jackson}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.9.8</version>
+      <version>${version.jackson}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-smile</artifactId>
+      <version>${version.jackson}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+    <!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
     <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <version>${version.jersey}</version>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.0</version>
     </dependency>
 
     <dependency>
@@ -99,11 +105,6 @@
       <artifactId>log4j-core</artifactId>
       <version>${version.log4j}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
 
     <dependency>
       <groupId>io.jaegertracing</groupId>
@@ -113,14 +114,26 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.6</version>
+      <version>${version.commonstext}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${version.httpcomponents}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20180813</version>
-    </dependency>
+    <!--<dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.4.0</version>
+      <scope>test</scope>
+    </dependency>-->
 
   </dependencies>
 </project>

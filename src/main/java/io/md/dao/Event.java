@@ -6,11 +6,9 @@ package io.md.dao;
  *
  */
 
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -19,15 +17,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.constants.Constants;
 import io.md.core.ReplayTypeEnum;
 import io.md.dao.DataObj.PathNotFoundException;
-import io.md.utils.UtilException;
-import io.md.utils.Utils;
+import io.md.dao.RawPayload.RawPayloadEmptyException;
+import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 
 /*
@@ -46,12 +41,10 @@ public class Event {
 
 	private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
-
 	private Event(String customerId, String app, String service, String instanceId,
 		String collection, String traceId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
-		byte[] rawPayloadBinary,
-		String rawPayloadString, DataObj payload, int payloadKey) {
+		Payload payload, int payloadKey) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -63,8 +56,6 @@ public class Event {
 		this.reqId = reqId;
 		this.apiPath = apiPath;
 		this.eventType = eventType;
-		this.rawPayloadBinary = rawPayloadBinary;
-		this.rawPayloadString = rawPayloadString;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
 	}
@@ -84,11 +75,8 @@ public class Event {
 		this.reqId = null;
 		this.apiPath = null;
 		this.eventType = null;
-		this.rawPayloadBinary = null;
-		this.rawPayloadString = null;
 		this.payload = null;
 		this.payloadKey = 0;
-
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -110,15 +98,14 @@ public class Event {
 			|| (traceId == null && eventType != EventType.ThriftResponse
 			&& eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-			|| ((rawPayloadBinary == null) == (rawPayloadString == null || rawPayloadString.trim()
-			.isEmpty()))) {
+			|| (payload == null || payload.isRawPayloadEmpty())) {
 			return false;
 		}
 		return true;
 	}
 
 	//TODO keep this logic in cube respository
-/*	public void parseAndSetKeyAndCollection(Config config, String collection,
+	/*	public void parseAndSetKeyAndCollection(Config config, String collection,
 		CompareTemplate template)
 		throws DataObjCreationException {
 		this.collection = collection;
@@ -144,20 +131,22 @@ public class Event {
 			new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
 	}*/
 
+	// TODO this function will be removed
 	public DataObj parsePayLoad(Map<String, Object> params) {
 		// parse if not already parsed
 		if (payload == null) {
 			;
-			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
-				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
-				Map<String, Object> newParams = Utils.extractThriftParams(this.apiPath);
-				params.putAll(newParams);
-				// TODO push the class loader from outside
-				/*  classLoader.ifPresent(urlClassLoader -> finalParams
-					.put(Constants.CLASS_LOADER, urlClassLoader));*/
-			}
-			payload = DataObjFactory
-				.build(eventType, rawPayloadBinary, rawPayloadString, params);
+			// TODO commenting this out from here need to put this logic in md-thrift-commons
+//			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
+//				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
+//				Map<String, Object> newParams = Utils.extractThriftParams(this.apiPath);
+//				params.putAll(newParams);
+//				// TODO push the class loader from outside
+//				/*  classLoader.ifPresent(urlClassLoader -> finalParams
+//					.put(Constants.CLASS_LOADER, urlClassLoader));*/
+//			}
+		/*	payload = (Payload) DataObjFactory
+				.build(eventType, payload, params);*/
 		}
 
 		return payload;
@@ -172,38 +161,26 @@ public class Event {
 		return reqId;
 	}
 
+	// TODO this function will be removed
 	public String getPayloadAsString(Map<String, Object> params) {
 		parsePayLoad(params);
 		return payload.toString();
 	}
 
+	// TODO this function will be removed
 	public DataObj getPayload(Map<String, Object> params) {
 		parsePayLoad(params);
 		return payload;
 	}
 
-	public String getPayloadAsJsonString(Map<String, Object> params) {
-		switch (this.eventType) {
-			case HTTPRequest:
-			case HTTPResponse:
-				return rawPayloadString;
-			case JavaRequest:
-			case JavaResponse:
-				try {
-					return getPayload(params).getValAsString(Constants.FN_RESPONSE_PATH);
-				} catch (PathNotFoundException e) {
-					LOGGER.error(new ObjectMessage(
-						Map.of(
-							Constants.MESSAGE, "Response path not found in JSON"
-						)));
-				}
-			case ThriftRequest:
-			case ThriftResponse:
-			case ProtoBufRequest:
-			case ProtoBufResponse:
-			default:
-				throw new NotImplementedException("Thrift and Protobuf not implemented");
-		}
+	//TODO this function will be removed
+	public String getPayloadAsJsonString()
+		throws RawPayloadEmptyException, RawPayloadProcessingException {
+			if (this.payload != null) {
+				return this.payload.rawPayloadAsString();
+			} else {
+				throw new RawPayloadEmptyException("Payload is null");
+			}
 	}
 
 	// TODO keep this in cube repository
@@ -263,9 +240,6 @@ public class Event {
 
 		public static EventType getResponseType(EventType eventType) {
 			switch (eventType) {
-				case HTTPRequest:
-				case HTTPResponse:
-					return HTTPResponse;
 				case JavaRequest:
 				case JavaResponse:
 					return JavaRequest; // JavaRequest itself has response. Check if JavaResponse can be removed
@@ -275,6 +249,8 @@ public class Event {
 				case ProtoBufRequest:
 				case ProtoBufResponse:
 					return ProtoBufResponse;
+				case HTTPRequest:
+				case HTTPResponse:
 				default:
 					return HTTPResponse;
 			}
@@ -319,16 +295,7 @@ public class Event {
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
-
-	// Payload can be binary or string. Keeping both types, since otherwise we will have to encode string also
-	// as base64. For debugging its easier if the string is readable.
-	@JsonSerialize(using = ByteArraySerializer.class)
-	@JsonDeserialize(as = byte[].class)
-	public final byte[] rawPayloadBinary;
-	public final String rawPayloadString;
-
-	@JsonIgnore
-	DataObj payload;
+	public final Payload payload;
 
 	@JsonIgnore
 	public int payloadKey;
@@ -365,9 +332,7 @@ public class Event {
 		private final String reqId;
 		private final String apiPath;
 		private final Event.EventType eventType;
-		private byte[] rawPayloadBinary;
-		private String rawPayloadString;
-		private DataObj payload;
+		private Payload payload;
 		private int payloadKey = 0;
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
@@ -379,11 +344,9 @@ public class Event {
 			this.service = service;
 			this.instanceId = instanceId;
 			this.collection = collection;
-
 			this.traceId = mdTraceInfo.traceId;
 			this.spanId = mdTraceInfo.spanId;
 			this.parentSpanId = mdTraceInfo.parentSpanId;
-
 			this.runType = runType;
 			this.timestamp = timestamp;
 			this.reqId = reqId;
@@ -398,11 +361,9 @@ public class Event {
 			this.app = cubeMetaInfo.appName;
 			this.instanceId = cubeMetaInfo.instance;
 			this.service = cubeMetaInfo.serviceName;
-
 			this.traceId = mdTraceInfo.traceId;
 			this.spanId = mdTraceInfo.spanId;
 			this.parentSpanId = mdTraceInfo.parentSpanId;
-
 			this.runType = runType;
 			this.apiPath = apiPath;
 			this.eventType = eventType;
@@ -412,7 +373,7 @@ public class Event {
 		}
 
 
-		public EventBuilder setRawPayloadBinary(byte[] rawPayloadBinary) {
+		/*public EventBuilder setRawPayloadBinary(byte[] rawPayloadBinary) {
 			this.rawPayloadBinary = rawPayloadBinary;
 			return this;
 		}
@@ -420,9 +381,9 @@ public class Event {
 		public EventBuilder setRawPayloadString(String rawPayloadString) {
 			this.rawPayloadString = rawPayloadString;
 			return this;
-		}
+		}*/
 
-		public EventBuilder setPayload(DataObj payload) {
+		public EventBuilder setPayload(Payload payload) {
 			this.payload = payload;
 			return this;
 		}
@@ -439,8 +400,7 @@ public class Event {
 			}
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId,
 				runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType,
-				rawPayloadBinary, rawPayloadString, payload, payloadKey);
+				eventType , payload, payloadKey);
 			if (event.validate()) {
 				return event;
 			} else {
@@ -452,8 +412,8 @@ public class Event {
 			try {
 				return Optional.of(createEvent());
 			} catch (io.md.dao.Event.EventBuilder.InvalidEventException e) {
-				LOGGER.error("Exception in creating an Event", e.getMessage(),
-					UtilException.extractFirstStackTraceLocation(e.getStackTrace()));
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
+					, "Exception in creating an Event")) , e);
 			}
 			return Optional.empty();
 		}
@@ -463,16 +423,4 @@ public class Event {
 
 		}
 	}
-
-	public static class RawPayload {
-
-		public final byte[] rawPayloadBinary;
-		public final String rawPayloadString;
-
-		public RawPayload(byte[] rawPayloadBinary, String rawPayloadString) {
-			this.rawPayloadBinary = rawPayloadBinary;
-			this.rawPayloadString = rawPayloadString;
-		}
-	}
-
 }
