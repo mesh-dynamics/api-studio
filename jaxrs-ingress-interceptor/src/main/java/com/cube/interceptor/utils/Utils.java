@@ -23,6 +23,8 @@ import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.MDTraceInfo;
+import io.opentracing.Scope;
+import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
 
@@ -104,13 +106,14 @@ public class Utils {
 
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
-		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, String requestBody) {
-		try {
-			Event requestEvent = io.md.utils.Utils
+		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
+		Event requestEvent = null;
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqEventCreate");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
-			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Invalid Event",
@@ -121,18 +124,30 @@ public class Utils {
 				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
 					Constants.ERROR, e.getMessage(),
 					Constants.API_PATH_FIELD, apiPath)));
+		} finally {
+			span.finish();
+		}
+
+		if (requestEvent != null) {
+			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan("reqEventLog");
+			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)){
+				config.recorder.record(requestEvent);
+			} finally {
+				reqLog.finish();
+			}
 		}
 	}
 
 	public static void createAndLogRespEvent(String apiPath,
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
-		MDTraceInfo mdTraceInfo, String responseBody) {
-		try {
-			Event responseEvent = io.md.utils.Utils
+		MDTraceInfo mdTraceInfo, byte[] responseBody) {
+		Event responseEvent = null;
+		final Span span = io.cube.agent.Utils.createPerformanceSpan("respEventCreate");
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
+			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
-			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Invalid Event",
@@ -143,6 +158,18 @@ public class Utils {
 				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
 					Constants.ERROR, e.getMessage(),
 					Constants.API_PATH_FIELD, apiPath)));
+		} finally {
+			span.finish();
+		}
+
+		if (responseEvent != null) {
+			final Span respLog = io.cube.agent.Utils.createPerformanceSpan("respEventLog");
+			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)){
+				config.recorder.record(responseEvent);
+			} finally {
+				respLog.finish();
+			}
+
 		}
 	}
 

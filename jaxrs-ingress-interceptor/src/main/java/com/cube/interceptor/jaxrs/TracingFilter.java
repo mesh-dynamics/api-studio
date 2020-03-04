@@ -29,6 +29,11 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	private static final Config config;
 
+	public static final String scopeKey
+		= Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
+	public static final String spanKey
+		= Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
+
 	static {
 		config = new Config();
 	}
@@ -37,9 +42,9 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 	public void filter(ContainerRequestContext reqContext) throws IOException {
 		//start a md-child-span
 		MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
-		Scope scope = CommonUtils.startServerSpan(requestHeaders,
-			Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN));
-		Span currentSpan = scope.span();
+		Span currentSpan = CommonUtils.startServerSpan(requestHeaders,
+			Constants.SERVICE_FIELD.concat("-").concat(Constants.MD_CHILD_SPAN));
+		Scope scope = CommonUtils.activateSpan(currentSpan);
 
 		String sampleBaggageItem = currentSpan.getBaggageItem(Constants.MD_IS_SAMPLED);
 		if (sampleBaggageItem == null) {
@@ -50,20 +55,24 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			currentSpan.setBaggageItem(Constants.MD_IS_VETOED,
 				String.valueOf(Utils.isSampled(requestHeaders)));
 		}
-
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 		reqContext.setProperty(scopeKey, scope);
+		reqContext.setProperty(spanKey, currentSpan);
 	}
 
 	@Override
 	public void filter(ContainerRequestContext reqContext,
 		ContainerResponseContext respContext) throws IOException {
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 
 		Object obj = reqContext.getProperty(scopeKey);
 		if (obj != null) {
 			((Scope) obj).close();
-			reqContext.removeProperty(scopeKey);
+			//reqContext.removeProperty(scopeKey);
+		}
+
+		Object spanObj = reqContext.getProperty(spanKey);
+		if (spanObj != null) {
+			((Span) spanObj).finish();
+			//reqContext.removeProperty(spanKey);
 		}
 	}
 }

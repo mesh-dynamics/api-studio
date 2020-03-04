@@ -5,7 +5,7 @@
 
 	<groupId>com.cube.interceptor</groupId>
 	<artifactId>md-jaxrs-ingress-interceptor</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-ingress-interceptor</name>
@@ -15,7 +15,11 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-		<version.jersey>2.27</version.jersey>
+		<version.md.agent>1.0.8</version.md.agent>
+		<version.jaeger>1.1.0</version.jaeger>
+		<version.jax.api>2.1</version.jax.api>
+		<version.apache.http.client>4.5.10</version.apache.http.client>
+		<version.commons.io>2.6</version.commons.io>
 	</properties>
 
 
@@ -32,33 +36,33 @@
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.6</version>
+			<version>${version.commons.io}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.6</version>
+			<version>${version.md.agent}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.jaegertracing</groupId>
 			<artifactId>jaeger-client</artifactId>
-			<version>0.32.0</version>
+			<version>${version.jaeger}</version>
 		</dependency>
 
 		<dependency>
 			<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
 			<groupId>javax.ws.rs</groupId>
 			<artifactId>javax.ws.rs-api</artifactId>
-			<version>2.1</version>
+			<version>${version.jax.api}</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.5.10</version>
+			<version>${version.apache.http.client}</version>
 		</dependency>
 
 	</dependencies>
