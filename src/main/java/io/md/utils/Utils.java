@@ -35,6 +35,8 @@ import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.RawPayload.RawPayloadEmptyException;
+import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 public class Utils {
 
@@ -226,8 +228,8 @@ public class Utils {
 	}
 
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
-		throws IOException {
-		String payload = event.getPayloadAsJsonString(Map.of(Constants.OBJECT_MAPPER, jsonMapper));
+		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
+		String payload = event.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPRequestPayload.class);
 	}
 
@@ -286,13 +288,13 @@ public class Utils {
 	}
 
 	public static HTTPResponsePayload getResponsePayload(Event event, ObjectMapper jsonMapper)
-		throws IOException {
-		String payload = event.getPayloadAsJsonString(Map.of(Constants.OBJECT_MAPPER, jsonMapper));
+		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
+		String payload = event.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPResponsePayload.class);
 	}
 
 	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type"
-		, "Content-type", "Content-Type", "content-Type");
+		/*, "Content-type", "Content-Type", "content-Type"*/);
 
 	public  static  boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()

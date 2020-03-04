@@ -62,9 +62,9 @@ public interface DataObj {
 	@JsonIgnore
 	<T> Optional<T> getValAsObject(String path, Class<T> className);
 
-	<T> T convertToType(Class<T> tClass);
-
 	byte[] getValAsByteArray(String path) throws PathNotFoundException;
+
+	Payload convertToPayload();
 
 	class PathNotFoundException extends Exception{
 
