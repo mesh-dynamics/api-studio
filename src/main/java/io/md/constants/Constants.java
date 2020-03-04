@@ -170,10 +170,11 @@ public class Constants {
 	public static final String ZIPKIN_SPAN_HEADER = "x-b3-spanid";
 	public static final String ZIPKIN_PARENT_SPAN_HEADER = "x-b3-parentspanid";
 	public static final String MD_SCOPE = "md-scope";
-	public static final String MD_CHILD_SPAN = "md-childspan";
-	public static final String MD_TRACE_INFO = "traceInfo";
+	public static final String MD_CHILD_SPAN = "md-child-span";
+	public static final String MD_TRACE_INFO = "md-trace-info";
 	public static final String MD_IS_SAMPLED = "md-sampled";
 	public static final String MD_IS_VETOED = "md-vetoed";
+	public static final String MD_QUERY_PARAMS = "md-query-params";
 
 	//Thrift Related
 	public static final String THRIFT_SPAN_ARGUMENT_NAME = "meshd_span";
