@@ -21,13 +21,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 public class CubeObjectMapperProvider  {
 
 
-    private static AtomicReference<ObjectMapper> singleInstance = new AtomicReference<>();
+    private static ObjectMapper singleInstance = createDefaultMapper();
 
-    static {
-        singleInstance.set(createDefaultMapper());
-    }
     public static ObjectMapper getInstance() {
-        return singleInstance.get();
+        return singleInstance;
     }
 
     private static ObjectMapper createDefaultMapper() {

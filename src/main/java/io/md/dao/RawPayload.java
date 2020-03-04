@@ -34,6 +34,7 @@ public interface RawPayload {
 	}
 
 	static class RawPayloadEmptyException extends Exception {
+
 		public RawPayloadEmptyException(Throwable e) {
 			super(e);
 		}

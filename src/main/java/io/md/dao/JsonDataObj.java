@@ -47,7 +47,7 @@ public class JsonDataObj implements DataObj {
 		this(jsonBinaryToTreeNode(jsonByteArray, jsonMapper), jsonMapper);
 	}
 
-	JsonDataObj(Object obj, ObjectMapper jsonMapper) {
+	JsonDataObj(Payload obj, ObjectMapper jsonMapper) {
 		ArrayNode payloadTreeMap   = jsonMapper.valueToTree(obj);
 		this.typeInfo = payloadTreeMap.get(0);
 		this.objRoot = payloadTreeMap.get(1);
@@ -370,12 +370,12 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@Override
-	public <T> T convertToType(Class<T> tClass) {
+	public  Payload convertToPayload() {
 		final JsonNodeFactory factory = JsonNodeFactory.instance;
 		ArrayNode arrayNode = factory.arrayNode();
 		arrayNode.add(typeInfo);
 		arrayNode.add(objRoot);
-		return jsonMapper.convertValue(arrayNode, tClass);
+		return jsonMapper.convertValue(arrayNode, Payload.class);
 	}
 
 	@JsonIgnore

@@ -98,7 +98,7 @@ public class Event {
 			|| (traceId == null && eventType != EventType.ThriftResponse
 			&& eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-			|| (payload != null && payload.isRawPayloadEmpty())) {
+			|| (payload == null || payload.isRawPayloadEmpty())) {
 			return false;
 		}
 		return true;
@@ -174,35 +174,13 @@ public class Event {
 	}
 
 	//TODO this function will be removed
-	public String getPayloadAsJsonString(Map<String, Object> params) {
-		switch (this.eventType) {
-			case HTTPRequest:
-			case HTTPResponse:
-				try {
-					return payload.rawPayloadAsString();
-				} catch (RawPayloadEmptyException | RawPayloadProcessingException e) {
-					LOGGER.error(new ObjectMessage(
-						Map.of(
-							Constants.MESSAGE, "Error Occurred while get payload as json"
-						)) , e);
-				}
-			case JavaRequest:
-			case JavaResponse:
-				try {
-					return getPayload(params).getValAsString(Constants.FN_RESPONSE_PATH);
-				} catch (PathNotFoundException e) {
-					LOGGER.error(new ObjectMessage(
-						Map.of(
-							Constants.MESSAGE, "Response path not found in JSON"
-						)));
-				}
-			case ThriftRequest:
-			case ThriftResponse:
-			case ProtoBufRequest:
-			case ProtoBufResponse:
-			default:
-				throw new NotImplementedException("Not implemented/Error Occurred");
-		}
+	public String getPayloadAsJsonString()
+		throws RawPayloadEmptyException, RawPayloadProcessingException {
+			if (this.payload != null) {
+				return this.payload.rawPayloadAsString();
+			} else {
+				throw new RawPayloadEmptyException("Payload is null");
+			}
 	}
 
 	// TODO keep this in cube repository

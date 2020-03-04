@@ -132,8 +132,8 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public <T> T convertToType(Class<T> tClass) {
+	public Payload convertToPayload() {
 		parseIfRequired();
-		return dataObj.convertToType(tClass);
+		return dataObj.convertToPayload();
 	}
 }

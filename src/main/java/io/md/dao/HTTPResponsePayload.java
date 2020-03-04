@@ -82,8 +82,8 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 		if (!isDataObjEmpty()) {
 			this.dataObj.wrapAsByteArray("/".concat(BODY),
 				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
-			HTTPResponsePayload requestPayload = this.dataObj
-				.convertToType(HTTPResponsePayload.class);
+			HTTPResponsePayload requestPayload = (HTTPResponsePayload)this.dataObj
+				.convertToPayload();
 			this.hdrs = requestPayload.hdrs;
 			this.body = requestPayload.body;
 			this.status = requestPayload.status;
