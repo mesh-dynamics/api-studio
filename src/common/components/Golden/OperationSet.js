@@ -3,7 +3,9 @@ import { Glyphicon } from 'react-bootstrap';
 import Popover, { ArrowContainer } from 'react-tiny-popover';
 import GoldenPopover from "../GoldenPopover";
 import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
+import { DiffResultsContext } from "../../routes/diff_results/DiffResults";
 import "./OperationalSet.css";
+import {history} from "../../helpers/history.js"
 
 class OperationSet extends Component {
     constructor(props) {
@@ -95,9 +97,17 @@ class OperationSet extends Component {
                         onClick={this.handlePopoverTriggerClick}
                         className="os-root-container"
                     >
+                        {
+                            /* TODO: temporary workaround; cleanup when removing shareable_link page */
+                        (history.location.pathname.includes("/diff_results")) && 
+                        <DiffResultsContext.Consumer>
+                            {(context) => this.renderOperationalSet(context)}
+                        </DiffResultsContext.Consumer> 
+                        || 
                         <ShareableLinkContext.Consumer>
                             {(context) => this.renderOperationalSet(context)}
                         </ShareableLinkContext.Consumer>
+                    }
                     </div>
                 )
             : "");

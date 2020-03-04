@@ -14,6 +14,7 @@ import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
 import statusCodeList from "../../StatusCodeList";
+import "../../components/Diff.css"
 
 const ShareableLinkContext = createContext();
 
