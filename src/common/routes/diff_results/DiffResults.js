@@ -17,7 +17,7 @@ const respData = {
     facets: {
         services: [{value: "s1", count: 2}, {value: "s2", count: 2}],
         apiPaths: [{value: "a1", count: 2}, {value: "a2", count: 2}],
-        resolutionTypes: [{value: "ERR_ValTypeMismatch", count: 2}],
+        resolutionTypes: [{value: "ERR_ValTypeMismatch", count: 2}, {value: "OK_OtherValInvalid", count: 4}],
         pages: 10,
     }
 }
@@ -163,6 +163,8 @@ class DiffResults extends Component {
             default:
                 newFilter[metaData] = value;       
         }
+
+        console.log(newFilter)
 
         // set the new filter and fetch new set of results
         this.setState({

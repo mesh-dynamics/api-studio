@@ -121,7 +121,7 @@ export default class DiffResultsFilter extends Component {
             case "All":
                 return "All"
             
-            case "ERR":
+            case "ERR*":
                 return "All Errors"
             
             default:
@@ -158,8 +158,8 @@ export default class DiffResultsFilter extends Component {
                                 <Glyphicon style={{ visibility: selectedResolutionType === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({resolutionTypes.reduce((accumulator, item) => accumulator += item.count, 0)})
                             </MenuItem>
                             <MenuItem divider />
-                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR")}>
-                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                            <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR*")}>
+                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR*" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
                             </MenuItem>
                             {this.resolutionTypeMenuItems(resolutionTypes, "error")}
                             <MenuItem divider />
