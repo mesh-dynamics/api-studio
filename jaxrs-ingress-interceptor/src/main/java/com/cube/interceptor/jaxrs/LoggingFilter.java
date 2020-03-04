@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.Collections;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -25,7 +24,6 @@ import org.apache.logging.log4j.util.Strings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.CommonConfig;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;

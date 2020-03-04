@@ -20,7 +20,7 @@ public class Config {
 
 	public static CommonConfig commonConfig = null;
 
-	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.createDefaultMapper();
+	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
 	static {
 		try {
