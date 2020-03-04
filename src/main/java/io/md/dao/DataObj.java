@@ -1,6 +1,8 @@
 package io.md.dao;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -8,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
 
 /*
@@ -52,6 +55,10 @@ public interface DataObj {
 	@JsonIgnore
 	Optional<String> decryptField(String path, EncryptionAlgorithm decrypter);
 
+	void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals);
+
+	DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
+
 	@JsonIgnore
 	<T> Optional<T> getValAsObject(String path, Class<T> className);
 
@@ -81,6 +88,13 @@ public interface DataObj {
 
 		public DataObjProcessingException(String msg, Throwable e) {
 			super(msg,e);
+		}
+	}
+
+	class DataObjectCreationException extends Exception {
+		public DataObjectCreationException(Throwable rootCause) {super(rootCause);}
+		public DataObjectCreationException(String msg) {
+			super(msg);
 		}
 	}
 }

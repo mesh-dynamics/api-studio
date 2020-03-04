@@ -1,23 +1,27 @@
 package io.md.dao;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.CubeObjectMapperProvider;
 
 public abstract class LazyParseAbstractPayload implements Payload {
 
 	@JsonIgnore
-	protected JsonDataObj dataObj;
+	public JsonDataObj dataObj;
 	@JsonIgnore
 	protected ObjectMapper mapper;
 
@@ -117,6 +121,13 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
+	public void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals) {
+		// Using json pointer to handle proper escaping in case keys have special characters
+		parseIfRequired();
+		dataObj.getPathRules(template, vals);
+	}
+
+	@Override
 	public String serializeDataObj() throws DataObjProcessingException {
 		if (dataObj != null) {
 			return dataObj.serializeDataObj();
@@ -136,4 +147,22 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		parseIfRequired();
 		return dataObj.convertToType(tClass);
 	}
+
+	@Override
+	public DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList) {
+		parseIfRequired();
+		return dataObj.applyTransform(rhs, operationList);
+	}
+
+
+	@Override
+	public Payload applyTransform(Payload rhs, List<ReqRespUpdateOperation> operationList) {
+		if (rhs instanceof  LazyParseAbstractPayload) {
+			parseIfRequired();
+			this.dataObj = (JsonDataObj) dataObj.
+				applyTransform(((LazyParseAbstractPayload)rhs).dataObj, operationList);
+		}
+		return this;
+	}
 }
+

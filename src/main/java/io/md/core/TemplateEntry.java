@@ -93,26 +93,26 @@ public class TemplateEntry {
 
 
 	@JsonProperty("path")
-	String path;
+	public String path;
 	@JsonProperty("dt")
-	CompareTemplate.DataType dt;
+	public CompareTemplate.DataType dt;
 	@JsonProperty("pt")
-	CompareTemplate.PresenceType pt;
+	public CompareTemplate.PresenceType pt;
 	@JsonProperty("ct")
-	CompareTemplate.ComparisonType ct;
+	public CompareTemplate.ComparisonType ct;
 	@JsonProperty("em")
-	CompareTemplate.ExtractionMethod em;
+	public CompareTemplate.ExtractionMethod em;
 	@JsonProperty("customization")
-	Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
-	JsonPointer pathptr; // compiled form of path
-	Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex
+	public Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
+	public JsonPointer pathptr; // compiled form of path
+	public Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex
 	@JsonIgnore
-	boolean isParentArray = false;
+	public boolean isParentArray = false;
 
 	/*
 	 * Assuming compare type is not ignore or default
 	 */
-	protected Comparator.Resolution rhsmissing() {
+	public Comparator.Resolution rhsmissing() {
 		switch (pt) {
 			case Required:
 				return ERR_Required;
@@ -128,7 +128,7 @@ public class TemplateEntry {
 	 * Assuming rhs is present
 	 * Assuming compare type is not ignore or default
 	 */
-	Comparator.Resolution lhsmissing() {
+	public Comparator.Resolution lhsmissing() {
 		if (pt == CompareTemplate.PresenceType.Default && !isParentArray) {
 			return ERR_NewField;
 		} else if(pt == CompareTemplate.PresenceType.Required && !isParentArray) {
@@ -148,7 +148,7 @@ public class TemplateEntry {
 
 	// This function is designed on the premise that it checks matches over the actual found diffs and then return the resolution.
 	// If the resolution is taken first and then the diffs are added then this may generate spurious diffs for example - In current case of Response/Request match.
-	Comparator.Resolution checkMatchStr(Optional<String> lhs, Optional<String> rhs) {
+	public Comparator.Resolution checkMatchStr(Optional<String> lhs, Optional<String> rhs) {
 		Comparator.Resolution resolution = checkTypeAndPresence(CompareTemplate.DataType.Str, rhs);
 		if (resolution.isErr()) {
 			return resolution;
@@ -215,7 +215,7 @@ public class TemplateEntry {
 
 	}
 
-	void checkMatchStr(Optional<String> lhs, Optional<String> rhs, Comparator.Match match,
+	public void checkMatchStr(Optional<String> lhs, Optional<String> rhs, Comparator.Match match,
 		boolean needDiff, String prefixpath) {
 
 		Comparator.Resolution resolution = checkMatchStr(lhs, rhs);
@@ -233,7 +233,7 @@ public class TemplateEntry {
 		checkMatchStr(Optional.ofNullable(lhs), Optional.ofNullable(rhs), match, needDiff, "");
 	}
 
-	Comparator.Resolution checkMatchInt(Optional<Integer> lhs, Optional<Integer> rhs) {
+	public Comparator.Resolution checkMatchInt(Optional<Integer> lhs, Optional<Integer> rhs) {
 		Comparator.Resolution resolution = checkTypeAndPresence(CompareTemplate.DataType.Int, rhs);
 		if (resolution.isErr()) {
 			return resolution;
@@ -256,17 +256,17 @@ public class TemplateEntry {
 		}
 	}
 
-	private void checkMatchInt(Optional<Integer> lhs, Optional<Integer> rhs, Comparator.Match match, boolean needDiff) {
+	public  void checkMatchInt(Optional<Integer> lhs, Optional<Integer> rhs, Comparator.Match match, boolean needDiff) {
 
 		Comparator.Resolution resolution = checkMatchInt(lhs, rhs);
 		match.mergeInt(resolution, path, needDiff, "", rhs, lhs);
 	}
 
-	public void checkMatchInt(int lhs, int rhs, Comparator.Match match, boolean needDiff) {
+	public  void checkMatchInt(int lhs, int rhs, Comparator.Match match, boolean needDiff) {
 		checkMatchInt(Optional.ofNullable(lhs), Optional.ofNullable(rhs), match, needDiff);
 	}
 
-	private <T> Comparator.Resolution checkEqual(Optional<T> lhs, Optional<T> rhs, boolean isEqualOptional, boolean isCustomMatch) {
+	public  <T> Comparator.Resolution checkEqual(Optional<T> lhs, Optional<T> rhs, boolean isEqualOptional, boolean isCustomMatch) {
 		return rhs.map(rval -> {
 			return lhs.map(lval -> {
 				if (rval.equals(lval)) {
@@ -292,7 +292,7 @@ public class TemplateEntry {
 		return OK;
 	}
 
-	Comparator.Resolution checkMatchDbl(Optional<Double> lhs, Optional<Double> rhs) {
+	public Comparator.Resolution checkMatchDbl(Optional<Double> lhs, Optional<Double> rhs) {
 		Comparator.Resolution resolution = checkTypeAndPresence(CompareTemplate.DataType.Float, rhs);
 		if (resolution.isErr()) {
 			return resolution;

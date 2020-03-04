@@ -6,9 +6,12 @@ package io.md.dao;
  *
  */
 
+import java.net.URLClassLoader;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -19,8 +22,11 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.md.constants.Constants;
+import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
 import io.md.dao.DataObj.PathNotFoundException;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
 
@@ -54,7 +60,7 @@ public class Event {
 		this.runType = runType;
 		this.timestamp = timestamp;
 		this.reqId = reqId;
-		this.apiPath = apiPath;
+		this.apiPath = CompareTemplate.normaliseAPIPath(apiPath);
 		this.eventType = eventType;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
@@ -98,58 +104,10 @@ public class Event {
 			|| (traceId == null && eventType != EventType.ThriftResponse
 			&& eventType != EventType.ThriftRequest) || (runType == null) ||
 			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-			|| (payload != null && payload.isRawPayloadEmpty())) {
+			|| (payload == null || payload.isRawPayloadEmpty())) {
 			return false;
 		}
 		return true;
-	}
-
-	//TODO keep this logic in cube respository
-	/*	public void parseAndSetKeyAndCollection(Config config, String collection,
-		CompareTemplate template)
-		throws DataObjCreationException {
-		this.collection = collection;
-		parseAndSetKey(config, template);
-	}
-
-	public void parseAndSetKey(Config config, CompareTemplate template) {
-		parseAndSetKey(config,template,Optional.empty());
-	}
-
-	public void parseAndSetKey(Config config, CompareTemplate template, Optional<URLClassLoader> classLoader)  {
-		parsePayLoad(config, classLoader);
-		List<String> keyVals = new ArrayList<>();
-		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
-			== CompareTemplate.ComparisonType.Equal, keyVals);
-		LOGGER.info(new ObjectMessage(
-			Map.of("message", "Generating event key from vals", "vals", keyVals.toString())));
-		payloadKey = Objects.hash(keyVals);
-		if (eventType == EventType.ThriftRequest) {
-			this.traceId = ((ThriftDataObject) payload).traceId;
-		}
-		LOGGER.info(
-			new ObjectMessage(Map.of("message", "Event key generated", "key", payloadKey)));
-	}*/
-
-	// TODO this function will be removed
-	public DataObj parsePayLoad(Map<String, Object> params) {
-		// parse if not already parsed
-		if (payload == null) {
-			;
-			// TODO commenting this out from here need to put this logic in md-thrift-commons
-//			if ((Objects.equals(this.eventType, EventType.ThriftRequest) ||
-//				Objects.equals(this.eventType, EventType.ThriftResponse)) && this.apiPath != null) {
-//				Map<String, Object> newParams = Utils.extractThriftParams(this.apiPath);
-//				params.putAll(newParams);
-//				// TODO push the class loader from outside
-//				/*  classLoader.ifPresent(urlClassLoader -> finalParams
-//					.put(Constants.CLASS_LOADER, urlClassLoader));*/
-//			}
-		/*	payload = (Payload) DataObjFactory
-				.build(eventType, payload, params);*/
-		}
-
-		return payload;
 	}
 
 	@JsonIgnore
@@ -163,13 +121,11 @@ public class Event {
 
 	// TODO this function will be removed
 	public String getPayloadAsString(Map<String, Object> params) {
-		parsePayLoad(params);
 		return payload.toString();
 	}
 
 	// TODO this function will be removed
 	public DataObj getPayload(Map<String, Object> params) {
-		parsePayLoad(params);
 		return payload;
 	}
 
@@ -207,49 +163,6 @@ public class Event {
 
 	// TODO keep this in cube repository
 
-	/**
-	 * Create a new event with transformed payload. While transforming request events, need to send
-	 * the comparator so that payloadKey can be calculated
-	 * <p>
-	 * //@param rhs
-	 * //@param operationList
-	 * //@param config
-	 * //@param newCollection
-	 * //@param newReqId
-	 * //@return
-	 * //@throws EventBuilder.InvalidEventException
-	 */
-	/*public Event applyTransform(Optional<Event> rhs, List<ReqRespUpdateOperation> operationList,
-		Config config,
-		String newCollection, String newReqId, Optional<Comparator> comparator)
-		throws EventBuilder.InvalidEventException {
-		// parse if not already parsed
-		parsePayLoad(config);
-		Optional<RawPayload> newPayload = rhs.map(rhsEvent -> {
-			DataObj transformedDataObj = payload
-				.applyTransform(rhsEvent.getPayload(config), operationList);
-			DataObjFactory.wrapIfNeeded(transformedDataObj, eventType);
-			return transformedDataObj.toRawPayload();
-		});
-
-		// payload doesn't change if rhs is empty
-		byte[] newRawPayloadBinary = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadBinary)
-			.orElse(rawPayloadBinary);
-		String newRawPayloadString = newPayload.map(newPayloadVal -> newPayloadVal.rawPayloadString)
-			.orElse(rawPayloadString);
-
-		Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection,
-			traceId,
-			runType, timestamp, newReqId, apiPath, eventType)
-			.setRawPayloadBinary(newRawPayloadBinary)
-			.setRawPayloadString(newRawPayloadString)
-			.createEvent();
-		// set key for request events
-		comparator.ifPresent(
-			comparatorVal -> toReturn.parseAndSetKey(config, comparatorVal.getCompareTemplate()));
-		return toReturn;
-	}*/
-
 	public enum EventType {
 		HTTPRequest,
 		HTTPResponse,
@@ -260,26 +173,30 @@ public class Event {
 		ProtoBufRequest,
 		ProtoBufResponse;
 
-		public static EventType getResponseType(EventType eventType) {
-			switch (eventType) {
+		public static EventType mapType(EventType sourceType, boolean requireResponseType) {
+			switch (sourceType) {
 				case JavaRequest:
 				case JavaResponse:
-					return JavaRequest; // JavaRequest itself has response. Check if JavaResponse can be removed
+					return requireResponseType ? JavaResponse : JavaRequest;
 				case ThriftRequest:
 				case ThriftResponse:
-					return ThriftResponse;
+					return requireResponseType ? ThriftResponse : ThriftRequest;
 				case ProtoBufRequest:
 				case ProtoBufResponse:
-					return ProtoBufResponse;
+					return requireResponseType ? ProtoBufResponse : ProtoBufRequest;
 				case HTTPRequest:
 				case HTTPResponse:
 				default:
-					return HTTPResponse;
+					return requireResponseType ? HTTPResponse : HTTPRequest;
 			}
 		}
 
+		public static EventType getResponseType(EventType eventType) {
+			return mapType(eventType, true);
+		}
+
 		public static EventType fromReplayType(ReplayTypeEnum replayType) {
-			switch (replayType) {
+			switch(replayType) {
 				case THRIFT:
 					return ThriftRequest;
 				case GRPC:
@@ -289,6 +206,61 @@ public class Event {
 			}
 		}
 	}
+
+	public void parseAndSetKeyAndCollection( String collection,
+		CompareTemplate template) {
+		this.collection = collection;
+		parseAndSetKey(template);
+	}
+
+	public void parseAndSetKey(CompareTemplate template) {
+		parseAndSetKey(template,Optional.empty());
+	}
+
+	public void parseAndSetKey(CompareTemplate template, Optional<URLClassLoader> classLoader)  {
+		List<String> keyVals = new ArrayList<>();
+		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
+			== CompareTemplate.ComparisonType.Equal, keyVals);
+		LOGGER.info(new ObjectMessage(
+			Map.of("message", "Generating event key from vals"
+				, "vals", keyVals.toString())));
+		payloadKey = Objects.hash(keyVals);
+		// TODO deal with this later
+		/*if (eventType == EventType.ThriftRequest) {
+			this.traceId = ((ThriftDataObject) payload).traceId;
+		}*/
+		LOGGER.info(
+			new ObjectMessage(Map.of("message", "Event key generated"
+				, "key", payloadKey)));
+	}
+
+	/**
+	 * Create a new event with transformed payload. While transforming request events, need to send
+	 * the comparator so that payloadKey can be calculated
+	 *
+	 * @param rhs
+	 * @param operationList
+	 * @param newCollection
+	 * @param newReqId
+	 * @return
+	 * @throws InvalidEventException
+	 */
+	public Event applyTransform(Optional<Event> rhs, List<ReqRespUpdateOperation> operationList,
+		String newCollection, String newReqId, Optional<Comparator> comparator)
+		throws InvalidEventException {
+		Optional<Payload> newPayload = rhs.map(rhsEvent ->
+				payload.applyTransform(rhsEvent.payload, operationList));
+		Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection,
+			new MDTraceInfo(this.traceId, null, null),
+			runType, Optional.of(timestamp), newReqId, apiPath, eventType)
+			.setPayload(newPayload.orElse(payload))
+			.createEvent();
+		// set key for request events
+		comparator.ifPresent(
+			comparatorVal -> toReturn.parseAndSetKey(comparatorVal.getCompareTemplate()));
+		return toReturn;
+	}
+
 
 	public static final List<EventType> REQUEST_EVENT_TYPES = List
 		.of(EventType.HTTPRequest, EventType.JavaRequest,
@@ -393,17 +365,6 @@ public class Event {
 			this.reqId = reqId;
 			this.collection = collection;
 		}
-
-
-		/*public EventBuilder setRawPayloadBinary(byte[] rawPayloadBinary) {
-			this.rawPayloadBinary = rawPayloadBinary;
-			return this;
-		}
-
-		public EventBuilder setRawPayloadString(String rawPayloadString) {
-			this.rawPayloadString = rawPayloadString;
-			return this;
-		}*/
 
 		public EventBuilder setPayload(Payload payload) {
 			this.payload = payload;

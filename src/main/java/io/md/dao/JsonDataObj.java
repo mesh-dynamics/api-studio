@@ -3,6 +3,7 @@ package io.md.dao;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -29,7 +30,9 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
+import io.md.utils.JsonTransformer;
 
 public class JsonDataObj implements DataObj {
 
@@ -136,6 +139,13 @@ public class JsonDataObj implements DataObj {
 		// Using json pointer to handle proper escaping in case keys have special characters
 		JsonPointer path = JsonPointer.compile("");
 		processNode(objRoot, filter, vals, path);
+	}
+
+	@Override
+	public void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals) {
+		// Using json pointer to handle proper escaping in case keys have special characters
+		JsonPointer path = JsonPointer.compile("");
+		getPathRules(objRoot, template, vals, path);
 	}
 
 	@Override
@@ -311,6 +321,38 @@ public class JsonDataObj implements DataObj {
 		return Optional.empty();
 	}
 
+	private void getPathRules(JsonNode node, CompareTemplate template, Map<String, TemplateEntry> vals, JsonPointer path) {
+		vals.put(path.toString(), template.getRule(path.toString()));
+		if (node.isObject()) {
+			Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+			while (fields.hasNext()) {
+				Map.Entry<String, JsonNode> child = fields.next();
+				getPathRules(child.getValue(), template, vals, path.append(JsonPointer.compile("/" + child.getKey())));
+			}
+		} else if (node.isArray()) {
+			int idx = 0;
+			for (JsonNode child : node) {
+				getPathRules(child, template, vals, path.append(JsonPointer.compile("/" + idx)));
+				idx++;
+			}
+		}
+	}
+
+	@Override
+	public DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList) {
+		if (!(rhs instanceof JsonDataObj)) {
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Rhs not Json obj type. Ignoring the transformation",
+				Constants.DATA, rhs.toString()
+			)));
+			return this;
+		}
+		JsonTransformer jsonTransformer = new JsonTransformer(jsonMapper);
+		JsonNode transformedRoot = jsonTransformer.transform(this.objRoot, ((JsonDataObj)rhs).getRoot(),
+			operationList);
+
+		return new JsonDataObj(transformedRoot, jsonMapper);
+	}
 
 
 	private void processNode(JsonNode node, Function<String, Boolean> filter,
@@ -353,7 +395,7 @@ public class JsonDataObj implements DataObj {
 		}
 	}
 
-	private JsonNode getNode(String path) {
+	protected JsonNode getNode(String path) {
 		return objRoot.at(path);
 	}
 
@@ -379,11 +421,11 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@JsonIgnore
-	private final JsonNode objRoot;
+	protected final JsonNode objRoot;
 	@JsonIgnore
-	private JsonNode typeInfo;
+	protected JsonNode typeInfo;
 	@JsonIgnore
-	private final ObjectMapper jsonMapper;
+	protected final ObjectMapper jsonMapper;
 
 	public JsonNode getRoot() {
 		return objRoot;

@@ -1,5 +1,7 @@
 package io.md.dao;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -18,5 +20,7 @@ public interface Payload extends DataObj, RawPayload {
 
 	@JsonIgnore
 	void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
+
+	Payload applyTransform(Payload rhs, List<ReqRespUpdateOperation> operationList);
 
 }
