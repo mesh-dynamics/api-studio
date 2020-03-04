@@ -456,205 +456,205 @@ public class DataInitializer implements CommandLineRunner {
             Service account_UserService = this.serviceRepository.save(serviceAccount_User);
         //}
 
-        if(!serviceRepository.existsById(40L)) {
-            Service service = new Service();
-            service.setId(40L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("App");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(40L)) {
+            Service serviceApp = new Service();
+            //service.setId(40L);
+            serviceApp.setServiceGroup(uiServiceGroupCube);
+            serviceApp.setName("App");
+            serviceApp.setApp(appCube);
+            Service appService = this.serviceRepository.save(serviceApp);
+        //}
 
-        if(!serviceRepository.existsById(41L)) {
-            Service service = new Service();
-            service.setId(41L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("Instance");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(41L)) {
+            Service serviceInstance = new Service();
+            //service.setId(41L);
+            serviceInstance.setServiceGroup(uiServiceGroupCube);
+            serviceInstance.setName("Instance");
+            serviceInstance.setApp(appCube);
+            Service instanceService = this.serviceRepository.save(serviceInstance);
+        //}
 
-        if(!serviceRepository.existsById(42L)) {
-            Service service = new Service();
-            service.setId(42L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("Service/Graph");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(42L)) {
+            Service service_Graph = new Service();
+            //service.setId(42L);
+            service_Graph.setServiceGroup(uiServiceGroupCube);
+            service_Graph.setName("Service/Graph");
+            service_Graph.setApp(appCube);
+            Service graphService = this.serviceRepository.save(service_Graph);
+        //}
 
-        if(!serviceRepository.existsById(43L)) {
-            Service service = new Service();
-            service.setId(43L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("TestConfig");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(43L)) {
+            Service serviceTestConfig = new Service();
+            //service.setId(43L);
+            serviceTestConfig.setServiceGroup(uiServiceGroupCube);
+            serviceTestConfig.setName("TestConfig");
+            serviceTestConfig.setApp(appCube);
+            Service testConfigService = this.serviceRepository.save(serviceTestConfig);
+        //}
 
-        if(!serviceRepository.existsById(44L)) {
-            Service service = new Service();
-            service.setId(44L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("Record");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(44L)) {
+            Service serviceRecord = new Service();
+            //service.setId(44L);
+            serviceRecord.setServiceGroup(uiServiceGroupCube);
+            serviceRecord.setName("Record");
+            serviceRecord.setApp(appCube);
+            Service recordService = this.serviceRepository.save(serviceRecord);
+        //}
 
-        if(!serviceRepository.existsById(45L)) {
-            Service service = new Service();
-            service.setId(45L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("Replay");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(45L)) {
+            Service serviceReplay = new Service();
+            //service.setId(45L);
+            serviceReplay.setServiceGroup(uiServiceGroupCube);
+            serviceReplay.setName("Replay");
+            serviceReplay.setApp(appCube);
+            Service replayService = this.serviceRepository.save(serviceReplay);
+        //}
 
-        if(!serviceRepository.existsById(46L)) {
-            Service service = new Service();
-            service.setId(46L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("Analyze");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(46L)) {
+            Service serviceAnalyze = new Service();
+            //service.setId(46L);
+            serviceAnalyze.setServiceGroup(uiServiceGroupCube);
+            serviceAnalyze.setName("Analyze");
+            serviceAnalyze.setApp(appCube);
+            Service analyzeService = this.serviceRepository.save(serviceAnalyze);
+        //}
 
-        if(!serviceRepository.existsById(47L)) {
-            Service service = new Service();
-            service.setId(47L);
-            service.setServiceGroup(serviceGroupRepository.findById(33L).get());
-            service.setName("Customer");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(47L)) {
+            Service serviceCustomer = new Service();
+            //service.setId(47L);
+            serviceCustomer.setServiceGroup(uiServiceGroupCube);
+            serviceCustomer.setName("Customer");
+            serviceCustomer.setApp(appCube);
+            Service customerService = this.serviceRepository.save(serviceCustomer);
+        //}
 
-        if(!serviceRepository.existsById(48L)) {
-            Service service = new Service();
-            service.setId(48L);
-            service.setServiceGroup(serviceGroupRepository.findById(34L).get());
-            service.setName("Record/SetDefault");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(48L)) {
+            Service serviceRecord_SetDefault = new Service();
+            //service.setId(48L);
+            serviceRecord_SetDefault.setServiceGroup(recordServieGroupCube);
+            serviceRecord_SetDefault.setName("Record/SetDefault");
+            serviceRecord_SetDefault.setApp(appCube);
+            Service record_SetDefaultService = this.serviceRepository.save(serviceRecord_SetDefault);
+        //}
 
-        if(!serviceRepository.existsById(49L)) {
-            Service service = new Service();
-            service.setId(49L);
-            service.setServiceGroup(serviceGroupRepository.findById(34L).get());
-            service.setName("Record/HTTP");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(49L)) {
+            Service serviceRecordHTTP = new Service();
+            //service.setId(49L);
+            serviceRecordHTTP.setServiceGroup(recordServieGroupCube);
+            serviceRecordHTTP.setName("Record/HTTP");
+            serviceRecordHTTP.setApp(appCube);
+            Service recordHTTPService = this.serviceRepository.save(serviceRecordHTTP);
+        //}
 
-        if(!serviceRepository.existsById(50L)) {
-            Service service = new Service();
-            service.setId(50L);
-            service.setServiceGroup(serviceGroupRepository.findById(34L).get());
-            service.setName("Record/Java");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(50L)) {
+            Service serviceRecord_Java = new Service();
+            //service.setId(50L);
+            serviceRecord_Java.setServiceGroup(recordServieGroupCube);
+            serviceRecord_Java.setName("Record/Java");
+            serviceRecord_Java.setApp(appCube);
+            Service recordJavaService = this.serviceRepository.save(serviceRecord_Java);
+        //}
 
-        if(!serviceRepository.existsById(51L)) {
-            Service service = new Service();
-            service.setId(51L);
-            service.setServiceGroup(serviceGroupRepository.findById(34L).get());
-            service.setName("Record/Record");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(51L)) {
+            Service service_Record = new Service();
+            //service.setId(51L);
+            service_Record.setServiceGroup(recordServieGroupCube);
+            service_Record.setName("Record/Record");
+            service_Record.setApp(appCube);
+            Service record_Service = this.serviceRepository.save(service_Record);
+        //}
 
-        if(!serviceRepository.existsById(52L)) {
-            Service service = new Service();
-            service.setId(52L);
-            service.setServiceGroup(serviceGroupRepository.findById(34L).get());
-            service.setName("Record/Collections");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(52L)) {
+            Service serviceRecordCollection = new Service();
+            //service.setId(52L);
+            serviceRecordCollection.setServiceGroup(recordServieGroupCube);
+            serviceRecordCollection.setName("Record/Collections");
+            serviceRecordCollection.setApp(appCube);
+            Service recordCollectionService = this.serviceRepository.save(serviceRecordCollection);
+        //}
 
-        if(!serviceRepository.existsById(53L)) {
-            Service service = new Service();
-            service.setId(53L);
-            service.setServiceGroup(serviceGroupRepository.findById(35L).get());
-            service.setName("Replay/SetDefault");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(53L)) {
+            Service serviceReplaySetDefault = new Service();
+            //service.setId(53L);
+            serviceReplaySetDefault.setServiceGroup(replayServiceGroupCube);
+            serviceReplaySetDefault.setName("Replay/SetDefault");
+            serviceReplaySetDefault.setApp(appCube);
+            this.serviceRepository.save(serviceReplaySetDefault);
+        //}
 
-        if(!serviceRepository.existsById(54L)) {
-            Service service = new Service();
-            service.setId(54L);
-            service.setServiceGroup(serviceGroupRepository.findById(35L).get());
-            service.setName("Replay/Replay");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(54L)) {
+            Service serviceReplay_Replay = new Service();
+            //service.setId(54L);
+            serviceReplay_Replay.setServiceGroup(replayServiceGroupCube);
+            serviceReplay_Replay.setName("Replay/Replay");
+            serviceReplay_Replay.setApp(appCube);
+            Service replay_Service = this.serviceRepository.save(serviceReplay_Replay);
+        //}
 
-        if(!serviceRepository.existsById(55L)) {
-            Service service = new Service();
-            service.setId(55L);
-            service.setServiceGroup(serviceGroupRepository.findById(35L).get());
-            service.setName("Analyze/Setup");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(55L)) {
+            Service serviceAnalyzeSetup = new Service();
+            //service.setId(55L);
+            serviceAnalyzeSetup.setServiceGroup(replayServiceGroupCube);
+            serviceAnalyzeSetup.setName("Analyze/Setup");
+            serviceAnalyzeSetup.setApp(appCube);
+            Service analyzeSetupService = this.serviceRepository.save(serviceAnalyzeSetup);
+        //}
 
-        if(!serviceRepository.existsById(56L)) {
-            Service service = new Service();
-            service.setId(56L);
-            service.setServiceGroup(serviceGroupRepository.findById(35L).get());
-            service.setName("Analyze/Retrieval");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(56L)) {
+            Service serviceAnalyzeRetrieval = new Service();
+            //service.setId(56L);
+            serviceAnalyzeRetrieval.setServiceGroup(replayServiceGroupCube);
+            serviceAnalyzeRetrieval.setName("Analyze/Retrieval");
+            serviceAnalyzeRetrieval.setApp(appCube);
+            Service AnalyzeRetrievalService = this.serviceRepository.save(serviceAnalyzeRetrieval);
+        //}
 
-        if(!serviceRepository.existsById(57L)) {
-            Service service = new Service();
-            service.setId(57L);
-            service.setServiceGroup(serviceGroupRepository.findById(35L).get());
-            service.setName("Analyze/Analysis");
-            service.setApp(appRepository.findById(5L).get());
-            this.serviceRepository.save(service);
-        }
+        //if(!serviceRepository.existsById(57L)) {
+            Service serviceAnalyzeAnalysis = new Service();
+            //service.setId(57L);
+            serviceAnalyzeAnalysis.setServiceGroup(replayServiceGroupCube);
+            serviceAnalyzeAnalysis.setName("Analyze/Analysis");
+            serviceAnalyzeAnalysis.setApp(appCube);
+            Service analyzeAnalysisService = this.serviceRepository.save(serviceAnalyzeAnalysis);
+        //}
 
         /* Cube - ServiceGraph */
         // Mock - Solr
-        if(!serviceGraphRepository.existsById(58L)) {
-            ServiceGraph serviceGraph = new ServiceGraph();
-            serviceGraph.setId(58L);
-            serviceGraph.setFromService(serviceRepository.findById(36L).get());
-            serviceGraph.setToService(serviceRepository.findById(38L).get());
-            serviceGraph.setApp(appRepository.findById(5L).get());
-            this.serviceGraphRepository.save(serviceGraph);
-        }
+        //if(!serviceGraphRepository.existsById(58L)) {
+            ServiceGraph serviceGraphMockToSolr = new ServiceGraph();
+            //serviceGraph.setId(58L);
+            serviceGraphMockToSolr.setFromService(mockService);
+            serviceGraphMockToSolr.setToService(solrCubeService);
+            serviceGraphMockToSolr.setApp(appCube);
+            ServiceGraph mockToSolarServiceGraph = this.serviceGraphRepository.save(serviceGraphMockToSolr);
+        //}
         // Record/SetDefault - Solr
-        if(!serviceGraphRepository.existsById(59L)) {
-            ServiceGraph serviceGraph = new ServiceGraph();
-            serviceGraph.setId(59L);
-            serviceGraph.setFromService(serviceRepository.findById(48L).get());
-            serviceGraph.setToService(serviceRepository.findById(38L).get());
-            serviceGraph.setApp(appRepository.findById(5L).get());
-            this.serviceGraphRepository.save(serviceGraph);
-        }
+        //if(!serviceGraphRepository.existsById(59L)) {
+            ServiceGraph serviceGraphRecordSetDefaultToSolr = new ServiceGraph();
+            //serviceGraph.setId(59L);
+            serviceGraphRecordSetDefaultToSolr.setFromService(record_SetDefaultService);
+            serviceGraphRecordSetDefaultToSolr.setToService(solrCubeService);
+            serviceGraphRecordSetDefaultToSolr.setApp(appCube);
+            ServiceGraph recordSetDefaultToSolrServiceGraph = this.serviceGraphRepository.save(serviceGraphRecordSetDefaultToSolr);
+        //}
         // Record/HTTP - Solr
-        if(!serviceGraphRepository.existsById(60L)) {
-            ServiceGraph serviceGraph = new ServiceGraph();
-            serviceGraph.setId(60L);
-            serviceGraph.setFromService(serviceRepository.findById(49L).get());
-            serviceGraph.setToService(serviceRepository.findById(38L).get());
-            serviceGraph.setApp(appRepository.findById(5L).get());
-            this.serviceGraphRepository.save(serviceGraph);
-        }
+        //if(!serviceGraphRepository.existsById(60L)) {
+            ServiceGraph serviceGraphRecordHTTPToSolr = new ServiceGraph();
+            //serviceGraph.setId(60L);
+            serviceGraphRecordHTTPToSolr.setFromService(recordHTTPService);
+            serviceGraphRecordHTTPToSolr.setToService(solrCubeService);
+            serviceGraphRecordHTTPToSolr.setApp(appCube);
+            ServiceGraph recordHTTPToSolrServiceGraph = this.serviceGraphRepository.save(serviceGraphRecordHTTPToSolr);
+        //}
         // Record/Java - Solr
-        if(!serviceGraphRepository.existsById(61L)) {
-            ServiceGraph serviceGraph = new ServiceGraph();
-            serviceGraph.setId(61L);
-            serviceGraph.setFromService(serviceRepository.findById(50L).get());
-            serviceGraph.setToService(serviceRepository.findById(38L).get());
-            serviceGraph.setApp(appRepository.findById(5L).get());
-            this.serviceGraphRepository.save(serviceGraph);
-        }
+        //if(!serviceGraphRepository.existsById(61L)) {
+            ServiceGraph serviceGraphRecordJavaToSolr = new ServiceGraph();
+            //serviceGraph.setId(61L);
+            serviceGraphRecordJavaToSolr.setFromService(recordJavaService);
+            serviceGraphRecordJavaToSolr.setToService(solrCubeService);
+            serviceGraphRecordJavaToSolr.setApp(appCube);
+            ServiceGraph recordJavaToSolrServiceGraph = this.serviceGraphRepository.save(serviceGraphRecordJavaToSolr);
+        //}
         // Record/Record - Solr
         if(!serviceGraphRepository.existsById(62L)) {
             ServiceGraph serviceGraph = new ServiceGraph();
