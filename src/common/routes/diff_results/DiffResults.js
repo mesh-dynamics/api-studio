@@ -163,11 +163,9 @@ class DiffResults extends Component {
             default:
                 newFilter[metaData] = value;       
         }
+
+        // set the new filter and fetch new set of results
         this.setState({
-                //filter : {
-                //    ...this.state.filter,
-                //    [metaData] : value,
-                //}
                 filter: newFilter,
             },
             this.fetchAndUpdateResults
