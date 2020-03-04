@@ -1,6 +1,5 @@
 package io.cube.agent;
 
-import static io.md.utils.CommonUtils.createEvent;
 import static io.md.utils.CommonUtils.createPayload;
 import static io.md.utils.UtilException.rethrowFunction;
 
@@ -144,8 +143,9 @@ public class SimpleMocker implements Mocker {
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null), spanId.orElse(null),
 			parentSpanId.orElse(null));
 		JsonObject payload = createPayload(null, gson, args);
-		Optional<Event> event = createEvent(fnKey, mdTraceInfo, RunType.Replay,
-			Optional.of(prevRespTS.orElse(fnMap.get(key))), payload);
+		// TODO this has be implemented later with FnReqRespPayload
+		Optional<Event> event = /*createEvent(fnKey, mdTraceInfo, RunType.Replay,
+			Optional.of(prevRespTS.orElse(fnMap.get(key))), payload);*/ Optional.empty();
 
 		return event.map(eve -> {
 			Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);

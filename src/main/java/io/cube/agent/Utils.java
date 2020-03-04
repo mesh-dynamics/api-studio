@@ -14,6 +14,10 @@ import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
+import io.md.utils.CommonUtils;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.SpanContext;
 
 public class Utils {
 
@@ -59,6 +63,22 @@ public class Utils {
 			return Optional.of(Sampler.ALWAYS_SAMPLE);
 		}
 		return Optional.empty();
+	}
+
+	public static Span createPerformanceSpan(String operationName) {
+		return CommonUtils.startClientSpan(operationName,
+			! CommonConfig.getInstance().performanceTest);
+	}
+
+	public static Span createPerformanceSpan(String operationName, SpanContext parentContext) {
+		return CommonUtils.startClientSpan(operationName, parentContext,
+			! CommonConfig.getInstance().performanceTest);
+	}
+
+
+	public static Scope activatePerformanceSpan(Span span) {
+		return CommonUtils.activateSpan(span ,
+			! CommonConfig.getInstance().performanceTest);
 	}
 }
 

@@ -17,12 +17,13 @@ import org.apache.thrift.transport.TTransportException;
 import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
-import io.cube.agent.FluentDLogRecorder;
+import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.ThriftMocker;
 import io.md.constants.Constants;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
+import io.md.dao.JsonByteArrayPayload;
 import io.md.utils.CommonUtils;
 
 // MESH-D Mostly overriding the process function in
@@ -37,7 +38,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 	public MeshDProcessFunction(String methodName) {
 		this.methodName = methodName;
 		try {
-			fluentDLogRecorder = new FluentDLogRecorder((new GsonBuilder()).create());
+			fluentDLogRecorder = new ConsoleRecorder((new GsonBuilder()).create());
 			serializer = new MeshDTSerializer();
 			thriftMocker = new ThriftMocker();
 		} catch (Exception e) {
@@ -46,7 +47,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 
 	}
 
-	private FluentDLogRecorder fluentDLogRecorder;
+	private ConsoleRecorder fluentDLogRecorder;
 	private String reqId;
 	private MeshDTSerializer serializer;
 	private ThriftMocker thriftMocker;
@@ -73,7 +74,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 						constructApiPath(methodName, args),
 						EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
 						Constants.DEFAULT_COLLECTION)
-						.setRawPayloadBinary(serializer.serialize(args));
+						.setPayload(new JsonByteArrayPayload(serializer.serialize(args)));
 					fluentDLogRecorder.record(eventBuilder.createEvent());
 				}
 			} catch (Exception e) {
@@ -101,7 +102,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					constructApiPath(methodName, args),
 					EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
 					Constants.DEFAULT_COLLECTION)
-					.setRawPayloadBinary(serializer.serialize(args));
+					.setPayload(new JsonByteArrayPayload(serializer.serialize(args)));
 				result = thriftMocker.mockThriftRequest(eventBuilder.createEvent());
 				LOGGER.info(new ObjectMessage(
 					Map.of(Constants.MESSAGE,
@@ -139,7 +140,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					constructApiPath(methodName, result),
 					EventType.ThriftResponse, Optional.of(Instant.now()), reqId,
 					Constants.DEFAULT_COLLECTION)
-					.setRawPayloadBinary(serializer.serialize(result));
+					.setPayload(new JsonByteArrayPayload(serializer.serialize(result)));
 				fluentDLogRecorder.record(eventBuilder.createEvent());
 			} catch (Exception e) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,

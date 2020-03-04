@@ -12,11 +12,14 @@ import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
+import io.opentracing.Scope;
+import io.opentracing.Span;
 
-public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
+public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
 
-	public FluentDLogRecorder(Gson gson) {
+	public ConsoleRecorder(Gson gson) {
 		super(gson);
 	}
 
@@ -39,37 +42,17 @@ public class FluentDLogRecorder extends AbstractGsonSerializeRecorder {
 
 	@Override
 	public boolean record(Event event) {
-		try {
-			// TODO might wanna explore java fluent logger
-			// https://github.com/fluent/fluent-logger-java
-			CommonConfig commonConfig = CommonConfig.getInstance();
-			Optional<DataObj> payloadOptional = Utils.encryptFields(commonConfig, event);
-
-			// Using isPresent instead of ifPresentOrElse to avoid getting "Variable in Lambda should be final" for jsonSerialized;
-
-			MDTraceInfo mdTraceInfo = new MDTraceInfo(event.getTraceId(), null, null);
-
-			String jsonSerialized = payloadOptional.map(UtilException.rethrowFunction(payload -> {
-				EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
-					event.service, event.instanceId,
-					event.getCollection(), mdTraceInfo, event.runType,
-					Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType);
-				eventBuilder.setPayload(payload);
-				eventBuilder.setRawPayloadString(payload.toString());
-				return jsonMapper.writeValueAsString(eventBuilder.createEvent());
-			}))
-				.orElseGet(UtilException.rethrowSupplier(() -> {
-					return jsonMapper.writeValueAsString(event);
-				}));
-
-			// The prefix will be a part of the fluentd parse regex
-			LOGGER.info("[Cube Event]" + jsonSerialized);
+		final Span span = Utils.createPerformanceSpan("log4jLog");
+		try (Scope scope = Utils.activatePerformanceSpan(span)) {
+			LOGGER.info(new ObjectMessage(Map.of("Cube Event", event)));
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Unable to serialize Event Object", Constants.REASON,
 					e.getMessage())));
 			return false;
+		} finally {
+			span.finish();
 		}
 	}
 

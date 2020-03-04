@@ -25,7 +25,7 @@ public class MeshDTBaseProcessor<I> implements TProcessor {
     }
 
     @Override
-    public boolean process(TProtocol in, TProtocol out) throws TException {
+    public void process(TProtocol in, TProtocol out) throws TException {
         TMessage msg = in.readMessageBegin();
         MeshDProcessFunction fn = processMap.get(msg.name);
         if (fn == null) {
@@ -39,6 +39,5 @@ public class MeshDTBaseProcessor<I> implements TProcessor {
         } else {
             fn.process(msg.seqid, in, out, iface);
         }
-        return true;
     }
 }
