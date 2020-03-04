@@ -281,7 +281,7 @@ class ViewSelectedTestConfig extends React.Component {
                     <div className="label-n">SELECT GOLDEN&nbsp;
                         <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
                         {
-                            cube.selectedInstance && cube.selectedTestId &&
+                            cube.selectedTestId &&
                                     <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
                                         <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
                                     </span>
