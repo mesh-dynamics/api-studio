@@ -15,7 +15,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-		<version.md.agent>1.0.7</version.md.agent>
+		<version.md.agent>1.0.8</version.md.agent>
 		<version.jaeger>1.1.0</version.jaeger>
 		<version.jax.api>2.1</version.jax.api>
 		<version.apache.http.client>4.5.10</version.apache.http.client>
