@@ -233,7 +233,7 @@ public class AnalyzeWSController {
     }
 
     @GetMapping("/goldenInsights/{recordingId}")
-    public ResponseEntity goldenInsights(HttpServletRequest request, @RequestBody Optional<String> postBody, @RequestParam String recordingId,
+    public ResponseEntity goldenInsights(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId,
                                          @RequestParam String service, @RequestParam String apiPath) {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
