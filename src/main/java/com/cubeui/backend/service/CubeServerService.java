@@ -32,7 +32,13 @@ import static org.springframework.http.ResponseEntity.*;
 @Slf4j
 public class CubeServerService {
 
-    @Value("${cube.server.baseUrl}")
+    @Value("${cube.server.baseUrl.replay}")
+    private String cubeServerBaseUrlReplay = CUBE_SERVER_HREF;
+    @Value("${cube.server.baseUrl.mock}")
+    private String cubeServerBaseUrlMock = CUBE_SERVER_HREF;
+    @Value("${cube.server.baseUrl.record}")
+    private String cubeServerBaseUrlRecord = CUBE_SERVER_HREF;
+
     private String cubeServerBaseUrl = CUBE_SERVER_HREF;
 
     @Autowired
@@ -70,7 +76,7 @@ public class CubeServerService {
     }
 
     public Optional<Replay> getReplay(String replayId) {
-        final String path  = cubeServerBaseUrl + "/rs/status/" + replayId;
+        final String path  = cubeServerBaseUrlReplay + "/rs/status/" + replayId;
         final ResponseEntity  response = fetchGetResponse(path);
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
@@ -93,6 +99,7 @@ public class CubeServerService {
     }
 
     private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method){
+        updateCubeBaseUrl(request);
         String path = cubeServerBaseUrl + request.getRequestURI().replace("/api", "");
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
@@ -114,5 +121,15 @@ public class CubeServerService {
         } catch (Exception e){
             return status(NOT_FOUND).body(e);
         }
+    }
+
+    private void updateCubeBaseUrl(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri.contains("/api/as/") || uri.contains("/api/rs"))
+            cubeServerBaseUrl = cubeServerBaseUrlReplay;
+        else if (uri.contains("api/ms/"))
+            cubeServerBaseUrl = cubeServerBaseUrlMock;
+        else if (uri.contains("/api/cs/"))
+            cubeServerBaseUrl = cubeServerBaseUrlRecord;
     }
 }
