@@ -1,4 +1,4 @@
-package com.cube.interceptor.apachecxf;
+package com.cube.interceptor.apachecxf.ingress;
 
 import java.io.IOException;
 
