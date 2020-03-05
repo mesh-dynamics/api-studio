@@ -6,17 +6,12 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.repository.*;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
-import com.cubeui.backend.web.AuthenticationRequest;
-import com.cubeui.backend.web.rest.LoginController;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 
 @Setter
@@ -25,8 +20,6 @@ import java.util.Optional;
 @Component
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
-
-    private LoginController loginController;
 
     private UserService userService;
 
@@ -72,7 +65,7 @@ public class DataInitializer implements CommandLineRunner {
         TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository,
         CustomerRepository customerRepository, UserRepository userRepository,
         InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository,
-        JiraUserCredentialsRepository jiraUserCredentialsRepository, EmailDomainRepository emailDomainRepository, LoginController loginController) {
+        JiraUserCredentialsRepository jiraUserCredentialsRepository, EmailDomainRepository emailDomainRepository) {
 
         this.userService = userService;
         this.customerService = customerService;
@@ -93,7 +86,6 @@ public class DataInitializer implements CommandLineRunner {
         this.appUserRepository = appUserRepository;
         this.jiraUserCredentialsRepository = jiraUserCredentialsRepository;
         this.emailDomainRepository = emailDomainRepository;
-        this.loginController = loginController;
     }
 
     @Override
@@ -123,28 +115,19 @@ public class DataInitializer implements CommandLineRunner {
 //            log.info("User with email '{}' created", user.getUsername());
 //        //}
 
-        Optional<User> user = userRepository.findByUsername("admin");
+        Optional<User> user = userRepository.findByUsername("admin@meshdynamics.io");
         //if (!userRepository.existsById(3L)){
         if (user.isEmpty()) {
             UserDTO userDTOAdmin = new UserDTO();
             //userDTO.setId(3L);
             userDTOAdmin.setName("Administrator");
-            userDTOAdmin.setEmail("admin");
+            userDTOAdmin.setEmail("admin@meshdynamics.io");
             userDTOAdmin.setPassword("admin");
             userDTOAdmin.setCustomerId(customer.get().getId());
             userDTOAdmin.setRoles(Arrays.asList("ROLE_USER", "ROLE_ADMIN"));
             userDTOAdmin.setActivated(true);
-            user =  Optional.of(this.userService.save(userDTOAdmin, true, false));
+            this.userService.save(userDTOAdmin, true, false);
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
-        }
-
-        if (user.isPresent()) {
-            AuthenticationRequest auth = new AuthenticationRequest("admin", "admin");
-            ResponseEntity response = loginController.login(auth);
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, String> resposnseBody = objectMapper.convertValue(response.getBody(), Map.class);
-            String token = resposnseBody.get("token_type") + " " + resposnseBody.get("access_token");
-            System.out.println(token);
         }
 
 //        //if(!appRepository.existsById(4L)) {
