@@ -52,7 +52,11 @@ class DiffResults extends Component {
                 shownRequestMessageBody: false
             },
             diffLayoutData : [],
-            facetListData: {},
+            facetListData: {
+                services: {},
+                apiPaths: {},
+                resolutionTypes: [],
+            },
             
             // golden
             showNewGolden: false,
@@ -131,6 +135,11 @@ class DiffResults extends Component {
                 // request body
                 showRequestMessageBody: requestBody,
                 shownRequestMessageBody: requestBody
+            },
+            facetListData: {
+                services: {},
+                apiPaths: {},
+                resolutionTypes: [],
             },
             replayId: replayId,
             recordingId: recordingId,
@@ -455,26 +464,19 @@ class DiffResults extends Component {
 
     // fetch the analysis results
     // todo: move to service file 
-    async fetchAnalysisResults(replayId, filter, start, numResults) {
+    async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
-        let dataList = {}
-        //let start = 0; //todo
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        /*
-                selectedService: "s1",
-                selectedAPI: "a1",
-                selectedReqRespMatchType: "responseMismatch",
-                selectedResolutionType: "All",
-                currentPageNumber: 1,
-        */
+        //let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
 
+        let start = (filter.currentPageNumber - 1) * filter.pageSize;
         let service = filter.selectedService === "All" ? "*" : filter.selectedService;
         let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
         let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
 
         let u = new URL(analysisResUrl);
         u.searchParams.set("start", start);
-        u.searchParams.set("numResults", numResults);
+        u.searchParams.set("numResults", filter.pageSize);
         u.searchParams.set("includeDiff", true);
         u.searchParams.set("service", service);
         u.searchParams.set("path", path);
@@ -485,7 +487,6 @@ class DiffResults extends Component {
         console.log("fetch url " + u)
         console.log(u)
 
-        //let url = "https://app.meshdynamics.io/api/as/analysisResByPath/a48fd5a0-fc01-443b-a2db-685d2cc72b2c-753a5807-84e8-4c00-b3c9-e053bd10ff0f?start=20&includeDiff=true&path=%2A";
         //let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
         try {
         
@@ -498,6 +499,7 @@ class DiffResults extends Component {
             });
             
             if (response.ok) {
+                let dataList = {}
                 let json = await response.json();
                 dataList = json;
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
@@ -505,13 +507,6 @@ class DiffResults extends Component {
                     return {};
                 } 
                 return dataList;
-                // let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
-                // return diffLayoutData;
-
-                // add filter paths based on the selected resolution type 
-                //this.updateResolutionFilterPaths(diffLayoutData); 
-                //console.log(diffLayoutData)
-                //this.setState({diffLayoutData: diffLayoutData});
             } else {
                 console.error("unable to fetch analysis results");
                 throw new Error("unable to fetch analysis results");
@@ -520,11 +515,45 @@ class DiffResults extends Component {
             console.error("Error fetching analysis results list");
             throw e;
         }
+    }
 
-        // this.setState({
-        //     //diffLayoutData: diffLayoutData, 
-        //     //facetListData: respData.facets,
-        // });
+    async fetchFacetData() {
+        // http://www.mocky.io/v2/5e5f99af310000a9f8afdd73
+        console.log("fetching replay list")
+        //let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
+        let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";  
+        let u = new URL(analysisResUrl);
+        u.searchParams.set("numResults", 0);
+        
+        try {
+        
+            let response = await fetch(u, { 
+                // todo
+                headers: { 
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
+                }, 
+                "method": "GET", 
+            });
+            
+            if (response.ok) {
+                let dataList = {}
+                let json = await response.json();
+                dataList = json;
+                if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
+                    console.log("facets data is empty")
+                    return {};
+                }
+                console.log(dataList) 
+                return dataList;
+            } else {
+                console.error("unable to fetch facet data");
+                throw new Error("unable to fetch facet data");
+            }
+        } catch (e) {
+            console.error("Error fetching facet data");
+            throw e;
+        }
+        //return respData.facets;
     }
 
     updateUrlPathWithFilters = () => {
@@ -549,38 +578,36 @@ class DiffResults extends Component {
         console.log("fetching results and updating")
         console.log(this.state.filter)
         // fetch results from the backend
-        // todo: is this pattern (using `then`) right?
-        const { filter : { 
-            currentPageNumber, pageSize 
-        } } = this.state;
+        const { replayId, filter } = this.state;
         
-        let start = (currentPageNumber - 1) * pageSize;
+        // fetch facet data for services (since it requires a non filtered call)
+        
+        let facetDataPromise = this.fetchFacetData(replayId)  
+        // fetch results and facet data
+        
+        let resultsPromise = this.fetchAnalysisResults(replayId, filter)
+            Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
+                const facets1 = facetData.data.facets || {};
+                
+                const results = resultsData.data && resultsData.data.res || [];
+                let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
+                this.updateResolutionFilterPaths(diffLayoutData);
+                
+                const facets2 = resultsData.data && resultsData.data.facets || {};
 
-        this.fetchAnalysisResults(this.state.replayId, this.state.filter, start, pageSize)
-            .then(  
-                (dataList) => {
-                    const results = dataList.data && dataList.data.res || [];
-                    let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
-                    this.updateResolutionFilterPaths(diffLayoutData);
-                    
-                    const numFound = dataList.data && dataList.data.numFound || 0;
-                    const pages = Math.ceil(numFound/pageSize);
-                    this.setState({
-                        pages: pages,
-                        diffLayoutData: diffLayoutData,
-                        facetListData: respData.facets,
-                    });
-                }
-        ); //todo: page number
-        // create the diff layout formatted data
-        //diffLayoutData = this.validateAndCreateDiffLayoutData(diffLayoutData);
-        // add filter paths based on the selected resolution type 
-        //this.updateResolutionFilterPaths(diffLayoutData);
-        
-        //this.setState({
-        //    diffLayoutData: diffLayoutData,
-        //    facetListData: respData.facets,
-        //});
+                const numFound = resultsData.data && resultsData.data.numFound || 0;
+                const pages = Math.ceil(numFound/filter.pageSize);
+
+                this.setState({
+                    pages: pages,
+                    diffLayoutData: diffLayoutData,
+                    facetListData: {
+                        services: facets1.serviceFacets,
+                        apiPaths: facets2.pathFacets,
+                        resolutionTypes: facets2.diffResFacets,
+                    },
+                });
+            });
     }
 
     handleClose = () => {

@@ -49,19 +49,22 @@ export default class DiffResultsFilter extends Component {
     }
 
     renderServiceDropdown() {
-        const services = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.services;
+        const {facetListData} = this.props;
+        const services = _.isEmpty(facetListData.services) ? {} : facetListData.services;
         const selectedService = this.props.filter.selectedService;
-
+        const servicesEntries = Object.entries(services);
+        let totalServiceCounts = servicesEntries.reduce((accumulator, [service, count]) => accumulator += count, 0);
+        
         return (
             <Fragment>
                 <DropdownButton title={selectedService} id="dropdown-size-medium">
                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedService", "All")}>
-                        <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({services.reduce((accumulator, item) => accumulator += item.count, 0)})
+                        <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({totalServiceCounts})
                     </MenuItem>
                     <MenuItem divider />
-                    {services.map((item, index) => {return (
-                    <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedService", item.value)}>
-                        <Glyphicon style={{ visibility: selectedService === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
+                    {servicesEntries.map(([service, count]) => {return (
+                    <MenuItem key={service + "-" + count} eventKey={service} onClick={() => this.handleMetaDataSelect("selectedService", service)}>
+                        <Glyphicon style={{ visibility: selectedService === service ? "visible" : "hidden" }} glyph="ok" /> {service} ({count})
                     </MenuItem>);
                     })}
                 </DropdownButton>
@@ -70,19 +73,23 @@ export default class DiffResultsFilter extends Component {
     }
     
     renderAPIPathDropdown() {
-        const apiPaths = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.apiPaths; 
+        const {facetListData} = this.props;
+        const apiPaths = _.isEmpty(facetListData.apiPaths) ? {} : facetListData.apiPaths; 
         const selectedAPI = this.props.filter.selectedAPI; 
-
+        console.log(this.props)
+        const apiPathEntries = Object.entries(apiPaths);
+        let totalAPIPathCounts = apiPathEntries.reduce((accumulator, [apiPath, count]) => accumulator += count, 0);
+        
         return (
             <Fragment>
                 <DropdownButton title={selectedAPI ? selectedAPI : "Select API Path"} id="dropdown-size-medium">
                     <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedAPI", "All")}>
-                        <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({apiPaths.reduce((accumulator, item) => accumulator += item.count, 0)})
+                        <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({totalAPIPathCounts})
                     </MenuItem>
                     <MenuItem divider />
-                    {apiPaths.map((item, index) => {return (
-                        <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedAPI", item.value)}>
-                            <Glyphicon style={{ visibility: selectedAPI === item.value ? "visible" : "hidden" }} glyph="ok" /> {item.value} ({item.count})
+                    {apiPathEntries.map(([apiPath, count]) => {return (
+                        <MenuItem key={apiPath+ "-" + count} eventKey={apiPath} onClick={() => this.handleMetaDataSelect("selectedAPI", apiPath)}>
+                            <Glyphicon style={{ visibility: selectedAPI === apiPath ? "visible" : "hidden" }} glyph="ok" /> {apiPath} ({count})
                         </MenuItem>);
                     })}
                 </DropdownButton>
@@ -133,18 +140,19 @@ export default class DiffResultsFilter extends Component {
         let resTypeMenuJsx = (item, index) => {
             return (
             <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.value)}>
-                <Glyphicon style={{ visibility: this.props.filter.selectedResolutionType === item.value ? "visible" : "hidden" }} glyph="ok" /> {this.getResolutionTypeDescription(item.value)} ({item.count})
+                <Glyphicon style={{ visibility: this.props.filter.selectedResolutionType === item.val ? "visible" : "hidden" }} glyph="ok" /> {this.getResolutionTypeDescription(item.val)} ({item.count})
             </MenuItem>);
         }
 
         return resolutionTypes.filter((item) => {
-            return ((kind == "error") ? item.value.indexOf("ERR_") > -1 : item.value.indexOf("ERR_") == -1);
+            return ((kind == "error") ? item.val.indexOf("ERR_") > -1 : item.val.indexOf("ERR_") == -1);
         }).map(resTypeMenuJsx);
     }
 
     renderResolutionTypesDropdown = () => {
-        let selectedResolutionType = this.props.filter.selectedResolutionType;
-        let resolutionTypes = _.isEmpty(this.props.facetListData) ? [] : this.props.facetListData.resolutionTypes;
+        const {filter, facetListData} = this.props;
+        const selectedResolutionType = filter.selectedResolutionType;
+        const resolutionTypes = _.isEmpty(facetListData.resolutionTypes) ? [] : facetListData.resolutionTypes;
         
         return (
             <Fragment>
@@ -159,7 +167,7 @@ export default class DiffResultsFilter extends Component {
                             </MenuItem>
                             <MenuItem divider />
                             <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR*")}>
-                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR*" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.value.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR*" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.val.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
                             </MenuItem>
                             {this.resolutionTypeMenuItems(resolutionTypes, "error")}
                             <MenuItem divider />
