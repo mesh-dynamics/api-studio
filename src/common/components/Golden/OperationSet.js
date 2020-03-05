@@ -5,7 +5,7 @@ import GoldenPopover from "../GoldenPopover";
 import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
 import { DiffResultsContext } from "../../routes/diff_results/DiffResults";
 import "./OperationalSet.css";
-import {history} from "../../helpers/history.js"
+// import { history } from "../../helpers/history.js"
 
 class OperationSet extends Component {
     constructor(props) {
@@ -98,7 +98,7 @@ class OperationSet extends Component {
                     >
                         {
                             /* TODO: temporary workaround; cleanup when removing shareable_link page */
-                        (history.location.pathname.includes("/diff_results")) && 
+                        (window.location.pathname.includes("/diff_results")) && 
                         <DiffResultsContext.Consumer>
                             {(context) => this.renderOperationalSet(context)}
                         </DiffResultsContext.Consumer> 

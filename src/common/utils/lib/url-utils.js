@@ -73,10 +73,11 @@ const constructUrlParams = (params) => {
         searchFilterPath, 
         currentTemplateVer, 
         selectedReqRespMatchType,
-        selectedResolutionType, 
+        selectedResolutionType,
+        currentPageNumber = 0
     } = params;
 
-    return `?replayId=${replayId}&app=${app}&apiPath=${selectedAPI}&service=${selectedService}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&searchFilterPath=${searchFilterPath}&requestHeaders=${requestHeaders}&requestParams=${requestParams}&requestBody=${requestBody}&responseHeaders=${responseHeaders}&responseBody=${responseBody}`;
+    return `?replayId=${replayId}&app=${app}&apiPath=${selectedAPI}&service=${selectedService}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&searchFilterPath=${searchFilterPath}&requestHeaders=${requestHeaders}&requestParams=${requestParams}&requestBody=${requestBody}&responseHeaders=${responseHeaders}&responseBody=${responseBody}&currentPageNumber=${currentPageNumber}`;
 };
 
 const updateSearchHistoryParams = (metaDataType, value, state) => {
@@ -113,4 +114,26 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
     return constructUrlParams(params);
 };
 
-export { getSearchHistoryParams, updateSearchHistoryParams };
+// TODO: to retire the other versions and use this
+const constUrlParams__NextVersion = (state) => {
+    const {
+        app, replayId, timeStamp, recordingId, searchFilterPath, currentTemplateVer,
+        filter : {
+            selectedService, selectedAPI, selectedReqRespMatchType,
+            selectedResolutionType, currentPageNumber, pageSize,  
+        },
+        diffToggleRibbon: {
+            showResponseMessageHeaders, // response headers
+            showResponseMessageBody, // response body
+            showRequestMessageHeaders, // request header
+            showRequestMessageQParams, // request query params
+            showRequestMessageFParams, // request form params
+            showRequestMessageBody, // request body
+        }
+    } =  state;
+
+    return `?replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&service=${selectedService}&apiPath=${selectedAPI}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&currentPageNumber=${currentPageNumber}&pageSize=${pageSize}`;
+
+}
+
+export { constUrlParams__NextVersion as constructUrlParams, getSearchHistoryParams, updateSearchHistoryParams };

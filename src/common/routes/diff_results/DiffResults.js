@@ -11,6 +11,7 @@ import Modal from "react-bootstrap/lib/Modal";
 import {connect} from "react-redux";
 import axios from "axios";
 import {cubeActions} from "../../actions";
+import { constructUrlParams } from "../../utils/lib/url-utils";
 import config from "../../config";
 
 const respData = {
@@ -35,6 +36,20 @@ class DiffResults extends Component {
                 selectedResolutionType: "All",
                 currentPageNumber: 1,
                 pageSize: 5,
+            },
+            diffToggleRibbon: {
+                showResponseMessageHeaders: false,
+                showResponseMessageBody: true,
+                showRequestMessageHeaders: false,
+                showRequestMessageQParams: false,
+                showRequestMessageFParams: false,
+                showRequestMessageBody: false,
+                shownResponseMessageHeaders: false,
+                shownResponseMessageBody: true,
+                shownRequestMessageHeaders: false,
+                shownRequestMessageQParams: false,
+                shownRequestMessageFParams: false,
+                shownRequestMessageBody: false
             },
             diffLayoutData : [],
             facetListData: {},
@@ -65,6 +80,8 @@ class DiffResults extends Component {
         //let url = new URL(window.location.search);
         //let urlSearchParams = url.searchParams;
 
+        console.log("URL PARAMETERS:::", urlParameters["responseHeaders"]);
+
         const app = urlParameters["app"];
         const selectedAPI = urlParameters["selectedAPI"] ? urlParameters["selectedAPI"]  : "All"; //"%2A";
         const replayId = urlParameters["replayId"];
@@ -74,12 +91,12 @@ class DiffResults extends Component {
         const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
         const selectedResolutionType = urlParameters["selectedResolutionType"];
         const searchFilterPath = urlParameters["searchFilterPath"];
-        const requestHeaders = urlParameters["requestHeaders"];
-        const requestQParams = urlParameters["requestQParams"];
-        const requestFParams = urlParameters["requestFParams"];
-        const requestBody = urlParameters["requestBody"];
-        const responseHeaders = urlParameters["responseHeaders"];
-        const responseBody = urlParameters["responseBody"];
+        const requestHeaders = urlParameters["requestHeaders"] || false;
+        const requestQParams = urlParameters["requestQParams"] || false;
+        const requestFParams = urlParameters["requestFParams"] || false;
+        const requestBody = urlParameters["requestBody"] || false;
+        const responseHeaders =  urlParameters["responseHeaders"] || false;
+        const responseBody = urlParameters["responseBody"] || true;
         const timeStamp = decodeURI(urlParameters["timeStamp"]);
         const currentPageNumber = urlParameters["currentPageNumber"]
         const pageSize = urlParameters["pageSize"]
@@ -95,6 +112,26 @@ class DiffResults extends Component {
                 currentPageNumber: currentPageNumber || 1,
                 pageSize: pageSize || 5,
             },
+            diffToggleRibbon: {
+                // response headers
+                showResponseMessageHeaders: responseHeaders,
+                shownResponseMessageHeaders: responseHeaders,
+                // response body
+                showResponseMessageBody: responseBody,
+                shownResponseMessageBody: responseBody,
+                // request header
+                showRequestMessageHeaders: requestHeaders,
+                shownRequestMessageHeaders: requestHeaders,
+                // request query params
+                showRequestMessageQParams: requestQParams,
+                shownRequestMessageQParams: requestQParams,
+                // request form params
+                showRequestMessageFParams: requestFParams,
+                shownRequestMessageFParams: requestFParams,
+                // request body
+                showRequestMessageBody: requestBody,
+                shownRequestMessageBody: requestBody
+            },
             replayId: replayId,
             recordingId: recordingId,
             currentTemplateVer: currentTemplateVer,
@@ -104,24 +141,7 @@ class DiffResults extends Component {
             showAll: (selectedResolutionType === "All"),
             
             // TODO: improve
-            // response headers
-            showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
-            shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
-            // response body
-            showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
-            shownResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
-            // request header
-            showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
-            shownRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
-            // request query params
-            showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
-            shownRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
-            // request form params
-            showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
-            shownRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
-            // request body
-            showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
-            shownRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
+            
         });
         setTimeout(() => {
             const { dispatch, history, cube } = this.props;
@@ -170,7 +190,8 @@ class DiffResults extends Component {
         this.setState({
                 filter: newFilter,
             },
-            this.fetchAndUpdateResults
+            this.updateResults
+            // this.fetchAndUpdateResults
         );    
     }
 
@@ -190,22 +211,27 @@ class DiffResults extends Component {
         return str;
     }
 
+    updateResults = () => {
+        this.updateUrlPathWithFilters();
+        this.fetchAndUpdateResults();
+    };
+
     // todo: move to utils
     validateAndCleanHTTPMessageParts = (messagePart) => {
-        let cleanedMessagepart = "";
-        if (messagePart &&_.isObject(messagePart)) {
-            cleanedMessagepart = messagePart;
-        } else if (messagePart) {
-            try {
-                cleanedMessagepart = JSON.parse(messagePart);
-            } catch (e) {
-                cleanedMessagepart = JSON.parse('"' + this.cleanEscapedString(_.escape(messagePart)) + '"')
+        if(messagePart) {
+
+            if (_.isObject(messagePart)) {
+                return messagePart;
             }
-        } else {
-            cleanedMessagepart = JSON.parse('""');
+
+            try {
+                return JSON.parse(messagePart);
+            } catch (e) {
+                return JSON.parse('"' + this.cleanEscapedString(_.escape(messagePart)) + '"')
+            }            
         }
 
-        return cleanedMessagepart;
+        return JSON.parse('""');
     }
 
     
@@ -501,7 +527,25 @@ class DiffResults extends Component {
         // });
     }
 
-    fetchAndUpdateResults() {
+    updateUrlPathWithFilters = () => {
+        const { history } = this.props;
+        const constructedUrlParams = constructUrlParams(this.state);
+
+        history.push(`/diff_results${constructedUrlParams}`)
+    };
+
+    updateDiffToggleRibbon = (updatedRibbonState) => {
+        console.log(updatedRibbonState)
+        this.setState({ 
+            ...this.state, 
+            diffToggleRibbon: {
+                ...this.state.diffToggleRibbon,
+                ...updatedRibbonState
+            }
+        }, this.updateUrlPathWithFilters);
+    }
+        
+    fetchAndUpdateResults = () => {
         console.log("fetching results and updating")
         console.log(this.state.filter)
         // fetch results from the backend
@@ -786,8 +830,20 @@ class DiffResults extends Component {
                     </div>
                     
                     <div>
-                        <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={this.state.app ? this.state.app : "(Unknown)"} pages={this.state.pages}></DiffResultsFilter>
-                        <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData} showAll={showAll}></DiffResultsList>
+                        <DiffResultsFilter 
+                            filter={this.state.filter} 
+                            filterChangeHandler={this.handleFilterChange} 
+                            facetListData={this.state.facetListData} 
+                            app={this.state.app ? this.state.app : "(Unknown)"} 
+                            pages={this.state.pages}
+                        ></DiffResultsFilter>
+                        <DiffResultsList 
+                            showAll={showAll} 
+                            facetListData={this.state.facetListData} 
+                            diffLayoutData={this.state.diffLayoutData} 
+                            diffToggleRibbon={this.state.diffToggleRibbon}
+                            updateDiffToggleRibbon={this.updateDiffToggleRibbon}
+                        ></DiffResultsList>
                     </div>
                     
                     {this.renderModals()}
@@ -797,12 +853,9 @@ class DiffResults extends Component {
     } 
 }
 
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube
+})
 
 const connectedDiffResults = connect(mapStateToProps)(DiffResults);
 export default connectedDiffResults;
