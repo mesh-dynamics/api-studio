@@ -31,8 +31,13 @@ class DiffResults extends Component {
             filter : {
                 selectedService: "s1",
                 selectedAPI: "a1",
-                selectedReqRespMatchType: "responseMismatch",
-                selectedResolutionType: "All",
+                //selectedReqRespMatchType: "responseMismatch",
+                //selectedResolutionType: "All",
+                
+                selectedReqMatchType: "match",
+                selectedReqCompareResType: "All",
+                selectedRespCompareResType: "All",
+    
                 currentPageNumber: 1,
                 pageSize: 5,
             },
@@ -75,8 +80,9 @@ class DiffResults extends Component {
         const recordingId = urlParameters["recordingId"];
         const currentTemplateVer = urlParameters["currentTemplateVer"];
         const selectedService = urlParameters["selectedService"];
-        const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
-        const selectedResolutionType = urlParameters["selectedResolutionType"];
+        const selectedReqMatchType = urlParameters["selectedReqMatchType"];
+        const selectedReqCompareResType = urlParameters["selectedReqCompareResType"];
+        const selectedRespCompareResType = urlParameters["selectedRespCompareResType"];
         const searchFilterPath = urlParameters["searchFilterPath"];
         const requestHeaders = urlParameters["requestHeaders"];
         const requestQParams = urlParameters["requestQParams"];
@@ -94,8 +100,13 @@ class DiffResults extends Component {
             filter : {
                 selectedService: selectedService || "All",
                 selectedAPI: selectedAPI || "All",
-                selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
-                selectedResolutionType: selectedResolutionType || "All",
+                //selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
+                //selectedResolutionType: selectedResolutionType || "All",
+                
+                selectedReqMatchType: selectedReqMatchType || "match",
+                selectedReqCompareResType: selectedReqCompareResType || "All",
+                selectedRespCompareResType: selectedRespCompareResType || "All",
+    
                 currentPageNumber: currentPageNumber || 1,
                 pageSize: pageSize || 5,
             },
@@ -110,7 +121,7 @@ class DiffResults extends Component {
             app: app,
             searchFilterPath: searchFilterPath || "",
             timeStamp: timeStamp || "",
-            showAll: (selectedResolutionType === "All"),
+            showAll: ((selectedReqCompareResType === "All") || (selectedRespCompareResType === "All")),
             
             // TODO: improve
             // response headers
@@ -446,7 +457,10 @@ class DiffResults extends Component {
         let start = (filter.currentPageNumber - 1) * filter.pageSize;
         let service = filter.selectedService === "All" ? "*" : filter.selectedService;
         let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
-        let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+        let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
+        let reqCompareResType = filter.selectedReqCompareResType === "All" ? "*" : filter.selectedReqCompareResType;
+        let respCompareResType = filter.selectedRespCompareResType === "All" ? "*" : filter.selectedRespCompareResType;
+
 
         let u = new URL(analysisResUrl);
         u.searchParams.set("start", start);
@@ -454,14 +468,14 @@ class DiffResults extends Component {
         u.searchParams.set("includeDiff", true);
         u.searchParams.set("service", service);
         u.searchParams.set("path", path);
-        u.searchParams.set("diffRes", resolutionType); 
-        u.searchParams.set("reqMatchType", ""); // todo
-        u.searchParams.set("respMatchType", ""); // todo
+        //u.searchParams.set("diffRes", resolutionType); 
+        u.searchParams.set("reqMatchType", reqMatchType); 
+        u.searchParams.set("reqCmpResType", reqCompareResType); 
+        u.searchParams.set("respMatchType", respCompareResType); // misnomer in the API, should've been respCmpResType
         // todo: timestamp field
         console.log("fetch url " + u)
         console.log(u)
 
-        //let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
         try {
         
             let response = await fetch(u, { 
@@ -795,7 +809,7 @@ class DiffResults extends Component {
     }
 
     render() {
-        const showAll = (this.state.filter.selectedResolutionType === "All")
+        const showAll = this.state.showAll;
         return (
             <DiffResultsContext.Provider 
                 value={{ 
