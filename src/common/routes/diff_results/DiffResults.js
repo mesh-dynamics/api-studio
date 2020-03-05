@@ -37,7 +37,11 @@ class DiffResults extends Component {
                 pageSize: 5,
             },
             diffLayoutData : [],
-            facetListData: {},
+            facetListData: {
+                services: {},
+                apiPaths: {},
+                resolutionTypes: [],
+            },
             
             // golden
             showNewGolden: false,
@@ -94,6 +98,11 @@ class DiffResults extends Component {
                 selectedResolutionType: selectedResolutionType || "All",
                 currentPageNumber: currentPageNumber || 1,
                 pageSize: pageSize || 5,
+            },
+            facetListData: {
+                services: {},
+                apiPaths: {},
+                resolutionTypes: [],
             },
             replayId: replayId,
             recordingId: recordingId,
@@ -432,7 +441,8 @@ class DiffResults extends Component {
     async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
- 
+        //let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
+
         let start = (filter.currentPageNumber - 1) * filter.pageSize;
         let service = filter.selectedService === "All" ? "*" : filter.selectedService;
         let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
@@ -485,7 +495,7 @@ class DiffResults extends Component {
         // http://www.mocky.io/v2/5e5f99af310000a9f8afdd73
         console.log("fetching replay list")
         //let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        let analysisResUrl = "http://www.mocky.io/v2/5e5f99af310000a9f8afdd73";
+        let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";  
         let u = new URL(analysisResUrl);
         u.searchParams.set("numResults", 0);
         
@@ -506,7 +516,8 @@ class DiffResults extends Component {
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
                     console.log("facets data is empty")
                     return {};
-                } 
+                }
+                console.log(dataList) 
                 return dataList;
             } else {
                 console.error("unable to fetch facet data");
@@ -526,67 +537,33 @@ class DiffResults extends Component {
         const { replayId, filter } = this.state;
         
         // fetch facet data for services (since it requires a non filtered call)
-        // let facetSearchParams = new URLSearchParams();
-        // facetSearchParams.set("numResults", 0);
-
-        this.fetchFacetData(replayId)
-            .then(
-                (dataList) => {
-                    const facets = dataList.facets || {};
-                    this.setState((prevState) => {
-                        return {
-                            facetListData: {
-                                ...prevState.facetListData,
-                                services: facets.serviceFacets,
-                            },
-                        }
-                    })
-                }
-        );
-
         
+        let facetDataPromise = this.fetchFacetData(replayId)  
         // fetch results and facet data
         
-        // let start = (filter.currentPageNumber - 1) * filter.pageSize;
-        // let service = filter.selectedService === "All" ? "*" : filter.selectedService;
-        // let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
-        // let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+        let resultsPromise = this.fetchAnalysisResults(replayId, filter)
+            Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
+                const facets1 = facetData.data.facets || {};
+                
+                const results = resultsData.data && resultsData.data.res || [];
+                let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
+                this.updateResolutionFilterPaths(diffLayoutData);
+                
+                const facets2 = resultsData.data && resultsData.data.facets || {};
 
-        // let searchParams = new URLSearchParams();
-        // searchParams.set("start", start);
-        // searchParams.set("numResults", filter.pageSize);
-        // searchParams.set("includeDiff", true);
-        // searchParams.set("service", service);
-        // searchParams.set("path", path);
-        // searchParams.set("diffRes", resolutionType); 
-        // searchParams.set("reqMatchType", ""); // todo
-        // searchParams.set("respMatchType", ""); // todo
-        // // todo: timestamp field
+                const numFound = resultsData.data && resultsData.data.numFound || 0;
+                const pages = Math.ceil(numFound/filter.pageSize);
 
-        this.fetchAnalysisResults(replayId, filter)
-            .then(  
-                (dataList) => {
-                    const results = dataList.data && dataList.data.res || [];
-                    let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
-                    this.updateResolutionFilterPaths(diffLayoutData);
-                    
-                    const facets = dataList.facets || {};
-
-                    const numFound = dataList.data && dataList.data.numFound || 0;
-                    const pages = Math.ceil(numFound/filter.pageSize);
-                    this.setState((prevState) => {
-                        return {
-                            pages: pages,
-                            diffLayoutData: diffLayoutData,
-                            facetListData: {
-                                ...prevState.facetListData,
-                                apiPaths: facets.pathFacets,
-                                resolutionTypes: facets.diffResFacets,
-                            },
-                        }}
-                    );
-                }
-        ); 
+                this.setState({
+                    pages: pages,
+                    diffLayoutData: diffLayoutData,
+                    facetListData: {
+                        services: facets1.serviceFacets,
+                        apiPaths: facets2.pathFacets,
+                        resolutionTypes: facets2.diffResFacets,
+                    },
+                });
+            });
     }
 
     handleClose = () => {
