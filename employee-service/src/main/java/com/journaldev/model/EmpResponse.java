@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class EmpResponse {
 	private int id;
 	private String name;
+	private String deptName;
 
 	public int getId() {
 		return id;
@@ -22,5 +23,9 @@ public class EmpResponse {
 	public void setName(String name) {
 		this.name = name;
 	}
+
+	public String getDeptName() { return deptName; }
+
+	public void setDeptName (String deptName) { this.deptName = deptName; }
 
 }

@@ -3,11 +3,11 @@
 	xmlns="http://java.sun.com/xml/ns/javaee"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	id="WebApp_ID" version="3.0">
-	<display-name>Jersey 1.19 sample app</display-name>
+	<display-name>Jersey 1.19 sample app Dept</display-name>
 
 	<!-- Jersey Servlet configurations -->
 	<servlet>
-		<servlet-name>Jersey REST Service</servlet-name>
+		<servlet-name>Jersey REST Service Dept</servlet-name>
 		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
 		<init-param>
 			<param-name>com.sun.jersey.config.property.packages</param-name>
@@ -34,8 +34,8 @@
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>Jersey REST Service</servlet-name>
-		<url-pattern>/rest/*</url-pattern>
+		<servlet-name>Jersey REST Service Dept</servlet-name>
+		<url-pattern>/dept/*</url-pattern>
 	</servlet-mapping>
 	<!-- Jersey Servlet configurations -->
 
