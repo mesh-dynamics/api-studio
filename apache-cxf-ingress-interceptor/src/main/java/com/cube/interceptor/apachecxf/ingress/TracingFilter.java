@@ -20,6 +20,11 @@ import io.opentracing.Span;
 import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
 
+/**
+ * Priority is to specify in which order the filters are to be executed.
+ * Lower the order, early the filter is executed.
+ * We want Logging filter to execute after Tracing Filter during Ingress
+ **/
 @Provider
 @Priority(1000)
 public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {

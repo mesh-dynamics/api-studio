@@ -34,14 +34,20 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.logging.log4j.util.Strings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.cube.interceptor.config.Config;
-import com.cube.interceptor.utils.Utils;
 
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.opentracing.Span;
 
+import com.cube.interceptor.config.Config;
+import com.cube.interceptor.utils.Utils;
+
+/**
+ * Priority is to specify in which order the filters are to be executed.
+ * Lower the order, early the filter is executed.
+ * We want Client filter to execute before Tracing Filter.
+ **/
 @Priority(3500)
 public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 
@@ -224,7 +230,7 @@ public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 			respContext.setEntityStream(new ByteArrayInputStream(new byte[0]));
 		}
 
-		return "";
+		return Strings.EMPTY;
 	}
 
 	private void removeSetContextProperty(ClientRequestContext context) {
