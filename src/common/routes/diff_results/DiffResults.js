@@ -466,33 +466,52 @@ class DiffResults extends Component {
         //let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
 
         let start = (filter.currentPageNumber - 1) * filter.pageSize;
-        let service = filter.selectedService === "All" ? "*" : filter.selectedService;
-        let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
+        //let service = filter.selectedService === "All" ? "*" : filter.selectedService;
+        ///let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
         let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
-        let reqCompareResType = filter.selectedReqCompareResType === "All" ? "*" : filter.selectedReqCompareResType;
-        let respCompareResType = filter.selectedRespCompareResType === "All" ? "*" : filter.selectedRespCompareResType;
+        //let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+        
+        
+        let searchParams = new URLSearchParams();
+        searchParams.set("start", start);
+        searchParams.set("numResults", filter.pageSize);
+        searchParams.set("includeDiff", true);
 
+        if (filter.selectedService !== "All") {
+            searchParams.set("service", filter.selectedService);
+        }
 
-        let u = new URL(analysisResUrl);
-        u.searchParams.set("start", start);
-        u.searchParams.set("numResults", filter.pageSize);
-        u.searchParams.set("includeDiff", true);
-        u.searchParams.set("service", service);
-        u.searchParams.set("path", path);
-        //u.searchParams.set("diffRes", resolutionType); 
-        u.searchParams.set("reqMatchType", reqMatchType); 
-        u.searchParams.set("reqCmpResType", reqCompareResType); 
-        u.searchParams.set("respMatchType", respCompareResType); // misnomer in the API, should've been respCmpResType
-        // todo: timestamp field
-        console.log("fetch url " + u)
-        console.log(u)
+        if (filter.selectedAPI !== "All") {
+            searchParams.set("path", filter.selectedAPI);
+        }
 
+        if (filter.selectedResolutionType !== "All") {
+            searchParams.set("diffRes", filter.selectedResolutionType)
+        }
+
+        searchParams.set("reqMatchType", reqMatchType); 
+        
+        switch (filter.selectedDiffType) {
+            case "All":
+                break;
+            case "requestDiff":
+                searchParams.set("reqCmpResType", "NoMatch"); 
+                break;
+            case "responseDiff":
+                searchParams.set("respMatchType", "NoMatch"); // misnomer in the API, should've been respCmpResType
+                break;
+        }
+        
+        let url = analysisResUrl + "?" + searchParams.toString();
+        console.log("fetch url " + url)
+        console.log(url)
+
+        let user = JSON.parse(localStorage.getItem('user'));
         try {
         
-            let response = await fetch(u, { 
-                // todo
+            let response = await fetch(url, { 
                 headers: { 
-                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
+                    "Authorization": "Bearer " + user['access_token']
                 }, 
                 "method": "GET", 
             });
@@ -523,13 +542,12 @@ class DiffResults extends Component {
         let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";  
         let u = new URL(analysisResUrl);
         u.searchParams.set("numResults", 0);
-        
+        let user = JSON.parse(localStorage.getItem('user'));
         try {
         
             let response = await fetch(u, { 
-                // todo
                 headers: { 
-                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
+                    "Authorization": "Bearer " + user['access_token']
                 }, 
                 "method": "GET", 
             });

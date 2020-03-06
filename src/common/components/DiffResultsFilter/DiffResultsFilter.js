@@ -126,18 +126,16 @@ export default class DiffResultsFilter extends Component {
         }
     }
 
-    // build the list of menu items for resolution types, based on whether they are for error types, and for request or response
-    resolutionTypeMenuItems = (resolutionTypes, errKind, reqRespKind) => {
+    // build the list of menu items for resolution types, based on whether they are for error types
+    resolutionTypeMenuItems = (resolutionTypes, errKind) => {
         const {filter} = this.props;
-        // get whether we are dealing with request compare or response compare resolution type
-        const compareMetaResolutionType = (reqRespKind === "request") ? "selectedReqCompareResType" : "selectedRespCompareResType";
-        // get the actual selected value of the resolution type
-        const selectedCompareResType = filter[compareMetaResolutionType];
+        // get the selected value of the resolution type
+        const selectedResolutionType = filter.selectedResolutionType;
 
         let resTypeMenuJsx = (item, index) => {
             return (
-            <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect(compareMetaResolutionType, item.value)}>
-                <Glyphicon style={{ visibility: selectedCompareResType === item.val ? "visible" : "hidden" }} glyph="ok" /> {this.getResolutionTypeDescription(item.val)} ({item.count})
+            <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect("selectedResolutionType", item.val)}>
+                <Glyphicon style={{ visibility: selectedResolutionType === item.val ? "visible" : "hidden" }} glyph="ok" /> {this.getResolutionTypeDescription(item.val)} ({item.count})
             </MenuItem>);
         }
 
@@ -150,7 +148,7 @@ export default class DiffResultsFilter extends Component {
     renderResolutionTypesDropdown = () => {
         const {filter, facetListData} = this.props;
         const selectedResolutionType = filter.selectedResolutionType;
-        const resolutionTypes = _.isEmpty(facetListData.resolutionTypes) ? [] : facetListData.resolutionTypes;
+        const resolutionTypes = _.isEmpty(facetListData.resolutionTypes) ? [{val: "ERR_ValTypeMismatch", count: 2}, {val: "OK_OtherValInvalid", count: 4}] : facetListData.resolutionTypes; // todo: remove
         
         return (
             <Fragment>
@@ -234,8 +232,8 @@ export default class DiffResultsFilter extends Component {
                             Mismatched Requests
                         </MenuItem>
                     </DropdownButton>
-                        {this.renderDiffTypesDropdown()}
-                        {this.renderResolutionTypesDropdown()}
+                        {(selectedReqMatchType === "match") && this.renderDiffTypesDropdown()}
+                        {(selectedReqMatchType === "match") && this.renderResolutionTypesDropdown()}
                         {/* {(selectedReqMatchType === "match") && this.renderReqResolutionTypesDropdown()}
                     
                         {(selectedReqMatchType === "match") && this.renderRespResolutionTypesDropdown()} */}
@@ -331,6 +329,26 @@ export default class DiffResultsFilter extends Component {
             </Fragment>
         )
     }
+    // build the list of menu items for resolution types, based on whether they are for error types, and for request or response
+    resolutionTypeMenuItems = (resolutionTypes, errKind, reqRespKind) => {
+        const {filter} = this.props;
+        // get whether we are dealing with request compare or response compare resolution type
+        const compareMetaResolutionType = (reqRespKind === "request") ? "selectedReqCompareResType" : "selectedRespCompareResType";
+        // get the actual selected value of the resolution type
+        const selectedCompareResType = filter[compareMetaResolutionType];
+
+        let resTypeMenuJsx = (item, index) => {
+            return (
+            <MenuItem key={item.value + "-" + index} eventKey={index + 2} onClick={() => this.handleMetaDataSelect(compareMetaResolutionType, item.value)}>
+                <Glyphicon style={{ visibility: selectedCompareResType === item.val ? "visible" : "hidden" }} glyph="ok" /> {this.getResolutionTypeDescription(item.val)} ({item.count})
+            </MenuItem>);
+        }
+
+        return resolutionTypes.filter((item) => {
+            return ((errKind == "error") ? item.val.indexOf("ERR_") > -1 : item.val.indexOf("ERR_") == -1);
+        }).map(resTypeMenuJsx);
+    }
+
     */
 
 }
