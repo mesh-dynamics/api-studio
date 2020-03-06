@@ -76,7 +76,6 @@ export default class DiffResultsFilter extends Component {
         const {facetListData} = this.props;
         const apiPaths = _.isEmpty(facetListData.apiPaths) ? {"minfo/listmovies": 103, "minfo/liststores": 100,  "minfo/rentmovie": 56, "minfo/returnmovie": 56} : facetListData.apiPaths; 
         const selectedAPI = this.props.filter.selectedAPI; 
-        console.log(this.props)
         const apiPathEntries = Object.entries(apiPaths);
         let totalAPIPathCounts = apiPathEntries.reduce((accumulator, [apiPath, count]) => accumulator += count, 0);
         
@@ -212,7 +211,6 @@ export default class DiffResultsFilter extends Component {
     renderDiffTypesDropdown = () => {
         const {filter} = this.props;
         const {selectedDiffType} = filter;
-        console.log("sew" + this.getDiffTypeDescription(selectedDiffType));
         
         return (
             <Fragment>

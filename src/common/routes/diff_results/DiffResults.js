@@ -194,8 +194,6 @@ class DiffResults extends Component {
                 newFilter[metaData] = value;       
         }
 
-        console.log(newFilter)
-
         // set the new filter and fetch new set of results
         this.setState({
                 filter: newFilter,
@@ -463,7 +461,7 @@ class DiffResults extends Component {
     async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        //let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
+        //let analysisResUrl = "https://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
 
         let start = (filter.currentPageNumber - 1) * filter.pageSize;
         //let service = filter.selectedService === "All" ? "*" : filter.selectedService;
@@ -536,16 +534,19 @@ class DiffResults extends Component {
     }
 
     async fetchFacetData() {
-        // http://www.mocky.io/v2/5e5f99af310000a9f8afdd73
+        // https://www.mocky.io/v2/5e5f99af310000a9f8afdd73
         console.log("fetching replay list")
         //let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";  
-        let u = new URL(analysisResUrl);
-        u.searchParams.set("numResults", 0);
+        let analysisResUrl = "https://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
+        let searchParams = new URLSearchParams();
+        searchParams.set("numResults", 0);
+        
+        let url = analysisResUrl + "?" + searchParams.toString();
+
         let user = JSON.parse(localStorage.getItem('user'));
         try {
         
-            let response = await fetch(u, { 
+            let response = await fetch(url, { 
                 headers: { 
                     "Authorization": "Bearer " + user['access_token']
                 }, 
@@ -560,7 +561,6 @@ class DiffResults extends Component {
                     console.log("facets data is empty")
                     return {};
                 }
-                console.log(dataList) 
                 return dataList;
             } else {
                 console.error("unable to fetch facet data");
@@ -575,7 +575,6 @@ class DiffResults extends Component {
 
     fetchAndUpdateResults() {
         console.log("fetching results and updating")
-        console.log(this.state.filter)
         // fetch results from the backend
         const { replayId, filter } = this.state;
         
