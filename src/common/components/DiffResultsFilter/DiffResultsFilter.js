@@ -113,16 +113,6 @@ export default class DiffResultsFilter extends Component {
         );
     }
 
-    renderSelectReqRespRadio() {
-        return (
-            <Fragment>
-                <Radio inline value="responseMismatch" checked={this.props.filter.selectedReqRespMatchType === "responseMismatch"} onChange={() => this.handleMetaDataSelect("selectedReqRespMatchType", "responseMismatch")}> Response Mismatches only </Radio>
-                <Radio inline value="requestMismatch" checked={this.props.filter.selectedReqRespMatchType === "requestMismatch"} onChange={() => this.handleMetaDataSelect("selectedReqRespMatchType", "requestMismatch")}> Request Mismatches only </Radio>
-                <Radio inline value="All" checked={this.props.filter.selectedReqRespMatchType === "All"} onChange={() => this.handleMetaDataSelect("selectedReqRespMatchType", "All")}> All </Radio>
-            </Fragment>
-        )
-    }
-
     getResolutionTypeDescription = (resolutionType) => {
         switch (resolutionType) {
             case "All":
@@ -156,7 +146,7 @@ export default class DiffResultsFilter extends Component {
         }).map(resTypeMenuJsx);
     }
 
-    /*
+    // render the resolution types dropdown    
     renderResolutionTypesDropdown = () => {
         const {filter, facetListData} = this.props;
         const selectedResolutionType = filter.selectedResolutionType;
@@ -186,8 +176,100 @@ export default class DiffResultsFilter extends Component {
             </Fragment>
         )
     }
-    */
+    
+    renderDiffTypesDropdown = () => {
+        const {filter} = this.props;
+        const {selectedDiffType} = filter;
+        console.log("sew" + this.getDiffTypeDescription(selectedDiffType));
+        
+        return (
+            <Fragment>
+                <div style={{display: "inline-block"}}>
+                    <label class="checkbox-inline">
+                        Diff Type:
+                    </label>
+                    <div style={{ paddingLeft: "9px", display: "inline-block" }}>
+                        <DropdownButton title={this.getDiffTypeDescription(selectedDiffType)} id="dropdown-size-medium">
+                            {["All", "requestDiff", "responseDiff"].map((diffType) => {
+                                return (
+                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedDiffType", diffType)}>
+                                        <Glyphicon style={{ visibility: selectedDiffType === diffType ? "visible" : "hidden" }} glyph="ok" /> 
+                                        {this.getDiffTypeDescription(diffType)} 
+                                    </MenuItem>
+                                );
+                            })}
+                        </DropdownButton>
+                    </div>
+                </div>
+            </Fragment>
+        );
+    }   
 
+    getDiffTypeDescription = (diffType) => {
+        switch (diffType){
+            case "All":
+                return "All";
+            case "requestDiff":
+                return "Request diff";
+            case "responseDiff":
+                return "Response diff";
+            default:
+                return "(Unknown) [" + diffType + "]";
+        }
+    }
+
+    renderMatchCompareRibbon = () => {
+        const {filter} = this.props;
+        const selectedReqMatchType = filter.selectedReqMatchType;
+        return (
+            <Fragment>
+                <div style={{ marginBottom: "18px" }}>
+                    <DropdownButton title={selectedReqMatchType === "match" ? "Matched Requests" : "Mismatched Requests"} id="dropdown-size-medium">
+                        <MenuItem onClick={() => this.handleMetaDataSelect("selectedReqMatchType", "match")}>
+                            <Glyphicon style={{ visibility: selectedReqMatchType === "match" ? "visible" : "hidden" }} glyph="ok" />
+                            Matched Requests
+                        </MenuItem>
+                        <MenuItem onClick={() => this.handleMetaDataSelect("selectedReqMatchType", "mismatch")}>
+                            <Glyphicon style={{ visibility: selectedReqMatchType === "mismatch" ? "visible" : "hidden" }} glyph="ok" />
+                            Mismatched Requests
+                        </MenuItem>
+                    </DropdownButton>
+                        {this.renderDiffTypesDropdown()}
+                        {this.renderResolutionTypesDropdown()}
+                        {/* {(selectedReqMatchType === "match") && this.renderReqResolutionTypesDropdown()}
+                    
+                        {(selectedReqMatchType === "match") && this.renderRespResolutionTypesDropdown()} */}
+                    
+                </div>
+            </Fragment>
+        );
+    }
+
+    render() {
+        return (
+            <div>
+                <Breadcrumb style={{}}>
+                    <Breadcrumb.Item href="/">{this.props.app}</Breadcrumb.Item>
+                    {this.renderServiceAPIBreadcrumb()}
+                </Breadcrumb>
+
+                {/* <div style={{ marginBottom: "18px" }}>
+                    {this.renderSelectReqRespRadio()}
+                <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        
+                {this.renderResolutionTypesDropdown()}
+                </div> */}
+                {this.renderMatchCompareRibbon()}
+                <ButtonGroup style={{ marginBottom: "9px", width: "100%" }}>
+                    <div style={{ textAlign: "left" }}>
+                        {this.renderPageButtons()}
+                    </div>
+                </ButtonGroup>
+            </div>
+        )
+    }
+
+    /* leaving this code here so that it can be used later if needed
     // render the request resolution type dropdown
     renderReqResolutionTypesDropdown = () => {
         const {filter, facetListData} = this.props;
@@ -249,54 +331,6 @@ export default class DiffResultsFilter extends Component {
             </Fragment>
         )
     }
+    */
 
-    renderMatchCompareRibbon = () => {
-        const {filter} = this.props;
-        const selectedReqMatchType = filter.selectedReqMatchType;
-        return (
-            <Fragment>
-                <div style={{ marginBottom: "18px" }}>
-                    <DropdownButton title={selectedReqMatchType === "match" ? "Matched Requests" : "Mismatched Requests"} id="dropdown-size-medium">
-                        <MenuItem onClick={() => this.handleMetaDataSelect("selectedReqMatchType", "match")}>
-                            <Glyphicon style={{ visibility: selectedReqMatchType === "match" ? "visible" : "hidden" }} glyph="ok" />
-                            Matched Requests
-                        </MenuItem>
-                        <MenuItem onClick={() => this.handleMetaDataSelect("selectedReqMatchType", "mismatch")}>
-                            <Glyphicon style={{ visibility: selectedReqMatchType === "mismatch" ? "visible" : "hidden" }} glyph="ok" />
-                            Mismatched Requests
-                        </MenuItem>
-                    </DropdownButton>
-                    
-                        {(selectedReqMatchType === "match") && this.renderReqResolutionTypesDropdown()}
-                    
-                        {(selectedReqMatchType === "match") && this.renderRespResolutionTypesDropdown()}
-                    
-                </div>
-            </Fragment>
-        );
-    }
-
-    render() {
-        return (
-            <div>
-                <Breadcrumb style={{}}>
-                    <Breadcrumb.Item href="/">{this.props.app}</Breadcrumb.Item>
-                    {this.renderServiceAPIBreadcrumb()}
-                </Breadcrumb>
-
-                {/* <div style={{ marginBottom: "18px" }}>
-                    {this.renderSelectReqRespRadio()}
-                <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
-                        
-                {this.renderResolutionTypesDropdown()}
-                </div> */}
-                {this.renderMatchCompareRibbon()}
-                <ButtonGroup style={{ marginBottom: "9px", width: "100%" }}>
-                    <div style={{ textAlign: "left" }}>
-                        {this.renderPageButtons()}
-                    </div>
-                </ButtonGroup>
-            </div>
-        )
-    }
 }

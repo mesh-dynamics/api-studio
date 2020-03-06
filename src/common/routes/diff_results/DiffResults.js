@@ -31,12 +31,12 @@ class DiffResults extends Component {
             filter : {
                 selectedService: "s1",
                 selectedAPI: "a1",
-                //selectedReqRespMatchType: "responseMismatch",
-                //selectedResolutionType: "All",
                 
                 selectedReqMatchType: "match",
-                selectedReqCompareResType: "All",
-                selectedRespCompareResType: "All",
+                selectedDiffType: "All",
+                selectedResolutionType: "All",
+                //selectedReqCompareResType: "All",
+                //selectedRespCompareResType: "All",
     
                 currentPageNumber: 1,
                 pageSize: 5,
@@ -58,7 +58,7 @@ class DiffResults extends Component {
             commitId: "",
             saveGoldenError: "",
 
-            showAll: true,
+            showAll: true, //todo
         }
     }
 
@@ -71,9 +71,6 @@ class DiffResults extends Component {
             .fromPairs()
             .value();
         
-        //let url = new URL(window.location.search);
-        //let urlSearchParams = url.searchParams;
-
         const app = urlParameters["app"];
         const selectedAPI = urlParameters["selectedAPI"] || "All"; //"%2A";
         const replayId = urlParameters["replayId"];
@@ -81,8 +78,10 @@ class DiffResults extends Component {
         const currentTemplateVer = urlParameters["currentTemplateVer"];
         const selectedService = urlParameters["selectedService"] || "All";
         const selectedReqMatchType = urlParameters["selectedReqMatchType"] || "match";
-        const selectedReqCompareResType = urlParameters["selectedReqCompareResType"] || "All";
-        const selectedRespCompareResType = urlParameters["selectedRespCompareResType"] || "All";
+        const selectedDiffType = urlParameters["selectedDiffType"] || "All";
+        const selectedResolutionType = urlParameters["selectedResolutionType"] || "All";
+        //const selectedReqCompareResType = urlParameters["selectedReqCompareResType"] || "All";
+        //const selectedRespCompareResType = urlParameters["selectedRespCompareResType"] || "All";
         const searchFilterPath = urlParameters["searchFilterPath"];
         const requestHeaders = urlParameters["requestHeaders"];
         const requestQParams = urlParameters["requestQParams"];
@@ -100,12 +99,12 @@ class DiffResults extends Component {
             filter : {
                 selectedService: selectedService,
                 selectedAPI: selectedAPI,
-                //selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
-                //selectedResolutionType: selectedResolutionType || "All",
                 
                 selectedReqMatchType: selectedReqMatchType,
-                selectedReqCompareResType: selectedReqCompareResType,
-                selectedRespCompareResType: selectedRespCompareResType,
+                selectedDiffType: selectedDiffType,
+                selectedResolutionType: selectedResolutionType,
+                //selectedReqCompareResType: selectedReqCompareResType,
+                //selectedRespCompareResType: selectedRespCompareResType,
     
                 currentPageNumber: currentPageNumber,
                 pageSize: pageSize,
@@ -121,7 +120,7 @@ class DiffResults extends Component {
             app: app,
             searchFilterPath: searchFilterPath || "",
             timeStamp: timeStamp || "",
-            showAll: ((selectedReqCompareResType === "All") || (selectedRespCompareResType === "All")),
+            //showAll: ((selectedReqCompareResType === "All") || (selectedRespCompareResType === "All")),
             
             // TODO: improve
             // response headers
@@ -176,14 +175,18 @@ class DiffResults extends Component {
                 newFilter["selectedAPI"] = "All";
             case "selectedReqMatchType":
                 newFilter["selectedReqMatchType"] = "match";
-            
-            case "selectedReqCompareResType":
-            case "selectedRespCompareResType":
-                // set to defaults only if the higher ones are changed
-                if (!metaData.includes("CompareResType")) {
-                    newFilter["selectedReqCompareResType"] = "All";
-                    newFilter["selectedRespCompareResType"] = "All";        
-                }
+            case "selectedDiffType":
+                newFilter['selectedDiffType'] = "All";
+            case "selectedResolutionType":
+                newFilter['selectedResolutionType'] = "All";
+    
+            // case "selectedReqCompareResType":
+            // case "selectedRespCompareResType":
+            //     // set to defaults only if the higher ones are changed
+            //     if (!metaData.includes("CompareResType")) {
+            //         newFilter["selectedReqCompareResType"] = "All";
+            //         newFilter["selectedRespCompareResType"] = "All";        
+            //     }
                 
             case "currentPageNumber":
                 newFilter["currentPageNumber"] = 1;
@@ -196,7 +199,7 @@ class DiffResults extends Component {
         // set the new filter and fetch new set of results
         this.setState({
                 filter: newFilter,
-                showAll: ((newFilter['selectedReqCompareResType'] === "All") || (newFilter['selectedRespCompareResType'] === "All")),
+                showAll: (newFilter['selectedResolutionType'] === "All"),
             },
             this.fetchAndUpdateResults
         );    
