@@ -74,7 +74,7 @@ export default class DiffResultsFilter extends Component {
     
     renderAPIPathDropdown() {
         const {facetListData} = this.props;
-        const apiPaths = _.isEmpty(facetListData.apiPaths) ? {} : facetListData.apiPaths; 
+        const apiPaths = _.isEmpty(facetListData.apiPaths) ? {"minfo/listmovies": 103, "minfo/liststores": 100,  "minfo/rentmovie": 56, "minfo/returnmovie": 56} : facetListData.apiPaths; 
         const selectedAPI = this.props.filter.selectedAPI; 
         console.log(this.props)
         const apiPathEntries = Object.entries(apiPaths);
@@ -148,7 +148,41 @@ export default class DiffResultsFilter extends Component {
     renderResolutionTypesDropdown = () => {
         const {filter, facetListData} = this.props;
         const selectedResolutionType = filter.selectedResolutionType;
-        const resolutionTypes = _.isEmpty(facetListData.resolutionTypes) ? [{val: "ERR_ValTypeMismatch", count: 2}, {val: "OK_OtherValInvalid", count: 4}] : facetListData.resolutionTypes; // todo: remove
+        const resolutionTypes = _.isEmpty(facetListData.resolutionTypes) 
+        ? 
+        [{
+            "val": "ERR_ValTypeMismatch",
+            "count": 551
+        },
+        {
+            "val": "OK_Ignore",
+            "count": 417
+        },
+        {
+            "val": "ERR_Required",
+            "count": 196
+        },
+        {
+            "val": "OK_OtherValInvalid",
+            "count": 167
+        },
+        {
+            "val": "OK_Optional",
+            "count": 162
+        },
+        {
+            "val": "ERR_ValMismatch",
+            "count": 14
+        },
+        {
+            "val": "ERR",
+            "count": 1
+        },
+        {
+            "val": "OK_DefaultCT",
+            "count": 1
+        }] 
+        : facetListData.resolutionTypes; // todo: remove
         
         return (
             <Fragment>
