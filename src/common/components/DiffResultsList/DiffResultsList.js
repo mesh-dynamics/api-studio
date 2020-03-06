@@ -18,6 +18,7 @@ export default class DiffResultsList extends Component {
             showResponseMessageBody: true,
             searchFilterPath: "",
             //selectedResolutionType: "All",
+            showFragments: false,
         }
         //this.selectedResolutionType = "All";
         //this.resolutionTypes = [{value: "ERR", count: 2}];
@@ -47,7 +48,9 @@ export default class DiffResultsList extends Component {
         }
     };
 
-    handleMetaDataSelect = (metaDataType, value) => {
+    toggleShowFragments = () => {
+        const {showFragments} = this.state;
+        this.setState({showFragments: !showFragments})
     }
 
     toggleMessageContents = (e) => {
@@ -118,15 +121,16 @@ export default class DiffResultsList extends Component {
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={this.state.showRequestMessageQParams}>Request Query Params</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={this.state.showRequestMessageFParams}>Request Form Params</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={this.state.showRequestMessageBody}>Request Body</Checkbox>
+                        
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                        
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
                         
-                        {/* todo: remove */}
-                        {/* <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         
-                        {this.renderResolutionTypesDropdown()} */}
-
+                        <Checkbox inline onChange={this.toggleShowFragments} checked={this.state.showFragments}>Show fragments only</Checkbox>
+                        
                         <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                             ref={this.inputElementRef}
                             type="text"
@@ -134,7 +138,6 @@ export default class DiffResultsList extends Component {
                             placeholder="Search"
                             onChange={this.handleSearchFilterChange}
                             id="filterPathInputId"
-                            //inputRef={ref => { this.input = ref; }}
                         />
                     </FormGroup>
             </Fragment>
@@ -231,7 +234,7 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.updatedReducedDiffArrayRespHdr}
                                 onLineNumberClick={(lineId, e) => { return; }}
-                                showAll={this.props.showAll}
+                                showAll={!this.state.showFragments}
                                 searchFilterPath={this.state.searchFilterPath}
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
@@ -272,7 +275,7 @@ export default class DiffResultsList extends Component {
                                     filterPaths={item.filterPaths}
                                     onLineNumberClick={(lineId, e) => { return; }}
                                     inputElementRef={this.inputElementRef}
-                                    showAll={this.props.showAll}
+                                    showAll={!this.state.showFragments}
                                     searchFilterPath={this.state.searchFilterPath}
                                 />
                             </div>
