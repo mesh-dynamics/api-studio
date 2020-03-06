@@ -22,6 +22,7 @@ import javax.ws.rs.client.WebTarget;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.logging.log4j.util.Strings;
 import org.glassfish.jersey.client.ClientConfig;
@@ -30,6 +31,7 @@ import org.glassfish.jersey.client.ClientProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.logging.MDConfigurationFactory;
 import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
@@ -68,6 +70,7 @@ public class CommonConfig {
 	public boolean samplerVeto;
 	public List<String> headerParams;
 	public Sampler sampler;
+	public final boolean performanceTest;
 
 	private static class Updater implements Runnable {
 
@@ -106,6 +109,7 @@ public class CommonConfig {
 			", serviceName='" + serviceName + '\'' +
 			", encryptionConfig=" + encryptionConfig +
 			", intent=" + intent +
+			", performance_test=" + performanceTest +
 			'}';
 	}
 
@@ -114,7 +118,7 @@ public class CommonConfig {
 	}
 
 	static {
-
+		ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
@@ -155,6 +159,7 @@ public class CommonConfig {
 
 	private CommonConfig() throws Exception {
 		this(new Properties());
+		System.setProperty("JAEGER_AGENT_HOST", "jaeger-agent");
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
 			MDGlobalTracer.register(tracer);
@@ -225,6 +230,10 @@ public class CommonConfig {
 			return Optional.empty();
 		});
 
+		performanceTest = BooleanUtils.toBoolean(
+			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
+				, dynamicProperties).orElse("false"));
+
 		ClientConfig clientConfig = new ClientConfig()
 			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
 			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
@@ -260,18 +269,13 @@ public class CommonConfig {
 	}
 
 	public static String getCurrentIntent() {
-		String currentIntent = getCurrentIntentFromScope().orElse(getConfigIntent());
-		LOGGER.info("Got intent from trace (in agent) :: " + currentIntent);
-		return currentIntent;
+		return getCurrentIntentFromScope().orElse(getConfigIntent());
 	}
 
 	public static Optional<String> getCurrentIntentFromScope() {
-		Optional<String> currentIntent = CommonUtils.getCurrentSpan().flatMap(span -> Optional.
+		return CommonUtils.getCurrentSpan().flatMap(span -> Optional.
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
 			Optional.ofNullable(CommonConfig.intent));
-		LOGGER.info("Got intent from trace (in agent) :: " +
-			currentIntent.orElse(" N/A"));
-		return currentIntent;
 	}
 
 	public static boolean isIntentToRecord() {
