@@ -224,9 +224,9 @@ public class ReplayWS {
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
 
         if (userId == null) {
-        return Response.status(Status.BAD_REQUEST)
-            .entity((new JSONObject(Map.of("Message", "userId Not Specified"))).toString())
-            .build();
+            return Response.status(Status.BAD_REQUEST)
+                .entity((new JSONObject(Map.of("Message", "userId Not Specified"))).toString())
+                .build();
         }
 
         if (instanceId == null) {

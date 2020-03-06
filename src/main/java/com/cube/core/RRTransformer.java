@@ -1,6 +1,7 @@
 package com.cube.core;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -58,8 +59,8 @@ public class RRTransformer {
 	}
 	
     private List<String> transform(Optional<List<String>> input, JSONArray xfms) {
-        Set<String> out = input.orElse(Collections.emptyList())
-            .stream().collect(Collectors.toSet());
+
+        Set<String> out = new HashSet<>(input.orElse(Collections.emptyList()));
 
         for (int indx = 0; indx < xfms.length(); ++indx) {
             JSONObject pair = xfms.getJSONObject(indx);
