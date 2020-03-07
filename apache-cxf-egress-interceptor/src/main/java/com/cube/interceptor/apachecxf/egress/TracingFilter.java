@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.Priority;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.ext.Provider;
 
 import io.md.utils.CommonUtils;
 
@@ -13,6 +14,7 @@ import io.md.utils.CommonUtils;
  * Lower the order, early the filter is executed.
  * We want Client filter to execute before Tracing Filter.
  **/
+@Provider
 @Priority(4000)
 public class TracingFilter implements ClientRequestFilter {
 

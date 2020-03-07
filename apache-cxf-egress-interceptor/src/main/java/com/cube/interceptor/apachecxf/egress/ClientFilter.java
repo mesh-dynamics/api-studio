@@ -8,16 +8,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
@@ -44,12 +45,12 @@ import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
 
 /**
- * Priority is to specify in which order the filters are to be executed.
- * Lower the order, early the filter is executed.
- * We want Client filter to execute before Tracing Filter.
+ * Priority is to specify in which order the filters are to be executed. Lower the order, early the
+ * filter is executed. We want Client filter to execute before Tracing Filter.
  **/
+@Provider
 @Priority(3500)
-public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
+public class ClientFilter implements WriterInterceptor, ClientRequestFilter, ClientResponseFilter {
 
 	private static final Logger LOGGER = LogManager.getLogger(ClientFilter.class);
 
@@ -71,58 +72,7 @@ public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 		}
 
 		if (reqContext != null) {
-			Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
-			if (currentSpan.isPresent()) {
-				Span span = currentSpan.get();
-				//Either baggage has sampling set to true or this service uses its veto power to sample.
-				boolean isSampled = BooleanUtils
-					.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
-				boolean isVetoed = BooleanUtils
-					.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
-
-				if (isSampled || isVetoed) {
-					span.setBaggageItem(Constants.MD_IS_VETOED, null);
-
-					URI uri = reqContext.getUri();
-
-					//query params
-					MultivaluedMap<String, String> queryParams = Utils.getQueryParams(uri);
-
-					//path
-					String apiPath = uri.getPath();
-
-					//serviceName to be host+port for outgoing calls
-					String serviceName =
-						uri.getPort() != -1
-							? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
-							: uri.getHost();
-
-					MDTraceInfo mdTraceInfo = getTraceInfo(span);
-
-					String xRequestId = reqContext.getStringHeaders()
-						.getFirst(Constants.X_REQUEST_ID);
-					MultivaluedMap<String, String> traceMetaMap = Utils
-						.buildTraceInfoMap(mdTraceInfo, xRequestId);
-
-					reqContext.setProperty(Constants.MD_SERVICE_PROP, serviceName);
-					reqContext.setProperty(Constants.MD_TRACE_META_MAP_PROP, traceMetaMap);
-					reqContext.setProperty(Constants.MD_API_PATH_PROP, apiPath);
-					reqContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
-					reqContext.setProperty(Constants.MD_TRACE_INFO, mdTraceInfo);
-
-					logRequest(context, reqContext, apiPath,
-						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
-						mdTraceInfo, serviceName);
-				} else {
-					LOGGER.debug(new ObjectMessage(
-						Map.of(Constants.MESSAGE, "Sampling is false!")));
-					context.proceed();
-				}
-			} else {
-				LOGGER
-					.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Current Span is empty!")));
-				context.proceed();
-			}
+			recordRequest(context, reqContext);
 		} else {
 			LOGGER
 				.debug(new ObjectMessage(
@@ -145,21 +95,26 @@ public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 				Optional.ofNullable(serviceName));
 
 		//body
-		String requestBody = getRequestBody(writerInterceptorContext);
+		byte[] requestBody = null;
+
+		//we pass null for GET requests
+		if (writerInterceptorContext != null) {
+			requestBody = getRequestBody(writerInterceptorContext);
+		}
 
 		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
 			requestBody);
 	}
 
-	private String getRequestBody(WriterInterceptorContext interceptorContext) throws IOException {
+	private byte[] getRequestBody(WriterInterceptorContext interceptorContext) throws IOException {
 		OutputStream originalStream = interceptorContext.getOutputStream();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		String reqBody;
+		byte[] reqBody;
 		interceptorContext.setOutputStream(baos);
 		try {
 			interceptorContext.proceed();
 		} finally {
-			reqBody = baos.toString("UTF-8");
+			reqBody = baos.toByteArray();
 			baos.writeTo(originalStream);
 			baos.close();
 			interceptorContext.setOutputStream(originalStream);
@@ -207,17 +162,17 @@ public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 		meta.putAll(traceMeta);
 
 		//body
-		String responseBody = getResponseBody(responseContext);
+		byte[] responseBody = getResponseBody(responseContext);
 
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 	}
 
-	private String getResponseBody(ClientResponseContext respContext) {
+	private byte[] getResponseBody(ClientResponseContext respContext) {
 		try (InputStream entityStream = respContext.getEntityStream()) {
 			if (entityStream != null) {
-				String respBody = IOUtils
-					.toString(entityStream, StandardCharsets.UTF_8);
-				InputStream in = IOUtils.toInputStream(respBody, StandardCharsets.UTF_8);
+				byte[] respBody = IOUtils
+					.toByteArray(entityStream);
+				InputStream in = new ByteArrayInputStream(respBody);
 				respContext.setEntityStream(in);
 				return respBody;
 			}
@@ -230,7 +185,7 @@ public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 			respContext.setEntityStream(new ByteArrayInputStream(new byte[0]));
 		}
 
-		return Strings.EMPTY;
+		return null;
 	}
 
 	private void removeSetContextProperty(ClientRequestContext context) {
@@ -239,5 +194,75 @@ public class ClientFilter implements WriterInterceptor, ClientResponseFilter {
 		context.removeProperty(Constants.MD_SERVICE_PROP);
 		context.removeProperty(Constants.MD_SAMPLE_REQUEST);
 		context.removeProperty(Constants.MD_TRACE_INFO);
+	}
+
+	@Override
+	public void filter(ClientRequestContext clientRequestContext) throws IOException {
+		if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
+			//aroundWriteTo will not be called, as there will be no body to write.
+			//hence have to log the request here.
+			recordRequest(null, clientRequestContext);
+		}
+	}
+
+	private void recordRequest(WriterInterceptorContext writerInterceptorContext,
+		ClientRequestContext clientRequestContext) throws IOException {
+		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+		if (currentSpan.isPresent()) {
+			Span span = currentSpan.get();
+			//Either baggage has sampling set to true or this service uses its veto power to sample.
+			boolean isSampled = BooleanUtils
+				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+			boolean isVetoed = BooleanUtils
+				.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
+
+			if (isSampled || isVetoed) {
+				span.setBaggageItem(Constants.MD_IS_VETOED, null);
+
+				URI uri = clientRequestContext.getUri();
+
+				//query params
+				MultivaluedMap<String, String> queryParams = Utils.getQueryParams(uri);
+
+				//path
+				String apiPath = uri.getPath();
+
+				//serviceName to be host+port for outgoing calls
+				String serviceName =
+					uri.getPort() != -1
+						? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
+						: uri.getHost();
+
+				MDTraceInfo mdTraceInfo = getTraceInfo(span);
+
+				String xRequestId = clientRequestContext.getStringHeaders()
+					.getFirst(Constants.X_REQUEST_ID);
+				MultivaluedMap<String, String> traceMetaMap = Utils
+					.buildTraceInfoMap(mdTraceInfo, xRequestId);
+
+				clientRequestContext.setProperty(Constants.MD_SERVICE_PROP, serviceName);
+				clientRequestContext
+					.setProperty(Constants.MD_TRACE_META_MAP_PROP, traceMetaMap);
+				clientRequestContext.setProperty(Constants.MD_API_PATH_PROP, apiPath);
+				clientRequestContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
+				clientRequestContext.setProperty(Constants.MD_TRACE_INFO, mdTraceInfo);
+
+				logRequest(writerInterceptorContext, clientRequestContext, apiPath,
+					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
+					mdTraceInfo, serviceName);
+			} else {
+				LOGGER.debug(new ObjectMessage(
+					Map.of(Constants.MESSAGE, "Sampling is false!")));
+				if (writerInterceptorContext != null) {
+					writerInterceptorContext.proceed();
+				}
+			}
+		} else {
+			LOGGER
+				.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Current Span is empty!")));
+			if (writerInterceptorContext != null) {
+				writerInterceptorContext.proceed();
+			}
+		}
 	}
 }

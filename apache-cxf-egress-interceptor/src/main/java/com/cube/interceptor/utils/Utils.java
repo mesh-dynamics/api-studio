@@ -97,7 +97,7 @@ public class Utils {
 
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
-		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, String requestBody) {
+		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
@@ -119,7 +119,7 @@ public class Utils {
 
 	public static void createAndLogRespEvent(String apiPath,
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
-		MDTraceInfo mdTraceInfo, String responseBody) {
+		MDTraceInfo mdTraceInfo, byte[] responseBody) {
 		try {
 			Event responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
