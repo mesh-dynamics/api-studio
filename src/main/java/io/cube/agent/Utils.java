@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import io.cube.agent.EncryptionConfig.JSONPathMeta;
 import io.cube.agent.samplers.Sampler;
+import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
@@ -52,6 +53,10 @@ public class Utils {
 	}
 
 	public static Optional<Sampler> getSampler(float samplingRate, int samplingAccuracy) {
+		if (samplingAccuracy == 0) {
+			samplingAccuracy = SimpleSampler.DEFAULT_SAMPLING_ACCURACY;
+		}
+
 		if (samplingRate == 0) {
 			return Optional.of(Sampler.NEVER_SAMPLE);
 		}

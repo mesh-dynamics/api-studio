@@ -57,7 +57,7 @@ public class SamplerTest {
 	void testBoundarySampler() {
 		int count = 0;
 		List<String> headerParams = Arrays.asList("sessionId");
-		Sampler sampler = BoundarySampler.create(0.4f, 1000, headerParams);
+		Sampler sampler = BoundarySampler.create(0.4f, 1000, "headers", headerParams);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
 		Map<String, Integer> sampledSessionIDs = new HashMap<>();
