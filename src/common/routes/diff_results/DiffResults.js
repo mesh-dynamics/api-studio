@@ -29,8 +29,8 @@ class DiffResults extends Component {
         super(props);
         this.state = {
             filter : {
-                selectedService: "s1",
-                selectedAPI: "a1",
+                selectedService: "All",
+                selectedAPI: "All",
                 
                 selectedReqMatchType: "match",
                 selectedDiffType: "All",
@@ -39,7 +39,7 @@ class DiffResults extends Component {
                 //selectedRespCompareResType: "All",
     
                 currentPageNumber: 1,
-                pageSize: 5,
+                pageSize: config.defaultPageSize,
             },
             diffLayoutData : [],
             facetListData: {
@@ -91,7 +91,7 @@ class DiffResults extends Component {
         const responseBody = urlParameters["responseBody"];
         const timeStamp = decodeURI(urlParameters["timeStamp"]);
         const currentPageNumber = urlParameters["currentPageNumber"] || 1;
-        const pageSize = urlParameters["pageSize"] || 5;
+        const pageSize = urlParameters["pageSize"] || config.defaultPageSize;
         
 
         dispatch(cubeActions.setSelectedApp(app));
