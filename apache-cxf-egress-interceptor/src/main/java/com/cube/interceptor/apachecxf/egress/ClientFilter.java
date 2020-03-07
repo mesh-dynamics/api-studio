@@ -95,7 +95,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				Optional.ofNullable(serviceName));
 
 		//body
-		byte[] requestBody = null;
+		byte[] requestBody = new byte[0];
 
 		//we pass null for GET requests
 		if (writerInterceptorContext != null) {
@@ -170,8 +170,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	private byte[] getResponseBody(ClientResponseContext respContext) {
 		try (InputStream entityStream = respContext.getEntityStream()) {
 			if (entityStream != null) {
-				byte[] respBody = IOUtils
-					.toByteArray(entityStream);
+				byte[] respBody = IOUtils.toByteArray(entityStream);
 				InputStream in = new ByteArrayInputStream(respBody);
 				respContext.setEntityStream(in);
 				return respBody;
@@ -185,7 +184,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 			respContext.setEntityStream(new ByteArrayInputStream(new byte[0]));
 		}
 
-		return null;
+		return new byte[0];
 	}
 
 	private void removeSetContextProperty(ClientRequestContext context) {
@@ -200,7 +199,8 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
 			//aroundWriteTo will not be called, as there will be no body to write.
-			//hence have to log the request here.
+			//hence have to log the request here. WebClient does not have a provision
+			//to create a get request with body, so double logging is not an issue.
 			recordRequest(null, clientRequestContext);
 		}
 	}
