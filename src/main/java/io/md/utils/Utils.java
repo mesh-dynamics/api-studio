@@ -29,12 +29,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
+import io.opentracing.Span;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
 
@@ -157,8 +159,6 @@ public class Utils {
 	}
 
 
-
-
 	public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap,
 		String fieldname) {
 		return Optional.ofNullable(fieldMap.getFirst(fieldname));
@@ -216,13 +216,17 @@ public class Utils {
 
 	}
 
-	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
-		if (mvMap == null) return null;
+	public static MultivaluedMap<String, String> setLowerCaseKeys(
+		MultivaluedMap<String, String> mvMap) {
+		if (mvMap == null) {
+			return null;
+		}
 		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
 		for (String key : new ArrayList<>(mvMap.keySet())) {
 			String lowerCase = key.toLowerCase();
-			for (String value : mvMap.get(key))
+			for (String value : mvMap.get(key)) {
 				lowerCaseMVMap.add(lowerCase, value);
+			}
 		}
 		return lowerCaseMVMap;
 	}
@@ -293,19 +297,28 @@ public class Utils {
 		return jsonMapper.readValue(payload, HTTPResponsePayload.class);
 	}
 
+	public static MDTraceInfo getTraceInfo(Span currentSpan) {
+		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
+
+		String traceId = spanContext.getTraceId();
+		String spanId = String.valueOf(spanContext.getSpanId());
+		String parentSpanId = String.valueOf(spanContext.getParentId());
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
+		return mdTraceInfo;
+	}
+
 	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type"
 		/*, "Content-type", "Content-Type", "content-Type"*/);
 
-	public  static  boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
+	public static boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).findFirst().filter(x ->
-			x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
+				x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
 	}
 
-	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
+	public static Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).findFirst().map(x -> x.toLowerCase().stripLeading());
 	}
-
 
 }
