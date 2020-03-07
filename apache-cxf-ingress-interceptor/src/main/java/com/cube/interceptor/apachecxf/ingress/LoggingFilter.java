@@ -1,11 +1,11 @@
-package com.cube.interceptor.apachecxf;
+package com.cube.interceptor.apachecxf.ingress;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -40,6 +40,11 @@ import io.opentracing.Span;
 import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
 
+/**
+ * Priority is to specify in which order the filters are to be executed.
+ * Lower the order, early the filter is executed.
+ * We want Logging filter to execute after Tracing Filter during Ingress
+ **/
 @Provider
 @Priority(3000)
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
@@ -133,7 +138,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
 
 		//body
-		String requestBody = getRequestBody(reqContext);
+		byte[] requestBody = getRequestBody(reqContext);
 
 		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
 			requestBody);
@@ -166,7 +171,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		MDTraceInfo mdTraceInfo = traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 
 		//body
-		String responseBody = getResponseBody(context);
+		byte[] responseBody = getResponseBody(context);
 
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
@@ -198,23 +203,23 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		return Utils.buildTraceInfoMap(mdTraceInfo, xRequestId);
 	}
 
-	private String getRequestBody(ContainerRequestContext reqContext) throws IOException {
-		String json = IOUtils.toString(reqContext.getEntityStream(), StandardCharsets.UTF_8);
-		InputStream in = IOUtils.toInputStream(json, StandardCharsets.UTF_8);
+	private byte[] getRequestBody(ContainerRequestContext reqContext) throws IOException {
+		byte[] reqBody = IOUtils.toByteArray(reqContext.getEntityStream());
+		InputStream in = new ByteArrayInputStream(reqBody);
 		reqContext.setEntityStream(in);
 
-		return json;
+		return reqBody;
 	}
 
-	private String getResponseBody(WriterInterceptorContext context) throws IOException {
+	private byte[] getResponseBody(WriterInterceptorContext context) throws IOException {
 		OutputStream originalStream = context.getOutputStream();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		String responseBody;
+		byte[] responseBody;
 		context.setOutputStream(baos);
 		try {
 			context.proceed();
 		} finally {
-			responseBody = baos.toString("UTF-8");
+			responseBody = baos.toByteArray();
 			baos.writeTo(originalStream);
 			baos.close();
 			context.setOutputStream(originalStream);

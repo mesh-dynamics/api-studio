@@ -37,12 +37,6 @@ public class Utils {
 		config = new Config();
 	}
 
-	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return ((config.intentResolver.isIntentToRecord()
-			&& config.commonConfig.sampler.isSampled(requestHeaders))
-			|| config.intentResolver.isIntentToMock());
-	}
-
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
 		Optional<String> serviceName) {
 		MultivaluedMap<String, String> metaMap = Utils.createEmptyMultivaluedMap();
@@ -158,5 +152,4 @@ public class Utils {
 	public static MultivaluedMap<String, String> createEmptyMultivaluedMap() {
 		return new MultivaluedHashMap<>();
 	}
-
 }
