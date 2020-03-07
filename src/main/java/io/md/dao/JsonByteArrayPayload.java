@@ -2,26 +2,28 @@ package io.md.dao;
 
 import java.nio.charset.StandardCharsets;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
-public class JsonByteArrayPayload extends LazyParseAbstractPayload {
+import io.md.utils.JsonByteArrayPayloadDeserializer;
 
-	private static final Logger LOGGER = LogManager.getLogger(JsonByteArrayPayload.class);
+@JsonDeserialize(using = JsonByteArrayPayloadDeserializer.class)
+public class JsonByteArrayPayload extends LazyParseAbstractPayload {
 
 	@JsonSerialize(using = ByteArraySerializer.class)
 	@JsonDeserialize(as = byte[].class)
 	public byte[] jsonBinary;
 
-	@JsonCreator
+
 	public JsonByteArrayPayload(@JsonProperty("jsonBinary") byte[] payload) {
 		this.jsonBinary = payload;
+	}
+
+	public JsonByteArrayPayload(JsonNode dataObjRoot) {
+		super(dataObjRoot);
 	}
 
 	@Override
@@ -42,7 +44,7 @@ public class JsonByteArrayPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public boolean isRawPayloadEmpty() {
-		return this.jsonBinary == null || this.jsonBinary.length == 0;
+		return (this.jsonBinary == null || this.jsonBinary.length == 0) && this.dataObj.isDataObjEmpty();
 	}
 
 	@Override
@@ -54,17 +56,6 @@ public class JsonByteArrayPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public void postParse() {
-		//Do Nothing
-	}
-
-	@Override
-	public void syncFromDataObj() {
-		if (!this.isDataObjEmpty()) {
-			try {
-				jsonBinary = (dataObj.serializeDataObj()).getBytes();
-			} catch (DataObjProcessingException e) {
-				jsonBinary = null;
-			}
-		}
+		//Do Nothing (No unwrapping required)
 	}
 }

@@ -1,6 +1,7 @@
 package io.md.dao;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -22,7 +23,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BinaryNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -51,8 +51,10 @@ public class JsonDataObj implements DataObj {
 	}
 
 	JsonDataObj(Payload obj, ObjectMapper jsonMapper) {
+		// The serializer always serializes a Paylaod as an array(Because of our custom serializer)
+		// The first element is typeInfo and the second element is the payload object itself
+		// we just need the payload object parsed into a json tree (ignoring type info)
 		ArrayNode payloadTreeMap   = jsonMapper.valueToTree(obj);
-		this.typeInfo = payloadTreeMap.get(0);
 		this.objRoot = payloadTreeMap.get(1);
 		this.jsonMapper = jsonMapper;
 	}
@@ -153,26 +155,6 @@ public class JsonDataObj implements DataObj {
 		return null;
 	}
 
-
-	//TODO keep this in cube repository
-/*	@Override
-	public DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList) {
-		if (!(rhs instanceof JsonDataObj)) {
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Rhs not Json obj type. Ignoring the transformation",
-				Constants.DATA, rhs.toString()
-			)));
-			return this;
-		}
-		JsonTransformer jsonTransformer = new JsonTransformer(jsonMapper);
-		JsonNode transformedRoot = jsonTransformer.transform(this.objRoot,
-		 ((JsonDataObj)rhs).getRoot(),
-			operationList);
-
-		return new JsonDataObj(transformedRoot, jsonMapper);
-	}*/
-
-
 	/**
 	 * Unwrap the string at path into a json object. The type for interpreting the
 	 * string is given by mimetype
@@ -195,8 +177,25 @@ public class JsonDataObj implements DataObj {
 				// currently handling only json type
 				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
 					try {
-						JsonNode parsedVal = (val.isTextual()) ? jsonMapper.readTree(val.asText()) :
-							jsonMapper.readTree(val.binaryValue());
+						// This will work irrespective if the val is a TextNode (if unwrapped in
+						// collector or CubeServer after serialization by agent)
+						// or BinaryNode (if unwrapped in agent before serialization)
+						JsonNode parsedVal = jsonMapper.readTree(val.binaryValue());
+						valParentObj.set(fieldName, parsedVal);
+						return true;
+					} catch (IOException e) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"Exception in parsing json string", Constants.PATH_FIELD, path
+							, "value" , val.toString())) , e);
+					}
+				} else if (val.isTextual()) {
+					try {
+						// if the value is not object, it is always a byte array ,( for now )
+						// since we are using generic objectMapper.readTree(jsonParser) in serializer,
+						// all leaf values in quotes will be read as TextNode (even though they might a Base64
+						// encoded byte array)
+						// so we are just converting a TextNode to a BinaryNode here (to avoid confusion)
+						JsonNode parsedVal = new BinaryNode(val.binaryValue());
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (IOException e) {
@@ -254,25 +253,37 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@Override
-	public Optional<String> encryptField(String path, EncryptionAlgorithm encrypter) {
+	public Optional<Object> encryptField(String path, EncryptionAlgorithm encrypter) {
 		return encryptField(objRoot, path, encrypter);
 	}
 
-	private Optional<String> encryptField(JsonNode root, String path, EncryptionAlgorithm encrypter) {
+	private Optional<Object> encryptField(JsonNode root, String path,
+		EncryptionAlgorithm encrypter) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = root.at(pathPtr.head());
-		if (valParent != null &&  valParent.isObject()) {
+		if (valParent != null && valParent.isObject()) {
 			ObjectNode valParentObj = (ObjectNode) valParent;
 			String fieldName = pathPtr.last().getMatchingProperty();
 			JsonNode val = valParentObj.get(fieldName);
 			if (val != null && val.isValueNode()) {
-				// TODO if the original node is binary, we can't blindly convert to a TextNode
-				// we might need to have encrypt functions which directly ingest byte array
-				// and return byte array
-				return encrypter.encrypt(val.toString()).map(newVal -> {
-					valParentObj.set(fieldName, new TextNode(newVal));
-					return newVal;
-				});
+				// TODO handle types other than binary and text node
+				// corresponding changes in the encrypter module might be required
+				if (val.isBinary()) {
+					try {
+						return encrypter.encrypt(val.binaryValue()).map(newVal -> {
+							valParentObj.set(fieldName, new BinaryNode(newVal));
+							return newVal;
+						});
+					} catch (IOException e) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
+							, "Error while retrieving binary node value")), e);
+					}
+				} else {
+					return encrypter.encrypt(val.toString()).map(newVal -> {
+						valParentObj.set(fieldName, new TextNode(newVal));
+						return newVal;
+					});
+				}
 			}
 		}
 		return Optional.empty();
@@ -403,27 +414,18 @@ public class JsonDataObj implements DataObj {
 		try {
 			if (node.isTextual()) {
 				return node.asText();
+			} else if (node.isBinary()) {
+				return new String(node.binaryValue() , StandardCharsets.UTF_8);
 			}
 			return jsonMapper.writeValueAsString(node);
-		} catch (JsonProcessingException e) {
+		} catch (IOException e) {
 			LOGGER.error("Error in converting json node to string: " + node.toString());
 			return node.toString();
 		}
 	}
 
-	@Override
-	public  Payload convertToPayload() {
-		final JsonNodeFactory factory = JsonNodeFactory.instance;
-		ArrayNode arrayNode = factory.arrayNode();
-		arrayNode.add(typeInfo);
-		arrayNode.add(objRoot);
-		return jsonMapper.convertValue(arrayNode, Payload.class);
-	}
-
 	@JsonIgnore
 	protected final JsonNode objRoot;
-	@JsonIgnore
-	protected JsonNode typeInfo;
 	@JsonIgnore
 	protected final ObjectMapper jsonMapper;
 

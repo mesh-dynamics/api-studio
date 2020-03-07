@@ -105,9 +105,10 @@ public class EventPayloadTests {
 			HTTPRequestPayload payloadFromSerialized = (HTTPRequestPayload) fromSerialized.payload;
 			Assert.assertEquals(payloadFromSerialized.
 				hdrs.getFirst("content-type"), MediaType.APPLICATION_JSON);
-			Assert.assertTrue(payloadFromSerialized.body == null
-				|| payloadFromSerialized.body.length == 0);
-			Assert.assertNull(payloadFromSerialized.formParams);
+			Assert.assertTrue(payloadFromSerialized.getBody() == null
+				|| payloadFromSerialized.getBody().length == 0);
+			Assert.assertTrue(payloadFromSerialized.formParams == null ||
+				 payloadFromSerialized.formParams.isEmpty());
 			Assert
 				.assertEquals("Beverly Outlaw", payloadFromSerialized
 					.queryParams.getFirst("filmName"));
@@ -121,7 +122,8 @@ public class EventPayloadTests {
 
 		@Test
 		public void testHttpJsonResponseEvent() throws IOException, PathNotFoundException {
-			String jsonResponseEventSerialized = objectMapper.writeValueAsString(httpJsonResponseEvent);
+			String jsonResponseEventSerialized = objectMapper
+				.writeValueAsString(httpJsonResponseEvent);
 			System.out.println("INITIAL :: " + jsonResponseEventSerialized);
 			Event event = objectMapper.readValue(jsonResponseEventSerialized, Event.class);
 			HTTPResponsePayload payload =  (HTTPResponsePayload) event.payload;
@@ -142,11 +144,13 @@ public class EventPayloadTests {
 		@Test
 		public void testHttpHtmlResponseEvent() throws  IOException, PathNotFoundException {
 			String jsonRespEventSerialized = objectMapper.writeValueAsString(httpHtmlResponseEvent);
-			System.out.println("INITIAL :: " + jsonRespEventSerialized);
+			System.out.println("ONE SERIALIZATION :: " + jsonRespEventSerialized);
 			Event event = objectMapper.readValue(jsonRespEventSerialized, Event.class);
 			HTTPResponsePayload payload =  (HTTPResponsePayload) event.payload;
-			System.out.println(new String(payload.getValAsByteArray("/body")));
-			Assert.assertEquals(new String(payload.getValAsByteArray("/body")),
+			System.out.println(new String(payload.getValAsString("/body")));
+			System.out.println("SECOND SERIALIZATION :: " + objectMapper
+				.writeValueAsString(payload));
+			Assert.assertEquals(new String(payload.getValAsString("/body")),
 				"<html><meta></meta><body>Sample Body</body></html>");
 			//Assert.assertEquals(payload.getValAsString("/body"));
 			payload.encryptField("/body" , new JcaEncryption());
@@ -154,9 +158,10 @@ public class EventPayloadTests {
 			System.out.println("POST ENCRYPTION :: " + reSerialized);
 			Event encrypted = objectMapper.readValue(reSerialized , Event.class);
 			HTTPResponsePayload encryptedPayload  = (HTTPResponsePayload) encrypted.payload;
-			Assert.assertNotEquals(new String(encryptedPayload.getValAsByteArray("/body"))
+			Assert.assertNotEquals(new String(encryptedPayload.getValAsString("/body"))
 				, "<html><meta></meta><body>Sample Body</body></html>");
-			System.out.println(new String(encryptedPayload.getValAsByteArray("/body")));
+			System.out.println(new String( new JcaEncryption().decrypt(encryptedPayload
+				.getValAsByteArray("/body")).orElse(new byte[]{0}) , "UTF-8"));
 		}
 
 		@Test

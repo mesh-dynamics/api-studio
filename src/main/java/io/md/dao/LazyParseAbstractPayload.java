@@ -9,7 +9,7 @@ import java.util.function.Function;
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.core.Comparator.MatchType;
@@ -29,28 +29,36 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		this.mapper = CubeObjectMapperProvider.getInstance();
 	}
 
+	public LazyParseAbstractPayload(JsonNode objRoot) {
+		this.mapper = CubeObjectMapperProvider.getInstance();
+		this.dataObj = new JsonDataObj(objRoot, mapper);
+	}
+
 	@Override
+	@JsonIgnore
 	abstract  public byte[] rawPayloadAsByteArray()
 		throws NotImplementedException, RawPayloadEmptyException;
 
 	@Override
+	@JsonIgnore
 	abstract  public String rawPayloadAsString()
 		throws NotImplementedException, RawPayloadProcessingException, RawPayloadEmptyException;
 
 	@Override
+	@JsonIgnore
 	public abstract  boolean isRawPayloadEmpty();
 
+	@JsonIgnore
 	public abstract  void postParse();
 
+	@JsonIgnore
+	// This is default implementation. Can be overriden by specific payload types
 	public void parseIfRequired() {
 		if (this.dataObj == null) {
 			this.dataObj = new JsonDataObj(this, mapper);
 			postParse();
 		}
 	}
-
-	@JsonIgnore
-	abstract public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
 
 	@Override
 	public boolean isLeaf() {
@@ -92,9 +100,6 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		return dataObj.compare(rhs, template);
 	}
 
-	//TODO leaving it out from here
-	//DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
-
 	@Override
 	public boolean wrapAsString(String path, String mimetype) {
 		parseIfRequired();
@@ -108,7 +113,7 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public Optional<String> encryptField(String path, EncryptionAlgorithm encrypter) {
+	public Optional<Object> encryptField(String path, EncryptionAlgorithm encrypter) {
 		parseIfRequired();
 		return dataObj.encryptField(path, encrypter);
 
@@ -140,12 +145,6 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	public <T> Optional<T> getValAsObject(String path, Class<T> className) {
 		parseIfRequired();
 		return dataObj.getValAsObject(path , className);
-	}
-
-	@Override
-	public Payload convertToPayload() {
-		parseIfRequired();
-		return dataObj.convertToPayload();
 	}
 
 	@Override

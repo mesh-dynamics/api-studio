@@ -1,25 +1,26 @@
 package io.md.dao;
 
-import javax.ws.rs.core.MediaType;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StringSerializer;
 
-public class JsonPayload extends LazyParseAbstractPayload {
+import io.md.utils.JsonPayloadDeserializer;
 
-	private static final Logger LOGGER = LogManager.getLogger(JsonPayload.class);
+@JsonDeserialize(using = JsonPayloadDeserializer.class)
+public class JsonPayload extends LazyParseAbstractPayload {
 
 	@JsonSerialize(using = StringSerializer.class)
 	public String json;
 
-	@JsonCreator
+
 	public JsonPayload(@JsonProperty("json") String payload) {
 		this.json = payload;
+	}
+
+	public JsonPayload(JsonNode dataObjRoot) {
+		super(dataObjRoot);
 	}
 
 	@Override
@@ -47,22 +48,11 @@ public class JsonPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public void postParse() {
-		// DO NOTHING
-	}
-
-	@Override
-	public void syncFromDataObj()  {
-		if (!isDataObjEmpty()) {
-			try {
-				json = this.dataObj.serializeDataObj();
-			} catch (DataObjProcessingException e) {
-				json = null;
-			}
-		}
+		// DO NOTHING (No unwrapping required)
 	}
 
 	@Override
 	public boolean isRawPayloadEmpty() {
-		return json == null || json.isEmpty();
+		return (json == null || json.isEmpty()) && this.dataObj.isDataObjEmpty();
 	}
 }

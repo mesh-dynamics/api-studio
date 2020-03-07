@@ -11,18 +11,20 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
+import io.md.utils.HttpRequestPayloadDeserializer;
 import io.md.utils.Utils;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
  */
+@JsonDeserialize(using = HttpRequestPayloadDeserializer.class)
 public class HTTPRequestPayload extends LazyParseAbstractPayload {
 
 	@JsonDeserialize(as=MultivaluedHashMap.class)
@@ -34,8 +36,7 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 	public String method;
 	@JsonSerialize(using = ByteArraySerializer.class)
 	@JsonDeserialize(as = byte[].class)
-	public byte[] body;
-
+	private byte[] body;
 	static String BODY = "body";
 
     /**
@@ -46,7 +47,8 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
      * @param method
      * @param body
      */
-    @JsonCreator
+    // NOTE this constructor will be used only in the agent,
+    // when creating the payload initially
     public HTTPRequestPayload(@JsonProperty("hdrs") MultivaluedMap<String, String> hdrs,
 	    @JsonProperty("queryParams") MultivaluedMap<String, String> queryParams,
 	    @JsonProperty("formParams") MultivaluedMap<String, String> formParams,
@@ -59,6 +61,30 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 	    this.body = body;
     }
 
+
+    // Once the payload has been serialized, only this constructor will be called
+    // from within the deserializer
+	public HTTPRequestPayload(JsonNode deserializedJsonTree) {
+    	super(deserializedJsonTree);
+		this.queryParams = this.dataObj.getValAsObject("/".concat("queryParams"),
+			MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		this.formParams =  this.dataObj.getValAsObject("/".concat("formParams"),
+			MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		this.hdrs =  this.dataObj.getValAsObject("/".concat("hdrs"),
+			MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		try {
+			this.method = this.dataObj.getValAsString("/".concat("method"));
+		} catch (PathNotFoundException e) {
+			this.method = "GET";
+		}
+		// to unwrap the body if not already
+		postParse();
+	}
+
+	public byte[] getBody() {
+    	return body;
+	}
+
 	@Override
 	public byte[] rawPayloadAsByteArray() throws NotImplementedException {
 		throw new NotImplementedException("Payload can be accessed as a json string");
@@ -67,7 +93,8 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 	@Override
 	public String rawPayloadAsString() throws RawPayloadProcessingException {
 		try {
-			return mapper.writeValueAsString(this);
+			return this.dataObj.isDataObjEmpty() ? mapper.writeValueAsString(this) :
+				dataObj.serializeDataObj();
 		} catch (Exception e) {
 			throw  new RawPayloadProcessingException(e);
 		}
@@ -84,20 +111,6 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 		if (!this.dataObj.isDataObjEmpty()) {
 			this.dataObj.unwrapAsJson("/".concat(BODY),
 				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
-		}
-	}
-
-	@Override
-	public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException {
-		if (!isDataObjEmpty()) {
-			this.dataObj.wrapAsByteArray("/".concat(BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
-			HTTPRequestPayload requestPayload = (HTTPRequestPayload) this.dataObj.convertToPayload();
-			this.hdrs = requestPayload.hdrs;
-			this.formParams = requestPayload.formParams;
-			this.queryParams = requestPayload.queryParams;
-			this.body = requestPayload.body;
-			this.method = requestPayload.method;
 		}
 	}
 }

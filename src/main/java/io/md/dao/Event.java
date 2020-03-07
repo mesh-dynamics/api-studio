@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -25,10 +24,7 @@ import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
-import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
-import io.md.dao.RawPayload.RawPayloadEmptyException;
-import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 
 /*
@@ -119,27 +115,18 @@ public class Event {
 		return reqId;
 	}
 
-	// TODO this function will be removed
-	public String getPayloadAsString(Map<String, Object> params) {
-		return payload.toString();
-	}
-
-	// TODO this function will be removed
-	public DataObj getPayload(Map<String, Object> params) {
-		return payload;
-	}
-
-	//TODO this function will be removed
-	public String getPayloadAsJsonString()
-		throws RawPayloadEmptyException, RawPayloadProcessingException {
-			if (this.payload != null) {
+	@JsonIgnore
+	public String getPayloadAsJsonString() {
+		if (this.payload != null && !this.payload.isRawPayloadEmpty()) {
+			try {
 				return this.payload.rawPayloadAsString();
-			} else {
-				throw new RawPayloadEmptyException("Payload is null");
+			} catch (Exception e) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while "
+					+ "converting payload to json string")), e);
 			}
+		}
+		return "";
 	}
-
-	// TODO keep this in cube repository
 
 	public enum EventType {
 		HTTPRequest,
