@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -14,7 +13,6 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -24,21 +22,21 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
-import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
+import io.opentracing.Span;
 
 public class Utils {
 
@@ -159,8 +157,6 @@ public class Utils {
 	}
 
 
-
-
 	public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap,
 		String fieldname) {
 		return Optional.ofNullable(fieldMap.getFirst(fieldname));
@@ -218,13 +214,17 @@ public class Utils {
 
 	}
 
-	public static MultivaluedMap<String, String> setLowerCaseKeys(MultivaluedMap<String, String> mvMap) {
-		if (mvMap == null) return null;
+	public static MultivaluedMap<String, String> setLowerCaseKeys(
+		MultivaluedMap<String, String> mvMap) {
+		if (mvMap == null) {
+			return null;
+		}
 		MultivaluedMap<String, String> lowerCaseMVMap = new MultivaluedHashMap<>();
 		for (String key : new ArrayList<>(mvMap.keySet())) {
 			String lowerCase = key.toLowerCase();
-			for (String value : mvMap.get(key))
+			for (String value : mvMap.get(key)) {
 				lowerCaseMVMap.add(lowerCase, value);
+			}
 		}
 		return lowerCaseMVMap;
 	}
@@ -295,21 +295,31 @@ public class Utils {
 		return jsonMapper.readValue(payload, HTTPResponsePayload.class);
 	}
 
+	public static MDTraceInfo getTraceInfo(Span currentSpan) {
+		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
+
+		String traceId = spanContext.getTraceId();
+		String spanId = String.valueOf(spanContext.getSpanId());
+		String parentSpanId = String.valueOf(spanContext.getParentId());
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
+		return mdTraceInfo;
+	}
+
 	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type"
 		/*, "Content-type", "Content-Type", "content-Type"*/);
 
-	public  static  boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
+	public static boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).findFirst().filter(x ->
-			x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
+				x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
 	}
 
 	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
-		if (headers == null) return Optional.empty();
-		return  HTTP_CONTENT_TYPE_HEADERS.stream()
+		if (headers == null)
+			return Optional.empty();
+		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).filter(Objects::nonNull)
-			 .findFirst().map(x -> x.toLowerCase().stripLeading());
+			.findFirst().map(x -> x.toLowerCase().stripLeading());
 	}
-
 
 }
