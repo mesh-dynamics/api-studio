@@ -184,9 +184,15 @@ public class JsonDataObj implements DataObj {
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (IOException e) {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"Exception in parsing json string", Constants.PATH_FIELD, path
-							, "value" , val.toString())) , e);
+						try {
+							JsonNode parsedVal = jsonMapper.readTree(val.textValue());
+							valParentObj.set(fieldName, parsedVal);
+							return true;
+						} catch (IOException ex) {
+							LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+								"Exception in parsing json string", Constants.PATH_FIELD, path
+								, "value" , val.toString())) , e);
+						}
 					}
 				} else if (val.isTextual()) {
 					try {
