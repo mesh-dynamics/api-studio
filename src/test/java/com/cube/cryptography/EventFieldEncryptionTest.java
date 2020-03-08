@@ -5,6 +5,7 @@ import static org.apache.commons.io.FileUtils.readFileToString;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.json.JSONObject;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
 import io.md.cryptography.JcaEncryption;
@@ -90,29 +92,40 @@ public class EventFieldEncryptionTest {
 					JSONObject algoDetails = jsonPaths.getJSONObject(jsonPath);
 					String algoName = algoDetails.getString("algorithm");
 					JSONObject metaData = algoDetails.getJSONObject("metaData");
+					Map<String, Object> metaDataMap = new HashMap<>();
+					metaDataMap.put("cipherKeyType",  metaData.get("cipherKeyType"));
 					EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
-						.build(algoName, passPhrase, new HashMap<>());
+						.build(algoName, passPhrase, metaDataMap);
 					Payload payload = event.payload;
-					System.out.println(payload);
-					payload.encryptField(jsonPath, encryptionAlgorithm);
-					System.out.println(payload);
+					try {
+						Assertions.assertEquals(payload.getValAsString("/status"), "200");
+						payload.encryptField(jsonPath, encryptionAlgorithm);
+						Assertions.assertNotEquals(payload.getValAsString("/status"), "200");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				});
 
 				jsonPaths.keySet().forEach(jsonPath -> {
 					JSONObject algoDetails = jsonPaths.getJSONObject(jsonPath);
 					String algoName = algoDetails.getString("algorithm");
 					JSONObject metaData = algoDetails.getJSONObject("metaData");
+					Map<String, Object> metaDataMap = new HashMap<>();
+					metaDataMap.put("cipherKeyType",  metaData.get("cipherKeyType"));
 					EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
-						.build(algoName, passPhrase, new HashMap<>());
+						.build(algoName, passPhrase, metaDataMap);
 					Payload payload = event.payload;
-					System.out.println(payload);
-					payload.decryptField(jsonPath, encryptionAlgorithm);
-					System.out.println(payload);
+					try {
+						Assertions.assertNotEquals(payload.getValAsString("/status"), "200");
+						payload.decryptField(jsonPath, encryptionAlgorithm);
+						Assertions.assertEquals(payload.getValAsString("/status"), "200");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				});
 			}
 
 		} catch (Exception e) {
-			//e.printStackTrace();
 			Assertions.fail("Exception occured", e);
 		}
 

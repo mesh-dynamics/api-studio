@@ -74,11 +74,13 @@ public class Config {
 	public final Gson gson;
 
     public IntentResolver intentResolver = new TraceIntentResolver();
-    public CommonConfig commonConfig = CommonConfig.getInstance();
+    public CommonConfig commonConfig;
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
+		System.setProperty("io.md.intent" , "noop");
+		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
         try {
             properties.load(this.getClass().getClassLoader().
