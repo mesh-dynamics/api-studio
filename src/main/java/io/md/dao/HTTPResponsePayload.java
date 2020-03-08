@@ -88,7 +88,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	public void postParse() {
 		if (!this.dataObj.isDataObjEmpty()) {
 			this.dataObj.unwrapAsJson("/".concat(BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+				Utils.getMimeType(hdrs).orElse(MediaType.APPLICATION_JSON));
 		}
 	}
 

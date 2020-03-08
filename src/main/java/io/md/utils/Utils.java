@@ -7,12 +7,14 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -303,8 +305,10 @@ public class Utils {
 	}
 
 	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
-		return HTTP_CONTENT_TYPE_HEADERS.stream()
-			.map(headers::getFirst).findFirst().map(x -> x.toLowerCase().stripLeading());
+		if (headers == null) return Optional.empty();
+		return  HTTP_CONTENT_TYPE_HEADERS.stream()
+			.map(headers::getFirst).filter(Objects::nonNull)
+			 .findFirst().map(x -> x.toLowerCase().stripLeading());
 	}
 
 
