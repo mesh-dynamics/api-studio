@@ -14,6 +14,8 @@ import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
 import io.md.dao.DataObj;
 import io.md.dao.Event;
+import io.md.dao.LazyParseAbstractPayload;
+import io.md.dao.Payload;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -23,32 +25,24 @@ public class Utils {
 
 	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
-	static Optional<DataObj> encryptFields(CommonConfig commonConfig, Event event) {
+	static Optional<Payload> encryptFields(CommonConfig commonConfig, Event event) {
 
-		Optional<DataObj> payload = commonConfig.encryptionConfig.flatMap(encryptionConfig -> {
-			return encryptionConfig.getServiceMeta(event.service).flatMap(services -> {
-				return services.getApiPathMeta(event.apiPath).flatMap(apiPathMeta -> {
-					Map<String, JSONPathMeta> jsonPathMetas = apiPathMeta.getJSONPathMap();
-
-					Map<String, Object> params = new HashMap<>();
-					params.put(Constants.OBJECT_MAPPER, commonConfig.jsonMapper);
-					DataObj eventPayload = event.getPayload(params);
-
-					for (String jsonPath : jsonPathMetas.keySet()) {
-						JSONPathMeta algoDetails = jsonPathMetas.get(jsonPath);
-						String algoName = algoDetails.getAlgorithm();
-						Map<String, Object> metaDataMap = algoDetails.getMetaData();
-
-						EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
-							.build(algoName, encryptionConfig.getPassPhrase(),
-								metaDataMap);
-						eventPayload.encryptField(jsonPath, encryptionAlgorithm);
-					}
-					return Optional.of(eventPayload);
-				});
-			});
-		});
-		return payload;
+		return commonConfig.encryptionConfig.flatMap(encryptionConfig ->
+			encryptionConfig.getServiceMeta(event.service).flatMap(services ->
+				services.getApiPathMeta(event.apiPath).flatMap(apiPathMeta -> {
+				Map<String, JSONPathMeta> jsonPathMetas = apiPathMeta.getJSONPathMap();
+				Payload eventPayload = event.payload;
+				for (String jsonPath : jsonPathMetas.keySet()) {
+					JSONPathMeta algoDetails = jsonPathMetas.get(jsonPath);
+					String algoName = algoDetails.getAlgorithm();
+					Map<String, Object> metaDataMap = algoDetails.getMetaData();
+					EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
+						.build(algoName, encryptionConfig.getPassPhrase(),
+							metaDataMap);
+					eventPayload.encryptField(jsonPath, encryptionAlgorithm);
+				}
+				return Optional.of(eventPayload);
+			})));
 	}
 
 	public static Optional<Sampler> getSampler(float samplingRate, int samplingAccuracy) {
