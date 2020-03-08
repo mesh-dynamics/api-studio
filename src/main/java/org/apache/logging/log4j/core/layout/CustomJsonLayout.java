@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import io.cube.agent.CommonUtils;
+import io.md.utils.CommonUtils;
 
 // REFER TO
 // https://github.com/metamx/sumologic-log4j2-appender/blob/master/src/main/java/com/sumologic/log4j/core/SumoJsonLayout.java#L117-L237

@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.cube.dao.HTTPRequestPayload;
+import io.md.dao.HTTPRequestPayload;
 
 
 public class RRTransformer {

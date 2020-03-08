@@ -2,7 +2,6 @@ package com.cube.ws;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -12,14 +11,13 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
-import io.cube.agent.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
-
-import com.cube.core.Utils;
+import io.opentracing.Span;
 
 @Provider
 public class TracingFilter implements ContainerRequestFilter , ContainerResponseFilter {
@@ -34,19 +32,26 @@ public class TracingFilter implements ContainerRequestFilter , ContainerResponse
         if ("health".equals(resourceInfo.getResourceMethod().getName())) return;
         LOGGER.debug(new ObjectMessage(Map.of("method" ,resourceInfo.getResourceMethod()
             .getName(), "resourceClass" ,  resourceInfo.getResourceClass().getName())));
-        Scope scope = CommonUtils.startServerSpan(containerRequestContext.getHeaders() ,
+        Span span = CommonUtils.startServerSpan(containerRequestContext.getHeaders() ,
             resourceInfo.getResourceClass().getSimpleName() + "-"
                 + resourceInfo.getResourceMethod().getName());
+        Scope scope = CommonUtils.activateSpan(span);
         containerRequestContext.setProperty("scope" , scope);
+        containerRequestContext.setProperty("span" , span);
     }
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext
         , ContainerResponseContext containerResponseContext) throws IOException {
-        Scope scope = (Scope) containerRequestContext.getProperty("scope");
+        Object scope = containerRequestContext.getProperty("scope");
         if (scope != null) {
             LOGGER.debug("Closing scope");
-            scope.close();
+            ((Scope)scope).close();
+        }
+        Object span = containerRequestContext.getProperty("span");
+        if (span != null) {
+            LOGGER.debug("Closing span");
+            ((Span)span).finish();
         }
     }
 }

@@ -15,11 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
-import com.cube.core.Comparator.Match;
-import com.cube.core.CompareTemplate.ComparisonType;
-import com.cube.core.CompareTemplate.DataType;
-import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.core.CompareTemplate.ExtractionMethod;
 import com.cube.ws.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -28,6 +23,14 @@ import java.nio.charset.Charset;
 import java.util.Optional;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
+
+import io.md.core.Comparator.Match;
+import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.ExtractionMethod;
+import io.md.core.CompareTemplate.PresenceType;
+import io.md.core.TemplateEntry;
 
 
 /**

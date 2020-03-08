@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import io.md.dao.ReqRespUpdateOperation;
+import io.md.dao.ReqRespUpdateOperation.OperationType;
+
 class RecordingUpdateTest {
 
     @Test

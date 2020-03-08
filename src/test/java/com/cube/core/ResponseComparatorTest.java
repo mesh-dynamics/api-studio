@@ -22,14 +22,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import com.cube.core.Comparator.Match;
-import com.cube.core.CompareTemplate.ComparisonType;
-import com.cube.core.CompareTemplate.DataType;
-import com.cube.core.CompareTemplate.ExtractionMethod;
-import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.dao.Event;
-import com.cube.dao.Event.EventBuilder;
-import com.cube.dao.HTTPResponsePayload;
+import io.md.core.Comparator;
+import io.md.core.Comparator.Match;
+import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.ExtractionMethod;
+import io.md.core.CompareTemplate.PresenceType;
+import io.md.core.TemplateEntry;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.RawPayload.RawPayloadEmptyException;
+import io.md.dao.RawPayload.RawPayloadProcessingException;
+
 import com.cube.ws.Config;
 
 public class ResponseComparatorTest {
@@ -128,13 +135,18 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Header template test: Negative")
     final void headerTemplateNegativeTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
         JSONObject testData = object.getJSONObject("headerTemplateNegative");
         String res1 = testData.get("res1").toString();
         String res2 = testData.get("res2").toString();
         Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
-        Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
-        response2 = updateRequestEventHdr(response2, "content-type", "K");
+        //Event response2 = mapper.readValue(object.getJSONObject(res2).toString(), Event.class);
+        JSONObject cloned = new JSONObject(object.getJSONObject(res2).toString());
+        JSONObject payload = (JSONObject) cloned.getJSONArray("payload").get(1);
+        JSONObject hdrs = (JSONObject) payload.get("hdrs");
+        hdrs.put("content-type", new JSONArray("[\"K\"]"));
+        Event response2 = mapper.readValue(cloned.toString(), Event.class);
+        //response2 = updateRequestEventHdr(response2, "content-type", "K");
         compareTest(testData, response1, response2);
     }
 
@@ -162,16 +174,17 @@ public class ResponseComparatorTest {
     @Test
     @DisplayName("Same Response body test: Negative")
     final void sameResponseBodyNegativeTest()
-        throws IOException, JSONException, EventBuilder.InvalidEventException {
+        throws IOException, JSONException, EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
         JSONObject testData = object.getJSONObject("sameResponseBodyNegative");
         String res1 = testData.get("res1").toString();
         Event response1 = mapper.readValue(object.getJSONObject(res1).toString(), Event.class);
-        JSONObject body = new JSONObject(Utils.getResponsePayload(response1, config).body);
+        JSONObject cloned = new JSONObject(object.getJSONObject(res1).toString());
+        JSONObject payload = (JSONObject) cloned.getJSONArray("payload").get(1);
+        JSONObject body = (JSONObject) payload.get("body");
         body.put("year", 1000);
         body.put("type", "softcopy");
         body.put("pages", 3.14);
-
-        Event response2 = updateResponseEventBody(response1, body.toString());
+        Event response2 = mapper.readValue(cloned.toString(), Event.class);
         compareTest(testData, response1, response2);
     }
 
@@ -197,8 +210,8 @@ public class ResponseComparatorTest {
         JSONException {
         JSONArray rules = testData.getJSONArray("rules");
         String expected = testData.get("output").toString();
-        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event1));
-        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event2));
+        System.out.println(mapper.writeValueAsString(event1));
+        System.out.println(mapper.writeValueAsString(event2));
         CompareTemplate template = new CompareTemplate();
         for (int i = 0; i < rules.length(); i++) {
             JSONObject ruleObj = rules.getJSONObject(i);
@@ -215,14 +228,14 @@ public class ResponseComparatorTest {
         }
 
         Comparator comparator = new JsonComparator(template, mapper);
-        Match m = comparator.compare(event1.getPayload(config),
-            event2.getPayload(config));
+        Match m = comparator.compare(event1.payload, event2.payload);
 
         String mjson = config.jsonMapper.writeValueAsString(m);
         JSONAssert.assertEquals(expected, mjson, false);
     }
 
-    private Event updateRequestEventHdr(Event event, String hdrField, String val) throws IOException, EventBuilder.InvalidEventException {
+    private Event updateRequestEventHdr(Event event, String hdrField, String val)
+        throws IOException, EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
         HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
         responsePayload.hdrs.putSingle(hdrField, val);
 
@@ -231,18 +244,19 @@ public class ResponseComparatorTest {
     }
 
     private Event updateResponseEventBody(Event event, String body) throws IOException,
-        EventBuilder.InvalidEventException {
+        EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
         HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
 
-        HTTPResponsePayload newPayload = new HTTPResponsePayload(responsePayload.hdrs, responsePayload.status, body);
+        HTTPResponsePayload newPayload = new HTTPResponsePayload(responsePayload.hdrs, responsePayload.status, body.getBytes());
         return cloneWithPayload(event, newPayload);
 
     }
 
     private Event cloneWithPayload(Event event, HTTPResponsePayload payload) throws JsonProcessingException, EventBuilder.InvalidEventException {
-        return new Event.EventBuilder(event.customerId, event.app, event.service, event.instanceId,
-            event.getCollection(), event.getTraceId(), event.runType, event.timestamp, event.reqId, event.apiPath, event.eventType)
-            .setRawPayloadString(mapper.writeValueAsString(payload))
+        return new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
+            event.getCollection(), new MDTraceInfo(event.getTraceId(), null , null)
+            , event.runType, Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType)
+            .setPayload(payload)
             .createEvent();
     }
 

@@ -1,5 +1,7 @@
 package com.cube.dao;
 
+import io.md.dao.Event;
+
 public class DefaultEvent {
 
     private final Event event;

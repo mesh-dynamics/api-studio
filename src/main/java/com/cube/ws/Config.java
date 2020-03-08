@@ -20,13 +20,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
-import io.cube.agent.CommonUtils;
-import io.cube.agent.FluentDLogRecorder;
+import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.SimpleMocker;
 import io.cube.agent.TraceIntentResolver;
+import io.md.utils.CommonUtils;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -74,7 +74,7 @@ public class Config {
 	public final Gson gson;
 
     public IntentResolver intentResolver = new TraceIntentResolver();
-    public CommonConfig commonConfig = new CommonConfig();
+    public CommonConfig commonConfig = CommonConfig.getInstance();
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -108,7 +108,7 @@ public class Config {
             .registerTypeAdapter(SolrDocumentList.class, new GsonSolrDocumentListSerializer())
             .registerTypeAdapter(SolrDocument.class, new GsonSolrDocumentSerializer())
             .create();
-        recorder = new FluentDLogRecorder(gson);
+        recorder = new ConsoleRecorder(gson);
         mocker = new SimpleMocker(gson);
 
         try {

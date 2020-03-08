@@ -9,7 +9,7 @@
 	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
 	  <version.java>11</version.java>
 	  <version.jaxb>2.3.2</version.jaxb>
-	  <version.jaeger>0.32.0</version.jaeger>
+	  <version.jaeger>1.1.0</version.jaeger>
 	  <version.gson>2.8.5</version.gson>
   </properties>
 
@@ -307,19 +307,12 @@
 		  <version>4.5.9</version>
 	  </dependency>
 
-	  <!-- https://mvnrepository.com/artifact/org.apache.thrift/libthrift -->
-	  <dependency>
-		  <groupId>org.apache.thrift</groupId>
-		  <artifactId>libthrift</artifactId>
-		  <version>0.12.0</version>
-	  </dependency>
+		<dependency>
+			<groupId>io.cube</groupId>
+			<artifactId>agent</artifactId>
+			<version>1.0.8</version>
+		</dependency>
 
-	  <dependency>
-		<groupId>io.cube</groupId>
-		<artifactId>agent</artifactId>
-		<version>1.0.1</version>
-	  </dependency>
-
-  </dependencies>
+	</dependencies>
   <groupId>com.cube</groupId>
 </project>

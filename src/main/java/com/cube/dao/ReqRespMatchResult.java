@@ -2,8 +2,10 @@ package com.cube.dao;
 
 import java.util.Optional;
 
-import com.cube.core.Comparator;
-import com.cube.core.Comparator.Match;
+import io.md.core.Comparator;
+import io.md.core.Comparator.Match;
+import io.md.dao.Event;
+
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 
 public class ReqRespMatchResult {

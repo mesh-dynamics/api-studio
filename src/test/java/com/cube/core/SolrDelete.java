@@ -46,7 +46,8 @@ public class SolrDelete {
 
                 Solr.add(doc);
             Solr.add(doc);*/
-
+            //Solr.deleteByQuery("collection_s:order-processor-jan-18 AND eventType_s:HTTPRequest");
+            Solr.deleteByQuery("id:\"HTTPRequest-restsql/update-req-2019-11-20T14:40:36Z\"");
             Solr.commit();
         } catch (Exception e) {
             System.out.println("Error in saving document to solr " + e.getMessage());

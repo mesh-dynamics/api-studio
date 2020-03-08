@@ -6,16 +6,7 @@
 
 package com.cube.cache;
 
-import static com.cube.dao.Event.EventType.HTTPRequest;
-import static com.cube.dao.Event.EventType.HTTPResponse;
-import static com.cube.dao.Event.EventType.JavaRequest;
-import static com.cube.dao.Event.EventType.JavaResponse;
-import static com.cube.dao.Event.EventType.ThriftRequest;
-import static com.cube.dao.Event.EventType.ThriftResponse;
-
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
@@ -26,16 +17,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.PresenceType;
+import io.md.core.TemplateEntry;
+import io.md.dao.Event.EventType;
+
 import com.cube.cache.TemplateKey.Type;
-import com.cube.core.Comparator;
-import com.cube.core.CompareTemplate;
-import com.cube.core.CompareTemplate.ComparisonType;
-import com.cube.core.CompareTemplate.DataType;
-import com.cube.core.CompareTemplate.PresenceType;
 import com.cube.core.JsonComparator;
-import com.cube.core.TemplateEntry;
 import com.cube.core.Utils;
-import com.cube.dao.Event.EventType;
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;
 import com.cube.utils.Constants;

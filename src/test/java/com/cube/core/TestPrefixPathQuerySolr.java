@@ -18,6 +18,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
+import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
+
 import com.cube.cache.TemplateKey;
 import com.cube.dao.ReqRespStore;
 import com.cube.ws.Config;

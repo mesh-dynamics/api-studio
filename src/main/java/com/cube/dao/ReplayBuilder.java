@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 import io.cube.agent.UtilException;
+import io.md.core.ReplayTypeEnum;
 
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.utils.Constants;
-import com.cube.utils.ReplayTypeEnum;
 
 public class ReplayBuilder {
 

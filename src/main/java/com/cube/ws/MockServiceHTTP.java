@@ -38,23 +38,29 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.core.Comparator;
+import io.md.core.Comparator.Match;
+import io.md.core.Comparator.MatchType;
+import io.md.dao.DataObj.PathNotFoundException;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventType;
+import io.md.dao.Event.RunType;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.RawPayload.RawPayloadEmptyException;
+import io.md.dao.RawPayload.RawPayloadProcessingException;
+
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
-import com.cube.core.Comparator;
-import com.cube.core.Comparator.Match;
-import com.cube.core.Comparator.MatchType;
 import com.cube.core.Utils;
-import com.cube.dao.DataObj.PathNotFoundException;
-import com.cube.dao.Event;
-import com.cube.dao.Event.EventType;
-import com.cube.dao.Event.RunType;
+
 import com.cube.dao.EventQuery;
 import com.cube.dao.EventQuery.Builder;
-import com.cube.dao.HTTPResponsePayload;
 import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
@@ -128,7 +134,7 @@ public class MockServiceHTTP {
             if (collection.isPresent()) {
                 event.setCollection(collection.get());
                 try {
-                    event.parseAndSetKey(config, Utils
+                    event.parseAndSetKey(Utils
                         .getRequestMatchTemplate(config, event, recordOrReplay.get().getTemplateVersion()));
                 } catch (ComparatorCache.TemplateNotFoundException e) {
                     LOGGER.error(new ObjectMessage(
@@ -202,17 +208,18 @@ public class MockServiceHTTP {
         LOGGER.debug(new ObjectMessage(
             Map.of(
                 Constants.API_PATH_FIELD, retEvent.apiPath,
-                Constants.TRACE_ID_FIELD, retEvent.getTraceId(),
-                Constants.DATA, retEvent.rawPayloadString)));
+                Constants.TRACE_ID_FIELD, retEvent.getTraceId()/*,
+                Constants.DATA, retEvent.payload.rawPayloadAsString()*/)));
         try {
             FnResponse fnResponse = new FnResponse(
-                retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH),
+                null //TODO redo this once FnReqResp is sorted
+                /*retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH)*/,
                 Optional.of(retEvent.timestamp),
                 FnReqResponse.RetStatus.Success, Optional.empty(),
                 matchingEventsCount > 1);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                 .build();
-        } catch (PathNotFoundException e) {
+        } catch (Exception e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(
                     Constants.API_PATH_FIELD, event.apiPath,
@@ -239,7 +246,8 @@ public class MockServiceHTTP {
 
         Optional<Event> defaultRespEvent = rrstore
             .getSingleEvent(defEventQuery.build());
-        if (defaultRespEvent.isPresent()) {
+        // TODO revisit this logic once FnReqRespPayload is in place
+        /*if (defaultRespEvent.isPresent()) {
             FnResponse fnResponse = null;
             try {
                 fnResponse = new FnResponse(
@@ -257,7 +265,7 @@ public class MockServiceHTTP {
             }
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                 .build();
-        }
+        }*/
 
         errorReason = "Unable to find default response!";
         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
@@ -279,7 +287,7 @@ public class MockServiceHTTP {
                             + " , app :: " + thriftMockRequest.app + " , instanceId :: "
                             + thriftMockRequest.instanceId));
             Optional<URLClassLoader> urlClassLoader = recordOrReplay.getClassLoader();
-            thriftMockRequest.parseAndSetKey(config, Utils
+            thriftMockRequest.parseAndSetKey(Utils
                 .getRequestMatchTemplate(config, thriftMockRequest,
                     recordOrReplay.getTemplateVersion()), urlClassLoader);
 
@@ -356,7 +364,7 @@ public class MockServiceHTTP {
                                          String customerId, String app, String instanceId, String service,
                                          String method, String body,
                                          HttpHeaders headers, MultivaluedMap<String, String> queryParams,
-                                         String replayId, Comparator comparator) throws Event.EventBuilder.InvalidEventException, JsonProcessingException {
+                                         String replayId, Comparator comparator) throws EventBuilder.InvalidEventException, JsonProcessingException {
         // At the time of mock, our lua filters don't get deployed, hence no request id is generated
         // we can generate a new request id here in the mock service
         Optional<String> requestId = Optional.of(service.concat("-mock-").concat(String.valueOf(UUID.randomUUID())));
@@ -384,13 +392,15 @@ public class MockServiceHTTP {
     private Event createMockResponseEvent(Event originalResponse,
                                           Optional<String> mockReqId,
                                           String instanceId,
-                                          String replayCollection) throws Event.EventBuilder.InvalidEventException {
-        Event.EventBuilder builder = new Event.EventBuilder(originalResponse.customerId, originalResponse.app,
+                                          String replayCollection) throws EventBuilder.InvalidEventException {
+        EventBuilder builder = new EventBuilder(originalResponse.customerId, originalResponse.app,
             originalResponse.service,
-            instanceId, replayCollection, originalResponse.getTraceId(), Event.RunType.Replay, Instant.now(),
+            instanceId, replayCollection,
+            new MDTraceInfo(originalResponse.getTraceId() , null, null),
+            Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
             originalResponse.apiPath, Event.EventType.HTTPResponse);
-        return builder.setRawPayloadString(originalResponse.rawPayloadString).createEvent();
+        return builder.setPayload(originalResponse.payload).createEvent();
     }
 
 
@@ -518,12 +528,13 @@ public class MockServiceHTTP {
 
     }
 
-    private Optional<Response> createResponseFromEvent(Event mockRequestEvent, Event respEventVal) {
+    private Optional<Response> createResponseFromEvent(
+        Event mockRequestEvent, Event respEventVal) {
 
         HTTPResponsePayload responsePayload;
         try {
-            responsePayload = Utils.getResponsePayload(respEventVal, config);
-        } catch (IOException e) {
+            responsePayload =  Utils.getResponsePayload(respEventVal, config);
+        } catch (IOException | RawPayloadProcessingException | RawPayloadEmptyException e) {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Not able to deserialize response event",
                 Constants.ERROR, e.getMessage()
@@ -560,13 +571,13 @@ public class MockServiceHTTP {
                 Optional.of(mockRequestEvent.reqId),
                 mockRequestEvent.instanceId, mockRequestEvent.getCollection());
             rrstore.save(mockResponseToStore);
-        } catch (Event.EventBuilder.InvalidEventException e) {
+        } catch (EventBuilder.InvalidEventException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Not able to store mock response event",
                     Constants.TRACE_ID_FIELD, respEventVal.getTraceId(),
                     Constants.REQ_ID_FIELD, respEventVal.reqId)));
         }
-        return Optional.of(builder.entity(responsePayload.body).build());
+        return Optional.of(builder.entity(responsePayload.getBody()).build());
     }
 
     private EventQuery getDefaultRespEventQuery(Event mockRequest) {
