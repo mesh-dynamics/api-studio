@@ -1255,6 +1255,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SAMPLERATEF = CPREFIX + "samplerate" + DOUBLE_SUFFIX;
     private static final String REPLAYPATHSTATF = CPREFIX + "pathstat" + STRINGSET_SUFFIX;
     private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv" + STRINGSET_SUFFIX;
+    private static final String XFMSF = CPREFIX + "transforms" + STRING_SUFFIX;
 
 
     // field names in Solr for compare template (stored as json)
@@ -1293,6 +1294,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
         replay.service.ifPresent(serv -> doc.setField(SERVICEF, serv));
         doc.setField(REPLAY_TYPE_F, replay.replayType.toString());
+        replay.xfms.ifPresent(xfms -> doc.setField(XFMSF, xfms));
+
         return doc;
     }
 
@@ -1348,6 +1351,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> service = getStrField(doc, SERVICEF);
         ReplayTypeEnum replayType = getStrField(doc, REPLAY_TYPE_F).flatMap(repType ->
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
+        Optional<String> xfms = getStrField(doc, XFMSF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1370,6 +1374,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(builder::withGeneratedClassJar));
                 service.ifPresent(builder::withServiceToReplay);
+                xfms.ifPresent(builder::withXfms);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE

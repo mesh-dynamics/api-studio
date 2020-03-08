@@ -73,7 +73,7 @@ public class Replay {
 		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
 		Optional<Double> sampleRate, List<String> intermediateServices,
 		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
-		Optional<String> service, ReplayTypeEnum replayType) {
+		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -91,7 +91,8 @@ public class Replay {
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
 		this.creationTimeStamp = creationTimestamp;
-		this.xfmer = Optional.empty();
+		this.xfms = xfms;
+		this.xfmer = xfmer;
 		this.sampleRate = sampleRate;
 		this.intermediateServices = intermediateServices;
 		this.generatedClassJarPath = generatedClassJarPath;
@@ -120,11 +121,14 @@ public class Replay {
 	    templateVersion = "";
 	    generatedClassJarPath = Optional.empty();
 	    replayType = ReplayTypeEnum.HTTP;
+	    xfms = Optional.empty();
+	    xfmer = Optional.empty();
     }
 
 	/*
 	 * @param jsonStrRepOfXfms: multivalued map of {key : [{src, tgt}+]} in a string representation
 	 */
+	/*
 	public void updateXfmsFromJSONString(String jsonStrRepOfXfms) throws JSONException {
 		JSONObject obj = new JSONObject(jsonStrRepOfXfms);
 		if (xfmer.isPresent()) {
@@ -133,6 +137,7 @@ public class Replay {
 			xfmer = Optional.of(new RRTransformer(obj));
 		}
 	}
+	*/
 
 	@JsonProperty("endpoint")
 	public final String endpoint;
@@ -168,8 +173,9 @@ public class Replay {
     public int reqsent; // number of requests sent. Some requests could be skipped due to exceptions
     @JsonProperty("reqfailed")
     public int reqfailed; // requests failed, return code not 200
+    public final Optional<String> xfms; // the transformation string
 	@JsonIgnore
-    public transient Optional<RRTransformer> xfmer;
+    public final Optional<RRTransformer> xfmer;
     @JsonProperty("sampleRate")
 	public final Optional<Double> sampleRate;
 	@JsonProperty("creationTimeStamp")
