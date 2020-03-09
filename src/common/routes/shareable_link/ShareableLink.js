@@ -398,7 +398,7 @@ class ShareableLink extends Component {
                 cleanedMessagepart = JSON.parse('"' + cleanEscapedString(_.escape(messagePart)) + '"')
             }
         } else {
-            cleanedMessagepart = JSON.parse('""');
+            cleanedMessagepart = messagePart || JSON.parse('""');
         }
 
         return cleanedMessagepart;
@@ -906,6 +906,10 @@ class ShareableLink extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArrayReqBody}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={this.state.showAll}
+                                searchFilterPath={this.state.searchFilterPath}
+                                filterPaths={item.filterPaths}
+                                inputElementRef={this.inputElementRef}
                             />
                         </div>
                     </div>
