@@ -30,6 +30,7 @@ import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplate;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.Constants;
@@ -535,7 +536,7 @@ public interface ReqRespStore {
 	 * @param analysisMatchResultQuery
 	 * @return
 	 */
-	List getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
+	ReqRespResultsWithFacets getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
 
 	/**

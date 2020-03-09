@@ -344,7 +344,7 @@ public class RecordingUpdate {
          /*, RecordingOperationSetSP recordingOperationSetSP*/) {
         Result<ReqRespMatchResult> matchResults = (Result<ReqRespMatchResult>) config.rrstore.getAnalysisMatchResults(
             new AnalysisMatchResultQuery(replayId)
-        ).get(0);
+        ).result;
 
         return matchResults.getObjects();
     }
