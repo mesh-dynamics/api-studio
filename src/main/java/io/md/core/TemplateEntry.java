@@ -104,7 +104,9 @@ public class TemplateEntry {
 	public CompareTemplate.ExtractionMethod em;
 	@JsonProperty("customization")
 	public Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
+	@JsonIgnore
 	public JsonPointer pathptr; // compiled form of path
+	@JsonIgnore
 	public Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex
 	@JsonIgnore
 	public boolean isParentArray = false;
