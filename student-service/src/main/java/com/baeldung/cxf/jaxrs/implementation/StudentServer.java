@@ -7,8 +7,9 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.md.interceptor.apachecxf.ingress.LoggingFilter;
-import com.md.interceptor.apachecxf.ingress.TracingFilter;
+
+import com.cube.interceptor.apachecxf.ingress.LoggingFilter;
+import com.cube.interceptor.apachecxf.ingress.TracingFilter;
 
 
 public class StudentServer {

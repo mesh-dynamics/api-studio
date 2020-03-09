@@ -15,11 +15,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.cxf.jaxrs.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.md.interceptor.apachecxf.egress.ClientFilter;
-import com.md.interceptor.apachecxf.egress.TracingFilter;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+
+import com.cube.interceptor.apachecxf.egress.ClientFilter;
+import com.cube.interceptor.apachecxf.egress.TracingFilter;
 
 
 @XmlRootElement(name = "Course")
@@ -27,7 +28,7 @@ public class Course {
     private int id;
     private String name;
     private List<Integer> studentIds = new ArrayList<>();
-    private String URL = "http://localhost:8081/meshd/students/";
+    private String URL = "http://localhost:8081/meshd/students?source=aaa&trial=bbb";
     private OkHttpClient httpClient = new OkHttpClient();
     private WebClient webClient = WebClient.create(URL, List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);

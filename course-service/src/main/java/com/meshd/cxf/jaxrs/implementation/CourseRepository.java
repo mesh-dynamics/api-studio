@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -13,10 +14,19 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
+import org.apache.cxf.jaxrs.client.WebClient;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.cube.interceptor.apachecxf.egress.ClientFilter;
+import com.cube.interceptor.apachecxf.egress.TracingFilter;
+
 @Path("meshd")
 @Produces("application/json")
 public class CourseRepository {
     private Map<Integer, Course> courses = new HashMap<>();
+    private String URL = "http://localhost:8081/meshd/students/1?source=aaa&trial=bbb";
 
     {
         List<Integer> studentIds = new ArrayList<>();
@@ -83,6 +93,33 @@ public class CourseRepository {
             if (course.getKey() == id) {
                 return course.getValue();
             }
+        }
+        return null;
+    }
+
+    @GET
+    @Path("courses/students/{studentId}")
+    public Student findStudentById(@PathParam("studentId") int id) {
+//        WebClient studentWebClient = webClient.path(URL + id);
+        WebClient studentWebClient = WebClient.create(URL+id, List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+            javax.ws.rs.core.MediaType.APPLICATION_JSON);
+//        WebClient studentWebClient = webClient;
+
+//        config.getInInterceptors().add(new LoggingInInterceptor());
+//        config.getOutInterceptors().add(new LoggingOutInterceptor());
+        Response response = studentWebClient.get();
+        int code = response.getStatus();
+        if (code >= 200 && code <= 299) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String studentString = response.readEntity(String.class);
+            Student student = null;
+            try {
+                student = objectMapper.readValue(studentString, Student.class);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            return student;
+//                return objectMapper.readValue(response.body().string(), Student.class);
         }
         return null;
     }

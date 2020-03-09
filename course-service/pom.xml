@@ -104,12 +104,12 @@
             <version>3.9.0</version>
         </dependency>
         <dependency>
-        <groupId>com.md.interceptor</groupId>
+        <groupId>com.cube.interceptor</groupId>
         <artifactId>md-apache-cxf-ingress-interceptor</artifactId>
         <version>0.0.1</version>
         </dependency>
         <dependency>
-            <groupId>com.md.interceptor</groupId>
+            <groupId>com.cube.interceptor</groupId>
             <artifactId>md-apache-cxf-egress-interceptor</artifactId>
             <version>0.0.1</version>
         </dependency>
