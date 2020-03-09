@@ -755,6 +755,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String PAYLOADSTRF = CPREFIX + "payloadStr" + NOTINDEXED_SUFFIX;
     private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
     private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
+    private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
+    private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX ;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -958,6 +960,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, event.instanceId);
         doc.setField(COLLECTIONF, event.getCollection());
         doc.setField(TRACEIDF, event.getTraceId());
+        if (event.spanId != null) doc.setField(SPAN_ID_F, event.spanId);
+        if (event.parentSpanId != null) doc.setField(PARENT_SPAN_ID_F, event.parentSpanId);
         doc.setField(RRTYPEF, event.runType.toString());
         doc.setField(TIMESTAMPF, event.timestamp.toString());
         doc.setField(REQIDF, event.reqId);
@@ -980,6 +984,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> traceid = getStrField(doc, TRACEIDF);
+        Optional<String> spanId = getStrField(doc, SPAN_ID_F);
+        Optional<String> parentSpanId = getStrField(doc, PARENT_SPAN_ID_F);
         Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(
             Event.RunType.class, rrt));
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
@@ -994,8 +1000,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null)
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
-            , collection.orElse(null), new MDTraceInfo(traceid.orElse(null), null
-            , null), runType.orElse(null)
+            , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
+            , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
             , timestamp, reqId.orElse(null), path.orElse(""), eType);
         // TODO revisit this need to construct payload properly from type and json string
         try {
