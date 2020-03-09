@@ -11,7 +11,6 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

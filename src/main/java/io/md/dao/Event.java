@@ -44,7 +44,7 @@ public class Event {
 	private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
 	private Event(String customerId, String app, String service, String instanceId,
-		String collection, String traceId,
+		String collection, String traceId, String spanId, String parentSpanId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
 		Payload payload, int payloadKey) {
 		this.customerId = customerId;
@@ -53,6 +53,8 @@ public class Event {
 		this.instanceId = instanceId;
 		this.collection = collection;
 		this.traceId = traceId;
+		this.spanId = spanId;
+		this.parentSpanId = parentSpanId;
 		this.runType = runType;
 		this.timestamp = timestamp;
 		this.reqId = reqId;
@@ -72,6 +74,8 @@ public class Event {
 		this.instanceId = null;
 		this.collection = null;
 		this.traceId = null;
+		this.spanId = null;
+		this.parentSpanId = null;
 		this.runType = RunType.Record;
 		this.timestamp = null;
 		this.reqId = null;
@@ -216,7 +220,7 @@ public class Event {
 		Optional<Payload> newPayload = rhs.map(rhsEvent ->
 				payload.applyTransform(rhsEvent.payload, operationList));
 		Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection,
-			new MDTraceInfo(this.traceId, null, null),
+			new MDTraceInfo(this.traceId, this.spanId, this.parentSpanId),
 			runType, Optional.of(timestamp), newReqId, apiPath, eventType)
 			.setPayload(newPayload.orElse(payload))
 			.createEvent();
@@ -243,6 +247,8 @@ public class Event {
 	public final String instanceId;
 	private String collection;
 	private String traceId;
+	private final String spanId;
+	private final String parentSpanId;
 	public final RunType runType;
 
 
@@ -346,8 +352,8 @@ public class Event {
 				LOGGER.info(new ObjectMessage(
 					Map.of(Constants.MESSAGE, "Timestamp empty, using current instant")));
 			}
-			Event event = new Event(customerId, app, service, instanceId, collection, traceId,
-				runType, timestamp.orElse(Instant.now()), reqId, apiPath,
+			Event event = new Event(customerId, app, service, instanceId, collection, traceId
+				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
 				eventType , payload, payloadKey);
 			if (event.validate()) {
 				return event;
