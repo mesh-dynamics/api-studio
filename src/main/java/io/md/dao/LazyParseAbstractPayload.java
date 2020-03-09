@@ -1,23 +1,27 @@
 package io.md.dao;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.CubeObjectMapperProvider;
 
 public abstract class LazyParseAbstractPayload implements Payload {
 
 	@JsonIgnore
-	protected JsonDataObj dataObj;
+	public JsonDataObj dataObj;
 	@JsonIgnore
 	protected ObjectMapper mapper;
 
@@ -25,28 +29,36 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		this.mapper = CubeObjectMapperProvider.getInstance();
 	}
 
+	public LazyParseAbstractPayload(JsonNode objRoot) {
+		this.mapper = CubeObjectMapperProvider.getInstance();
+		this.dataObj = new JsonDataObj(objRoot, mapper);
+	}
+
 	@Override
+	@JsonIgnore
 	abstract  public byte[] rawPayloadAsByteArray()
 		throws NotImplementedException, RawPayloadEmptyException;
 
 	@Override
+	@JsonIgnore
 	abstract  public String rawPayloadAsString()
 		throws NotImplementedException, RawPayloadProcessingException, RawPayloadEmptyException;
 
 	@Override
+	@JsonIgnore
 	public abstract  boolean isRawPayloadEmpty();
 
+	@JsonIgnore
 	public abstract  void postParse();
 
+	@JsonIgnore
+	// This is default implementation. Can be overriden by specific payload types
 	public void parseIfRequired() {
 		if (this.dataObj == null) {
 			this.dataObj = new JsonDataObj(this, mapper);
 			postParse();
 		}
 	}
-
-	@JsonIgnore
-	abstract public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException;
 
 	@Override
 	public boolean isLeaf() {
@@ -88,9 +100,6 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		return dataObj.compare(rhs, template);
 	}
 
-	//TODO leaving it out from here
-	//DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
-
 	@Override
 	public boolean wrapAsString(String path, String mimetype) {
 		parseIfRequired();
@@ -104,7 +113,7 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public Optional<String> encryptField(String path, EncryptionAlgorithm encrypter) {
+	public Optional<Object> encryptField(String path, EncryptionAlgorithm encrypter) {
 		parseIfRequired();
 		return dataObj.encryptField(path, encrypter);
 
@@ -114,6 +123,13 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	public  Optional<String> decryptField(String path, EncryptionAlgorithm decrypter) {
 		parseIfRequired();
 		return dataObj.decryptField(path, decrypter);
+	}
+
+	@Override
+	public void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals) {
+		// Using json pointer to handle proper escaping in case keys have special characters
+		parseIfRequired();
+		dataObj.getPathRules(template, vals);
 	}
 
 	@Override
@@ -132,8 +148,20 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public Payload convertToPayload() {
+	public DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList) {
 		parseIfRequired();
-		return dataObj.convertToPayload();
+		return dataObj.applyTransform(rhs, operationList);
+	}
+
+
+	@Override
+	public Payload applyTransform(Payload rhs, List<ReqRespUpdateOperation> operationList) {
+		if (rhs instanceof  LazyParseAbstractPayload) {
+			parseIfRequired();
+			this.dataObj = (JsonDataObj) dataObj.
+				applyTransform(((LazyParseAbstractPayload)rhs).dataObj, operationList);
+		}
+		return this;
 	}
 }
+

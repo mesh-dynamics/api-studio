@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>commons</artifactId>
-  <version>1.0.10</version>
+  <version>1.0.11</version>
   <packaging>jar</packaging>
   <properties>
     <version.java>11</version.java>
@@ -15,6 +15,7 @@
     <version.jackson>2.9.9</version.jackson>
     <version.commonstext>1.8</version.commonstext>
     <version.httpcomponents>4.5.11</version.httpcomponents>
+    <version.flipkart-jsonpath>0.4.7</version.flipkart-jsonpath>
   </properties>
 <!--      <distributionManagement>
         <repository>
@@ -126,6 +127,11 @@
       <artifactId>junit</artifactId>
       <version>4.12</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.flipkart.zjsonpatch</groupId>
+      <artifactId>zjsonpatch</artifactId>
+      <version>${version.flipkart-jsonpath}</version>
     </dependency>
 
     <!--<dependency>

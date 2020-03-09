@@ -1,6 +1,8 @@
 package io.md.dao;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -8,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
 
 /*
@@ -37,9 +40,6 @@ public interface DataObj {
 	@JsonIgnore
 	MatchType compare(DataObj rhs, CompareTemplate template);
 
-	//TODO leaving it out from here
-	//DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
-
 	@JsonIgnore
 	boolean wrapAsString(String path, String mimetype);
 
@@ -47,17 +47,23 @@ public interface DataObj {
 	boolean wrapAsByteArray(String path, String mimetype);
 
 	@JsonIgnore
-	Optional<String> encryptField(String path, EncryptionAlgorithm encrypter);
+	Optional<Object> encryptField(String path, EncryptionAlgorithm encrypter);
 
 	@JsonIgnore
 	Optional<String> decryptField(String path, EncryptionAlgorithm decrypter);
 
 	@JsonIgnore
+	void getPathRules(CompareTemplate template, Map<String, TemplateEntry> vals);
+
+	@JsonIgnore
+	DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList);
+
+	@JsonIgnore
 	<T> Optional<T> getValAsObject(String path, Class<T> className);
 
+	@JsonIgnore
 	byte[] getValAsByteArray(String path) throws PathNotFoundException;
 
-	Payload convertToPayload();
 
 	class PathNotFoundException extends Exception{
 
@@ -83,4 +89,12 @@ public interface DataObj {
 			super(msg,e);
 		}
 	}
+
+	class DataObjectCreationException extends Exception {
+		public DataObjectCreationException(Throwable rootCause) {super(rootCause);}
+		public DataObjectCreationException(String msg) {
+			super(msg);
+		}
+	}
+
 }

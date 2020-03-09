@@ -11,18 +11,20 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
+import io.md.utils.HttpResponsePayloadDeserializer;
 import io.md.utils.Utils;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-10-01
  */
+@JsonDeserialize(using = HttpResponsePayloadDeserializer.class)
 public class HTTPResponsePayload extends LazyParseAbstractPayload {
 
 	@JsonDeserialize(as=MultivaluedHashMap.class)
@@ -30,16 +32,18 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	public int status;
 	@JsonSerialize(using = ByteArraySerializer.class)
 	@JsonDeserialize(as = byte[].class)
-	public byte[] body;
+	private byte[] body;
 
 	static String BODY = "body";
+
 	/**
 	 *
 	 * @param hdrs
 	 * @param status
 	 * @param body
 	 */
-	@JsonCreator
+	// NOTE this constructor will be used only in the agent,
+	// when creating the payload initially
 	public HTTPResponsePayload(@JsonProperty("hdrs") MultivaluedMap<String, String> hdrs,
 		@JsonProperty("status") int status,
 		@JsonProperty("body") byte[] body) {
@@ -48,7 +52,21 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 		this.body = body;
 	}
 
+	// Once the payload has been serialized, only this constructor will be called
+	// from within the deserializer
+	public HTTPResponsePayload(JsonNode node) {
+		super(node);
+		this.hdrs =  this.dataObj.getValAsObject("/".concat("hdrs"),
+			MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		this.status =  this.dataObj.getValAsObject("/".concat("status"),
+			Integer.class).orElse(-1);
+		//this.body = null;
+		postParse();
+	}
 
+	public byte[] getBody() {
+		return body;
+	}
 
 	@Override
 	public byte[] rawPayloadAsByteArray() throws NotImplementedException {
@@ -58,7 +76,8 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	@Override
 	public String rawPayloadAsString() throws RawPayloadProcessingException {
 		try {
-			return mapper.writeValueAsString(this);
+			return this.dataObj.isDataObjEmpty() ? mapper.writeValueAsString(this) :
+				dataObj.serializeDataObj();
 		} catch (Exception e) {
 			throw  new RawPayloadProcessingException(e);
 		}
@@ -68,7 +87,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	public void postParse() {
 		if (!this.dataObj.isDataObjEmpty()) {
 			this.dataObj.unwrapAsJson("/".concat(BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+				Utils.getMimeType(hdrs).orElse(MediaType.APPLICATION_JSON));
 		}
 	}
 
@@ -77,16 +96,4 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 		return false;
 	}
 
-	@Override
-	public void syncFromDataObj() {
-		if (!isDataObjEmpty()) {
-			this.dataObj.wrapAsByteArray("/".concat(BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
-			HTTPResponsePayload requestPayload = (HTTPResponsePayload)this.dataObj
-				.convertToPayload();
-			this.hdrs = requestPayload.hdrs;
-			this.body = requestPayload.body;
-			this.status = requestPayload.status;
-		}
-	}
 }

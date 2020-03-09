@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -22,7 +22,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,14 +30,13 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
-import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
-import io.opentracing.Span;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
+import io.opentracing.Span;
 
 public class Utils {
 
@@ -316,9 +314,12 @@ public class Utils {
 				x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
 	}
 
-	public static Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
+	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
+		if (headers == null)
+			return Optional.empty();
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
-			.map(headers::getFirst).findFirst().map(x -> x.toLowerCase().stripLeading());
+			.map(headers::getFirst).filter(Objects::nonNull)
+			.findFirst().map(x -> x.toLowerCase().stripLeading());
 	}
 
 }

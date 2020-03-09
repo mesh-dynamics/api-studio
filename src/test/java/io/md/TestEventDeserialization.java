@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.cryptography.JcaEncryption;
 import io.md.dao.Event;
 import io.md.dao.HTTPResponsePayload;
-import io.md.dao.JsonPayload;
 import io.md.utils.CubeObjectMapperProvider;
 
 public class TestEventDeserialization {

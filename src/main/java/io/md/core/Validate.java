@@ -3,8 +3,8 @@ package io.md.core;
 import java.util.Optional;
 
 public class Validate {
-	protected final boolean isValid;
-	protected final Optional<String> message;
+	public final boolean isValid;
+	public final Optional<String> message;
 
 	public Validate() {
 		this.isValid = false;

@@ -92,10 +92,42 @@ public class JcaEncryption implements EncryptionAlgorithm {
 	{
 		try
 		{
-//			String utfString = new String(strToDecrypt.getBytes(), "UTF-8");
 			Cipher cipher = Cipher.getInstance(jcaAlgorithm);
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, initialisationVector);
 			return Optional.of(new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt))));
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error while decrypting")), e);
+
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<byte[]> encrypt(byte[] byteArrayToEncrypt) {
+		try
+		{
+			Cipher cipher = Cipher.getInstance(jcaAlgorithm);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, initialisationVector);
+			return Optional.of(Base64.getEncoder().encode(cipher.doFinal(byteArrayToEncrypt)));
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Error while encrypting")), e);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<byte[]> decrypt(byte[] byteArrayToDecrypt) {
+		try
+		{
+			Cipher cipher = Cipher.getInstance(jcaAlgorithm);
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, initialisationVector);
+			return Optional.of(cipher.doFinal(Base64.getDecoder().decode(byteArrayToDecrypt)));
 		}
 		catch (Exception e)
 		{

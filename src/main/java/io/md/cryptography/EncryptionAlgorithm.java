@@ -7,4 +7,8 @@ public interface EncryptionAlgorithm {
 
 	Optional<String> decrypt(String strToDecrypt);
 
+	Optional<byte[]> encrypt(byte[] byteArrayToEncrypt);
+
+	Optional<byte[]> decrypt(byte[] byteArrayToEncrypt);
+
 }

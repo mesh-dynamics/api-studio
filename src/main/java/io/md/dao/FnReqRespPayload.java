@@ -43,8 +43,4 @@ public class FnReqRespPayload extends LazyParseAbstractPayload {
 
 	}
 
-	@Override
-	public void syncFromDataObj() throws PathNotFoundException, DataObjProcessingException {
-
-	}
 }
