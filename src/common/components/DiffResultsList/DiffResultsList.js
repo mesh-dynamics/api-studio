@@ -148,6 +148,15 @@ export default class DiffResultsList extends Component {
         const newStyles = this.newStyles;
 
         const { diffLayoutData } = this.props;
+
+        if (diffLayoutData.length == 0) {
+            return (
+                <div className="loading-text">
+                    No Results Found
+                </div>
+            )
+        }
+        
         return diffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
@@ -286,13 +295,24 @@ export default class DiffResultsList extends Component {
         });
     }
 
+    renderLoading = () => {
+        return (
+            <div className={this.props.fetching ? "loading-text" : ""}>
+                Loading...
+            </div>
+        );
+    }
+
     render() {
-        // TODO
-        
         return (
             <div>
-                {this.renderToggleRibbon()}
-                {this.renderResultsList()}
+                {this.props.fetching 
+                ? this.renderLoading() 
+                : 
+                <Fragment>
+                    {this.renderToggleRibbon()}
+                    {this.renderResultsList()}
+                </Fragment>}
             </div>
         )
     }
