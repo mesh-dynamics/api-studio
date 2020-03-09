@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.utils.CubeObjectMapperProvider;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
@@ -32,8 +34,7 @@ public class TemplateSerializationTest {
 
     @Test
     public void testTemplateEntrySerialization(){
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new Jdk8Module());
+        ObjectMapper mapper = CubeObjectMapperProvider.getInstance();
         TemplateEntry te = new TemplateEntry("/body",
                 CompareTemplate.DataType.Str,
                 CompareTemplate.PresenceType.Required,
@@ -50,16 +51,14 @@ public class TemplateSerializationTest {
             assertEquals(te1.dt , CompareTemplate.DataType.Str);
             assert(te1.customization.isEmpty());
         } catch (Exception e) {
-
-            e.printStackTrace();
+            Assertions.fail(e);
         }
     }
 
 
     @Test
     public void testCompareTemplateSerialization(){
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new Jdk8Module());
+        ObjectMapper mapper = CubeObjectMapperProvider.getInstance();
         CompareTemplate template = new CompareTemplate("");
         String[] paths = {"", "/string", "/int", "/float", "/obj", "/rptArr", "/nrptArr"};
         CompareTemplate.DataType[] dataTypes = {CompareTemplate.DataType.Obj, CompareTemplate.DataType.Str, CompareTemplate.DataType.Int, CompareTemplate.DataType.Float, CompareTemplate.DataType.Obj,
@@ -85,7 +84,7 @@ public class TemplateSerializationTest {
                 );
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Assertions.fail(e);
         }
 
     }
