@@ -999,21 +999,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , timestamp, reqId.orElse(null), path.orElse(""), eType);
         // TODO revisit this need to construct payload properly from type and json string
         try {
-            payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
-                eventBuilder.setPayload(this.config.jsonMapper.readValue(payload, Payload.class))));
-        } catch (Exception e) {
-            payloadStr.ifPresent(payload -> {
+            payloadStr.ifPresent(UtilException.rethrowConsumer(payload -> {
                 String finalPayload = "[ \"" + ((eType == EventType.HTTPRequest)
                     ? "HTTPRequestPayload" : "HTTPResponsePayload") + "\" , " + payload + " ] ";
-                try {
-                    eventBuilder.setPayload(this.config.jsonMapper.readValue(finalPayload, Payload.class));
-                } catch (Exception e1) {
-                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                        "Unable to convert json string back to payload object")), e1);
-                }
-            });
-
-
+                eventBuilder
+                    .setPayload(this.config.jsonMapper.readValue(finalPayload, Payload.class));
+            }));
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert json string back to payload object")), e);
         }
         //eventBuilder.setRawPayloadString(payloadStr.orElse(null));
         //eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));

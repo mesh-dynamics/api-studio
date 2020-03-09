@@ -74,6 +74,7 @@ import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Result;
+import com.cube.dao.WrapperEvent;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
 
@@ -515,7 +516,13 @@ public class CubeStore {
     private int processEventJson(String eventJson) {
         Event event = null;
         try {
-            event = jsonMapper.readValue(eventJson, Event.class);
+            WrapperEvent wrapperEvent = jsonMapper.readValue(eventJson, WrapperEvent.class);
+            if (wrapperEvent.cubeEvent == null) {
+                logStoreError(new CubeStoreException(new NullPointerException(), "Cube Event is null" ,
+                    new CubeEventMetaInfo()));
+                return 0;
+            }
+            event = wrapperEvent.cubeEvent;
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
