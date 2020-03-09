@@ -247,8 +247,8 @@ public class Event {
 	public final String instanceId;
 	private String collection;
 	private String traceId;
-	private final String spanId;
-	private final String parentSpanId;
+	public final String spanId;
+	public final String parentSpanId;
 	public final RunType runType;
 
 
