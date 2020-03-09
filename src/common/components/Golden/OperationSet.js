@@ -45,6 +45,7 @@ class OperationSet extends Component {
                         isOpen={showPopover && popoverCurrentPath === this.props.jsonPath}
                         position={['top', 'bottom', 'left', 'right']}
                         padding={10}
+                        containerStyle={{ zIndex: 100 }}
                         content={({ position, targetRect, popoverRect }) => (
                             <ArrowContainer
                                 position={position}

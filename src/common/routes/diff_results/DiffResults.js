@@ -15,6 +15,8 @@ import config from "../../config";
 
 const DiffResultsContext = createContext();
 
+const DiffResultsContext = createContext();
+
 class DiffResults extends Component {
     constructor(props) {
         super(props);
