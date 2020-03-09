@@ -13,15 +13,6 @@ import axios from "axios";
 import {cubeActions} from "../../actions";
 import config from "../../config";
 
-const respData = {
-    facets: {
-        services: [{value: "s1", count: 2}, {value: "s2", count: 2}],
-        apiPaths: [{value: "a1", count: 2}, {value: "a2", count: 2}],
-        resolutionTypes: [{value: "ERR_ValTypeMismatch", count: 2}, {value: "OK_OtherValInvalid", count: 4}],
-        pages: 10,
-    }
-}
-
 const DiffResultsContext = createContext();
 
 class DiffResults extends Component {
