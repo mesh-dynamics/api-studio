@@ -1,20 +1,27 @@
 package com.cubeui.backend.web.external;
 
+import static org.springframework.http.ResponseEntity.status;
+
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.cubeui.backend.domain.FnReqResponse;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.util.Optional;
 import io.md.dao.Event;
-
-import static org.springframework.http.ResponseEntity.status;
 
 @RestController
 @RequestMapping("/api/ms")
@@ -27,18 +34,16 @@ public class MockServiceController {
     @Autowired
     private ObjectMapper jsonMapper;
 
-    @GetMapping("/{customerId}/{app}/{instanceId}/{service}/{var:.+}")
+    @GetMapping("/{customerId}/{app}/{instanceId}/{service}/**")
     public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
-                              @PathVariable String app, @PathVariable String instanceId, @PathVariable String service,
-                              @PathVariable String var) {
+                              @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/{customerId}/{app}/{instanceId}/{service}/{var:.+}")
+    @PostMapping("/{customerId}/{app}/{instanceId}/{service}/**")
     public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
-                              @PathVariable String app, @PathVariable String instanceId, @PathVariable String service,
-                              @PathVariable String var) {
+                              @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchPostResponse(request, getBody);
     }
