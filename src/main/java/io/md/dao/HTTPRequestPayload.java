@@ -82,7 +82,16 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 	}
 
 	public byte[] getBody() {
-    	return body;
+		if (this.body != null && !(this.body.length == 0)) {
+			return body;
+		} else if (!this.dataObj.isDataObjEmpty()) {
+			try {
+				return this.dataObj.getValAsByteArray("/".concat(BODY));
+			} catch (PathNotFoundException e) {
+				//do nothing
+			}
+		}
+		return new byte[]{};
 	}
 
 	@Override
