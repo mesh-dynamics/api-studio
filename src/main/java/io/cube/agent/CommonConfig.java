@@ -2,7 +2,6 @@ package io.cube.agent;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -76,9 +75,10 @@ public class CommonConfig {
 
 	public String customerId, app, instance, serviceName, samplerType;
 	public final Optional<EncryptionConfig> encryptionConfig;
+	public final Optional<SamplerConfig> samplerConfig;
 
 	//Sampling
-	public String samplingConfFilePath;
+	//public String samplingConfFilePath;
 	public Number samplerRate, samplerAccuracy;
 	public boolean samplerVeto;
 	public List<String> headerParams;
@@ -121,6 +121,7 @@ public class CommonConfig {
 			", instance='" + instance + '\'' +
 			", serviceName='" + serviceName + '\'' +
 			", encryptionConfig=" + encryptionConfig +
+			", samplerConfig=" + samplerConfig +
 			", intent=" + intent +
 			", performance_test=" + performanceTest +
 			'}';
@@ -211,22 +212,17 @@ public class CommonConfig {
 			.orElseThrow(() -> new Exception("Mesh-D Service Name Not Specified"));
 		intent = fromDynamicOREnvORStaticProperties(Constants.MD_INTENT_PROP, dynamicProperties)
 			.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
-		samplingConfFilePath = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.SAMPLING_CONF_FILE_PATH, dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Sampling Not Specified"));
-//		samplerType = fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_TYPE,
-//			dynamicProperties)
-//			.orElse(SimpleSampler.TYPE);
-//		samplerRate = getPropertyAsNum(
-//			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_RATE, dynamicProperties)
-//				.orElse(SimpleSampler.DEFAULT_SAMPLING_RATE)).orElse(1);
-//		samplerAccuracy = getPropertyAsNum(
-//			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_ACCURACY, dynamicProperties)
-//				.orElse(SimpleSampler.DEFAULT_SAMPLING_ACCURACY)).orElse(10000);
-//		headerParams = getPropertyAsList(
-//			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_HEADER_PARAMS,
-//				dynamicProperties)
-//				.orElse(Strings.EMPTY));
+		samplerConfig = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.SAMPLER_CONF_FILE_PATH,
+			dynamicProperties).flatMap(scf -> {
+			try {
+				return Optional.of(jsonMapper.readValue(new File(scf), SamplerConfig.class));
+			} catch (Exception e) {
+				LOGGER.error(new ObjectMessage(Map.of(
+					Constants.MESSAGE, "Error in reading sampler config file")), e);
+			}
+			return Optional.empty();
+		});
 		samplerVeto = BooleanUtils.toBoolean(
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_VETO, dynamicProperties)
 				.orElse("false"));
@@ -320,17 +316,14 @@ public class CommonConfig {
 	}
 
 	Sampler initSampler() {
-		try {
-			SamplerConfig fromProps = jsonMapper
-				.readValue(new File(samplingConfFilePath), SamplerConfig.class);
-			return createSampler(fromProps);
-		} catch (IOException e) {
-			LOGGER.error(new ObjectMessage(
+		if (samplerConfig.isEmpty()) {
+			LOGGER.debug(new ObjectMessage(
 				Map.of(
-					Constants.MESSAGE, "Exception reading the config file, recording all requests!"
+					Constants.MESSAGE, "Invalid config file, recording all requests!"
 				)));
 			return Sampler.ALWAYS_SAMPLE;
 		}
+		return createSampler(samplerConfig.get());
 
 	}
 
@@ -366,7 +359,7 @@ public class CommonConfig {
 		//even if different probabilities are give in the config file and this probability
 		//will be the first available probability.
 		if (BoundarySampler.TYPE.equalsIgnoreCase(samplerType)) {
-			if (isSamplerIdentifierPresent(samplerType, samplingID)) {
+			if (!isSamplerIdentifierPresent(samplerType, samplingID)) {
 				return SimpleSampler
 					.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
 						SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
@@ -399,14 +392,17 @@ public class CommonConfig {
 
 			MultivaluedMap<String, Pair<String, Float>> samplingParams = new MultivaluedHashMap<>();
 			for (SamplerAttributes attr : samplerAttributes) {
-				if (attr.getSamplingField() == null || attr.getSamplingField().isEmpty() || attr.getSamplingField()
-					.isBlank() || attr.getSamplingValue() == null || attr.getSamplingValue().isEmpty()
+				if (attr.getSamplingField() == null || attr.getSamplingField().isEmpty() || attr
+					.getSamplingField()
+					.isBlank() || attr.getSamplingValue() == null || attr.getSamplingValue()
+					.isEmpty()
 					|| attr.getSamplingValue().isBlank()) {
 					return SimpleSampler
 						.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
 							SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
 				}
-				Optional<Sampler> sampler = Utils.getSampler(attr.getSamplingRate(), samplingAccuracy);
+				Optional<Sampler> sampler = Utils
+					.getSampler(attr.getSamplingRate(), samplingAccuracy);
 				if (sampler.isPresent()) {
 					LOGGER.error(new ObjectMessage(
 						Map.of(
@@ -440,9 +436,9 @@ public class CommonConfig {
 					Constants.MESSAGE, "Missing Sampler Identifier, using default sampler",
 					Constants.MD_SAMPLER_TYPE, samplerType
 				)));
-			return true;
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 }

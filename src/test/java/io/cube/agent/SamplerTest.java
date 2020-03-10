@@ -129,7 +129,9 @@ public class SamplerTest {
 		//System.out.println("My Count Value : " + myCount + " Other Count Value : " + otherCount);
 		float myPercent = myCount/100.0f;
 		float otherPercent = otherCount/149900.0f;
-		Assertions.assertTrue(myPercent > 0.45 && myPercent < 0.55);
+		System.out.println("My percent : " + myPercent);
+		System.out.println("Other percent : " + otherPercent);
+		Assertions.assertTrue(myPercent > 0.4 && myPercent < 0.6);
 		Assertions.assertTrue(otherPercent > 0.25 && otherPercent < 0.35);
 		//check if the sampling is idempotent
 		//Assertions.assertTrue(sampledSessionIDs.values().stream().distinct().limit(2).count() <= 1);
