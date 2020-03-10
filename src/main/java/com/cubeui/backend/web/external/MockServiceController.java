@@ -27,7 +27,7 @@ public class MockServiceController {
     @Autowired
     private ObjectMapper jsonMapper;
 
-    @GetMapping("/{customerId}/{app}/{instanceId}/{service}/{var}")
+    @GetMapping("/{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
                               @PathVariable String app, @PathVariable String instanceId, @PathVariable String service,
                               @PathVariable String var) {
@@ -35,7 +35,7 @@ public class MockServiceController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/{customerId}/{app}/{instanceId}/{service}/{var}")
+    @PostMapping("/{customerId}/{app}/{instanceId}/{service}/{var:.+}")
     public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
                               @PathVariable String app, @PathVariable String instanceId, @PathVariable String service,
                               @PathVariable String var) {
