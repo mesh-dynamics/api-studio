@@ -11,6 +11,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -81,8 +83,18 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload {
 		postParse();
 	}
 
+	@JsonIgnore
 	public byte[] getBody() {
-    	return body;
+		if (this.body != null && !(this.body.length == 0)) {
+			return body;
+		} else if (!this.dataObj.isDataObjEmpty()) {
+			try {
+				return this.dataObj.getValAsByteArray("/".concat(BODY));
+			} catch (PathNotFoundException e) {
+				//do nothing
+			}
+		}
+		return new byte[]{};
 	}
 
 	@Override
