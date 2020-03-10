@@ -130,6 +130,15 @@ public class DataInitializer implements CommandLineRunner {
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
 
+        Optional<EmailDomain> emailDomain = emailDomainRepository.findByDomain("meshdynamics.io");
+        if (emailDomain.isEmpty()) {
+            EmailDomain domain = new EmailDomain();
+            domain.setDomain("meshdynamics.io");
+            domain.setCustomer(customer.get());
+            this.emailDomainRepository.save(domain);
+            log.info("EmailDomain with domain '{}' created", domain.getDomain());
+        }
+
 //        //if(!appRepository.existsById(4L)) {
 //            App app = new App();
 //            //app.setId(4L);
