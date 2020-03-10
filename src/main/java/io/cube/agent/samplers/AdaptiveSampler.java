@@ -1,9 +1,11 @@
 package io.cube.agent.samplers;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -36,7 +38,6 @@ public class AdaptiveSampler extends Sampler {
 	private final String samplingID;
 	private final int samplingAccuracy;
 	private Random rnd;
-	private float[] samplingRate = new float[1];
 
 	AdaptiveSampler(String samplingID, int samplingAccuracy,
 		MultivaluedMap<String, Pair<String, Float>> samplingParams) {
@@ -55,8 +56,8 @@ public class AdaptiveSampler extends Sampler {
 	private float getSamplingRate(MultivaluedMap<String, String> samplingInputs) {
 		for (Map.Entry<String, List<Pair<String, Float>>> entry : samplingParams.entrySet()) {
 			Optional<Float> samplingRate = entry.getValue().stream()
-				.filter(cv -> samplingInputs.get(entry.getKey())
-					.stream()
+				.filter(cv -> Stream.ofNullable(samplingInputs.get(entry.getKey())).flatMap(
+					Collection::stream)
 					.anyMatch(inp -> cv.getLeft().equalsIgnoreCase(inp) || cv.getLeft()
 						.equalsIgnoreCase("other")))
 				.findFirst()

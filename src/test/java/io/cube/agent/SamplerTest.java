@@ -10,9 +10,12 @@ import java.util.UUID;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.cube.agent.samplers.AdaptiveSampler;
 import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
@@ -78,6 +81,87 @@ public class SamplerTest {
 		Assertions.assertTrue(percent > 0.35 && percent < 0.45);
 		//check if the sampling is idempotent
 		Assertions.assertTrue(sampledSessionIDs.values().stream().distinct().limit(2).count() <= 1);
+	}
+
+	@Test
+	void testAdaptiveSamplerInvalidField() {
+		int count = 0;
+		MultivaluedMap<String, Pair<String,Float>> params = new MultivaluedHashMap<>();
+		params.add("source", new ImmutablePair<>("aaa",0.9f));
+		params.add("source", new ImmutablePair<>("other",0.3f));
+		Sampler sampler = AdaptiveSampler.create("headers", 1000, params);
+		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
+		List<String> sessionIDs = generateSessionIDs();
+		map.add("sessionId", sessionIDs.get(0));
+		Assertions.assertTrue(!sampler.isSampled(map));
+	}
+
+	@Test
+	void testAdaptiveSamplerValidInput() {
+		int myCount = 0;
+		int otherCount = 0;
+		MultivaluedMap<String, Pair<String,Float>> params = new MultivaluedHashMap<>();
+		params.add("source", new ImmutablePair<>("aaa",0.5f));
+		params.add("source", new ImmutablePair<>("other",0.3f));
+		Sampler sampler = AdaptiveSampler.create("headers", 1000, params);
+		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
+		List<String> sessionIDs = generateSessionIDs();
+		Map<String, Integer> sampledSessionIDs = new HashMap<>();
+		//Run 150k requests and check probability criteria
+		for (int i=0; i<150000; i++) {
+			String sessionID = sessionIDs.get(i%1500);
+			if (i%1500 == 0) {
+				sessionID = "aaa";
+			}
+			map.add("source", sessionID);
+			boolean result = sampler.isSampled(map);
+			if (result) {
+				if (sessionID.equalsIgnoreCase("aaa")) {
+					myCount++;
+				} else {
+					otherCount++;
+				}
+				sampledSessionIDs.put(sessionID, sampledSessionIDs.getOrDefault(sessionID, 0) + 1);
+			}
+			map.clear();
+		}
+
+		//System.out.println("My Count Value : " + myCount + " Other Count Value : " + otherCount);
+		float myPercent = myCount/100.0f;
+		float otherPercent = otherCount/149900.0f;
+		Assertions.assertTrue(myPercent > 0.45 && myPercent < 0.55);
+		Assertions.assertTrue(otherPercent > 0.25 && otherPercent < 0.35);
+		//check if the sampling is idempotent
+		//Assertions.assertTrue(sampledSessionIDs.values().stream().distinct().limit(2).count() <= 1);
+	}
+
+	@Test
+	void testAdaptiveSamplerOtherInput() {
+		int count = 0;
+		MultivaluedMap<String, Pair<String,Float>> params = new MultivaluedHashMap<>();
+		params.add("source", new ImmutablePair<>("aaa",0.9f));
+		params.add("source", new ImmutablePair<>("other",0.3f));
+		Sampler sampler = AdaptiveSampler.create("headers", 1000, params);
+		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
+		List<String> sessionIDs = generateSessionIDs();
+		Map<String, Integer> sampledSessionIDs = new HashMap<>();
+		//Run 150k requests and check probability criteria
+		for (int i=0; i<150000; i++) {
+			String sessionID = sessionIDs.get(i%1500);
+			map.add("source", sessionID);
+			boolean result = sampler.isSampled(map);
+			if (result) {
+				count++;
+				sampledSessionIDs.put(sessionID, sampledSessionIDs.getOrDefault(sessionID, 0) + 1);
+			}
+			map.clear();
+		}
+
+		//System.out.println("Count Value : " + count);
+		float percent = count/150000.0f;
+		Assertions.assertTrue(percent > 0.25 && percent < 0.35);
+		//check if the sampling is idempotent
+		//Assertions.assertTrue(sampledSessionIDs.values().stream().distinct().limit(2).count() <= 1);
 	}
 
 	private List<String> generateSessionIDs() {
