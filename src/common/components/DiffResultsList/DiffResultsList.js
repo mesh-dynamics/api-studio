@@ -12,12 +12,14 @@ export default class DiffResultsList extends Component {
         this.state = {
             searchFilterPath: "",
 
-            shownResponseMessageHeaders: false,
-            shownResponseMessageBody: true,
-            shownRequestMessageHeaders: false,
-            shownRequestMessageQParams: false,
-            shownRequestMessageFParams: false,
-            shownRequestMessageBody: false,
+            // the 'shown' flags should match the corresponding 'show' flags coming from the initial props
+            // because we have shown the ones having 'show' true
+            shownResponseMessageHeaders: props.showResponseMessageHeaders, 
+            shownResponseMessageBody: props.showResponseMessageBody, 
+            shownRequestMessageHeaders: props.showRequestMessageHeaders, 
+            shownRequestMessageQParams: props.showRequestMessageQParams, 
+            shownRequestMessageFParams: props.showRequestMessageFParams, 
+            shownRequestMessageBody: props.showRequestMessageBody, 
 
             showFragments: false,
         }
@@ -44,7 +46,7 @@ export default class DiffResultsList extends Component {
             "&:hover": {
                 background: "#f7f7f7",
             },
-        }
+        } 
     };
 
     toggleShowFragments = () => {
@@ -60,44 +62,43 @@ export default class DiffResultsList extends Component {
             case "responseHeaders":
                 updateDiffToggleRibbon({
                     showResponseMessageHeaders: e.target.checked, 
-                    shownResponseMessageHeaders: true 
                 })
-                this.setState
+                this.setState({shownResponseMessageHeaders: true})
                 break;
         
             case "responseBody":
                 updateDiffToggleRibbon({ 
                     showResponseMessageBody: e.target.checked,
-                    shownResponseMessageBody: true
                 });
+                this.setState({shownResponseMessageBody: true})
                 break;
 
             case "requestHeaders":
                 updateDiffToggleRibbon({ 
                     showRequestMessageHeaders: e.target.checked,
-                    shownRequestMessageHeaders: true
                 });
+                    this.setState({shownRequestMessageHeaders: true})
                 break;
 
             case "requestQParams":
                 updateDiffToggleRibbon({ 
                     showRequestMessageQParams: e.target.checked,
-                    shownRequestMessageQParams: true
                 });
+                this.setState({shownRequestMessageQParams: true})
                 break;
 
             case "requestFParams":
                 updateDiffToggleRibbon({ 
                     showRequestMessageFParams: e.target.checked,
-                    shownRequestMessageFParams: true
                 });
+                this.setState({shownRequestMessageFParams: true})
                 break;
 
             case "requestBody":
                 updateDiffToggleRibbon({ 
-                    showRequestMessageBody: e.target.checked, 
-                    shownRequestMessageBody: true 
+                    showRequestMessageBody: e.target.checked,  
                 });
+                this.setState({shownRequestMessageBody: true})
                 break;
         }
         
@@ -198,12 +199,6 @@ export default class DiffResultsList extends Component {
                 showRequestMessageQParams, // Request Message Q Params
                 showRequestMessageFParams, // Request Message F Params
                 showRequestMessageBody,// Request Message Body
-                // shownRequestMessageBody, // Request Message Body
-                // // shownResponseMessageBody, // Response Message Body
-                // shownRequestMessageHeaders,// Request Message Headers
-                // shownResponseMessageHeaders,  // Response Message Headers
-                // shownRequestMessageQParams, // Request Message Q Params
-                // shownRequestMessageFParams, // Request Message F Params
             }
         } = this.props;
 

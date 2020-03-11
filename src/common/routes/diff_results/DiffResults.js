@@ -40,12 +40,6 @@ class DiffResults extends Component {
                 showRequestMessageQParams: false,
                 showRequestMessageFParams: false,
                 showRequestMessageBody: false,
-                // shownResponseMessageHeaders: false,
-                // shownResponseMessageBody: true,
-                // shownRequestMessageHeaders: false,
-                // shownRequestMessageQParams: false,
-                // shownRequestMessageFParams: false,
-                // shownRequestMessageBody: false
             },
             diffLayoutData : [],
             facetListData: {
@@ -90,19 +84,18 @@ class DiffResults extends Component {
         //const selectedReqCompareResType = urlParameters["selectedReqCompareResType"] || "All";
         //const selectedRespCompareResType = urlParameters["selectedRespCompareResType"] || "All";
 
-        const requestHeaders = urlParameters["requestHeaders"] || false;
-        const requestQParams = urlParameters["requestQParams"] || false;
-        const requestFParams = urlParameters["requestFParams"] || false;
-        const requestBody = urlParameters["requestBody"] || false;
-        const responseHeaders =  urlParameters["responseHeaders"] || false;
-        const responseBody = urlParameters["responseBody"] || true;
+        const requestHeaders = urlParameters["requestHeaders"];
+        const requestQParams = urlParameters["requestQParams"];
+        const requestFParams = urlParameters["requestFParams"];
+        const requestBody = urlParameters["requestBody"];
+        const responseHeaders =  urlParameters["responseHeaders"];
+        const responseBody = urlParameters["responseBody"];
 
         const searchFilterPath = urlParameters["searchFilterPath"] || "";
         const timeStamp = decodeURI(urlParameters["timeStamp"]) || "";
-        const currentPageNumber = urlParameters["currentPageNumber"] || 1;
+        const currentPageNumber = parseInt(urlParameters["currentPageNumber"]) || 1;
         const pageSize = urlParameters["pageSize"] || config.defaultPageSize;
         
-
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
             filter : {
@@ -118,25 +111,25 @@ class DiffResults extends Component {
                 currentPageNumber: currentPageNumber,
                 pageSize: pageSize,
             },
+            // set the toggle ribbon 'show' states (parse the strings from url params to boolean)
             diffToggleRibbon: {
                 // response headers
-                showResponseMessageHeaders: responseHeaders,
-                shownResponseMessageHeaders: responseHeaders,
+                showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
+
                 // response body
-                showResponseMessageBody: responseBody,
-                shownResponseMessageBody: responseBody,
+                showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
+
                 // request header
-                showRequestMessageHeaders: requestHeaders,
-                shownRequestMessageHeaders: requestHeaders,
+                showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
+
                 // request query params
-                showRequestMessageQParams: requestQParams,
-                shownRequestMessageQParams: requestQParams,
+                showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+
                 // request form params
-                showRequestMessageFParams: requestFParams,
-                shownRequestMessageFParams: requestFParams,
+                showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
+
                 // request body
-                showRequestMessageBody: requestBody,
-                shownRequestMessageBody: requestBody
+                showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
             },
             facetListData: {
                 services: {},
@@ -155,7 +148,7 @@ class DiffResults extends Component {
             
         });
         setTimeout(() => {
-            const { dispatch, history, cube } = this.props;
+            const { dispatch } = this.props;
             dispatch(cubeActions.setPathResultsParams({
                 path: selectedAPI,
                 service: selectedService,
@@ -279,7 +272,7 @@ class DiffResults extends Component {
 
     // todo: move to utils
     validateAndCreateDiffLayoutData = (replayList) => {
-        let diffLayoutData = replayList.map((item, index) => {
+        let diffLayoutData = replayList.map((item) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
             let isJson = true;
@@ -594,6 +587,8 @@ class DiffResults extends Component {
     };
 
     updateDiffToggleRibbon = (updatedRibbonState) => {
+
+        // todo
         console.log(updatedRibbonState)
         this.setState({ 
             ...this.state, 
