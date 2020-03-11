@@ -493,9 +493,6 @@ class DiffResults extends Component {
         }
         
         let url = analysisResUrl + "?" + searchParams.toString();
-        console.log("fetch url " + url)
-        console.log(url)
-
         let user = JSON.parse(localStorage.getItem('user'));
         try {
         
@@ -526,10 +523,8 @@ class DiffResults extends Component {
     }
 
     async fetchFacetData() {
-        // https://www.mocky.io/v2/5e5f99af310000a9f8afdd73
-        console.log("fetching replay list")
         //let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        let analysisResUrl = "https://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
+        let analysisResUrl = "http://www.mocky.io/v2/5e6890a32f00004259d8ad74";
         let searchParams = new URLSearchParams();
         searchParams.set("numResults", 0);
         
@@ -566,7 +561,6 @@ class DiffResults extends Component {
     }
 
     fetchAndUpdateResults() {
-        console.log("fetching results and updating")
         // fetch results from the backend
         const { replayId, filter } = this.state;
         

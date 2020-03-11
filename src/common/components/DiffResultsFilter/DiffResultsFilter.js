@@ -50,10 +50,9 @@ export default class DiffResultsFilter extends Component {
 
     renderServiceDropdown() {
         const {facetListData} = this.props;
-        const services = _.isEmpty(facetListData.services) ? {} : facetListData.services;
+        const services = _.isEmpty(facetListData.services) ? [] : facetListData.services;
         const selectedService = this.props.filter.selectedService;
-        const servicesEntries = Object.entries(services);
-        let totalServiceCounts = servicesEntries.reduce((accumulator, [service, count]) => accumulator += count, 0);
+        let totalServiceCounts = services.reduce((accumulator, service) => accumulator += service.count, 0);
         
         return (
             <Fragment>
@@ -62,9 +61,9 @@ export default class DiffResultsFilter extends Component {
                         <Glyphicon style={{ visibility: selectedService === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({totalServiceCounts})
                     </MenuItem>
                     <MenuItem divider />
-                    {servicesEntries.map(([service, count]) => {return (
-                    <MenuItem key={service + "-" + count} eventKey={service} onClick={() => this.handleMetaDataSelect("selectedService", service)}>
-                        <Glyphicon style={{ visibility: selectedService === service ? "visible" : "hidden" }} glyph="ok" /> {service} ({count})
+                    {services.map((service) => {return (
+                    <MenuItem key={service.val + "-" + service.count} eventKey={service.val} onClick={() => this.handleMetaDataSelect("selectedService", service.val)}>
+                        <Glyphicon style={{ visibility: selectedService === service.val ? "visible" : "hidden" }} glyph="ok" /> {service.val} ({service.count})
                     </MenuItem>);
                     })}
                 </DropdownButton>
@@ -74,10 +73,9 @@ export default class DiffResultsFilter extends Component {
     
     renderAPIPathDropdown() {
         const {facetListData} = this.props;
-        const apiPaths = _.isEmpty(facetListData.apiPaths) ? {"minfo/listmovies": 103, "minfo/liststores": 100,  "minfo/rentmovie": 56, "minfo/returnmovie": 56} : facetListData.apiPaths; 
+        const apiPaths = _.isEmpty(facetListData.apiPaths) ? [{val: "minfo/listmovies", count: 103}, {val: "minfo/liststores", count: 100}, {val:"minfo/rentmovie", count: 56},{val: "minfo/returnmovie", count : 56}] : facetListData.apiPaths; 
         const selectedAPI = this.props.filter.selectedAPI; 
-        const apiPathEntries = Object.entries(apiPaths);
-        let totalAPIPathCounts = apiPathEntries.reduce((accumulator, [apiPath, count]) => accumulator += count, 0);
+        let totalAPIPathCounts = apiPaths.reduce((accumulator, apiPath) => accumulator += apiPath.count, 0);
         
         return (
             <Fragment>
@@ -86,9 +84,9 @@ export default class DiffResultsFilter extends Component {
                         <Glyphicon style={{ visibility: selectedAPI === "All" ? "visible" : "hidden" }} glyph="ok" /> All ({totalAPIPathCounts})
                     </MenuItem>
                     <MenuItem divider />
-                    {apiPathEntries.map(([apiPath, count]) => {return (
-                        <MenuItem key={apiPath+ "-" + count} eventKey={apiPath} onClick={() => this.handleMetaDataSelect("selectedAPI", apiPath)}>
-                            <Glyphicon style={{ visibility: selectedAPI === apiPath ? "visible" : "hidden" }} glyph="ok" /> {apiPath} ({count})
+                    {apiPaths.map((apiPath) => {return (
+                        <MenuItem key={apiPath.val + "-" + apiPath.count} eventKey={apiPath.val} onClick={() => this.handleMetaDataSelect("selectedAPI", apiPath.val)}>
+                            <Glyphicon style={{ visibility: selectedAPI === apiPath.val ? "visible" : "hidden" }} glyph="ok" /> {apiPath.val} ({apiPath.count})
                         </MenuItem>);
                     })}
                 </DropdownButton>
