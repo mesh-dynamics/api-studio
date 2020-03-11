@@ -1,6 +1,7 @@
 package com.cube.interceptor.apachecxf.ingress;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -43,19 +44,45 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 		Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
 		Scope scope = CommonUtils.activateSpan(span);
 
+		Optional<String> fieldCategory = config.commonConfig.sampler.getFieldCategory();
 		String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
 		if (sampleBaggageItem == null) {
 			//root span
-			boolean isSampled = Utils.isSampled(requestHeaders);
+			boolean isSampled = runSampling(reqContext, fieldCategory);
 			span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
 		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && config.commonConfig.samplerVeto) {
 			span.setBaggageItem(Constants.MD_IS_VETOED,
-				String.valueOf(Utils.isSampled(requestHeaders)));
+				String.valueOf(runSampling(reqContext, fieldCategory)));
 		}
 
 		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 		reqContext.setProperty(scopeKey, scope);
 		reqContext.setProperty(spanKey, span);
+	}
+
+	private boolean runSampling(ContainerRequestContext reqContext, Optional<String> fieldCategory) {
+		boolean isSampled;
+		if (fieldCategory.isEmpty()) {
+			isSampled = Utils.isSampled(new MultivaluedHashMap<>());
+		} else {
+			switch (fieldCategory.get()) {
+				case Constants.HEADERS:
+					isSampled = Utils.isSampled(reqContext.getHeaders());
+					break;
+				case Constants.QUERY_PARAMS:
+					isSampled = Utils.isSampled(reqContext.getUriInfo().getQueryParameters());
+					break;
+				case Constants.API_PATH_FIELD:
+					String apiPath = reqContext.getUriInfo().getRequestUri().getPath();
+					MultivaluedMap<String,String> apiPathMap = new MultivaluedHashMap<>();
+					apiPathMap.add(Constants.API_PATH_FIELD, apiPath);
+					isSampled = Utils.isSampled(apiPathMap);
+					break;
+				default:
+					isSampled = Utils.isSampled(new MultivaluedHashMap<>());
+			}
+		}
+		return isSampled;
 	}
 
 	@Override
