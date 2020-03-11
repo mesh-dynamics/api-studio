@@ -3,12 +3,13 @@ package com.cube.interceptor;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -18,13 +19,14 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.springframework.http.HttpRequest;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.MDTraceInfo;
 
 public class Utils {
 
@@ -78,29 +80,6 @@ public class Utils {
 		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
 	}
 
-	public static MultivaluedMap<String, String> buildTraceInfoMap(String traceId, String spanId,
-		String parentSpanId, String xRequestId) {
-		String cRequestId = config.commonConfig.serviceName.concat("-")
-			.concat(traceId == null ? "" : traceId).concat("-").concat(
-				UUID.randomUUID().toString());
-
-		MultivaluedMap<String, String> metaMap = Utils.createEmptyMultivaluedMap();
-		metaMap.add(Constants.DEFAULT_REQUEST_ID, cRequestId);
-		if (traceId != null) {
-			metaMap.add(Constants.DEFAULT_TRACE_FIELD, traceId);
-		}
-		if (spanId != null) {
-			metaMap.add(Constants.DEFAULT_SPAN_FIELD, spanId);
-		}
-		if (parentSpanId != null) {
-			metaMap.add(Constants.DEFAULT_PARENT_SPAN_FIELD, parentSpanId);
-		}
-		if (xRequestId != null) {
-			metaMap.add(Constants.X_REQUEST_ID, xRequestId);
-		}
-		return metaMap;
-	}
-
 	public static MultivaluedMap<String, String> getMultiMap(
 		Set<Entry<String, List<String>>> inputSet) {
 		MultivaluedMap<String, String> multivaluedMap = Utils.createEmptyMultivaluedMap();
@@ -113,11 +92,11 @@ public class Utils {
 
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
-		MultivaluedMap<String, String> meta, String requestBody) {
+		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
-					Utils.createEmptyMultivaluedMap(), meta, requestHeaders,
+					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
@@ -135,11 +114,11 @@ public class Utils {
 
 	public static void createAndLogRespEvent(String apiPath,
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
-		String responseBody) {
+		MDTraceInfo mdTraceInfo, byte[] responseBody) {
 		try {
 			Event responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
-					responseHeaders, responseBody, Optional.empty(), config.jsonMapper,
+					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
@@ -165,18 +144,18 @@ public class Utils {
 		return queryParams;
 	}
 
-	public static MultivaluedMap<String, String> getTraceInfoMetaMap(HttpRequest request) {
-		//Expecting the trace info to be single valued.
-		List<String> traceId = request.getHeaders().get(Constants.DEFAULT_TRACE_FIELD);
-		List<String> spanId = request.getHeaders().get(Constants.DEFAULT_SPAN_FIELD);
-		List<String> parentSpanId = request.getHeaders().get(Constants.DEFAULT_PARENT_SPAN_FIELD);
-		List<String> xRequestId = request.getHeaders().get(Constants.X_REQUEST_ID);
-		return Utils.buildTraceInfoMap(
-			traceId == null ? null : traceId.get(0),
-			spanId == null ? null : spanId.get(0),
-			parentSpanId == null ? null : parentSpanId.get(0),
-			xRequestId == null ? null : xRequestId.get(0)
-		);
+	public static MultivaluedMap<String, String> getHeaders(
+		ContentCachingRequestWrapper requestWrapper) {
+		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
+		Collections.list(requestWrapper.getHeaderNames()).stream()
+			.forEach(headerName -> {
+				Enumeration<String> headerValues = requestWrapper.getHeaders(headerName);
+				while (headerValues.hasMoreElements()) {
+					headerMap.add(headerName, headerValues.nextElement());
+				}
+			});
+
+		return headerMap;
 	}
 
 	public static MultivaluedMap<String, String> createEmptyMultivaluedMap() {

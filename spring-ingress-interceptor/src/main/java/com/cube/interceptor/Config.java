@@ -7,7 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
-import io.cube.agent.FluentDLogRecorder;
+import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;
@@ -23,7 +23,7 @@ public class Config {
 
 	public static CommonConfig commonConfig = null;
 
-	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.createDefaultMapper();
+	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
 	static {
 		try {
@@ -36,6 +36,6 @@ public class Config {
 	public Config() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
 			.create();
-		recorder = new FluentDLogRecorder(gson);
+		recorder = new ConsoleRecorder(gson);
 	}
 }
