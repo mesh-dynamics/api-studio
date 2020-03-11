@@ -18,9 +18,9 @@ export default class DiffResultsList extends Component {
             shownRequestMessageQParams: false,
             shownRequestMessageFParams: false,
             shownRequestMessageBody: false,
+
+            showFragments: false,
         }
-        //this.selectedResolutionType = "All";
-        //this.resolutionTypes = [{value: "ERR", count: 2}];
         this.inputElementRef = React.createRef();
     }
 
@@ -47,7 +47,9 @@ export default class DiffResultsList extends Component {
         }
     };
 
-    handleMetaDataSelect = (metaDataType, value) => {
+    toggleShowFragments = () => {
+        const {showFragments} = this.state;
+        this.setState({showFragments: !showFragments})
     }
 
     toggleMessageContents = (e) => {
@@ -162,15 +164,16 @@ export default class DiffResultsList extends Component {
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={showRequestMessageQParams}>Request Query Params</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={showRequestMessageFParams}>Request Form Params</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={showRequestMessageBody}>Request Body</Checkbox>
+                        
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                        
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={showResponseMessageHeaders}>Response Headers</Checkbox>
                         <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={showResponseMessageBody} >Response Body</Checkbox>
                         
-                        {/* todo: remove */}
-                        {/* <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         
-                        {this.renderResolutionTypesDropdown()} */}
-
+                        <Checkbox inline onChange={this.toggleShowFragments} checked={this.state.showFragments}>Show fragments only</Checkbox>
+                        
                         <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                             ref={this.inputElementRef}
                             type="text"
@@ -178,7 +181,6 @@ export default class DiffResultsList extends Component {
                             placeholder="Search"
                             onChange={this.handleSearchFilterChange}
                             id="filterPathInputId"
-                            //inputRef={ref => { this.input = ref; }}
                         />
                     </FormGroup>
             </Fragment>
@@ -215,9 +217,15 @@ export default class DiffResultsList extends Component {
         } = this.state;
 
         console.log(this.props.diffToggleRibbon)
-        
-        const { searchFilterPath } = this.state;
 
+        if (diffLayoutData.length == 0) {
+            return (
+                <div className="loading-text">
+                    No Results Found
+                </div>
+            )
+        }
+        
         return diffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
@@ -304,8 +312,8 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.updatedReducedDiffArrayRespHdr}
                                 onLineNumberClick={(lineId, e) => { return; }}
-                                showAll={this.props.showAll}
-                                searchFilterPath={searchFilterPath}
+                                showAll={!this.state.showFragments}
+                                searchFilterPath={this.state.searchFilterPath}
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
                             />
@@ -345,8 +353,8 @@ export default class DiffResultsList extends Component {
                                     filterPaths={item.filterPaths}
                                     onLineNumberClick={(lineId, e) => { return; }}
                                     inputElementRef={this.inputElementRef}
-                                    showAll={this.props.showAll}
-                                    searchFilterPath={searchFilterPath}
+                                    showAll={!this.state.showFragments}
+                                    searchFilterPath={this.state.searchFilterPath}
                                 />
                             </div>
                         )}
@@ -356,13 +364,24 @@ export default class DiffResultsList extends Component {
         });
     }
 
+    renderLoading = () => {
+        return (
+            <div className={this.props.fetching ? "loading-text" : ""}>
+                Loading...
+            </div>
+        );
+    }
+
     render() {
-        // TODO
-        
         return (
             <div>
-                {this.renderToggleRibbon()}
-                {this.renderResultsList()}
+                {this.props.fetching 
+                ? this.renderLoading() 
+                : 
+                <Fragment>
+                    {this.renderToggleRibbon()}
+                    {this.renderResultsList()}
+                </Fragment>}
             </div>
         )
     }

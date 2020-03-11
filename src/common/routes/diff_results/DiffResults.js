@@ -14,15 +14,6 @@ import {cubeActions} from "../../actions";
 import { constructUrlParams } from "../../utils/lib/url-utils";
 import config from "../../config";
 
-const respData = {
-    facets: {
-        services: [{value: "s1", count: 2}, {value: "s2", count: 2}],
-        apiPaths: [{value: "a1", count: 2}, {value: "a2", count: 2}],
-        resolutionTypes: [{value: "ERR_ValTypeMismatch", count: 2}, {value: "OK_OtherValInvalid", count: 4}],
-        pages: 10,
-    }
-}
-
 const DiffResultsContext = createContext();
 
 class DiffResults extends Component {
@@ -30,12 +21,17 @@ class DiffResults extends Component {
         super(props);
         this.state = {
             filter : {
-                selectedService: "s1",
-                selectedAPI: "a1",
-                selectedReqRespMatchType: "responseMismatch",
+                selectedService: "All",
+                selectedAPI: "All",
+                
+                selectedReqMatchType: "match",
+                selectedDiffType: "All",
                 selectedResolutionType: "All",
+                //selectedReqCompareResType: "All",
+                //selectedRespCompareResType: "All",
+    
                 currentPageNumber: 1,
-                pageSize: 5,
+                pageSize: config.defaultPageSize,
             },
             diffToggleRibbon: {
                 showResponseMessageHeaders: false,
@@ -68,7 +64,8 @@ class DiffResults extends Component {
             commitId: "",
             saveGoldenError: "",
 
-            showAll: false,
+            showAll: true, //todo
+            fetching: true,
         }
     }
 
@@ -81,40 +78,45 @@ class DiffResults extends Component {
             .fromPairs()
             .value();
         
-        //let url = new URL(window.location.search);
-        //let urlSearchParams = url.searchParams;
-
-        console.log("URL PARAMETERS:::", urlParameters["responseHeaders"]);
-
         const app = urlParameters["app"];
-        const selectedAPI = urlParameters["selectedAPI"] ? urlParameters["selectedAPI"]  : "All"; //"%2A";
+        const selectedAPI = urlParameters["selectedAPI"] || "All"; //"%2A";
         const replayId = urlParameters["replayId"];
         const recordingId = urlParameters["recordingId"];
         const currentTemplateVer = urlParameters["currentTemplateVer"];
-        const selectedService = urlParameters["selectedService"];
-        const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
-        const selectedResolutionType = urlParameters["selectedResolutionType"];
-        const searchFilterPath = urlParameters["searchFilterPath"];
+        const selectedService = urlParameters["selectedService"] || "All";
+        const selectedReqMatchType = urlParameters["selectedReqMatchType"] || "match";
+        const selectedDiffType = urlParameters["selectedDiffType"] || "All";
+        const selectedResolutionType = urlParameters["selectedResolutionType"] || "All";
+        //const selectedReqCompareResType = urlParameters["selectedReqCompareResType"] || "All";
+        //const selectedRespCompareResType = urlParameters["selectedRespCompareResType"] || "All";
+
         const requestHeaders = urlParameters["requestHeaders"] || false;
         const requestQParams = urlParameters["requestQParams"] || false;
         const requestFParams = urlParameters["requestFParams"] || false;
         const requestBody = urlParameters["requestBody"] || false;
         const responseHeaders =  urlParameters["responseHeaders"] || false;
         const responseBody = urlParameters["responseBody"] || true;
-        const timeStamp = decodeURI(urlParameters["timeStamp"]);
-        const currentPageNumber = urlParameters["currentPageNumber"]
-        const pageSize = urlParameters["pageSize"]
+
+        const searchFilterPath = urlParameters["searchFilterPath"] || "";
+        const timeStamp = decodeURI(urlParameters["timeStamp"]) || "";
+        const currentPageNumber = urlParameters["currentPageNumber"] || 1;
+        const pageSize = urlParameters["pageSize"] || config.defaultPageSize;
         
 
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
             filter : {
-                selectedService: selectedService || "All",
-                selectedAPI: selectedAPI || "All",
-                selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
-                selectedResolutionType: selectedResolutionType || "All",
-                currentPageNumber: currentPageNumber || 1,
-                pageSize: pageSize || 5,
+                selectedService: selectedService,
+                selectedAPI: selectedAPI,
+                
+                selectedReqMatchType: selectedReqMatchType,
+                selectedDiffType: selectedDiffType,
+                selectedResolutionType: selectedResolutionType,
+                //selectedReqCompareResType: selectedReqCompareResType,
+                //selectedRespCompareResType: selectedRespCompareResType,
+    
+                currentPageNumber: currentPageNumber,
+                pageSize: pageSize,
             },
             diffToggleRibbon: {
                 // response headers
@@ -145,9 +147,9 @@ class DiffResults extends Component {
             recordingId: recordingId,
             currentTemplateVer: currentTemplateVer,
             app: app,
-            searchFilterPath: searchFilterPath || "",
-            timeStamp: timeStamp || "",
-            showAll: (selectedResolutionType === "All"),
+            searchFilterPath: searchFilterPath,
+            timeStamp: timeStamp,
+            //showAll: ((selectedReqCompareResType === "All") || (selectedRespCompareResType === "All")),
             
             // TODO: improve
             
@@ -183,21 +185,31 @@ class DiffResults extends Component {
                 newFilter["selectedService"] = "All";
             case "selectedAPI":
                 newFilter["selectedAPI"] = "All";
-            case "selectedReqRespMatchType":
-                newFilter["selectedReqRespMatchType"] = "responseMismatch";
+            case "selectedReqMatchType":
+                newFilter["selectedReqMatchType"] = "match";
+            case "selectedDiffType":
+                newFilter['selectedDiffType'] = "All";
             case "selectedResolutionType":
-                newFilter["selectedResolutionType"] = "All";
+                newFilter['selectedResolutionType'] = "All";
+    
+            // case "selectedReqCompareResType":
+            // case "selectedRespCompareResType":
+            //     // set to defaults only if the higher ones are changed
+            //     if (!metaData.includes("CompareResType")) {
+            //         newFilter["selectedReqCompareResType"] = "All";
+            //         newFilter["selectedRespCompareResType"] = "All";        
+            //     }
+                
             case "currentPageNumber":
                 newFilter["currentPageNumber"] = 1;
             default:
                 newFilter[metaData] = value;       
         }
 
-        console.log(newFilter)
-
         // set the new filter and fetch new set of results
         this.setState({
                 filter: newFilter,
+                showAll: (newFilter['selectedResolutionType'] === "All"),
             },
             this.updateResults
             // this.fetchAndUpdateResults
@@ -467,33 +479,52 @@ class DiffResults extends Component {
     async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        //let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
+        //let analysisResUrl = "https://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
 
         let start = (filter.currentPageNumber - 1) * filter.pageSize;
-        let service = filter.selectedService === "All" ? "*" : filter.selectedService;
-        let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
-        let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+        //let service = filter.selectedService === "All" ? "*" : filter.selectedService;
+        ///let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
+        let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
+        //let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+        
+        
+        let searchParams = new URLSearchParams();
+        searchParams.set("start", start);
+        searchParams.set("numResults", filter.pageSize);
+        searchParams.set("includeDiff", true);
 
-        let u = new URL(analysisResUrl);
-        u.searchParams.set("start", start);
-        u.searchParams.set("numResults", filter.pageSize);
-        u.searchParams.set("includeDiff", true);
-        u.searchParams.set("service", service);
-        u.searchParams.set("path", path);
-        u.searchParams.set("diffRes", resolutionType); 
-        u.searchParams.set("reqMatchType", ""); // todo
-        u.searchParams.set("respMatchType", ""); // todo
-        // todo: timestamp field
-        console.log("fetch url " + u)
-        console.log(u)
+        if (filter.selectedService !== "All") {
+            searchParams.set("service", filter.selectedService);
+        }
 
-        //let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
+        if (filter.selectedAPI !== "All") {
+            searchParams.set("path", filter.selectedAPI);
+        }
+
+        if (filter.selectedResolutionType !== "All") {
+            searchParams.set("diffRes", filter.selectedResolutionType)
+        }
+
+        searchParams.set("reqMatchType", reqMatchType); 
+        
+        switch (filter.selectedDiffType) {
+            case "All":
+                break;
+            case "requestDiff":
+                searchParams.set("reqCmpResType", "NoMatch"); 
+                break;
+            case "responseDiff":
+                searchParams.set("respMatchType", "NoMatch"); // misnomer in the API, should've been respCmpResType
+                break;
+        }
+        
+        let url = analysisResUrl + "?" + searchParams.toString();
+        let user = JSON.parse(localStorage.getItem('user'));
         try {
-            const user = JSON.parse(localStorage.getItem('user'));
-            let response = await fetch(u, { 
-                // todo
+        
+            let response = await fetch(url, { 
                 headers: { 
-                    "authorization": "Bearer " + user['access_token'], 
+                    "Authorization": "Bearer " + user['access_token']
                 }, 
                 "method": "GET", 
             });
@@ -518,19 +549,19 @@ class DiffResults extends Component {
     }
 
     async fetchFacetData() {
-        // http://www.mocky.io/v2/5e5f99af310000a9f8afdd73
-        console.log("fetching replay list")
         //let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        let analysisResUrl = "http://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";  
-        let u = new URL(analysisResUrl);
-        u.searchParams.set("numResults", 0);
+        let analysisResUrl = "http://www.mocky.io/v2/5e6890a32f00004259d8ad74";
+        let searchParams = new URLSearchParams();
+        searchParams.set("numResults", 0);
         
+        let url = analysisResUrl + "?" + searchParams.toString();
+
+        let user = JSON.parse(localStorage.getItem('user'));
         try {
-            const user = JSON.parse(localStorage.getItem('user'));
-            let response = await fetch(u, { 
-                // todo
+        
+            let response = await fetch(url, { 
                 headers: { 
-                    "authorization": "Bearer " + user['access_token'], 
+                    "Authorization": "Bearer " + user['access_token']
                 }, 
                 "method": "GET", 
             });
@@ -543,7 +574,6 @@ class DiffResults extends Component {
                     console.log("facets data is empty")
                     return {};
                 }
-                console.log(dataList) 
                 return dataList;
             } else {
                 console.error("unable to fetch facet data");
@@ -575,39 +605,40 @@ class DiffResults extends Component {
     }
         
     fetchAndUpdateResults = () => {
-        console.log("fetching results and updating")
-        console.log(this.state.filter)
         // fetch results from the backend
         const { replayId, filter } = this.state;
         
+        this.setState({fetching : true})
         // fetch facet data for services (since it requires a non filtered call)
-        
         let facetDataPromise = this.fetchFacetData(replayId)  
-        // fetch results and facet data
         
+        // fetch results and facet data
         let resultsPromise = this.fetchAnalysisResults(replayId, filter)
-            Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
-                const facets1 = facetData.data.facets || {};
-                
-                const results = resultsData.data && resultsData.data.res || [];
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
-                this.updateResolutionFilterPaths(diffLayoutData);
-                
-                const facets2 = resultsData.data && resultsData.data.facets || {};
+        
+        // after both of the above are completed, do further processing
+        Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
+            const facets1 = facetData.data.facets || {};
+            
+            const results = resultsData.data && resultsData.data.res || [];
+            let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
+            this.updateResolutionFilterPaths(diffLayoutData);
+            
+            const facets2 = resultsData.data && resultsData.data.facets || {};
 
-                const numFound = resultsData.data && resultsData.data.numFound || 0;
-                const pages = Math.ceil(numFound/filter.pageSize);
+            const numFound = resultsData.data && resultsData.data.numFound || 0;
+            const pages = Math.ceil(numFound/filter.pageSize);
 
-                this.setState({
-                    pages: pages,
-                    diffLayoutData: diffLayoutData,
-                    facetListData: {
-                        services: facets1.serviceFacets,
-                        apiPaths: facets2.pathFacets,
-                        resolutionTypes: facets2.diffResFacets,
-                    },
-                });
+            this.setState({
+                pages: pages,
+                diffLayoutData: diffLayoutData,
+                facetListData: {
+                    services: facets1.serviceFacets,
+                    apiPaths: facets2.pathFacets,
+                    resolutionTypes: facets2.diffResFacets,
+                },
+                fetching: false,
             });
+        });
     }
 
     handleClose = () => {
@@ -839,7 +870,7 @@ class DiffResults extends Component {
     }
 
     render() {
-        const showAll = (this.state.filter.selectedResolutionType === "All")
+        const showAll = this.state.showAll;
         return (
             <DiffResultsContext.Provider 
                 value={{ 

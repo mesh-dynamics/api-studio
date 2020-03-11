@@ -34,6 +34,7 @@ export const cubeActions = {
     pushToOperations,
     pushNewOperationKeyToOperations,
     addToRuleBook,
+    addToDefaultRuleBook,
     removeFromRuleBook,
     removeFromNOS,
     removeFromOperations,
@@ -96,6 +97,10 @@ function pushNewOperationKeyToOperations(o, key) {
 
 function addToRuleBook(key, value) {
     return {type: cubeConstants.ADD_TO_RULE_BOOK, data: {key: key, val: value}};
+}
+
+function addToDefaultRuleBook(key, value) {
+    return {type: cubeConstants.ADD_TO_DEFAULT_RULE_BOOK, data: {key: key, val: value}}
 }
 
 function removeFromRuleBook(key) {
