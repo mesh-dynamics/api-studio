@@ -59,11 +59,15 @@ public class TracingFilter extends OncePerRequestFilter {
 				String.valueOf(runSampling(httpServletRequest, fieldCategory)));
 		}
 
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
-		httpServletRequest.setAttribute(scopeKey, scope);
-		httpServletRequest.setAttribute(spanKey, span);
-
 		filterChain.doFilter(httpServletRequest, httpServletResponse);
+
+		if (scope != null) {
+			scope.close();
+		}
+
+		if (span != null) {
+			span.finish();
+		}
 	}
 
 	private boolean runSampling(HttpServletRequest httpServletRequest,
