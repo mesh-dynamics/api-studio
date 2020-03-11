@@ -11,8 +11,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -344,9 +342,9 @@ public class RecordingUpdate {
 
      private Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId
          /*, RecordingOperationSetSP recordingOperationSetSP*/) {
-        Result<ReqRespMatchResult> matchResults = config.rrstore.getAnalysisMatchResults(
+        Result<ReqRespMatchResult> matchResults = (Result<ReqRespMatchResult>) config.rrstore.getAnalysisMatchResults(
             new AnalysisMatchResultQuery(replayId)
-        );
+        ).result;
 
         return matchResults.getObjects();
     }

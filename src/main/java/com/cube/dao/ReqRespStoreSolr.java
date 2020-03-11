@@ -54,7 +54,6 @@ import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Comparator;
 import com.cube.core.Comparator.Diff;
 import com.cube.core.Comparator.Match;
@@ -63,7 +62,6 @@ import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplate.ComparisonType;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
-import com.cube.dao.Event.EventType;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.golden.ReqRespUpdateOperation;
@@ -1804,22 +1802,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<ReqRespMatchResult>
+    public ReqRespResultsWithFacets
     getAnalysisMatchResults(AnalysisMatchResultQuery matchResQuery) {
 
-        String queryString  = "{!parent which="+TYPEF+":"+Types.ReqRespMatchResult.toString()+"}";
+        String queryString =
+            "{!parent which=" + TYPEF + ":" + Types.ReqRespMatchResult.toString() + "}";
+
+        String queryStringSansDiffFilter = queryString;
 
         if (matchResQuery.diffResolution.isPresent() || matchResQuery.diffJsonPath.isPresent() ||
             matchResQuery.diffType.isPresent()) {
-            queryString = queryString.concat(" +("+TYPEF+":"+Types.Diff.toString()+")");
+            queryString = queryString.concat(" +(" + TYPEF + ":" + Types.Diff.toString() + ")");
         }
 
         queryString = queryString.concat(matchResQuery.diffResolution.map(res ->
-            " +("+DIFF_RESOLUTION_F+":"+res+")").orElse(""));
+            " +(" + DIFF_RESOLUTION_F + ":" + res + ")").orElse(""));
         queryString = queryString.concat(matchResQuery.diffJsonPath.map(res ->
-            " +("+DIFF_PATH_F+":\""+res+"\")").orElse(""));
+            " +(" + DIFF_PATH_F + ":\"" + res + "\")").orElse(""));
         queryString = queryString.concat(matchResQuery.diffType.map(res ->
-            " +("+DIFF_TYPE_F+":"+res+")").orElse(""));
+            " +(" + DIFF_TYPE_F + ":" + res + ")").orElse(""));
 
         SolrQuery query = new SolrQuery(queryString);
         query.setFields("*");
@@ -1834,13 +1835,53 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REQ_COMP_RES_TYPE_F,
             matchResQuery.reqCompResType.map(Enum::toString));
         matchResQuery.traceId.ifPresent(traceId ->
-            query.addFilterQuery("("+RECORDTRACEIDF+":"+traceId+" OR "
-                + REPLAYTRACEIDF+":"+traceId+")" ));
+            query.addFilterQuery("(" + RECORDTRACEIDF + ":" + traceId + " OR "
+                + REPLAYTRACEIDF + ":" + traceId + ")"));
         addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
         addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
         query.addField(getDiffParentChildFilter());
-        return SolrIterator.getResults(solr, query, matchResQuery.numMatches, this::docToAnalysisMatchResult
-            , matchResQuery.start);
+        query.setFacetMinCount(1);
+
+
+        Map domainBlockMap = new HashMap();
+        domainBlockMap.put("blockChildren", "type_s: " + Types.ReqRespMatchResult.toString());
+        Facet diffChildFacet = Facet.createTermFacetWithDomain(DIFF_RESOLUTION_F, Optional.of(domainBlockMap), Optional.empty());
+        FacetQ facetq = new FacetQ();
+        facetq.addFacet(DIFFRESOLUTIONFACET, diffChildFacet);
+
+        String jsonFacets="";
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(facetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+
+        Result<ReqRespMatchResult> result = SolrIterator.getResults(solr, query, matchResQuery.numMatches,
+            this::docToAnalysisMatchResult, matchResQuery.start);
+        ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, BUCKETFIELD);
+
+        query.setQuery(queryStringSansDiffFilter);
+        Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
+        Facet pathf = Facet.createTermFacet(PATHF, Optional.empty());
+        facetq.removeFacet(DIFFRESOLUTIONFACET);
+        facetq.addFacet(SERVICEFACET, servicef);
+        facetq.addFacet(PATHFACET, pathf);
+
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(facetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+
+        Result<ReqRespMatchResult> resultsServPath = SolrIterator.getResults(solr, query, matchResQuery.numMatches,
+                this::docToAnalysisMatchResult, matchResQuery.start);
+
+        ArrayList serviceFacetResults = resultsServPath.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
+        ArrayList pathFacetResults = resultsServPath.getFacets(FACETSFIELD, PATHFACET, BUCKETFIELD);
+
+        return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults);
     }
 
     @Override
@@ -2222,6 +2263,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String VALFIELD = "val"; // term in solr facet results indicating a distinct value of the field
     private static final String COUNTFIELD = "count"; // term in solr facet results indicating aggregate value computed
     private static final String FACETSFIELD = "facets"; // term in solr facet results indicating the facet results block
+    private static final String DIFFRESOLUTIONFACET = "diff_resolution_facets";
 
 
     /**
@@ -2419,10 +2461,26 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     }
 
+    public class ReqRespResultsWithFacets {
+        ReqRespResultsWithFacets(Result<ReqRespMatchResult> result, ArrayList diffResolFacets,
+            ArrayList serviceFacets, ArrayList pathFacets) {
+             this.result = result;
+             this.diffResolFacets = diffResolFacets;
+             this.serviceFacets = serviceFacets;
+             this.pathFacets = pathFacets;
+        }
+
+        public final Result<ReqRespMatchResult> result;
+        public final ArrayList diffResolFacets;
+        public final ArrayList serviceFacets;
+        public final ArrayList pathFacets;
+    }
+
     static class Facet {
 
         private static final String TYPEK = "type";
         private static final String FIELDK = "field";
+        private static final String DOMAINK = "domain";
         private static final String LIMITK = "limit";
         private static final String FACETK = "facet";
         private static final String MISSINGK = "missing";
@@ -2451,9 +2509,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final private Map<String, Object> params;
 
         static Facet createTermFacet(String fieldname, Optional<Integer> limit) {
+            return createTermFacetWithDomain(fieldname, Optional.empty(), limit);
+        }
+
+        static Facet createTermFacetWithDomain(String fieldname, Optional<Map> domainBlock, Optional<Integer> limit) {
             Map<String, Object> params = new HashMap<>();
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
+            domainBlock.ifPresent(d -> params.put(DOMAINK, d));
             limit.ifPresent(l -> params.put(LIMITK, l));
             // include missing value in facet
             params.put(MISSINGK, true);
@@ -2478,6 +2541,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         @JsonAnySetter
         public void addFacet(String name, Facet facet) {
             facetqs.put(name, facet);
+        }
+
+        public void removeFacet(String name) {
+            facetqs.remove(name);
         }
 
         // These annotations are used for Jackson to flatten params while serializing/deserializing

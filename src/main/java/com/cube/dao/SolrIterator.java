@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -25,6 +26,8 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.util.Pair;
 
 import io.cube.agent.FnKey;
 import io.cube.agent.FnReqResponse.RetStatus;
@@ -44,7 +47,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
     private static Config config;
 
-    public static void setConfig(Config config) {
+	public static void setConfig(Config config) {
         SolrIterator.config = config;
     }
 
@@ -66,7 +69,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
 		query.setRows(toread);
 		query.setStart(this.start);
-		results = query();
+		query();
 		results.ifPresent(r -> {
 			numresults = maxresults.map(mr -> Math.min(r.getNumFound(), mr)).orElse(r.getNumFound());
 			numFound = r.getNumFound();
@@ -92,7 +95,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 				if (toread > 0) {
 					query.setRows(toread);
 					query.setStart(numread);
-					results = query();
+					query();
 					return results.map(res -> {
 						// Note - res.iterator can be null if there are no more result documents
 						iterator = Optional.ofNullable(res.iterator());
@@ -113,8 +116,14 @@ public class SolrIterator implements Iterator<SolrDocument> {
 		return iterator.map(iter -> iter.next()).orElseThrow(() -> new NoSuchElementException());
 	}
 
-	private Optional<SolrDocumentList> query() {
-		return runQuery(solr, query).map(r -> r.getResults());
+	private void query() {
+		Optional<QueryResponse> queryResponse = SolrIterator.runQuery(solr, query);
+		queryResponse.ifPresentOrElse(response -> {
+			solrResponse = response;
+		}, () -> {
+			solrResponse = new QueryResponse();
+		});
+		results = queryResponse.map(r -> r.getResults());
 	}
 
 	private Stream<SolrDocument> toStream() {
@@ -127,6 +136,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	int start;
 	Optional<SolrDocumentList> results;
 	Optional<Iterator<SolrDocument>> iterator;
+	private QueryResponse solrResponse;
 	long numresults;
 	final Optional<Integer> maxresults;
 	int numread;
@@ -149,41 +159,14 @@ public class SolrIterator implements Iterator<SolrDocument> {
 			Function<SolrDocument, Optional<R>> transform, Optional<Integer> start) {
 		SolrIterator iter = new SolrIterator(solr, query, maxresults, start);
 		return new Result<R>(iter.toStream().flatMap(d -> transform.apply(d).stream()), iter.numresults,
-				iter.numFound);
+				iter.numFound, iter.solrResponse);
 	}
 
-    static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
+	static public <R> Result<R> getResults(SolrClient solr, SolrQuery query,
                                            Optional<Integer> maxresults,
                                            Function<SolrDocument, Optional<R>> transform) {
 	    return getResults(solr, query, maxresults, transform, Optional.empty());
     }
-
-
-    /**
-	 * Utility function to
-	 * a) query solr (in batches) for a given query
-	 * b) convert the obtained result stream to a another stream by applying the transformer function
-	 * Note that the transformer function is applied lazily (when get next on stream is called)
-	 * c) wrap the resulting stream in a Result object (containing total/absolute number of results)
-	 * @param solr
-	 * @param query
-	 * @param maxresults
-	 * @param transformToStream
-	 * @param <R>
-	 * @return
-	 */
-	static public <R> Result<R> getResultsWithTransformStream
-			(SolrClient solr, SolrQuery query, Optional<Integer> maxresults,
-										   Function<SolrDocument, Stream<R>> transformToStream) {
-		SolrIterator iter = new SolrIterator(solr , query , maxresults, Optional.empty());
-		// just want to understand that this flatMap will be called on demand and the entire stream
-		// won't be transformed in the constructor of the Result object itself
-		// also num results only indicates top-level results , as the trasnformStream could be a
-		// one to many function
-		return new Result<R>(iter.toStream().flatMap(d -> transformToStream.apply(d)) , iter.numresults,
-				iter.numresults);
-
-	}
 
 
     // TODO mock this function for all solr queries
