@@ -25,6 +25,7 @@ import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.MDTraceInfo;
+import io.md.utils.CubeObjectMapperProvider;
 
 import com.cube.interceptor.config.Config;
 
@@ -41,8 +42,7 @@ public class Utils {
 	}
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return (config.commonConfig.samplerVeto
-			|| (config.intentResolver.isIntentToRecord()
+		return ((config.intentResolver.isIntentToRecord()
 			&& config.commonConfig.sampler.isSampled(requestHeaders))
 			|| config.intentResolver.isIntentToMock());
 	}
@@ -106,12 +106,12 @@ public class Utils {
 
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
-		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, String requestBody) {
+		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
-					requestBody, Optional.empty(), config.jsonMapper, true);
+					requestBody, Optional.empty(), CubeObjectMapperProvider.getInstance(), true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error(new ObjectMessage(
@@ -128,11 +128,11 @@ public class Utils {
 
 	public static void createAndLogRespEvent(String apiPath,
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
-		MDTraceInfo mdTraceInfo, String responseBody) {
+		MDTraceInfo mdTraceInfo, byte[] responseBody) {
 		try {
 			Event responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
-					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
+					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), CubeObjectMapperProvider.getInstance(),
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {

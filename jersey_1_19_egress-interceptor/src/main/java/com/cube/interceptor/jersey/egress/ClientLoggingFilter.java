@@ -1,13 +1,14 @@
 package com.cube.interceptor.jersey.egress;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.ws.rs.core.GenericEntity;
@@ -15,9 +16,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.logging.log4j.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientRequest;
@@ -40,6 +41,8 @@ public class ClientLoggingFilter extends ClientFilter {
 	private static final Config config;
 	private MessageBodyWorkers workers;
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
+	private static final String EMPTY = "";
 
 	static {
 		config = new Config();
@@ -55,7 +58,7 @@ public class ClientLoggingFilter extends ClientFilter {
 		try {
 			clientRequest = filter(clientRequest);
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.error("Exception in client request filter ", e);
 		}
 
 
@@ -66,7 +69,7 @@ public class ClientLoggingFilter extends ClientFilter {
 		try {
 			return filter(clientRequest, resp);
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.error("Exception in client response filter ", e);
 		}
 		return resp;
 	}
@@ -80,13 +83,12 @@ public class ClientLoggingFilter extends ClientFilter {
 			boolean isSampled = BooleanUtils
 				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
 
-			MultivaluedMap<String, String> headersMap = Utils.transformHeaders(clientRequest.getHeaders());
-			//check veto if upstream service decides to NOT SAMPLE
-			if (!isSampled && config.commonConfig.samplerVeto) {
-				isSampled = Utils.isSampled(headersMap);
-			}
+			boolean isVetoed = BooleanUtils
+					.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
-			if (isSampled) {
+			MultivaluedMap<String, String> headersMap = Utils.transformHeaders(clientRequest.getHeaders());
+
+			if (isSampled || isVetoed) {
 				URI uri = clientRequest.getURI();
 
 				//query params
@@ -127,11 +129,10 @@ public class ClientLoggingFilter extends ClientFilter {
 					clientResponse.getHeaders());
 			clientRequest.getProperties()
 				.put(Constants.MD_STATUS_PROP, clientResponse.getStatus());
-			clientRequest.getProperties().put(Constants.MD_BODY_PROP, getResponseBody(clientResponse));
 			try {
 				logResponse(clientRequest, getResponseBody(clientResponse));
 			} catch (IOException ioe) {
-				ioe.printStackTrace();
+				LOGGER.error("Exception while logging response", ioe);
 			}
 		}
 		return clientResponse;
@@ -150,13 +151,13 @@ public class ClientLoggingFilter extends ClientFilter {
 				Optional.ofNullable(serviceName));
 
 		//body
-		String requestBody = getRequestBody(clientRequest);
+		byte[] requestBody = getRequestBody(clientRequest);
 
 		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
 			requestBody);
 	}
 
-	private String getRequestBody(ClientRequest clientRequest) throws  IOException {
+	private byte[] getRequestBody(ClientRequest clientRequest) throws  IOException {
 		Object entity = clientRequest.getEntity();
 		if (entity != null) {
 			Type entityType = null;
@@ -176,20 +177,20 @@ public class ClientLoggingFilter extends ClientFilter {
 
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			bw.writeTo(entity, entityClass, entityType, EMPTY_ANNOTATIONS, mediaType, headers, baos);
-			String requestBody = baos.toString("UTF-8");
+			byte[] requestBody = baos.toByteArray();
 			baos.close();
 			return requestBody;
 		}
-		return Strings.EMPTY;
+		return new byte[0];
 	}
 
 
 	private MediaType getMediaType(Class entityClass, Type entityType, MultivaluedMap<String, Object> headers) {
-		Object mediaTypeHeader = headers.getFirst("Content-Type");
-		if (mediaTypeHeader instanceof MediaType) {
-			return (MediaType)mediaTypeHeader;
-		} else if (mediaTypeHeader != null) {
-			return MediaType.valueOf(mediaTypeHeader.toString());
+		Optional<Object> mimeTypeObj = getMimeType(headers);
+		if (mimeTypeObj.isPresent() && mimeTypeObj.get() instanceof MediaType) {
+			return (MediaType)mimeTypeObj.get();
+		} else if (mimeTypeObj.isPresent()) {
+			return MediaType.valueOf(mimeTypeObj.get().toString());
 		} else {
 			List<MediaType> mediaTypes = this.workers.getMessageBodyWriterMediaTypes(entityClass, entityType, EMPTY_ANNOTATIONS);
 			MediaType mediaType = this.getMediaType(mediaTypes);
@@ -198,6 +199,15 @@ public class ClientLoggingFilter extends ClientFilter {
 		}
 	}
 
+	private Optional<Object> getMimeType(MultivaluedMap<String, Object> headers) {
+		List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
+				"Content-type", "Content-Type", "content-Type");
+		if (headers == null)
+			return Optional.empty();
+		return HTTP_CONTENT_TYPE_HEADERS.stream()
+				.map(headers::getFirst).filter(Objects::nonNull)
+				.findFirst();
+	}
 
 	private MediaType getMediaType(List<MediaType> mediaTypes) {
 		if (mediaTypes.isEmpty()) {
@@ -212,18 +222,17 @@ public class ClientLoggingFilter extends ClientFilter {
 		}
 	}
 
-	private void logResponse(ClientRequest clientRequest, String respBody)
+	private void logResponse(ClientRequest clientRequest, byte[] responseBody)
 		throws IOException {
 		Object apiPathObj = clientRequest.getProperties().get(Constants.MD_API_PATH_PROP);
 		Object traceMetaMapObj = clientRequest.getProperties().get(Constants.MD_TRACE_META_MAP_PROP);
 		Object respHeadersObj = clientRequest.getProperties().get(Constants.MD_RESPONSE_HEADERS_PROP);
 		Object statusObj = clientRequest.getProperties().get(Constants.MD_STATUS_PROP);
 		Object serviceNameObj = clientRequest.getProperties().get(Constants.MD_SERVICE_PROP);
-		Object respBodyObj = clientRequest.getProperties().get(Constants.MD_BODY_PROP);
 		Object traceInfo = clientRequest.getProperties().get(Constants.MD_TRACE_INFO);
 
-		String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
-		String serviceName = serviceNameObj != null ? serviceNameObj.toString() : Strings.EMPTY;
+		String apiPath = apiPathObj != null ? apiPathObj.toString() : EMPTY;
+		String serviceName = serviceNameObj != null ? serviceNameObj.toString() : EMPTY;
 
 		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ?
 				(MultivaluedMap<String, String>) respHeadersObj
@@ -239,9 +248,6 @@ public class ClientLoggingFilter extends ClientFilter {
 		meta.putAll(traceMetaMap);
 
 		MDTraceInfo mdTraceInfo = traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
-
-		//body
-		String responseBody = respBodyObj != null ? respBodyObj.toString() : Strings.EMPTY;
 
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
@@ -276,11 +282,10 @@ public class ClientLoggingFilter extends ClientFilter {
 		return Utils.buildTraceInfoMap(mdTraceInfo, xRequestId);
 	}
 
-	private String getResponseBody(ClientResponse clientResponse) throws IOException {
-		String json = IOUtils.toString(clientResponse.getEntityInputStream(), StandardCharsets.UTF_8);
-		InputStream in = IOUtils.toInputStream(json, StandardCharsets.UTF_8);
+	private byte[] getResponseBody(ClientResponse clientResponse) throws IOException {
+		byte[] respBytes = clientResponse.getEntityInputStream().readAllBytes();
+		InputStream in = new ByteArrayInputStream(respBytes);
 		clientResponse.setEntityInputStream(in);
-
-		return json;
+		return respBytes;
 	}
 }
