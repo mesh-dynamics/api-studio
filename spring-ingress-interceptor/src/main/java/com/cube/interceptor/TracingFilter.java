@@ -20,7 +20,6 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
@@ -43,10 +42,8 @@ public class TracingFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws ServletException, IOException {
-		ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(
-			httpServletRequest);
 		//start a md-child-span
-		MultivaluedMap<String, String> requestHeaders = Utils.getHeaders(requestWrapper);
+		MultivaluedMap<String, String> requestHeaders = Utils.getHeaders(httpServletRequest);
 		String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
 		Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
 		Scope scope = CommonUtils.activateSpan(span);
@@ -55,11 +52,11 @@ public class TracingFilter extends OncePerRequestFilter {
 		String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
 		if (sampleBaggageItem == null) {
 			//root span
-			boolean isSampled = runSampling(requestWrapper, fieldCategory);
+			boolean isSampled = runSampling(httpServletRequest, fieldCategory);
 			span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
 		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && config.commonConfig.samplerVeto) {
 			span.setBaggageItem(Constants.MD_IS_VETOED,
-				String.valueOf(runSampling(requestWrapper, fieldCategory)));
+				String.valueOf(runSampling(httpServletRequest, fieldCategory)));
 		}
 
 		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
@@ -69,29 +66,31 @@ public class TracingFilter extends OncePerRequestFilter {
 		filterChain.doFilter(httpServletRequest, httpServletResponse);
 	}
 
-	private boolean runSampling(ContentCachingRequestWrapper requestWrapper, Optional<String> fieldCategory) {
+	private boolean runSampling(HttpServletRequest httpServletRequest,
+		Optional<String> fieldCategory) {
 		boolean isSampled;
 		if (fieldCategory.isEmpty()) {
 			isSampled = Utils.isSampled(new MultivaluedHashMap<>());
 		} else {
 			switch (fieldCategory.get()) {
 				case Constants.HEADERS:
-					isSampled = Utils.isSampled(Utils.getHeaders(requestWrapper));
+					isSampled = Utils.isSampled(Utils.getHeaders(httpServletRequest));
 					break;
 				case Constants.QUERY_PARAMS:
 					MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
 					try {
 						queryParams = Utils
-							.getQueryParams(new URI(requestWrapper.getRequestURL().toString()));
+							.getQueryParams(new URI(httpServletRequest.getRequestURL().toString()));
 					} catch (URISyntaxException e) {
 						LOGGER.error(new ObjectMessage(
-							Map.of(Constants.MESSAGE, "URI formation failed,  query params ignored!")));
+							Map.of(Constants.MESSAGE,
+								"URI formation failed,  query params ignored!")));
 					}
 					isSampled = Utils.isSampled(queryParams);
 					break;
 				case Constants.API_PATH_FIELD:
-					MultivaluedMap<String,String> apiPathMap = new MultivaluedHashMap<>();
-					apiPathMap.add(Constants.API_PATH_FIELD, requestWrapper.getContextPath());
+					MultivaluedMap<String, String> apiPathMap = new MultivaluedHashMap<>();
+					apiPathMap.add(Constants.API_PATH_FIELD, httpServletRequest.getContextPath());
 					isSampled = Utils.isSampled(apiPathMap);
 					break;
 				default:

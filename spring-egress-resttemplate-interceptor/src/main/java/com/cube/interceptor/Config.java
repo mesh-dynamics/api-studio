@@ -8,7 +8,6 @@ import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
 import io.cube.agent.ConsoleRecorder;
-import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;

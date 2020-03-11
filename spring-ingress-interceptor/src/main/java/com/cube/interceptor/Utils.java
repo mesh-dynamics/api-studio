@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -150,6 +151,20 @@ public class Utils {
 		Collections.list(requestWrapper.getHeaderNames()).stream()
 			.forEach(headerName -> {
 				Enumeration<String> headerValues = requestWrapper.getHeaders(headerName);
+				while (headerValues.hasMoreElements()) {
+					headerMap.add(headerName, headerValues.nextElement());
+				}
+			});
+
+		return headerMap;
+	}
+
+	public static MultivaluedMap<String, String> getHeaders(
+		HttpServletRequest httpServletRequest) {
+		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
+		Collections.list(httpServletRequest.getHeaderNames()).stream()
+			.forEach(headerName -> {
+				Enumeration<String> headerValues = httpServletRequest.getHeaders(headerName);
 				while (headerValues.hasMoreElements()) {
 					headerMap.add(headerName, headerValues.nextElement());
 				}

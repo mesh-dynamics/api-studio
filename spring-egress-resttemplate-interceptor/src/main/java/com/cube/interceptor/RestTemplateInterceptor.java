@@ -1,12 +1,9 @@
 package com.cube.interceptor;
 
-import static io.md.utils.Utils.getTraceInfo;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
