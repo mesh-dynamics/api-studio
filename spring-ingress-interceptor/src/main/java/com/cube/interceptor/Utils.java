@@ -47,7 +47,7 @@ public class Utils {
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
 		Optional<String> serviceName) {
-		MultivaluedMap<String, String> metaMap = Utils.createEmptyMultivaluedMap();
+		MultivaluedMap<String, String> metaMap = new MultivaluedHashMap<>();
 		getCommonMeta(metaMap, serviceName);
 		metaMap.add(Constants.TYPE_FIELD, Constants.REQUEST);
 		metaMap.add(Constants.METHOD_FIELD, method);
@@ -57,7 +57,7 @@ public class Utils {
 
 	public static MultivaluedMap<String, String> getResponseMeta(String pathUri,
 		String statusCode, Optional<String> serviceName) {
-		MultivaluedMap<String, String> metaMap = Utils.createEmptyMultivaluedMap();
+		MultivaluedMap<String, String> metaMap = new MultivaluedHashMap<>();
 		getCommonMeta(metaMap, serviceName);
 		metaMap.add(Constants.TYPE_FIELD, Constants.RESPONSE);
 		metaMap.add(Constants.STATUS, statusCode);
@@ -82,7 +82,7 @@ public class Utils {
 
 	public static MultivaluedMap<String, String> getMultiMap(
 		Set<Entry<String, List<String>>> inputSet) {
-		MultivaluedMap<String, String> multivaluedMap = Utils.createEmptyMultivaluedMap();
+		MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<>();
 		for (Entry<String, List<String>> entry : inputSet) {
 			String key = entry.getKey();
 			multivaluedMap.addAll(key, entry.getValue());
@@ -96,7 +96,7 @@ public class Utils {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
-					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
+					new MultivaluedHashMap<>(), meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
@@ -136,7 +136,7 @@ public class Utils {
 
 	public static MultivaluedMap<String, String> getQueryParams(URI uri) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
-		MultivaluedMap<String, String> queryParams = Utils.createEmptyMultivaluedMap();
+		MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
 		for (NameValuePair param : params) {
 			queryParams.add(param.getName(), param.getValue());
 		}
@@ -156,10 +156,6 @@ public class Utils {
 			});
 
 		return headerMap;
-	}
-
-	public static MultivaluedMap<String, String> createEmptyMultivaluedMap() {
-		return new MultivaluedHashMap<>();
 	}
 
 }
