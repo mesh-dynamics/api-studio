@@ -38,9 +38,10 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 	public ContainerRequest filter(ContainerRequest containerRequest) {
 		//start a md-child-span
 		MultivaluedMap<String, String> requestHeaders = containerRequest.getRequestHeaders();
-		Scope scope = CommonUtils.startServerSpan(requestHeaders,
+		Span currentSpan = CommonUtils.startServerSpan(requestHeaders,
 			Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN));
-		Span currentSpan = scope.span();
+		Scope scope = CommonUtils.activateSpan(currentSpan);
+		CommonUtils.injectContext(requestHeaders);
 
 		String sampleBaggageItem = currentSpan.getBaggageItem(Constants.MD_IS_SAMPLED);
 		if (sampleBaggageItem == null) {
