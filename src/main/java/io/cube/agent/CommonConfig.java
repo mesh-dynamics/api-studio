@@ -292,23 +292,6 @@ public class CommonConfig {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
 	}
 
-	private static Optional<Number> getPropertyAsNum(String value) {
-		if (value != null) {
-			try {
-				return Optional.of(NumberFormat.getInstance().parse(value));
-			} catch (ParseException e) {
-				LOGGER.error(
-					"Failed to parse number for property samplerRate with value '" + value + "'",
-					e.getMessage());
-			}
-		}
-		return Optional.empty();
-	}
-
-	private List<String> getPropertyAsList(String headerParams) {
-		return Arrays.asList(headerParams.split(","));
-	}
-
 	Sampler initSampler() {
 		if (samplerConfig.isEmpty()) {
 			LOGGER.debug(new ObjectMessage(
@@ -399,10 +382,10 @@ public class CommonConfig {
 				if (attr.getField() == null || attr.getField().isBlank()) {
 					LOGGER.debug(new ObjectMessage(
 						Map.of(
-							Constants.MESSAGE, "Invalid input, using simple sampler "
+							Constants.MESSAGE, "Invalid input, using default sampler "
 						)));
 					samplingParams.clear();
-					return SimpleSampler.create(rate.get(), accuracy.get());
+					return Sampler.NEVER_SAMPLE;
 				}
 				samplingParams.add(attr.getField());
 			}
@@ -425,6 +408,7 @@ public class CommonConfig {
 						Map.of(
 							Constants.MESSAGE, "Invalid input, using default sampler "
 						)));
+					samplingParams.clear();
 					return Sampler.NEVER_SAMPLE;
 				}
 
