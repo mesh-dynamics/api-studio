@@ -98,7 +98,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 			if (this.dataObj.isDataObjEmpty()) {
 				return mapper.writeValueAsString(this);
 			} else {
-				if (wrapForDisplay) this.dataObj.wrapAsString("/".concat("BODY"),
+				if (wrapForDisplay) this.dataObj.wrapAsString("/".concat(BODY),
 					Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
 				return dataObj.serializeDataObj();
 			}
