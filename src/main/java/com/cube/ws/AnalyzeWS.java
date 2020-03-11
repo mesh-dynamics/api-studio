@@ -628,7 +628,7 @@ public class AnalyzeWS {
                 Optional<String> request =
                     matchRes.recordReqId
                         .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)))
-                        .map(Event::getPayloadAsJsonString);
+                        .map(event -> event.getPayloadAsJsonString(true));
 
                 Optional<String> recordedRequest = Optional.empty();
                 Optional<String> replayedRequest = Optional.empty();
@@ -641,7 +641,7 @@ public class AnalyzeWS {
                     recordedRequest = request;
                     replayedRequest = matchRes.replayReqId
                         .flatMap(rrstore::getRequestEvent)
-                        .map(event -> event.getPayloadAsJsonString());
+                        .map(event -> event.getPayloadAsJsonString(true));
 	                try {
 		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
 			                .respCompareRes.diffs));
@@ -652,9 +652,9 @@ public class AnalyzeWS {
 			                "Unable to convert diff to json string")), e);
 	                }
 	                recordResponse = matchRes.recordReqId.flatMap(rrstore::getResponseEvent)
-                        .map(Event::getPayloadAsJsonString);
+                        .map(event -> event.getPayloadAsJsonString(true));
                     replayResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
-                        .map(Event::getPayloadAsJsonString);
+                        .map(event -> event.getPayloadAsJsonString(true));
                 }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
