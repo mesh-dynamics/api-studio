@@ -220,7 +220,7 @@ export default class DiffResultsFilter extends Component {
                         <DropdownButton title={this.getDiffTypeDescription(selectedDiffType)} id="dropdown-size-medium">
                             {["All", "requestDiff", "responseDiff"].map((diffType) => {
                                 return (
-                                    <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedDiffType", diffType)}>
+                                    <MenuItem key={diffType} eventKey="1" onClick={() => this.handleMetaDataSelect("selectedDiffType", diffType)}>
                                         <Glyphicon style={{ visibility: selectedDiffType === diffType ? "visible" : "hidden" }} glyph="ok" /> 
                                         {this.getDiffTypeDescription(diffType)} 
                                     </MenuItem>

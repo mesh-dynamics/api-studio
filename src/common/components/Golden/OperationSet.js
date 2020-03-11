@@ -99,14 +99,14 @@ class OperationSet extends Component {
                     >
                         {
                             /* TODO: temporary workaround; cleanup when removing shareable_link page */
-                        (window.location.pathname.includes("/diff_results")) && 
+                        ((window.location.pathname.includes("/diff_results")) && 
                         <DiffResultsContext.Consumer>
                             {(context) => this.renderOperationalSet(context)}
-                        </DiffResultsContext.Consumer> 
+                        </DiffResultsContext.Consumer>)
                         || 
-                        <ShareableLinkContext.Consumer>
+                        (<ShareableLinkContext.Consumer>
                             {(context) => this.renderOperationalSet(context)}
-                        </ShareableLinkContext.Consumer>
+                        </ShareableLinkContext.Consumer>)
                     }
                     </div>
                 )
