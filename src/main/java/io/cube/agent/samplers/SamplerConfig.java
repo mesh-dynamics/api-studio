@@ -1,6 +1,7 @@
 package io.cube.agent.samplers;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,60 +9,78 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-	"samplerType",
-	"samplerAccuracy",
-	"samplerID",
-	"samplerAttributes"
+	"type",
+	"accuracy",
+	"rate",
+	"fieldCategory",
+	"attributes"
 })
 public class SamplerConfig {
 
-	@JsonProperty("samplerType")
-	private String samplerType;
-	@JsonProperty("samplerAccuracy")
-	private int samplerAccuracy;
-	@JsonProperty("samplingID")
-	private String samplingID;
-	@JsonProperty("samplerAttributes")
-	private List<SamplerAttributes> samplerAttributes = null;
+	@JsonProperty("type")
+	private String type;
+	@JsonProperty("accuracy")
+	private Optional<Integer> accuracy;
+	//Upper level sampling rate for samplers
+	//like Simple/Boundary/Counting as they all have
+	//single sampling rate.
+	@JsonProperty("rate")
+	private Optional<Float> rate;
+	//This field will identify which request/response
+	//parameter will be used in sampling [headers/queryParams/apiPath].
+	@JsonProperty("fieldCategory")
+	private Optional<String> fieldCategory;
+	@JsonProperty("attributes")
+	private Optional<List<Attributes>> attributes = null;
 
-	@JsonProperty("samplerType")
-	public String getSamplerType() {
-		return samplerType;
+	@JsonProperty("type")
+	public String getType() {
+		return type;
 	}
 
-	@JsonProperty("samplerType")
-	public void setSamplerType(String samplerType) {
-		this.samplerType = samplerType;
+	@JsonProperty("type")
+	public void setType(String type) {
+		this.type = type;
 	}
 
-	@JsonProperty("samplerAccuracy")
-	public int getSamplerAccuracy() {
-		return samplerAccuracy;
+	@JsonProperty("accuracy")
+	public Optional<Integer> getAccuracy() {
+		return accuracy;
 	}
 
-	@JsonProperty("samplerAccuracy")
-	public void setSamplerAccuracy(int samplerAccuracy) {
-		this.samplerAccuracy = samplerAccuracy;
+	@JsonProperty("accuracy")
+	public void setAccuracy(Integer accuracy) {
+		this.accuracy = Optional.of(accuracy);
 	}
 
-	@JsonProperty("samplingID")
-	public String getSamplingID() {
-		return samplingID;
+	@JsonProperty("rate")
+	public Optional<Float> getRate() {
+		return rate;
 	}
 
-	@JsonProperty("samplingID")
-	public void setSamplingID(String samplingID) {
-		this.samplingID = samplingID;
+	@JsonProperty("rate")
+	public void setRate(Float rate) {
+		this.rate = Optional.of(rate);
 	}
 
-	@JsonProperty("samplerAttributes")
-	public List<SamplerAttributes> getSamplerAttributes() {
-		return samplerAttributes;
+	@JsonProperty("fieldCategory")
+	public Optional<String> getFieldCategory() {
+		return fieldCategory;
 	}
 
-	@JsonProperty("samplerAttributes")
-	public void setSamplerAttributes(List<SamplerAttributes> samplerAttributes) {
-		this.samplerAttributes = samplerAttributes;
+	@JsonProperty("fieldCategory")
+	public void setFieldCategory(String fieldCategory) {
+		this.fieldCategory = Optional.of(fieldCategory);
 	}
 
+	@JsonProperty("attributes")
+	public Optional<List<Attributes>> getAttributes() {
+		return attributes;
+	}
+
+	@JsonProperty("attributes")
+	public void setAttributes(
+		List<Attributes> attributes) {
+		this.attributes = Optional.of(attributes);
+	}
 }

@@ -29,26 +29,22 @@ public class BoundarySampler extends Sampler {
 	public static final String TYPE = "boundary";
 
 	public static Sampler create(float samplingRate, int samplingAccuracy,
-		String samplingID, List<String> samplingParams) {
-		Optional<Sampler> sampler = Utils.getSampler(samplingRate, samplingAccuracy);
+		String fieldCategory, List<String> samplingParams) {
+		Optional<Sampler> sampler = Utils.getConstSamplerIfValid(samplingRate, samplingAccuracy);
 		return sampler.orElse(
-			new BoundarySampler(samplingID, (long) (samplingRate * samplingAccuracy),
+			new BoundarySampler(fieldCategory, (long) (samplingRate * samplingAccuracy),
 				samplingAccuracy, samplingParams));
 	}
 
 	private List<String> samplingParams;
 	private final long boundary;
 	private final int samplingAccuracy;
-	private final String samplingID;
+	private final String fieldCategory;
 
-	@Override
-	public String getSamplingID() {
-		return samplingID;
-	}
 
-	public BoundarySampler(String samplingID, long boundary, int samplingAccuracy,
+	public BoundarySampler(String fieldCategory, long boundary, int samplingAccuracy,
 		List<String> samplingParams) {
-		this.samplingID = samplingID;
+		this.fieldCategory = fieldCategory;
 		this.boundary = boundary;
 		this.samplingAccuracy = samplingAccuracy;
 		this.samplingParams = samplingParams;
@@ -64,6 +60,11 @@ public class BoundarySampler extends Sampler {
 		});
 		Collections.sort(samplingStrings);
 		return samplingStrings;
+	}
+
+	@Override
+	public Optional<String> getFieldCategory() {
+		return Optional.of(fieldCategory);
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package io.cube.agent.samplers;
 
+import java.util.Optional;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 public abstract class Sampler {
@@ -7,8 +9,8 @@ public abstract class Sampler {
 	public static final Sampler NEVER_SAMPLE = new Sampler() {
 
 		@Override
-		public String getSamplingID() {
-			return null;
+		public Optional<String> getFieldCategory() {
+			return Optional.empty();
 		}
 
 		@Override
@@ -19,8 +21,8 @@ public abstract class Sampler {
 
 	public static final Sampler ALWAYS_SAMPLE = new Sampler() {
 		@Override
-		public String getSamplingID() {
-			return null;
+		public Optional<String> getFieldCategory() {
+			return Optional.empty();
 		}
 
 		@Override
@@ -29,7 +31,9 @@ public abstract class Sampler {
 		}
 	};
 
-	public abstract String getSamplingID();
+	public abstract Optional<String> getFieldCategory();
 
-	public abstract boolean isSampled(MultivaluedMap<String, String> samplingInputs);
+	//input could be a map of headers, query params, apiPath and any other
+	//request or response parameter. Keeping it generic by taking in a map.
+	public abstract boolean isSampled(MultivaluedMap<String, String> input);
 }

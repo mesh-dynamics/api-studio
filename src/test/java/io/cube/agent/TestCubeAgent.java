@@ -1,7 +1,5 @@
 package io.cube.agent;
 
-import java.time.Instant;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.google.gson.Gson;

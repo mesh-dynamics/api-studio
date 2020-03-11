@@ -7,6 +7,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,8 +20,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -37,18 +36,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.logging.MDConfigurationFactory;
 import io.cube.agent.samplers.AdaptiveSampler;
+import io.cube.agent.samplers.Attributes;
 import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
-import io.cube.agent.samplers.SamplerAttributes;
 import io.cube.agent.samplers.SamplerConfig;
 import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-
-//import javax.ws.rs.client.Client;
 
 public class CommonConfig {
 
@@ -73,15 +70,12 @@ public class CommonConfig {
 
 	public static String intent;
 
-	public String customerId, app, instance, serviceName, samplerType;
+	public String customerId, app, instance, serviceName;
 	public final Optional<EncryptionConfig> encryptionConfig;
 	public final Optional<SamplerConfig> samplerConfig;
 
 	//Sampling
-	//public String samplingConfFilePath;
-	public Number samplerRate, samplerAccuracy;
 	public boolean samplerVeto;
-	public List<String> headerParams;
 	public Sampler sampler;
 	public final boolean performanceTest;
 
@@ -319,126 +313,133 @@ public class CommonConfig {
 		if (samplerConfig.isEmpty()) {
 			LOGGER.debug(new ObjectMessage(
 				Map.of(
-					Constants.MESSAGE, "Invalid config file, recording all requests!"
+					Constants.MESSAGE, "Invalid config file, not sampling!"
 				)));
-			return Sampler.ALWAYS_SAMPLE;
+			return Sampler.NEVER_SAMPLE;
+		}
+		SamplerConfig config = samplerConfig.get();
+		if (!validateSamplerConfig(config)) {
+			return Sampler.NEVER_SAMPLE;
 		}
 		return createSampler(samplerConfig.get());
 
 	}
 
-	Sampler createSampler(SamplerConfig samplerConfig) {
-		String samplerType = samplerConfig.getSamplerType();
-		int samplingAccuracy = samplerConfig.getSamplerAccuracy();
-		String samplingID = samplerConfig.getSamplingID();
-		List<SamplerAttributes> samplerAttributes = samplerConfig.getSamplerAttributes();
+	private boolean validateSamplerConfig(SamplerConfig config) {
+		String type = config.getType();
+		Optional<Integer> accuracy = config.getAccuracy();
+		Optional<Float> rate = config.getRate();
+		Optional<String> fieldCategory = config.getFieldCategory();
+		Optional<List<Attributes>> attributes = config.getAttributes();
 
-		if (samplerAttributes == null || samplerAttributes.isEmpty()) {
-			LOGGER.error(new ObjectMessage(
+		if (type == null) {
+			LOGGER.debug(new ObjectMessage(
 				Map.of(
-					Constants.MESSAGE, "Missing sampler Attributes, using default sampler",
-					Constants.MD_SAMPLER_TYPE, samplerType
+					Constants.MESSAGE, "Sampler Type missing!"
 				)));
-			return SimpleSampler
-				.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
-					SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
+			return false;
 		}
 
-		if (SimpleSampler.TYPE.equalsIgnoreCase(samplerType)) {
-			SamplerAttributes samplerAttribute = samplerAttributes.get(0);
-			return SimpleSampler.create(samplerAttribute.getSamplingRate(), samplingAccuracy);
+		if (type.equalsIgnoreCase(SimpleSampler.TYPE)
+			|| type.equalsIgnoreCase(CountingSampler.TYPE)
+			&& (rate.isEmpty() || accuracy.isEmpty())) {
+			LOGGER.debug(new ObjectMessage(
+				Map.of(
+					Constants.MESSAGE, "Need sampling rate/accuracy "
+						+ "for Simple/Counting Samplers!"
+				)));
+			return false;
 		}
 
-		if (CountingSampler.TYPE.equalsIgnoreCase(samplerType)) {
-			SamplerAttributes samplerAttribute = samplerAttributes.get(0);
-			return CountingSampler.create(samplerAttribute.getSamplingRate(), samplingAccuracy);
+		if (type.equalsIgnoreCase(BoundarySampler.TYPE)
+			&& (rate.isEmpty() || accuracy.isEmpty()
+			|| fieldCategory.isEmpty() || attributes.isEmpty())) {
+			LOGGER.debug(new ObjectMessage(
+				Map.of(
+					Constants.MESSAGE, "Need sampling rate/accuracy/"
+						+ "fieldCategory/attributes "
+						+ "for Boundary Sampler!"
+				)));
+			return false;
+		}
+
+		if (type.equalsIgnoreCase(AdaptiveSampler.TYPE)
+			&& (fieldCategory.isEmpty() || attributes.isEmpty())) {
+			LOGGER.debug(new ObjectMessage(
+				Map.of(
+					Constants.MESSAGE, "Need field category/attributes "
+						+ "for Adaptive Sampler!"
+				)));
+			return false;
+		}
+
+		return true;
+	}
+
+	Sampler createSampler(SamplerConfig samplerConfig) {
+		String type = samplerConfig.getType();
+		Optional<Integer> accuracy = samplerConfig.getAccuracy();
+		Optional<Float> rate = samplerConfig.getRate();
+		Optional<String> fieldCategory = samplerConfig.getFieldCategory();
+		Optional<List<Attributes>> attributes = samplerConfig.getAttributes();
+
+		if (SimpleSampler.TYPE.equalsIgnoreCase(type)) {
+			return SimpleSampler.create(rate.get(), accuracy.get());
+		}
+
+		if (CountingSampler.TYPE.equalsIgnoreCase(type)) {
+			return CountingSampler.create(rate.get(), accuracy.get());
 		}
 
 		//This sampler takes only a list of fields on which the sampling is to be done.
-		//Specific values are not looked at. Only one sampling probability will be used
-		//even if different probabilities are give in the config file and this probability
-		//will be the first available probability.
-		if (BoundarySampler.TYPE.equalsIgnoreCase(samplerType)) {
-			if (!isSamplerIdentifierPresent(samplerType, samplingID)) {
-				return SimpleSampler
-					.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
-						SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
-			}
-
+		//Specific values are not looked at.
+		if (BoundarySampler.TYPE.equalsIgnoreCase(type)) {
 			List<String> samplingParams = new ArrayList<>();
-			float samplingRate = -1.0f;
-			for (SamplerAttributes attr : samplerAttributes) {
-				if (attr.getSamplingField().isEmpty() || attr.getSamplingField().isBlank()) {
-					samplingParams.clear();
-					return SimpleSampler
-						.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
-							SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
-				}
-				samplingParams.add(attr.getSamplingField());
-				if (samplingRate < 0f) {
-					samplingRate = attr.getSamplingRate();
-				}
-			}
-			return BoundarySampler
-				.create(samplingRate, samplingAccuracy, samplingID, samplingParams);
-		}
-
-		if (AdaptiveSampler.TYPE.equalsIgnoreCase(samplerType)) {
-			if (isSamplerIdentifierPresent(samplerType, samplingID)) {
-				return SimpleSampler
-					.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
-						SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
-			}
-
-			MultivaluedMap<String, Pair<String, Float>> samplingParams = new MultivaluedHashMap<>();
-			for (SamplerAttributes attr : samplerAttributes) {
-				if (attr.getSamplingField() == null || attr.getSamplingField().isEmpty() || attr
-					.getSamplingField()
-					.isBlank() || attr.getSamplingValue() == null || attr.getSamplingValue()
-					.isEmpty()
-					|| attr.getSamplingValue().isBlank()) {
-					return SimpleSampler
-						.create(SimpleSampler.DEFAULT_SAMPLING_RATE,
-							SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
-				}
-				Optional<Sampler> sampler = Utils
-					.getSampler(attr.getSamplingRate(), samplingAccuracy);
-				if (sampler.isPresent()) {
-					LOGGER.error(new ObjectMessage(
+			for (Attributes attr : attributes.get()) {
+				if (attr.getField() == null || attr.getField().isBlank()) {
+					LOGGER.debug(new ObjectMessage(
 						Map.of(
-							Constants.MESSAGE,
-							"Invalid sampling rate/accuracy, using default sampler",
-							Constants.MD_SAMPLER_TYPE, samplerType
+							Constants.MESSAGE, "Invalid input, using simple sampler "
 						)));
 					samplingParams.clear();
-					return sampler.get();
+					return SimpleSampler.create(rate.get(), accuracy.get());
 				}
-				samplingParams.add(attr.getSamplingField(),
-					new ImmutablePair<>(attr.getSamplingValue(), attr.getSamplingRate()));
+				samplingParams.add(attr.getField());
 			}
-			return AdaptiveSampler.create(samplingID, samplingAccuracy, samplingParams);
+			return BoundarySampler
+				.create(rate.get(), accuracy.get(), fieldCategory.get(), samplingParams);
+		}
+
+		//This sampler takes fields, values and specific rates. However currently
+		//only one field and multiple values are supported. Not multiple fields.
+		//`other` is a special value that can be used to specify rate for every other
+		//value that are possible for the specified field. Special value should be the
+		//last in the rule hierarchy.
+		if (AdaptiveSampler.TYPE.equalsIgnoreCase(type)) {
+			//ordered map to allow special value `other` at the end.
+			Map<Pair<String, String>, Float> samplingParams = new LinkedHashMap<>();
+			for (Attributes attr : attributes.get()) {
+				if (attr.getField() == null || attr.getField().isBlank()
+					|| attr.getValue().isEmpty() || attr.getRate().isEmpty()) {
+					LOGGER.debug(new ObjectMessage(
+						Map.of(
+							Constants.MESSAGE, "Invalid input, using default sampler "
+						)));
+					return Sampler.NEVER_SAMPLE;
+				}
+
+				samplingParams.put(new ImmutablePair<>(attr.getField(), attr.getValue().get()),
+					attr.getRate().get());
+			}
+			return AdaptiveSampler.create(fieldCategory.get(), samplingParams);
 		}
 
 		LOGGER.error(new ObjectMessage(
 			Map.of(
-				Constants.MESSAGE, "Invalid sampling strategy, using default values",
-				Constants.MD_SAMPLER_TYPE, samplerType
+				Constants.MESSAGE, "Invalid sampling strategy, using default sampler",
+				Constants.MD_SAMPLER_TYPE, type
 			)));
-		return SimpleSampler
-			.create(SimpleSampler.DEFAULT_SAMPLING_RATE, SimpleSampler.DEFAULT_SAMPLING_ACCURACY);
-	}
-
-	private boolean isSamplerIdentifierPresent(String samplerType, String samplerIdentifier) {
-		if (samplerIdentifier == null || samplerIdentifier.isEmpty() || samplerIdentifier
-			.isBlank()) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Missing Sampler Identifier, using default sampler",
-					Constants.MD_SAMPLER_TYPE, samplerType
-				)));
-			return false;
-		}
-		return true;
+		return Sampler.NEVER_SAMPLE;
 	}
 
 }

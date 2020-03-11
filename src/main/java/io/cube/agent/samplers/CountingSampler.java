@@ -30,7 +30,7 @@ public class CountingSampler extends Sampler {
 	public static final String TYPE = "counting";
 
 	public static Sampler create(float samplingRate, int samplingAccuracy) {
-		Optional<Sampler> sampler = Utils.getSampler(samplingRate, samplingAccuracy);
+		Optional<Sampler> sampler = Utils.getConstSamplerIfValid(samplingRate, samplingAccuracy);
 		return sampler.orElse(new CountingSampler(samplingRate, samplingAccuracy));
 	}
 
@@ -47,15 +47,13 @@ public class CountingSampler extends Sampler {
 	}
 
 	@Override
-	public String getSamplingID() {
-		return null;
+	public Optional<String> getFieldCategory() {
+		return Optional.empty();
 	}
 
 	@Override
 	public boolean isSampled(MultivaluedMap<String, String> samplingInputs) {
-		synchronized (this) {
-			return sampleDecisions.get(counter.getAndIncrement() % samplingAccuracy);
-		}
+		return sampleDecisions.get(counter.getAndIncrement() % samplingAccuracy);
 	}
 
 	/**

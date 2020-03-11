@@ -16,7 +16,7 @@ public class SimpleSampler extends Sampler {
 	private final Random rnd;
 
 	public static Sampler create(float samplingRate, int samplingAccuracy) {
-		Optional<Sampler> sampler = Utils.getSampler(samplingRate, samplingAccuracy);
+		Optional<Sampler> sampler = Utils.getConstSamplerIfValid(samplingRate, samplingAccuracy);
 		return sampler.orElse(new SimpleSampler(samplingRate));
 	}
 
@@ -26,8 +26,8 @@ public class SimpleSampler extends Sampler {
 	}
 
 	@Override
-	public String getSamplingID() {
-		return null;
+	public Optional<String> getFieldCategory() {
+		return Optional.empty();
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package io.cube.agent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -86,10 +87,10 @@ public class SamplerTest {
 	@Test
 	void testAdaptiveSamplerInvalidField() {
 		int count = 0;
-		MultivaluedMap<String, Pair<String,Float>> params = new MultivaluedHashMap<>();
-		params.add("source", new ImmutablePair<>("aaa",0.9f));
-		params.add("source", new ImmutablePair<>("other",0.3f));
-		Sampler sampler = AdaptiveSampler.create("headers", 1000, params);
+		Map<Pair<String,String>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("source", "aaa"), 0.9f);
+		params.put(new ImmutablePair<>("source", "other"), 0.3f);
+		Sampler sampler = AdaptiveSampler.create("headers", params);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
 		map.add("sessionId", sessionIDs.get(0));
@@ -100,10 +101,10 @@ public class SamplerTest {
 	void testAdaptiveSamplerValidInput() {
 		int myCount = 0;
 		int otherCount = 0;
-		MultivaluedMap<String, Pair<String,Float>> params = new MultivaluedHashMap<>();
-		params.add("source", new ImmutablePair<>("aaa",0.5f));
-		params.add("source", new ImmutablePair<>("other",0.3f));
-		Sampler sampler = AdaptiveSampler.create("headers", 1000, params);
+		Map<Pair<String,String>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("source", "aaa"), 0.5f);
+		params.put(new ImmutablePair<>("source", "other"), 0.3f);
+		Sampler sampler = AdaptiveSampler.create("headers", params);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
 		Map<String, Integer> sampledSessionIDs = new HashMap<>();
@@ -140,10 +141,10 @@ public class SamplerTest {
 	@Test
 	void testAdaptiveSamplerOtherInput() {
 		int count = 0;
-		MultivaluedMap<String, Pair<String,Float>> params = new MultivaluedHashMap<>();
-		params.add("source", new ImmutablePair<>("aaa",0.9f));
-		params.add("source", new ImmutablePair<>("other",0.3f));
-		Sampler sampler = AdaptiveSampler.create("headers", 1000, params);
+		Map<Pair<String,String>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("source", "aaa"), 0.9f);
+		params.put(new ImmutablePair<>("source", "other"), 0.3f);
+		Sampler sampler = AdaptiveSampler.create("headers", params);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
 		Map<String, Integer> sampledSessionIDs = new HashMap<>();

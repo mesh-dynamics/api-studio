@@ -52,8 +52,8 @@ public class Utils {
 		return payload;
 	}
 
-	public static Optional<Sampler> getSampler(float samplingRate, int samplingAccuracy) {
-		if (samplingAccuracy == 0) {
+	public static Optional<Sampler> getConstSamplerIfValid(float samplingRate, int samplingAccuracy) {
+		if (samplingAccuracy <= 0) {
 			samplingAccuracy = SimpleSampler.DEFAULT_SAMPLING_ACCURACY;
 		}
 
@@ -65,7 +65,7 @@ public class Utils {
 		}
 		if (samplingRate < 1.0f / samplingAccuracy || samplingRate > 1.0) {
 			LOGGER.error("The sampling rate must be between 1/samplingAccuracy and 1.0");
-			return Optional.of(Sampler.ALWAYS_SAMPLE);
+			return Optional.of(Sampler.NEVER_SAMPLE);
 		}
 		return Optional.empty();
 	}

@@ -1,7 +1,6 @@
 package io.cube.agent.samplers;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -29,50 +28,50 @@ public class AdaptiveSampler extends Sampler {
 
 	public static final String TYPE = "adaptive";
 
-	public static Sampler create(String samplingID, int samplingAccuracy,
-		MultivaluedMap<String, Pair<String, Float>> samplingParams) {
-		return new AdaptiveSampler(samplingID, samplingAccuracy, samplingParams);
+	public static Sampler create(String samplingID,
+		Map<Pair<String, String>, Float> samplingParams) {
+		return new AdaptiveSampler(samplingID, samplingParams);
 	}
 
-	private MultivaluedMap<String, Pair<String, Float>> samplingParams;
-	private final String samplingID;
-	private final int samplingAccuracy;
+	private Map<Pair<String, String>, Float> samplingParams;
+	private final String fieldCategory;
 	private Random rnd;
 
-	AdaptiveSampler(String samplingID, int samplingAccuracy,
-		MultivaluedMap<String, Pair<String, Float>> samplingParams) {
-		this.samplingID = samplingID;
-		this.samplingAccuracy = samplingAccuracy;
+	AdaptiveSampler(String fieldCategory, Map<Pair<String, String>, Float> samplingParams) {
+		this.fieldCategory = fieldCategory;
 		this.samplingParams = samplingParams;
 		this.rnd = new Random();
 	}
 
 	@Override
-	public String getSamplingID() {
-		return samplingID;
+	public Optional<String> getFieldCategory() {
+		return Optional.of(fieldCategory);
 	}
 
 
-	private float getSamplingRate(MultivaluedMap<String, String> samplingInputs) {
-		for (Map.Entry<String, List<Pair<String, Float>>> entry : samplingParams.entrySet()) {
-			Optional<Float> samplingRate = entry.getValue().stream()
-				.filter(cv -> Stream.ofNullable(samplingInputs.get(entry.getKey())).flatMap(
-					Collection::stream)
-					.anyMatch(inp -> cv.getLeft().equalsIgnoreCase(inp) || cv.getLeft()
-						.equalsIgnoreCase("other")))
-				.findFirst()
-				.map(Pair::getRight);
-			if (samplingRate.isPresent()) {
-				return samplingRate.get();
-			}
+	private Optional<Float> getSamplingRate(MultivaluedMap<String, String> samplingInputs) {
+		Optional<Float> samplingRate = Optional.empty();
+		for (Map.Entry<Pair<String, String>, Float> entry : samplingParams.entrySet()) {
+			samplingRate = Stream
+				.ofNullable(samplingInputs.get(entry.getKey().getLeft())).flatMap(
+					Collection::stream
+				).flatMap(val -> {
+					String samplingValue = entry.getKey().getRight();
+					if (samplingValue.equalsIgnoreCase(val) || samplingValue
+						.equalsIgnoreCase("other")) {
+						return Stream.of(entry.getValue());
+					}
+					return Stream.empty();
+				}).findFirst();
+			if (samplingRate.isPresent()) break;
 		}
 
-		return -1.0f;
+		return samplingRate;
 	}
 
 	@Override
 	public boolean isSampled(MultivaluedMap<String, String> samplingInputs) {
-		float samplingRate = getSamplingRate(samplingInputs);
-		return rnd.nextDouble() <= samplingRate;
+		Optional<Float> samplingRate = getSamplingRate(samplingInputs);
+		return rnd.nextDouble() <= samplingRate.orElse(-1.0f);
 	}
 }
