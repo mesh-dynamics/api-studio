@@ -194,4 +194,32 @@ public class Constants {
 	public static final String DEFAULT_PASS_PHRASE = "WubbaLubbaDubDub";
 	public static final String CIPHER_KEY_TYPE_FIELD = "cipherKeyType";
 
+
+	// Performance Spans For Ingress / Egress filters
+	public static final String PROCESS_REQUEST_INGRESS = "reqProcessIngress";
+	public static final String PROCESS_RESPONSE_INGRESS = "respProcessIngress";
+	public static final String COPY_REQUEST_BODY_INGRESS = "reqBodyIngress";
+	public static final String COPY_RESPONSE_BODY_INGRESS = "respBodyIngress";
+	public static final String CREATE_REQUEST_EVENT_INGRESS = "reqEventCreateIngress";
+	public static final String CREATE_RESPONSE_EVENT_INGRESS = "respEventCreateIngress";
+	public static final String LOG_REQUEST_EVENT_INGRESS = "reqEventLogIngress";
+	public static final String LOG_RESPONSE_EVENT_INGRESS = "respEventLogIngress";
+
+
+	public static final String PROCESS_REQUEST_EGRESS = "reqProcessEgress";
+	public static final String PROCESS_RESPONSE_EGRESS = "respProcessEgress";
+	public static final String COPY_REQUEST_BODY_EGRESS = "reqBodyEgress";
+	public static final String COPY_RESPONSE_BODY_EGRESS = "respBodyEgress";
+	public static final String CREATE_REQUEST_EVENT_EGRESS = "reqEventCreateEgress";
+	public static final String CREATE_RESPONSE_EVENT_EGRESS = "respEventCreateEgress";
+	public static final String LOG_REQUEST_EVENT_EGRESS = "reqEventLogEgress";
+	public static final String LOG_RESPONSE_EVENT_EGRESS = "respEventLogEgress";
+
+
+	public static final String LOG4J_LOG = "log4jLog";
+	public static final String ENCRYPT_PAYLOAD = "encryptPayload";
+
+
+
+
 }
