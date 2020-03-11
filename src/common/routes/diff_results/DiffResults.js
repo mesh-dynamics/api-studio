@@ -44,12 +44,12 @@ class DiffResults extends Component {
                 showRequestMessageQParams: false,
                 showRequestMessageFParams: false,
                 showRequestMessageBody: false,
-                shownResponseMessageHeaders: false,
-                shownResponseMessageBody: true,
-                shownRequestMessageHeaders: false,
-                shownRequestMessageQParams: false,
-                shownRequestMessageFParams: false,
-                shownRequestMessageBody: false
+                // shownResponseMessageHeaders: false,
+                // shownResponseMessageBody: true,
+                // shownRequestMessageHeaders: false,
+                // shownRequestMessageQParams: false,
+                // shownRequestMessageFParams: false,
+                // shownRequestMessageBody: false
             },
             diffLayoutData : [],
             facetListData: {
@@ -489,11 +489,11 @@ class DiffResults extends Component {
 
         //let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
         try {
-        
+            const user = JSON.parse(localStorage.getItem('user'));
             let response = await fetch(u, { 
                 // todo
                 headers: { 
-                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
+                    "authorization": "Bearer " + user['access_token'], 
                 }, 
                 "method": "GET", 
             });
@@ -526,11 +526,11 @@ class DiffResults extends Component {
         u.searchParams.set("numResults", 0);
         
         try {
-        
+            const user = JSON.parse(localStorage.getItem('user'));
             let response = await fetch(u, { 
                 // todo
                 headers: { 
-                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
+                    "authorization": "Bearer " + user['access_token'], 
                 }, 
                 "method": "GET", 
             });

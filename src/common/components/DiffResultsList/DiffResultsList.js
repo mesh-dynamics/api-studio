@@ -11,7 +11,13 @@ export default class DiffResultsList extends Component {
         super(props);
         this.state = {
             searchFilterPath: "",
-            //selectedResolutionType: "All",
+
+            shownResponseMessageHeaders: false,
+            shownResponseMessageBody: true,
+            shownRequestMessageHeaders: false,
+            shownRequestMessageQParams: false,
+            shownRequestMessageFParams: false,
+            shownRequestMessageBody: false,
         }
         //this.selectedResolutionType = "All";
         //this.resolutionTypes = [{value: "ERR", count: 2}];
@@ -54,6 +60,7 @@ export default class DiffResultsList extends Component {
                     showResponseMessageHeaders: e.target.checked, 
                     shownResponseMessageHeaders: true 
                 })
+                this.setState
                 break;
         
             case "responseBody":
@@ -189,14 +196,25 @@ export default class DiffResultsList extends Component {
                 showRequestMessageQParams, // Request Message Q Params
                 showRequestMessageFParams, // Request Message F Params
                 showRequestMessageBody,// Request Message Body
-                shownRequestMessageBody, // Request Message Body
-                // shownResponseMessageBody, // Response Message Body
-                shownRequestMessageHeaders,// Request Message Headers
-                shownResponseMessageHeaders,  // Response Message Headers
-                shownRequestMessageQParams, // Request Message Q Params
-                shownRequestMessageFParams, // Request Message F Params
+                // shownRequestMessageBody, // Request Message Body
+                // // shownResponseMessageBody, // Response Message Body
+                // shownRequestMessageHeaders,// Request Message Headers
+                // shownResponseMessageHeaders,  // Response Message Headers
+                // shownRequestMessageQParams, // Request Message Q Params
+                // shownRequestMessageFParams, // Request Message F Params
             }
         } = this.props;
+
+        const {
+            shownRequestMessageBody, // Request Message Body
+            // shownResponseMessageBody, // Response Message Body
+            shownRequestMessageHeaders,// Request Message Headers
+            shownResponseMessageHeaders,  // Response Message Headers
+            shownRequestMessageQParams, // Request Message Q Params
+            shownRequestMessageFParams, // Request Message F Params
+        } = this.state;
+
+        console.log(this.props.diffToggleRibbon)
         
         const { searchFilterPath } = this.state;
 
