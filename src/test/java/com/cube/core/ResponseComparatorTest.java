@@ -234,7 +234,7 @@ public class ResponseComparatorTest {
         JSONAssert.assertEquals(expected, mjson, false);
     }
 
-    private Event updateRequestEventHdr(Event event, String hdrField, String val)
+    /*private Event updateRequestEventHdr(Event event, String hdrField, String val)
         throws IOException, EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
         HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
         responsePayload.hdrs.putSingle(hdrField, val);
@@ -242,23 +242,23 @@ public class ResponseComparatorTest {
         return cloneWithPayload(event, responsePayload);
 
     }
-
-    private Event updateResponseEventBody(Event event, String body) throws IOException,
+*/
+    /*private Event updateResponseEventBody(Event event, String body) throws IOException,
         EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
         HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
 
         HTTPResponsePayload newPayload = new HTTPResponsePayload(responsePayload.hdrs, responsePayload.status, body.getBytes());
         return cloneWithPayload(event, newPayload);
 
-    }
+    }*/
 
-    private Event cloneWithPayload(Event event, HTTPResponsePayload payload) throws JsonProcessingException, EventBuilder.InvalidEventException {
+    /*private Event cloneWithPayload(Event event, HTTPResponsePayload payload) throws JsonProcessingException, EventBuilder.InvalidEventException {
         return new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
             event.getCollection(), new MDTraceInfo(event.getTraceId(), null , null)
             , event.runType, Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType)
             .setPayload(payload)
             .createEvent();
-    }
+    }*/
 
 
 

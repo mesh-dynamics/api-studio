@@ -61,6 +61,7 @@ import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.utils.CommonUtils;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
@@ -751,7 +752,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String OPERATIONSETIDF = CPREFIX + "operationsetid" + STRING_SUFFIX;
     private static final String OPERATIONLIST = CPREFIX + "operationlist" + STRINGSET_SUFFIX;
     private static final String TRACEIDF = CPREFIX + Constants.TRACE_ID_FIELD + STRING_SUFFIX;
-    private static final String PAYLOADBINF = CPREFIX + "payloadBin" + BIN_SUFFIX;
     private static final String PAYLOADSTRF = CPREFIX + "payloadStr" + NOTINDEXED_SUFFIX;
     private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
     private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
@@ -947,7 +947,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    private static SolrInputDocument eventToSolrDoc(Event event) {
+    private SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
         String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
             .concat(event.reqId);
@@ -967,10 +967,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
-        doc.setField(PAYLOADSTRF, event.getPayloadAsJsonString());
-       /* doc.setField(PAYLOADBINF, event.rawPayloadBinary);
-        doc.setField(PAYLOADSTRF, event.rawPayloadString);
-       */ doc.setField(PAYLOADKEYF, event.payloadKey);
+        try {
+            doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to convert "
+                + "event payload as string")) , e);
+        }
+        doc.setField(PAYLOADKEYF, event.payloadKey);
 
         return doc;
     }
@@ -992,7 +995,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> reqId = getStrField(doc, REQIDF);
         Optional<String> path = getStrField(doc, PATHF);
         Optional<String> eventType = getStrField(doc, EVENTTYPEF);
-        //Optional<byte[]> payloadBin = getBinField(doc, PAYLOADBINF);
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
 
@@ -1005,15 +1007,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , timestamp, reqId.orElse(null), path.orElse(""), eType);
         // TODO revisit this need to construct payload properly from type and json string
         try {
-            payloadStr.ifPresent(UtilException.rethrowConsumer(payload -> {
-                String finalPayload = "[ \"" + ((eType == EventType.HTTPRequest)
-                    ? "HTTPRequestPayload" : "HTTPResponsePayload") + "\" , " + payload + " ] ";
-                eventBuilder
-                    .setPayload(this.config.jsonMapper.readValue(finalPayload, Payload.class));
-            }));
+            payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
+                eventBuilder.setPayload(this.config.jsonMapper.readValue(payload
+            , Payload.class))));
+
         } catch (Exception e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Unable to convert json string back to payload object")), e);
+            try {
+                payloadStr.ifPresent(UtilException.rethrowConsumer(payload -> {
+                    String finalPayload = "[ \"" + ((eType == EventType.HTTPRequest)
+                        ? "HTTPRequestPayload" : "HTTPResponsePayload") + "\" , " + payload + " ] ";
+                    eventBuilder
+                        .setPayload(this.config.jsonMapper.readValue(finalPayload, Payload.class));
+                }));
+            } catch (Exception e1) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Unable to convert json string back to payload object")), e1);
+            }
         }
         //eventBuilder.setRawPayloadString(payloadStr.orElse(null));
         //eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));

@@ -337,11 +337,11 @@ public class Utils {
 
     }
 
-    public static HTTPRequestPayload getRequestPayload(Event event, Config config)
+    /*public static HTTPRequestPayload getRequestPayload(Event event, Config config)
 	    throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
         String payload = event.getPayloadAsJsonString();
         return config.jsonMapper.readValue(payload, HTTPRequestPayload.class);
-    }
+    }*/
 
 
     public static Event createHTTPResponseEvent(String apiPath, Optional<String> reqId,
@@ -376,10 +376,10 @@ public class Utils {
 
     }
 
-    public static HTTPResponsePayload getResponsePayload(Event event, Config config)
+    /*public static HTTPResponsePayload getResponsePayload(Event event, Config config)
 	    throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
     	return (HTTPResponsePayload) event.payload;
-    }
+    }*/
 
 	public static Map<String, TemplateEntry> getAllPathRules(Event event, Recording recording, TemplateKey.Type templateKeyType,
 		String service, String apiPath, ReqRespStore rrstore, Config config) {
@@ -389,8 +389,7 @@ public class Utils {
 		Optional<CompareTemplate> templateOptional = rrstore.getCompareTemplate(tkey);
 		Map<String, TemplateEntry> pathRules = new HashMap<>();
 		templateOptional.ifPresent(UtilException.rethrowConsumer(template -> {
-			DataObj payload =  ((LazyParseAbstractPayload)event.payload).dataObj;
-			payload.getPathRules(template, pathRules);
+			event.payload.getPathRules(template, pathRules);
 		}));
 
 		return pathRules;
