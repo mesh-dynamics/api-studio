@@ -159,8 +159,7 @@ public class Utils {
 		return headerMap;
 	}
 
-	public static MultivaluedMap<String, String> getHeaders(
-		HttpServletRequest httpServletRequest) {
+	public static MultivaluedMap<String, String> getHeaders(HttpServletRequest httpServletRequest) {
 		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
 		Collections.list(httpServletRequest.getHeaderNames()).stream()
 			.forEach(headerName -> {

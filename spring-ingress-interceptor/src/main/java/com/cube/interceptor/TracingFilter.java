@@ -30,7 +30,7 @@ import io.opentracing.Span;
 @Order(3000)
 public class TracingFilter extends OncePerRequestFilter {
 
-	private static final Logger LOGGER = LogManager.getLogger(LoggingFilter.class);
+	private static final Logger LOGGER = LogManager.getLogger(TracingFilter.class);
 
 	private static final Config config;
 

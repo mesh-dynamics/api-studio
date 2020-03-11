@@ -90,6 +90,9 @@ public class LoggingFilter extends OncePerRequestFilter {
 				logRequest(requestWrapper, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams, mdTraceInfo);
 				logResponse(responseWrapper, apiPath, traceMetaMap, mdTraceInfo);
+			} else {
+				LOGGER
+					.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Sampling is false!")));
 			}
 		}));
 

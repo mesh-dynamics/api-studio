@@ -4,12 +4,16 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -34,6 +38,8 @@ import io.opentracing.Span;
 @Order(3000)
 public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
 
+	private static final Logger LOGGER = LogManager.getLogger(RestTemplateInterceptor.class);
+
 	private static final Config config;
 
 	static {
@@ -43,7 +49,6 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
 	@Override
 	public ClientHttpResponse intercept(HttpRequest request, byte[] body,
 		ClientHttpRequestExecution execution) throws IOException {
-
 		String apiPath = Strings.EMPTY, serviceName = Strings.EMPTY;
 		MultivaluedMap<String, String> traceMetaMap = new MultivaluedHashMap<>();
 		boolean isSampled = false, isVetoed = false;
@@ -85,7 +90,13 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
 				logRequest(request, requestHeaders, body, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
 					serviceName, queryParams, mdTraceInfo);
+			} else {
+				LOGGER
+					.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Sampling is false!")));
 			}
+		} else {
+			LOGGER
+				.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Current Span is empty!")));
 		}
 		ClientHttpResponse response = execution.execute(request, body);
 		if (isSampled || isVetoed) {
