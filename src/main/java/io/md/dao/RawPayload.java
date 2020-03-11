@@ -17,6 +17,11 @@ public interface RawPayload {
 	public String rawPayloadAsString() throws NotImplementedException, RawPayloadEmptyException, RawPayloadProcessingException;
 
 	@JsonIgnore
+	public String rawPayloadAsString(boolean wrapForDisplay) throws
+		NotImplementedException, RawPayloadEmptyException, RawPayloadProcessingException;
+
+
+	@JsonIgnore
 	public boolean isRawPayloadEmpty();
 
 	static class RawPayloadProcessingException extends Exception {

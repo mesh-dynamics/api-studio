@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 
+import javax.swing.MenuElement;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.logging.log4j.LogManager;
@@ -252,6 +253,19 @@ public class JsonDataObj implements DataObj {
 						valParentObj.set(fieldName, new TextNode(val.toString()));
 					}
 					return true;
+				}
+			} else if (val != null && val.isBinary() && !asByteArray) {
+				if (mimetype.equals(MediaType.APPLICATION_XML) || mimetype.equals(MediaType.TEXT_HTML)
+					|| mimetype.equals(MediaType.TEXT_PLAIN)) {
+					try {
+						valParentObj.set(fieldName,
+							new TextNode(new String(val.binaryValue(), StandardCharsets.UTF_8)));
+						return true;
+					} catch (IOException e) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while"
+							+ " wrapping byte array as UTF-8 string")), e);
+
+					}
 				}
 			}
 		}

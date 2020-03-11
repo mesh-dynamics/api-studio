@@ -2,6 +2,8 @@ package io.md.dao;
 
 import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -36,6 +38,12 @@ public class JsonByteArrayPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public String rawPayloadAsString() throws RawPayloadEmptyException {
+		return rawPayloadAsString(false);
+	}
+
+	@Override
+	public String rawPayloadAsString(boolean wrapForDisplay)
+		throws NotImplementedException, RawPayloadEmptyException {
 		if (this.isRawPayloadEmpty()) {
 			throw new RawPayloadEmptyException("Byte Array is Empty/Null");
 		}

@@ -34,6 +34,12 @@ public class FnReqRespPayload extends LazyParseAbstractPayload {
 	}
 
 	@Override
+	public String rawPayloadAsString(boolean wrapForDisplay)
+		throws NotImplementedException, RawPayloadEmptyException, RawPayloadProcessingException {
+		return null;
+	}
+
+	@Override
 	public boolean isRawPayloadEmpty() {
 		return false;
 	}

@@ -121,9 +121,14 @@ public class Event {
 
 	@JsonIgnore
 	public String getPayloadAsJsonString() {
+		return getPayloadAsJsonString(false);
+	}
+
+	@JsonIgnore
+	public String getPayloadAsJsonString(boolean wrapForDisplay) {
 		if (this.payload != null && !this.payload.isRawPayloadEmpty()) {
 			try {
-				return this.payload.rawPayloadAsString();
+				return this.payload.rawPayloadAsString(wrapForDisplay);
 			} catch (Exception e) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while "
 					+ "converting payload to json string")), e);

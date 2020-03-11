@@ -87,10 +87,21 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	}
 
 	@Override
-	public String rawPayloadAsString() throws RawPayloadProcessingException {
+	public String rawPayloadAsString()
+		throws RawPayloadProcessingException {
+		return this.rawPayloadAsString(false);
+	}
+
+	public String rawPayloadAsString(boolean wrapForDisplay) throws
+		NotImplementedException, RawPayloadProcessingException {
 		try {
-			return this.dataObj.isDataObjEmpty() ? mapper.writeValueAsString(this) :
-				dataObj.serializeDataObj();
+			if (this.dataObj.isDataObjEmpty()) {
+				return mapper.writeValueAsString(this);
+			} else {
+				if (wrapForDisplay) this.dataObj.wrapAsString("/".concat("BODY"),
+					Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+				return dataObj.serializeDataObj();
+			}
 		} catch (Exception e) {
 			throw  new RawPayloadProcessingException(e);
 		}
