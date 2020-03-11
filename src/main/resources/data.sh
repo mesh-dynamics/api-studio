@@ -1,3 +1,5 @@
+#!/bin/bash
+Set -e
 url="${1}";
 
 accessToken=$(curl "$url/api/login" -H 'Connection: keep-alive' -H 'Content-Type: application/json' -H 'Accept: */*' --data-binary '{"username":"admin@meshdynamics.io","password":"admin"}'| jq -r '.access_token');
