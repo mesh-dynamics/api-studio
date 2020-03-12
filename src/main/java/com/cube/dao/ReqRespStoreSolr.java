@@ -1877,8 +1877,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             this::docToAnalysisMatchResult, matchResQuery.start);
         ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, BUCKETFIELD);
 
-        query.setQuery(queryStringSansDiffFilter);
-        removeFilter(query, PATHF, matchResQuery.apiPath);
+
+        SolrQuery queryForServPathFacets = new SolrQuery(queryStringSansDiffFilter);
+        queryForServPathFacets.setFields("*");
+        addFilter(queryForServPathFacets, REPLAYIDF, matchResQuery.replayId);
+        addFilter(queryForServPathFacets, SERVICEF, matchResQuery.service);
+
         Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
         Facet pathf = Facet.createTermFacet(PATHF, Optional.empty());
 
@@ -1899,12 +1903,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         try {
             jsonFacets = config.jsonMapper.writeValueAsString(facetq);
-            query.add(SOLRJSONFACETPARAM, jsonFacets);
+            queryForServPathFacets.add(SOLRJSONFACETPARAM, jsonFacets);
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Error in converting facets to json"), e);
         }
 
-        Result<ReqRespMatchResult> resultsServPath = SolrIterator.getResults(solr, query, matchResQuery.numMatches,
+        Result<ReqRespMatchResult> resultsServPath = SolrIterator.getResults(solr, queryForServPathFacets, matchResQuery.numMatches,
                 this::docToAnalysisMatchResult, matchResQuery.start);
 
         ArrayList serviceFacetResults = resultsServPath.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
