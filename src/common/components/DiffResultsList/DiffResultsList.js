@@ -56,8 +56,6 @@ export default class DiffResultsList extends Component {
 
     toggleMessageContents = (e) => {
         const { updateDiffToggleRibbon } = this.props;
-        console.log("I AM TRIGGERED:::::::::::::");
-
         switch (e.target.value) {
             case "responseHeaders":
                 updateDiffToggleRibbon({
@@ -132,16 +130,7 @@ export default class DiffResultsList extends Component {
     };
 
     handleSearchFilterChange = (e) => {
-        //const { history } = this.props;
-
         this.setState({ searchFilterPath: e.target.value });
-
-        //this.historySearchParams = updateSearchHistoryParams("searchFilterPath", e.target.value, this.state);
-
-        // history.push({
-        //     pathname: "/shareable_link",
-        //     search: this.historySearchParams
-        // });
     }
 
     renderToggleRibbon = () => {
@@ -155,8 +144,6 @@ export default class DiffResultsList extends Component {
                 showRequestMessageBody,// Request Message Body
             }
         } = this.props;
-
-        console.log(this.props.diffToggleRibbon);
 
         return (
             <Fragment>
@@ -210,8 +197,6 @@ export default class DiffResultsList extends Component {
             shownRequestMessageQParams, // Request Message Q Params
             shownRequestMessageFParams, // Request Message F Params
         } = this.state;
-
-        console.log(this.props.diffToggleRibbon)
 
         if (diffLayoutData.length == 0) {
             return (
