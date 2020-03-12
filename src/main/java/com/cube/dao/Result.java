@@ -57,6 +57,10 @@ public class Result<T> {
 		ArrayList facetsNamedList = (ArrayList) solrResponse.getResponse().
 			findRecursive(args);
 
+		return solrNamedPairToMap(facetsNamedList);
+	}
+
+	public ArrayList solrNamedPairToMap(ArrayList facetsNamedList) {
 		ArrayList facets = new ArrayList();
 		if(facetsNamedList==null) return facets;
 
@@ -68,7 +72,7 @@ public class Result<T> {
 		return facets;
 	}
 
-    static public class StreamToListSerializer extends JsonSerializer<Stream<Object>> {
+	static public class StreamToListSerializer extends JsonSerializer<Stream<Object>> {
         public StreamToListSerializer() {
         }
 

@@ -773,6 +773,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String METAREQID = META + "_c" + "-request-id" + STRINGSET_SUFFIX;
     private static final String METATRACEID = META + "_" + Constants.DEFAULT_TRACE_FIELD + STRINGSET_SUFFIX;
 
+
+    private static void removeFilter(SolrQuery query, String fieldname, Optional<String> fval) {
+        fval.ifPresent(val -> removeFilter(query, fieldname, val));
+    }
+
+    private static void removeFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
+        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
+        query.removeFilterQuery(String.format("%s:%s", fieldname, newfval));
+    }
+
+
+    private static void removeFilter(SolrQuery query, String fieldname, String fval) {
+        // add quotes by default in case the strings have spaces in them
+        removeFilter(query, fieldname, fval, true);
+    }
+
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
         //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
         String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
@@ -1862,8 +1878,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, BUCKETFIELD);
 
         query.setQuery(queryStringSansDiffFilter);
+        removeFilter(query, PATHF, matchResQuery.apiPath);
         Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
         Facet pathf = Facet.createTermFacet(PATHF, Optional.empty());
+
+        Facet respMatchTypeFacets = Facet.createTermFacet(RESP_COMP_RES_TYPE_F, Optional.empty());
+        Facet reqCompareTypeFacets = Facet.createTermFacet(REQ_COMP_RES_TYPE_F, Optional.empty());
+        Facet reqMatchTypeFacets = Facet.createTermFacet(REQMTF, Optional.empty());
+
+
+        FacetQ resolutionFacetsq = new FacetQ();
+        resolutionFacetsq.addFacet(RESPMATCHTYPEFACET, respMatchTypeFacets);
+        resolutionFacetsq.addFacet(REQCOMPAPARETYPEFACET, reqCompareTypeFacets);
+        resolutionFacetsq.addFacet(REQMATCHTYPEFACET, reqMatchTypeFacets);
+        pathf.addSubFacet(resolutionFacetsq);
+
         facetq.removeFacet(DIFFRESOLUTIONFACET);
         facetq.addFacet(SERVICEFACET, servicef);
         facetq.addFacet(PATHFACET, pathf);
@@ -1880,6 +1909,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         ArrayList serviceFacetResults = resultsServPath.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
         ArrayList pathFacetResults = resultsServPath.getFacets(FACETSFIELD, PATHFACET, BUCKETFIELD);
+        pathFacetResults.forEach(pathFacetResult -> {
+            HashMap respMatchTypeFacetMap = (HashMap) ((HashMap) pathFacetResult).get(RESPMATCHTYPEFACET);
+            HashMap reqMatchTypeFacetMap = (HashMap) ((HashMap) pathFacetResult).get(REQMATCHTYPEFACET);
+            HashMap reqCompareTypeFacetMap = (HashMap) ((HashMap) pathFacetResult).get(REQCOMPAPARETYPEFACET);
+            ((HashMap)pathFacetResult).put(RESPMATCHTYPEFACET,
+                resultsServPath.solrNamedPairToMap((ArrayList)respMatchTypeFacetMap.get(BUCKETFIELD)));
+            ((HashMap)pathFacetResult).put(REQMATCHTYPEFACET,
+                resultsServPath.solrNamedPairToMap((ArrayList)reqMatchTypeFacetMap.get(BUCKETFIELD)));
+            ((HashMap)pathFacetResult).put(REQCOMPAPARETYPEFACET,
+                resultsServPath.solrNamedPairToMap((ArrayList)reqCompareTypeFacetMap.get(BUCKETFIELD)));
+        });
 
         return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults);
     }
@@ -2264,6 +2304,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String COUNTFIELD = "count"; // term in solr facet results indicating aggregate value computed
     private static final String FACETSFIELD = "facets"; // term in solr facet results indicating the facet results block
     private static final String DIFFRESOLUTIONFACET = "diff_resolution_facets";
+    private static final String RESPMATCHTYPEFACET = "respMatchType_facets";
+    private static final String REQMATCHTYPEFACET = "reqMatchType_facets";
+    private static final String REQCOMPAPARETYPEFACET = "reqCmpResType_facets";
 
 
     /**
