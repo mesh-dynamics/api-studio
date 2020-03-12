@@ -50,8 +50,9 @@ public class AdaptiveSampler extends Sampler {
 
 
 	private Optional<Float> getSamplingRate(MultivaluedMap<String, String> samplingInputs) {
+		Optional<Float> samplingRate = Optional.empty();
 		for (Map.Entry<Pair<String, String>, Float> entry : samplingParams.entrySet()) {
-			return Optional.ofNullable(samplingInputs.get(entry.getKey().getLeft()))
+			samplingRate =  Optional.ofNullable(samplingInputs.get(entry.getKey().getLeft()))
 				.flatMap(vals -> {
 					String samplingValue = entry.getKey().getRight();
 					if (samplingValue.equalsIgnoreCase("other"))
@@ -61,8 +62,10 @@ public class AdaptiveSampler extends Sampler {
 						.findFirst()
 						.map(v -> entry.getValue());
 				});
+
+			if (samplingRate.isPresent()) break;
 		}
-		return Optional.empty();
+		return samplingRate;
 	}
 
 	@Override
