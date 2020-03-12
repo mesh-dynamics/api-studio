@@ -470,7 +470,9 @@ public class AnalyzeWS {
 			    matchRes.respCompareRes.mt, matchRes.service, matchRes.path,
 			    matchRes.reqCompareRes.mt,
 			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse
-			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId);
+			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+                matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+                matchRes.replayedSpanId, matchRes.replayedParentSpanId);
 
 		    String resultJson = null;
 		    try {
@@ -661,7 +663,9 @@ public class AnalyzeWS {
                     matchRes.reqMatchRes, matchRes.numMatch,
                     matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
 	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
-	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId);
+	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+                    matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+                    matchRes.replayedSpanId, matchRes.replayedParentSpanId);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1348,7 +1352,11 @@ public class AnalyzeWS {
                         Optional<String> recordResponse,
                         Optional<String> replayResponse,
 	                    Optional<String> recordTraceId,
-	                    Optional<String> replayTraceId
+	                    Optional<String> replayTraceId,
+                        Optional<String> recordedSpanId,
+                        Optional<String> recordedParentSpanId,
+                        Optional<String> replayedSpanId,
+                        Optional<String> replayedParentSpanId
 	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
@@ -1366,6 +1374,10 @@ public class AnalyzeWS {
             this.replayResponse = replayResponse;
             this.recordTraceId = recordTraceId;
             this.replayTraceId = replayTraceId;
+            this.recordedSpanId = recordedSpanId;
+            this.recordedParentSpanId = recordedParentSpanId;
+            this.replayedSpanId = replayedSpanId;
+            this.replayedParentSpanId = replayedParentSpanId;
         }
 
         public final Optional<String> recordReqId;
@@ -1378,6 +1390,11 @@ public class AnalyzeWS {
         public final String path;
         public final Optional<String> recordTraceId;
         public final Optional<String> replayTraceId;
+        public final Optional<String> recordedSpanId;
+        public final Optional<String> recordedParentSpanId;
+        public final Optional<String> replayedSpanId;
+        public final Optional<String> replayedParentSpanId;
+
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
         @JsonIgnore

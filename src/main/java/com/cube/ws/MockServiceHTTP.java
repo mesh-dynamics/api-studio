@@ -519,7 +519,9 @@ public class MockServiceHTTP {
                     , Optional.ofNullable(mockRequestEvent.reqId), MatchType.NoMatch
                     , 0, mockRequestEvent.getCollection(), mockRequestEvent.service
                     , mockRequestEvent.apiPath, Optional.empty()
-                    , Optional.of(mockRequestEvent.getTraceId()), new Match(MatchType
+                    , Optional.of(mockRequestEvent.getTraceId()), Optional.empty(),
+                    Optional.empty(), Optional.of(mockRequestEvent.spanId),
+                    Optional.of(mockRequestEvent.parentSpanId), new Match(MatchType
                     .Default, "", Collections.emptyList()), new Match(MatchType
                     .Default, "", Collections.emptyList()));
             rrstore.saveResult(matchResult);
@@ -562,7 +564,9 @@ public class MockServiceHTTP {
                 , Optional.ofNullable(mockRequestEvent.reqId), Comparator.MatchType.ExactMatch
                 , 1, mockRequestEvent.getCollection(), mockRequestEvent.service
                 , mockRequestEvent.apiPath, Optional.of(respEventVal.getTraceId())
-                , Optional.of(mockRequestEvent.getTraceId()), new Match(Comparator.MatchType
+                , Optional.of(mockRequestEvent.getTraceId()), Optional.of(respEventVal.spanId),
+                Optional.of(respEventVal.parentSpanId), Optional.of(mockRequestEvent.spanId),
+                Optional.of(mockRequestEvent.parentSpanId), new Match(Comparator.MatchType
                 .ExactMatch, "", Collections.emptyList()), new Match(Comparator.MatchType
                 .ExactMatch, "", Collections.emptyList()));
         rrstore.saveResult(matchResult);
