@@ -120,6 +120,7 @@ const constUrlParams__NextVersion = (state) => {
         app, replayId, timeStamp, recordingId, searchFilterPath, currentTemplateVer,
         filter : {
             selectedService, selectedAPI, 
+            selectedReqMatchType, selectedDiffType, 
             selectedResolutionType, currentPageNumber, pageSize,  
         },
         diffToggleRibbon: {
@@ -132,7 +133,7 @@ const constUrlParams__NextVersion = (state) => {
         }
     } =  state;
 
-    return `?replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&currentPageNumber=${currentPageNumber}&pageSize=${pageSize}`;
+    return `replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&currentPageNumber=${currentPageNumber}&pageSize=${pageSize}&selectedReqMatchType=${selectedReqMatchType}&selectedDiffType=${selectedDiffType}`;
 
 }
 

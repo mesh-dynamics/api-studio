@@ -59,7 +59,7 @@ class DiffResults extends Component {
             saveGoldenError: "",
 
             showAll: true, //todo
-            fetching: true,
+            isFetching: true,
         }
     }
 
@@ -583,19 +583,19 @@ class DiffResults extends Component {
         const { history } = this.props;
         const constructedUrlParams = constructUrlParams(this.state);
 
-        history.push(`/diff_results${constructedUrlParams}`)
+        history.push(`/diff_results?${constructedUrlParams}`)
     };
 
     updateDiffToggleRibbon = (updatedRibbonState) => {
 
-        // todo
         console.log(updatedRibbonState)
+        let newDiffToggleRibbon = {
+            ...this.state.diffToggleRibbon,
+            ...updatedRibbonState
+        }
+
         this.setState({ 
-            ...this.state, 
-            diffToggleRibbon: {
-                ...this.state.diffToggleRibbon,
-                ...updatedRibbonState
-            }
+            diffToggleRibbon: newDiffToggleRibbon,
         }, this.updateUrlPathWithFilters);
     }
         
@@ -603,7 +603,7 @@ class DiffResults extends Component {
         // fetch results from the backend
         const { replayId, filter } = this.state;
         
-        this.setState({fetching : true})
+        this.setState({isFetching : true})
         // fetch facet data for services (since it requires a non filtered call)
         let facetDataPromise = this.fetchFacetData(replayId)  
         
@@ -631,7 +631,7 @@ class DiffResults extends Component {
                     apiPaths: facets2.pathFacets,
                     resolutionTypes: facets2.diffResFacets,
                 },
-                fetching: false,
+                isFetching: false,
             });
         });
     }
@@ -896,6 +896,7 @@ class DiffResults extends Component {
                             diffLayoutData={this.state.diffLayoutData} 
                             diffToggleRibbon={this.state.diffToggleRibbon}
                             updateDiffToggleRibbon={this.updateDiffToggleRibbon}
+                            isFetching={this.state.isFetching}
                         ></DiffResultsList>
                     </div>
                     

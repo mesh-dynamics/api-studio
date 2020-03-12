@@ -361,7 +361,7 @@ export default class DiffResultsList extends Component {
 
     renderLoading = () => {
         return (
-            <div className={this.props.fetching ? "loading-text" : ""}>
+            <div className={"loading-text"}>
                 Loading...
             </div>
         );
@@ -370,7 +370,7 @@ export default class DiffResultsList extends Component {
     render() {
         return (
             <div>
-                {this.props.fetching 
+                {this.props.isFetching 
                 ? this.renderLoading() 
                 : 
                 <Fragment>
