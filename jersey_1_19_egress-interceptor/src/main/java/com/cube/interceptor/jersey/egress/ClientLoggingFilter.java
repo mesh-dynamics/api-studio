@@ -43,6 +43,8 @@ public class ClientLoggingFilter extends ClientFilter {
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
 	private static final String EMPTY = "";
+	private static List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
+			"Content-type", "Content-Type", "content-Type");
 
 	static {
 		config = new Config();
@@ -77,6 +79,7 @@ public class ClientLoggingFilter extends ClientFilter {
 	public ClientRequest filter(ClientRequest clientRequest) throws IOException {
 		//hdrs
 		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+
 		currentSpan.ifPresent(UtilException.rethrowConsumer(span ->
 		{
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
@@ -117,6 +120,7 @@ public class ClientLoggingFilter extends ClientFilter {
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
 					queryParams, mdTraceInfo, serviceName);
 			}
+
 		}));
 
 		return clientRequest;
@@ -200,8 +204,6 @@ public class ClientLoggingFilter extends ClientFilter {
 	}
 
 	private Optional<Object> getMimeType(MultivaluedMap<String, Object> headers) {
-		List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
-				"Content-type", "Content-Type", "content-Type");
 		if (headers == null)
 			return Optional.empty();
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
