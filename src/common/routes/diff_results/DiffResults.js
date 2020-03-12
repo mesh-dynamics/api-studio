@@ -11,7 +11,7 @@ import Modal from "react-bootstrap/lib/Modal";
 import {connect} from "react-redux";
 import axios from "axios";
 import {cubeActions} from "../../actions";
-import { constructUrlParams } from "../../utils/lib/url-utils";
+import { constructUrlParamsDiffResults } from "../../utils/lib/url-utils";
 import config from "../../config";
 
 const DiffResultsContext = createContext();
@@ -581,7 +581,7 @@ class DiffResults extends Component {
 
     updateUrlPathWithFilters = () => {
         const { history } = this.props;
-        const constructedUrlParams = constructUrlParams(this.state);
+        const constructedUrlParams = constructUrlParamsDiffResults(this.state);
 
         history.push(`/diff_results?${constructedUrlParams}`)
     };

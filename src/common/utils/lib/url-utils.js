@@ -114,8 +114,7 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
     return constructUrlParams(params);
 };
 
-// TODO: to retire the other versions and use this
-const constUrlParams__NextVersion = (state) => {
+const constructUrlParamsDiffResults = (state) => {
     const {
         app, replayId, timeStamp, recordingId, searchFilterPath, currentTemplateVer,
         filter : {
@@ -137,4 +136,4 @@ const constUrlParams__NextVersion = (state) => {
 
 }
 
-export { constUrlParams__NextVersion as constructUrlParams, getSearchHistoryParams, updateSearchHistoryParams };
+export { constructUrlParamsDiffResults, getSearchHistoryParams, updateSearchHistoryParams };
