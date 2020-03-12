@@ -398,7 +398,7 @@ class ShareableLink extends Component {
                 cleanedMessagepart = JSON.parse('"' + cleanEscapedString(_.escape(messagePart)) + '"')
             }
         } else {
-            cleanedMessagepart = JSON.parse('""');
+            cleanedMessagepart = messagePart || JSON.parse('""');
         }
 
         return cleanedMessagepart;
@@ -434,7 +434,7 @@ class ShareableLink extends Component {
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let recordedResponseMime = recordedResponseHeaders["content-type"][0];
+                let recordedResponseMime = recordedResponseHeaders["content-type"] ? recordedResponseHeaders["content-type"][0] : "";
                 isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.recordResponse.body && isJson) {
                     try {
@@ -456,7 +456,7 @@ class ShareableLink extends Component {
             if (item.replayResponse) {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let replayedResponseMime = replayedResponseHeaders["content-type"][0];
+                let replayedResponseMime = replayedResponseHeaders["content-type"] ? replayedResponseHeaders["content-type"][0] : "";
                 isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.replayResponse.body && isJson) {
                     try {
@@ -906,6 +906,10 @@ class ShareableLink extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArrayReqBody}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={this.state.showAll}
+                                searchFilterPath={this.state.searchFilterPath}
+                                filterPaths={item.filterPaths}
+                                inputElementRef={this.inputElementRef}
                             />
                         </div>
                     </div>
