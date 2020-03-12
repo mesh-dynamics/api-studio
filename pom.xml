@@ -20,12 +20,12 @@
 			<url>file:///${project.basedir}/repo</url>
 		</repository> -->
     <repository>
-          <id>github</id>
+          <id>github-agent</id>
           <name>GitHub OWNER Apache Maven Packages</name>
           <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
     </repository>
 			<repository>
-				<id>github</id>
+				<id>github-commons</id>
 				<name>GitHub OWNER Apache Maven Packages</name>
 				<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
 			</repository>
