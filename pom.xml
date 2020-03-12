@@ -25,7 +25,7 @@
           <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
     </repository>
 			<repository>
-				<id>github-commons</id>
+				<id>github</id>
 				<name>GitHub OWNER Apache Maven Packages</name>
 				<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
 			</repository>
