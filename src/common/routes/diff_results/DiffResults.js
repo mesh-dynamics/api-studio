@@ -179,6 +179,7 @@ class DiffResults extends Component {
             case "selectedResolutionType":
                 newFilter['selectedResolutionType'] = "All";
     
+            /* keeping around in case needed later */ 
             // case "selectedReqCompareResType":
             // case "selectedRespCompareResType":
             //     // set to defaults only if the higher ones are changed
@@ -466,14 +467,8 @@ class DiffResults extends Component {
     async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        //let analysisResUrl = "https://www.mocky.io/v2/5e5fc258310000aaf8afdf2c";
 
         let start = (filter.currentPageNumber - 1) * filter.pageSize;
-        //let service = filter.selectedService === "All" ? "*" : filter.selectedService;
-        ///let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
-        let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
-        //let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
-        
         
         let searchParams = new URLSearchParams();
         searchParams.set("start", start);
@@ -492,6 +487,7 @@ class DiffResults extends Component {
             searchParams.set("diffRes", filter.selectedResolutionType)
         }
 
+        let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
         searchParams.set("reqMatchType", reqMatchType); 
         
         switch (filter.selectedDiffType) {
@@ -613,7 +609,7 @@ class DiffResults extends Component {
                 },
             });  
         }
-        
+
         // fetch results and facet data
         let resultsPromise = this.fetchAnalysisResults(replayId, filter);
         
