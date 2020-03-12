@@ -1,87 +1,119 @@
-import React, { Component, Fragment } from 'react'
-import {resolutionsIconMap} from '../../components/Resolutions.js'
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
-import ReactDiffViewer from '../../utils/diff/diff-main';
+import React, { Component, Fragment } from "react";
+import {resolutionsIconMap} from "../../components/Resolutions.js";
+import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from "react-bootstrap";
+import ReactDiffViewer from "../../utils/diff/diff-main";
 import statusCodeList from "../../StatusCodeList"
-import _ from 'lodash';
+import _ from "lodash";
 import "../../components/Diff.css"
 
 export default class DiffResultsList extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showRequestMessageHeaders: false,
-            showRequestMessageQParams: false,
-            showRequestMessageFParams: false,
-            showRequestMessageBody: false,
-            showResponseMessageHeaders: false,
-            showResponseMessageBody: true,
             searchFilterPath: "",
-            //selectedResolutionType: "All",
+
+            // the 'shown' flags should match the corresponding 'show' flags coming from the initial props
+            // because we have shown the ones having 'show' true
+            shownResponseMessageHeaders: props.showResponseMessageHeaders, 
+            shownResponseMessageBody: props.showResponseMessageBody, 
+            shownRequestMessageHeaders: props.showRequestMessageHeaders, 
+            shownRequestMessageQParams: props.showRequestMessageQParams, 
+            shownRequestMessageFParams: props.showRequestMessageFParams, 
+            shownRequestMessageBody: props.showRequestMessageBody, 
+
+            showFragments: false,
         }
-        //this.selectedResolutionType = "All";
-        //this.resolutionTypes = [{value: "ERR", count: 2}];
         this.inputElementRef = React.createRef();
     }
 
     newStyles = {
         variables: {
-            addedBackground: '#e6ffed !important',
-            addedColor: '#24292e  !important',
-            removedBackground: '#ffeef0  !important',
-            removedColor: '#24292e  !important',
-            wordAddedBackground: '#acf2bd  !important',
-            wordRemovedBackground: '#fdb8c0  !important',
-            addedGutterBackground: '#cdffd8  !important',
-            removedGutterBackground: '#ffdce0  !important',
-            gutterBackground: '#f7f7f7  !important',
-            gutterBackgroundDark: '#f3f1f1  !important',
-            highlightBackground: '#fffbdd  !important',
-            highlightGutterBackground: '#fff5b1  !important',
+            addedBackground: "#e6ffed !important",
+            addedColor: "#24292e  !important",
+            removedBackground: "#ffeef0  !important",
+            removedColor: "#24292e  !important",
+            wordAddedBackground: "#acf2bd  !important",
+            wordRemovedBackground: "#fdb8c0  !important",
+            addedGutterBackground: "#cdffd8  !important",
+            removedGutterBackground: "#ffdce0  !important",
+            gutterBackground: "#f7f7f7  !important",
+            gutterBackgroundDark: "#f3f1f1  !important",
+            highlightBackground: "#fffbdd  !important",
+            highlightGutterBackground: "#fff5b1  !important",
         },
         line: {
-            padding: '10px 2px',
-            '&:hover': {
-                background: '#f7f7f7',
+            padding: "10px 2px",
+            "&:hover": {
+                background: "#f7f7f7",
             },
-        }
+        } 
     };
 
-    handleMetaDataSelect = (metaDataType, value) => {
+    toggleShowFragments = () => {
+        const {showFragments} = this.state;
+        this.setState({showFragments: !showFragments})
     }
 
     toggleMessageContents = (e) => {
+        const { updateDiffToggleRibbon } = this.props;
         switch (e.target.value) {
             case "responseHeaders":
-                this.setState({ showResponseMessageHeaders: e.target.checked, shownResponseMessageHeaders: true });       
+                updateDiffToggleRibbon({
+                    showResponseMessageHeaders: e.target.checked, 
+                })
+                this.setState({shownResponseMessageHeaders: true})
                 break;
         
             case "responseBody":
-                this.setState({ showResponseMessageBody: e.target.checked, shownResponseMessageBody: true });
+                updateDiffToggleRibbon({ 
+                    showResponseMessageBody: e.target.checked,
+                });
+                this.setState({shownResponseMessageBody: true})
                 break;
 
             case "requestHeaders":
-                this.setState({ showRequestMessageHeaders: e.target.checked, shownRequestMessageHeaders: true });
+                updateDiffToggleRibbon({ 
+                    showRequestMessageHeaders: e.target.checked,
+                });
+                    this.setState({shownRequestMessageHeaders: true})
                 break;
 
             case "requestQParams":
-                this.setState({ showRequestMessageQParams: e.target.checked, shownRequestMessageQParams: true });
+                updateDiffToggleRibbon({ 
+                    showRequestMessageQParams: e.target.checked,
+                });
+                this.setState({shownRequestMessageQParams: true})
                 break;
 
             case "requestFParams":
-                this.setState({ showRequestMessageFParams: e.target.checked, shownRequestMessageFParams: true });
+                updateDiffToggleRibbon({ 
+                    showRequestMessageFParams: e.target.checked,
+                });
+                this.setState({shownRequestMessageFParams: true})
                 break;
 
             case "requestBody":
-                this.setState({ showRequestMessageBody: e.target.checked, shownRequestMessageBody: true });
+                updateDiffToggleRibbon({ 
+                    showRequestMessageBody: e.target.checked,  
+                });
+                this.setState({shownRequestMessageBody: true})
                 break;
         }
         
         setTimeout(() => {
-            const { showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody } = this.state;
+            const { 
+                    diffToggleRibbon: { 
+                        showResponseMessageHeaders, 
+                        showResponseMessageBody, 
+                        showRequestMessageHeaders, 
+                        showRequestMessageQParams, 
+                        showRequestMessageFParams, 
+                        showRequestMessageBody 
+                    }
+                } = this.props;
 
             if(showResponseMessageHeaders === false && showResponseMessageBody === false && showRequestMessageHeaders === false &&  showRequestMessageQParams === false && showRequestMessageFParams === false && showRequestMessageBody === false) {
-                this.setState({ showResponseMessageBody: true, shownResponseMessageBody: true });
+                updateDiffToggleRibbon({ showResponseMessageBody: true, shownResponseMessageBody: true });
             }
         });
 
@@ -98,35 +130,38 @@ export default class DiffResultsList extends Component {
     };
 
     handleSearchFilterChange = (e) => {
-        //const { history } = this.props;
-
         this.setState({ searchFilterPath: e.target.value });
-
-        //this.historySearchParams = updateSearchHistoryParams("searchFilterPath", e.target.value, this.state);
-
-        // history.push({
-        //     pathname: '/shareable_link',
-        //     search: this.historySearchParams
-        // });
     }
 
     renderToggleRibbon = () => {
+        const { 
+            diffToggleRibbon: {
+                showResponseMessageBody, // Response Message Body
+                showResponseMessageHeaders, // Response Message Headers
+                showRequestMessageHeaders, // Request Message Headers
+                showRequestMessageQParams, // Request Message Q Params
+                showRequestMessageFParams, // Request Message F Params
+                showRequestMessageBody,// Request Message Body
+            }
+        } = this.props;
+
         return (
             <Fragment>
                 <FormGroup>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={this.state.showRequestMessageHeaders}>Request Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={this.state.showRequestMessageQParams}>Request Query Params</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={this.state.showRequestMessageFParams}>Request Form Params</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={this.state.showRequestMessageBody}>Request Body</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={showRequestMessageHeaders}>Request Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={showRequestMessageQParams}>Request Query Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={showRequestMessageFParams}>Request Form Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={showRequestMessageBody}>Request Body</Checkbox>
+                        
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
                         
-                        {/* todo: remove */}
-                        {/* <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={showResponseMessageHeaders}>Response Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={showResponseMessageBody} >Response Body</Checkbox>
                         
-                        {this.renderResolutionTypesDropdown()} */}
-
+                        <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
+                        
+                        <Checkbox inline onChange={this.toggleShowFragments} checked={this.state.showFragments}>Show fragments only</Checkbox>
+                        
                         <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                             ref={this.inputElementRef}
                             type="text"
@@ -134,7 +169,6 @@ export default class DiffResultsList extends Component {
                             placeholder="Search"
                             onChange={this.handleSearchFilterChange}
                             id="filterPathInputId"
-                            //inputRef={ref => { this.input = ref; }}
                         />
                     </FormGroup>
             </Fragment>
@@ -143,8 +177,35 @@ export default class DiffResultsList extends Component {
 
     renderResultsList = () => {
         const newStyles = this.newStyles;
+        const { 
+            diffLayoutData, 
+            diffToggleRibbon: {
+                showResponseMessageBody, // Response Message Body
+                showResponseMessageHeaders, // Response Message Headers
+                showRequestMessageHeaders, // Request Message Headers
+                showRequestMessageQParams, // Request Message Q Params
+                showRequestMessageFParams, // Request Message F Params
+                showRequestMessageBody,// Request Message Body
+            }
+        } = this.props;
 
-        const { diffLayoutData } = this.props;
+        const {
+            shownRequestMessageBody, // Request Message Body
+            // shownResponseMessageBody, // Response Message Body
+            shownRequestMessageHeaders,// Request Message Headers
+            shownResponseMessageHeaders,  // Response Message Headers
+            shownRequestMessageQParams, // Request Message Q Params
+            shownRequestMessageFParams, // Request Message F Params
+        } = this.state;
+
+        if (diffLayoutData.length == 0) {
+            return (
+                <div className="loading-text">
+                    No Results Found
+                </div>
+            )
+        }
+        
         return diffLayoutData.map((item, index) => {
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
@@ -155,8 +216,8 @@ export default class DiffResultsList extends Component {
                         </Button>
                     </div>
                 </div>
-                {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && (
-                    <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
+                {(showRequestMessageHeaders || shownRequestMessageHeaders) && (
+                    <div style={{ display: showRequestMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -171,8 +232,8 @@ export default class DiffResultsList extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageQParams || this.state.shownRequestMessageQParams) && (
-                    <div style={{ display: this.state.showRequestMessageQParams ? "" : "none" }}>
+                {(showRequestMessageQParams || shownRequestMessageQParams) && (
+                    <div style={{ display: showRequestMessageQParams ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Query Params</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -187,8 +248,8 @@ export default class DiffResultsList extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageFParams || this.state.shownRequestMessageFParams) && (
-                    <div style={{ display: this.state.showRequestMessageFParams ? "" : "none" }}>
+                {(showRequestMessageFParams || shownRequestMessageFParams) && (
+                    <div style={{ display: showRequestMessageFParams ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Form Params</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -203,8 +264,8 @@ export default class DiffResultsList extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && (
-                    <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
+                {(showRequestMessageBody || shownRequestMessageBody) && (
+                    <div style={{ display: showRequestMessageBody ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -219,8 +280,8 @@ export default class DiffResultsList extends Component {
                         </div>
                     </div>
                 )}
-                {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && (
-                    <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
+                {(showResponseMessageHeaders || shownResponseMessageHeaders) && (
+                    <div style={{ display: showResponseMessageHeaders ? "" : "none" }}>
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -231,7 +292,7 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.updatedReducedDiffArrayRespHdr}
                                 onLineNumberClick={(lineId, e) => { return; }}
-                                showAll={this.props.showAll}
+                                showAll={!this.state.showFragments}
                                 searchFilterPath={this.state.searchFilterPath}
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
@@ -240,7 +301,7 @@ export default class DiffResultsList extends Component {
                     </div>
                 )}
                 {(
-                    <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
+                    <div style={{ display: showResponseMessageBody ? "" : "none" }}>
                         <div className="row">
                             <div className="col-md-6">
                                 <h4>
@@ -272,7 +333,7 @@ export default class DiffResultsList extends Component {
                                     filterPaths={item.filterPaths}
                                     onLineNumberClick={(lineId, e) => { return; }}
                                     inputElementRef={this.inputElementRef}
-                                    showAll={this.props.showAll}
+                                    showAll={!this.state.showFragments}
                                     searchFilterPath={this.state.searchFilterPath}
                                 />
                             </div>
@@ -283,13 +344,24 @@ export default class DiffResultsList extends Component {
         });
     }
 
+    renderLoading = () => {
+        return (
+            <div className={"loading-text"}>
+                Loading...
+            </div>
+        );
+    }
+
     render() {
-        // TODO
-        
         return (
             <div>
-                {this.renderToggleRibbon()}
-                {this.renderResultsList()}
+                {this.props.isFetching 
+                ? this.renderLoading() 
+                : 
+                <Fragment>
+                    {this.renderToggleRibbon()}
+                    {this.renderResultsList()}
+                </Fragment>}
             </div>
         )
     }

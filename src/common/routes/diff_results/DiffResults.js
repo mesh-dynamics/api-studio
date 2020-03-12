@@ -11,16 +11,8 @@ import Modal from "react-bootstrap/lib/Modal";
 import {connect} from "react-redux";
 import axios from "axios";
 import {cubeActions} from "../../actions";
+import { constructUrlParamsDiffResults } from "../../utils/lib/url-utils";
 import config from "../../config";
-
-const respData = {
-    facets: {
-        services: [{value: "s1", count: 2}, {value: "s2", count: 2}],
-        apiPaths: [{value: "a1", count: 2}, {value: "a2", count: 2}],
-        resolutionTypes: [{value: "ERR_ValTypeMismatch", count: 2}],
-        pages: 10,
-    }
-}
 
 const DiffResultsContext = createContext();
 
@@ -29,14 +21,32 @@ class DiffResults extends Component {
         super(props);
         this.state = {
             filter : {
-                selectedService: "s1",
-                selectedAPI: "a1",
-                selectedReqRespMatchType: "responseMismatch",
+                selectedService: "All",
+                selectedAPI: "All",
+                
+                selectedReqMatchType: "match",
+                selectedDiffType: "All",
                 selectedResolutionType: "All",
+                //selectedReqCompareResType: "All",
+                //selectedRespCompareResType: "All",
+    
                 currentPageNumber: 1,
+                pageSize: config.defaultPageSize,
+            },
+            diffToggleRibbon: {
+                showResponseMessageHeaders: false,
+                showResponseMessageBody: true,
+                showRequestMessageHeaders: false,
+                showRequestMessageQParams: false,
+                showRequestMessageFParams: false,
+                showRequestMessageBody: false,
             },
             diffLayoutData : [],
-            facetListData: {},
+            facetListData: {
+                services: {},
+                apiPaths: {},
+                resolutionTypes: [],
+            },
             
             // golden
             showNewGolden: false,
@@ -48,7 +58,7 @@ class DiffResults extends Component {
             commitId: "",
             saveGoldenError: "",
 
-            showAll: false,
+            isFetching: true,
         }
     }
 
@@ -61,66 +71,79 @@ class DiffResults extends Component {
             .fromPairs()
             .value();
         
-        //let url = new URL(window.location.search);
-        //let urlSearchParams = url.searchParams;
-
         const app = urlParameters["app"];
-        const selectedAPI = urlParameters["selectedAPI"] ? urlParameters["selectedAPI"]  : "All"; //"%2A";
+        const selectedAPI = urlParameters["selectedAPI"] || "All"; //"%2A";
         const replayId = urlParameters["replayId"];
         const recordingId = urlParameters["recordingId"];
         const currentTemplateVer = urlParameters["currentTemplateVer"];
-        const selectedService = urlParameters["selectedService"];
-        const selectedReqRespMatchType = urlParameters["selectedReqRespMatchType"];
-        const selectedResolutionType = urlParameters["selectedResolutionType"];
-        const searchFilterPath = urlParameters["searchFilterPath"];
+        const selectedService = urlParameters["selectedService"] || "All";
+        const selectedReqMatchType = urlParameters["selectedReqMatchType"] || "match";
+        const selectedDiffType = urlParameters["selectedDiffType"] || "All";
+        const selectedResolutionType = urlParameters["selectedResolutionType"] || "All";
+        //const selectedReqCompareResType = urlParameters["selectedReqCompareResType"] || "All";
+        //const selectedRespCompareResType = urlParameters["selectedRespCompareResType"] || "All";
+
         const requestHeaders = urlParameters["requestHeaders"];
         const requestQParams = urlParameters["requestQParams"];
         const requestFParams = urlParameters["requestFParams"];
         const requestBody = urlParameters["requestBody"];
-        const responseHeaders = urlParameters["responseHeaders"];
+        const responseHeaders =  urlParameters["responseHeaders"];
         const responseBody = urlParameters["responseBody"];
-        const timeStamp = decodeURI(urlParameters["timeStamp"]);
-        const currentPageNumber = urlParameters["currentPageNumber"]
 
+        const searchFilterPath = urlParameters["searchFilterPath"] || "";
+        const timeStamp = decodeURI(urlParameters["timeStamp"]) || "";
+        const currentPageNumber = parseInt(urlParameters["currentPageNumber"]) || 1;
+        const pageSize = urlParameters["pageSize"] || config.defaultPageSize;
+        
         dispatch(cubeActions.setSelectedApp(app));
         this.setState({
             filter : {
-                selectedService: selectedService || "All",
-                selectedAPI: selectedAPI || "All",
-                selectedReqRespMatchType: selectedReqRespMatchType || "responseMismatch",
-                selectedResolutionType: selectedResolutionType || "All",
-                currentPageNumber: currentPageNumber || 1,
+                selectedService: selectedService,
+                selectedAPI: selectedAPI,
+                
+                selectedReqMatchType: selectedReqMatchType,
+                selectedDiffType: selectedDiffType,
+                selectedResolutionType: selectedResolutionType,
+                //selectedReqCompareResType: selectedReqCompareResType,
+                //selectedRespCompareResType: selectedRespCompareResType,
+    
+                currentPageNumber: currentPageNumber,
+                pageSize: pageSize,
+            },
+            // set the toggle ribbon 'show' states (parse the strings from url params to boolean)
+            diffToggleRibbon: {
+                // response headers
+                showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
+
+                // response body
+                showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
+
+                // request header
+                showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
+
+                // request query params
+                showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
+
+                // request form params
+                showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
+
+                // request body
+                showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
+            },
+            facetListData: {
+                services: {},
+                apiPaths: {},
+                resolutionTypes: [],
             },
             replayId: replayId,
             recordingId: recordingId,
             currentTemplateVer: currentTemplateVer,
             app: app,
-            searchFilterPath: searchFilterPath || "",
-            timeStamp: timeStamp || "",
-            showAll: (selectedResolutionType === "All"),
-            
-            // TODO: improve
-            // response headers
-            showResponseMessageHeaders: responseHeaders ? JSON.parse(responseHeaders) : false,
-            shownResponseMessageHeaders: responseHeaders ?  JSON.parse(responseHeaders) : false,
-            // response body
-            showResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
-            shownResponseMessageBody: responseBody ? JSON.parse(responseBody) : true,
-            // request header
-            showRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
-            shownRequestMessageHeaders: requestHeaders ? JSON.parse(requestHeaders) : false,
-            // request query params
-            showRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
-            shownRequestMessageQParams: requestQParams ? JSON.parse(requestQParams) : false,
-            // request form params
-            showRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
-            shownRequestMessageFParams: requestFParams ? JSON.parse(requestFParams) : false,
-            // request body
-            showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
-            shownRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
+            searchFilterPath: searchFilterPath,
+            timeStamp: timeStamp,
         });
         setTimeout(() => {
-            const { dispatch, history, cube } = this.props;
+            const { dispatch } = this.props;
             dispatch(cubeActions.setPathResultsParams({
                 path: selectedAPI,
                 service: selectedService,
@@ -141,16 +164,43 @@ class DiffResults extends Component {
     // update the filter, which will update the values in the DiffResultsFilter component,
     // and then fetch the new set of results    
     handleFilterChange = (metaData, value) => {
-        console.log("filter changed " + metaData + " : " + value)
-        // todo: set the states per hierarchy (see handleMetaDataSelect in ShareableLink)
+        let { filter: newFilter } = this.state;
+        
+        // utilize the fallthrough mechanism to set hierarchical defaults for filters
+        switch(metaData){
+            case "selectedService":
+                newFilter["selectedService"] = "All";
+            case "selectedAPI":
+                newFilter["selectedAPI"] = "All";
+            case "selectedReqMatchType":
+                newFilter["selectedReqMatchType"] = "match";
+            case "selectedDiffType":
+                newFilter['selectedDiffType'] = "All";
+            case "selectedResolutionType":
+                newFilter['selectedResolutionType'] = "All";
+    
+            /* keeping around in case needed later */ 
+            // case "selectedReqCompareResType":
+            // case "selectedRespCompareResType":
+            //     // set to defaults only if the higher ones are changed
+            //     if (!metaData.includes("CompareResType")) {
+            //         newFilter["selectedReqCompareResType"] = "All";
+            //         newFilter["selectedRespCompareResType"] = "All";        
+            //     }
+                
+            case "currentPageNumber":
+                newFilter["currentPageNumber"] = 1;
+            default:
+                newFilter[metaData] = value;       
+        }
 
+        // set the new filter and fetch new set of results
         this.setState({
-                filter : {
-                    ...this.state.filter,
-                    [metaData] : value,
-                }
+                filter: newFilter,
+                showAll: (newFilter['selectedResolutionType'] === "All"),
             },
-            this.fetchAndUpdateResults
+            this.updateResults
+            // this.fetchAndUpdateResults
         );    
     }
 
@@ -170,22 +220,27 @@ class DiffResults extends Component {
         return str;
     }
 
+    updateResults = () => {
+        this.updateUrlPathWithFilters();
+        this.fetchAndUpdateResults();
+    };
+
     // todo: move to utils
     validateAndCleanHTTPMessageParts = (messagePart) => {
-        let cleanedMessagepart = "";
-        if (messagePart &&_.isObject(messagePart)) {
-            cleanedMessagepart = messagePart;
-        } else if (messagePart) {
-            try {
-                cleanedMessagepart = JSON.parse(messagePart);
-            } catch (e) {
-                cleanedMessagepart = JSON.parse('"' + this.cleanEscapedString(_.escape(messagePart)) + '"')
+        if(messagePart) {
+
+            if (_.isObject(messagePart)) {
+                return messagePart;
             }
-        } else {
-            cleanedMessagepart = JSON.parse('""');
+
+            try {
+                return JSON.parse(messagePart);
+            } catch (e) {
+                return JSON.parse('"' + this.cleanEscapedString(_.escape(messagePart)) + '"')
+            }            
         }
 
-        return cleanedMessagepart;
+        return JSON.parse('""');
     }
 
     
@@ -212,7 +267,7 @@ class DiffResults extends Component {
 
     // todo: move to utils
     validateAndCreateDiffLayoutData = (replayList) => {
-        let diffLayoutData = replayList.map((item, index) => {
+        let diffLayoutData = replayList.map((item) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
             let isJson = true;
@@ -409,63 +464,63 @@ class DiffResults extends Component {
 
     // fetch the analysis results
     // todo: move to service file 
-    async fetchAnalysisResults(replayId, filter, start, numResults) {
+    async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
-        let dataList = {}
-        //let start = 0; //todo
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        /*
-                selectedService: "s1",
-                selectedAPI: "a1",
-                selectedReqRespMatchType: "responseMismatch",
-                selectedResolutionType: "All",
-                currentPageNumber: 1,
-        */
 
-        let service = filter.selectedService === "All" ? "*" : filter.selectedService;
-        let path = filter.selectedAPI === "All" ? "*" : filter.selectedAPI;
-        let resolutionType = filter.selectedResolutionType === "All" ? "*" : filter.selectedResolutionType;
+        let start = (filter.currentPageNumber - 1) * filter.pageSize;
+        
+        let searchParams = new URLSearchParams();
+        searchParams.set("start", start);
+        searchParams.set("numResults", filter.pageSize);
+        searchParams.set("includeDiff", true);
 
-        let u = new URL(analysisResUrl);
-        u.searchParams.set("start", start);
-        u.searchParams.set("numResults", numResults);
-        u.searchParams.set("includeDiff", true);
-        u.searchParams.set("service", service);
-        u.searchParams.set("path", path);
-        u.searchParams.set("diffRes", resolutionType); 
-        u.searchParams.set("reqMatchType", ""); // todo
-        u.searchParams.set("respMatchType", ""); // todo
+        if (filter.selectedService !== "All") {
+            searchParams.set("service", filter.selectedService);
+        }
 
-        console.log("fetch url " + u)
-        console.log(u)
+        if (filter.selectedAPI !== "All") {
+            searchParams.set("path", filter.selectedAPI);
+        }
 
-        //let url = "https://app.meshdynamics.io/api/as/analysisResByPath/a48fd5a0-fc01-443b-a2db-685d2cc72b2c-753a5807-84e8-4c00-b3c9-e053bd10ff0f?start=20&includeDiff=true&path=%2A";
-        //let url = "http://www.mocky.io/v2/5e565e05300000660028e608";
+        if (filter.selectedResolutionType !== "All") {
+            searchParams.set("diffRes", filter.selectedResolutionType)
+        }
+
+        let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
+        searchParams.set("reqMatchType", reqMatchType); 
+        
+        switch (filter.selectedDiffType) {
+            case "All":
+                break;
+            case "requestDiff":
+                searchParams.set("reqCmpResType", "NoMatch"); 
+                break;
+            case "responseDiff":
+                searchParams.set("respMatchType", "NoMatch"); // misnomer in the API, should've been respCmpResType
+                break;
+        }
+        
+        let url = analysisResUrl + "?" + searchParams.toString();
+        let user = JSON.parse(localStorage.getItem('user'));
         try {
         
-            let response = await fetch(u, { 
-                // todo
+            let response = await fetch(url, { 
                 headers: { 
-                    "authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4MzEyOTkxMCwiZXhwIjoxNTgzNzM0NzEwfQ.HeIczS9Ey0cEKZmPzOFQcTb_QmAJet63M0MlxpNTK9s", 
+                    "Authorization": "Bearer " + user['access_token']
                 }, 
                 "method": "GET", 
             });
             
             if (response.ok) {
+                let dataList = {}
                 let json = await response.json();
                 dataList = json;
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
                     console.log("results list is empty")
-                    return [];
+                    return {};
                 } 
-                return dataList.data.res;
-                // let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
-                // return diffLayoutData;
-
-                // add filter paths based on the selected resolution type 
-                //this.updateResolutionFilterPaths(diffLayoutData); 
-                //console.log(diffLayoutData)
-                //this.setState({diffLayoutData: diffLayoutData});
+                return dataList;
             } else {
                 console.error("unable to fetch analysis results");
                 throw new Error("unable to fetch analysis results");
@@ -474,41 +529,115 @@ class DiffResults extends Component {
             console.error("Error fetching analysis results list");
             throw e;
         }
-
-        // this.setState({
-        //     //diffLayoutData: diffLayoutData, 
-        //     //facetListData: respData.facets,
-        // });
     }
 
-    fetchAndUpdateResults() {
-        console.log("fetching results and updating")
-        console.log(this.state.filter)
-        // fetch results from the backend
-        // todo: is this pattern (using `then`) right?
-        let diffLayoutData = this.fetchAnalysisResults(this.state.replayId, this.state.filter, 0, 5)
-            .then(
-                (diffLayoutData) => {
-                    diffLayoutData = this.validateAndCreateDiffLayoutData(diffLayoutData);
-                    this.updateResolutionFilterPaths(diffLayoutData);
-                    console.log(diffLayoutData)
-                    this.setState({
-                        diffLayoutData: diffLayoutData,
-                        facetListData: respData.facets,
-                    });
-                }
-        ); //todo: page number
-        // create the diff layout formatted data
-        //diffLayoutData = this.validateAndCreateDiffLayoutData(diffLayoutData);
-        // add filter paths based on the selected resolution type 
-        //this.updateResolutionFilterPaths(diffLayoutData);
+    async fetchFacetData(replayId) {
+        let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
+        let searchParams = new URLSearchParams();
+        searchParams.set("numResults", 0);
         
-        //this.setState({
-        //    diffLayoutData: diffLayoutData,
-        //    facetListData: respData.facets,
-        //});
+        let url = analysisResUrl + "?" + searchParams.toString();
+
+        let user = JSON.parse(localStorage.getItem('user'));
+        try {
+        
+            let response = await fetch(url, { 
+                headers: { 
+                    "Authorization": "Bearer " + user['access_token']
+                }, 
+                "method": "GET", 
+            });
+            
+            if (response.ok) {
+                let dataList = {}
+                let json = await response.json();
+                dataList = json;
+                if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
+                    console.log("facets data is empty")
+                    return {};
+                }
+                return dataList;
+            } else {
+                console.error("unable to fetch facet data");
+                throw new Error("unable to fetch facet data");
+            }
+        } catch (e) {
+            console.error("Error fetching facet data");
+            throw e;
+        }
+        //return respData.facets;
     }
 
+    updateUrlPathWithFilters = () => {
+        const { history } = this.props;
+        const constructedUrlParams = constructUrlParamsDiffResults(this.state);
+
+        history.push(`/diff_results?${constructedUrlParams}`)
+    };
+
+    updateDiffToggleRibbon = (updatedRibbonState) => {
+
+        console.log(updatedRibbonState)
+        let newDiffToggleRibbon = {
+            ...this.state.diffToggleRibbon,
+            ...updatedRibbonState
+        }
+
+        this.setState({ 
+            diffToggleRibbon: newDiffToggleRibbon,
+        }, this.updateUrlPathWithFilters);
+    }
+        
+    fetchAndUpdateResults = () => {
+        // fetch results from the backend
+        const { replayId, filter, facetListData } = this.state;
+        
+        this.setState({isFetching : true})
+        
+        // fetch facet data for services (since it requires a non filtered call) 
+        // if already present, skip the api call and set existing data in a resolved Promise
+        let facetDataPromise;
+
+        if (_.isEmpty(facetListData.services)) {
+            facetDataPromise = this.fetchFacetData(replayId);
+        } else {
+            facetDataPromise = Promise.resolve({
+                data: {
+                    facets: {
+                        serviceFacets: facetListData.services,
+                    },
+                },
+            });  
+        }
+
+        // fetch results and facet data
+        let resultsPromise = this.fetchAnalysisResults(replayId, filter);
+        
+        // after both of the above are completed, do further processing
+        Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
+            const facets1 = facetData.data && facetData.data.facets || {};
+            
+            const results = resultsData.data && resultsData.data.res || [];
+            let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
+            this.updateResolutionFilterPaths(diffLayoutData);
+            
+            const facets2 = resultsData.data && resultsData.data.facets || {};
+
+            const numFound = resultsData.data && resultsData.data.numFound || 0;
+            const pages = Math.ceil(numFound/filter.pageSize);
+
+            this.setState({
+                pages: pages,
+                diffLayoutData: diffLayoutData,
+                facetListData: {
+                    services: facets1.serviceFacets,
+                    apiPaths: facets2.pathFacets,
+                    resolutionTypes: facets2.diffResFacets,
+                },
+                isFetching: false,
+            });
+        });
+    }
 
     handleClose = () => {
         const { history, dispatch } = this.props;
@@ -739,7 +868,7 @@ class DiffResults extends Component {
     }
 
     render() {
-        const showAll = (this.state.filter.selectedResolutionType === "All")
+        const showAll = this.state.showAll;
         return (
             <DiffResultsContext.Provider 
                 value={{ 
@@ -757,8 +886,21 @@ class DiffResults extends Component {
                     </div>
                     
                     <div>
-                        <DiffResultsFilter filter={this.state.filter} filterChangeHandler={this.handleFilterChange} facetListData={this.state.facetListData} app={this.state.app ? this.state.app : "(Unknown)"}></DiffResultsFilter>
-                        <DiffResultsList diffLayoutData={this.state.diffLayoutData} facetListData={this.state.facetListData} showAll={showAll}></DiffResultsList>
+                        <DiffResultsFilter 
+                            filter={this.state.filter} 
+                            filterChangeHandler={this.handleFilterChange} 
+                            facetListData={this.state.facetListData} 
+                            app={this.state.app ? this.state.app : "(Unknown)"} 
+                            pages={this.state.pages}
+                        ></DiffResultsFilter>
+                        <DiffResultsList 
+                            showAll={showAll} 
+                            facetListData={this.state.facetListData} 
+                            diffLayoutData={this.state.diffLayoutData} 
+                            diffToggleRibbon={this.state.diffToggleRibbon}
+                            updateDiffToggleRibbon={this.updateDiffToggleRibbon}
+                            isFetching={this.state.isFetching}
+                        ></DiffResultsList>
                     </div>
                     
                     {this.renderModals()}
@@ -768,12 +910,9 @@ class DiffResults extends Component {
     } 
 }
 
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube
+})
 
 const connectedDiffResults = connect(mapStateToProps)(DiffResults);
 export default connectedDiffResults;
