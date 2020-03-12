@@ -5,8 +5,8 @@ steps:
   - name: docker_build
     image: plugins/docker
     settings:
-      username: cubeiocorp
-      password: S9qe2fJ8*vtk
+      username: aakashsinghalmd01
+      password: Welcome@md
       repo: cubeiocorp/cubews
       target: prod
       tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
@@ -29,8 +29,8 @@ steps:
   - name: docker_build_on_PR
     image: plugins/docker
     settings:
-      username: cubeiocorp
-      password: S9qe2fJ8*vtk
+      username: aakashsinghalmd01
+      password: Welcome@md
       repo: cubeiocorp/cubews
       target: prod
       tags:
