@@ -58,7 +58,6 @@ class DiffResults extends Component {
             commitId: "",
             saveGoldenError: "",
 
-            showAll: true, //todo
             isFetching: true,
         }
     }
@@ -142,10 +141,6 @@ class DiffResults extends Component {
             app: app,
             searchFilterPath: searchFilterPath,
             timeStamp: timeStamp,
-            //showAll: ((selectedReqCompareResType === "All") || (selectedRespCompareResType === "All")),
-            
-            // TODO: improve
-            
         });
         setTimeout(() => {
             const { dispatch } = this.props;
@@ -169,7 +164,6 @@ class DiffResults extends Component {
     // update the filter, which will update the values in the DiffResultsFilter component,
     // and then fetch the new set of results    
     handleFilterChange = (metaData, value) => {
-        console.log("filter changed " + metaData + " : " + value)
         let { filter: newFilter } = this.state;
         
         // utilize the fallthrough mechanism to set hierarchical defaults for filters
@@ -541,9 +535,8 @@ class DiffResults extends Component {
         }
     }
 
-    async fetchFacetData() {
-        //let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        let analysisResUrl = "http://www.mocky.io/v2/5e6890a32f00004259d8ad74";
+    async fetchFacetData(replayId) {
+        let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
         let searchParams = new URLSearchParams();
         searchParams.set("numResults", 0);
         
@@ -601,18 +594,32 @@ class DiffResults extends Component {
         
     fetchAndUpdateResults = () => {
         // fetch results from the backend
-        const { replayId, filter } = this.state;
+        const { replayId, filter, facetListData } = this.state;
         
         this.setState({isFetching : true})
-        // fetch facet data for services (since it requires a non filtered call)
-        let facetDataPromise = this.fetchFacetData(replayId)  
+        
+        // fetch facet data for services (since it requires a non filtered call) 
+        // if already present, skip the api call and set existing data in a resolved Promise
+        let facetDataPromise;
+
+        if (_.isEmpty(facetListData.services)) {
+            facetDataPromise = this.fetchFacetData(replayId);
+        } else {
+            facetDataPromise = Promise.resolve({
+                data: {
+                    facets: {
+                        serviceFacets: facetListData.services,
+                    },
+                },
+            });  
+        }
         
         // fetch results and facet data
-        let resultsPromise = this.fetchAnalysisResults(replayId, filter)
+        let resultsPromise = this.fetchAnalysisResults(replayId, filter);
         
         // after both of the above are completed, do further processing
         Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
-            const facets1 = facetData.data.facets || {};
+            const facets1 = facetData.data && facetData.data.facets || {};
             
             const results = resultsData.data && resultsData.data.res || [];
             let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
