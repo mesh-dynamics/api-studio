@@ -699,7 +699,6 @@ public class CubeStore {
         }
     }
 
-    // TODO change this to accept a payload object, instead of a string
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {
         //Store default response
