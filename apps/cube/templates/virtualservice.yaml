@@ -7,12 +7,41 @@ metadata:
   labels:
     app: cube
 spec:
-  hosts:
-  - "{{namespace_host}}"
-  # - customer1.cubecorp.io
-  # - customer2.cubecorp.io
   gateways:
   - {{namespace}}-gateway
+  hosts:
+  - "{{namespace_host}}"
+  http:
+  - match:
+    - uri:
+        prefix: /api/
+    route:
+    - destination:
+        host: cubeui-backend
+        port:
+          number: 8080
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: cubeui
+        port:
+          number: 80
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cube-pvt
+  namespace: {{namespace}}
+  labels:
+    app: cube
+spec:
+  gateways:
+  - {{namespace}}-pvt-gateway
+  hosts:
+  - '*'
   http:
   - match:
     - uri:
@@ -40,25 +69,3 @@ spec:
         host: cubews-replay
         port:
           number: 8080
-  - match:
-    - uri:
-        prefix: /api/
-    route:
-    - destination:
-        host: cubeui-backend
-        port:
-          number: 8080
-  - match:
-    - uri:
-        exact: /
-    - uri:
-        prefix: /assets
-    - uri:
-        regex: '^.*\.(ico|png|jpg|js|css)$'
-    - uri:
-        prefix: /
-    route:
-    - destination:
-        host: cubeui
-        port:
-          number: 80
