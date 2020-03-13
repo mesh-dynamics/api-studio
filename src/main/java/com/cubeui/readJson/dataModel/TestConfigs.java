@@ -9,11 +9,6 @@ import java.util.List;
 @Setter
 public class TestConfigs {
     String testConfigName;
-    //String description;
-    //String gatewayReqSelection;
-    //String maxRunTimeMin;
-    //String emailId;
-    //String slackId;
     String serviceName;
     List<String> paths;
 }
