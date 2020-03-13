@@ -7,17 +7,26 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+import org.json.JSONObject;
 
 import io.cube.agent.UtilException;
 import io.md.core.ReplayTypeEnum;
 
+import com.cube.core.RRTransformer;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.utils.Constants;
 
 public class ReplayBuilder {
+    private static final Logger LOGGER = LogManager.getLogger(ReplayBuilder.class);
 
-	private String replayEndpoint;
+
+    private String replayEndpoint;
 	private String customerId;
 	private String app;
 	private String instanceId;
@@ -43,8 +52,11 @@ public class ReplayBuilder {
 	int reqSent;
 	int reqFailed;
 	private Instant updateTimestamp;
+    public Optional<String> xfms;
+    public Optional<RRTransformer> xfmer;
 
-	public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
+
+    public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
 		String collection, String userId) {
 		this.replayEndpoint = endpoint;
 		this.customerId = metaInfo.customerId;
@@ -65,6 +77,8 @@ public class ReplayBuilder {
 		this.replayType = ReplayTypeEnum.HTTP;
 		reqCnt = 0;  reqFailed = 0 ; reqSent = 0;
 		this.updateTimestamp = Instant.now();
+		this.xfms = Optional.empty();
+		this.xfmer = Optional.empty();
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -81,7 +95,7 @@ public class ReplayBuilder {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
 			reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType);
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -151,5 +165,24 @@ public class ReplayBuilder {
 		this.updateTimestamp = updateTimestamp;
 		return this;
 	}
+
+    /**
+     *
+     * @param xfms - the json string form of the transformation - multivalued map of {key : [{src, tgt}+]} in a
+     *             string representation
+     * @return
+     */
+    public ReplayBuilder withXfms(String xfms) {
+        try {
+            JSONObject obj = new JSONObject(xfms);
+            this.xfms = Optional.of(xfms);
+            this.xfmer = Optional.of(new RRTransformer(obj));
+        } catch (Exception e) {
+            LOGGER.error(new
+                ObjectMessage(Map.of(Constants.MESSAGE, "Unable to convert transformer string to Json Object",
+                Constants.DATA, xfms)));
+        }
+        return this;
+    }
 
 }
