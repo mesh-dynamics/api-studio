@@ -3,6 +3,7 @@ package com.cube.interceptor.jersey.egress;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.sun.jersey.api.client.ClientHandlerException;
@@ -18,13 +19,11 @@ public class ClientTracingFilter extends ClientFilter {
 
 	@Override
 	public ClientResponse handle(ClientRequest clientRequest) throws ClientHandlerException {
-		MultivaluedMap<String, String> transformedHeaders = Utils.transformHeaders(clientRequest.getHeaders());
-		CommonUtils.injectContext(transformedHeaders);
+		MultivaluedMap<String, String> mdTraceHeaders =  new MultivaluedHashMap<>();
+		CommonUtils.injectContext(mdTraceHeaders);
 		MultivaluedMap<String, Object> clientHeaders = clientRequest.getHeaders();
-		for (Map.Entry<String, List<String>> entry : transformedHeaders.entrySet()) {
-				if (!clientHeaders.containsKey(entry.getKey())) {
-					clientHeaders.add(entry.getKey(), entry.getValue());
-			}
+		for (Map.Entry<String, List<String>> entry : mdTraceHeaders.entrySet()) {
+			clientHeaders.add(entry.getKey(), entry.getValue());
 		}
 		// Call the next client handler in the filter chain
 		ClientResponse resp = getNext().handle(clientRequest);

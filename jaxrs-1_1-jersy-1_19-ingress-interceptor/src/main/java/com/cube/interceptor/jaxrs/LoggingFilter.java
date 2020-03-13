@@ -1,5 +1,6 @@
 package com.cube.interceptor.jaxrs;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -138,13 +139,13 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			.getRequestMeta(containerRequest.getMethod(), cRequestId, Optional.empty());
 
 		//body
-		String requestBody = getRequestBody(containerRequest);
+		byte[] requestBody = getRequestBody(containerRequest);
 
 		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
 			requestBody);
 	}
 
-	private void logResponse(ContainerRequest request, String respBody) {
+	private void logResponse(ContainerRequest request, byte[] respBody) {
 		Object apiPathObj = request.getProperties().get(Constants.MD_API_PATH_PROP);
 		Object traceMetaMapObj = request.getProperties().get(Constants.MD_TRACE_META_MAP_PROP);
 		Object respHeadersObj = request.getProperties().get(Constants.MD_RESPONSE_HEADERS_PROP);
@@ -197,23 +198,23 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		return Utils.buildTraceInfoMap(mdTraceInfo, xRequestId);
 	}
 
-	private String getRequestBody(ContainerRequest request) throws IOException {
-		String json = IOUtils.toString(request.getEntityInputStream(), StandardCharsets.UTF_8);
-		InputStream in = IOUtils.toInputStream(json, StandardCharsets.UTF_8);
+	private byte[] getRequestBody(ContainerRequest request) throws IOException {
+		byte[] reqBytes = request.getEntityInputStream().readAllBytes();
+		InputStream in = new ByteArrayInputStream(reqBytes);
 		request.setEntityInputStream(in);
-		return json;
+		return reqBytes;
 	}
 
-	private String getResponseBody(ContainerResponse containerResponse) throws IOException {
+	private byte[] getResponseBody(ContainerResponse containerResponse) throws IOException {
 		final MessageBodyWriter writer = containerResponse.getMessageBodyWorkers().getMessageBodyWriter(
 				containerResponse.getEntity().getClass(), containerResponse.getEntityType(),
 				containerResponse.getAnnotations(), containerResponse.getMediaType());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		String responseBody;
+		byte[] responseBody;
 		writer.writeTo(containerResponse.getEntity(), containerResponse.getEntity().getClass(),
 				containerResponse.getEntityType(), containerResponse.getAnnotations(),
 				containerResponse.getMediaType(), containerResponse.getHttpHeaders(), baos);
-		responseBody = baos.toString("UTF-8");
+		responseBody = baos.toByteArray();
 		baos.close();
 		return responseBody;
 	}
