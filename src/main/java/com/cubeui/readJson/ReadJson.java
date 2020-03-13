@@ -201,12 +201,8 @@ public class ReadJson {
     private String createTestConfig(TestConfigs testConfig, int appId, int serviceId) {
         JSONObject json = new JSONObject();
         json.put("testConfigName", testConfig.getTestConfigName());
-        //json.put("description", testConfig.getDescription());
         json.put("appId", appId);
         json.put("gatewayServiceId", serviceId);
-        //json.put("maxRunTimeMin", testConfig.getMaxRunTimeMin());
-        //json.put("emailId", testConfig.getEmailId());
-        //json.put("slackId", testConfig.getSlackId());
         return json.toString();
     }
 
