@@ -43,7 +43,7 @@ public class ClientLoggingFilter extends ClientFilter {
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
 	private static final String EMPTY = "";
-	private static List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
+	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
 			"Content-type", "Content-Type", "content-Type");
 
 	static {
