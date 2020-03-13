@@ -475,7 +475,9 @@ public class AnalyzeWS {
 			    matchRes.reqCompareRes.mt,
 			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse
 			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
-			    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+                matchRes.replayedSpanId, matchRes.replayedParentSpanId,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
 
 		    String resultJson = null;
 		    try {
@@ -661,6 +663,7 @@ public class AnalyzeWS {
 		                .flatMap(rrstore::getRequestEvent);
 	                replayedRequest = replayedRequestEvent.map(e -> e.getPayloadAsJsonString(true));
 	                replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
+
 	                try {
 		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
 			                .respCompareRes.diffs));
@@ -686,6 +689,8 @@ public class AnalyzeWS {
                     matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
 	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
 	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+                    matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+                    matchRes.replayedSpanId, matchRes.replayedParentSpanId,
 	                recordReqTime, recordRespTime,
 	                replayReqTime, replayRespTime);
             }).collect(Collectors.toList());
@@ -1378,6 +1383,10 @@ public class AnalyzeWS {
                         Optional<String> replayResponse,
 	                    Optional<String> recordTraceId,
 	                    Optional<String> replayTraceId,
+                        Optional<String> recordedSpanId,
+                        Optional<String> recordedParentSpanId,
+                        Optional<String> replayedSpanId,
+                        Optional<String> replayedParentSpanId,
 	                    Optional<Long> recordReqTime,
 					    Optional<Long> recordRespTime,
 		                Optional<Long> replayReqTime,
@@ -1399,11 +1408,14 @@ public class AnalyzeWS {
             this.replayResponse = replayResponse;
             this.recordTraceId = recordTraceId;
             this.replayTraceId = replayTraceId;
+            this.recordedSpanId = recordedSpanId;
+            this.recordedParentSpanId = recordedParentSpanId;
+            this.replayedSpanId = replayedSpanId;
+            this.replayedParentSpanId = replayedParentSpanId;
             this.recordReqTime = recordReqTime;
 		    this.recordRespTime = recordReqTime;
 		    this.replayReqTime = recordReqTime;
 		    this.replayRespTime = recordReqTime;
-
 	    }
 
         public final Optional<String> recordReqId;
@@ -1416,6 +1428,10 @@ public class AnalyzeWS {
         public final String path;
         public final Optional<String> recordTraceId;
         public final Optional<String> replayTraceId;
+        public final Optional<String> recordedSpanId;
+        public final Optional<String> recordedParentSpanId;
+        public final Optional<String> replayedSpanId;
+        public final Optional<String> replayedParentSpanId;
 	    public final Optional<Long> recordReqTime;
 	    public final Optional<Long> recordRespTime;
 	    public final Optional<Long> replayReqTime;

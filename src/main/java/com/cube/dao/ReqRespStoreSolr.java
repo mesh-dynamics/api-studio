@@ -230,7 +230,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .withPaths(paths)
             .withServices(services)
             .withLimit(1);
-        
+
             runType.ifPresent(builder::withRunType);
 
         return getSingleEvent(builder.build());
@@ -1707,6 +1707,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
     private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
     private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid" + STRING_SUFFIX;
+    private static final String RECORD_SPANID_F = CPREFIX + "recordSpanId" + STRING_SUFFIX;
+    private static final String REPLAY_SPANID_F = CPREFIX + "replaySpanId" + STRING_SUFFIX;
+    private static final String RECORD_PARENT_SPANID_F = CPREFIX + "recordParentSpanId" + STRING_SUFFIX;
+    private static final String REPLAY_PARENT_SPANID_F = CPREFIX + "replayParentSpanId" + STRING_SUFFIX;
     private static final String REPLAY_TYPE_F = CPREFIX + Constants.REPLAY_TYPE_FIELD + STRING_SUFFIX;
 
     /* (non-Javadoc)
@@ -1742,6 +1746,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, res.replayId);
         res.recordTraceId.ifPresent(traceId  -> doc.setField(RECORDTRACEIDF, traceId));
         res.replayTraceId.ifPresent(traceId  -> doc.setField(REPLAYTRACEIDF, traceId));
+        res.recordedSpanId.ifPresent(spanId -> doc.setField(RECORD_SPANID_F, spanId));
+        res.recordedParentSpanId.ifPresent(pSpanId -> doc.setField(RECORD_PARENT_SPANID_F, pSpanId));
+        res.replayedSpanId.ifPresent(spanId -> doc.setField(REPLAY_SPANID_F, spanId));
+        res.replayedParentSpanId.ifPresent(rSpanId -> doc.setField(REPLAY_PARENT_SPANID_F, rSpanId));
         doc.setField(REQMTF, res.reqMatchRes.toString());
         doc.setField(NUMMATCHF, res.numMatch);
         doc.setField(RESP_COMP_RES_TYPE_F, res.respCompareRes.mt.toString());
@@ -2060,8 +2068,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             String path = getStrField(doc, PATHF).orElse("");
             Optional<String> recordTraceId = getStrField(doc, RECORDTRACEIDF);
             Optional<String> replayTraceId = getStrField(doc, REPLAYTRACEIDF);
+            Optional<String> recordSpanId = getStrField(doc, RECORD_SPANID_F);
+            Optional<String> recordParentSpandId = getStrField(doc, RECORD_PARENT_SPANID_F);
+            Optional<String> replaySpanId = getStrField(doc, REPLAY_SPANID_F);
+            Optional<String> replayParentSpanId = getStrField(doc, REPLAY_PARENT_SPANID_F);
+
             return Optional.of(new ReqRespMatchResult(recordReqId, replayReqId, reqMatchType
-                , numMatch, replayId, service, path, recordTraceId, replayTraceId, respMatch
+                , numMatch, replayId, service, path, recordTraceId, replayTraceId, recordSpanId,
+                recordParentSpandId, replaySpanId, replayParentSpanId, respMatch
                 , reqCompResOptional.orElse(Match.DONT_CARE)));
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -2069,7 +2083,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             return Optional.empty();
         }
     }
-
 
     private List<Diff> getDiffFromChildDocs(SolrDocument doc, DiffType diffType) throws Exception {
         if (doc.getChildDocuments() == null) return Collections.emptyList();

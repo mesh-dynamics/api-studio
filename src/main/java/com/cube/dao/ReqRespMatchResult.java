@@ -23,12 +23,18 @@ public class ReqRespMatchResult {
 		this.replayId = replayId;
 		this.recordTraceId = Optional.of(rm.recordReq.getTraceId());
 		this.replayTraceId = rm.replayReq.map(Event::getTraceId);
+		this.recordedSpanId = Optional.ofNullable(rm.recordReq.spanId);
+		this.recordedParentSpanId = Optional.ofNullable(rm.recordReq.parentSpanId);
+		this.replayedSpanId = rm.replayReq.map(repEvent -> repEvent.spanId);
+		this.replayedParentSpanId = rm.replayReq.map(repEvent -> repEvent.parentSpanId);
 	}
 
 	public ReqRespMatchResult(Optional<String> recordReqId, Optional<String> replayReqId
 		, Comparator.MatchType reqMatchRes, int numMatch, String replayId
 		, String service, String path, Optional<String> recordTraceId
-		, Optional<String> replayTraceId, Match responseMatch, Match reqCompareRes) {
+		, Optional<String> replayTraceId, Optional<String> recordedSpanId, Optional<String> recordedParentSpanId
+        , Optional<String> replayedSpanId, Optional<String> replayedParentSpanId
+        ,Match responseMatch, Match reqCompareRes) {
 		this.recordReqId = recordReqId;
 		this.replayReqId = replayReqId;
 		this.reqMatchRes = reqMatchRes;
@@ -38,6 +44,10 @@ public class ReqRespMatchResult {
 		this.path = path;
 		this.recordTraceId = recordTraceId;
 		this.replayTraceId = replayTraceId;
+		this.recordedSpanId = recordedSpanId;
+		this.recordedParentSpanId = recordedParentSpanId;
+		this.replayedSpanId = replayedSpanId;
+		this.replayedParentSpanId = replayedParentSpanId;
 		this.respCompareRes = responseMatch;
 		this.reqCompareRes = reqCompareRes;
 
@@ -48,6 +58,10 @@ public class ReqRespMatchResult {
 	public final Optional<String> replayReqId;
 	public final Optional<String> recordTraceId;
 	public final Optional<String> replayTraceId;
+	public final Optional<String> recordedSpanId;
+	public final Optional<String> recordedParentSpanId;
+    public final Optional<String> replayedSpanId;
+    public final Optional<String> replayedParentSpanId;
 
 	public final Comparator.MatchType reqMatchRes;
 	public final Comparator.Match respCompareRes;
