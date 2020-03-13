@@ -1,6 +1,6 @@
 package com.cube.interceptor.apachecxf.egress;
 
-import static io.md.utils.Utils.getTraceInfo;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
+import io.opentracing.Scope;
 import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
@@ -86,40 +87,51 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo,
 		String serviceName)
 		throws IOException {
-		//hdrs
-		MultivaluedMap<String, String> requestHeaders = clientRequestContext.getStringHeaders();
+		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.PROCESS_REQUEST_EGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			//hdrs
+			MultivaluedMap<String, String> requestHeaders = clientRequestContext.getStringHeaders();
 
-		//meta
-		MultivaluedMap<String, String> meta = Utils
-			.getRequestMeta(clientRequestContext.getMethod(), cRequestId,
-				Optional.ofNullable(serviceName));
+			//meta
+			MultivaluedMap<String, String> meta = Utils
+				.getRequestMeta(clientRequestContext.getMethod(), cRequestId,
+					Optional.ofNullable(serviceName));
 
-		//body
-		byte[] requestBody = new byte[0];
+			//body
+			byte[] requestBody = new byte[0];
 
-		//we pass null for GET requests
-		if (writerInterceptorContext != null) {
-			requestBody = getRequestBody(writerInterceptorContext);
+			//we pass null for GET requests
+			if (writerInterceptorContext != null) {
+				requestBody = getRequestBody(writerInterceptorContext);
+			}
+
+			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
+				requestBody);
+		} finally {
+			span.finish();
 		}
-
-		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
-			requestBody);
 	}
 
 	private byte[] getRequestBody(WriterInterceptorContext interceptorContext) throws IOException {
-		OutputStream originalStream = interceptorContext.getOutputStream();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] reqBody;
-		interceptorContext.setOutputStream(baos);
-		try {
-			interceptorContext.proceed();
+		final Span span = io.cube.agent.Utils.createPerformanceSpan(
+			Constants.COPY_REQUEST_BODY_EGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			OutputStream originalStream = interceptorContext.getOutputStream();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			byte[] reqBody;
+			interceptorContext.setOutputStream(baos);
+			try {
+				interceptorContext.proceed();
+			} finally {
+				reqBody = baos.toByteArray();
+				baos.writeTo(originalStream);
+				baos.close();
+				interceptorContext.setOutputStream(originalStream);
+			}
+			return reqBody;
 		} finally {
-			reqBody = baos.toByteArray();
-			baos.writeTo(originalStream);
-			baos.close();
-			interceptorContext.setOutputStream(originalStream);
+			span.finish();
 		}
-		return reqBody;
 	}
 
 	@Override
@@ -152,36 +164,46 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	private void logResponse(ClientResponseContext responseContext, String apiPath,
 		MultivaluedMap<String, String> traceMeta, MDTraceInfo mdTraceInfo, String serviceName)
 		throws IOException {
-		//hdrs
-		MultivaluedMap<String, String> responseHeaders = responseContext.getHeaders();
+		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.PROCESS_RESPONSE_EGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			//hdrs
+			MultivaluedMap<String, String> responseHeaders = responseContext.getHeaders();
 
-		//meta
-		MultivaluedMap<String, String> meta = Utils
-			.getResponseMeta(apiPath, String.valueOf(responseContext.getStatus()),
-				Optional.ofNullable(serviceName));
-		meta.putAll(traceMeta);
+			//meta
+			MultivaluedMap<String, String> meta = Utils
+				.getResponseMeta(apiPath, String.valueOf(responseContext.getStatus()),
+					Optional.ofNullable(serviceName));
+			meta.putAll(traceMeta);
 
-		//body
-		byte[] responseBody = getResponseBody(responseContext);
+			//body
+			byte[] responseBody = getResponseBody(responseContext);
 
-		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
+			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
+		} finally {
+			span.finish();
+		}
 	}
 
 	private byte[] getResponseBody(ClientResponseContext respContext) {
-		try (InputStream entityStream = respContext.getEntityStream()) {
-			if (entityStream != null) {
-				byte[] respBody = IOUtils.toByteArray(entityStream);
-				InputStream in = new ByteArrayInputStream(respBody);
-				respContext.setEntityStream(in);
-				return respBody;
+		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.COPY_RESPONSE_BODY_EGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			try (InputStream entityStream = respContext.getEntityStream()) {
+				if (entityStream != null) {
+					byte[] respBody = IOUtils.toByteArray(entityStream);
+					InputStream in = new ByteArrayInputStream(respBody);
+					respContext.setEntityStream(in);
+					return respBody;
+				}
+			} catch (IOException ex) {
+				LOGGER.error(new ObjectMessage(
+					Map.of(
+						Constants.MESSAGE, "Failure during reading the response body",
+						Constants.REASON, ex.getMessage()
+					)));
+				respContext.setEntityStream(new ByteArrayInputStream(new byte[0]));
 			}
-		} catch (IOException ex) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Failure during reading the response body",
-					Constants.REASON, ex.getMessage()
-				)));
-			respContext.setEntityStream(new ByteArrayInputStream(new byte[0]));
+		} finally {
+			span.finish();
 		}
 
 		return new byte[0];
@@ -233,7 +255,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 						? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
 						: uri.getHost();
 
-				MDTraceInfo mdTraceInfo = getTraceInfo(span);
+				MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
 
 				String xRequestId = clientRequestContext.getStringHeaders()
 					.getFirst(Constants.X_REQUEST_ID);

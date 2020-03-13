@@ -35,6 +35,7 @@ import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
+import io.opentracing.Scope;
 import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
@@ -130,52 +131,64 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	private void logRequest(ContainerRequestContext reqContext, String apiPath,
 		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
 		throws IOException {
-		//hdrs
-		MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
+		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.PROCESS_REQUEST_INGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			//hdrs
+			MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
 
-		//meta
-		MultivaluedMap<String, String> meta = Utils
-			.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
+			//meta
+			MultivaluedMap<String, String> meta = Utils
+				.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
 
-		//body
-		byte[] requestBody = getRequestBody(reqContext);
+			//body
+			byte[] requestBody = getRequestBody(reqContext);
 
-		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
-			requestBody);
+			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
+				requestBody);
+		} finally {
+			span.finish();
+		}
 	}
 
 	private void logResponse(WriterInterceptorContext context, ContainerRequestContext reqContext)
 		throws IOException {
-		Object apiPathObj = reqContext.getProperty(Constants.MD_API_PATH_PROP);
-		Object traceMetaMapObj = reqContext.getProperty(Constants.MD_TRACE_META_MAP_PROP);
-		Object respHeadersObj = reqContext.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
-		Object statusObj = reqContext.getProperty(Constants.MD_STATUS_PROP);
-		Object traceInfo = reqContext.getProperty(Constants.MD_TRACE_INFO);
+		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.PROCESS_RESPONSE_INGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			Object apiPathObj = reqContext.getProperty(Constants.MD_API_PATH_PROP);
+			Object traceMetaMapObj = reqContext.getProperty(Constants.MD_TRACE_META_MAP_PROP);
+			Object respHeadersObj = reqContext.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
+			Object statusObj = reqContext.getProperty(Constants.MD_STATUS_PROP);
+			Object traceInfo = reqContext.getProperty(Constants.MD_TRACE_INFO);
 
-		ObjectMapper mapper = new ObjectMapper();
-		//hdrs
-		MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ? mapper
-			.convertValue(respHeadersObj, MetadataMap.class) : Utils.createEmptyMultivaluedMap();
+			ObjectMapper mapper = new ObjectMapper();
+			//hdrs
+			MultivaluedMap<String, String> responseHeaders = respHeadersObj != null ? mapper
+				.convertValue(respHeadersObj, MetadataMap.class)
+				: Utils.createEmptyMultivaluedMap();
 
-		MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
-			.convertValue(traceMetaMapObj, MetadataMap.class)
-			: Utils.createEmptyMultivaluedMap();
-		String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
-		//meta
-		MultivaluedMap<String, String> meta = Utils
-			.getResponseMeta(apiPath,
-				String.valueOf(statusObj != null ? statusObj.toString() : Strings.EMPTY),
-				Optional.empty());
-		meta.putAll(traceMetaMap);
+			MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
+				.convertValue(traceMetaMapObj, MetadataMap.class)
+				: Utils.createEmptyMultivaluedMap();
+			String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
+			//meta
+			MultivaluedMap<String, String> meta = Utils
+				.getResponseMeta(apiPath,
+					String.valueOf(statusObj != null ? statusObj.toString() : Strings.EMPTY),
+					Optional.empty());
+			meta.putAll(traceMetaMap);
 
-		MDTraceInfo mdTraceInfo = traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
+			MDTraceInfo mdTraceInfo =
+				traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 
-		//body
-		byte[] responseBody = getResponseBody(context);
+			//body
+			byte[] responseBody = getResponseBody(context);
 
-		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
+			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
-		removeSetContextProperty(reqContext);
+			removeSetContextProperty(reqContext);
+		} finally {
+			span.finish();
+		}
 	}
 
 	private void removeSetContextProperty(ContainerRequestContext context) {
@@ -204,27 +217,38 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	}
 
 	private byte[] getRequestBody(ContainerRequestContext reqContext) throws IOException {
-		byte[] reqBody = IOUtils.toByteArray(reqContext.getEntityStream());
-		InputStream in = new ByteArrayInputStream(reqBody);
-		reqContext.setEntityStream(in);
+		final Span span = io.cube.agent.Utils.createPerformanceSpan(
+			Constants.COPY_REQUEST_BODY_INGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			byte[] reqBody = IOUtils.toByteArray(reqContext.getEntityStream());
+			InputStream in = new ByteArrayInputStream(reqBody);
+			reqContext.setEntityStream(in);
 
-		return reqBody;
+			return reqBody;
+		} finally {
+			span.finish();
+		}
 	}
 
 	private byte[] getResponseBody(WriterInterceptorContext context) throws IOException {
-		OutputStream originalStream = context.getOutputStream();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] responseBody;
-		context.setOutputStream(baos);
-		try {
-			context.proceed();
-		} finally {
-			responseBody = baos.toByteArray();
-			baos.writeTo(originalStream);
-			baos.close();
-			context.setOutputStream(originalStream);
-		}
+		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.COPY_RESPONSE_BODY_INGRESS);
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
+			OutputStream originalStream = context.getOutputStream();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			byte[] responseBody;
+			context.setOutputStream(baos);
+			try {
+				context.proceed();
+			} finally {
+				responseBody = baos.toByteArray();
+				baos.writeTo(originalStream);
+				baos.close();
+				context.setOutputStream(originalStream);
+			}
 
-		return responseBody;
+			return responseBody;
+		} finally {
+			span.finish();
+		}
 	}
 }
