@@ -18,13 +18,13 @@
 	</properties>
 
 
-<!--<repositories>-->
-<!--	<repository>-->
-<!--		<id>github</id>-->
-<!--		<name>GitHub OWNER Apache Maven Packages</name>-->
-<!--		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>-->
-<!--	</repository>-->
-<!--</repositories>-->
+  <repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub OWNER Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
