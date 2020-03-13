@@ -23,8 +23,8 @@ public class ReqRespMatchResult {
 		this.replayId = replayId;
 		this.recordTraceId = Optional.of(rm.recordReq.getTraceId());
 		this.replayTraceId = rm.replayReq.map(Event::getTraceId);
-		this.recordedSpanId = Optional.of(rm.recordReq.spanId);
-		this.recordedParentSpanId = Optional.of(rm.recordReq.parentSpanId);
+		this.recordedSpanId = Optional.ofNullable(rm.recordReq.spanId);
+		this.recordedParentSpanId = Optional.ofNullable(rm.recordReq.parentSpanId);
 		this.replayedSpanId = rm.replayReq.map(repEvent -> repEvent.spanId);
 		this.replayedParentSpanId = rm.replayReq.map(repEvent -> repEvent.parentSpanId);
 	}
