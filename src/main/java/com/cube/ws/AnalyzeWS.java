@@ -60,12 +60,13 @@ import redis.clients.jedis.Jedis;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
+
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
-import io.md.dao.Event.RunType;
+
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
@@ -636,12 +637,12 @@ public class AnalyzeWS {
                 Result<Event> requestResult = rrstore
                     .getRequests(replay.customerId, replay.app, replay.collection,
                         reqIds, Collections.emptyList(), Collections.emptyList(), Optional.of(
-		                    RunType.Record));
+		                    Event.RunType.Record));
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
             return res.stream().map(matchRes -> {
-                Optional<Event> reqEvent = matchRes.recordReqId
+	            Optional<Event> reqEvent = matchRes.recordReqId
 		            .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
 	            Optional<String> request = reqEvent.map(e -> e.getPayloadAsJsonString(true));
 	            Optional<Long> recordReqTime = reqEvent.map(e -> e.timestamp.toEpochMilli());
@@ -672,6 +673,7 @@ public class AnalyzeWS {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
 	                }
+
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
 	                recordResponse = recordResponseEvent.map(e -> e.getPayloadAsJsonString(true));
 	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());

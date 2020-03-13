@@ -96,7 +96,10 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		@Override
 		public IReplayRequest build(Replay replay, Event reqEvent, Config config)
 			throws IOException {
-			HTTPRequestPayload httpRequest =  (HTTPRequestPayload) reqEvent.payload; //Utils.getRequestPayload(reqEvent, config);
+			if (!(reqEvent.payload instanceof  HTTPRequestPayload)) {
+				throw new IOException("Invalid Payload type");
+			}
+			HTTPRequestPayload httpRequest =  (HTTPRequestPayload) reqEvent.payload;
 
 			// transform fields in the request before the replay.
 			replay.xfmer.ifPresent(x -> x.transformRequest(httpRequest));
@@ -116,8 +119,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
 				.uri(uri)
 				.method(httpRequest.method,
-					HttpRequest.BodyPublishers.ofString(new String(httpRequest.getBody(),
-						StandardCharsets.UTF_8)));
+					HttpRequest.BodyPublishers.ofByteArray(httpRequest.getBody()));
 
 			httpRequest.hdrs.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request

@@ -57,6 +57,7 @@ import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.JsonPayload;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Payload;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
@@ -677,7 +678,7 @@ public class CubeStore {
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
             }
             if (defaultReqEvent.isPresent() && storeDefaultRespEvent(defaultReqEvent.get(),
-                    defaultEvent.getRawRespPayloadString())) {
+                    defaultEvent.getEvent().payload)) {
                 return Response.ok().type(MediaType.APPLICATION_JSON)
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
             } else {
@@ -698,9 +699,8 @@ public class CubeStore {
         }
     }
 
-    // TODO change this to accept a payload object, instead of a string
     private boolean storeDefaultRespEvent(
-        Event defaultReqEvent, String payload) throws InvalidEventException {
+        Event defaultReqEvent, Payload payload) throws InvalidEventException {
         //Store default response
         EventBuilder eventBuilder = new EventBuilder(defaultReqEvent.customerId,
             defaultReqEvent.app,
@@ -708,7 +708,7 @@ public class CubeStore {
             new MDTraceInfo("NA", null, null), RunType.Manual
             , Optional.of(Instant.now()), defaultReqEvent.reqId, defaultReqEvent.apiPath,
             Event.EventType.getResponseType(defaultReqEvent.eventType));
-        eventBuilder.setPayload(new JsonPayload(payload));
+        eventBuilder.setPayload(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
         // parseAndSetKey is needed only for requests
 

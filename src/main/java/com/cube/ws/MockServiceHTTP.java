@@ -535,8 +535,8 @@ public class MockServiceHTTP {
 
         HTTPResponsePayload responsePayload;
         try {
-            responsePayload =  Utils.getResponsePayload(respEventVal, config);
-        } catch (IOException | RawPayloadProcessingException | RawPayloadEmptyException e) {
+            responsePayload =  (HTTPResponsePayload) respEventVal.payload;
+        } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Not able to deserialize response event",
                 Constants.ERROR, e.getMessage()
