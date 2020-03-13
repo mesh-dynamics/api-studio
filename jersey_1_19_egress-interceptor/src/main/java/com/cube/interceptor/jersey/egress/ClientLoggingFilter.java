@@ -80,7 +80,11 @@ public class ClientLoggingFilter extends ClientFilter {
 		//hdrs
 		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
 
-		currentSpan.ifPresent(UtilException.rethrowConsumer(span ->
+		Optional<Span> newClientSpan = currentSpan.map( span -> {
+			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
+		});
+
+		newClientSpan.ifPresent(UtilException.rethrowConsumer(span ->
 		{
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
@@ -119,7 +123,11 @@ public class ClientLoggingFilter extends ClientFilter {
 				logRequest(clientRequest, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
 					queryParams, mdTraceInfo, serviceName);
-			}
+
+				//Setting the current span id as parent span id value
+				//This is intentionally set after the capture as it should be parent for subsequent capture
+				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+		}
 
 		}));
 

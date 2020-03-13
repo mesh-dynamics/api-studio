@@ -86,6 +86,11 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 					logRequest(containerRequest, apiPath, traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
 						queryParams, mdTraceInfo);
+
+					//Setting the ingress md span as parent span and re-injecting them into the headers.
+					// This is done after the capture as this is the parent only for the subsequent capture
+					span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+					CommonUtils.injectContext(containerRequest.getRequestHeaders());
 				}
 			}));
 		} catch (IOException e) {
