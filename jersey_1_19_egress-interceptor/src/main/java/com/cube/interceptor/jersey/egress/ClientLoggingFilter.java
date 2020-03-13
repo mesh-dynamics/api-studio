@@ -43,6 +43,8 @@ public class ClientLoggingFilter extends ClientFilter {
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
 	private static final String EMPTY = "";
+	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
+			"Content-type", "Content-Type", "content-Type");
 
 	static {
 		config = new Config();
@@ -200,8 +202,6 @@ public class ClientLoggingFilter extends ClientFilter {
 	}
 
 	private Optional<Object> getMimeType(MultivaluedMap<String, Object> headers) {
-		List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
-				"Content-type", "Content-Type", "content-Type");
 		if (headers == null)
 			return Optional.empty();
 		return HTTP_CONTENT_TYPE_HEADERS.stream()

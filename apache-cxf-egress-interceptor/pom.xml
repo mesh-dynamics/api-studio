@@ -4,65 +4,47 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.cube.interceptor</groupId>
-	<artifactId>md-jaxrs-ingress-interceptor</artifactId>
-	<version>0.0.2</version>
+	<artifactId>md-apache-cxf-egress-interceptor</artifactId>
+	<version>0.0.1</version>
 	<packaging>jar</packaging>
 
-	<name>jaxrs-ingress-interceptor</name>
-	<description>JAX-RS Ingress Interceptors for HTTP Requests</description>
+	<name>apache-cxf-egress-interceptor</name>
+	<description>Apache CXF Egress Interceptors for HTTP Requests</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-		<version.md.agent>1.0.8</version.md.agent>
-		<version.jaeger>1.1.0</version.jaeger>
-		<version.jax.api>2.1</version.jax.api>
-		<version.apache.http.client>4.5.10</version.apache.http.client>
-		<version.commons.io>2.6</version.commons.io>
+		<version.jersey>2.27</version.jersey>
 	</properties>
 
 
-<!--<repositories>-->
-<!--	<repository>-->
-<!--		<id>github</id>-->
-<!--		<name>GitHub OWNER Apache Maven Packages</name>-->
-<!--		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>-->
-<!--	</repository>-->
-<!--</repositories>-->
+<repositories>
+	<repository>
+		<id>github</id>
+		<name>GitHub OWNER Apache Maven Packages</name>
+		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+	</repository>
+</repositories>
 
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>${version.commons.io}</version>
+			<version>2.6</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>${version.md.agent}</version>
+			<version>1.0.9</version>
 		</dependency>
 
 		<dependency>
-			<groupId>io.jaegertracing</groupId>
-			<artifactId>jaeger-client</artifactId>
-			<version>${version.jaeger}</version>
-		</dependency>
-
-		<dependency>
-			<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
-			<groupId>javax.ws.rs</groupId>
-			<artifactId>javax.ws.rs-api</artifactId>
-			<version>${version.jax.api}</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
-			<version>${version.apache.http.client}</version>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-frontend-jaxrs</artifactId>
+			<version>2.7.18</version>
 		</dependency>
 
 	</dependencies>
