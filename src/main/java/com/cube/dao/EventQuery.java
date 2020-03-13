@@ -17,7 +17,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.cube.dao.Event.EventType;
+import io.md.dao.Event;
+import io.md.dao.Event.EventType;
+
 
 /*
  * Created by IntelliJ IDEA.

@@ -3,12 +3,17 @@
  */
 package com.cube.core;
 
-import static com.cube.core.Comparator.Resolution.*;
+import static io.md.core.Comparator.Resolution.ERR;
+import static io.md.core.Comparator.Resolution.ERR_ValTypeMismatch;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import io.cube.agent.UtilException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -21,10 +26,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
 
-import com.cube.core.CompareTemplate.PresenceType;
-import com.cube.core.CompareTemplate.DataType;
-import com.cube.dao.DataObj;
-import com.cube.dao.JsonDataObj;
+import io.cube.agent.UtilException;
+import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.PresenceType;
+import io.md.core.TemplateEntry;
+import io.md.dao.DataObj;
+import io.md.dao.JsonDataObj;
+import io.md.dao.LazyParseAbstractPayload;
+
 import com.cube.ws.Config;
 
 /**
@@ -139,7 +150,14 @@ public class JsonComparator implements Comparator {
             JsonDataObj lhsObj = (JsonDataObj) lhs;
             JsonDataObj rhsObj = (JsonDataObj) rhs;
             return compare(lhsObj.getRoot(), rhsObj.getRoot());
-        } else {
+        } if ((lhs instanceof LazyParseAbstractPayload) && (rhs instanceof LazyParseAbstractPayload)) {
+		    LazyParseAbstractPayload lhsObj = (LazyParseAbstractPayload) lhs;
+		    LazyParseAbstractPayload rhsObj = (LazyParseAbstractPayload) rhs;
+		    lhsObj.parseIfRequired();
+		    rhsObj.parseIfRequired();
+		    //JsonDataObj rhsObj = (JsonDataObj) rhs;
+		    return compare(lhsObj.dataObj.getRoot(), rhsObj.dataObj.getRoot());
+	    } else {
             ObjectMessage objectMessage = new ObjectMessage(Map.of("message", "Payload not of json type in JsonComparator", "lhs",
                 lhs.toString(), "rhs", rhs.toString()));
             List<Diff> result = new ArrayList<>();

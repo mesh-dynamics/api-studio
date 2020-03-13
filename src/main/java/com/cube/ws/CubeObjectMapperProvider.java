@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import io.md.utils.PayloadSerializerModifier;
+
 import com.cube.cache.TemplateKey;
 import com.cube.serialize.TemplateKeyDeserializer;
 import com.cube.serialize.TemplateKeySerializer;
@@ -42,6 +44,7 @@ public class CubeObjectMapperProvider implements ContextResolver<ObjectMapper> {
         SimpleModule module = new SimpleModule();
         module.addKeySerializer(TemplateKey.class, new TemplateKeySerializer(result));
         module.addKeyDeserializer(TemplateKey.class, new TemplateKeyDeserializer(result));
+        module.setSerializerModifier(new PayloadSerializerModifier());
         result.registerModule(module);
         return result;
     }

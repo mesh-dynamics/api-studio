@@ -33,16 +33,26 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.cube.agent.UtilException;
+import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
+import io.md.core.ValidateCompareTemplate;
+import io.md.dao.DataObj;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.HTTPRequestPayload;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.LazyParseAbstractPayload;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.RawPayload.RawPayloadEmptyException;
+import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
-import com.cube.dao.DataObj;
-import com.cube.dao.Event;
-import com.cube.dao.HTTPRequestPayload;
-import com.cube.dao.HTTPResponsePayload;
+
 import com.cube.dao.Recording;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
@@ -64,8 +74,9 @@ public class Utils {
 
     // Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
-	    return EnumSet.allOf(clazz).stream().filter(v -> v.name().toLowerCase().equals(name.toLowerCase()))
-	                    .findAny();
+	    return EnumSet.allOf(clazz).stream()
+		    .filter(v -> v.name().toLowerCase().equals(name.toLowerCase()))
+	        .findAny();
 	}
 
 	// copied from jdk.internal.net.http.common.Utils, since it is private there and we
@@ -229,7 +240,8 @@ public class Utils {
         });
     }
 
-    static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?), appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
+    static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?),"
+	    + " appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
     /**
      * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
@@ -244,8 +256,8 @@ public class Utils {
             .build().normalize().toString();
     }
 
-    public static CompareTemplate getRequestMatchTemplate(Config config, Event event, String templateVersion)
-        throws TemplateNotFoundException {
+    public static CompareTemplate getRequestMatchTemplate(Config config, Event event
+	    , String templateVersion) throws TemplateNotFoundException {
         TemplateKey tkey =
             new TemplateKey(templateVersion, event.customerId,
                 event.app, event.service, event.apiPath, Type.RequestMatch);
@@ -299,36 +311,37 @@ public class Utils {
                                                Optional<Event.RunType> runType, Optional<String> customerId,
                                                Optional<String> app,
                                                Config config,
-                                               Comparator comparator) throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
-        HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method, body);
-
-        String payloadStr = config.jsonMapper.writeValueAsString(httpRequestPayload);
+                                               Comparator comparator)
+	    throws JsonProcessingException, EventBuilder.InvalidEventException {
+        HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method, body.getBytes());
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
-            Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
+            EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                traceId.orElse(generateTraceId()), runType.get(), timestamp,
+                new MDTraceInfo(traceId.orElse(generateTraceId()) , null , null)
+	            , runType.get(), Optional.of(timestamp),
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPRequest);
-            eventBuilder.setRawPayloadString(payloadStr);
+            eventBuilder.setPayload(httpRequestPayload);
             Event event = eventBuilder.createEvent();
-            event.parseAndSetKey(config, comparator.getCompareTemplate());
+            event.parseAndSetKey(comparator.getCompareTemplate());
 
             return event;
         } else {
-            throw new Event.EventBuilder.InvalidEventException();
+            throw new EventBuilder.InvalidEventException();
         }
 
     }
 
-    public static HTTPRequestPayload getRequestPayload(Event event, Config config) throws IOException {
-        String payload = event.getPayloadAsJsonString(config);
+    /*public static HTTPRequestPayload getRequestPayload(Event event, Config config)
+	    throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
+        String payload = event.getPayloadAsJsonString();
         return config.jsonMapper.readValue(payload, HTTPRequestPayload.class);
-    }
+    }*/
 
 
     public static Event createHTTPResponseEvent(String apiPath, Optional<String> reqId,
@@ -339,35 +352,34 @@ public class Utils {
                                                 Optional<String> collection, Instant timestamp,
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
-                                                Config config) throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
-        HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status, body);
-
-        String payloadStr = config.jsonMapper.writeValueAsString(httpResponsePayload);
+                                                Config config) throws JsonProcessingException, EventBuilder.InvalidEventException {
+        HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status, body.getBytes());
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
-            Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
+            EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                traceId.orElse(reqId.flatMap(config.rrstore::getRequestEvent).map(Event::getTraceId).orElse("NA")),
-                runType.get(), timestamp,
+                new MDTraceInfo(traceId.orElse(reqId.flatMap(config.rrstore::getRequestEvent)
+	                .map(Event::getTraceId).orElse("NA")), null, null),
+                runType.get(), Optional.of(timestamp),
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPResponse);
-            eventBuilder.setRawPayloadString(payloadStr);
+            eventBuilder.setPayload(httpResponsePayload);
             Event event = eventBuilder.createEvent();
             return event;
         } else {
-            throw new Event.EventBuilder.InvalidEventException();
+            throw new EventBuilder.InvalidEventException();
         }
 
     }
 
-    public static HTTPResponsePayload getResponsePayload(Event event, Config config) throws IOException {
-        String payload = event.getPayloadAsJsonString(config);
-        return config.jsonMapper.readValue(payload, HTTPResponsePayload.class);
-    }
+    /*public static HTTPResponsePayload getResponsePayload(Event event, Config config)
+	    throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
+    	return (HTTPResponsePayload) event.payload;
+    }*/
 
 	public static Map<String, TemplateEntry> getAllPathRules(Event event, Recording recording, TemplateKey.Type templateKeyType,
 		String service, String apiPath, ReqRespStore rrstore, Config config) {
@@ -377,8 +389,7 @@ public class Utils {
 		Optional<CompareTemplate> templateOptional = rrstore.getCompareTemplate(tkey);
 		Map<String, TemplateEntry> pathRules = new HashMap<>();
 		templateOptional.ifPresent(UtilException.rethrowConsumer(template -> {
-			DataObj payload = event.getPayload(config);
-			payload.getPathRules(template, pathRules);
+			event.payload.getPathRules(template, pathRules);
 		}));
 
 		return pathRules;

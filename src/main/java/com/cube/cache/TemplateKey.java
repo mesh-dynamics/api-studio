@@ -1,14 +1,8 @@
 package com.cube.cache;
 
 
-import java.util.Optional;
-
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.google.common.collect.ComparisonChain;
-
-import com.cube.dao.Event;
-import com.cube.dao.Recording;
 
 /**
  * Key against which the analysis template will be retrieved/cached

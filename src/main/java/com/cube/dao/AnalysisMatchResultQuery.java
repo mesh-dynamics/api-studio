@@ -4,7 +4,8 @@ import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.cube.core.Comparator;
+import io.md.core.Comparator;
+
 import com.cube.core.Utils;
 import com.cube.utils.Constants;
 

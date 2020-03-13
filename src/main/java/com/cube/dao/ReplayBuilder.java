@@ -16,11 +16,11 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import org.json.JSONObject;
 
 import io.cube.agent.UtilException;
+import io.md.core.ReplayTypeEnum;
 
 import com.cube.core.RRTransformer;
 import com.cube.dao.Replay.ReplayStatus;
 import com.cube.utils.Constants;
-import com.cube.utils.ReplayTypeEnum;
 
 public class ReplayBuilder {
     private static final Logger LOGGER = LogManager.getLogger(ReplayBuilder.class);

@@ -15,11 +15,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import io.md.core.Comparator;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.ReqRespUpdateOperation;
+
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
-import com.cube.core.Comparator;
 import com.cube.dao.AnalysisMatchResultQuery;
-import com.cube.dao.Event;
+
 import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetMeta;
 import com.cube.dao.RecordingOperationSetSP;
@@ -197,7 +202,7 @@ public class RecordingUpdate {
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
                 Event transformedResponse = recordResponse.applyTransform(replayResponse
-                    , responseOperationList, config, newCollectionName, newReqId, Optional.empty());
+                    , responseOperationList,  newCollectionName, newReqId, Optional.empty());
 
                 TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
@@ -207,7 +212,7 @@ public class RecordingUpdate {
 
                 // Transform request
                 Event transformedRequest = recordRequest.applyTransform(replayRequest
-                    , reqOperationList, config, newCollectionName, newReqId
+                    , reqOperationList , newCollectionName, newReqId
                     , Optional.of(comparator));
 
                 LOGGER.debug(new ObjectMessage(Map.of(
@@ -221,8 +226,8 @@ public class RecordingUpdate {
                     Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, Optional
                         .ofNullable(transformedResponse.reqId).orElse(Constants.NOT_PRESENT),
                     Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId
-                    , Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
-                        .orElse(Constants.NOT_PRESENT))));
+                    /*, Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
+                        .orElse(Constants.NOT_PRESENT)*/)));
 
                 boolean saved = config.rrstore.save(transformedRequest) && config.rrstore
                     .save(transformedResponse);
@@ -234,9 +239,9 @@ public class RecordingUpdate {
                         res.replayReqId.orElse(Constants.NOT_PRESENT),
                         Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, Optional
                             .ofNullable(transformedResponse.reqId).orElse(Constants.NOT_PRESENT),
-                        Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId,
+                        Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId/*,
                         Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
-                            .orElse(Constants.NOT_PRESENT))));
+                            .orElse(Constants.NOT_PRESENT)*/)));
                 }
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -274,13 +279,14 @@ public class RecordingUpdate {
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
 
-                Event transformedResponse = new Event.EventBuilder(recordResponse.customerId
+                Event transformedResponse = new EventBuilder(recordResponse.customerId
                     , recordResponse.app, recordResponse.service, recordResponse.instanceId
-                    , "", recordResponse.getTraceId(), recordResponse.runType
-                    , recordResponse.timestamp, newReqId, recordResponse.apiPath
+                    , "", new MDTraceInfo(recordResponse.getTraceId(), null
+                    , null), recordResponse.runType
+                    , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
                     , recordResponse.eventType)
-                    .setRawPayloadBinary(recordResponse.rawPayloadBinary)
-                    .setRawPayloadString(recordResponse.rawPayloadString)
+                    .setPayload(recordResponse.payload)
+                    /*.setRawPayloadString(recordResponse.rawPayloadString)*/
                     .setPayloadKey(recordResponse.payloadKey)
                     .createEvent();
 
@@ -289,13 +295,14 @@ public class RecordingUpdate {
                 LOGGER.debug("Changing the reqid and collection name in the response for "
                     + "the sanitized collection");
 
-                Event transformedRequest = new Event.EventBuilder(recordRequest.customerId
+                Event transformedRequest = new EventBuilder(recordRequest.customerId
                     , recordRequest.app, recordRequest.service, recordRequest.instanceId
-                    , "", recordRequest.getTraceId(), recordRequest.runType
-                    , recordRequest.timestamp, newReqId, recordRequest.apiPath
+                    , "", new MDTraceInfo(recordResponse.getTraceId(), null
+                    , null), recordRequest.runType
+                    , Optional.of(recordRequest.timestamp), newReqId, recordRequest.apiPath
                     , recordRequest.eventType)
-                    .setRawPayloadBinary(recordRequest.rawPayloadBinary)
-                    .setRawPayloadString(recordRequest.rawPayloadString)
+                    .setPayload(recordRequest.payload)
+                    /*.setRawPayloadString(recordRequest.rawPayloadString)*/
                     .setPayloadKey(recordRequest.payloadKey)
                     .createEvent();
 

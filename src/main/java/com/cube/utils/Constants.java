@@ -177,4 +177,6 @@ public class Constants {
 
 	public static final String REPLAY_TRACE_ID = "replayTraceId";
 	public static final String REC_TRACE_ID = "recordTraceId";
+	public static final String SPAN_ID_FIELD = "spanId";
+    public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
 }

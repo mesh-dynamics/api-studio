@@ -42,7 +42,6 @@
         "req1": "testRequest1",
         "req2": "testRequest1",
         "rules": [
-            { "path": "",        "dataType": "Default",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/hdrs/accept",        "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
             { "path": "/queryParams/filmId",    "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
             "Ignore",  "customization": "" },
@@ -56,7 +55,6 @@
         "req1": "testRequest1",
         "req2": "testRequest1",
         "rules": [
-            { "path": "",        "dataType": "Default",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
             { "path": "/hdrs/accept",        "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal",
             "customization": ""},
             { "path": "/queryParams/filmId",    "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
@@ -79,8 +77,60 @@
         "reqId" : "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "apiPath" : "restsql/update",
         "eventType" : "HTTPRequest",
-        "rawPayloadBinary" : null,
-        "rawPayloadString" : "{\"hdrs\":{\"x-request-id\":[\"310b1af7-8df2-9049-8c73-a1e81b40355f\"],\"content-length\":[\"344\"],\"x-forwarded-proto\":[\"http\"],\"uber-trace-id\":[\"6e00af888d96940c%3A6e00af888d96940c%3A0%3A1\"],\"x-b3-sampled\":[\"1\"],\"_path\":[\"/restsql/update\"],\"x-istio-attributes\":[\"Cj8KE2Rlc3RpbmF0aW9uLnNlcnZpY2USKBImcmVzdHdyYXBqZGJjLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwKQgoKc291cmNlLnVpZBI0EjJrdWJlcm5ldGVzOi8vbW92aWVpbmZvLXYxLTc1NmZmNzg1YzQtbHp2encuZGVmYXVsdApCChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBInEiVpc3RpbzovL2RlZmF1bHQvc2VydmljZXMvcmVzdHdyYXBqZGJjCkQKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIoEiZyZXN0d3JhcGpkYmMuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbAoqCh1kZXN0aW5hdGlvbi5zZXJ2aWNlLm5hbWVzcGFjZRIJEgdkZWZhdWx0CioKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRIOEgxyZXN0d3JhcGpkYmM=\"],\"accept\":[\"text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\"],\"_authority\":[\"restwrapjdbc:8080\"],\"x-b3-traceid\":[\"17f552e5e0edf085\"],\"x-b3-spanid\":[\"17f552e5e0edf085\"],\"_method\":[\"POST\"],\"content-type\":[\"application/json\"],\"user-agent\":[\"Jersey/2.27 (HttpUrlConnection 11.0.2)\"]},\"queryParams\":{\"filmId\":[\"230\"]},\"formParams\":{\"filmName\":[\"DIARY PANIC\"]},\"method\":\"POST\",\"body\":\"{\\\"query\\\":\\\"INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date) VALUES (?, ?, ?, ?, ?)\\\",\\\"params\\\":[{\\\"index\\\":1,\\\"type\\\":\\\"integer\\\",\\\"value\\\":252},{\\\"index\\\":2,\\\"type\\\":\\\"integer\\\",\\\"value\\\":1},{\\\"index\\\":3,\\\"type\\\":\\\"integer\\\",\\\"value\\\":17905},{\\\"index\\\":4,\\\"type\\\":\\\"double\\\",\\\"value\\\":9.98},{\\\"index\\\":5,\\\"type\\\":\\\"string\\\",\\\"value\\\":\\\"2019-04-05 03:45:28\\\"}]}\"}"
+        "payload" : ["HTTPRequestPayload", {
+            "hdrs": {
+                "x-request-id": ["310b1af7-8df2-9049-8c73-a1e81b40355f"],
+                "content-length": ["344"],
+                "x-forwarded-proto": ["http"],
+                "uber-trace-id": ["6e00af888d96940c%3A6e00af888d96940c%3A0%3A1"],
+                "x-b3-sampled": ["1"],
+                "_path": ["/restsql/update"],
+                "x-istio-attributes": ["Cj8KE2Rlc3RpbmF0aW9uLnNlcnZpY2USKBImcmVzdHdyYXBqZGJjLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwKQgoKc291cmNlLnVpZBI0EjJrdWJlcm5ldGVzOi8vbW92aWVpbmZvLXYxLTc1NmZmNzg1YzQtbHp2encuZGVmYXVsdApCChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBInEiVpc3RpbzovL2RlZmF1bHQvc2VydmljZXMvcmVzdHdyYXBqZGJjCkQKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIoEiZyZXN0d3JhcGpkYmMuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbAoqCh1kZXN0aW5hdGlvbi5zZXJ2aWNlLm5hbWVzcGFjZRIJEgdkZWZhdWx0CioKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRIOEgxyZXN0d3JhcGpkYmM="],
+                "accept": ["text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"],
+                "_authority": ["restwrapjdbc:8080"],
+                "x-b3-traceid": ["17f552e5e0edf085"],
+                "x-b3-spanid": ["17f552e5e0edf085"],
+                "_method": ["POST"],
+                "content-type": ["application/json"],
+                "user-agent": ["Jersey/2.27 (HttpUrlConnection 11.0.2)"]
+            },
+            "queryParams": {
+                "filmId": ["230"]
+            },
+            "formParams": {
+                "filmName": ["DIARY PANIC"]
+            },
+            "method": "POST",
+            "body": {
+                "query": "INSERT INTO payment(customer_id, staff_id, rental_id, amount, payment_date) VALUES( ? , ? , ? , ? , ? )",
+                "params": [{
+                    "index": 1,
+                    "type": "integer",
+                    "value": 252
+                },
+                    {
+                        "index": 2,
+                        "type": "integer",
+                        "value": 1
+                    },
+                    {
+                        "index": 3,
+                        "type": "integer",
+                        "value": 17905
+                    },
+                    {
+                        "index": 4,
+                        "type": "double",
+                        "value": 9.98
+                    },
+                    {
+                        "index": 5,
+                        "type": "string",
+                        "value": "2019 - 04 - 05 03: 45: 28"
+                    }
+                ]
+            }
+        }]
     },
 
     "testRequestMethodChanged": {
@@ -95,7 +145,39 @@
         "reqId" : "restwrapjdbc5f4f257c-5971-402a-a411-ef49bfcec923",
         "apiPath" : "restsql/update",
         "eventType" : "HTTPRequest",
-        "rawPayloadBinary" : null,
-        "rawPayloadString" : "{\"hdrs\":{\"x-request-id\":[\"310b1af7-8df2-9049-8c73-a1e81b40355f\"],\"content-length\":[\"344\"],\"x-forwarded-proto\":[\"http\"],\"uber-trace-id\":[\"6e00af888d96940c%3A6e00af888d96940c%3A0%3A1\"],\"x-b3-sampled\":[\"1\"],\"_path\":[\"/restsql/update\"],\"x-istio-attributes\":[\"Cj8KE2Rlc3RpbmF0aW9uLnNlcnZpY2USKBImcmVzdHdyYXBqZGJjLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwKQgoKc291cmNlLnVpZBI0EjJrdWJlcm5ldGVzOi8vbW92aWVpbmZvLXYxLTc1NmZmNzg1YzQtbHp2encuZGVmYXVsdApCChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBInEiVpc3RpbzovL2RlZmF1bHQvc2VydmljZXMvcmVzdHdyYXBqZGJjCkQKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIoEiZyZXN0d3JhcGpkYmMuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbAoqCh1kZXN0aW5hdGlvbi5zZXJ2aWNlLm5hbWVzcGFjZRIJEgdkZWZhdWx0CioKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRIOEgxyZXN0d3JhcGpkYmM=\"],\"accept\":[\"text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\"],\"_authority\":[\"restwrapjdbc:8080\"],\"x-b3-traceid\":[\"17f552e5e0edf085\"],\"x-b3-spanid\":[\"17f552e5e0edf085\"],\"_method\":[\"POST\"],\"content-type\":[\"application/json\"],\"user-agent\":[\"Jersey/2.27 (HttpUrlConnection 11.0.2)\"]},\"queryParams\":{\"filmId\":[\"230\"]},\"formParams\":{\"filmName\":[\"DIARY PANIC\"]},\"method\":\"K\",\"body\":\"{\\\"query\\\":\\\"INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date) VALUES (?, ?, ?, ?, ?)\\\",\\\"params\\\":[{\\\"index\\\":1,\\\"type\\\":\\\"integer\\\",\\\"value\\\":252},{\\\"index\\\":2,\\\"type\\\":\\\"integer\\\",\\\"value\\\":1},{\\\"index\\\":3,\\\"type\\\":\\\"integer\\\",\\\"value\\\":17905},{\\\"index\\\":4,\\\"type\\\":\\\"double\\\",\\\"value\\\":9.98},{\\\"index\\\":5,\\\"type\\\":\\\"string\\\",\\\"value\\\":\\\"2019-04-05 03:45:28\\\"}]}\"}"
+        "payload" :["HTTPRequestPayload", {
+            "hdrs": {
+                "x-request-id": ["310b1af7-8df2-9049-8c73-a1e81b40355f"],
+                "content-length": ["344"],
+                "x-forwarded-proto": ["http"],
+                "uber-trace-id": ["6e00af888d96940c%3A6e00af888d96940c%3A0%3A1"],
+                "x-b3-sampled": ["1"],
+                "_path": ["/restsql/update"],
+                "x-istio-attributes": ["Cj8KE2Rlc3RpbmF0aW9uLnNlcnZpY2USKBImcmVzdHdyYXBqZGJjLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwKQgoKc291cmNlLnVpZBI0EjJrdWJlcm5ldGVzOi8vbW92aWVpbmZvLXYxLTc1NmZmNzg1YzQtbHp2encuZGVmYXVsdApCChdkZXN0aW5hdGlvbi5zZXJ2aWNlLnVpZBInEiVpc3RpbzovL2RlZmF1bHQvc2VydmljZXMvcmVzdHdyYXBqZGJjCkQKGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIoEiZyZXN0d3JhcGpkYmMuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbAoqCh1kZXN0aW5hdGlvbi5zZXJ2aWNlLm5hbWVzcGFjZRIJEgdkZWZhdWx0CioKGGRlc3RpbmF0aW9uLnNlcnZpY2UubmFtZRIOEgxyZXN0d3JhcGpkYmM="],
+                "accept": ["text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"],
+                "_authority": ["restwrapjdbc:8080"],
+                "x-b3-traceid": ["17f552e5e0edf085"],
+                "x-b3-spanid": ["17f552e5e0edf085"],
+                "_method": ["POST"],
+                "content-type": ["application/json"],
+                "user-agent": ["Jersey/2.27 (HttpUrlConnection 11.0.2)"]
+            },
+            "queryParams": {
+                "filmId": ["230"]
+            },
+            "formParams": {
+                "filmName": ["DIARY PANIC"]
+            },
+            "method": "K",
+            "body": {"query":"INSERT INTO payment(customer_id, staff_id, rental_id, amount, payment_date) VALUES( ? , ? , ? , ? , ? )",
+                "params":[
+                    {"index":1,"type":"integer","value":252},
+                    {"index":2,"type":"integer","value":1},
+                    {"index":3,"type":"integer","value":17905},
+                    {"index":4,"type":"double","value":9.98},
+                    {"index":5,"type":"string","value":"2019 - 04 - 05 03: 45: 28"}
+                ]
+            }
+        }]
     }
 }

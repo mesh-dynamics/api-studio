@@ -4,7 +4,8 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.cube.core.TemplateEntry;
+import io.md.core.TemplateEntry;
+import io.md.dao.ReqRespUpdateOperation.OperationType;
 
 public class TemplateEntryOperation {
 

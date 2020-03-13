@@ -44,32 +44,40 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.CommonUtils;
-import io.cube.agent.FnKey;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
+import io.md.core.Comparator;
+import io.md.core.Comparator.Diff;
+import io.md.core.Comparator.Match;
+import io.md.core.Comparator.Resolution;
+import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.ReplayTypeEnum;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventType;
+import io.md.dao.JsonPayload;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.Payload;
+import io.md.dao.ReqRespUpdateOperation;
+import io.md.utils.CommonUtils;
+import io.md.utils.CubeObjectMapperProvider;
+import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-import com.cube.core.Comparator;
-import com.cube.core.Comparator.Diff;
-import com.cube.core.Comparator.Match;
-import com.cube.core.Comparator.Resolution;
-import com.cube.core.CompareTemplate;
-import com.cube.core.CompareTemplate.ComparisonType;
+
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
-import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.Constants;
-import com.cube.utils.ReplayTypeEnum;
 import com.cube.ws.Config;
 
 /**
@@ -745,10 +753,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String OPERATIONSETIDF = CPREFIX + "operationsetid" + STRING_SUFFIX;
     private static final String OPERATIONLIST = CPREFIX + "operationlist" + STRINGSET_SUFFIX;
     private static final String TRACEIDF = CPREFIX + Constants.TRACE_ID_FIELD + STRING_SUFFIX;
-    private static final String PAYLOADBINF = CPREFIX + "payloadBin" + BIN_SUFFIX;
     private static final String PAYLOADSTRF = CPREFIX + "payloadStr" + NOTINDEXED_SUFFIX;
     private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
     private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
+    private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
+    private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX ;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -955,7 +964,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    private static SolrInputDocument eventToSolrDoc(Event event) {
+    private SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
         String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
             .concat(event.reqId);
@@ -968,13 +977,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, event.instanceId);
         doc.setField(COLLECTIONF, event.getCollection());
         doc.setField(TRACEIDF, event.getTraceId());
+        if (event.spanId != null) doc.setField(SPAN_ID_F, event.spanId);
+        if (event.parentSpanId != null) doc.setField(PARENT_SPAN_ID_F, event.parentSpanId);
         doc.setField(RRTYPEF, event.runType.toString());
         doc.setField(TIMESTAMPF, event.timestamp.toString());
         doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
-        doc.setField(PAYLOADBINF, event.rawPayloadBinary);
-        doc.setField(PAYLOADSTRF, event.rawPayloadString);
+        try {
+            doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to convert "
+                + "event payload as string")) , e);
+        }
         doc.setField(PAYLOADKEYF, event.payloadKey);
 
         return doc;
@@ -989,23 +1004,45 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
         Optional<String> traceid = getStrField(doc, TRACEIDF);
-        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
+        Optional<String> spanId = getStrField(doc, SPAN_ID_F);
+        Optional<String> parentSpanId = getStrField(doc, PARENT_SPAN_ID_F);
+        Optional<Event.RunType> runType = getStrField(doc, RRTYPEF).flatMap(rrt -> Utils.valueOf(
+            Event.RunType.class, rrt));
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
         Optional<String> reqId = getStrField(doc, REQIDF);
         Optional<String> path = getStrField(doc, PATHF);
         Optional<String> eventType = getStrField(doc, EVENTTYPEF);
-        Optional<byte[]> payloadBin = getBinField(doc, PAYLOADBINF);
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
 
-        Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.orElse(null), app.orElse(null), service.orElse(null),
-            instanceId.orElse(null), collection.orElse(null), traceid.orElse(null),
-            runType.orElse(null), timestamp.orElse(null),
-            reqId.orElse(null), path.orElse(""), eType);
-        eventBuilder.setRawPayloadString(payloadStr.orElse(null));
-        eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));
+        EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null)
+            , app.orElse(null), service.orElse(null), instanceId.orElse(null)
+            , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
+            , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
+            , timestamp, reqId.orElse(null), path.orElse(""), eType);
+        // TODO revisit this need to construct payload properly from type and json string
+        try {
+            payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
+                eventBuilder.setPayload(this.config.jsonMapper.readValue(payload
+            , Payload.class))));
+
+        } catch (Exception e) {
+            try {
+                payloadStr.ifPresent(UtilException.rethrowConsumer(payload -> {
+                    String finalPayload = "[ \"" + ((eType == EventType.HTTPRequest)
+                        ? "HTTPRequestPayload" : "HTTPResponsePayload") + "\" , " + payload + " ] ";
+                    eventBuilder
+                        .setPayload(this.config.jsonMapper.readValue(finalPayload, Payload.class));
+                }));
+            } catch (Exception e1) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Unable to convert json string back to payload object")), e1);
+            }
+        }
+        //eventBuilder.setRawPayloadString(payloadStr.orElse(null));
+        //eventBuilder.setRawPayloadBinary(payloadBin.orElse(null));
         eventBuilder.setPayloadKey(payloadKey.orElse(0));
 
         Optional<Event> event = eventBuilder.createEventOpt();

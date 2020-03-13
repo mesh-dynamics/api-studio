@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
@@ -26,10 +27,10 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import org.glassfish.jersey.uri.UriComponent;
 
 import io.cube.agent.UtilException;
+import io.md.dao.Event;
+import io.md.dao.HTTPRequestPayload;
 
 import com.cube.core.Utils;
-import com.cube.dao.Event;
-import com.cube.dao.HTTPRequestPayload;
 import com.cube.dao.Replay;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -95,7 +96,10 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		@Override
 		public IReplayRequest build(Replay replay, Event reqEvent, Config config)
 			throws IOException {
-			HTTPRequestPayload httpRequest = Utils.getRequestPayload(reqEvent, config);
+			if (!(reqEvent.payload instanceof  HTTPRequestPayload)) {
+				throw new IOException("Invalid Payload type");
+			}
+			HTTPRequestPayload httpRequest =  (HTTPRequestPayload) reqEvent.payload;
 
 			// transform fields in the request before the replay.
 			replay.xfmer.ifPresent(x -> x.transformRequest(httpRequest));
@@ -115,7 +119,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
 				.uri(uri)
 				.method(httpRequest.method,
-					HttpRequest.BodyPublishers.ofString(httpRequest.body));
+					HttpRequest.BodyPublishers.ofByteArray(httpRequest.getBody()));
 
 			httpRequest.hdrs.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request

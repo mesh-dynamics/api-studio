@@ -4,7 +4,7 @@
         "res2": "testResponse1",
         "rules": [
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": {
             "mt":           "ExactMatch",
@@ -19,7 +19,7 @@
         "rules": [
             { "path": "/hdrs/content-type",  "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
             { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/status",        "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
         ],
         "output": {
             "mt":           "ExactMatch",
@@ -42,15 +42,6 @@
                     "path": "/hdrs/content-type/0",
                     "resolution": "ERR_ValMismatch",
                     "value": "K"
-                },
-                {
-                    "fromValue": {
-                        "MIRest status": "MovieInfo is healthy"
-                    },
-                    "op": "replace",
-                    "path": "/body",
-                    "resolution": "OK_DefaultCT",
-                    "value": "{\"MIRest status\": \"MovieInfo is healthy\"}"
                 }
             ],
             "matchmeta": "JsonDiff",
@@ -94,8 +85,8 @@
                 {"op":"noop",       "path":"/body/id",      "value":0,          "resolution":"ERR_ValTypeMismatch"},
                 {"op":"replace",    "path":"/body/year",    "value":1000,       "fromValue":1595,"resolution":"ERR_ValMismatch"},
                 {"op":"replace",    "path":"/body/type",    "value":"softcopy",     "fromValue":"paperback","resolution":"OK_OptionalMismatch"},
-                {"op":"replace",    "path":"/body/pages",   "value":3.14,       "fromValue":200,"resolution":"ERR_ValMismatch"},
-            ],
+                {"op":"replace",    "path":"/body/pages",   "value":3.14,       "fromValue":200,"resolution":"ERR_ValMismatch"}
+            ]
         }
     },
 
@@ -225,8 +216,17 @@
         "reqId" : "movieinfoea45f119-8b00-4a58-bdca-fce5f8810c38",
         "apiPath" : "/dummyApiPath",
         "eventType" : "HTTPResponse",
-        "rawPayloadBinary" : null,
-        "rawPayloadString" : "{\"hdrs\":{\"date\":[\"Thu, 28 Mar 2019 12:48:54 GMT\"],\"content-length\":[\"41\"],\"x-envoy-upstream-service-time\":[\"60486\"],\"content-type\":[\"application/json\"],\"_status\":[\"200\"]},\"status\":200,\"body\":\"{\\\"MIRest status\\\": \\\"MovieInfo is healthy\\\"}\"}"
+        "payload" : ["HTTPResponsePayload", {
+            "hdrs": {
+                "date": ["Thu, 28 Mar 2019 12:48:54 GMT"],
+                "content-length": ["41"],
+                "x-envoy-upstream-service-time": ["60486"],
+                "content-type": ["application/json"],
+                "_status": ["200"]
+            },
+            "status": 200,
+            "body": {"MIRest status": "MovieInfo is healthy"}
+        } ]
     },
 
     "testResponse2" : {
@@ -241,8 +241,29 @@
         "reqId" : "72471111-e096-4494-942e-5fa942c07e90",
         "apiPath" : "/dummyApiPath",
         "eventType" : "HTTPResponse",
-        "rawPayloadBinary" : null,
-        "rawPayloadString" : "{\"hdrs\":{\"date\":[\"Fri, 04 Jan 2019 09:09:00 GMT\"],\"server\":[\"WEBrick/1.3.1 (Ruby/2.3.7/2018-03-28)\"],\"content-length\":[\"178\"],\"x-envoy-upstream-service-time\":[\"1\"],\"content-type\":[\"application/json\"],\"connection\":[\"Keep-Alive\"],\"_status\":[\"200\"]},\"status\":200,\"body\":\"{\\\"id\\\":0,\\\"author\\\":\\\"William Shakespeare\\\",\\\"year\\\":1595,\\\"type\\\":\\\"paperback\\\",\\\"pages\\\":200,\\\"publisher\\\":\\\"PublisherA\\\",\\\"language\\\":\\\"English\\\",\\\"ISBN-10\\\":\\\"1234567890\\\",\\\"ISBN-13\\\":\\\"123-1234567890\\\"}\"}"
+        "payload" : ["HTTPResponsePayload" , {
+            "hdrs": {
+                "date": ["Fri, 04 Jan 2019 09:09:00 GMT"],
+                "server": ["WEBrick/1.3.1 (Ruby/2.3.7/2018-03-28)"],
+                "content-length": ["178"],
+                "x-envoy-upstream-service-time": ["1"],
+                "content-type": ["application/json"],
+                "connection": ["Keep-Alive"],
+                "_status": ["200"]
+            },
+            "status": 200,
+            "body": {
+                "id":0,
+                "author":"William Shakespeare",
+                "year":1595,
+                "type":"paperback",
+                "pages":200,
+                "publisher":"PublisherA",
+                "language":"English",
+                "ISBN-10":"1234567890",
+                "ISBN-13":"123-1234567890"
+            }
+        }]
     }
 
 }

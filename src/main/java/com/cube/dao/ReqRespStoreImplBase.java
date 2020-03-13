@@ -3,7 +3,6 @@
  */
 package com.cube.dao;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,6 +11,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.common.base.MoreObjects;
+
+import io.md.dao.Event;
 
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;

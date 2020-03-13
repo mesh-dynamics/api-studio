@@ -32,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.core.ReplayTypeEnum;
 
 import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
@@ -44,7 +45,6 @@ import com.cube.dao.ReqRespStore;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.ReplayDriverFactory;
 import com.cube.utils.Constants;
-import com.cube.utils.ReplayTypeEnum;
 
 /**
  * @author prasad
