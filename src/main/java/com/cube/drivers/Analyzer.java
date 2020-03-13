@@ -6,12 +6,13 @@
 
 package com.cube.drivers;
 
-import static com.cube.core.Comparator.MatchType.DontCare;
-import static com.cube.core.Comparator.MatchType.ExactMatch;
-import static com.cube.core.Comparator.MatchType.NoMatch;
+
+import static io.md.core.Comparator.MatchType.DontCare;
+import static io.md.core.Comparator.MatchType.ExactMatch;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -29,20 +30,18 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.core.Comparator;
+import io.md.core.Comparator.Match;
+import io.md.core.Comparator.MatchType;
+import io.md.dao.Event;
 
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
-import com.cube.core.Comparator;
-import com.cube.core.Comparator.Match;
-import com.cube.core.Comparator.MatchType;
-import com.cube.core.CompareTemplate;
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.JsonComparator;
 import com.cube.dao.Analysis;
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
-import com.cube.dao.Event;
 import com.cube.dao.EventQuery;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Replay;
@@ -230,7 +229,8 @@ public class Analyzer {
     }
 
 
-    private ReqRespMatchWithEvent checkReqRespEventMatch(Event recordreq, Event replayreq,
+    private ReqRespMatchWithEvent checkReqRespEventMatch(
+        Event recordreq, Event replayreq,
                                                       Optional<Event> recordedResponse ,
                                                      Map<String, Event> replayResponseMap) {
 
@@ -245,9 +245,9 @@ public class Analyzer {
                 .getComparator(reqCompareKey, recordreq.eventType);
             if (reqComparator != JsonComparator.EMPTY_COMPARATOR) {
                 reqCompareRes = reqComparator
-                    .compare(recordreq.getPayload(config), replayreq.getPayload(config));
+                    .compare(recordreq.payload, replayreq.payload);
             } else {
-                reqCompareRes = new Comparator.Match(MatchType.DontCare, "",
+                reqCompareRes = new Comparator.Match(DontCare, "",
                     Collections.emptyList());
             }
             TemplateKey respCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
@@ -259,7 +259,7 @@ public class Analyzer {
                 Comparator respComparator = comparatorCache
                     .getComparator(respCompareKey, recordedr.eventType);
                 respCompareRes = respComparator
-                    .compare(recordedr.getPayload(config), replayr.getPayload(config));
+                    .compare(recordedr.payload, replayr.payload);
             }
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(

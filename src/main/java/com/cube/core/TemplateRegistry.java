@@ -2,6 +2,8 @@ package com.cube.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.md.core.CompareTemplate;
+
 import com.cube.cache.TemplateKey;
 
 public class TemplateRegistry {
@@ -11,7 +13,7 @@ public class TemplateRegistry {
     @JsonProperty("service")
     private  String service;
     @JsonProperty("template")
-    private  CompareTemplate template;
+    private CompareTemplate template;
     /*
     @JsonProperty("id")
     private String id;

@@ -1,21 +1,17 @@
 package com.cube.dao;
 
-import java.lang.reflect.Constructor;
-import java.net.URLClassLoader;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
+public class ThriftDataObject extends io.md.dao.JsonDataObj {
 
-import io.cube.agent.CommonUtils;
-
-import com.cube.utils.Constants;
-import com.cube.ws.Config;
-
-public class ThriftDataObject extends JsonDataObj implements DataObj  {
+	public ThriftDataObject(JsonNode root,
+		ObjectMapper jsonMapper) {
+		super(root, jsonMapper);
+	}
 
 
-	public final String traceId;
+	/*public final String traceId;
 
 	public static class ThriftDataObjectBuilder {
 		public ThriftDataObject build(byte[] payloadBin, Config config, Map<String, Object> params)  {
@@ -28,10 +24,11 @@ public class ThriftDataObject extends JsonDataObj implements DataObj  {
 				Object obj1 = constructor.newInstance();
 				tDeserializer.deserialize((TBase)obj1, payloadBin);
 				String jsonSerialized = config.gson.toJson(obj1);
-				String traceId = CommonUtils.traceIdFromThriftSpan((TBase)obj1);
-				return new ThriftDataObject(jsonSerialized, config, traceId);
+				// TODO this will come from md commons thrift
+				//String traceId = CommonUtils.traceIdFromThriftSpan((TBase)obj1);
+				return new ThriftDataObject(jsonSerialized, config, *//*traceId*//*null);
 			} catch (Exception e) {
-				throw new DataObjCreationException(e);
+				throw new DataObjectCreationException(e);
 			}
 		}
 	}
@@ -39,5 +36,5 @@ public class ThriftDataObject extends JsonDataObj implements DataObj  {
 	private ThriftDataObject(String jsonSerialized, Config config, String traceId) {
 		super(jsonSerialized, config.jsonMapper);
 		this.traceId = traceId;
-	}
+	}*/
 }

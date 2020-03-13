@@ -6,8 +6,6 @@ import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import javax.ws.rs.core.Response;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -17,8 +15,10 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 
+import io.md.dao.Event;
+
 import com.cube.core.Utils;
-import com.cube.dao.Event;
+//import com.cube.dao.Event;
 import com.cube.dao.Replay;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -92,7 +92,7 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 				Class<?> argsClazz = classLoader.loadClass(argsClassName);
 				Constructor<?> constructor = argsClazz.getConstructor();
 				TBase args = (TBase) constructor.newInstance();
-				tDeserializer.deserialize(args, reqEvent.rawPayloadBinary);
+				tDeserializer.deserialize(args, reqEvent.payload.rawPayloadAsByteArray());
 				Class<?> resultClazz = classLoader.loadClass(resultClassName);
 				constructor = resultClazz.getConstructor();
 				TBase result = (TBase) constructor.newInstance();

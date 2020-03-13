@@ -11,6 +11,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.md.dao.ReqRespUpdateOperation;
+import io.md.utils.JsonTransformer;
+
 class JsonTransformerTest {
 
     @Test
@@ -37,9 +40,9 @@ class JsonTransformerTest {
 
         // update operations list
         List<ReqRespUpdateOperation> operationsList = Arrays.asList(
-            new ReqRespUpdateOperation(OperationType.REMOVE, "/0/actors_lastnames"),
-            new ReqRespUpdateOperation(OperationType.REPLACE, "/0/timestamp"),
-            new ReqRespUpdateOperation(OperationType.ADD, "/0/book_info/reviews/0/testkey")
+            new ReqRespUpdateOperation(io.md.dao.ReqRespUpdateOperation.OperationType.REMOVE, "/0/actors_lastnames"),
+            new ReqRespUpdateOperation(io.md.dao.ReqRespUpdateOperation.OperationType.REPLACE, "/0/timestamp"),
+            new ReqRespUpdateOperation(io.md.dao.ReqRespUpdateOperation.OperationType.ADD, "/0/book_info/reviews/0/testkey")
         );
 
         // transform the response by applying the update operations

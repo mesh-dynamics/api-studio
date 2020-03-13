@@ -15,19 +15,24 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.apache.solr.common.util.Pair;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.md.core.CompareTemplate;
+import io.md.dao.Event;
+
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-import com.cube.core.CompareTemplate;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.Constants;
@@ -528,20 +533,20 @@ public interface ReqRespStore {
     Optional<ReqRespMatchResult> getAnalysisMatchResult(Optional<String> recordReqId, Optional<String> replayReqId,
                                                         String replayId);
 
-    /**
-     * Get results matching a path and other constraints
-     * @param analysisMatchResultQuery
-     * @return
-     */
-    Result<ReqRespMatchResult>
-    getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
+	/**
+	 * Get results matching a path and other constraints
+	 * @param analysisMatchResultQuery
+	 * @return
+	 */
+	ReqRespResultsWithFacets getAnalysisMatchResults(AnalysisMatchResultQuery analysisMatchResultQuery);
 
-    /**
-     * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
-     * as NoMatch
-     * @param replayId
-     * @return
-     */
+
+	/**
+	 * Get ReqResponseMatchResult list for the given replay Id and filters out the results that has either Request or Response MatchType
+	 * as NoMatch
+	 * @param replayId
+	 * @return
+	 */
     Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
 
     /**

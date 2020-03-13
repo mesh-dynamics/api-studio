@@ -1,7 +1,5 @@
 package com.cube.dao;
 
-import com.cube.golden.OperationType;
-import com.cube.golden.ReqRespUpdateOperation;
 import com.cube.ws.Config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -10,6 +8,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import io.md.dao.ReqRespUpdateOperation;
+import io.md.dao.ReqRespUpdateOperation.OperationType;
 
 class ReqRespStoreSolrTest {
 

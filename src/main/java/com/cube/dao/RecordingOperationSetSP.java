@@ -1,11 +1,13 @@
 package com.cube.dao;
 
-import com.cube.golden.ReqRespUpdateOperation;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
+import io.md.dao.ReqRespUpdateOperation;
 
 public class RecordingOperationSetSP {
     public String id; // Solr id
