@@ -1,4 +1,4 @@
-package com.cube.interceptor;
+package com.cube.interceptor.spring.egress;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,16 +34,20 @@ import io.opentracing.Span;
  * Reference : https://stackoverflow.com/a/52698745/2761431
  */
 
+/**
+ * Order is to specify in which order the filters are to be executed. Lower the order, early the
+ * filter is executed. We want Tracing filter to execute after Client Filter.
+ **/
 @Component
 @Order(3000)
-public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
+public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor {
 
-	private static final Logger LOGGER = LogManager.getLogger(RestTemplateInterceptor.class);
+	private static final Logger LOGGER = LogManager.getLogger(RestTemplateDataInterceptor.class);
 
-	private static final Config config;
+	private static final RestTemplateConfig config;
 
 	static {
-		config = new Config();
+		config = new RestTemplateConfig();
 	}
 
 	@Override
@@ -128,7 +132,7 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
 
 		//meta
 		MultivaluedMap<String, String> meta = Utils
-			.getResponseMeta(apiPath, String.valueOf(response.getStatusCode()),
+			.getResponseMeta(apiPath, String.valueOf(response.getStatusCode().value()),
 				Optional.ofNullable(serviceName));
 		meta.putAll(traceMeta);
 

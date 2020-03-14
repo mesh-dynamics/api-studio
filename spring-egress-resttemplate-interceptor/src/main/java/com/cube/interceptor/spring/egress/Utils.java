@@ -1,17 +1,14 @@
-package com.cube.interceptor;
+package com.cube.interceptor.spring.egress;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -20,7 +17,6 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -35,15 +31,10 @@ public class Utils {
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final Config config;
+	private static final RestTemplateConfig config;
 
 	static {
-		config = new Config();
-	}
-
-	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return ((config.intentResolver.isIntentToRecord() && config.commonConfig.sampler
-			.isSampled(requestHeaders)) || config.intentResolver.isIntentToMock());
+		config = new RestTemplateConfig();
 	}
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
@@ -97,8 +88,8 @@ public class Utils {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
-					new MultivaluedHashMap<>(), meta, requestHeaders, mdTraceInfo,
-					requestBody, Optional.empty(), config.jsonMapper, true);
+					new MultivaluedHashMap<>(), meta, requestHeaders,
+					mdTraceInfo, requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error(new ObjectMessage(
@@ -143,33 +134,6 @@ public class Utils {
 		}
 
 		return queryParams;
-	}
-
-	public static MultivaluedMap<String, String> getHeaders(
-		ContentCachingRequestWrapper requestWrapper) {
-		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
-		Collections.list(requestWrapper.getHeaderNames()).stream()
-			.forEach(headerName -> {
-				Enumeration<String> headerValues = requestWrapper.getHeaders(headerName);
-				while (headerValues.hasMoreElements()) {
-					headerMap.add(headerName, headerValues.nextElement());
-				}
-			});
-
-		return headerMap;
-	}
-
-	public static MultivaluedMap<String, String> getHeaders(HttpServletRequest httpServletRequest) {
-		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
-		Collections.list(httpServletRequest.getHeaderNames()).stream()
-			.forEach(headerName -> {
-				Enumeration<String> headerValues = httpServletRequest.getHeaders(headerName);
-				while (headerValues.hasMoreElements()) {
-					headerMap.add(headerName, headerValues.nextElement());
-				}
-			});
-
-		return headerMap;
 	}
 
 }

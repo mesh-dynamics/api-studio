@@ -1,4 +1,4 @@
-package com.cube.interceptor;
+package com.cube.interceptor.spring.egress;
 
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,7 @@ import io.md.utils.CubeObjectMapperProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 @Component
-public class Config {
+public class RestTemplateConfig {
 
 	public IntentResolver intentResolver = new TraceIntentResolver();
 
@@ -33,7 +33,7 @@ public class Config {
 		}
 	}
 
-	public Config() {
+	public RestTemplateConfig() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
 			.create();
 		recorder = new ConsoleRecorder(gson);

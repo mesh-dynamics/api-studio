@@ -1,4 +1,4 @@
-package com.cube.interceptor;
+package com.cube.interceptor.spring.ingress;
 
 import java.io.IOException;
 import java.net.URI;
@@ -33,11 +33,15 @@ import io.opentracing.Span;
  * Reference : https://stackoverflow.com/a/44497698/2761431
  */
 
+/**
+ * Order is to specify in which order the filters are to be executed. Lower the order, early the
+ * filter is executed. We want Tracing filter to execute before Logging Filter.
+ **/
 @Component
 @Order(3001)
-public class LoggingFilter extends OncePerRequestFilter {
+public class DataFilter extends OncePerRequestFilter {
 
-	private static final Logger LOGGER = LogManager.getLogger(LoggingFilter.class);
+	private static final Logger LOGGER = LogManager.getLogger(DataFilter.class);
 
 	private static final Config config;
 

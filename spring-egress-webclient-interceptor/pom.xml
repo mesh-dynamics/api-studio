@@ -26,18 +26,18 @@
 	</properties>
 
 
-<!--<repositories>-->
-<!--	<repository>-->
-<!--		<id>github</id>-->
-<!--		<name>GitHub OWNER Apache Maven Packages</name>-->
-<!--		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>-->
-<!--	</repository>-->
-<!--</repositories>-->
+<repositories>
+	<repository>
+		<id>github</id>
+		<name>GitHub OWNER Apache Maven Packages</name>
+		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+	</repository>
+</repositories>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
 		<dependency>
@@ -74,13 +74,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.4</version>
-		</dependency>
-
-		<dependency>
-			<groupId>io.jaegertracing</groupId>
-			<artifactId>jaeger-client</artifactId>
-			<version>0.32.0</version>
+			<version>1.0.9</version>
 		</dependency>
 
 		<dependency>

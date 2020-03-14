@@ -1,4 +1,4 @@
-package com.cube.interceptor;
+package com.cube.interceptor.spring.egress;
 
 import java.io.IOException;
 
@@ -13,9 +13,13 @@ import org.springframework.stereotype.Component;
 
 import io.md.utils.CommonUtils;
 
+/**
+ * Order is to specify in which order the filters are to be executed. Lower the order, early the
+ * filter is executed. We want Tracing filter to execute after Client Filter.
+ **/
 @Component
 @Order(3001)
-public class TracingFilter implements ClientHttpRequestInterceptor {
+public class RestTemplateTracingInterceptor implements ClientHttpRequestInterceptor {
 
 	@Override
 	public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes,

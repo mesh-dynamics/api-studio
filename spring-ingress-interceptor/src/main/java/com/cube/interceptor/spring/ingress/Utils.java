@@ -1,14 +1,15 @@
-package com.cube.interceptor;
+package com.cube.interceptor.spring.ingress;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -17,6 +18,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -35,6 +37,11 @@ public class Utils {
 
 	static {
 		config = new Config();
+	}
+
+	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
+		return ((config.intentResolver.isIntentToRecord() && config.commonConfig.sampler
+			.isSampled(requestHeaders)) || config.intentResolver.isIntentToMock());
 	}
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
@@ -72,24 +79,14 @@ public class Utils {
 		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
 	}
 
-	public static MultivaluedMap<String, String> getMultiMap(
-		Set<Entry<String, List<String>>> inputSet) {
-		MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<>();
-		for (Entry<String, List<String>> entry : inputSet) {
-			String key = entry.getKey();
-			multivaluedMap.addAll(key, entry.getValue());
-		}
-		return multivaluedMap;
-	}
-
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
 		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
-					new MultivaluedHashMap<>(), meta, requestHeaders,
-					mdTraceInfo, requestBody, Optional.empty(), config.jsonMapper, true);
+					new MultivaluedHashMap<>(), meta, requestHeaders, mdTraceInfo,
+					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error(new ObjectMessage(
@@ -134,6 +131,19 @@ public class Utils {
 		}
 
 		return queryParams;
+	}
+
+	public static MultivaluedMap<String, String> getHeaders(HttpServletRequest httpServletRequest) {
+		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
+		Collections.list(httpServletRequest.getHeaderNames()).stream()
+			.forEach(headerName -> {
+				Enumeration<String> headerValues = httpServletRequest.getHeaders(headerName);
+				while (headerValues.hasMoreElements()) {
+					headerMap.add(headerName, headerValues.nextElement());
+				}
+			});
+
+		return headerMap;
 	}
 
 }
