@@ -79,11 +79,17 @@ class ShareableLink extends Component {
             saveGoldenError: "",
             timeStamp: "",
             popoverCurrentPath: "",
+            collapseLength: 2,
+            collapseLengthIncrement: 3,
+            incrementCollapseLengthForRecReqId: null,
+            incrementCollapseLengthForRepReqId: null,
+            incrementStartJsonPath: null
         };
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.handleReqRespMtChange = this.handleReqRespMtChange.bind(this)
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.changePageNumber = this.changePageNumber.bind(this);
+        this.increaseCollapseLength = this.increaseCollapseLength.bind(this);
 
         this.inputElementRef = React.createRef();
         this.pageSize = 5;
@@ -220,6 +226,11 @@ class ShareableLink extends Component {
             pathname: '/shareable_link',
             search: this.historySearchParams
         });
+    }
+
+    increaseCollapseLength(e, jsonPath, recordReqId, replayReqId) {
+        const { collapseLength, collapseLengthIncrement } = this.state;
+        this.setState({ collapseLength: (collapseLength + collapseLengthIncrement), incrementCollapseLengthForRecReqId: recordReqId, incrementCollapseLengthForRepReqId: replayReqId, incrementStartJsonPath: jsonPath});
     }
 
     handleReqRespMtChange(e) {
@@ -424,6 +435,106 @@ class ShareableLink extends Component {
         return updatedReductedDiffArrayMsgPart;
     }
 
+    addCompressToggleData(diffData, collapseLength) {
+        let indx  = 0;
+        if(!diffData) return diffData;
+        for (let i = 0; i < diffData.length; i++) {
+            let diffDataChunk = diffData[i];
+            if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
+                let j = i - 1, chunkTopLength = 0;
+                diffDataChunk["collapseChunk"] = false;
+                while (diffData[j] && diffData[j].serverSideDiff === null && chunkTopLength < collapseLength) {
+                    diffData[j]["collapseChunk"] = false;
+                    chunkTopLength++;
+                    j--;
+                }
+                let k = i + 1, chunkBottomLength = 0;
+                while (diffData[k] && diffData[k].serverSideDiff === null && chunkBottomLength < collapseLength) {
+                    diffData[k]["collapseChunk"] = false;
+                    chunkBottomLength++;
+                    k++;
+                }
+            } else {
+                if(!diffDataChunk.hasOwnProperty("collapseChunk")) diffDataChunk["collapseChunk"] = true;
+            }
+        }
+        let toggleDrawChunk  = false;
+        for (let eachChunk of diffData) {
+            if(eachChunk.collapseChunk === true && toggleDrawChunk === false) {
+                toggleDrawChunk = true;
+                eachChunk["drawChunk"] = true;
+            } else if(eachChunk.collapseChunk === true && toggleDrawChunk === true) {
+                eachChunk["drawChunk"] = false;
+            } else if(eachChunk.collapseChunk === false) {
+                toggleDrawChunk = false;
+                eachChunk["drawChunk"] = false;
+            }
+        }
+        return diffData;
+    }
+
+    addHasDiffToParentPath (diffData) {
+        if(!diffData) return diffData;
+        const BEGIN_BRACKET = "<BEGIN>", END_BRACKET = "<END>";
+        for (let i = 0; i < diffData.length; i++) {
+            let diffDataChunk = diffData[i];
+            diffDataChunk["hasDiff"] = false;
+            diffDataChunk["showDiff"] = false;
+            if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
+                if(diffDataChunk.jsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                    diffDataChunk["hasDiff"] = true;
+                    diffDataChunk["showDiff"] = true;
+                } else {
+                    diffDataChunk["hasDiff"] = true;
+                    diffDataChunk["showDiff"] = true;
+                    let j = i - 1, bracketEndStack = [];
+                    while (j >= 0) {
+                        if(bracketEndStack.length === 0 && diffData[j].jsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                            diffData[j]["hasDiff"] = true;
+                            diffDataChunk["showDiff"] = true;
+                        }
+                        if(bracketEndStack.length > 0 && diffData[j].jsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                            bracketEndStack.pop();
+                        }
+                        if(diffData[j].jsonPath.indexOf(END_BRACKET) > -1) {
+                            bracketEndStack.push(END_BRACKET);
+                        }
+                        j--;
+                    }
+                }
+            }
+        }
+        for (let k = 0; k < diffData.length; k++) {
+            if(!diffData[k].jsonPath) continue;
+            if(diffData[k].hasDiff && diffData[k].jsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                let m = k + 1, bracketBeginStack = [];
+                while (diffData[k].jsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, "") !== diffData[m].jsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, "")) {
+                    
+                    if(bracketBeginStack.length === 0 && diffData[m].jsonPath.indexOf(BEGIN_BRACKET) < 0) {
+                        diffData[m]["hasDiff"] = true;
+                        diffData[m]["showDiff"] = true;
+                    }
+
+                    if(bracketBeginStack.length === 0 && diffData[m].jsonPath.indexOf(BEGIN_BRACKET) > 0 && !diffData[m].hasDiff) {
+                        diffData[m]["showDiff"] = true;
+                    }
+                    
+                    if(diffData[m].jsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                        bracketBeginStack.push(BEGIN_BRACKET);
+                    }
+
+                    if(bracketBeginStack.length > 0 && diffData[m].jsonPath.indexOf(END_BRACKET) > -1) {
+                        bracketBeginStack.pop();
+                    }
+
+                    m++;
+                }
+                diffData[m]["hasDiff"] = true;
+            }
+        }
+        return diffData;
+    }
+
     validateAndCreateDiffLayoutData(replayList) {
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
@@ -516,6 +627,8 @@ class ShareableLink extends Component {
             let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
                 return {
                     ...eachItem,
+                    recordReqId: item.recordReqId,
+                    replayReqId: item.replayReqId,
                     service: item.service,
                     app: this.state.app,
                     templateVersion: this.state.templateVersion,
@@ -524,6 +637,8 @@ class ShareableLink extends Component {
                     recordingId: this.state.recordingId
                 }
             });
+
+            let updatedReductedDiffArrayWithCollapsible = this.addCompressToggleData(updatedReductedDiffArray, this.state.collapseLength);
 
             let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
                 return {
@@ -580,7 +695,7 @@ class ShareableLink extends Component {
                 actJSON,
                 expJSON,
                 parsedDiff: diff,
-                reductedDiffArray: updatedReductedDiffArray,
+                reductedDiffArray: updatedReductedDiffArrayWithCollapsible,
                 missedRequiredFields,
                 show: true,
                 recordedRequestHeaders,
@@ -625,10 +740,15 @@ class ShareableLink extends Component {
     };
 
     render() {
-        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType, replayId, app, service, apiPath} = this.state;
+        let { selectedAPI, selectedResolutionType, selectedService, currentPageNumber, fetchedResults, selectedReqRespMatchType, replayId, app, service, apiPath, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId } = this.state;
         let apiPaths = [], services = [], resolutionTypes = [];
         let apiPathIndicators = {};
         const {cube, history} = this.props;
+        this.layoutDataWithDiff.forEach(eachDiffItem => {
+            if (incrementCollapseLengthForRepReqId && eachDiffItem.replayReqId === incrementCollapseLengthForRepReqId) {
+                this.addCompressToggleData(eachDiffItem.reductedDiffArray, collapseLength);
+            }
+        });
         let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function (eachItem) {
             services.push({value: eachItem.service, count: 0});
             if (selectedService === "All" || selectedService === eachItem.service) {
@@ -729,7 +849,6 @@ class ShareableLink extends Component {
                         startIndex: startIndex,
                         endIndex: i
                     };
-                    console.log (JSON.stringify(pgVsIndexMap));
                     this.pageNumberVsDataIndex.push(pgVsIndexMap);
                     startIndex =  i  + 1;
                     accumulatedObjectSize=0;
@@ -983,6 +1102,7 @@ class ShareableLink extends Component {
                                     inputElementRef={this.inputElementRef}
                                     showAll={this.state.showAll}
                                     searchFilterPath={this.state.searchFilterPath}
+                                    handleCollapseLength={this.increaseCollapseLength}
                                 />
                             </div>
                         )}
