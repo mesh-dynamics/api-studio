@@ -1,5 +1,7 @@
 package io.md.dao;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -33,6 +35,12 @@ public class JsonPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public String rawPayloadAsString() throws RawPayloadEmptyException {
+		return rawPayloadAsString(false);
+	}
+
+	@Override
+	public String rawPayloadAsString(boolean wrapForDisplay)
+		throws NotImplementedException, RawPayloadEmptyException {
 		if (isRawPayloadEmpty()) {
 			throw new RawPayloadEmptyException("Payload String Empty/Null");
 		}
