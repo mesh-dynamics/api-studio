@@ -311,7 +311,7 @@ public class CommonConfig {
 		return servicesToMock.contains(serviceName);
 	}
 
-	public URI getMockingURI(URI originalURI) throws URISyntaxException {
+	public URI getMockingURI(URI originalURI, String serviceName) throws URISyntaxException {
 		//    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
 		URIBuilder uriBuilder = new URIBuilder(originalURI);
 		URI cubeMockURI = new URI(CUBE_MOCK_SERVICE_URI);
