@@ -28,7 +28,7 @@ public class ReadJson {
 
     private RestTemplate restTemplate = new RestTemplate();
 
-    private ResponseEntity fetchResponse(String path, HttpMethod method, String token, String body){
+    private ResponseEntity fetchResponse(String path, HttpMethod method, String token, String body) throws Exception{
         ResponseEntity response;
         try {
             URI uri = new URI(path);
@@ -37,17 +37,13 @@ public class ReadJson {
             headers.add("Authorization", token);
             HttpEntity<String> entity = new HttpEntity<>(body, headers);
             response = restTemplate.exchange(uri, method, entity, String.class);
-        } catch (URISyntaxException e){
-            response = noContent().build();
+            return response;
         } catch (HttpClientErrorException e){
             response = status(e.getStatusCode()).body(new ErrorResponse(e.getLocalizedMessage()));
-        } catch (Exception e){
-            response = status(NOT_FOUND).body(e);
-        }
-        if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.CREATED)
             return response;
-        System.exit(1);
-        return null;
+        } catch (Exception e){
+            throw e;
+        }
     }
     public static void main(String[] args)  throws  Exception {
         String url;
@@ -80,6 +76,10 @@ public class ReadJson {
             for(Customers customer: data.getCustomers()){
                 String body =  readJson.createCustomer(customer);
                 ResponseEntity response = readJson.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,body);
+                if (response.getStatusCode() == HttpStatus.FORBIDDEN)
+                {
+                    response = readJson.fetchResponse(url+"/api/customer/update", HttpMethod.POST, token,body);
+                }
                 int customerId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
                 for(Apps app: customer.getApps())
                 {
