@@ -3,10 +3,13 @@ package io.cube.agent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,19 +20,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+//import javax.ws.rs.client.Client;
+//import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -78,6 +81,8 @@ public class CommonConfig {
 	public boolean samplerVeto;
 	public Sampler sampler;
 	public final boolean performanceTest;
+
+	public List servicesToMock;
 
 	private static class Updater implements Runnable {
 
@@ -236,16 +241,26 @@ public class CommonConfig {
 			return Optional.empty();
 		});
 
+		servicesToMock = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.SERVICES_TO_MOCK_PROP,
+			dynamicProperties).map(serv -> Arrays.asList(serv.split(",")))
+			.orElse(Collections.EMPTY_LIST);
+
 		performanceTest = BooleanUtils.toBoolean(
 			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
 				, dynamicProperties).orElse("false"));
 
-		ClientConfig clientConfig = new ClientConfig()
-			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
-			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
-		Client restClient = ClientBuilder.newClient(clientConfig);
-		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
-		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
+		//TODO: Remove total dependecy of this from agent.
+		// Commenting now for cxf based app to work.
+//		ClientConfig clientConfig = new ClientConfig()
+//			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
+//			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
+//		Client restClient = ClientBuilder.newClient(clientConfig);
+//		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
+//		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
+		cubeRecordService = null;
+		cubeMockService = null;
+
 
 		LOGGER.info(new ObjectMessage(
 			Map.of(Constants.MESSAGE, "PROPERTIES POLLED :: " + this.toString())));
@@ -290,6 +305,27 @@ public class CommonConfig {
 
 	public static boolean isIntentToMock() {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
+	}
+
+	public boolean toMockService(String serviceName) {
+		return servicesToMock.contains(serviceName);
+	}
+
+	public URI getMockingURI(URI originalURI) throws URISyntaxException {
+		//    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
+		URIBuilder uriBuilder = new URIBuilder(originalURI);
+		URI cubeMockURI = new URI(CUBE_MOCK_SERVICE_URI);
+		uriBuilder.setHost(cubeMockURI.getHost());
+		uriBuilder.setPort(cubeMockURI.getPort());
+		String origPath = uriBuilder.getPath();
+		String pathToSet = cubeMockURI.getPath() + "/ms" +
+			"/" + customerId +
+			"/" + app +
+			"/" + instance +
+			"/" + serviceName +
+			"/" + origPath;
+		uriBuilder.setPath(pathToSet);
+		return uriBuilder.build().normalize();
 	}
 
 	Sampler initSampler() {
