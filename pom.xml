@@ -59,13 +59,13 @@
         </plugins>
     </build>
 
-  <!--<repositories>
+  <repositories>
     <repository>
       <id>github</id>
       <name>GitHub OWNER Apache Maven Packages</name>
       <url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
     </repository>
-  </repositories>-->
+  </repositories>
 
   <dependencies>
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
@@ -183,7 +183,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0.16</version>
+      <version>1.0.17</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.lmax/disruptor -->
     <dependency>
