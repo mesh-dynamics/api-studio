@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import io.cube.agent.EncryptionConfig.JSONPathMeta;
 import io.cube.agent.samplers.Sampler;
+import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
@@ -45,7 +46,11 @@ public class Utils {
 			})));
 	}
 
-	public static Optional<Sampler> getSampler(float samplingRate, int samplingAccuracy) {
+	public static Optional<Sampler> getConstSamplerIfValid(float samplingRate, int samplingAccuracy) {
+		if (samplingAccuracy <= 0) {
+			samplingAccuracy = SimpleSampler.DEFAULT_SAMPLING_ACCURACY;
+		}
+
 		if (samplingRate == 0) {
 			return Optional.of(Sampler.NEVER_SAMPLE);
 		}
@@ -54,7 +59,7 @@ public class Utils {
 		}
 		if (samplingRate < 1.0f / samplingAccuracy || samplingRate > 1.0) {
 			LOGGER.error("The sampling rate must be between 1/samplingAccuracy and 1.0");
-			return Optional.of(Sampler.ALWAYS_SAMPLE);
+			return Optional.of(Sampler.NEVER_SAMPLE);
 		}
 		return Optional.empty();
 	}
