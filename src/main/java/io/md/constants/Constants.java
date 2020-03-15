@@ -111,6 +111,8 @@ public class Constants {
 	public static final String JAR_PATH_FIELD = "jarPath";
 	public static final String REPLAY_TYPE_FIELD = "replayType";
 	public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path";
+	public static final String HEADERS = "headers";
+	public static final String QUERY_PARAMS = "queryParams";
 
 	public static final String ROOT_RECORDING_FIELD = "root_recording_id";
 	public static final String PARENT_RECORDING_FIELD = "parent_recording_id";

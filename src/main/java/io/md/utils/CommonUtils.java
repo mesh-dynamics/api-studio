@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -369,7 +370,28 @@ public class CommonUtils {
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
 	}
 
+	public static MultivaluedMap<String, String> buildTraceInfoMap(String serviceName,
+		MDTraceInfo mdTraceInfo, String xRequestId) {
+		String cRequestId = serviceName.concat("-")
+			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId).concat("-").concat(
+				UUID.randomUUID().toString());
 
+		MultivaluedMap<String, String> metaMap = new MultivaluedHashMap<>();
+		metaMap.add(Constants.DEFAULT_REQUEST_ID, cRequestId);
+		if (mdTraceInfo.traceId != null) {
+			metaMap.add(Constants.DEFAULT_TRACE_FIELD, mdTraceInfo.traceId);
+		}
+		if (mdTraceInfo.spanId != null) {
+			metaMap.add(Constants.DEFAULT_SPAN_FIELD, mdTraceInfo.spanId);
+		}
+		if (mdTraceInfo.parentSpanId != null) {
+			metaMap.add(Constants.DEFAULT_PARENT_SPAN_FIELD, mdTraceInfo.parentSpanId);
+		}
+		if (xRequestId != null) {
+			metaMap.add(Constants.X_REQUEST_ID, xRequestId);
+		}
+		return metaMap;
+	}
 
 }
 
