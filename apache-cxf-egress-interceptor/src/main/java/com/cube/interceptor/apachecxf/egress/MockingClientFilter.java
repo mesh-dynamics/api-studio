@@ -12,6 +12,9 @@ import org.apache.http.client.utils.URIBuilder;
 
 import io.cube.agent.CommonConfig;
 
+import com.cube.interceptor.apachecxf.egress.utils.Utils;
+
+
 
 @Provider
 public class MockingClientFilter implements ClientRequestFilter {
@@ -22,7 +25,8 @@ public class MockingClientFilter implements ClientRequestFilter {
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		if (commonConfig.toMockService(originalUri.toString())) {
 			try {
-				URI mockURI = commonConfig.getMockingURI(originalUri);
+				String serviceName = Utils.getEgressServiceName(originalUri);
+				URI mockURI = commonConfig.getMockingURI(originalUri, serviceName);
 				clientRequestContext.setUri(mockURI);
 			} catch (URISyntaxException e) {
 				e.printStackTrace();

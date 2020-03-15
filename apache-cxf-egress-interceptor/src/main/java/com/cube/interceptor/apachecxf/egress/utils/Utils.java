@@ -1,4 +1,4 @@
-package com.cube.interceptor.utils;
+package com.cube.interceptor.apachecxf.egress.utils;
 
 import java.net.URI;
 import java.time.Instant;
@@ -182,5 +182,11 @@ public class Utils {
 
 	public static MultivaluedMap<String, String> createEmptyMultivaluedMap() {
 		return new MultivaluedHashMap<>();
+	}
+
+	public static String getEgressServiceName(URI uri) {
+		return uri.getPort() != -1
+			? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
+			: uri.getHost();
 	}
 }
