@@ -323,8 +323,8 @@ public class CommonConfig {
 			return false;
 		}
 
-		if (type.equalsIgnoreCase(SimpleSampler.TYPE)
-			|| type.equalsIgnoreCase(CountingSampler.TYPE)
+		if ((type.equalsIgnoreCase(SimpleSampler.TYPE)
+			|| type.equalsIgnoreCase(CountingSampler.TYPE))
 			&& (rate.isEmpty() || accuracy.isEmpty())) {
 			LOGGER.debug(new ObjectMessage(
 				Map.of(
