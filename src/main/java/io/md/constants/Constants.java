@@ -177,6 +177,7 @@ public class Constants {
 	public static final String MD_IS_SAMPLED = "md-sampled";
 	public static final String MD_IS_VETOED = "md-vetoed";
 	public static final String MD_QUERY_PARAMS = "md-query-params";
+	public static final String MD_PARENT_SPAN = "md-parent-span";
 
 	//Thrift Related
 	public static final String THRIFT_SPAN_ARGUMENT_NAME = "meshd_span";
