@@ -1,4 +1,4 @@
-package com.cube.interceptor.utils;
+package com.cube.interceptor.apachecxf.egress.utils;
 
 import java.net.URI;
 import java.time.Instant;
@@ -25,7 +25,7 @@ import io.md.dao.MDTraceInfo;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.config.Config;
+import com.cube.interceptor.apachecxf.egress.config.Config;
 
 public class Utils {
 
