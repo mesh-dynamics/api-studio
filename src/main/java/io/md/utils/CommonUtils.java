@@ -2,6 +2,7 @@ package io.md.utils;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -391,6 +392,12 @@ public class CommonUtils {
 			metaMap.add(Constants.X_REQUEST_ID, xRequestId);
 		}
 		return metaMap;
+	}
+
+	public static String getEgressServiceName(URI uri) {
+		return uri.getPort() != -1
+			? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
+			: uri.getHost();
 	}
 
 }
