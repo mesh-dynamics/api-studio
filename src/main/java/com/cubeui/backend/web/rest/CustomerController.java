@@ -39,6 +39,10 @@ public class CustomerController {
     @PostMapping("/save")
     public ResponseEntity save(@RequestBody CustomerDTO customerDTO, HttpServletRequest request) {
         Optional<Customer> customer = this.customerService.getByName(customerDTO.getName());
+        if (customer.isPresent())
+        {
+            return ok(customer);
+        }
         if (customer.isEmpty()) {
             Customer saved = this.customerService.save(customerDTO);
 
@@ -63,9 +67,6 @@ public class CustomerController {
     public ResponseEntity update(@RequestBody CustomerDTO customerDTO, HttpServletRequest request) {
         Optional<Customer> customer = this.customerService.getByName(customerDTO.getName());
         if (customer.isPresent()) {
-            Optional<EmailDomain> domain = this.emailDomainRepository.findByCustomerId(customer.get().getId());
-            domain.get().setDomain(customerDTO.getDomainURL());
-            this.emailDomainRepository.save(domain.get());
             Customer saved = this.customerService.save(customerDTO);
             return created(
                     ServletUriComponentsBuilder

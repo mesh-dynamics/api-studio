@@ -8,6 +8,7 @@ import com.cubeui.backend.repository.InstanceUserRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -63,7 +64,13 @@ public class InstanceController {
             return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + instanceDTO.getId() +"' already exists."));
         }
         Optional<App> app = appRepository.findById(instanceDTO.getAppId());
-        if(app.isPresent()) {
+        if(app.isPresent() && StringUtils.isNoneBlank(instanceDTO.getName())
+                    && StringUtils.isNoneBlank(instanceDTO.getGatewayEndpoint())) {
+            Optional<Instance> instance = this.instanceRepository.findByNameAndAppIdAndGatewayEndpoint(
+                        instanceDTO.getName(), instanceDTO.getAppId(), instanceDTO.getGatewayEndpoint());
+            if (instance.isPresent()) {
+                return ok(instance);
+            }
             Instance saved = this.instanceRepository.save(Instance.builder()
                     .name(instanceDTO.getName())
                     .app(app.get())

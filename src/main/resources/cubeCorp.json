@@ -108,7 +108,9 @@
               "paths": [
                 "/listmovies",
                 "/liststores"
-              ]
+              ],
+              "test_virtualized_services": ["Postgres", "Reviews", "Details"],
+              "test_intermediate_services": ["RestWrapJDBC"]
             }
           ],
           "serviceGraphs": [
@@ -355,7 +357,9 @@
               "paths": [
                 "/as/timelineres/*",
                 "/as/analysisResByPath/*"
-              ]
+              ],
+              "test_virtualized_services": ["Solr"],
+              "test_intermediate_services": []
             }
           ],
           "serviceGraphs": [

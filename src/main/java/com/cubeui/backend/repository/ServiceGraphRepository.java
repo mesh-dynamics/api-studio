@@ -10,4 +10,5 @@ import java.util.Optional;
 @RepositoryRestResource(path = "service_graphs", collectionResourceRel = "service_graphs", itemResourceRel = "service_graph")
 public interface ServiceGraphRepository extends JpaRepository<ServiceGraph, Long> {
     Optional<List<ServiceGraph>> findByAppId(Long appId);
+    Optional<ServiceGraph> findByAppIdAndFromServiceIdAndToServiceId(Long appId, Long fromServiceId, Long toServiceId);
 }

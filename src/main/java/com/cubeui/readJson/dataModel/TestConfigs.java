@@ -11,4 +11,6 @@ public class TestConfigs {
     String testConfigName;
     String serviceName;
     List<String> paths;
+    List<String> test_virtualized_services;
+    List<String> test_intermediate_services;
 }

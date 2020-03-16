@@ -4,29 +4,24 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cubeui.backend.domain.DTO.CustomerDTO;
-import com.cubeui.backend.domain.ServiceGroup;
 import com.cubeui.backend.web.ErrorResponse;
+import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.readJson.dataModel.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.md.dao.Replay;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.*;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.ResponseEntity.*;
 import static org.springframework.http.ResponseEntity.status;
 
 public class ReadJson {
 
     private RestTemplate restTemplate = new RestTemplate();
+    private JSONObject json = null;
 
     private ResponseEntity fetchResponse(String path, HttpMethod method, String token, String body) throws Exception{
         ResponseEntity response;
@@ -76,10 +71,6 @@ public class ReadJson {
             for(Customers customer: data.getCustomers()){
                 String body =  readJson.createCustomer(customer);
                 ResponseEntity response = readJson.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,body);
-                if (response.getStatusCode() == HttpStatus.FORBIDDEN)
-                {
-                    response = readJson.fetchResponse(url+"/api/customer/update", HttpMethod.POST, token,body);
-                }
                 int customerId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
                 for(Apps app: customer.getApps())
                 {
@@ -121,19 +112,32 @@ public class ReadJson {
                             body = readJson.createTestPath(testConfigId,pathId);
                             response = readJson.fetchResponse(url+"/api/test-path", HttpMethod.POST, token,body);
                         }
-                        /**
-                         * Need to check the Which Services we need to update for the given test
-                         * Is it the same as used for path or different
-                         */
-                        body = readJson.createTestVirtualizedService(testConfigId,serviceId);
-                        response = readJson.fetchResponse(url+"/api/test_virtualized_service", HttpMethod.POST, token,body);
-                        response = readJson.fetchResponse(url+"/api/test_intermediate_service", HttpMethod.POST, token,body);
+                        for (String testVirtualizedService: testConfig.getTest_virtualized_services()) {
+                            serviceId = servicesMap.get(testVirtualizedService);
+                            body = readJson.createTestVirtualizedService(testConfigId, serviceId);
+                            response = readJson.fetchResponse(url + "/api/test_virtualized_service", HttpMethod.POST, token, body);
+                        }
+                        for (String testIntermediateService: testConfig.getTest_intermediate_services()) {
+                            serviceId = servicesMap.get(testIntermediateService);
+                            body = readJson.createTestVirtualizedService(testConfigId, serviceId);
+                            response = readJson.fetchResponse(url + "/api/test_intermediate_service", HttpMethod.POST, token, body);
+                        }
+                    }
+                    for(ServiceGraphs serviceGraph: app.getServiceGraphs()) {
+                        int fromServiceId = servicesMap.get(serviceGraph.getFrom());
+                        int toServiceId = servicesMap.get(serviceGraph.getTo());
+                        body = readJson.createServiceGraph(fromServiceId, toServiceId, appId);
+                        response = readJson.fetchResponse(url + "/api/service_graph", HttpMethod.POST, token, body);
                     }
                 }
                 for(Users user: customer.getUsers())
                 {
-                    body = readJson.createUser(user,customerId);
-                    response = readJson.fetchResponse(url+"/api/account/create-user", HttpMethod.POST, token,body);
+                    try {
+                        body = readJson.createUser(user, customerId);
+                        response = readJson.fetchResponse(url + "/api/account/create-user", HttpMethod.POST, token, body);
+                    } catch (DuplicateRecordException e) {
+                        System.out.println(e.getMessage());
+                    }
                 }
             }
         } catch (Exception e) {
@@ -143,7 +147,7 @@ public class ReadJson {
     private Object getDataField(ResponseEntity response, String field) throws ParseException {
         try {
             JSONParser parser = new JSONParser();
-            JSONObject json = (JSONObject) parser.parse(response.getBody().toString());
+            json = (JSONObject) parser.parse(response.getBody().toString());
             return json.get(field).toString();
         } catch (ParseException e) {
             e.printStackTrace();
@@ -152,7 +156,7 @@ public class ReadJson {
     }
 
     private String createCustomer(Customers customer) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("name", customer.getName());
         json.put("email", customer.getEmailId());
         json.put("domainURL", customer.getDomainUrl());
@@ -160,14 +164,14 @@ public class ReadJson {
     }
 
     private String createApp(Apps app, int customerId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("name", app.getName());
         json.put("customerId", customerId);
         return json.toString();
     }
 
     private String createInstance(Instances instance, int appId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("name", instance.getName());
         json.put("gatewayEndpoint", instance.getGatewayEndpoint());
         json.put("appId", appId);
@@ -175,7 +179,7 @@ public class ReadJson {
     }
 
     private String createServiceGroup(ServiceGroups serviceGroup, int appId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("name", serviceGroup.getName());
         json.put("appId", appId);
         return json.toString();
@@ -183,7 +187,7 @@ public class ReadJson {
 
     private String createService(Services service, int appId, int serviceGroupId)
     {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("name", service.getName());
         json.put("appId", appId);
         json.put("serviceGroupId", serviceGroupId);
@@ -192,14 +196,14 @@ public class ReadJson {
 
     private String createPath(String path, int serviceId)
     {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("path", path);
         json.put("serviceId", serviceId);
         return json.toString();
     }
 
     private String createTestConfig(TestConfigs testConfig, int appId, int serviceId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("testConfigName", testConfig.getTestConfigName());
         json.put("appId", appId);
         json.put("gatewayServiceId", serviceId);
@@ -207,21 +211,29 @@ public class ReadJson {
     }
 
     private String createTestPath(int testId, int pathId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("testId", testId);
         json.put("pathId", pathId);
         return json.toString();
     }
 
     private String createTestVirtualizedService(int testId, int serviceId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("testId", testId);
         json.put("serviceId", serviceId);
         return json.toString();
     }
 
+    private String createServiceGraph(int fromServiceId, int toServiceId, int appId) {
+        json = new JSONObject();
+        json.put("appId", appId);
+        json.put("fromServiceId", fromServiceId);
+        json.put("toServiceId", toServiceId);
+        return json.toString();
+    }
+
     private String createUser(Users user, int customerId) {
-        JSONObject json = new JSONObject();
+        json = new JSONObject();
         json.put("name", user.getName());
         json.put("email", user.getEmail());
         json.put("password", user.getPassword());

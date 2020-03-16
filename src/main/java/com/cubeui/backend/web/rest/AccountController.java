@@ -68,6 +68,7 @@ public class AccountController {
     public ResponseEntity createUser(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         log.info("Create user called for email: " + userDTO.getEmail());
         Optional<User> existingUser = this.userService.getByUsername(userDTO.getEmail());
+
         // check existing user
         if (existingUser.isPresent()) {
             log.error("User already exists");
