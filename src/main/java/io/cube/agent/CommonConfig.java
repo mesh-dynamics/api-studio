@@ -307,25 +307,28 @@ public class CommonConfig {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_MOCK);
 	}
 
-	public boolean toMockService(String serviceName) {
+	public boolean shouldMockService(String serviceName) {
 		return servicesToMock.contains(serviceName);
 	}
 
-	public URI getMockingURI(URI originalURI, String serviceName) throws URISyntaxException {
-		//    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
-		URIBuilder uriBuilder = new URIBuilder(originalURI);
-		URI cubeMockURI = new URI(CUBE_MOCK_SERVICE_URI);
-		uriBuilder.setHost(cubeMockURI.getHost());
-		uriBuilder.setPort(cubeMockURI.getPort());
-		String origPath = uriBuilder.getPath();
-		String pathToSet = cubeMockURI.getPath() + "/ms" +
-			"/" + customerId +
-			"/" + app +
-			"/" + instance +
-			"/" + serviceName +
-			"/" + origPath;
-		uriBuilder.setPath(pathToSet);
-		return uriBuilder.build().normalize();
+	public Optional<URI> getMockingURI(URI originalURI, String serviceName) throws URISyntaxException {
+		if(!shouldMockService(serviceName)) {
+			return Optional.empty();
+		} else {
+			URIBuilder uriBuilder = new URIBuilder(originalURI);
+			URI cubeMockURI = new URI(CUBE_MOCK_SERVICE_URI);
+			uriBuilder.setHost(cubeMockURI.getHost());
+			uriBuilder.setPort(cubeMockURI.getPort());
+			String origPath = uriBuilder.getPath();
+			String pathToSet = cubeMockURI.getPath() + "/ms" +
+				"/" + customerId +
+				"/" + app +
+				"/" + instance +
+				"/" + serviceName +
+				"/" + origPath;
+			uriBuilder.setPath(pathToSet);
+			return Optional.of(uriBuilder.build().normalize());
+		}
 	}
 
 	Sampler initSampler() {
