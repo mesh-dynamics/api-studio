@@ -41,7 +41,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 		Span currentSpan = CommonUtils.startServerSpan(requestHeaders,
 			Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN));
 		Scope scope = CommonUtils.activateSpan(currentSpan);
-		CommonUtils.injectContext(requestHeaders);
+
 
 		String sampleBaggageItem = currentSpan.getBaggageItem(Constants.MD_IS_SAMPLED);
 		if (sampleBaggageItem == null) {
@@ -52,6 +52,8 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			currentSpan.setBaggageItem(Constants.MD_IS_VETOED,
 				String.valueOf(Utils.isSampled(requestHeaders)));
 		}
+
+		CommonUtils.injectContext(requestHeaders);
 
 		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 		containerRequest.getProperties().put(scopeKey, scope);
