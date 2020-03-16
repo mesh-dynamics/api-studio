@@ -21,7 +21,6 @@ import static org.springframework.http.ResponseEntity.status;
 public class ReadJson {
 
     private RestTemplate restTemplate = new RestTemplate();
-    private JSONObject json = null;
 
     private ResponseEntity fetchResponse(String path, HttpMethod method, String token, String body) throws Exception{
         ResponseEntity response;
@@ -147,7 +146,7 @@ public class ReadJson {
     private Object getDataField(ResponseEntity response, String field) throws ParseException {
         try {
             JSONParser parser = new JSONParser();
-            json = (JSONObject) parser.parse(response.getBody().toString());
+            JSONObject json = (JSONObject) parser.parse(response.getBody().toString());
             return json.get(field).toString();
         } catch (ParseException e) {
             e.printStackTrace();
@@ -156,7 +155,7 @@ public class ReadJson {
     }
 
     private String createCustomer(Customers customer) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("name", customer.getName());
         json.put("email", customer.getEmailId());
         json.put("domainURL", customer.getDomainUrl());
@@ -164,14 +163,14 @@ public class ReadJson {
     }
 
     private String createApp(Apps app, int customerId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("name", app.getName());
         json.put("customerId", customerId);
         return json.toString();
     }
 
     private String createInstance(Instances instance, int appId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("name", instance.getName());
         json.put("gatewayEndpoint", instance.getGatewayEndpoint());
         json.put("appId", appId);
@@ -179,7 +178,7 @@ public class ReadJson {
     }
 
     private String createServiceGroup(ServiceGroups serviceGroup, int appId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("name", serviceGroup.getName());
         json.put("appId", appId);
         return json.toString();
@@ -187,7 +186,7 @@ public class ReadJson {
 
     private String createService(Services service, int appId, int serviceGroupId)
     {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("name", service.getName());
         json.put("appId", appId);
         json.put("serviceGroupId", serviceGroupId);
@@ -196,14 +195,14 @@ public class ReadJson {
 
     private String createPath(String path, int serviceId)
     {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("path", path);
         json.put("serviceId", serviceId);
         return json.toString();
     }
 
     private String createTestConfig(TestConfigs testConfig, int appId, int serviceId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("testConfigName", testConfig.getTestConfigName());
         json.put("appId", appId);
         json.put("gatewayServiceId", serviceId);
@@ -211,21 +210,21 @@ public class ReadJson {
     }
 
     private String createTestPath(int testId, int pathId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("testId", testId);
         json.put("pathId", pathId);
         return json.toString();
     }
 
     private String createTestVirtualizedService(int testId, int serviceId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("testId", testId);
         json.put("serviceId", serviceId);
         return json.toString();
     }
 
     private String createServiceGraph(int fromServiceId, int toServiceId, int appId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("appId", appId);
         json.put("fromServiceId", fromServiceId);
         json.put("toServiceId", toServiceId);
@@ -233,7 +232,7 @@ public class ReadJson {
     }
 
     private String createUser(Users user, int customerId) {
-        json = new JSONObject();
+        JSONObject json = new JSONObject();
         json.put("name", user.getName());
         json.put("email", user.getEmail());
         json.put("password", user.getPassword());

@@ -44,8 +44,8 @@ public class TestConfigController {
         Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
         if (service.isPresent() && app.isPresent() &&
                 StringUtils.isNotBlank(testConfigDTO.getTestConfigName())) {
-            Optional<TestConfig> testConfig = this.testConfigRepository.findByTestConfigNameAndAppIdAndGatewayServiceId(
-                    testConfigDTO.getTestConfigName(), testConfigDTO.getAppId(),testConfigDTO.getGatewayServiceId());
+            Optional<TestConfig> testConfig = this.testConfigRepository.findByTestConfigNameAndAppId(
+                    testConfigDTO.getTestConfigName(), testConfigDTO.getAppId());
             if (testConfig.isPresent()) {
                 return ok(testConfig);
             }

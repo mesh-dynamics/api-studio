@@ -5,7 +5,6 @@ import com.cubeui.backend.domain.DTO.InstanceDTO;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.InstanceUserRepository;
-import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.apache.commons.lang3.StringUtils;
@@ -64,10 +63,9 @@ public class InstanceController {
             return status(FORBIDDEN).body(new ErrorResponse("Instance with ID '" + instanceDTO.getId() +"' already exists."));
         }
         Optional<App> app = appRepository.findById(instanceDTO.getAppId());
-        if(app.isPresent() && StringUtils.isNoneBlank(instanceDTO.getName())
-                    && StringUtils.isNoneBlank(instanceDTO.getGatewayEndpoint())) {
-            Optional<Instance> instance = this.instanceRepository.findByNameAndAppIdAndGatewayEndpoint(
-                        instanceDTO.getName(), instanceDTO.getAppId(), instanceDTO.getGatewayEndpoint());
+        if(app.isPresent() && StringUtils.isNoneBlank(instanceDTO.getName())) {
+            Optional<Instance> instance = this.instanceRepository.findByNameAndAppId(
+                        instanceDTO.getName(), instanceDTO.getAppId());
             if (instance.isPresent()) {
                 return ok(instance);
             }
