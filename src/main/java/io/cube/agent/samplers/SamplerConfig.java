@@ -79,8 +79,7 @@ public class SamplerConfig {
 	}
 
 	@JsonProperty("attributes")
-	public void setAttributes(
-		List<Attributes> attributes) {
+	public void setAttributes(List<Attributes> attributes) {
 		this.attributes = Optional.of(attributes);
 	}
 }
