@@ -180,7 +180,6 @@ public class CommonConfig {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 				"Trying to register a tracer when one is already registered")), e);
 		}
-		sampler = initSampler();
 	}
 
 	private CommonConfig(Properties dynamicProperties) throws Exception {
@@ -222,6 +221,7 @@ public class CommonConfig {
 			}
 			return Optional.empty();
 		});
+		sampler = initSampler();
 		samplerVeto = BooleanUtils.toBoolean(
 			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_VETO, dynamicProperties)
 				.orElse("false"));
