@@ -34,7 +34,7 @@ public class CustomerService {
     }
 
     public Customer save(CustomerDTO customerDTO) {
-        Optional<Customer> customer = customerRepository.findByName(customerDTO.getEmail());
+        Optional<Customer> customer = customerRepository.findByName(customerDTO.getName());
         customer.ifPresent(c -> {
             Optional.ofNullable(customerDTO.getName()).ifPresent(name -> c.setName(name));
             Optional.ofNullable(customerDTO.getEmail()).ifPresent(name -> c.setEmail(name));

@@ -3,7 +3,9 @@ package com.cubeui.backend.web.rest;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.EmailDomain;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.EmailDomainRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -22,9 +24,11 @@ import static org.springframework.http.ResponseEntity.*;
 public class CustomerController {
 
     private CustomerService customerService;
+    private EmailDomainRepository emailDomainRepository;
 
-    public CustomerController(CustomerService customerService) {
+    public CustomerController(CustomerService customerService, EmailDomainRepository emailDomainRepository) {
         this.customerService = customerService;
+        this.emailDomainRepository = emailDomainRepository;
     }
 
     @GetMapping("")
@@ -35,8 +39,18 @@ public class CustomerController {
     @PostMapping("/save")
     public ResponseEntity save(@RequestBody CustomerDTO customerDTO, HttpServletRequest request) {
         Optional<Customer> customer = this.customerService.getByName(customerDTO.getName());
+        if (customer.isPresent())
+        {
+            return ok(customer);
+        }
         if (customer.isEmpty()) {
             Customer saved = this.customerService.save(customerDTO);
+
+            EmailDomain domain = new EmailDomain();
+            domain.setDomain(customerDTO.getDomainURL());
+            domain.setCustomer(saved);
+            this.emailDomainRepository.save(domain);
+
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)
