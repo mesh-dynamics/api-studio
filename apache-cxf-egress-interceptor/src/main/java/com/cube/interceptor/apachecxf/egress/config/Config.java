@@ -1,4 +1,4 @@
-package com.cube.interceptor.config;
+package com.cube.interceptor.apachecxf.egress.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;

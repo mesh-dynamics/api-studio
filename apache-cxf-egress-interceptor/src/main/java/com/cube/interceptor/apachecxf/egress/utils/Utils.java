@@ -25,7 +25,7 @@ import io.md.dao.MDTraceInfo;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.config.Config;
+import com.cube.interceptor.apachecxf.egress.config.Config;
 
 public class Utils {
 
@@ -182,11 +182,5 @@ public class Utils {
 
 	public static MultivaluedMap<String, String> createEmptyMultivaluedMap() {
 		return new MultivaluedHashMap<>();
-	}
-
-	public static String getEgressServiceName(URI uri) {
-		return uri.getPort() != -1
-			? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
-			: uri.getHost();
 	}
 }

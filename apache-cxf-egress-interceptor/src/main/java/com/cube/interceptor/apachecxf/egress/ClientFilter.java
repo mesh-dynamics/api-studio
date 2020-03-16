@@ -43,7 +43,7 @@ import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.config.Config;
+import com.cube.interceptor.apachecxf.egress.config.Config;
 import com.cube.interceptor.apachecxf.egress.utils.Utils;
 
 
@@ -76,9 +76,9 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 
 		if (reqContext != null) {
 			// Do not log request in case the egress serivce is to be mocked
-			String serviceName = Utils.getEgressServiceName(reqContext.getUri());
+			String serviceName = CommonUtils.getEgressServiceName(reqContext.getUri());
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (!commonConfig.toMockService(serviceName)) {
+			if (!commonConfig.shouldMockService(serviceName)) {
 				recordRequest(context, reqContext);
 			}
 		} else {
@@ -146,9 +146,9 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 		ClientResponseContext clientResponseContext) throws IOException {
 		if (clientRequestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
 			// Do not log request in case the egress serivce is to be mocked
-			String service = Utils.getEgressServiceName(clientRequestContext.getUri());
+			String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (commonConfig.toMockService(service)) {
+			if (commonConfig.shouldMockService(service)) {
 				return;
 			}
 			Object apiPathObj = clientRequestContext.getProperty(Constants.MD_API_PATH_PROP);
@@ -234,9 +234,9 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
 			// Do not log request in case the egress serivce is to be mocked
-			String serviceName = Utils.getEgressServiceName(clientRequestContext.getUri());
+			String serviceName = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (!commonConfig.toMockService(serviceName)) {
+			if (!commonConfig.shouldMockService(serviceName)) {
 				//aroundWriteTo will not be called, as there will be no body to write.
 				//hence have to log the request here. WebClient does not have a provision
 				//to create a get request with body, so double logging is not an issue.
@@ -268,7 +268,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				String apiPath = uri.getPath();
 
 				//serviceName to be host+port for outgoing calls
-				String serviceName = Utils.getEgressServiceName(uri);
+				String serviceName = CommonUtils.getEgressServiceName(uri);
 
 				MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
 
