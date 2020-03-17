@@ -110,7 +110,7 @@
                 "/liststores"
               ],
               "test_virtualized_services": ["RestWrapJDBC", "Reviews", "Details"],
-              "test_intermediate_services": ["RestWrapJDBC"]
+              "test_intermediate_services": []
             }
           ],
           "serviceGraphs": [
