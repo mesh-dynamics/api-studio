@@ -109,7 +109,7 @@
                 "/listmovies",
                 "/liststores"
               ],
-              "test_virtualized_services": ["Postgres", "Reviews", "Details"],
+              "test_virtualized_services": ["RestWrapJDBC", "Reviews", "Details"],
               "test_intermediate_services": ["RestWrapJDBC"]
             }
           ],
