@@ -5,6 +5,7 @@ import {cubeActions} from "../actions";
 import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
+import {getTransformHeaders} from "../utils/lib/url-utils";
 // import { history } from "../helpers";
 import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
@@ -19,6 +20,7 @@ class ViewSelectedTestConfig extends React.Component {
             replayId: null,
             show: false,
             showCT: false,
+            showAddCustomHeader: false,
             showGoldenMeta: false,
             showGoldenFilter: false,
             goldenNameFilter: "",
@@ -31,6 +33,12 @@ class ViewSelectedTestConfig extends React.Component {
             recName: "",
             recId: null,
             stopDisabled: true,
+            customHeaders: {
+                default: {
+                    key: "",
+                    value: ""
+                }
+            }
         };
         this.statusInterval;
     }
@@ -66,6 +74,50 @@ class ViewSelectedTestConfig extends React.Component {
 
     changeRecName = (e) => {
         this.setState({recName: e.target.value});
+    };
+
+    showAddCustomHeaderModal = () => this.setState({ showAddCustomHeader: true });
+
+    cancelAddCustomHeaderModal = () => this.setState({ 
+        showAddCustomHeader: false, 
+        customHeaders: { default: { key: "", value: "" }} 
+    });
+
+    closeAddCustomHeaderModal = () => this.setState({ showAddCustomHeader: false })
+
+    addKeyValueInput = () => {
+        const headerId = Math.random().toString(36).slice(2);
+
+        this.setState({ 
+            customHeaders: {
+                ...this.state.customHeaders,
+                [headerId]: { key: "", value: "" },
+            }
+        });
+    };
+
+    removeKeyValueInput = (headerId) => {
+        const { customHeaders } = this.state;
+        
+        delete customHeaders[headerId];
+
+        this.setState({ customHeaders });
+    };
+
+    handleCustomHeaderKeyChange = (key, headerId) => {
+        const { customHeaders } = this.state;
+
+        customHeaders[headerId].key = key;
+
+        this.setState({ customHeaders });
+    };
+    
+    handleCustomHeaderValueChange = (value, headerId) => {
+        const { customHeaders } = this.state;
+
+        customHeaders[headerId].value = value;
+
+        this.setState({ customHeaders });
     };
 
     handleChangeForTestIds = (e) => {
@@ -292,6 +344,13 @@ class ViewSelectedTestConfig extends React.Component {
                     </div>
                 </div>
 
+                <div style={{ fontSize: "12px" }} className="margin-top-10 row">
+                    <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
+                        <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
+                        Add Custom Headers
+                    </span>
+                </div>
+
                 <div className="margin-top-10 row">
                     <div className={
                         (cube.selectedApp === "MovieInfo" && !username.includes("guest@meshdynamics.io"))
@@ -311,141 +370,6 @@ class ViewSelectedTestConfig extends React.Component {
         );
 
     };
-
-    render() {
-        const { cube } = this.props;
-        const { showGoldenMeta } = this.state;
-
-        return (
-            <div>
-                {!showGoldenMeta && this.renderTestInfo()}
-
-                {showGoldenMeta && <GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />}
-
-                <Modal show={this.state.recordModalVisible}>
-                    <Modal.Header>
-                        <Modal.Title>Record</Modal.Title>
-                    </Modal.Header>
-
-                    <Modal.Body className={"text-center padding-15"}>
-                        <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={this.state.recName}/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span onClick={this.startRecord} className={this.state.stopDisabled ? "cube-btn" : "cube-btn disabled"}>START</span>
-                        &nbsp;<span onClick={this.stopRecord} className={this.state.stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
-                        <div className={"padding-15 bold"}>
-                            <span className={!this.state.recStatus ? "hidden" : ""}>Recording Id: {this.state.recStatus ? this.state.recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                            Status: {this.state.recStatus ? this.state.recStatus.status : "Initialize"}
-                        </div>
-                    </Modal.Body>
-
-                    <Modal.Footer>
-                        <span onClick={this.handleCloseRecModal} className={this.state.stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
-                    </Modal.Footer>
-                </Modal>
-
-                <Modal show={this.state.show}>
-                    <Modal.Header>
-                        <Modal.Title>{cube.testConfig ? cube.testConfig.testConfigName : ''}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <div className={!cube.replayStatusObj || (cube.replayStatusObj.status != "Completed" && cube.replayStatusObj.status != "Error") ? "" : "hidden"}>Test In Progress...</div>
-                        <div className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "" : "hidden"}>Test Completed</div>
-                        <h3>
-                            Status: {cube.replayStatus}&nbsp;&nbsp;
-                            {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
-                        </h3>
-                    </Modal.Body>
-                    <Modal.Footer className={cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error")) ? "text-center" : "hidden"}>
-                        <Link to="/">
-                            <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
-                        </Link>
-                        <span onClick={this.handleClose} className="cube-btn">Done</span>
-                    </Modal.Footer>
-                </Modal>
-                <Modal show={this.state.fcId}>
-                    <Modal.Header>
-                        <Modal.Title>Force Complete</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <p>
-                            A replay with id {this.state.fcId} is in progress.
-                        </p>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <span onClick={this.handleFC} className="cube-btn">Force Complete</span>&nbsp;&nbsp;
-                        <span onClick={this.handleFCDone} className="cube-btn">Done</span>
-                    </Modal.Footer>
-                </Modal>
-
-                <Modal show={this.state.showGoldenFilter} bsSize="large">
-                    <Modal.Header>
-                        <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-5">
-                                    <div className="label-n">NAME</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenNameFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-
-                                <div className="col-md-2"></div>
-
-                                <div className="col-md-5">
-                                    <div className="label-n">BRANCH</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenBranchFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-5">
-                                    <div className="label-n">RECORDING ID</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenIdFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-
-                                <div className="col-md-2"></div>
-
-                                <div className="col-md-5">
-                                    <div className="label-n">CODE VERSION</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenVersionFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{height: "300px", overflowY: "auto"}}>
-                            <table className="table table-condensed table-hover table-striped">
-                                <thead>
-                                <tr>
-                                    <td className="bold">Name</td>
-                                    <td className="bold">ID</td>
-                                    <td className="bold">Date</td>
-                                    <td className="bold">Created By</td>
-                                    <td className="bold">Parent ID</td>
-                                </tr>
-                                </thead>
-
-                                <tbody>
-                                {this.renderCollectionTable()}
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <span onClick={this.selectHighlighted} className={this.state.selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
-                        <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
-                    </Modal.Footer>
-                </Modal>
-            </div>
-        );
-    }
 
     showGoldenFilter = () => {
         this.setState({
@@ -537,12 +461,15 @@ class ViewSelectedTestConfig extends React.Component {
             this.setState({show: true});
             let user = authentication.user;
             let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
-            
+
+            const transforms = encodeURI(JSON.stringify(getTransformHeaders(this.state.customHeaders)));
+
             const searchParams = new URLSearchParams();
             searchParams.set('endPoint', selectedInstances[0].gatewayEndpoint);
             searchParams.set('instanceId', cube.selectedInstance);
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
+            searchParams.set('transforms', transforms);
             // Append Test Paths
             // If not specified, it will run all paths
             if(testPaths && testPaths.length !== 0) {
@@ -583,6 +510,181 @@ class ViewSelectedTestConfig extends React.Component {
         let checkStatus = () => {
             dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayId, cube.selectedApp));
         };
+    };
+
+    render() {
+        const { cube } = this.props;
+        const { 
+            showGoldenMeta, customHeaders, recordModalVisible, 
+            show, fcId, showGoldenFilter, selectedGoldenFromFilter,
+            recName, stopDisabled, recStatus, showAddCustomHeader
+        } = this.state;
+
+        return (
+            <div>
+                {!showGoldenMeta && this.renderTestInfo()}
+
+                {showGoldenMeta && <GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />}
+
+                <Modal show={recordModalVisible}>
+                    <Modal.Header>
+                        <Modal.Title>Record</Modal.Title>
+                    </Modal.Header>
+
+                    <Modal.Body className={"text-center padding-15"}>
+                        <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span onClick={this.startRecord} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>START</span>
+                        &nbsp;<span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                        <div className={"padding-15 bold"}>
+                            <span className={!recStatus ? "hidden" : ""}>Recording Id: {recStatus ? recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                            Status: {recStatus ? recStatus.status : "Initialize"}
+                        </div>
+                    </Modal.Body>
+
+                    <Modal.Footer>
+                        <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
+                    </Modal.Footer>
+                </Modal>
+
+                <Modal show={show}>
+                    <Modal.Header>
+                        <Modal.Title>{cube.testConfig ? cube.testConfig.testConfigName : ''}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className={!cube.replayStatusObj || (cube.replayStatusObj.status != "Completed" && cube.replayStatusObj.status != "Error") ? "" : "hidden"}>Test In Progress...</div>
+                        <div className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "" : "hidden"}>Test Completed</div>
+                        <h3>
+                            Status: {cube.replayStatus}&nbsp;&nbsp;
+                            {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
+                        </h3>
+                    </Modal.Body>
+                    <Modal.Footer className={cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error")) ? "text-center" : "hidden"}>
+                        <Link to="/">
+                            <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
+                        </Link>
+                        <span onClick={this.handleClose} className="cube-btn">Done</span>
+                    </Modal.Footer>
+                </Modal>
+                
+                <Modal show={fcId}>
+                    <Modal.Header>
+                        <Modal.Title>Force Complete</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>
+                            A replay with id {fcId} is in progress.
+                        </p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <span onClick={this.handleFC} className="cube-btn">Force Complete</span>&nbsp;&nbsp;
+                        <span onClick={this.handleFCDone} className="cube-btn">Done</span>
+                    </Modal.Footer>
+                </Modal>
+
+                <Modal show={showGoldenFilter} bsSize="large">
+                    <Modal.Header>
+                        <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-5">
+                                    <div className="label-n">NAME</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenNameFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+
+                                <div className="col-md-2"></div>
+
+                                <div className="col-md-5">
+                                    <div className="label-n">BRANCH</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenBranchFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-5">
+                                    <div className="label-n">RECORDING ID</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenIdFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+
+                                <div className="col-md-2"></div>
+
+                                <div className="col-md-5">
+                                    <div className="label-n">CODE VERSION</div>
+                                    <div className="value-n">
+                                        <input onChange={(event) => this.applyGoldenFilter("goldenVersionFilter", event)} className="width-100 h-20px" type="text"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{height: "300px", overflowY: "auto"}}>
+                            <table className="table table-condensed table-hover table-striped">
+                                <thead>
+                                <tr>
+                                    <td className="bold">Name</td>
+                                    <td className="bold">ID</td>
+                                    <td className="bold">Date</td>
+                                    <td className="bold">Created By</td>
+                                    <td className="bold">Parent ID</td>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                {this.renderCollectionTable()}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <span onClick={this.selectHighlighted} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
+                        <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
+                    </Modal.Footer>
+                </Modal>
+                <Modal show={showAddCustomHeader} bsSize="large">
+                    <Modal.Header>
+                        <Modal.Title>Add Custom Headers</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        {Object.keys(customHeaders).map((headerId, index) => 
+                            <div key={headerId} className="add-header-row margin-bottom-10">
+                                <input 
+                                    placeholder="Header" 
+                                    className="add-header-input" 
+                                    value={customHeaders[headerId].key}
+                                    onChange={(e) => this.handleCustomHeaderKeyChange(e.target.value, headerId)} 
+                                />
+                                <input 
+                                    placeholder="Value" 
+                                    className="add-header-input margin-left-15" 
+                                    value={customHeaders[headerId].value}
+                                    onChange={(e) => this.handleCustomHeaderValueChange(e.target.value, headerId)}
+                                />
+                                {
+                                    (index + 1) === Object.keys(customHeaders).length 
+                                    ?
+                                    <i className="fas fa-plus pointer" style={{ color: "#757575", marginLeft: "5px" }} aria-hidden="true" onClick={this.addKeyValueInput}></i>
+                                    :
+                                    <i className="fas fa-close pointer" style={{ color: "#757575", marginLeft: "5px" }} aria-hidden="true" onClick={() => this.removeKeyValueInput(headerId)}></i>
+                                }
+                            </div>
+                            )
+                        }
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <span onClick={this.closeAddCustomHeaderModal} className="cube-btn">Add</span>
+                        <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
+                    </Modal.Footer>
+                </Modal>
+            </div>
+        );
     }
 }
 

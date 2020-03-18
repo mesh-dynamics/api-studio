@@ -136,4 +136,26 @@ const constructUrlParamsDiffResults = (state) => {
 
 }
 
-export { constructUrlParamsDiffResults, getSearchHistoryParams, updateSearchHistoryParams };
+const getTransformHeaders = (customHeaders) => {
+    const headerIds = Object.keys(customHeaders);
+    const [defaultItem] = customHeaders;
+    const requestTransforms = {};
+
+    // If there is only one default header... and the key is empty
+    if(headerIds.length === 1 && defaultItem.key === "") {
+        // Will return empty
+        // return has to be object
+        return { requestTransforms };
+    }
+
+    // if there are multiple header id... map it in the structure required
+    headerIds.map(id => 
+        requestTransforms[customHeaders[id].key] = [{ 
+            source: "*",
+            target: customHeaders[id].value
+    }]);
+
+    return { requestTransforms };
+};
+
+export { getTransformHeaders, constructUrlParamsDiffResults, getSearchHistoryParams, updateSearchHistoryParams };
