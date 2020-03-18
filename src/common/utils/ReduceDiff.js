@@ -62,6 +62,7 @@ class ReduceDiff {
             count: 1,
             serverSideDiff: serverSideDiff,
             jsonPath: currentJsonPath,
+            hasChildren: currentJsonPath && currentJsonPath.indexOf(BEGIN_BRACKET) > -1,
             isLastRemoved : currentDiffReason === REMOVED && isLast,
         });
         return [diffReason, tempReducedDiffArray];
