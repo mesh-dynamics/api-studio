@@ -114,13 +114,14 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
     return constructUrlParams(params);
 };
 
-const constructUrlParamsDiffResults = (state) => {
+const constructUrlParamsDiffResults = (state, isNextPage) => {
     const {
         app, replayId, timeStamp, recordingId, searchFilterPath, currentTemplateVer,
         filter : {
             selectedService, selectedAPI, 
             selectedReqMatchType, selectedDiffType, 
-            selectedResolutionType, currentPageNumber, pageSize,  
+            selectedResolutionType,  
+            startIndex, endIndex,
         },
         diffToggleRibbon: {
             showResponseMessageHeaders, // response headers
@@ -132,7 +133,7 @@ const constructUrlParamsDiffResults = (state) => {
         }
     } =  state;
 
-    return `replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&currentPageNumber=${currentPageNumber}&pageSize=${pageSize}&selectedReqMatchType=${selectedReqMatchType}&selectedDiffType=${selectedDiffType}`;
+    return `replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&selectedReqMatchType=${selectedReqMatchType}&selectedDiffType=${selectedDiffType}&` + (isNextPage ? `startIndex=${startIndex}` : `endIndex=${endIndex}`);
 
 }
 

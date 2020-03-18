@@ -9,40 +9,6 @@ export default class DiffResultsFilter extends Component {
     constructor(props) {
         super(props);
     }
-
-    renderPageButtons = () => {
-        const { pages = 1 } = this.props;
-        let pageButtons = [];
-
-        /* todo: use this for refactor
-        const { 
-            facetListData: { pages },
-            filter: { currentPageNumber }
-        } = this.props;
-    
-        return pages && _.isEmpty(pages) 
-            ? 
-            <Button
-                onClick={() => this.handleMetaDataSelect("currentPageNumber", 1)} 		
-                bsStyle="primary"
-            />
-            :
-            <Fragment>
-                pages.map(pageNumber => 
-                        <Button 
-                            onClick={() => this.handleMetaDataSelect("currentPageNumber",1)} 
-                            bsStyle={currentPageNumber === pageNumber ? "primary" : "default"}
-                        />
-                    );
-            </Fragment>
-        */
-        for(let idx = 1; idx <= pages; idx++) {
-            pageButtons.push(
-                <Button onClick={() => this.handleMetaDataSelect("currentPageNumber", idx)} bsStyle={this.props.filter.currentPageNumber === idx ? "primary" : "default"}>{idx}</Button>
-            );
-        }
-        return pageButtons;
-    }
     
     handleMetaDataSelect = (metaDataType, value) => {
         this.props.filterChangeHandler(metaDataType, value);
@@ -247,18 +213,7 @@ export default class DiffResultsFilter extends Component {
                     {this.renderServiceAPIBreadcrumb()}
                 </Breadcrumb>
 
-                {/* <div style={{ marginBottom: "18px" }}>
-                    {this.renderSelectReqRespRadio()}
-                <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
-                        
-                {this.renderResolutionTypesDropdown()}
-                </div> */}
                 {this.renderMatchCompareRibbon()}
-                <ButtonGroup style={{ marginBottom: "9px", width: "100%" }}>
-                    <div style={{ textAlign: "left" }}>
-                        {this.renderPageButtons()}
-                    </div>
-                </ButtonGroup>
             </div>
         )
     }

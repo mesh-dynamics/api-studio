@@ -30,8 +30,8 @@ class DiffResults extends Component {
                 //selectedReqCompareResType: "All",
                 //selectedRespCompareResType: "All",
     
-                currentPageNumber: 1,
-                pageSize: config.defaultPageSize,
+                startIndex: 0,
+                endIndex: 5,
             },
             diffToggleRibbon: {
                 showResponseMessageHeaders: false,
@@ -41,12 +41,13 @@ class DiffResults extends Component {
                 showRequestMessageFParams: false,
                 showRequestMessageBody: false,
             },
+
             diffLayoutData : [],
-            facetListData: {
-                services: {},
-                apiPaths: {},
-                resolutionTypes: [],
-            },
+            
+            // facets
+            serviceFacets: {},
+            apiPathFacets: {},
+            resolutionTypeFacets: [],
             
             // golden
             showNewGolden: false,
@@ -59,6 +60,7 @@ class DiffResults extends Component {
             saveGoldenError: "",
 
             isFetching: true,
+            numResults: 0,
         }
     }
 
@@ -92,24 +94,40 @@ class DiffResults extends Component {
 
         const searchFilterPath = urlParameters["searchFilterPath"] || "";
         const timeStamp = decodeURI(urlParameters["timeStamp"]) || "";
-        const currentPageNumber = parseInt(urlParameters["currentPageNumber"]) || 1;
-        const pageSize = urlParameters["pageSize"] || config.defaultPageSize;
         
+        const startIndex = urlParameters["startIndex"] || null;
+        const endIndex = urlParameters["endIndex"] || null;
+
+        // if only start index is present in the url, fetch forward
+        // else if only end index is present, fetch backward
+        // checking 'null' because 0 is also valid
+        let updateFunc;
+        if (startIndex != null) {
+            updateFunc  = () => this.updateResults(true, Math.max(startIndex, 0));
+        } else if (endIndex != null) {
+            updateFunc  = () => this.updateResults(false, endIndex);
+        } else {
+            // if none of the above, start with 0, fetching forward
+            updateFunc  = () => this.updateResults(true, 0);
+        }
+        this.setServiceFacetData(replayId); // needs to be done only once per page load
         dispatch(cubeActions.setSelectedApp(app));
+        let newFilter = {
+            ...this.state.filter,
+            selectedService: selectedService,
+            selectedAPI: selectedAPI,
+            
+            selectedReqMatchType: selectedReqMatchType,
+            selectedDiffType: selectedDiffType,
+            selectedResolutionType: selectedResolutionType,
+            //selectedReqCompareResType: selectedReqCompareResType,
+            //selectedRespCompareResType: selectedRespCompareResType,
+
+            startIndex: startIndex,
+            endIndex: endIndex,
+        }
         this.setState({
-            filter : {
-                selectedService: selectedService,
-                selectedAPI: selectedAPI,
-                
-                selectedReqMatchType: selectedReqMatchType,
-                selectedDiffType: selectedDiffType,
-                selectedResolutionType: selectedResolutionType,
-                //selectedReqCompareResType: selectedReqCompareResType,
-                //selectedRespCompareResType: selectedRespCompareResType,
-    
-                currentPageNumber: currentPageNumber,
-                pageSize: pageSize,
-            },
+            filter : newFilter,
             // set the toggle ribbon 'show' states (parse the strings from url params to boolean)
             diffToggleRibbon: {
                 // response headers
@@ -130,18 +148,15 @@ class DiffResults extends Component {
                 // request body
                 showRequestMessageBody: requestBody ? JSON.parse(requestBody) : false,
             },
-            facetListData: {
-                services: {},
-                apiPaths: {},
-                resolutionTypes: [],
-            },
             replayId: replayId,
             recordingId: recordingId,
             currentTemplateVer: currentTemplateVer,
             app: app,
             searchFilterPath: searchFilterPath,
             timeStamp: timeStamp,
-        });
+        },
+        updateFunc);
+
         setTimeout(() => {
             const { dispatch } = this.props;
             dispatch(cubeActions.setPathResultsParams({
@@ -156,7 +171,6 @@ class DiffResults extends Component {
             dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
-            this.fetchAndUpdateResults();
         });
     }
 
@@ -188,8 +202,6 @@ class DiffResults extends Component {
             //         newFilter["selectedRespCompareResType"] = "All";        
             //     }
                 
-            case "currentPageNumber":
-                newFilter["currentPageNumber"] = 1;
             default:
                 newFilter[metaData] = value;       
         }
@@ -199,256 +211,29 @@ class DiffResults extends Component {
                 filter: newFilter,
                 showAll: (newFilter['selectedResolutionType'] === "All"),
             },
-            this.updateResults
-            // this.fetchAndUpdateResults
+            () => this.updateResults(true, 0) // fetch and update results from 0
         );    
     }
 
-    // todo: move to utils
-    cleanEscapedString = (str) => {
-        // preserve newlines, etc - use valid JSON
-        str = str.replace(/\\n/g, "\\n")
-            .replace(/\\'/g, "\\'")
-            .replace(/\\"/g, '\\"')
-            .replace(/\\&/g, "\\&")
-            .replace(/\\r/g, "\\r")
-            .replace(/\\t/g, "\\t")
-            .replace(/\\b/g, "\\b")
-            .replace(/\\f/g, "\\f");
-        // remove non-printable and other non-valid JSON chars
-        str = str.replace(/[\u0000-\u0019]+/g, "");
-        return str;
-    }
-
-    updateResults = () => {
-        this.updateUrlPathWithFilters();
-        this.fetchAndUpdateResults();
+    updateResults = (isNextPage, index) => {
+        this.updatePageResults(isNextPage, index)
+        .then(
+            () => this.updateUrlPathWithFilters(isNextPage)
+        )
     };
 
-    // todo: move to utils
-    validateAndCleanHTTPMessageParts = (messagePart) => {
-        if(messagePart) {
+    updateUrlPathWithFilters = (isNextPage) => {
+        const { history } = this.props;
+        const constructedUrlParams = constructUrlParamsDiffResults(this.state, isNextPage);
 
-            if (_.isObject(messagePart)) {
-                return messagePart;
-            }
-
-            try {
-                return JSON.parse(messagePart);
-            } catch (e) {
-                return JSON.parse('"' + this.cleanEscapedString(_.escape(messagePart)) + '"')
-            }            
-        }
-
-        return JSON.parse('""');
-    }
-
-    
-    // todo: move to utils
-    getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path) => {
-        if (!serverSideDiff || serverSideDiff.length === 0) return null; 
-        let actpart = JSON.stringify(replayedPart, undefined, 4);
-        let expPart = JSON.stringify(recordedPart, undefined, 4);
-        let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
-        let reductedDiffArrayMsgPart = reducedDiffArrayMsgPart.computeDiffArray()
-        let updatedReductedDiffArrayMsgPart = reductedDiffArrayMsgPart && reductedDiffArrayMsgPart.map((eachItem) => {
-            return {
-                ...eachItem,
-                service,
-                app: this.state.app,
-                templateVersion: this.state.templateVersion,
-                apiPath: path,
-                replayId: this.state.replayId,
-                recordingId: this.state.recordingId
-            }
-        });
-        return updatedReductedDiffArrayMsgPart;
-    }
-
-    // todo: move to utils
-    validateAndCreateDiffLayoutData = (replayList) => {
-        let diffLayoutData = replayList.map((item) => {
-            let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
-                recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
-            let isJson = true;
-            // processing Response    
-            // recorded response body and headers
-            if (item.recordResponse) {
-                recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
-                // check if the content type is JSON and attempt to parse it
-                let recordedResponseMime = recordedResponseHeaders["content-type"][0];
-                isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
-                if (item.recordResponse.body && isJson) {
-                    try {
-                        recordedData = JSON.parse(item.recordResponse.body);
-                    } catch (e) {
-                        recordedData = JSON.parse('"' + this.cleanEscapedString(_.escape(item.recordResponse.body)) + '"')
-                    }
-                }
-                else {
-                    // in case the content type isn't json, display the entire body if present, or else an empty string
-                    recordedData = item.recordResponse.body ? item.recordResponse.body : '""';
-                }
-            } else {
-                recordedResponseHeaders = "";
-                recordedData = "";
-            }   
-
-            // same as above but for replayed response
-            if (item.replayResponse) {
-                replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
-                // check if the content type is JSON and attempt to parse it
-                let replayedResponseMime = replayedResponseHeaders["content-type"][0];
-                isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
-                if (item.replayResponse.body && isJson) {
-                    try {
-                        replayedData = JSON.parse(item.replayResponse.body);
-                    } catch (e) {
-                        replayedData = JSON.parse('"' + this.cleanEscapedString(_.escape(item.replayResponse.body)) + '"')
-                    }
-                }
-                else {
-                    // in case the content type isn't json, display the entire body if present, or else an empty string
-                    replayedData = item.replayResponse.body ? item.replayResponse.body : '""';
-                }
-            } else {
-                replayedResponseHeaders = "";
-                replayedData = "";
-            }
-            let diff;
-            
-            if (item.respCompDiff && item.respCompDiff.length !== 0) {
-                diff = item.respCompDiff;
-            } else {
-                diff = [];
-            }
-            let actJSON = JSON.stringify(sortJson(replayedData), undefined, 4),
-                expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
-            let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
-
-            let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
-            let expRespHdrJSON = JSON.stringify(recordedResponseHeaders, undefined, 4);
-            
-
-            // use the backend diff and the two JSONs to generate diff array that will be passed to the diff renderer
-            if (diff && diff.length > 0) {
-                // skip calculating the diff array in case of non json data 
-                // pass diffArray as null so that the diff library can render it directly
-                if (isJson) { 
-                    let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
-                    reductedDiffArray = reduceDiff.computeDiffArray();
-                }
-                let expJSONPaths = generator(recordedData, "", "", prefix);
-                missedRequiredFields = diff.filter((eachItem) => {
-                    return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
-                })
-
-                let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
-                reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
-
-            } else if (diff && diff.length == 0) {
-                if (_.isEqual(expJSON, actJSON)) {
-                    let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
-                    reductedDiffArray = reduceDiff.computeDiffArray();
-                }
-            }
-            let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
-                return {
-                    ...eachItem,
-                    service: item.service,
-                    app: this.state.app,
-                    templateVersion: this.state.templateVersion,
-                    apiPath: item.path,
-                    replayId: this.state.replayId,
-                    recordingId: this.state.recordingId
-                }
-            });
-
-            let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
-                return {
-                    ...eachItem,
-                    service: item.service,
-                    app: this.state.app,
-                    templateVersion: this.state.templateVersion,
-                    apiPath: item.path,
-                    replayId: this.state.replayId,
-                    recordingId: this.state.recordingId
-                }
-            });
-
-            // process Requests
-            // recorded request header and body
-            // parse and clean up body string
-            if (item.recordRequest) {
-                recordedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
-                recordedRequestBody = this.validateAndCleanHTTPMessageParts(item.recordRequest.body);
-                recordedRequestQParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
-                recordedRequestFParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
-            } else {
-                recordedRequestHeaders = "";
-                recordedRequestBody = "";
-                recordedRequestQParams = "";
-                recordedRequestFParams = "";
-            }
-
-            // replayed request header and body
-            // same as above
-            if (item.replayRequest) {
-                replayedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
-                replayedRequestBody = this.validateAndCleanHTTPMessageParts(item.replayRequest.body);
-                replayedRequestQParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
-                replayedRequestFParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
-            } else {
-                replayedRequestHeaders = "";
-                replayedRequestBody = "";
-                replayedRequestQParams = "";
-                replayedRequestFParams = "";
-            }
-
-            reductedDiffArrayReqHeaders = this.getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path);
-            reductedDiffArrayReqQParams = this.getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path);
-            reductedDiffArrayReqFParams = this.getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path);
-            reductedDiffArrayReqBody = this.getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path);
-
-            return {
-                ...item,
-                recordedResponseHeaders,
-                replayedResponseHeaders,
-                recordedData,
-                replayedData,
-                actJSON,
-                expJSON,
-                parsedDiff: diff,
-                reductedDiffArray: updatedReductedDiffArray,
-                missedRequiredFields,
-                show: true,
-                recordedRequestHeaders,
-                replayedRequestHeaders,
-                recordedRequestQParams,
-                replayedRequestQParams,
-                recordedRequestFParams,
-                replayedRequestFParams,
-                recordedRequestBody,
-                replayedRequestBody,
-                updatedReducedDiffArrayRespHdr,
-                reductedDiffArrayReqHeaders,
-                reductedDiffArrayReqQParams,
-                reductedDiffArrayReqFParams,
-                reductedDiffArrayReqBody
-            }
-        });
-        return diffLayoutData;
-    }
+        history.push(`/diff_results?${constructedUrlParams}`)
+    };
 
     updateResolutionFilterPaths = (diffLayoutData) => {
         const selectedResolutionType = this.state.filter.selectedResolutionType;
         diffLayoutData && diffLayoutData.forEach(item => {
             item.filterPaths = [];
             for (let jsonPathParsedDiff of item.parsedDiff) {
-                // TODO: count of ERR/non-ERR types
-                // add non error types to resolutionTypes list
-                //resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
-
                 // add path to the filter list if the resolution is All or matches the current selected one,
                 // and if the selected type is 'All Errors' it is an error type
                 if (selectedResolutionType === "All"
@@ -462,17 +247,91 @@ class DiffResults extends Component {
         });
     }
 
+    // fetch and set the service facets
+    setServiceFacetData = async (replayId) => {
+        this.fetchFacetData(replayId)
+        .then(
+            (resultsData) => {
+                const facets = resultsData.data && resultsData.data.facets || {};
+                this.setState({
+                    serviceFacets: facets.serviceFacets,
+                })
+            }
+        );
+    }
+
+
+    // todo: move to utils
+    pruneResults = (diffLayoutData, fromBeginning) => {
+        let accumulatedObjectSize = 0;
+        const diffObjectSizeThreshold = config.diffObjectSizeThreshold;
+        const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
+        let len = diffLayoutData.length;
+        let i;
+        if (fromBeginning) { // prune from top of the list
+            i = 0;
+            while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+                accumulatedObjectSize += this.roughSizeOfObject(diffLayoutData[i]);
+                i++;
+            }
+            let diffLayoutDataPruned = diffLayoutData.slice(0, i)
+            return {diffLayoutDataPruned, i};
+        } else { // prune from bottom of the list
+            i = 0;
+            while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+                accumulatedObjectSize += this.roughSizeOfObject(diffLayoutData[len-i-1]);
+                i++;
+            }
+            let diffLayoutDataPruned = diffLayoutData.slice(len - i, len);
+            return {diffLayoutDataPruned, i} 
+        }
+    }
+
+    // todo: move to utils
+    roughSizeOfObject = ( object ) => {
+
+        var objectList = [];
+        var stack = [ object ];
+        var bytes = 0;
+    
+        while ( stack.length ) {
+            var value = stack.pop();
+    
+            if ( typeof value === 'boolean' ) {
+                bytes += 4;
+            }
+            else if ( typeof value === 'string' ) {
+                bytes += value.length * 2;
+            }
+            else if ( typeof value === 'number' ) {
+                bytes += 8;
+            }
+            else if
+            (
+                typeof value === 'object'
+                && objectList.indexOf( value ) === -1
+            )
+            {
+                objectList.push( value );
+    
+                for( var i in value ) {
+                    stack.push( value[ i ] );
+                }
+            }
+        }
+        return bytes;
+    }
+    
+
     // fetch the analysis results
     // todo: move to service file 
     async fetchAnalysisResults(replayId, filter) {
         console.log("fetching replay list")
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-
-        let start = (filter.currentPageNumber - 1) * filter.pageSize;
         
         let searchParams = new URLSearchParams();
-        searchParams.set("start", start);
-        searchParams.set("numResults", filter.pageSize);
+        searchParams.set("start", filter.startIndex);
+        searchParams.set("numResults", config.defaultFetchDiffResults); // 
         searchParams.set("includeDiff", true);
 
         if (filter.selectedService !== "All") {
@@ -568,12 +427,67 @@ class DiffResults extends Component {
         //return respData.facets;
     }
 
-    updateUrlPathWithFilters = () => {
-        const { history } = this.props;
-        const constructedUrlParams = constructUrlParamsDiffResults(this.state);
+    preProcessResults = (results) => {
+        let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
+        this.updateResolutionFilterPaths(diffLayoutData);
+        return diffLayoutData;
+    }
 
-        history.push(`/diff_results?${constructedUrlParams}`)
-    };
+    handlePageNav = (isNextPage, index) => {
+        this.updateResults(isNextPage, index);
+    }
+    
+    updatePageResults = async (isNextPage, index) => {
+        let {filter, replayId} = this.state;
+        let {pageSize} = config.defaultFetchDiffResults;
+        let startIndex, endIndex;
+        let diffLayoutDataPruned, resultsData;
+
+        this.setState({isFetching: true})
+
+        if (isNextPage) {
+            startIndex = index;
+            resultsData = await this.fetchAnalysisResults(replayId, {...filter, startIndex});
+            
+            const results = resultsData.data && resultsData.data.res || [];
+            const diffLayoutData = this.preProcessResults(results);
+            
+            let pruneEndIndex;
+            ({diffLayoutDataPruned, i: pruneEndIndex} = this.pruneResults(diffLayoutData, true));
+            
+            endIndex = startIndex + pruneEndIndex;
+            
+        } else {
+            endIndex = index;
+            startIndex = Math.max(endIndex - pageSize, 0);
+            resultsData = await this.fetchAnalysisResults(replayId, {...filter, startIndex});
+            
+            const results = resultsData.data && resultsData.data.res || [];
+            const diffLayoutData = this.preProcessResults(results);
+            
+            let pruneStartIndex;
+            ({diffLayoutDataPruned, i: pruneStartIndex} = this.pruneResults(diffLayoutData, false))
+            
+            startIndex = Math.max(endIndex - pruneStartIndex, 0);
+
+        }
+
+        const facets = resultsData.data && resultsData.data.facets || {};
+        const numFound = resultsData.data && resultsData.data.numFound || 0;
+
+        this.setState({
+            diffLayoutData: diffLayoutDataPruned,
+            apiPathFacets: facets.pathFacets,
+            resolutionTypeFacets: facets.diffResFacets,
+            isFetching: false,
+            filter: {
+                ...filter,
+                startIndex,
+                endIndex,
+            },
+            numResults: numFound,
+        });
+    }
 
     updateDiffToggleRibbon = (updatedRibbonState) => {
 
@@ -588,57 +502,6 @@ class DiffResults extends Component {
         }, this.updateUrlPathWithFilters);
     }
         
-    fetchAndUpdateResults = () => {
-        // fetch results from the backend
-        const { replayId, filter, facetListData } = this.state;
-        
-        this.setState({isFetching : true})
-        
-        // fetch facet data for services (since it requires a non filtered call) 
-        // if already present, skip the api call and set existing data in a resolved Promise
-        let facetDataPromise;
-
-        if (_.isEmpty(facetListData.services)) {
-            facetDataPromise = this.fetchFacetData(replayId);
-        } else {
-            facetDataPromise = Promise.resolve({
-                data: {
-                    facets: {
-                        serviceFacets: facetListData.services,
-                    },
-                },
-            });  
-        }
-
-        // fetch results and facet data
-        let resultsPromise = this.fetchAnalysisResults(replayId, filter);
-        
-        // after both of the above are completed, do further processing
-        Promise.all([facetDataPromise, resultsPromise]).then(([facetData, resultsData]) => {
-            const facets1 = facetData.data && facetData.data.facets || {};
-            
-            const results = resultsData.data && resultsData.data.res || [];
-            let diffLayoutData = this.validateAndCreateDiffLayoutData(results);
-            this.updateResolutionFilterPaths(diffLayoutData);
-            
-            const facets2 = resultsData.data && resultsData.data.facets || {};
-
-            const numFound = resultsData.data && resultsData.data.numFound || 0;
-            const pages = Math.ceil(numFound/filter.pageSize);
-
-            this.setState({
-                pages: pages,
-                diffLayoutData: diffLayoutData,
-                facetListData: {
-                    services: facets1.serviceFacets,
-                    apiPaths: facets2.pathFacets,
-                    resolutionTypes: facets2.diffResFacets,
-                },
-                isFetching: false,
-            });
-        });
-    }
-
     handleClose = () => {
         const { history, dispatch } = this.props;
         dispatch(cubeActions.clearGolden());
@@ -869,6 +732,11 @@ class DiffResults extends Component {
 
     render() {
         const showAll = this.state.showAll;
+        const facetListData = {
+            services: this.state.serviceFacets,
+            apiPaths: this.state.apiPathFacets,
+            resolutionTypes: this.state.resolutionTypeFacets,
+        };
         return (
             <DiffResultsContext.Provider 
                 value={{ 
@@ -889,17 +757,21 @@ class DiffResults extends Component {
                         <DiffResultsFilter 
                             filter={this.state.filter} 
                             filterChangeHandler={this.handleFilterChange} 
-                            facetListData={this.state.facetListData} 
+                            facetListData={facetListData} 
                             app={this.state.app ? this.state.app : "(Unknown)"} 
                             pages={this.state.pages}
                         ></DiffResultsFilter>
+
                         <DiffResultsList 
                             showAll={showAll} 
-                            facetListData={this.state.facetListData} 
                             diffLayoutData={this.state.diffLayoutData} 
                             diffToggleRibbon={this.state.diffToggleRibbon}
                             updateDiffToggleRibbon={this.updateDiffToggleRibbon}
                             isFetching={this.state.isFetching}
+                            handlePageNav={this.handlePageNav}
+                            startIndex={this.state.filter.startIndex}
+                            endIndex={this.state.filter.endIndex}
+                            numResults={this.state.numResults}
                         ></DiffResultsList>
                     </div>
                     
@@ -907,7 +779,238 @@ class DiffResults extends Component {
                 </div>
             </DiffResultsContext.Provider>
         )
-    } 
+    }
+    
+    // todo: move to utils
+    cleanEscapedString = (str) => {
+        // preserve newlines, etc - use valid JSON
+        str = str.replace(/\\n/g, "\\n")
+            .replace(/\\'/g, "\\'")
+            .replace(/\\"/g, '\\"')
+            .replace(/\\&/g, "\\&")
+            .replace(/\\r/g, "\\r")
+            .replace(/\\t/g, "\\t")
+            .replace(/\\b/g, "\\b")
+            .replace(/\\f/g, "\\f");
+        // remove non-printable and other non-valid JSON chars
+        str = str.replace(/[\u0000-\u0019]+/g, "");
+        return str;
+    }
+    
+    // todo: move to utils
+    validateAndCleanHTTPMessageParts = (messagePart) => {
+        let cleanedMessagepart = "";
+        if (messagePart &&_.isObject(messagePart)) {
+            cleanedMessagepart = messagePart;
+        } else if (messagePart) {
+            try {
+                cleanedMessagepart = JSON.parse(messagePart);
+            } catch (e) {
+                cleanedMessagepart = JSON.parse('"' + this.cleanEscapedString(_.escape(messagePart)) + '"')
+            }
+        } else {
+            cleanedMessagepart = messagePart || JSON.parse('""');
+        }
+
+        return cleanedMessagepart;
+    }
+
+    
+    // todo: move to utils
+    getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path) => {
+        if (!serverSideDiff || serverSideDiff.length === 0) return null; 
+        let actpart = JSON.stringify(replayedPart, undefined, 4);
+        let expPart = JSON.stringify(recordedPart, undefined, 4);
+        let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
+        let reductedDiffArrayMsgPart = reducedDiffArrayMsgPart.computeDiffArray()
+        let updatedReductedDiffArrayMsgPart = reductedDiffArrayMsgPart && reductedDiffArrayMsgPart.map((eachItem) => {
+            return {
+                ...eachItem,
+                service,
+                app: this.state.app,
+                templateVersion: this.state.templateVersion,
+                apiPath: path,
+                replayId: this.state.replayId,
+                recordingId: this.state.recordingId
+            }
+        });
+        return updatedReductedDiffArrayMsgPart;
+    }
+
+    // todo: move to utils
+    validateAndCreateDiffLayoutData = (replayList) => {
+        let diffLayoutData = replayList.map((item) => {
+            let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
+                recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
+            let isJson = true;
+            // processing Response    
+            // recorded response body and headers
+            if (item.recordResponse) {
+                recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
+                // check if the content type is JSON and attempt to parse it
+                let recordedResponseMime = recordedResponseHeaders["content-type"] ? recordedResponseHeaders["content-type"][0] : "";
+                isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
+                if (item.recordResponse.body && isJson) {
+                    try {
+                        recordedData = JSON.parse(item.recordResponse.body);
+                    } catch (e) {
+                        recordedData = JSON.parse('"' + this.cleanEscapedString(_.escape(item.recordResponse.body)) + '"')
+                    }
+                }
+                else {
+                    // in case the content type isn't json, display the entire body if present, or else an empty string
+                    recordedData = item.recordResponse.body ? item.recordResponse.body : '""';
+                }
+            } else {
+                recordedResponseHeaders = "";
+                recordedData = "";
+            }   
+
+            // same as above but for replayed response
+            if (item.replayResponse) {
+                replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
+                // check if the content type is JSON and attempt to parse it
+                let replayedResponseMime = replayedResponseHeaders["content-type"] ? replayedResponseHeaders["content-type"][0] : "";
+                isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
+                if (item.replayResponse.body && isJson) {
+                    try {
+                        replayedData = JSON.parse(item.replayResponse.body);
+                    } catch (e) {
+                        replayedData = JSON.parse('"' + this.cleanEscapedString(_.escape(item.replayResponse.body)) + '"')
+                    }
+                }
+                else {
+                    // in case the content type isn't json, display the entire body if present, or else an empty string
+                    replayedData = item.replayResponse.body ? item.replayResponse.body : '""';
+                }
+            } else {
+                replayedResponseHeaders = "";
+                replayedData = "";
+            }
+            let diff;
+            
+            if (item.respCompDiff && item.respCompDiff.length !== 0) {
+                diff = item.respCompDiff;
+            } else {
+                diff = [];
+            }
+            let actJSON = JSON.stringify(sortJson(replayedData), undefined, 4),
+                expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
+            let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
+
+            let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
+            let expRespHdrJSON = JSON.stringify(recordedResponseHeaders, undefined, 4);
+            
+
+            // use the backend diff and the two JSONs to generate diff array that will be passed to the diff renderer
+            if (diff && diff.length > 0) {
+                // skip calculating the diff array in case of non json data 
+                // pass diffArray as null so that the diff library can render it directly
+                if (isJson) { 
+                    let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
+                    reductedDiffArray = reduceDiff.computeDiffArray();
+                }
+                let expJSONPaths = generator(recordedData, "", "", prefix);
+                missedRequiredFields = diff.filter((eachItem) => {
+                    return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
+                })
+
+                let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
+                reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
+
+            } else if (diff && diff.length == 0) {
+                if (_.isEqual(expJSON, actJSON)) {
+                    let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
+                    reductedDiffArray = reduceDiff.computeDiffArray();
+                }
+            }
+            let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
+                return {
+                    ...eachItem,
+                    service: item.service,
+                    app: this.state.app,
+                    templateVersion: this.state.templateVersion,
+                    apiPath: item.path,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId
+                }
+            });
+
+            let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
+                return {
+                    ...eachItem,
+                    service: item.service,
+                    app: this.state.app,
+                    templateVersion: this.state.templateVersion,
+                    apiPath: item.path,
+                    replayId: this.state.replayId,
+                    recordingId: this.state.recordingId
+                }
+            });
+
+            // process Requests
+            // recorded request header and body
+            // parse and clean up body string
+            if (item.recordRequest) {
+                recordedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
+                recordedRequestBody = this.validateAndCleanHTTPMessageParts(item.recordRequest.body);
+                recordedRequestQParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
+                recordedRequestFParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
+            } else {
+                recordedRequestHeaders = "";
+                recordedRequestBody = "";
+                recordedRequestQParams = "";
+                recordedRequestFParams = "";
+            }
+
+            // replayed request header and body
+            // same as above
+            if (item.replayRequest) {
+                replayedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
+                replayedRequestBody = this.validateAndCleanHTTPMessageParts(item.replayRequest.body);
+                replayedRequestQParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
+                replayedRequestFParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
+            } else {
+                replayedRequestHeaders = "";
+                replayedRequestBody = "";
+                replayedRequestQParams = "";
+                replayedRequestFParams = "";
+            }
+
+            reductedDiffArrayReqHeaders = this.getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path);
+            reductedDiffArrayReqQParams = this.getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path);
+            reductedDiffArrayReqFParams = this.getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path);
+            reductedDiffArrayReqBody = this.getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path);
+
+            return {
+                ...item,
+                recordedResponseHeaders,
+                replayedResponseHeaders,
+                recordedData,
+                replayedData,
+                actJSON,
+                expJSON,
+                parsedDiff: diff,
+                reductedDiffArray: updatedReductedDiffArray,
+                missedRequiredFields,
+                show: true,
+                recordedRequestHeaders,
+                replayedRequestHeaders,
+                recordedRequestQParams,
+                replayedRequestQParams,
+                recordedRequestFParams,
+                replayedRequestFParams,
+                recordedRequestBody,
+                replayedRequestBody,
+                updatedReducedDiffArrayRespHdr,
+                reductedDiffArrayReqHeaders,
+                reductedDiffArrayReqQParams,
+                reductedDiffArrayReqFParams,
+                reductedDiffArrayReqBody
+            }
+        });
+        return diffLayoutData;
+    }
 }
 
 const mapStateToProps = (state) => ({

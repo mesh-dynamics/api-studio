@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 import {resolutionsIconMap} from "../../components/Resolutions.js";
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from "react-bootstrap";
+import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio, InputGroup} from "react-bootstrap";
 import ReactDiffViewer from "../../utils/diff/diff-main";
 import statusCodeList from "../../StatusCodeList"
 import _ from "lodash";
@@ -131,6 +131,43 @@ export default class DiffResultsList extends Component {
 
     handleSearchFilterChange = (e) => {
         this.setState({ searchFilterPath: e.target.value });
+    }
+
+    handleStartIndexChange = (e) => {
+        let value = parseInt(e.target.value)
+        if (e.key !== "Enter")
+            return;
+
+        if (!(value >= 0)) {
+            alert("Invalid index value")
+            console.error("Invalid index value")
+            return;
+        }
+        
+        this.props.handlePageNav(true, value);
+    }
+
+    // page navigation
+    renderPageNav = () => {
+        const {startIndex, endIndex, numResults} = this.props;
+        return(
+            <div>
+                <ButtonGroup>
+                    <Button onClick={() => this.props.handlePageNav(false, startIndex)} disabled={(startIndex === 0) || (numResults === 0)}>&lt;</Button>
+                    <Button onClick ={() => this.props.handlePageNav(true, endIndex)} disabled={(endIndex === numResults) || (numResults === 0)}>&gt;</Button>
+                    
+                </ButtonGroup>
+                <div class="checkbox-inline">
+                    <label class="checkbox-inline" style={{paddingLeft: 0}}>
+                        Results 
+                    </label>
+                    <input class="checkbox-inline" defaultValue={startIndex} onKeyPressCapture={this.handleStartIndexChange} style={{width: "60px"}}/>
+                    <label class="checkbox-inline" style={{paddingLeft: 0}}>
+                    to {endIndex} of {numResults}
+                    </label>
+                </div>
+            </div>
+        )
     }
 
     renderToggleRibbon = () => {
@@ -359,8 +396,10 @@ export default class DiffResultsList extends Component {
                 ? this.renderLoading() 
                 : 
                 <Fragment>
+                    {this.renderPageNav()}
                     {this.renderToggleRibbon()}
                     {this.renderResultsList()}
+                    {this.renderPageNav()}
                 </Fragment>}
             </div>
         )
