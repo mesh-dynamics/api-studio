@@ -139,11 +139,11 @@ const constructUrlParamsDiffResults = (state, isNextPage) => {
 
 const getTransformHeaders = (customHeaders) => {
     const headerIds = Object.keys(customHeaders);
-    const [defaultItem] = customHeaders;
+    const [defaultItem] = headerIds;
     const requestTransforms = {};
 
     // If there is only one default header... and the key is empty
-    if(headerIds.length === 1 && defaultItem.key === "") {
+    if(headerIds.length === 1 && customHeaders[defaultItem].key === "") {
         // Will return empty
         // return has to be object
         return { requestTransforms };
