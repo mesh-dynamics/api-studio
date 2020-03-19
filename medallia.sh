@@ -53,7 +53,6 @@ analyze() {
 
 main() {
 	set -ex
-	RECORDING_ID=Recording--1680696020
 	if [ -z "$RECORDING_ID" ]; then
 		echo "Enter Recording Id"
 		read RECORDING_ID
