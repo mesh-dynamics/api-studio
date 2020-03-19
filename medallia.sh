@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 replay() {
 	BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
-
+	BODY2=$(echo transforms={"requestTransforms":{"authorization":[{"source":"*", "target":"Bearer $SECURITY_TOKEN"}]}})
 	REPLAY_ID=$(curl -X POST \
 		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
+		--data-urlencode "$BODY2" \
 		-d $BODY \
 	| jq -r ".replayId")
 
 	echo "REPLAYID:" $REPLAY_ID
-
 	#Status Check
 	COUNT=0
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ]; do
@@ -64,6 +64,7 @@ main() {
 	TEMPLATE=DEFAULT
 	SENTTOEMAIL=aakash.singahl@meshdynamics.io
 	SENDGRID_API_KEY='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'
+	SECURITY_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1IiwiaWF0IjoxNTgzMjA3NjM0LCJleHAiOjE1ODMyMTEyMzR9.0LT2PKM3rT46ZOy5pD2G44pge5qpSNWU9-e7fRuPtLk"
 	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZWRhbGxpYS5jb20iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoyLCJpYXQiOjE1ODMwNTE4NDEsImV4cCI6MTg5ODQxMTg0MX0.9hOCHHkf1N6wxyG7w-MJ8M22yQEy8qiGzuCBSjTYY9o"
 	replay
 	analyze
