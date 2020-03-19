@@ -47,7 +47,8 @@ public class TracingFilter extends OncePerRequestFilter {
 		HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws ServletException, IOException {
 		//start a md-child-span
-		MultivaluedMap<String, String> requestHeaders = Utils.getHeaders(httpServletRequest);
+		HeaderWrapper wrappedRequest =  new HeaderWrapper(httpServletRequest);
+		MultivaluedMap<String, String> requestHeaders = wrappedRequest.headersToMultiMap();
 		String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
 		Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
 		Scope scope = CommonUtils.activateSpan(span);
@@ -56,14 +57,22 @@ public class TracingFilter extends OncePerRequestFilter {
 		String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
 		if (sampleBaggageItem == null) {
 			//root span
-			boolean isSampled = runSampling(httpServletRequest, fieldCategory);
+			boolean isSampled = runSampling(wrappedRequest, fieldCategory);
 			span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
 		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && config.commonConfig.samplerVeto) {
 			span.setBaggageItem(Constants.MD_IS_VETOED,
-				String.valueOf(runSampling(httpServletRequest, fieldCategory)));
+				String.valueOf(runSampling(wrappedRequest, fieldCategory)));
 		}
 
-		filterChain.doFilter(httpServletRequest, httpServletResponse);
+		CommonUtils.injectContext(requestHeaders);
+		//cannot directly inject into httpservletrequest
+		requestHeaders.keySet().forEach(value -> {
+			if (wrappedRequest.getHeader(value) == null) {
+				wrappedRequest.putHeader(value, requestHeaders.get(value));
+			}
+		});
+
+		filterChain.doFilter(wrappedRequest, httpServletResponse);
 
 		if (scope != null) {
 			scope.close();

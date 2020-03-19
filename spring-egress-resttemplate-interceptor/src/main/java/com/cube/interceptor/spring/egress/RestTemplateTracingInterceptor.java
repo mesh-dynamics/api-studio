@@ -27,6 +27,12 @@ public class RestTemplateTracingInterceptor implements ClientHttpRequestIntercep
 		MultivaluedMap<String, String> requestHeaders = Utils
 			.getMultiMap(httpRequest.getHeaders().entrySet());
 		CommonUtils.injectContext(requestHeaders);
+
+		//Need to add the md-context headers to the original request
+		//if underlying framework doesn't have MultivaluedMap o/p for headers
+		requestHeaders.keySet().removeAll(httpRequest.getHeaders().keySet());
+		httpRequest.getHeaders().putAll(requestHeaders);
+
 		return execution.execute(httpRequest, bytes);
 	}
 }
