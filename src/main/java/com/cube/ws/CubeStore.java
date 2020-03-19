@@ -50,6 +50,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -154,6 +155,9 @@ public class CubeStore {
 
     private void storeSingleReqResp(ReqRespStore.ReqResp rr, String path,
         MultivaluedMap<String, String> queryParams) throws CubeStoreException {
+
+	    path = CompareTemplate.normaliseAPIPath(path);
+
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
             hdrs.add(kv.getKey(), kv.getValue());
