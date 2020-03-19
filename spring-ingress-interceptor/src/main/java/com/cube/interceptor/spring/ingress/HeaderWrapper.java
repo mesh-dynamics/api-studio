@@ -60,9 +60,7 @@ public class HeaderWrapper extends HttpServletRequestWrapper {
 		Enumeration<String> headerNames = getHeaderNames();
 		Collections.list(headerNames).stream().forEach(headerName -> {
 			Enumeration<String> headerValues = this.getHeaders(headerName);
-			while (headerValues.hasMoreElements()) {
-				headerMap.add(headerName, headerValues.nextElement());
-			}
+			headerMap.addAll(headerName, Collections.list(headerValues));
 		});
 
 		return headerMap;

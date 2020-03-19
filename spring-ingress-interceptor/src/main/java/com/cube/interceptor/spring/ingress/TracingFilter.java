@@ -47,7 +47,7 @@ public class TracingFilter extends OncePerRequestFilter {
 		HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws ServletException, IOException {
 		//start a md-child-span
-		HeaderWrapper wrappedRequest =  new HeaderWrapper(httpServletRequest);
+		HeaderWrapper wrappedRequest = new HeaderWrapper(httpServletRequest);
 		MultivaluedMap<String, String> requestHeaders = wrappedRequest.headersToMultiMap();
 		String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
 		Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
@@ -64,13 +64,11 @@ public class TracingFilter extends OncePerRequestFilter {
 				String.valueOf(runSampling(wrappedRequest, fieldCategory)));
 		}
 
-		CommonUtils.injectContext(requestHeaders);
+		MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
+		CommonUtils.injectContext(mdTraceHeaders);
 		//cannot directly inject into httpservletrequest
-		requestHeaders.keySet().forEach(value -> {
-			if (wrappedRequest.getHeader(value) == null) {
-				wrappedRequest.putHeader(value, requestHeaders.get(value));
-			}
-		});
+		mdTraceHeaders.keySet().forEach(value ->
+			wrappedRequest.putHeader(value, mdTraceHeaders.get(value)));
 
 		filterChain.doFilter(wrappedRequest, httpServletResponse);
 

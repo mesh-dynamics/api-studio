@@ -1,5 +1,6 @@
 package com.cube.interceptor.spring.egress;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.springframework.core.annotation.Order;
@@ -19,15 +20,13 @@ public class WebFluxTracingInterceptor {
 
 	public static ExchangeFilterFunction logFilter() {
 		return (clientRequest, next) -> {
-			MultivaluedMap<String, String> requestHeaders = Utils
-				.getMultiMap(clientRequest.headers().entrySet());
-			CommonUtils.injectContext(requestHeaders);
+			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
+			CommonUtils.injectContext(mdTraceHeaders);
 
 			//Need to add the md-context headers to the original request
 			//if underlying framework doesn't have MultivaluedMap o/p for headers
-			requestHeaders.keySet().removeAll(clientRequest.headers().keySet());
 			ClientRequest request = ClientRequest.from(clientRequest)
-				.headers(httpHeaders -> httpHeaders.putAll(requestHeaders)).build();
+				.headers(httpHeaders -> httpHeaders.putAll(mdTraceHeaders)).build();
 
 			return next.exchange(request);
 		};
