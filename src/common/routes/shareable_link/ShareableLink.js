@@ -80,7 +80,7 @@ class ShareableLink extends Component {
             timeStamp: "",
             popoverCurrentPath: "",
             collapseLength: 2,
-            collapseLengthIncrement: 3,
+            collapseLengthIncrement: 10,
             incrementCollapseLengthForRecReqId: null,
             incrementCollapseLengthForRepReqId: null,
             incrementStartJsonPath: null
@@ -436,13 +436,14 @@ class ShareableLink extends Component {
     }
 
     addCompressToggleData(diffData, collapseLength) {
-        let indx  = 0;
+        let indx  = 0, atleastADiff = false;
         if(!diffData) return diffData;
         for (let i = 0; i < diffData.length; i++) {
             let diffDataChunk = diffData[i];
             if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
                 let j = i - 1, chunkTopLength = 0;
                 diffDataChunk["collapseChunk"] = false;
+                atleastADiff = true;
                 while (diffData[j] && diffData[j].serverSideDiff === null && chunkTopLength < collapseLength) {
                     diffData[j]["collapseChunk"] = false;
                     chunkTopLength++;
@@ -456,6 +457,13 @@ class ShareableLink extends Component {
                 }
             } else {
                 if(!diffDataChunk.hasOwnProperty("collapseChunk")) diffDataChunk["collapseChunk"] = true;
+            }
+        }
+        if(!atleastADiff) {
+            for (let m = 0; m < collapseLength; m++) {
+                let tempDiffDataChunk = diffData[m];
+                if(tempDiffDataChunk) tempDiffDataChunk["collapseChunk"] = false;
+                if(m >= diffData.length) break;
             }
         }
         let toggleDrawChunk  = false;
