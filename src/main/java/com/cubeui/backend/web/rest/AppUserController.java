@@ -60,6 +60,11 @@ public class AppUserController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field User Id is empty."));
         }
+        Optional<AppUser> appUser = this.appUserRepository.findByAppIdAndUserId(appUserDTO.getAppId(), appUserDTO.getUserId());
+        if (appUser.isPresent())
+        {
+            return ok(appUser);
+        }
         AppUser saved = this.appUserRepository.save(
                 AppUser.builder()
                         .app(app.get())
