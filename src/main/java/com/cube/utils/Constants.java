@@ -179,4 +179,7 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+
+    public static final String MD_TRACE_HEADER = "md-trace-id";
+    public static final String BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
 }

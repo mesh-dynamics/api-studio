@@ -317,12 +317,14 @@ public class Utils {
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-        Optional<String> traceId = getFirst(hdrs, Constants.DEFAULT_TRACE_FIELD);
+        Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+        Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
+        Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                new MDTraceInfo(traceId.orElse(generateTraceId()) , null , null)
+                new MDTraceInfo(traceId.orElse(generateTraceId()) , spanId.orElse("NA") , parentSpanId.orElse("NA"))
 	            , runType.get(), Optional.of(timestamp),
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPRequest);

@@ -2,13 +2,17 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,15 +45,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.core.Comparator;
 import io.md.core.Comparator.Match;
 import io.md.core.Comparator.MatchType;
-import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
-import io.md.dao.RawPayload.RawPayloadEmptyException;
-import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
@@ -372,14 +373,82 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         meta.putSingle(Constants.SERVICE_FIELD, service);
         meta.putSingle(Constants.INSTANCE_ID_FIELD, instanceId);
+        setSpanAndParentSpanInMeta(meta, headers);
         return Utils.createHTTPRequestEvent(path, requestId, queryParams, formParams, meta, headers.getRequestHeaders(),
             method, body, Optional.of(replayId), Instant.now(), Optional.of(RunType.Replay), Optional.of(customerId),
             Optional.of(app), config, comparator);
 
     }
 
+    private void setSpanAndParentSpanInMeta (MultivaluedMap<String, String> meta, HttpHeaders headers) {
+        Iterator<String> keySetItr = headers.getRequestHeaders().keySet().iterator();
 
 
+        while(keySetItr.hasNext()) {
+            String key = (keySetItr.next()).toLowerCase(Locale.ROOT);
+            if (key.equals(Constants.MD_TRACE_HEADER)) {
+                String value = decodedValue(headers.getRequestHeaders().getFirst(key));
+                if (value != null && !value.equals("")) {
+                    String[] parts = value.split(":");
+                    if (parts.length != 4) {
+                        LOGGER.warn("trace id should have 4 parts but found: " + parts.length);
+                        return;
+                    } else {
+                        String traceId = parts[0];
+                        if (traceId.length() <= 32 && traceId.length() >= 1) {
+                            meta.putSingle(Constants.DEFAULT_SPAN_FIELD, Long.toHexString((new BigInteger(parts[1], 16)).longValue()));
+                            meta.putSingle(Constants.DEFAULT_TRACE_FIELD, convertTraceId(high(parts[0]), (new BigInteger(parts[0], 16)).longValue()));
+                        } else {
+                            LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
+                        }
+                    }
+                } else {
+                    LOGGER.warn("No md-trace-id header found in the mock request");
+                }
+            } else if (key.contains(io.md.constants.Constants.MD_PARENT_SPAN)) {
+                meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(key)));
+            } else if (key.equalsIgnoreCase(Constants.DEFAULT_SPAN_FIELD)) {
+                meta.putSingle(Constants.DEFAULT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(key)));
+            } else if (key.equalsIgnoreCase(Constants.BAGGAGE_PARENT_SPAN)) {
+                meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(key)));
+            } else if (key.equalsIgnoreCase(Constants.DEFAULT_TRACE_FIELD)) {
+                meta.putSingle(Constants.DEFAULT_TRACE_FIELD, headers.getRequestHeaders().getFirst(key));
+            }
+        }
+    }
+
+    private String decodedValue(String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (UnsupportedEncodingException var3) {
+            return value;
+        }
+    }
+
+    private String convertTraceId(long traceIdHigh, long traceIdLow) {
+        if (traceIdHigh == 0L) {
+            return Long.toHexString(traceIdLow);
+        }
+        final String hexStringHigh = Long.toHexString(traceIdHigh);
+        final String hexStringLow = Long.toHexString(traceIdLow);
+        if (hexStringLow.length() < 16) {
+            // left pad low trace id with '0'.
+            // In theory, only 12.5% of all possible long values will be padded.
+            // In practice, using Random.nextLong(), only 6% will need padding
+            return hexStringHigh + "0000000000000000".substring(hexStringLow.length()) + hexStringLow;
+        }
+        return hexStringHigh + hexStringLow;
+    }
+
+    private static long high(String hexString) {
+        if (hexString.length() > 16) {
+            int highLength = hexString.length() - 16;
+            String highString = hexString.substring(0, highLength);
+            return (new BigInteger(highString, 16)).longValue();
+        } else {
+            return 0L;
+        }
+    }
 
     /**
      * Create a dummy response event (just for the records) to save against the dummy mock request
