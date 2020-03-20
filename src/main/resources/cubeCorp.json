@@ -483,11 +483,19 @@
           ],
           "serviceGroups": [
             {
-              "name": "JerseyDemoSG",
+              "name": "GLOBAL",
               "services": [
                 {
                   "name": "EmpService",
-                  "paths": []
+                  "paths": [
+                    "/emp/emp/getEmp"
+                  ]
+                },
+                {
+                  "name": "Department",
+                  "paths": [
+                    "/dept/dept/getDept"
+                  ]
                 }
               ]
             }
@@ -501,7 +509,12 @@
               "test_intermediate_services": []
             }
           ],
-          "serviceGraphs":[]
+          "serviceGraphs":[
+            {
+              "from": "EmpService",
+              "to": "Department"
+            }
+          ]
         }
       ],
       "users": [
