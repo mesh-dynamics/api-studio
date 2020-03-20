@@ -74,7 +74,7 @@ public class DataFilter extends OncePerRequestFilter {
 				span.setBaggageItem(Constants.MD_IS_VETOED, null);
 
 				//path
-				String apiPath = requestWrapper.getContextPath();
+				String apiPath = requestWrapper.getRequestURI();
 
 				MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
 				try {

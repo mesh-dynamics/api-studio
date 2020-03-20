@@ -18,7 +18,6 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
