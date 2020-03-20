@@ -725,11 +725,12 @@ class ViewTrace extends Component {
                 case "All":
                     return "All"
                 
+                case "ERR*":
                 case "ERR":
                     return "All Errors"
                 
                 default:
-                    return resolutionsIconMap[resolutionType].description;
+                    return resolutionsIconMap[resolutionType] ? resolutionsIconMap[resolutionType].description : "(Unknown) [" + resolutionType + "]";
             }
         };
         return (
