@@ -51,7 +51,7 @@ public class MDConfigurationFactory extends ConfigurationFactory {
 		builder.add(builder.newLogger("org.apache.logging.log4j", Level.DEBUG).
 			add(builder.newAppenderRef("Stdout")).
 			addAttribute("additivity", false));
-		builder.add(builder.newAsyncRootLogger(Level.INFO).add(builder.newAppenderRef("Stdout")));
+		builder.add(builder.newAsyncLogger("io.cube.agent",  Level.INFO).add(builder.newAppenderRef("Stdout")) );
 		System.out.println("Create configuration called");
 		return builder.build();
 	}
