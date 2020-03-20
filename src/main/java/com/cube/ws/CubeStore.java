@@ -49,29 +49,34 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
+import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.Event.EventType;
+import io.md.dao.Event.RunType;
+import io.md.dao.JsonPayload;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.Payload;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
-import com.cube.core.Comparator;
 import com.cube.core.Utils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.DefaultEvent;
-import com.cube.dao.Event;
-import com.cube.dao.Event.EventBuilder.InvalidEventException;
-import com.cube.dao.Event.EventType;
-import com.cube.dao.Event.RunType;
 import com.cube.dao.EventQuery;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingSaveFailureException;
 import com.cube.dao.Recording.RecordingStatus;
-import com.cube.dao.Recording.RecordingWithSameNamePresent;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Result;
+import com.cube.dao.WrapperEvent;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
 
@@ -150,6 +155,9 @@ public class CubeStore {
 
     private void storeSingleReqResp(ReqRespStore.ReqResp rr, String path,
         MultivaluedMap<String, String> queryParams) throws CubeStoreException {
+
+	    path = CompareTemplate.normaliseAPIPath(path);
+
         MultivaluedMap<String, String> hdrs = new MultivaluedHashMap<String, String>();
         rr.hdrs.forEach(kv -> {
             hdrs.add(kv.getKey(), kv.getValue());
@@ -248,7 +256,7 @@ public class CubeStore {
                     .createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
                         hdrs, method, rr.body, collection, timestamp, runType, customerId,
                         app, config, requestComparator);
-            } catch (JsonProcessingException | Event.EventBuilder.InvalidEventException e) {
+            } catch (JsonProcessingException | EventBuilder.InvalidEventException e) {
                 throw new CubeStoreException(e, "Invalid Event"
                     , cubeEventMetaInfo);
             }
@@ -513,7 +521,13 @@ public class CubeStore {
     private int processEventJson(String eventJson) {
         Event event = null;
         try {
-            event = jsonMapper.readValue(eventJson, Event.class);
+            WrapperEvent wrapperEvent = jsonMapper.readValue(eventJson, WrapperEvent.class);
+            if (wrapperEvent.cubeEvent == null) {
+                logStoreError(new CubeStoreException(new NullPointerException(), "Cube Event is null" ,
+                    new CubeEventMetaInfo()));
+                return 0;
+            }
+            event = wrapperEvent.cubeEvent;
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
@@ -568,8 +582,7 @@ public class CubeStore {
                     classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
                 }
 
-                event.parseAndSetKey(config,
-                    Utils.getRequestMatchTemplate(config, event,
+                event.parseAndSetKey(Utils.getRequestMatchTemplate(config, event,
                         recordOrReplay.get().getTemplateVersion()), classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Compare Template Not Found", event);
@@ -669,7 +682,7 @@ public class CubeStore {
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
             }
             if (defaultReqEvent.isPresent() && storeDefaultRespEvent(defaultReqEvent.get(),
-                    defaultEvent.getRawRespPayloadString())) {
+                    defaultEvent.getEvent().payload)) {
                 return Response.ok().type(MediaType.APPLICATION_JSON)
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
             } else {
@@ -691,15 +704,15 @@ public class CubeStore {
     }
 
     private boolean storeDefaultRespEvent(
-        Event defaultReqEvent, String payload) throws InvalidEventException {
+        Event defaultReqEvent, Payload payload) throws InvalidEventException {
         //Store default response
-        Event.EventBuilder eventBuilder = new Event.EventBuilder(defaultReqEvent.customerId,
+        EventBuilder eventBuilder = new EventBuilder(defaultReqEvent.customerId,
             defaultReqEvent.app,
             defaultReqEvent.service, "NA", "NA",
-            "NA", RunType.Manual, Instant.now(),
-            defaultReqEvent.reqId, defaultReqEvent.apiPath,
+            new MDTraceInfo("NA", null, null), RunType.Manual
+            , Optional.of(Instant.now()), defaultReqEvent.reqId, defaultReqEvent.apiPath,
             Event.EventType.getResponseType(defaultReqEvent.eventType));
-        eventBuilder.setRawPayloadString(payload);
+        eventBuilder.setPayload(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
         // parseAndSetKey is needed only for requests
 
@@ -743,17 +756,19 @@ public class CubeStore {
                     Constants.REQ_ID_FIELD, reqEvent.reqId,
                     Constants.API_PATH_FIELD, reqEvent.apiPath)));
 
-            Event.EventBuilder eventBuilder = new Event.EventBuilder(reqEvent.customerId, reqEvent.app,
-                reqEvent.service, "NA", "NA",
-                "NA", RunType.Manual, Instant.now(),
+            EventBuilder eventBuilder = new EventBuilder(reqEvent.customerId, reqEvent.app,
+                reqEvent.service, "NA", "NA"
+                , new MDTraceInfo("NA", null, null), RunType.Manual,
+                Optional.of(Instant.now()),
                 reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType);
 
             //TODO:Add support for Binary payload.
-            eventBuilder.setRawPayloadString(reqEvent.rawPayloadString);
+            eventBuilder.setPayload(reqEvent.payload);
             Event defaultReqEvent = eventBuilder.createEvent();
             try {
-                defaultReqEvent.parseAndSetKey(config, Utils.
-                    getRequestMatchTemplate(config, defaultReqEvent, Constants.DEFAULT_TEMPLATE_VER));
+                defaultReqEvent.parseAndSetKey(Utils.
+                    getRequestMatchTemplate(config, defaultReqEvent
+                        , Constants.DEFAULT_TEMPLATE_VER));
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,

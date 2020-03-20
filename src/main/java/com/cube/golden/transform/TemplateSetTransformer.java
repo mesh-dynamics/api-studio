@@ -12,16 +12,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.cube.cache.ComparatorCache;
-import com.cube.dao.Event;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import io.md.core.CompareTemplate;
+import io.md.core.TemplateEntry;
+import io.md.dao.ReqRespUpdateOperation.OperationType;
+
 import com.cube.cache.TemplateKey;
-import com.cube.core.CompareTemplate;
 import com.cube.core.CompareTemplateVersioned;
-import com.cube.core.TemplateEntry;
-import com.cube.golden.OperationType;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateSet;

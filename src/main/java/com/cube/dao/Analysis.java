@@ -5,13 +5,16 @@
  */
 package com.cube.dao;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cube.core.Comparator;
+import io.md.core.Comparator;
+import io.md.dao.Event;
+
 import com.cube.ws.Config;
 
 
@@ -134,20 +137,20 @@ public class Analysis {
 
 
 	    public Optional<String> getRecordedResponseBody(Config config) {
-            return recordResp.map(response-> response.getPayloadAsString(config));
+            return recordResp.map(Event::getPayloadAsJsonString);
         }
 
         public Optional<String> getReplayResponseBody(Config config) {
-            return replayResp.map(response -> response.getPayloadAsString(config));
+            return replayResp.map(Event::getPayloadAsJsonString);
         }
 
         public Optional<String> getReplayReq(Config config) {
-            return replayReq.map(request -> request.getPayloadAsString(config));
+            return replayReq.map(Event::getPayloadAsJsonString);
         }
 
 
         public Optional<String> getRecordReq(Config config) {
-	        return Optional.of(recordReq.getPayloadAsString(config));
+	        return Optional.of(recordReq.getPayloadAsJsonString());
         }
     }
 

@@ -9,7 +9,7 @@
 	  <version.dockerfile-maven>1.4.9</version.dockerfile-maven>
 	  <version.java>11</version.java>
 	  <version.jaxb>2.3.2</version.jaxb>
-	  <version.jaeger>0.32.0</version.jaeger>
+	  <version.jaeger>1.1.0</version.jaeger>
 	  <version.gson>2.8.5</version.gson>
   </properties>
 
@@ -20,10 +20,15 @@
 			<url>file:///${project.basedir}/repo</url>
 		</repository> -->
     <repository>
-          <id>github</id>
+          <id>github-agent</id>
           <name>GitHub OWNER Apache Maven Packages</name>
           <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
     </repository>
+			<repository>
+				<id>github</id>
+				<name>GitHub OWNER Apache Maven Packages</name>
+				<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
+			</repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -171,21 +176,21 @@
     	<artifactId>solr-solrj</artifactId>
     	<version>7.5.0</version>
 	</dependency>
-	<dependency>
-	    <groupId>org.apache.logging.log4j</groupId>
-	    <artifactId>log4j-api</artifactId>
-	    <version>${version.log4j}</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.apache.logging.log4j</groupId>
-	    <artifactId>log4j-core</artifactId>
-	    <version>${version.log4j}</version>
-	    </dependency>
-	<dependency>
-	    <groupId>org.apache.logging.log4j</groupId>
-	    <artifactId>log4j-slf4j-impl</artifactId>
-	    <version>${version.log4j}</version>
-	</dependency>
+<!--	<dependency>-->
+<!--	    <groupId>org.apache.logging.log4j</groupId>-->
+<!--	    <artifactId>log4j-api</artifactId>-->
+<!--	    <version>${version.log4j}</version>-->
+<!--	</dependency>-->
+<!--	<dependency>-->
+<!--	    <groupId>org.apache.logging.log4j</groupId>-->
+<!--	    <artifactId>log4j-core</artifactId>-->
+<!--	    <version>${version.log4j}</version>-->
+<!--	    </dependency>-->
+<!--	<dependency>-->
+<!--	    <groupId>org.apache.logging.log4j</groupId>-->
+<!--	    <artifactId>log4j-slf4j-impl</artifactId>-->
+<!--	    <version>${version.log4j}</version>-->
+<!--	</dependency>-->
 	<!-- jaxb was removed from java 9 onwards, so need to explicitly add -->
 	<!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
 	<dependency>
@@ -307,19 +312,18 @@
 		  <version>4.5.9</version>
 	  </dependency>
 
-	  <!-- https://mvnrepository.com/artifact/org.apache.thrift/libthrift -->
-	  <dependency>
-		  <groupId>org.apache.thrift</groupId>
-		  <artifactId>libthrift</artifactId>
-		  <version>0.12.0</version>
-	  </dependency>
+		<dependency>
+			<groupId>io.cube</groupId>
+			<artifactId>agent</artifactId>
+			<version>1.0.9</version>
+		</dependency>
 
-	  <dependency>
-		<groupId>io.cube</groupId>
-		<artifactId>agent</artifactId>
-		<version>1.0.1</version>
-	  </dependency>
+		<dependency>
+			<groupId>io.cube</groupId>
+			<artifactId>commons</artifactId>
+			<version>1.0.17</version>
+		</dependency>
 
-  </dependencies>
+	</dependencies>
   <groupId>com.cube</groupId>
 </project>
