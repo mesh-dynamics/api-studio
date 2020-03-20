@@ -278,7 +278,7 @@ export default class DiffResultsList extends Component {
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
                     <div style={{display: "inline-block"}}>{item.path}</div>
                     <div style={{ marginTop: "5px" }}>
-                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + window.location.search + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
                             <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
                         </Button>
                     </div>
