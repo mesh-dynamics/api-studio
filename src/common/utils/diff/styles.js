@@ -57,12 +57,12 @@ exports.default = (function (styleOverride) {
             tr: {
                 '&:first-child': {
                     td: {
-                        paddingTop: 15,
+                        paddingTop: 0,
                     },
                 },
                 '&:last-child': {
                     td: {
-                        paddingBottom: 15,
+                        paddingBottom: 0,
                     },
                 },
             },

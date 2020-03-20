@@ -3,7 +3,9 @@ import { Glyphicon } from 'react-bootstrap';
 import Popover, { ArrowContainer } from 'react-tiny-popover';
 import GoldenPopover from "../GoldenPopover";
 import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
+import { DiffResultsContext } from "../../routes/diff_results/DiffResults";
 import "./OperationalSet.css";
+// import { history } from "../../helpers/history.js"
 
 class OperationSet extends Component {
     constructor(props) {
@@ -43,6 +45,7 @@ class OperationSet extends Component {
                         isOpen={showPopover && popoverCurrentPath === this.props.jsonPath}
                         position={['top', 'bottom', 'left', 'right']}
                         padding={10}
+                        containerStyle={{ zIndex: 100 }}
                         content={({ position, targetRect, popoverRect }) => (
                             <ArrowContainer
                                 position={position}
@@ -94,9 +97,17 @@ class OperationSet extends Component {
                         onClick={this.handlePopoverTriggerClick}
                         className="os-root-container"
                     >
-                        <ShareableLinkContext.Consumer>
+                        {
+                            /* TODO: temporary workaround; cleanup when removing shareable_link page */
+                        ((window.location.pathname.includes("/diff_results")) && 
+                        <DiffResultsContext.Consumer>
                             {(context) => this.renderOperationalSet(context)}
-                        </ShareableLinkContext.Consumer>
+                        </DiffResultsContext.Consumer>)
+                        || 
+                        (<ShareableLinkContext.Consumer>
+                            {(context) => this.renderOperationalSet(context)}
+                        </ShareableLinkContext.Consumer>)
+                    }
                     </div>
                 )
             : "");

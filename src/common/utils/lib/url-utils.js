@@ -73,10 +73,11 @@ const constructUrlParams = (params) => {
         searchFilterPath, 
         currentTemplateVer, 
         selectedReqRespMatchType,
-        selectedResolutionType, 
+        selectedResolutionType,
+        currentPageNumber = 0
     } = params;
 
-    return `?replayId=${replayId}&app=${app}&apiPath=${selectedAPI}&service=${selectedService}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&searchFilterPath=${searchFilterPath}&requestHeaders=${requestHeaders}&requestParams=${requestParams}&requestBody=${requestBody}&responseHeaders=${responseHeaders}&responseBody=${responseBody}`;
+    return `?replayId=${replayId}&app=${app}&apiPath=${selectedAPI}&service=${selectedService}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&selectedReqRespMatchType=${selectedReqRespMatchType}&selectedResolutionType=${selectedResolutionType}&searchFilterPath=${searchFilterPath}&requestHeaders=${requestHeaders}&requestParams=${requestParams}&requestBody=${requestBody}&responseHeaders=${responseHeaders}&responseBody=${responseBody}&currentPageNumber=${currentPageNumber}`;
 };
 
 const updateSearchHistoryParams = (metaDataType, value, state) => {
@@ -113,4 +114,49 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
     return constructUrlParams(params);
 };
 
-export { getSearchHistoryParams, updateSearchHistoryParams };
+const constructUrlParamsDiffResults = (state, isNextPage) => {
+    const {
+        app, replayId, timeStamp, recordingId, searchFilterPath, currentTemplateVer,
+        filter : {
+            selectedService, selectedAPI, 
+            selectedReqMatchType, selectedDiffType, 
+            selectedResolutionType,  
+            startIndex, endIndex,
+        },
+        diffToggleRibbon: {
+            showResponseMessageHeaders, // response headers
+            showResponseMessageBody, // response body
+            showRequestMessageHeaders, // request header
+            showRequestMessageQParams, // request query params
+            showRequestMessageFParams, // request form params
+            showRequestMessageBody, // request body
+        }
+    } =  state;
+
+    return `replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&selectedReqMatchType=${selectedReqMatchType}&selectedDiffType=${selectedDiffType}&` + (isNextPage ? `startIndex=${startIndex}` : `endIndex=${endIndex}`);
+
+}
+
+const getTransformHeaders = (customHeaders) => {
+    const headerIds = Object.keys(customHeaders);
+    const [defaultItem] = headerIds;
+    const requestTransforms = {};
+
+    // If there is only one default header... and the key is empty
+    if(headerIds.length === 1 && customHeaders[defaultItem].key === "") {
+        // Will return empty
+        // return has to be object
+        return { requestTransforms };
+    }
+
+    // if there are multiple header id... map it in the structure required
+    headerIds.map(id => 
+        requestTransforms[customHeaders[id].key] = [{ 
+            source: "*",
+            target: customHeaders[id].value
+    }]);
+
+    return { requestTransforms };
+};
+
+export { getTransformHeaders, constructUrlParamsDiffResults, getSearchHistoryParams, updateSearchHistoryParams };

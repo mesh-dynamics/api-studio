@@ -57,8 +57,9 @@ class GoldenPopover extends React.Component {
 
     setRule(tag, evt) {
         const { dispatch, jsonPath } = this.props;
-        let { newRule } = this.state;
+        const { defaultRule, newRule } = this.state;
         newRule[tag] = evt.target.value;
+        dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", ""), defaultRule));
         dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule));
         this.setState({ newRule: newRule });
 
@@ -111,7 +112,8 @@ class GoldenPopover extends React.Component {
             let operation = {
                 op: serverSideDiff.op.toUpperCase(),
                 path: serverSideDiff.path,
-                value: serverSideDiff.value
+                value: serverSideDiff.value,
+                eventType: "Response" // TODO: To be set this from diff context
             };
             this.hideGR();
             let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
@@ -163,9 +165,14 @@ class GoldenPopover extends React.Component {
 
     async showRuleModal() {
         const { cube, jsonPath } = this.props;
+        if(cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")]) {
+            const defaultRule = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")];
+            this.setState({ defaultRule: { ...defaultRule }});
+        }
+
         if (cube.ruleBook[jsonPath.replace("<BEGIN>", "")]) {
             const rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
-            this.setState({ defaultRule: { ...rule }, newRule: { ...rule } });
+            this.setState({ newRule: { ...rule } });
         } else {
             
             try {
