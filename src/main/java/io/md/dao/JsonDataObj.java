@@ -246,7 +246,7 @@ public class JsonDataObj implements DataObj {
 			if (val != null && !val.isValueNode()) {
 				// convert to string
 				// currently handling only json type
-				if (mimetype.equals(MediaType.APPLICATION_JSON)) {
+				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
 					if (asByteArray) {
 						valParentObj.set(fieldName, new BinaryNode(val.toString().getBytes()));
 					} else {
