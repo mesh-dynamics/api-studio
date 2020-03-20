@@ -53,7 +53,10 @@ logging:
 
 cube:
     server:
-        baseUrl: https://demo.dev.cubecorp.io
+        baseUrl:
+            replay: http://cubews-replay:8080
+            mock: http://cubews-mock:8080
+            record: http://cubews-record:8080
 
 external:
     recaptcha:
