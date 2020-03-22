@@ -10,9 +10,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -373,47 +371,44 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         meta.putSingle(Constants.SERVICE_FIELD, service);
         meta.putSingle(Constants.INSTANCE_ID_FIELD, instanceId);
-        setSpanAndParentSpanInMeta(meta, headers);
+        setSpanTraceIDParentSpanInMeta(meta, headers);
         return Utils.createHTTPRequestEvent(path, requestId, queryParams, formParams, meta, headers.getRequestHeaders(),
             method, body, Optional.of(replayId), Instant.now(), Optional.of(RunType.Replay), Optional.of(customerId),
             Optional.of(app), config, comparator);
 
     }
 
-    private void setSpanAndParentSpanInMeta (MultivaluedMap<String, String> meta, HttpHeaders headers) {
-        Iterator<String> keySetItr = headers.getRequestHeaders().keySet().iterator();
-
-
-        while(keySetItr.hasNext()) {
-            String key = (keySetItr.next()).toLowerCase(Locale.ROOT);
-            if (key.equals(Constants.MD_TRACE_HEADER)) {
-                String value = decodedValue(headers.getRequestHeaders().getFirst(key));
-                if (value != null && !value.equals("")) {
-                    String[] parts = value.split(":");
-                    if (parts.length != 4) {
-                        LOGGER.warn("trace id should have 4 parts but found: " + parts.length);
-                        return;
-                    } else {
-                        String traceId = parts[0];
-                        if (traceId.length() <= 32 && traceId.length() >= 1) {
-                            meta.putSingle(Constants.DEFAULT_SPAN_FIELD, Long.toHexString((new BigInteger(parts[1], 16)).longValue()));
-                            meta.putSingle(Constants.DEFAULT_TRACE_FIELD, convertTraceId(high(parts[0]), (new BigInteger(parts[0], 16)).longValue()));
-                        } else {
-                            LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
-                        }
-                    }
+    private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, HttpHeaders headers) {
+        String mdTrace = headers.getRequestHeaders().getFirst(Constants.MD_TRACE_FIELD);
+        if (mdTrace != null && !mdTrace.equals("")) {
+            String[] parts = decodedValue(mdTrace).split(":");
+            if (parts.length != 4) {
+                LOGGER.warn("trace id should have 4 parts but found: " + parts.length);
+                return;
+            } else {
+                String traceId = parts[0];
+                if (traceId.length() <= 32 && traceId.length() >= 1) {
+                    meta.putSingle(Constants.DEFAULT_SPAN_FIELD, Long.toHexString((new BigInteger(parts[1], 16)).longValue()));
+                    meta.putSingle(Constants.DEFAULT_TRACE_FIELD, convertTraceId(high(parts[0]), (new BigInteger(parts[0], 16)).longValue()));
                 } else {
-                    LOGGER.warn("No md-trace-id header found in the mock request");
+                    LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
                 }
-            } else if (key.contains(io.md.constants.Constants.MD_PARENT_SPAN)) {
-                meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(key)));
-            } else if (key.equalsIgnoreCase(Constants.DEFAULT_SPAN_FIELD)) {
-                meta.putSingle(Constants.DEFAULT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(key)));
-            } else if (key.equalsIgnoreCase(Constants.BAGGAGE_PARENT_SPAN)) {
-                meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(key)));
-            } else if (key.equalsIgnoreCase(Constants.DEFAULT_TRACE_FIELD)) {
-                meta.putSingle(Constants.DEFAULT_TRACE_FIELD, headers.getRequestHeaders().getFirst(key));
             }
+        } else if ( headers.getRequestHeaders().getFirst(Constants.DEFAULT_TRACE_FIELD) != null ) {
+            meta.putSingle(Constants.DEFAULT_TRACE_FIELD, headers.getRequestHeaders().getFirst(Constants.DEFAULT_TRACE_FIELD));
+            if ( headers.getRequestHeaders().getFirst(Constants.DEFAULT_SPAN_FIELD) != null) {
+                meta.putSingle(Constants.DEFAULT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(Constants.DEFAULT_SPAN_FIELD)));
+            }
+        } else {
+            LOGGER.warn("Neither default not md trace id header found to the mock sever request");
+        }
+
+        if (headers.getRequestHeaders().getFirst(Constants.MD_BAGGAGE_PARENT_SPAN) != null ) {
+            meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(Constants.MD_BAGGAGE_PARENT_SPAN)));
+        } else if (headers.getRequestHeaders().getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN) != null ) {
+            meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN)));
+        } else {
+            LOGGER.warn("Neither default not md baggage parent span id header found to the mock sever request");
         }
     }
 
