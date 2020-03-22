@@ -505,7 +505,7 @@
               "testConfigName": "Jersey 1.19 Demo",
               "serviceName": "EmpService",
               "paths": [],
-              "test_virtualized_services": [],
+              "test_virtualized_services": ["Department"],
               "test_intermediate_services": []
             }
           ],
