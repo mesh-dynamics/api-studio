@@ -109,6 +109,15 @@ spec:
                   meta["app"] = "{{cube_application}}"
                   meta["instanceId"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
-                  request_handle:logInfo("Trace id : " .. xb3traceid)
+                  request_handle:logErr("Span id : " .. xb3spanid)
+                  baggageParentId = request_handle:headers():get("baggage-parent-span-id")
+                  if (baggageParentId) then request_handle:logErr("Baggage Parent id : " .. baggageParentId) end
+                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
+                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
+                  if baggageParentId then
+                    meta["x-b3-parentspanid"] = baggageParentId
+                  end
                   logHdrBody(request_handle, meta)
+                  request_handle:headers():remove("baggage-parent-span-id")
+                  request_handle:headers():add("baggage-parent-span-id", xb3spanid)
                 end
