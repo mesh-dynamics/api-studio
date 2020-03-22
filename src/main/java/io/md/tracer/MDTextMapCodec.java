@@ -29,12 +29,12 @@ public class MDTextMapCodec implements Codec<TextMap> {
 	/**
 	 * Key used to store serialized span context representation
 	 */
-	private static final String SPAN_CONTEXT_KEY = "md-trace-id";
+	public static final String SPAN_CONTEXT_KEY = "md-trace-id";
 
 	/**
 	 * Key prefix used for baggage items
 	 */
-	private static final String BAGGAGE_KEY_PREFIX = "mdctx-";
+	public static final String BAGGAGE_KEY_PREFIX = "mdctx-";
 
 	private final String contextKey;
 
