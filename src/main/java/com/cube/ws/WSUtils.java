@@ -35,6 +35,7 @@ public class WSUtils {
             instanceId);
         Optional<String> rrcollection = recordOrReplay.flatMap(rr -> rr.getRecordingCollection());
         Optional<String> replayId = recordOrReplay.flatMap(rr -> rr.getReplayId());
+        Optional<String> recordingId = recordOrReplay.flatMap(rr -> rr.getRecordingId());
         String runType = recordOrReplay.map(rr -> rr.isRecording() ? "Recording" : "Replay").orElse("None");
 
         return rrcollection.map(collection -> {
@@ -45,6 +46,7 @@ public class WSUtils {
                 "instance", instanceId.orElse("None"),
                 "collection", collection,
                 "replayId", replayId.orElse("None"),
+	            "recordingId", recordingId.orElse("None"),
                 "userId", userId.orElse("None"));
             return Response.status(Response.Status.CONFLICT)
                 .type(MediaType.APPLICATION_JSON)

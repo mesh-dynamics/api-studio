@@ -450,6 +450,11 @@ public interface ReqRespStore {
         }
 
 		@JsonIgnore
+		public Optional<String> getRecordingId() {
+			return recording.map(recording -> recording.id);
+		}
+
+		@JsonIgnore
 		public boolean isRecording() {
 			return recording.isPresent();
 		}
