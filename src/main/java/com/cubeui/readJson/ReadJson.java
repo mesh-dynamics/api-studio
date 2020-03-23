@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.readJson.dataModel.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,7 +72,7 @@ public class ReadJson {
                 String body =  readJson.createCustomer(customer);
                 ResponseEntity response = readJson.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,body);
                 int customerId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
-                body = readJson.createJiraCustomer(customer.getJira(), customerId);
+                body = readJson.createJiraCustomer(customer.getJiraCredentials(), customerId);
                 readJson.fetchResponse(url+"/api/jira/customer", HttpMethod.POST, token,body);
                 Map<Integer, List<Integer>> instanceMap = new HashMap<>();
                 List<Integer> appIds = new ArrayList<>();
@@ -188,11 +187,11 @@ public class ReadJson {
         return json.toString();
     }
 
-    private String createJiraCustomer(Jira jira, int customerId) {
+    private String createJiraCustomer(JiraCredentials jiraCredentials, int customerId) {
         JSONObject json = new JSONObject();
-        json.put("userName", jira.getUserName());
-        json.put("apiKey", jira.getApiKey());
-        json.put("jiraBaseURL", jira.getJiraBaseURL());
+        json.put("userName", jiraCredentials.getUserName());
+        json.put("apiKey", jiraCredentials.getApiKey());
+        json.put("jiraBaseURL", jiraCredentials.getJiraBaseURL());
         json.put("customerId", customerId);
         return json.toString();
     }

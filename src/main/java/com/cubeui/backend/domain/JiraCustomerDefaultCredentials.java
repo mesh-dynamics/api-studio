@@ -10,12 +10,12 @@ import org.hibernate.annotations.OnDeleteAction;
 import javax.persistence.*;
 
 @Entity
-@Table(name="Jira_default_customer")
+@Table(name="jira_customer_default_credentials")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JiraCustomer {
+public class JiraCustomerDefaultCredentials {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     Long id;

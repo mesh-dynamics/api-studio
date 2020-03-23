@@ -4,7 +4,7 @@
       "name": "cubeCorp",
       "emailId": "demo@cubecorp.io",
       "domainUrl": "cubecorp.io",
-      "jira" : {
+      "jiraCredentials" : {
         "userName": "siddhant.mutha@meshdynamics.io",
         "apiKey": "fAODfwU3eTmrEDSdz7gM26C4",
         "jiraBaseURL": "https://cubeio.atlassian.net"

@@ -2,12 +2,10 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
-import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.EmailDomain;
-import com.cubeui.backend.domain.JiraCustomer;
-import com.cubeui.backend.domain.User;
+import com.cubeui.backend.domain.JiraCustomerDefaultCredentials;
 import com.cubeui.backend.repository.EmailDomainRepository;
-import com.cubeui.backend.repository.JiraCustomerRepository;
+import com.cubeui.backend.repository.JiraCustomerCredentialsRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -29,13 +27,13 @@ public class CustomerController {
 
     private CustomerService customerService;
     private EmailDomainRepository emailDomainRepository;
-    private JiraCustomerRepository jiraCustomerRepository;
+    private JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository;
 
     public CustomerController(CustomerService customerService, EmailDomainRepository emailDomainRepository,
-                              JiraCustomerRepository jiraCustomerRepository) {
+                              JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository) {
         this.customerService = customerService;
         this.emailDomainRepository = emailDomainRepository;
-        this.jiraCustomerRepository = jiraCustomerRepository;
+        this.jiraCustomerCredentialsRepository = jiraCustomerCredentialsRepository;
     }
 
     @GetMapping("")
@@ -57,8 +55,8 @@ public class CustomerController {
             domain.setDomain(customerDTO.getDomainURL());
             domain.setCustomer(saved);
             this.emailDomainRepository.save(domain);
-            Optional<JiraCustomer> jiraCustomer = jiraCustomerRepository.findByCustomerId(saved.getId());
-            if(jiraCustomer.isEmpty()) {
+            Optional<JiraCustomerDefaultCredentials> jiraCustomerDefaultCredentials = jiraCustomerCredentialsRepository.findByCustomerId(saved.getId());
+            if(jiraCustomerDefaultCredentials.isEmpty()) {
                 log.info("Customer is created without jira credentials");
             }
             return created(
