@@ -4,11 +4,14 @@ import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.EmailDomain;
+import com.cubeui.backend.domain.JiraCustomer;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.EmailDomainRepository;
+import com.cubeui.backend.repository.JiraCustomerRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -20,15 +23,19 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/customer")
 public class CustomerController {
 
     private CustomerService customerService;
     private EmailDomainRepository emailDomainRepository;
+    private JiraCustomerRepository jiraCustomerRepository;
 
-    public CustomerController(CustomerService customerService, EmailDomainRepository emailDomainRepository) {
+    public CustomerController(CustomerService customerService, EmailDomainRepository emailDomainRepository,
+                              JiraCustomerRepository jiraCustomerRepository) {
         this.customerService = customerService;
         this.emailDomainRepository = emailDomainRepository;
+        this.jiraCustomerRepository = jiraCustomerRepository;
     }
 
     @GetMapping("")
@@ -50,7 +57,10 @@ public class CustomerController {
             domain.setDomain(customerDTO.getDomainURL());
             domain.setCustomer(saved);
             this.emailDomainRepository.save(domain);
-
+            Optional<JiraCustomer> jiraCustomer = jiraCustomerRepository.findByCustomerId(saved.getId());
+            if(jiraCustomer.isEmpty()) {
+                log.info("Customer is created without jira credentials");
+            }
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)

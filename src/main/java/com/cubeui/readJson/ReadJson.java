@@ -73,6 +73,8 @@ public class ReadJson {
                 String body =  readJson.createCustomer(customer);
                 ResponseEntity response = readJson.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,body);
                 int customerId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
+                body = readJson.createJiraCustomer(customer.getJira(), customerId);
+                readJson.fetchResponse(url+"/api/jira/customer", HttpMethod.POST, token,body);
                 Map<Integer, List<Integer>> instanceMap = new HashMap<>();
                 List<Integer> appIds = new ArrayList<>();
                 for(Apps app: customer.getApps())
@@ -183,6 +185,15 @@ public class ReadJson {
         json.put("name", customer.getName());
         json.put("email", customer.getEmailId());
         json.put("domainURL", customer.getDomainUrl());
+        return json.toString();
+    }
+
+    private String createJiraCustomer(Jira jira, int customerId) {
+        JSONObject json = new JSONObject();
+        json.put("userName", jira.getUserName());
+        json.put("apiKey", jira.getApiKey());
+        json.put("jiraBaseURL", jira.getJiraBaseURL());
+        json.put("customerId", customerId);
         return json.toString();
     }
 
