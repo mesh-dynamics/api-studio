@@ -54,6 +54,7 @@ import io.md.core.CompareTemplate.CompareTemplateStoreException;
 import io.md.core.TemplateEntry;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
+import io.md.dao.Event.RunType;
 import io.md.dao.ReqRespUpdateOperation;
 import redis.clients.jedis.Jedis;
 
@@ -1323,6 +1324,40 @@ public class AnalyzeWS {
 		}
 
 	}
+
+
+	/**
+	 * API to return Golden meta data for a given golden Id
+	 * @param recordingId
+	 * @return
+	 */
+	@GET
+	@Path("getGoldenMetaData/{recordingId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getGoldenMetaData(@Context UriInfo urlInfo,
+		@PathParam("recordingId") String recordingId) {
+		try {
+			Recording recording = rrstore.getRecording(recordingId).orElseThrow(() ->
+				new Exception("Unable to find recording object for the given id"));
+
+			ArrayList servicePathFacets = rrstore
+				.getServicePathHierarchicalFacets(recording.collection, RunType.Record);
+
+			JSONObject jsonObject = new JSONObject(jsonMapper.writeValueAsString(recording));
+			jsonObject.put(Constants.SERVICE_FACET, servicePathFacets);
+
+			return Response.ok().entity(jsonObject.toString()).build();
+		} catch (Exception e) {
+			LOGGER.error(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while returning golden meta info",
+					Constants.RECORDING_ID, recordingId)), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while returning golden meta info",
+					e.getMessage())).build();
+		}
+
+	}
+
 
 	private void setRequestAndRules(Recording recording, String service, String apiPath,
 		JSONObject jsonObject, Event request) throws JsonProcessingException {
