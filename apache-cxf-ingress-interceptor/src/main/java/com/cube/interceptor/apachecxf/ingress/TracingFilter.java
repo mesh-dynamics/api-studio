@@ -58,6 +58,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 		reqContext.setProperty(scopeKey, scope);
 		reqContext.setProperty(spanKey, span);
+		CommonUtils.injectContext(requestHeaders);
 	}
 
 	private boolean runSampling(ContainerRequestContext reqContext, Optional<String> fieldCategory) {
