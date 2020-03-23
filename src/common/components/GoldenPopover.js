@@ -113,7 +113,7 @@ class GoldenPopover extends React.Component {
                 op: serverSideDiff.op.toUpperCase(),
                 path: serverSideDiff.path,
                 value: serverSideDiff.value,
-                eventType: "Response" // TODO: To be set this from diff context
+                eventType: serverSideDiff.eventType,
             };
             this.hideGR();
             let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
