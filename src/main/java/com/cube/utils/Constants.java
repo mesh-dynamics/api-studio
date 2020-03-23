@@ -1,13 +1,20 @@
 package com.cube.utils;
 
+import io.md.tracer.MDTextMapCodec;
+
 public class Constants {
     public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
     public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
     public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
     public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
     public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
+    public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
+    public static final String MD_BAGGAGE_PARENT_SPAN = MDTextMapCodec.BAGGAGE_KEY_PREFIX + io.md.constants.Constants.MD_PARENT_SPAN;
+    public static final String MD_TRACE_FIELD = MDTextMapCodec.SPAN_CONTEXT_KEY;
+
 
     public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
+
 
     //API STRINGS
     public static final String REQUEST = "request";
