@@ -15,6 +15,7 @@ import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
 import statusCodeList from "../../StatusCodeList";
 import "../../components/Diff.css"
+import {validateAndCreateDiffLayoutData, addCompressToggleData} from "../../utils/diff/diff-process.js"
 
 const ShareableLinkContext = createContext();
 
@@ -332,7 +333,7 @@ class ShareableLink extends Component {
     }
 
     async fetchReplayList() {
-        const {apiPath, replayId} = this.state;
+        const {apiPath, replayId, app, recordingId, templateVersion} = this.state;
         if(!replayId) throw new Error("replayId is required");
         let response, json;
         let user = JSON.parse(localStorage.getItem('user'));
@@ -354,7 +355,7 @@ class ShareableLink extends Component {
             if (response.ok) {
                 json = await response.json();
                 dataList = json;
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
+                let diffLayoutData = validateAndCreateDiffLayoutData(dataList.data.res, app, replayId, recordingId, templateVersion, config.diffCollapseLength);
                 this.layoutDataWithDiff.push(...diffLayoutData);
 
                 fetchedResults = dataList.data.res.length;
@@ -382,7 +383,7 @@ class ShareableLink extends Component {
                 }
                 axios.all(promises).then((results) => {
                     results.forEach((eachResponse) => {
-                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
+                        let eachDiffLayoutData = validateAndCreateDiffLayoutData(eachResponse.data.data.res, app, replayId, recordingId, templateVersion, config.diffCollapseLength);
                         this.layoutDataWithDiff.push(...eachDiffLayoutData);
                     });
                     this.setState({ isFetching: false, fetchComplete: true });
@@ -398,6 +399,7 @@ class ShareableLink extends Component {
         }
     }
 
+    /*
     validateAndCleanHTTPMessageParts (messagePart) {
         let cleanedMessagepart = "";
         if (messagePart &&_.isObject(messagePart)) {
@@ -724,6 +726,8 @@ class ShareableLink extends Component {
         return diffLayoutData;
     }
 
+    */
+
     generateJsonPathList(resolutionType, diffLayoutDataFiltered) {
         // for each response body
         return  diffLayoutDataFiltered.flatMap((v) => {
@@ -754,7 +758,7 @@ class ShareableLink extends Component {
         const {cube, history} = this.props;
         this.layoutDataWithDiff.forEach(eachDiffItem => {
             if (incrementCollapseLengthForRepReqId && eachDiffItem.replayReqId === incrementCollapseLengthForRepReqId) {
-                this.addCompressToggleData(eachDiffItem.reductedDiffArray, collapseLength);
+                addCompressToggleData(eachDiffItem.reductedDiffArray, collapseLength);
             }
         });
         let diffLayoutDataFiltered = this.layoutDataWithDiff.filter(function (eachItem) {
