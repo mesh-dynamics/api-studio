@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cubeui.backend.web.ErrorResponse;
@@ -33,7 +35,7 @@ public class ReadJson {
             response = restTemplate.exchange(uri, method, entity, String.class);
             return response;
         } catch (HttpClientErrorException e){
-            response = status(e.getStatusCode()).body(new ErrorResponse(e.getLocalizedMessage()));
+            response = status(e.getStatusCode()).body("HttpClientErrorException");
             return response;
         } catch (Exception e){
             throw e;
@@ -71,15 +73,22 @@ public class ReadJson {
                 String body =  readJson.createCustomer(customer);
                 ResponseEntity response = readJson.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,body);
                 int customerId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
+                Map<Integer, List<Integer>> instanceMap = new HashMap<>();
+                List<Integer> appIds = new ArrayList<>();
                 for(Apps app: customer.getApps())
                 {
                     body = readJson.createApp(app,customerId);
                     response = readJson.fetchResponse(url+"/api/app", HttpMethod.POST, token,body);
                     int appId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                    appIds.add(appId);
+                    List<Integer> instanceIds = new ArrayList<>();
                     for(Instances instance: app.getInstances()) {
                         body = readJson.createInstance(instance,appId);
                         response = readJson.fetchResponse(url+"/api/instance", HttpMethod.POST, token,body);
+                        int instanceId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
+                        instanceIds.add(instanceId);
                     }
+                    instanceMap.put(appId, instanceIds);
                     Map<String, Integer> servicesMap = new HashMap<>();
                     Map<String, Integer> pathMap = new HashMap<>();
                     for(ServiceGroups serviceGroup: app.getServiceGroups()){
@@ -134,6 +143,21 @@ public class ReadJson {
                     try {
                         body = readJson.createUser(user, customerId);
                         response = readJson.fetchResponse(url + "/api/account/create-user", HttpMethod.POST, token, body);
+                        if(response.getStatusCode() == HttpStatus.FORBIDDEN)
+                        {
+                            response = readJson.fetchResponse(url + "/api/account/getUser/"+user.getEmail(), HttpMethod.GET, token, body);
+                            int userId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                            for(Integer appId: appIds) {
+                                body = readJson.createAppUser(appId,userId);
+                                response = readJson.fetchResponse(url + "/api/app-user", HttpMethod.POST, token, body);
+                                List<Integer> instanceIds = instanceMap.get(appId);
+                                for (Integer instanceId: instanceIds) {
+                                    body = readJson.createInstanceUser(instanceId, userId);
+                                    response = readJson.fetchResponse(url + "/api/instance-user", HttpMethod.POST, token, body);
+                                }
+                            }
+
+                        }
                     } catch (DuplicateRecordException e) {
                         System.out.println(e.getMessage());
                     }
@@ -240,5 +264,19 @@ public class ReadJson {
         json.put("roles", user.getRoles());
         json.put("isActivated", user.isActivated());
         return json.toString();
+    }
+
+    private String createAppUser(int appId, int userId) {
+        JSONObject json = new JSONObject();
+        json.put("appId", appId);
+        json.put("userId", userId);
+        return  json.toString();
+    }
+
+    private String createInstanceUser(int instanceId, int userId) {
+        JSONObject json = new JSONObject();
+        json.put("instanceId", instanceId);
+        json.put("userId", userId);
+        return  json.toString();
     }
 }

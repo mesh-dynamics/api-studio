@@ -472,6 +472,49 @@
               "to": "Analyze/Analysis"
             }
           ]
+        },
+        {
+          "name": "Jersey_1_19_demo",
+          "instances": [
+            {
+              "name": "PROD",
+              "gatewayEndpoint": "http://35.160.68.101:8081"
+            }
+          ],
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "EmpService",
+                  "paths": [
+                    "/emp/emp/getEmp"
+                  ]
+                },
+                {
+                  "name": "Department",
+                  "paths": [
+                    "/dept/dept/getDept"
+                  ]
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "Jersey 1.19 Demo",
+              "serviceName": "EmpService",
+              "paths": [],
+              "test_virtualized_services": ["Department"],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs":[
+            {
+              "from": "EmpService",
+              "to": "Department"
+            }
+          ]
         }
       ],
       "users": [

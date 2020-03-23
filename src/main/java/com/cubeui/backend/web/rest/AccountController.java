@@ -115,6 +115,12 @@ public class AccountController {
         return ok().build();
     }
 
+    @GetMapping("/getUser/{userName}")
+    public ResponseEntity getUser(HttpServletRequest request, @PathVariable String userName) {
+        Optional<User> existingUser = this.userService.getByUsername(userName);
+        return ok(existingUser);
+    }
+
     @Secured("ROLE_USER")
     @PostMapping("/update-user")
     public ResponseEntity updateUser(@RequestBody UserDTO userDTO, HttpServletRequest request, @AuthenticationPrincipal UserDetails userDetails) {
