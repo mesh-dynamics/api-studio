@@ -19,12 +19,12 @@ pushd "$SCRIPTDIR/reviews"
   docker run --rm -u root -v "$(pwd)":/home/gradle/project -w /home/gradle/project gradle:4.8.1 gradle clean build
   pushd reviews-wlpcfg
     #plain build -- no ratings
-    docker build -t "istio/examples-bookinfo-reviews-v1:${VERSION}" --build-arg service_version=v1 .
+    docker build -t "cubeiocorp/examples-bookinfo-reviews-v1:${VERSION}" --build-arg service_version=v1 .
     #with ratings black stars
-    docker build -t "istio/examples-bookinfo-reviews-v2:${VERSION}" --build-arg service_version=v2 \
+    docker build -t "cubeiocorp/examples-bookinfo-reviews-v2:${VERSION}" --build-arg service_version=v2 \
            --build-arg enable_ratings=true .
     #with ratings red stars
-    docker build -t "istio/examples-bookinfo-reviews-v3:${VERSION}" --build-arg service_version=v3 \
+    docker build -t "cubeiocorp/examples-bookinfo-reviews-v3:${VERSION}" --build-arg service_version=v3 \
            --build-arg enable_ratings=true --build-arg star_color=red .
   popd
 popd
