@@ -67,10 +67,13 @@ public class CubeServerService {
             String result = restTemplate.getForObject(uri, String.class);
             return ok().body(result);
         } catch (URISyntaxException e){
+            log.error("Error while retrieving the data from "+ path + " with message="+ e.getMessage());
             return noContent().build();
         } catch (HttpClientErrorException e){
+            log.error("Error while retrieving the data from "+ path + " with statusCode=" + e.getStatusCode() + ",message="+ e.getLocalizedMessage());
             return status(e.getStatusCode()).body(new ErrorResponse(e.getLocalizedMessage()));
         } catch (Exception e){
+            log.error("Error while retrieving the data from "+ path + " with message="+ e.getMessage());
             return status(NOT_FOUND).body(e);
         }
     }
@@ -78,6 +81,9 @@ public class CubeServerService {
     public Optional<Replay> getReplay(String replayId) {
         final String path  = cubeServerBaseUrlReplay + "/rs/status/" + replayId;
         final ResponseEntity  response = fetchGetResponse(path);
+        if (response.getStatusCode() != HttpStatus.OK) {
+            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
+        }
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
