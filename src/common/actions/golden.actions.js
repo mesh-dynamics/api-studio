@@ -51,7 +51,7 @@ const getGoldenData = (goldenId, service, apiPath) => async (dispatch, getState)
 
         const requestExample = request ? JSON.parse(request) : "";
 
-        const responseExample =  parsedResponse ? JSON.parse(parsedResponse.body): "";
+        const responseExample =  parsedResponse ? parsedResponse.body: "";
 
         // needs to have two keys { matchRules, compareRules } 
         // for component to consume

@@ -78,7 +78,7 @@ const GoldenMeta = (props) => {
             <div className="margin-top-10">
                 {!editable &&
                     <div className="gv-edit-icon-container">
-                        <i class="fa fa-pencil-square-o pointer" aria-hidden="true" onClick={() => setEditable(true)}></i>
+                        <i className="fa fa-pencil-square-o pointer" aria-hidden="true" onClick={() => setEditable(true)}></i>
                     </div>
                 }
                 <span className="margin-right-10"><strong>Golden:</strong></span>
