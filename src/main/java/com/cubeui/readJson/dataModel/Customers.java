@@ -11,6 +11,7 @@ public class Customers {
         String name;
         String emailId;
         String domainUrl;
+        JiraCredentials jiraCredentials;
         List<Apps> apps;
         List<Users> users;
 }

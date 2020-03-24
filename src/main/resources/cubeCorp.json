@@ -4,6 +4,11 @@
       "name": "cubeCorp",
       "emailId": "demo@cubecorp.io",
       "domainUrl": "cubecorp.io",
+      "jiraCredentials" : {
+        "userName": "siddhant.mutha@meshdynamics.io",
+        "apiKey": "fAODfwU3eTmrEDSdz7gM26C4",
+        "jiraBaseURL": "https://cubeio.atlassian.net"
+      },
       "apps": [
         {
           "name": "MovieInfo",
