@@ -1343,10 +1343,10 @@ public class AnalyzeWS {
 			ArrayList servicePathFacets = rrstore
 				.getServicePathHierarchicalFacets(recording.collection, RunType.Record);
 
-			JSONObject jsonObject = new JSONObject(jsonMapper.writeValueAsString(recording));
-			jsonObject.put(Constants.SERVICE_FACET, servicePathFacets);
-
-			return Response.ok().entity(jsonObject.toString()).build();
+			Map jsonMap = jsonMapper.convertValue(recording, Map.class);
+			jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
+			
+			return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
 		} catch (Exception e) {
 			LOGGER.error(
 				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while returning golden meta info",
