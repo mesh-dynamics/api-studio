@@ -88,6 +88,7 @@ public class CubeServerService {
                 return Optional.of(replay);
             } catch (Exception e) {
                 log.info("Error in converting Json to Replay" + replayId + " message"  + e.getMessage());
+                return Optional.empty();
             }
         }
         else {
