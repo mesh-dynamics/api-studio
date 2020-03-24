@@ -81,9 +81,6 @@ public class CubeServerService {
     public Optional<Replay> getReplay(String replayId) {
         final String path  = cubeServerBaseUrlReplay + "/rs/status/" + replayId;
         final ResponseEntity  response = fetchGetResponse(path);
-        if (response.getStatusCode() != HttpStatus.OK) {
-            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
-        }
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
@@ -93,7 +90,10 @@ public class CubeServerService {
                 log.info("Error in converting Json to Replay" + replayId + " message"  + e.getMessage());
             }
         }
-        return Optional.empty();
+        else {
+            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
+            return Optional.empty();
+        }
     }
 
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody) {
