@@ -168,9 +168,7 @@ class Navigation extends Component{
                             <AddTestConfig />
                         </div>
 
-                        <div className={!cube.hideTestConfigView ? "margin-top-10 info-div" : "hidden"}>
-                            <ViewSelectedTestConfig />
-                        </div>
+                        {!cube.hideTestConfigView ? <ViewSelectedTestConfig /> : null}
                     </div>
                 </div>
             </div>
