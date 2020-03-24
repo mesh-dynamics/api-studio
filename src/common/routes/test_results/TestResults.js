@@ -67,7 +67,7 @@ class TestResults extends Component {
         }));
         setTimeout(() => {
             // initial default path
-            history.push(`/shareable_link?replayId=${replayId}&app=${cube.selectedApp}&apiPath=${path}&service=${service}&recordingId=${recordingId}&timeStamp=${dateTime}&currentTemplateVer=${currentTemplateVer}&selectedReqRespMatchType=responseMismatch&selectedResolutionType=All`);
+            history.push(`/diff_results?replayId=${replayId}&app=${cube.selectedApp}&selectedAPI=${path}&selectedService=${service}&recordingId=${recordingId}&timeStamp=${dateTime}&currentTemplateVer=${currentTemplateVer}&selectedReqMatchType=match&startIndex=0`);
         });
     }
 

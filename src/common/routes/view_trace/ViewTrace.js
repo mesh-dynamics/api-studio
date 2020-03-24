@@ -725,11 +725,12 @@ class ViewTrace extends Component {
                 case "All":
                     return "All"
                 
+                case "ERR*":
                 case "ERR":
                     return "All Errors"
                 
                 default:
-                    return resolutionsIconMap[resolutionType].description;
+                    return resolutionsIconMap[resolutionType] ? resolutionsIconMap[resolutionType].description : "(Unknown) [" + resolutionType + "]";
             }
         };
         return (
@@ -752,7 +753,7 @@ class ViewTrace extends Component {
                     <div style={{display: "inline-block"}} className="pull-right">
                         <Button bsSize="small" bsStyle={"primary"} href={"/test_config_view"} style={{}}>VIEW SERVICE MESH</Button>
                         <span style={{borderRight: "1px solid #ccc", paddingLeft: "5px", marginRight: "9px"}}></span>
-                        <Button bsSize="small" bsStyle={"primary"} href={"/shareable_link" + removeURLParameter(window.location.search, "traceId")} style={{}}><Glyphicon style={{ visibility:  "visible" }} glyph="menu-left" /> <span>BACK TO DIFF</span></Button>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/diff_results" + removeURLParameter(window.location.search, "traceId")} style={{}}><Glyphicon style={{ visibility:  "visible" }} glyph="menu-left" /> <span>BACK TO DIFF</span></Button>
                     </div>
                 </div>
                 

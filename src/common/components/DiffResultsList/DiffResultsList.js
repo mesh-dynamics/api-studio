@@ -5,11 +5,16 @@ import ReactDiffViewer from "../../utils/diff/diff-main";
 import statusCodeList from "../../StatusCodeList"
 import _ from "lodash";
 import "../../components/Diff.css"
+import config from "../../config.js";
+import {addCompressToggleData} from "../../utils/diff/diff-process"
 
 export default class DiffResultsList extends Component {
     constructor(props) {
         super(props);
-        this.state = {
+
+        this.state = {           
+            diffLayoutData: props.diffLayoutData,
+
             searchFilterPath: "",
 
             // the 'shown' flags should match the corresponding 'show' flags coming from the initial props
@@ -22,6 +27,9 @@ export default class DiffResultsList extends Component {
             shownRequestMessageBody: props.showRequestMessageBody, 
 
             showFragments: false,
+
+            collapseLength: parseInt(config.diffCollapseLength),
+            collapseLengthIncrement: parseInt(config.diffCollapseLengthIncrement),
         }
         this.inputElementRef = React.createRef();
     }
@@ -48,6 +56,10 @@ export default class DiffResultsList extends Component {
             },
         } 
     };
+
+    componentWillReceiveProps = (newProps) => {
+        this.setState({diffLayoutData: newProps.diffLayoutData})
+    }
 
     toggleShowFragments = () => {
         const {showFragments} = this.state;
@@ -147,6 +159,23 @@ export default class DiffResultsList extends Component {
         this.props.handlePageNav(true, value);
     }
 
+    increaseCollapseLength = (e, jsonPath, recordReqId, replayReqId) => {
+        const { collapseLength, collapseLengthIncrement, diffLayoutData } = this.state;
+        let newCollapseLength = collapseLength + collapseLengthIncrement;
+
+        let newDiffLayoutData = diffLayoutData.map(diffItem => {
+            if (diffItem.replayReqId === replayReqId) {
+                addCompressToggleData(diffItem.reductedDiffArray, newCollapseLength);
+            }
+            return diffItem;
+        });
+
+        this.setState({ 
+            collapseLength: newCollapseLength, 
+            diffLayoutData: newDiffLayoutData,
+        });
+    }
+    
     // page navigation
     renderPageNav = () => {
         const {startIndex, endIndex, numResults} = this.props;
@@ -215,7 +244,7 @@ export default class DiffResultsList extends Component {
     renderResultsList = () => {
         const newStyles = this.newStyles;
         const { 
-            diffLayoutData, 
+            //diffLayoutData, 
             diffToggleRibbon: {
                 showResponseMessageBody, // Response Message Body
                 showResponseMessageHeaders, // Response Message Headers
@@ -227,6 +256,7 @@ export default class DiffResultsList extends Component {
         } = this.props;
 
         const {
+            diffLayoutData,
             shownRequestMessageBody, // Request Message Body
             // shownResponseMessageBody, // Response Message Body
             shownRequestMessageHeaders,// Request Message Headers
@@ -248,7 +278,7 @@ export default class DiffResultsList extends Component {
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
                     <div style={{display: "inline-block"}}>{item.path}</div>
                     <div style={{ marginTop: "5px" }}>
-                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + this.historySearchParams + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + window.location.search + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
                             <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
                         </Button>
                     </div>
@@ -372,6 +402,7 @@ export default class DiffResultsList extends Component {
                                     inputElementRef={this.inputElementRef}
                                     showAll={!this.state.showFragments}
                                     searchFilterPath={this.state.searchFilterPath}
+                                    handleCollapseLength={this.increaseCollapseLength}
                                 />
                             </div>
                         )}
