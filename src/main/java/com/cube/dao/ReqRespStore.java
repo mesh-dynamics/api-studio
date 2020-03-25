@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.md.core.CompareTemplate;
 import io.md.dao.Event;
+import io.md.dao.Event.RunType;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
@@ -553,6 +554,14 @@ public interface ReqRespStore {
 	 * @return
 	 */
     Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
+
+	/**
+	 * Returns service facets with path sub-facets for each service
+	 * @param collectionId
+	 * @param runType
+	 * @return
+	 */
+    ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType);
 
     /**
      * Deletes the Requests and Responses from the passed collection that has the given trace id

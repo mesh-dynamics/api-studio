@@ -56,12 +56,11 @@ import io.md.core.ReplayTypeEnum;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
-import io.md.dao.JsonPayload;
+import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.utils.CommonUtils;
-import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
@@ -1971,6 +1970,49 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
 
         return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults);
+    }
+
+    @Override
+    public ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.setFields("*");
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, COLLECTIONF, collectionId);
+        addFilter(query, RRTYPEF, runType.toString());
+
+        FacetQ facetq = new FacetQ();
+
+        Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
+
+        FacetQ pathFacetsq = new FacetQ();
+        Facet pathf = Facet.createTermFacet(PATHF, Optional.empty());
+        pathFacetsq.addFacet(PATHFACET, pathf);
+        servicef.addSubFacet(pathFacetsq);
+
+        facetq.addFacet(SERVICEFACET, servicef);
+        query.setFacetMinCount(1);
+
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(facetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+
+        Result<Event> result = SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToEvent, Optional.empty());
+
+        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
+        serviceFacetResults.forEach(serviceFacetResult -> {
+            HashMap pathFacetMap = (HashMap) ((HashMap) serviceFacetResult).get(PATHFACET);
+            ((HashMap)serviceFacetResult).put(PATHFACET,
+                result.solrNamedPairToMap((ArrayList)pathFacetMap.get(BUCKETFIELD)));
+        });
+
+        return serviceFacetResults;
+
+
     }
 
     @Override
