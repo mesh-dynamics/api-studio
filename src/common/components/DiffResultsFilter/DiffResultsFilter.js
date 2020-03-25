@@ -123,7 +123,7 @@ export default class DiffResultsFilter extends Component {
         }
 
         return resolutionTypes.filter((item) => {
-            return ((errKind == "error") ? item.val.indexOf("ERR_") > -1 : item.val.indexOf("ERR_") == -1);
+            return ((errKind == "error") ? item.val.indexOf("ERR") > -1 : item.val.indexOf("ERR") == -1);
         }).map(resTypeMenuJsx);
     }
 
@@ -146,7 +146,7 @@ export default class DiffResultsFilter extends Component {
                             </MenuItem>
                             <MenuItem divider />
                             <MenuItem eventKey="1" onClick={() => this.handleMetaDataSelect("selectedResolutionType", "ERR*")}>
-                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR*" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.val.indexOf("ERR_") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
+                                <Glyphicon style={{ visibility: selectedResolutionType === "ERR*" ? "visible" : "hidden" }} glyph="ok" /> All Errors ({resolutionTypes.filter((r) => {return r.val.indexOf("ERR") > -1}).reduce((accumulator, item) => accumulator += item.count, 0)})
                             </MenuItem>
                             {this.resolutionTypeMenuItems(resolutionTypes, "error")}
                             <MenuItem divider />
