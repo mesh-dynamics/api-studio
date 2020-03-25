@@ -378,7 +378,6 @@ class DiffResults extends Component {
                 dataList = json;
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
                     console.log("results list is empty")
-                    return {};
                 } 
                 return dataList;
             } else {
@@ -414,7 +413,6 @@ class DiffResults extends Component {
                 dataList = json;
                 if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
                     console.log("facets data is empty")
-                    return {};
                 }
                 return dataList;
             } else {

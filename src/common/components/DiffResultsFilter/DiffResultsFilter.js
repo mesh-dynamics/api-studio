@@ -36,10 +36,29 @@ export default class DiffResultsFilter extends Component {
             </Fragment>
         )
     }
+
+    // add showIndicator flag to api paths
+    processAPIPathIndicator = (apiPaths) => {
+        let showIndicator = (apiPathItem) => {
+            // use reduce to find if any api path has a resolution such as NoMatch or ExactMatch
+            let respMTNoMatch = apiPathItem.respMatchType_facets.reduce((acc, e) => (acc || e.val==="NoMatch"), false);
+            let reqMTNoMatch = apiPathItem.reqMatchType_facets.reduce((acc, e) => (acc || e.val==="NoMatch"), false);
+            let reqCTNoMatch = apiPathItem.reqCmpResType_facets.reduce((acc, e) => (acc || e.val==="NoMatch"), false);
+            let reqMTExactMatch = apiPathItem.reqMatchType_facets.reduce((acc, e) => (acc || e.val==="ExactMatch"), false);
+
+            return (reqMTExactMatch && (reqCTNoMatch || respMTNoMatch)) 
+                    || (reqMTNoMatch);
+        }
+
+        apiPaths.forEach(apiPathItem => {
+            apiPathItem.showIndicator = showIndicator(apiPathItem);
+        })
+    }
     
     renderAPIPathDropdown() {
         const {facetListData} = this.props;
-        const apiPaths = _.isEmpty(facetListData.apiPaths) ? [] : facetListData.apiPaths; 
+        let apiPaths = _.isEmpty(facetListData.apiPaths) ? [] : facetListData.apiPaths; 
+        this.processAPIPathIndicator(apiPaths);
         const selectedAPI = this.props.filter.selectedAPI; 
         let totalAPIPathCounts = apiPaths.reduce((accumulator, apiPath) => accumulator += apiPath.count, 0);
         
@@ -52,6 +71,7 @@ export default class DiffResultsFilter extends Component {
                     <MenuItem divider />
                     {apiPaths.map((apiPath) => {return (
                         <MenuItem key={apiPath.val + "-" + apiPath.count} eventKey={apiPath.val} onClick={() => this.handleMetaDataSelect("selectedAPI", apiPath.val)}>
+                            <Glyphicon style={{ visibility: apiPath.showIndicator ? "visible" : "hidden", color: "red"}} glyph="alert" /> 
                             <Glyphicon style={{ visibility: selectedAPI === apiPath.val ? "visible" : "hidden" }} glyph="ok" /> {apiPath.val} ({apiPath.count})
                         </MenuItem>);
                     })}
