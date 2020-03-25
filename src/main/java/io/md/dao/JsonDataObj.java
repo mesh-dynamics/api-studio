@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BinaryNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -202,8 +203,14 @@ public class JsonDataObj implements DataObj {
 						// all leaf values in quotes will be read as TextNode (even though they might a Base64
 						// encoded byte array)
 						// so we are just converting a TextNode to a BinaryNode here (to avoid confusion)
-						JsonNode parsedVal = new BinaryNode(val.binaryValue());
-						valParentObj.set(fieldName, parsedVal);
+						if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+							JsonNode parserVal = new TextNode(new String(val.binaryValue(),
+								StandardCharsets.UTF_8));
+							valParentObj.set(fieldName, parserVal);
+						} else {
+							JsonNode parsedVal = new BinaryNode(val.binaryValue());
+							valParentObj.set(fieldName, parsedVal);
+						}
 						return true;
 					} catch (IOException e) {
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
