@@ -2332,7 +2332,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
 
-    private final static int FACETLIMIT = 100;
+    private final static int FACETLIMIT = 500;
     private static final String REQMTFACET = "reqmt_facets";
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
@@ -2601,7 +2601,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
             domainBlock.ifPresent(d -> params.put(DOMAINK, d));
-            limit.ifPresent(l -> params.put(LIMITK, l));
+            limit.ifPresentOrElse(l -> params.put(LIMITK, l), () -> {
+                params.put(LIMITK, FACETLIMIT);
+            });
             // include missing value in facet
             params.put(MISSINGK, true);
 
