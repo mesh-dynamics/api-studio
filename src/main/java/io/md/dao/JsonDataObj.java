@@ -409,8 +409,9 @@ public class JsonDataObj implements DataObj {
 	private void processNode(JsonNode node, Function<String, Boolean> filter,
 		Collection<String> vals, JsonPointer path) {
 		if (node.isValueNode()) {
-			if (filter.apply(path.toString())) {
-				vals.add(path + "=" + node.asText());
+			String nodeValString = node.asText();
+			if (filter.apply(path.toString()) && !node.isNull() && !nodeValString.isEmpty()) {
+				vals.add(path + "=" + nodeValString);
 			}
 		} else if (node.isObject()) {
 			Iterator<Entry<String, JsonNode>> fields = node.fields();
