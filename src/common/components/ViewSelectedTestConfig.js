@@ -136,7 +136,6 @@ class ViewSelectedTestConfig extends React.Component {
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
-            dispatch(goldenActions.setSelectedGolden({ collec: e.target.value, testIds: cube.testIds }));
         }
     };
     
@@ -347,7 +346,7 @@ class ViewSelectedTestConfig extends React.Component {
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
                         <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
-                        Add Custom Headers
+                        Custom Headers
                     </span>
                 </div>
 

@@ -4,7 +4,7 @@ import {
     transformResponseContractToJson,
     transformRequestContract
 } from "../utils/generator/insights-table-generator";
-import { fetchGoldenInsights, postGoldenMeta } from "../services/golden.service";
+import { fetchGoldenInsights, postGoldenMeta, fetchGoldenMeta } from "../services/golden.service";
 
 const setMessage = (data) => ({ type: goldenConstants.SET_MESSAGE, data });
 
@@ -26,12 +26,28 @@ const loadGoldenExamples = (data) => ({ type: goldenConstants.SET_GOLDEN_EXAMPLE
 
 const loadSelectedGolden = (data) => ({ type: goldenConstants.SET_SELECTED_GOLDEN, data });
 
-const setSelectedGolden = (data) => (dispatch) => {
-    const { collec, testIds } = data;
-    
-    const selectedGolden = testIds.find(items => items.collec === collec);
+const getGoldenMeta = () => async (dispatch, getState) => {
+    const { authentication: { user: { access_token } }, cube: { selectedGolden }} = getState();
 
-    dispatch(loadSelectedGolden(selectedGolden));
+    try {
+        dispatch(beginFetch());
+
+        const goldenMetaData = await fetchGoldenMeta(selectedGolden, access_token);
+
+        dispatch(fetchComplete());
+
+        dispatch(loadSelectedGolden(goldenMetaData));
+
+    } catch (e) {
+        dispatch(fetchComplete());
+
+        // In case of error
+        dispatch(setMessage("Failed to fetch golden details. Please try again later"));
+
+        // Clear the message after 3 seconds
+        setTimeout(() => dispatch(clearMessage()), 8000);
+    }
+
 };
 
 const getGoldenData = (goldenId, service, apiPath) => async (dispatch, getState) => {
@@ -116,8 +132,8 @@ const updateGoldenMeta = (data) => async (dispatch, getState) => {
 
 export const goldenActions = {
     getGoldenData,
+    getGoldenMeta,
     updateGoldenMeta,
-    setSelectedGolden,
     setSelectedService,
     setSelectedApiPath,
     resetServiceAndApiPath

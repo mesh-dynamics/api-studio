@@ -25,6 +25,31 @@ const fetchGoldenInsights = async (goldenId, service, apiPath, token) => {
     
 };
 
+const fetchGoldenMeta = async (recordingId, token) => {
+    const requestOptions = {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": `Bearer ${token}`
+        }
+    };
+
+    try {
+        const response = await fetch(`${config.analyzeBaseUrl}/getGoldenMetaData/${recordingId}`, requestOptions);
+
+        if(response.ok) {
+            const data = await response.json();
+
+            return data;
+        } else {
+            throw new Error("Error Fetching Golden Meta");
+        }
+
+    } catch (error) {
+        console.log("Error Caught", error)
+    }
+};
+
 const postGoldenMeta = async (goldenDetails, token) => {
     const { id, goldenName, branchName, codeVersionNumber, commitId } = goldenDetails;
     //userId, golden_comment, tags to be added in later iterations
@@ -55,6 +80,7 @@ const postGoldenMeta = async (goldenDetails, token) => {
 };
 
 export {
+    fetchGoldenMeta,
     postGoldenMeta,
     fetchGoldenInsights
 };
