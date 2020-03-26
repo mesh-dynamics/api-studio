@@ -28,8 +28,8 @@ public class TracingFilter implements ClientRequestFilter {
 		CommonUtils.injectContext(mdTraceHeaders);
 		MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();
 		for (Map.Entry<String, List<String>> entry : mdTraceHeaders.entrySet()) {
-			for (String s: entry.getValue()) {
-				clientHeaders.add(entry.getKey(), s);
+			for (String entValue: entry.getValue()) {
+				clientHeaders.add(entry.getKey(), entValue);
 			}
 		}
 	}

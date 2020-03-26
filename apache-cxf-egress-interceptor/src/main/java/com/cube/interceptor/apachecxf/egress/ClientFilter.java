@@ -247,7 +247,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 		String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		if (commonConfig.shouldMockService(service)) {
-			newClientSpan.ifPresent(span -> {
+			currentSpan.ifPresent(span -> {
 				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
 			});
 			return;
@@ -294,6 +294,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 					mdTraceInfo, serviceName);
 
 				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+				span.finish();
 			} else {
 				LOGGER.debug(new ObjectMessage(
 					Map.of(Constants.MESSAGE, "Sampling is false!")));
