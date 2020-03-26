@@ -5,7 +5,6 @@ package com.cube.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1312,8 +1311,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate" + STRING_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
-    private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
+    // DONT use SimpleDateFormat in multi-threaded environment. Each thread should have its own
+    // instance. https://www.callicoder.com/java-simpledateformat-thread-safety-issues/
+    // private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private static SolrInputDocument replayToSolrDoc(Replay replay) {
         final SolrInputDocument doc = new SolrInputDocument();
@@ -1419,7 +1419,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .withReqCounts(reqcnt, reqsent, reqfailed)
                     .withReplayType(replayType).withUpdateTimestamp(
                         creationTimestamp
-                            .orElse(format.parse("2010-01-01 00:00:00.000").toInstant()));
+                            .orElseGet(() -> Instant.now()));
                 sampleRate.ifPresent(builder::withSampleRate);
                 generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(builder::withGeneratedClassJar));
