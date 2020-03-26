@@ -74,6 +74,7 @@ public class CommonConfig {
 	public static String intent;
 
 	public String customerId, app, instance, serviceName;
+	public final Optional<String> authToken;
 	public final Optional<EncryptionConfig> encryptionConfig;
 	public final Optional<SamplerConfig> samplerConfig;
 
@@ -240,6 +241,15 @@ public class CommonConfig {
 			}
 			return Optional.empty();
 		});
+
+		authToken = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.AUTH_TOKEN_PROP,
+			dynamicProperties);
+
+		if (CUBE_RECORD_SERVICE_URI.endsWith("/api") || CUBE_MOCK_SERVICE_URI.endsWith("/api")) {
+			authToken.orElseThrow(
+				() -> new Exception("Auth token not specified when /api present"));
+		}
 
 		servicesToMock = fromDynamicOREnvORStaticProperties(
 			io.cube.agent.Constants.SERVICES_TO_MOCK_PROP,
