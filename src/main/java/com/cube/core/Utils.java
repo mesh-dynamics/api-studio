@@ -4,6 +4,7 @@
 package com.cube.core;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -313,7 +314,9 @@ public class Utils {
                                                Config config,
                                                Comparator comparator)
 	    throws JsonProcessingException, EventBuilder.InvalidEventException {
-        HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method, body.getBytes());
+        HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
+	        formParams, method, body.getBytes(StandardCharsets.UTF_8));
+        //httpRequestPayload.postParse();
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
@@ -353,7 +356,8 @@ public class Utils {
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
                                                 Config config) throws JsonProcessingException, EventBuilder.InvalidEventException {
-        HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status, body.getBytes());
+        HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status,
+	        body.getBytes(StandardCharsets.UTF_8));
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
