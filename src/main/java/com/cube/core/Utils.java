@@ -318,7 +318,7 @@ public class Utils {
 	    // We treat empty body ("") as null
 	    if (body != null && (!body.isEmpty())) {
 		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
-			    body.getBytes());
+			    body.getBytes(StandardCharsets.UTF_8));
 	    } else {
 		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
 			    null);
@@ -367,7 +367,7 @@ public class Utils {
 	    HTTPResponsePayload httpResponsePayload;
 	    // We treat empty body ("") as null
 	    if (body != null && (!body.isEmpty())) {
-		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, body.getBytes());
+		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, body.getBytes(StandardCharsets.UTF_8));
 	    } else {
 		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, null);
 	    }
