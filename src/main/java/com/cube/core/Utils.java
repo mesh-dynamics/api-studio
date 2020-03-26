@@ -314,9 +314,17 @@ public class Utils {
                                                Config config,
                                                Comparator comparator)
 	    throws JsonProcessingException, EventBuilder.InvalidEventException {
-        HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
-	        formParams, method, body.getBytes(StandardCharsets.UTF_8));
-        //httpRequestPayload.postParse();
+	    HTTPRequestPayload httpRequestPayload;
+	    // We treat empty body ("") as null
+	    if (body != null && (!body.isEmpty())) {
+		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
+			    body.getBytes());
+	    } else {
+		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
+			    null);
+	    }
+
+	    //httpRequestPayload.postParse();
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
@@ -356,10 +364,15 @@ public class Utils {
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
                                                 Config config) throws JsonProcessingException, EventBuilder.InvalidEventException {
-        HTTPResponsePayload httpResponsePayload = new HTTPResponsePayload(hdrs, status,
-	        body.getBytes(StandardCharsets.UTF_8));
+	    HTTPResponsePayload httpResponsePayload;
+	    // We treat empty body ("") as null
+	    if (body != null && (!body.isEmpty())) {
+		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, body.getBytes());
+	    } else {
+		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, null);
+	    }
 
-        Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
+	    Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 
