@@ -13,17 +13,16 @@ spec:
     - port: 8080
     route:
     - destination:
-      host: jersy119-record
-      port:
-        number: 8080
+        host: jersy119-record
+        port:
+          number: 8080
   - match:
     - port: 80
     route:
     - destination:
-      host: jersy119-replay
-      port:
-        number: 8080
-
+        host: jersy119-replay
+        port:
+          number: 8080
 
 ---
 apiVersion: networking.istio.io/v1alpha3
