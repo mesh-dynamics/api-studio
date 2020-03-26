@@ -58,10 +58,13 @@ spec:
             value: "{{cube_application}}"
           - name: io.md.app
             value: "jersey_1_19_demo"
+          - name: depURL
+            value: department:8080
 
 ##################################################################################################
 # Jersy119 employee record services
 ##################################################################################################
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -117,10 +120,13 @@ spec:
             value: "{{cube_application}}"
           - name: io.md.app
             value: "jersey_1_19_demo"
+          - name: depURL
+            value: department:8080
 
 ##################################################################################################
 # Jersy119 record services
 ##################################################################################################
+---
 apiVersion: v1
 kind: Service
 metadata:
