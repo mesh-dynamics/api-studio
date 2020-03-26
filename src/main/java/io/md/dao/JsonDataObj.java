@@ -2,6 +2,7 @@ package io.md.dao;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -196,6 +197,24 @@ public class JsonDataObj implements DataObj {
 								, "value" , val.toString())) , e);
 						}
 					}
+				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+					try {
+						JsonNode parsedVal = null;
+						if (val.isBinary()) {
+							parsedVal = new TextNode(new String(val.binaryValue()
+						, StandardCharsets.UTF_8));
+						} else {
+							parsedVal =new TextNode(new String(Base64.getDecoder()
+								.decode(val.textValue())));
+
+						}
+						valParentObj.set(fieldName, parsedVal);
+						return true;
+					} catch (IOException ex) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"Exception in parsing json string", Constants.PATH_FIELD, path
+							, "value" , val.toString())) , ex);
+					}
 				} else if (val.isTextual()) {
 					try {
 						// if the value is not object, it is always a byte array ,( for now )
@@ -203,16 +222,10 @@ public class JsonDataObj implements DataObj {
 						// all leaf values in quotes will be read as TextNode (even though they might a Base64
 						// encoded byte array)
 						// so we are just converting a TextNode to a BinaryNode here (to avoid confusion)
-						if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
-							JsonNode parserVal = new TextNode(new String(val.binaryValue(),
-								StandardCharsets.UTF_8));
-							valParentObj.set(fieldName, parserVal);
-						} else {
-							JsonNode parsedVal = new BinaryNode(val.binaryValue());
-							valParentObj.set(fieldName, parsedVal);
-						}
+						JsonNode parsedVal = new BinaryNode(val.binaryValue());
+						valParentObj.set(fieldName, parsedVal);
 						return true;
-					} catch (IOException e) {
+					} catch (Exception e) {
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 							"Exception in parsing json string", Constants.PATH_FIELD, path
 							, "value" , val.toString())) , e);
