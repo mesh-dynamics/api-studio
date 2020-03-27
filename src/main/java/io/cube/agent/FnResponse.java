@@ -4,8 +4,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.cube.agent.FnReqResponse.RetStatus;
+import io.md.dao.FnReqRespPayload;
 
 /*
  * Created by IntelliJ IDEA.
@@ -18,7 +17,7 @@ public class FnResponse {
     @JsonProperty("recordTimestamp")
     Optional<Instant> timeStamp;
     @JsonProperty("returnStatus")
-    RetStatus retStatus;
+    FnReqRespPayload.RetStatus retStatus;
     @JsonProperty("exceptionType")
     Optional<String> exceptionType;
     @JsonProperty("multipleResults")
@@ -28,7 +27,7 @@ public class FnResponse {
     public FnResponse() {
     }
 
-    public FnResponse(String retVal, Optional<Instant> timeStamp, RetStatus retStatus, Optional<String> exceptionType, boolean multipleResults) {
+    public FnResponse(String retVal, Optional<Instant> timeStamp, FnReqRespPayload.RetStatus retStatus, Optional<String> exceptionType, boolean multipleResults) {
         this.retVal = retVal;
         this.timeStamp = timeStamp;
         this.retStatus = retStatus;

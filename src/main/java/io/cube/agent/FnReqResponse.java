@@ -1,9 +1,11 @@
 package io.cube.agent;
 
+import io.md.dao.FnReqRespPayload;
+
 import java.time.Instant;
 import java.util.Optional;
 
-import io.md.dao.FnReqRespPayload.RetStatus;
+
 
 /*
  * Created by IntelliJ IDEA.
@@ -25,14 +27,14 @@ public class FnReqResponse {
     public final  Integer[] argsHash;
     public final  String[] argVals;
     public final  String retOrExceptionVal;
-    public final  RetStatus retStatus;
+    public final FnReqRespPayload.RetStatus retStatus;
     public final  Optional<String> exceptionType; // the class name of the exception type in case of Exception
 
 
     public FnReqResponse(String customerId, String app, String instanceId, String service,
                          int fnSignatureHash, String name, Optional<String> traceId,
                          Optional<String> spanId, Optional<String> parentSpanId, Optional<Instant> respTS,
-                         Integer[] argsHash, String[] argVals, String retOrExceptionVal, RetStatus retStatus,
+                         Integer[] argsHash, String[] argVals, String retOrExceptionVal, FnReqRespPayload.RetStatus retStatus,
                          Optional<String> exceptionType) {
         this.customerId = customerId;
         this.app = app;
