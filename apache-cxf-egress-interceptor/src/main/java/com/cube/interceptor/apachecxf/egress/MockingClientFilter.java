@@ -35,15 +35,9 @@ public class MockingClientFilter implements ClientRequestFilter {
 		try {
 			commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
 				commonConfig.authToken.ifPresentOrElse(auth -> {
-					MultivaluedMap<String, String> authHeaders = new MultivaluedHashMap<>();
-					authHeaders.put(Constants.AUTHORIZATION_HEADER, List.of(auth));
 					MultivaluedMap<String, Object> clientHeaders = clientRequestContext
 						.getHeaders();
-					for (Map.Entry<String, List<String>> entry : authHeaders.entrySet()) {
-						for (String entVal : entry.getValue()) {
-							clientHeaders.add(entry.getKey(), entVal);
-						}
-					}
+					clientHeaders.put(Constants.AUTHORIZATION_HEADER, List.of(auth));
 				}, ()-> {
 					LOGGER.info("Auth token not present for Mocking service");
 				});
