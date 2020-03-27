@@ -329,6 +329,7 @@ public class CommonConfig {
 			URI cubeMockURI = new URI(CUBE_MOCK_SERVICE_URI);
 			uriBuilder.setHost(cubeMockURI.getHost());
 			uriBuilder.setPort(cubeMockURI.getPort());
+			uriBuilder.setScheme(cubeMockURI.getScheme());
 			String origPath = uriBuilder.getPath();
 			String pathToSet = cubeMockURI.getPath() + "/ms" +
 				"/" + customerId +
