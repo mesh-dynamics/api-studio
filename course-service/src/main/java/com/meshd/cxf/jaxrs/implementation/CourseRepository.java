@@ -1,5 +1,6 @@
 package com.meshd.cxf.jaxrs.implementation;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,7 @@ import com.cube.interceptor.apachecxf.egress.TracingFilter;
 @Produces("application/json")
 public class CourseRepository {
     private Map<Integer, Course> courses = new HashMap<>();
-    private String URL = "http://localhost:8081/meshd/students/1?source=aaa&trial=bbb";
+    private String URL = "http://localhost:8085/meshd/students/1?source=aaa&trial=bbb";
 
     {
         List<Integer> studentIds = new ArrayList<>();
@@ -116,6 +117,8 @@ public class CourseRepository {
             try {
                 student = objectMapper.readValue(studentString, Student.class);
             } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             return student;

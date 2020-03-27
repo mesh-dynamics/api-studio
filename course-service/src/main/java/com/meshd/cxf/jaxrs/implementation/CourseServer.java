@@ -18,7 +18,7 @@ public class  CourseServer {
         factoryBean.setResourceClasses(CourseRepository.class);
         factoryBean.setResourceProvider(new SingletonResourceProvider(new CourseRepository()));
         factoryBean.setProviders(List.of(new JacksonJaxbJsonProvider(), new TracingFilter(), new LoggingFilter()));
-        factoryBean.setAddress("http://localhost:8080/");
+        factoryBean.setAddress("http://localhost:8084/");
         Server server = factoryBean.create();
 
         System.out.println("Server ready...");

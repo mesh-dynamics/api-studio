@@ -8,8 +8,6 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 
-import com.cube.interceptor.apachecxf.ingress.LoggingFilter;
-import com.cube.interceptor.apachecxf.ingress.TracingFilter;
 
 
 public class StudentServer {
@@ -17,8 +15,9 @@ public class StudentServer {
     JAXRSServerFactoryBean factoryBean = new JAXRSServerFactoryBean();
     factoryBean.setResourceClasses(StudentRepository.class);
     factoryBean.setResourceProvider(new SingletonResourceProvider(new StudentRepository()));
-    factoryBean.setProviders(List.of(new JacksonJaxbJsonProvider(), new TracingFilter(), new LoggingFilter()));
-    factoryBean.setAddress("http://localhost:8081/");
+//    factoryBean.setProviders(List.of(new JacksonJaxbJsonProvider(), new TracingFilter(), new LoggingFilter()));
+    factoryBean.setProvider(new JacksonJaxbJsonProvider());
+    factoryBean.setAddress("http://localhost:8085/");
     Server server = factoryBean.create();
 
     System.out.println("Server ready...");
