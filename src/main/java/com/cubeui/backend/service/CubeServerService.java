@@ -119,11 +119,11 @@ public class CubeServerService {
         } catch (URISyntaxException e){
             return noContent().build();
         } catch (HttpClientErrorException e){
-            return status(e.getStatusCode()).body(e);
+            return status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
         } catch(HttpServerErrorException e) {
-            return status(e.getStatusCode()).body(e);
+            return status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
         } catch(UnknownHttpStatusCodeException e) {
-            return status(e.getRawStatusCode()).body(e);
+            return status(e.getRawStatusCode()).body(e.getResponseBodyAsByteArray());
         } catch (Exception e){
             return status(NOT_FOUND).body(e);
         }
