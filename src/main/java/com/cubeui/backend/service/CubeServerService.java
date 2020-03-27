@@ -15,7 +15,9 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.UnknownHttpStatusCodeException;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -117,7 +119,11 @@ public class CubeServerService {
         } catch (URISyntaxException e){
             return noContent().build();
         } catch (HttpClientErrorException e){
-            return status(e.getStatusCode()).body(new ErrorResponse(e.getLocalizedMessage()));
+            return status(e.getStatusCode()).body(e);
+        } catch(HttpServerErrorException e) {
+            return status(e.getStatusCode()).body(e);
+        } catch(UnknownHttpStatusCodeException e) {
+            return status(e.getRawStatusCode()).body(e);
         } catch (Exception e){
             return status(NOT_FOUND).body(e);
         }
