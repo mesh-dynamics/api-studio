@@ -80,7 +80,7 @@ public class ReplayBuilder {
 		this.updateTimestamp = Instant.now();
 		this.xfms = Optional.empty();
 		this.xfmer = Optional.empty();
-		this.mocks = Collections.EMPTY_LIST;
+		this.mocks = Collections.emptyList();
 	}
 
 	private void populateClassLoader() throws Exception {
