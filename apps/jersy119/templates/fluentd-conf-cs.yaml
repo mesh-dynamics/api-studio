@@ -12,7 +12,7 @@ data:
     <source>
       @type tail
       @id in_tail_cube_nginx_{{namespace}}
-      path /var/log/containers/jersy119*{{namespace}}_employee*.log
+      path /var/log/containers/*jersy119_employee*.log
       pos_file /var/log/fluentd-containers-{{namespace}}-md_jersey_1_19_app.log.pos
       tag cube.jersey
       read_from_head true
