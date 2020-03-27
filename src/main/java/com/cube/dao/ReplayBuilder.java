@@ -54,7 +54,7 @@ public class ReplayBuilder {
 	private Instant updateTimestamp;
     public Optional<String> xfms;
     public Optional<RRTransformer> xfmer;
-    public List<String> mocks;
+    public List<String> mockServices;
 
 
     public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
@@ -80,7 +80,7 @@ public class ReplayBuilder {
 		this.updateTimestamp = Instant.now();
 		this.xfms = Optional.empty();
 		this.xfmer = Optional.empty();
-		this.mocks = Collections.emptyList();
+		this.mockServices = Collections.emptyList();
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -97,7 +97,7 @@ public class ReplayBuilder {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
 			reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mocks);
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -187,8 +187,8 @@ public class ReplayBuilder {
         return this;
     }
 
-    public ReplayBuilder withMocks(List<String> mocks) {
-        this.mocks = mocks;
+    public ReplayBuilder withMockServices(List<String> mockServices) {
+        this.mockServices = mockServices;
         return this;
     }
 
