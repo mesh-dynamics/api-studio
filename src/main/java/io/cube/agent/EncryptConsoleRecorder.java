@@ -12,6 +12,7 @@ import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Payload;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
@@ -24,12 +25,10 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 	public boolean record(Event event) {
 		try {
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			Optional<DataObj> payloadOptional;
+			Optional<Payload> payloadOptional;
 			// TODO make encryptFields return AbstractMDPayload instead of DataObj
 			final Span span = Utils.createPerformanceSpan("encryptPayload");
 			try (Scope scope = Utils.activatePerformanceSpan(span)) {
-				// TODO eventually this will eventually retrun payload
-				// also maybe its better to make changes in the original payload during encryption
 				payloadOptional = Utils.encryptFields(commonConfig, event);
 			} finally {
 				span.finish();
@@ -43,10 +42,8 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 					EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
 						event.service, event.instanceId,
 						event.getCollection(), mdTraceInfo, event.runType,
-						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType);
-					// TODO this has to be corrected later using payload field of event
-					//eventBuilder.setPayload(payload);
-					//eventBuilder.setRawPayload(new StringPayload(payload.toString()));
+						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType)
+						.setPayload(payload);
 					return eventBuilder.createEvent();
 				})).orElse(event);
 			} finally {

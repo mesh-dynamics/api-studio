@@ -21,8 +21,8 @@ import io.cube.agent.Utils;
  * </p>
  *
  * <p>
- * This counts to see how many out of samplingAccuracy requests should be retained. This means that it is
- * accurate in units of samplingAccuracy requests.
+ * This counts to see how many out of samplingAccuracy requests should be retained. This means that
+ * it is accurate in units of samplingAccuracy requests.
  */
 
 public class CountingSampler extends Sampler {
@@ -30,12 +30,8 @@ public class CountingSampler extends Sampler {
 	public static final String TYPE = "counting";
 
 	public static Sampler create(float samplingRate, int samplingAccuracy) {
-		Optional<Sampler> sampler = Utils.getSampler(samplingRate, samplingAccuracy);
-		if (sampler.isPresent()) {
-			return sampler.get();
-		}
-
-		return new CountingSampler(samplingRate, samplingAccuracy);
+		Optional<Sampler> sampler = Utils.getConstSamplerIfValid(samplingRate, samplingAccuracy);
+		return sampler.orElse(new CountingSampler(samplingRate, samplingAccuracy));
 	}
 
 	private final AtomicInteger counter;
@@ -51,10 +47,13 @@ public class CountingSampler extends Sampler {
 	}
 
 	@Override
-	public boolean isSampled(MultivaluedMap<String, String> samplingParams) {
-		synchronized (this) {
-			return sampleDecisions.get(counter.getAndIncrement() % samplingAccuracy);
-		}
+	public Optional<String> getFieldCategory() {
+		return Optional.empty();
+	}
+
+	@Override
+	public boolean isSampled(MultivaluedMap<String, String> samplingInputs) {
+		return sampleDecisions.get(counter.getAndIncrement() % samplingAccuracy);
 	}
 
 	/**
