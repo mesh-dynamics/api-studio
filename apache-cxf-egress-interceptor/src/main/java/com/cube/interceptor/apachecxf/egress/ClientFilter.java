@@ -75,12 +75,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 		}
 
 		if (reqContext != null) {
-			// Do not log request in case the egress serivce is to be mocked
-			String serviceName = CommonUtils.getEgressServiceName(reqContext.getUri());
-			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (!commonConfig.shouldMockService(serviceName)) {
 				recordRequest(context, reqContext);
-			}
 		} else {
 			LOGGER
 				.debug(new ObjectMessage(
@@ -149,6 +144,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 			String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			if (commonConfig.shouldMockService(service)) {
+				removeSetContextProperty(clientRequestContext);
 				return;
 			}
 			Object apiPathObj = clientRequestContext.getProperty(Constants.MD_API_PATH_PROP);
@@ -233,23 +229,32 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
-			// Do not log request in case the egress serivce is to be mocked
-			String serviceName = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
-			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (!commonConfig.shouldMockService(serviceName)) {
 				//aroundWriteTo will not be called, as there will be no body to write.
 				//hence have to log the request here. WebClient does not have a provision
 				//to create a get request with body, so double logging is not an issue.
 				recordRequest(null, clientRequestContext);
-			}
 		}
 	}
 
 	private void recordRequest(WriterInterceptorContext writerInterceptorContext,
 		ClientRequestContext clientRequestContext) throws IOException {
 		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
-		if (currentSpan.isPresent()) {
-			Span span = currentSpan.get();
+		Optional<Span> newClientSpan = currentSpan.map( span -> {
+			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
+		});
+
+		// Do not log request in case the egress serivce is to be mocked
+		String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		if (commonConfig.shouldMockService(service)) {
+			currentSpan.ifPresent(span -> {
+				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+			});
+			return;
+		}
+
+		if (newClientSpan.isPresent()) {
+			Span span = newClientSpan.get();
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
 				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
@@ -287,6 +292,9 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				logRequest(writerInterceptorContext, clientRequestContext, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
 					mdTraceInfo, serviceName);
+
+				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+				span.finish();
 			} else {
 				LOGGER.debug(new ObjectMessage(
 					Map.of(Constants.MESSAGE, "Sampling is false!")));

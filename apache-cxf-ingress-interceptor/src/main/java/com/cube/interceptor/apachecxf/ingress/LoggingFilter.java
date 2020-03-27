@@ -93,6 +93,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 				logRequest(reqContext, apiPath, traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
 					queryParams, mdTraceInfo);
+
+				// Setting parent span
+				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+
 			}
 		}));
 	}
