@@ -20,8 +20,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.Event;
+import io.md.dao.FnReqRespPayload;
 import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
@@ -49,7 +52,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 		Optional<String> spanId,
 		Optional<String> parentSpanId,
 		Object responseOrException,
-		FnReqResponse.RetStatus retStatus,
+		RetStatus retStatus,
 		Optional<String> exceptionType,
 		Object... args) {
 		try {
@@ -96,14 +99,15 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 		Optional<String> spanId,
 		Optional<String> parentSpanId,
 		Object responseOrException,
-		FnReqResponse.RetStatus retStatus,
+		RetStatus retStatus,
 		Optional<String> exceptionType,
 		Object... args) {
 		try {
 			JsonObject payload = createPayload(responseOrException, gson, args);
-			MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null),
-				spanId.orElse(null), parentSpanId.orElse(null));
-
+			MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();/* new MDTraceInfo(traceId.orElse(null),
+				spanId.orElse(null), parentSpanId.orElse(null));*/
+			FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
+				args, responseOrException,retStatus , exceptionType);
 			//TODO this has to be corrected with a payload FnReqRespPayload
 			/*Optional<Event> event = CommonUtils.creacreateEvent(fnKey, mdTraceInfo, RunType.Record,
 				Optional.of(Instant.now()), payload);

@@ -3,17 +3,14 @@ package io.cube.agent;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.md.dao.FnReqRespPayload.RetStatus;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-05-06
  * @author Prasad M D
  */
 public class FnReqResponse {
-
-    public enum RetStatus {
-        Success,
-        Exception
-    }
 
     public final String customerId;
     public final String app;
