@@ -218,7 +218,7 @@ public class ReplayWS {
         String userId = formParams.getFirst("userId");
         String instanceId = formParams.getFirst("instanceId");
         String replayType = formParams.getFirst("replayType");
-        List<String> mocks = Optional.ofNullable(formParams.get("mocks"))
+        List<String> mockServices = Optional.ofNullable(formParams.get("mockServices"))
             .orElse(new ArrayList<String>());
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
 
@@ -266,7 +266,7 @@ public class ReplayWS {
                 .withIntermediateServices(intermediateServices)
                 .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                     .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-                .withMocks(mocks);
+                .withMocks(mockServices);
             sampleRate.ifPresent(replayBuilder::withSampleRate);
             service.ifPresent(replayBuilder::withServiceToReplay);
             xfms.ifPresent(replayBuilder::withXfms);

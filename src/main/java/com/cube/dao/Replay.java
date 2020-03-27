@@ -75,7 +75,7 @@ public class Replay {
 		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
 		Optional<Double> sampleRate, List<String> intermediateServices,
 		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
-		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mocks) {
+		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mockServices) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -101,7 +101,7 @@ public class Replay {
 		this.service = service;
 		this.replayType = replayType;
 		this.generatedClassLoader = classLoader;
-		this.mocks = mocks;
+		this.mockServices = mockServices;
 	}
 
 	//for deserialization
@@ -126,7 +126,7 @@ public class Replay {
 	    replayType = ReplayTypeEnum.HTTP;
 	    xfms = Optional.empty();
 	    xfmer = Optional.empty();
-	    mocks = Collections.EMPTY_LIST;
+	    mockServices = Collections.emptyList();
     }
 
 	/*
@@ -188,8 +188,8 @@ public class Replay {
 	public Optional<String> generatedClassJarPath;
 	@JsonProperty("replayType")
 	public final ReplayTypeEnum replayType;
-	@JsonProperty("mocks")
-    public final List<String> mocks;
+	@JsonProperty("mockServices")
+    public final List<String> mockServices;
 	public transient Optional<URLClassLoader> generatedClassLoader;
 
 	@JsonSetter

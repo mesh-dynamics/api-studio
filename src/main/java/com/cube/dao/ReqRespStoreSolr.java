@@ -737,7 +737,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr
     private static final String PATHF = CPREFIX + Constants.PATH_FIELD + STRING_SUFFIX;
-    private static final String MOCKF = CPREFIX + Constants.MOCK_FIELD + STRING_SUFFIX;
+    private static final String MOCKSERVICESF = CPREFIX + Constants.MOCK_SERVICES_FIELD + STRING_SUFFIX;
     private static final String REQIDF = CPREFIX + Constants.REQ_ID_FIELD + STRING_SUFFIX;
     private static final String METHODF = CPREFIX + Constants.METHOD_FIELD + STRING_SUFFIX;
     private static final String BODYF = CPREFIX + Constants.BODY + NOTINDEXED_SUFFIX;
@@ -1336,7 +1336,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYSTATUSF, replay.status.toString());
         doc.setField(TYPEF, type);
         replay.paths.forEach(path -> doc.addField(PATHSF, path));
-        replay.mocks.forEach(mock -> doc.addField(MOCKF,mock));
+        replay.mockServices.forEach(mockService -> doc.addField(MOCKSERVICESF,mockService));
         doc.setField(REQCNTF, replay.reqcnt);
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
@@ -1393,7 +1393,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<ReplayStatus> status = getStrField(doc, REPLAYSTATUSF)
             .flatMap(s -> Utils.valueOf(ReplayStatus.class, s));
         List<String> paths = getStrFieldMV(doc, PATHSF);
-        List<String> mocks = getStrFieldMV(doc,MOCKF);
+        List<String> mockServices = getStrFieldMV(doc, MOCKSERVICESF);
         int reqcnt = getIntField(doc, REQCNTF).orElse(0);
         int reqsent = getIntField(doc, REQSENTF).orElse(0);
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
@@ -1419,7 +1419,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .withReplayId(replayId.get())
                     .withAsync(async.get()).withTemplateSetVersion(templateVersion.get())
                     .withReplayStatus(status.get()).withPaths(paths)
-                    .withMocks(mocks)
+                    .withMocks(mockServices)
                     .withIntermediateServices(intermediateService)
                     .withReqCounts(reqcnt, reqsent, reqfailed)
                     .withReplayType(replayType).withUpdateTimestamp(
