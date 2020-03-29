@@ -10,6 +10,7 @@ import {getTransformHeaders} from "../utils/lib/url-utils";
 import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
+import { Glyphicon } from 'react-bootstrap';
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -145,6 +146,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleClose = () => {
         const {cube} = this.props;
+        clearInterval(this.statusInterval);
         this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
         this.setState({ show: false, showCT: false });
     };
@@ -556,12 +558,19 @@ class ViewSelectedTestConfig extends React.Component {
                             Status: {cube.replayStatus}&nbsp;&nbsp;
                             {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
                         </h3>
+                        {cube.replayStatusObj && <p>
+                            Replay ID: {cube.replayStatusObj.replayId}
+                        </p>}
                     </Modal.Body>
-                    <Modal.Footer className={cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error")) ? "text-center" : "hidden"}>
+                    <Modal.Footer >
+                        {(cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error"))) ? 
                         <Link to="/">
                             <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
-                        <span onClick={this.handleClose} className="cube-btn">Done</span>
+                    :
+                    <span className="modal-footer-text">The results will be available on the test results page once the test completes</span>
+                    }
+                        <span onClick={this.handleClose} className="cube-btn">Close</span>
                     </Modal.Footer>
                 </Modal>
                 
