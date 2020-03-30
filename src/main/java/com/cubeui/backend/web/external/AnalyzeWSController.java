@@ -5,6 +5,7 @@ import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.google.gson.JsonObject;
 import io.md.dao.RecordingOperationSetSP;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.Option;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -24,6 +25,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/as")
+@Slf4j
 public class AnalyzeWSController {
 
     @Autowired
@@ -246,30 +248,52 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/updateGoldenSet/{operationSetId}/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
-    public  ResponseEntity updateGoldenSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String operationSetId,
-                                                @PathVariable String recordingId,@PathVariable String replayId,
-                                                @PathVariable String collectionUpdOpSetId, @PathVariable String templateUpdOpSetId) {
+    @PostMapping("/updateGoldenSet")
+    public  ResponseEntity updateGoldenSet(HttpServletRequest request, @RequestBody Optional<String> postBody) {
         try {
             JSONParser parser = new JSONParser();
             if (postBody.isPresent()) {
                 JSONObject json = (JSONObject) parser.parse(postBody.get());
-                JSONObject templateOperationSet = (JSONObject)json.get("templateOperationSet");
-                String key = templateOperationSet.get("key").toString();
-                String operations = templateOperationSet.get("value").toString();
-                Map<String, String> templateOperationSetMap = new HashMap<>();
-                templateOperationSetMap.put(key, operations);
-                Optional<String> body = Optional.of(templateOperationSetMap.toString());
+                //Get Data for Api= /updateTemplateOperationSet from JSON post body
+                JSONObject jsonObject = (JSONObject)json.get("templateOperationSet");
+                Optional<String> body = Optional.of(jsonObject.get("body").toString());
+                JSONObject params = (JSONObject)jsonObject.get("params");
+
+                String operationSetId = params.get("operationSetId").toString();
                 ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/updateTemplateOperationSet/"+operationSetId);
-                body = Optional.of(json.get("updateMultiPath").toString());
+                if (response.getStatusCode() != HttpStatus.OK) {
+                    log.error("Error while calling API=/updateTemplateOperationSet/"+operationSetId);
+                    return ResponseEntity.status(response.getStatusCode()).body("Error while calling API=/updateTemplateOperationSet/");
+                }
+                //Get Data for API= /goldenUpdate/recordingOperationSet/updateMultiPath from JSON post body
+                jsonObject = (JSONObject)json.get("updateMultiPath");
+                body = Optional.of(jsonObject.get("body").toString());
                 response = cubeServerService.fetchPostResponse(request, body, "/goldenUpdate/recordingOperationSet/updateMultiPath");
-                body = Optional.of(json.get("updateGoldenSet").toString());
+
+                if (response.getStatusCode() != HttpStatus.OK) {
+                    log.error("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath");
+                    return ResponseEntity.status(response.getStatusCode()).body("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath");
+                }
+
+                //Get Data for API=/updateGoldenSet from JSON post body
+                jsonObject = (JSONObject)json.get("updateGoldenSet");
+                body = Optional.of(jsonObject.get("body").toString());
+                params = (JSONObject)jsonObject.get("params");
+
+                String recordingId = params.get("recordingId").toString();
+                String replayId = params.get("replayId").toString();
+                String collectionUpdOpSetId = params.get("collectionUpdOpSetId").toString();
+                String templateUpdOpSetId = params.get("templateUpdOpSetId").toString();
                 response = cubeServerService.fetchPostResponse(request, body, "/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId);
                 return response;
             }
         } catch (ParseException e) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(new ErrorResponse(e.getLocalizedMessage()));
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Empty");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Empty post Body");
+    }
+    @GetMapping("/getGoldenMetaData/{recordingId}")
+    public ResponseEntity getGoldenMetaData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchGetResponse(request, getBody);
     }
 }
