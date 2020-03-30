@@ -47,8 +47,8 @@ public class EmpRouter {
 				request.setName("HR");
 				Client client = Client.create();
 				client.addFilter(new ClientMockingFilter());
-				client.addFilter(new ClientLoggingFilter(client.getMessageBodyWorkers()));
 				client.addFilter(new ClientTracingFilter());
+				client.addFilter(new ClientLoggingFilter(client.getMessageBodyWorkers()));
 				WebResource r = client.resource(uri);
 				System.out.println("Dept service URI: "+uri);
 				ClientResponse response = r.type(MediaType.APPLICATION_JSON).post(ClientResponse.class, request);
