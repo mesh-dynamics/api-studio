@@ -237,4 +237,9 @@ public class AnalyzeWSController {
                                          @RequestParam String service, @RequestParam String apiPath) {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @GetMapping("/getGoldenMetaData/{recordingId}")
+    public ResponseEntity getGoldenMetaData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
