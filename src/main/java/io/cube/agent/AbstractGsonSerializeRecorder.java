@@ -1,8 +1,6 @@
 package io.cube.agent;
 
 
-import static io.md.utils.CommonUtils.createPayload;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -18,11 +16,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
-import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.Event;
 import io.md.dao.FnReqRespPayload;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
