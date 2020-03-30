@@ -248,8 +248,8 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/updateGoldenSet")
-    public  ResponseEntity updateGoldenSet(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+    @PostMapping("/goldenUpdateUnified")
+    public  ResponseEntity goldenUpdateUnified(HttpServletRequest request, @RequestBody Optional<String> postBody) {
         try {
             JSONParser parser = new JSONParser();
             ObjectMapper mapper = new ObjectMapper();
@@ -264,7 +264,7 @@ public class AnalyzeWSController {
                 ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/as/updateTemplateOperationSet/"+operationSetId);
                 if (response.getStatusCode() != HttpStatus.OK) {
                     log.error("Error while calling API=/updateTemplateOperationSet/"+operationSetId);
-                    return ResponseEntity.status(response.getStatusCode()).body("Error while calling API=/as/updateTemplateOperationSet/");
+                    return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(response.getBody(), "Error while calling API=/as/updateTemplateOperationSet/"));
                 }
                 //Get Data for API= /goldenUpdate/recordingOperationSet/updateMultiPath from JSON post body
                 jsonObject = (JSONObject)json.get("updateMultiPath");
@@ -277,7 +277,7 @@ public class AnalyzeWSController {
 
                 if (response.getStatusCode() != HttpStatus.OK) {
                     log.error("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath");
-                    return ResponseEntity.status(response.getStatusCode()).body("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath");
+                    return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(response.getBody(),"Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath"));
                 }
 
                 //Get Data for API=/updateGoldenSet from JSON post body
