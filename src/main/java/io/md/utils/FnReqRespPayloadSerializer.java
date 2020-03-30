@@ -9,15 +9,13 @@ import com.fasterxml.jackson.core.type.WritableTypeId;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import io.md.dao.FnReqRespPayload;
 
 public class FnReqRespPayloadSerializer extends JsonSerializer<FnReqRespPayload> {
 
-	private Gson gson = (new GsonBuilder()).create();
+	private Gson gson = MeshDGsonProvider.getInstance();
 
 	@Override
 	public void serialize(FnReqRespPayload fnReqRespPayload, JsonGenerator jsonGenerator,
