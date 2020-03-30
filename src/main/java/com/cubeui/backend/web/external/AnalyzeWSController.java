@@ -256,15 +256,15 @@ public class AnalyzeWSController {
                 JSONObject params = (JSONObject)jsonObject.get("params");
 
                 String operationSetId = params.get("operationSetId").toString();
-                ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/updateTemplateOperationSet/"+operationSetId);
+                ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/as/updateTemplateOperationSet/"+operationSetId);
                 if (response.getStatusCode() != HttpStatus.OK) {
                     log.error("Error while calling API=/updateTemplateOperationSet/"+operationSetId);
-                    return ResponseEntity.status(response.getStatusCode()).body("Error while calling API=/updateTemplateOperationSet/");
+                    return ResponseEntity.status(response.getStatusCode()).body("Error while calling API=/as/updateTemplateOperationSet/");
                 }
                 //Get Data for API= /goldenUpdate/recordingOperationSet/updateMultiPath from JSON post body
                 jsonObject = (JSONObject)json.get("updateMultiPath");
                 body = Optional.of(jsonObject.get("body").toString());
-                response = cubeServerService.fetchPostResponse(request, body, "/goldenUpdate/recordingOperationSet/updateMultiPath");
+                response = cubeServerService.fetchPostResponse(request, body, "/as/goldenUpdate/recordingOperationSet/updateMultiPath");
 
                 if (response.getStatusCode() != HttpStatus.OK) {
                     log.error("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath");
@@ -280,7 +280,7 @@ public class AnalyzeWSController {
                 String replayId = params.get("replayId").toString();
                 String collectionUpdOpSetId = params.get("collectionUpdOpSetId").toString();
                 String templateUpdOpSetId = params.get("templateUpdOpSetId").toString();
-                response = cubeServerService.fetchPostResponse(request, body, "/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId);
+                response = cubeServerService.fetchPostResponse(request, body, "/as/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId);
                 return response;
             }
         } catch (ParseException e) {
