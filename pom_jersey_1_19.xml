@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.cube.interceptor</groupId>
+    <artifactId>jersey_1_19</artifactId>
+    <version>0.0.1</version>
+    <packaging>jar</packaging>
+
+    <repositories>
+    	<repository>
+    		<id>github</id>
+    		<name>GitHub OWNER Apache Maven Packages</name>
+    		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+    	</repository>
+    </repositories>
+
+    	<dependencies>
+        	<dependency>
+          		<groupId>com.cube.interceptor</groupId>
+        		<artifactId>md-jersey_1_19-egress-interceptor</artifactId>
+        		<version>0.0.1</version>
+        	</dependency>
+                <dependency>
+                        <groupId>com.cube.interceptor</groupId>
+                        <artifactId>md-jaxrs_1_1-ingress-interceptor</artifactId>
+                        <version>0.0.1</version>
+                </dependency>
+      </dependencies>
+    	<build>
+  		<plugins>
+  			<plugin>
+  				<artifactId>maven-compiler-plugin</artifactId>
+  				<version>3.8.0</version>
+  				<configuration>
+  					<source>11</source>
+  					<target>11</target>
+  				</configuration>
+  			</plugin>
+  			<!--  needed for unit and integration testing  -->
+  			<plugin>
+  				<groupId>org.apache.maven.plugins</groupId>
+  				<artifactId>maven-shade-plugin</artifactId>
+  				<version>3.2.2</version>
+  				<executions>
+  					<execution>
+  						<phase>package</phase>
+  						<goals>
+  							<goal>shade</goal>
+  						</goals>
+  						<configuration>
+  							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+  							<artifactSet>
+  								<includes>
+  									<include>io.cube:agent</include>
+  									<include>io.cube:commons</include>
+									<include>javax.ws.rs:javax.ws.rs-api</include>
+									<include>org.apache.logging.log4j:log4j-api</include>
+									<include>org.apache.logging.log4j:log4j-core</include>	
+  								</includes>
+  							</artifactSet>
+  						</configuration>
+  					</execution>
+  				</executions>
+  			</plugin>
+
+  		</plugins>
+  	</build>
+
+</project>

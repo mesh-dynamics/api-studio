@@ -1,5 +1,6 @@
 package com.cube.interceptor.jersey.egress;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +24,10 @@ public class ClientTracingFilter extends ClientFilter {
 		CommonUtils.injectContext(mdTraceHeaders);
 		MultivaluedMap<String, Object> clientHeaders = clientRequest.getHeaders();
 		for (Map.Entry<String, List<String>> entry : mdTraceHeaders.entrySet()) {
-			clientHeaders.add(entry.getKey(), entry.getValue());
+			Iterator valuesItr = entry.getValue().iterator();
+			while (valuesItr.hasNext()) {
+				clientHeaders.add(entry.getKey(), valuesItr.next());
+			}
 		}
 		// Call the next client handler in the filter chain
 		ClientResponse resp = getNext().handle(clientRequest);

@@ -26,6 +26,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.filter.ClientFilter;
 import com.sun.jersey.spi.MessageBodyWorkers;
 
+import io.cube.agent.CommonConfig;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
@@ -56,9 +57,15 @@ public class ClientLoggingFilter extends ClientFilter {
 
 	@Override
 	public ClientResponse handle(ClientRequest clientRequest) throws ClientHandlerException {
+		String serviceName = CommonUtils.getEgressServiceName(clientRequest.getURI());
+		CommonConfig commonConfig = CommonConfig.getInstance();
+
 		// Modify the request
 		try {
-			clientRequest = filter(clientRequest);
+			//If egress to be mocked then skip data capture
+			if (!commonConfig.shouldMockService(serviceName)) {
+				clientRequest = filter(clientRequest);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Exception in client request filter ", e);
 		}
@@ -69,7 +76,10 @@ public class ClientLoggingFilter extends ClientFilter {
 
 		// Modify the response
 		try {
-			return filter(clientRequest, resp);
+			//If egress to be mocked then skip data capture
+			if (!commonConfig.shouldMockService(serviceName)) {
+				return filter(clientRequest, resp);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Exception in client response filter ", e);
 		}
@@ -280,8 +290,8 @@ public class ClientLoggingFilter extends ClientFilter {
 		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
 
 		String traceId = spanContext.getTraceId();
-		String spanId = String.valueOf(spanContext.getSpanId());
-		String parentSpanId = String.valueOf(spanContext.getParentId());
+		String spanId = Long.toHexString(spanContext.getSpanId());
+		String parentSpanId = Long.toHexString(spanContext.getParentId());
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
 		return mdTraceInfo;
 	}
