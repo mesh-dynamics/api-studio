@@ -263,7 +263,7 @@ public class AnalyzeWSController {
                 String operationSetId = params.get("operationSetId").toString();
                 ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/as/updateTemplateOperationSet/"+operationSetId);
                 if (response.getStatusCode() != HttpStatus.OK) {
-                    log.error("Error while calling API=/updateTemplateOperationSet/"+operationSetId);
+                    log.error("Error while calling API=/updateTemplateOperationSet/"+operationSetId +", error="+response.getBody());
                     return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(response.getBody(), "Error while calling API=/as/updateTemplateOperationSet/"));
                 }
                 //Get Data for API= /goldenUpdate/recordingOperationSet/updateMultiPath from JSON post body
@@ -276,7 +276,7 @@ public class AnalyzeWSController {
                 response = cubeServerService.fetchPostResponse(request, body, "/as/goldenUpdate/recordingOperationSet/updateMultiPath");
 
                 if (response.getStatusCode() != HttpStatus.OK) {
-                    log.error("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath");
+                    log.error("Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath"+ ", error="+response.getBody());
                     return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(response.getBody(),"Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath"));
                 }
 
