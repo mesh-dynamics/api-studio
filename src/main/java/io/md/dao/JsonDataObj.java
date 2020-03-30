@@ -2,6 +2,7 @@ package io.md.dao;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BinaryNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -195,6 +197,24 @@ public class JsonDataObj implements DataObj {
 								, "value" , val.toString())) , e);
 						}
 					}
+				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+					try {
+						JsonNode parsedVal = null;
+						if (val.isBinary()) {
+							parsedVal = new TextNode(new String(val.binaryValue()
+						, StandardCharsets.UTF_8));
+						} else {
+							parsedVal =new TextNode(new String(Base64.getDecoder()
+								.decode(val.textValue())));
+
+						}
+						valParentObj.set(fieldName, parsedVal);
+						return true;
+					} catch (IOException ex) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"Exception in parsing json string", Constants.PATH_FIELD, path
+							, "value" , val.toString())) , ex);
+					}
 				} else if (val.isTextual()) {
 					try {
 						// if the value is not object, it is always a byte array ,( for now )
@@ -205,7 +225,7 @@ public class JsonDataObj implements DataObj {
 						JsonNode parsedVal = new BinaryNode(val.binaryValue());
 						valParentObj.set(fieldName, parsedVal);
 						return true;
-					} catch (IOException e) {
+					} catch (Exception e) {
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 							"Exception in parsing json string", Constants.PATH_FIELD, path
 							, "value" , val.toString())) , e);
@@ -389,8 +409,9 @@ public class JsonDataObj implements DataObj {
 	private void processNode(JsonNode node, Function<String, Boolean> filter,
 		Collection<String> vals, JsonPointer path) {
 		if (node.isValueNode()) {
-			if (filter.apply(path.toString())) {
-				vals.add(path + "=" + node.asText());
+			String nodeValString = node.asText();
+			if (filter.apply(path.toString()) && !node.isNull() && !nodeValString.isEmpty()) {
+				vals.add(path + "=" + nodeValString);
 			}
 		} else if (node.isObject()) {
 			Iterator<Entry<String, JsonNode>> fields = node.fields();
