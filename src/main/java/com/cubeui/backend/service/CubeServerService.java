@@ -110,6 +110,8 @@ public class CubeServerService {
             URI uri = new URI(path);
             HttpHeaders headers = new HttpHeaders();
             request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
+            if (pathValue.length >1)
+                headers.set("Content-Type", pathValue[1]);
 //            MultiValueMap<String, String[]> map = new LinkedMultiValueMap<>();
 //            request.getParameterMap().forEach(map::add);
             HttpEntity<T> entity;

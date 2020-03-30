@@ -294,7 +294,7 @@ public class AnalyzeWSController {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("Error while retrieving Replay Object for replayId=" + replayId);
                 validation.validateCustomerName(request,replay.get().customerId);
-                response = cubeServerService.fetchPostResponse(request, body, "/as/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId);
+                response = cubeServerService.fetchPostResponse(request, body, "/as/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId, "application/x-www-form-urlencoded");
                 return response;
             }
         } catch (ParseException e) {
