@@ -92,17 +92,17 @@ public class CubeServerService {
         return Optional.empty();
     }
 
-    public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody) {
-        return fetchResponse(request, requestBody, HttpMethod.GET);
+    public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
+        return fetchResponse(request, requestBody, HttpMethod.GET, path);
     }
 
-    public <T> ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<T> requestBody) {
-        return fetchResponse(request, requestBody, HttpMethod.POST);
+    public <T> ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
+        return fetchResponse(request, requestBody, HttpMethod.POST, path);
     }
 
-    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method){
+    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
         updateCubeBaseUrl(request);
-        String path = cubeServerBaseUrl + request.getRequestURI().replace("/api", "");
+        String path = cubeServerBaseUrl + (pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", ""));
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }

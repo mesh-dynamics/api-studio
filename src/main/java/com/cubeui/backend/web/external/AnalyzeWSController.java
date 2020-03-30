@@ -2,7 +2,13 @@ package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import com.cubeui.backend.web.ErrorResponse;
+import com.google.gson.JsonObject;
 import io.md.dao.RecordingOperationSetSP;
+import org.apache.thrift.Option;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +17,9 @@ import io.md.dao.Replay;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -236,5 +244,32 @@ public class AnalyzeWSController {
     public ResponseEntity goldenInsights(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String recordingId,
                                          @RequestParam String service, @RequestParam String apiPath) {
         return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/updateGoldenSet/{operationSetId}/{recordingId}/{replayId}/{collectionUpdOpSetId}/{templateUpdOpSetId}")
+    public  ResponseEntity updateGoldenSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String operationSetId,
+                                                @PathVariable String recordingId,@PathVariable String replayId,
+                                                @PathVariable String collectionUpdOpSetId, @PathVariable String templateUpdOpSetId) {
+        try {
+            JSONParser parser = new JSONParser();
+            if (postBody.isPresent()) {
+                JSONObject json = (JSONObject) parser.parse(postBody.get());
+                JSONObject templateOperationSet = (JSONObject)json.get("templateOperationSet");
+                String key = templateOperationSet.get("key").toString();
+                String operations = templateOperationSet.get("value").toString();
+                Map<String, String> templateOperationSetMap = new HashMap<>();
+                templateOperationSetMap.put(key, operations);
+                Optional<String> body = Optional.of(templateOperationSetMap.toString());
+                ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/updateTemplateOperationSet/"+operationSetId);
+                body = Optional.of(json.get("updateMultiPath").toString());
+                response = cubeServerService.fetchPostResponse(request, body, "/goldenUpdate/recordingOperationSet/updateMultiPath");
+                body = Optional.of(json.get("updateGoldenSet").toString());
+                response = cubeServerService.fetchPostResponse(request, body, "/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId);
+                return response;
+            }
+        } catch (ParseException e) {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(new ErrorResponse(e.getLocalizedMessage()));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Empty");
     }
 }
