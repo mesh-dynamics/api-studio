@@ -448,7 +448,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     replay = () => {
         const { cube, dispatch, authentication } = this.props;
-        const { testConfig: { testPaths }} = cube;
+        const { testConfig: { testPaths, testMockServices }} = cube;
         const selectedInstances = cube.instances
             .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
         cubeActions.clearReplayStatus();
@@ -471,6 +471,7 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
             searchParams.set('transforms', transforms);
+            searchParams.set('mockServices',testMockServices);
             // Append Test Paths
             // If not specified, it will run all paths
             if(testPaths && testPaths.length !== 0) {
