@@ -1,5 +1,7 @@
 package com.journaldev.router;
 
+import java.util.Optional;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -19,6 +21,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 import com.cube.interceptor.jersey.egress.ClientLoggingFilter;
+import com.cube.interceptor.jersey.egress.ClientMockingFilter;
 import com.cube.interceptor.jersey.egress.ClientTracingFilter;
 
 @Path("/emp")
@@ -34,12 +37,16 @@ public class EmpRouter {
 			empResponse.setId(empRequest.getValue().getId());
 			empResponse.setName(empRequest.getValue().getName());
 			try {
-				String uri = "http://34.221.6.181:8082/dept/dept/getDept";
+				//String hostPort = fromEnvOrSystemProperties("depURL").orElse("35.160.68.101:8082");
+				String hostPort = fromEnvOrSystemProperties("depURL");
+				String uri = "http://"+hostPort+"/dept/dept/getDept";
+
 				DepRequest request = new DepRequest();
 				// set id as 1 for OK response
 				request.setId(1);
 				request.setName("HR");
 				Client client = Client.create();
+				client.addFilter(new ClientMockingFilter());
 				client.addFilter(new ClientLoggingFilter(client.getMessageBodyWorkers()));
 				client.addFilter(new ClientTracingFilter());
 				WebResource r = client.resource(uri);
@@ -64,5 +71,17 @@ public class EmpRouter {
 			throw new EmpNotFoundException("Wrong ID", empRequest.getValue().getId());
 		}
 		return Response.ok(empResponse).build();
+	}
+
+	public static String fromEnvOrSystemProperties(String propertyName) {
+//		Optional<String> or = Optional.ofNullable(System.getenv(propertyName)).or(() -> {
+//			return Optional.ofNullable(System.getProperty(propertyName));
+//		});
+		if (System.getenv(propertyName) != null ) {
+			return System.getenv(propertyName);
+		} else if (System.getProperty(propertyName) != null ) {
+			return System.getProperty(propertyName);
+		}
+		return "35.160.68.101:8082";
 	}
 }

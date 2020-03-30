@@ -16,8 +16,10 @@ public class EmpClient {
 	 */
 	public static void main(String[] args) {
 		//String uri = "http://localhost:8081/jersey_1_19_sampleapp_war/emp/emp/getEmp";
-		String uri = "http://34.221.6.181:8080/emp/emp/getEmp";
-		//String uri = "http://52.41.197.18:8080/emp/emp/getEmp";
+		//String uri = "http://localhost:8080/emp/emp/getEmp";
+		String uri = "http://35.160.68.101:8080/emp/emp/getEmp";
+		//String uri = "http://34.220.106.159:8080/emp/emp/getEmp";
+		//String uri = "http://192.168.1.121:8080/emp/emp/getEmp";
 		EmpRequest request = new EmpRequest();
 		// set id as 1 for OK response
 		request.setId(1);
@@ -25,7 +27,7 @@ public class EmpClient {
 		try {
 			Client client = Client.create();
 			WebResource r = client.resource(uri);
-			ClientResponse response = r.type(MediaType.APPLICATION_XML).post(ClientResponse.class, request);
+			ClientResponse response = r.type(MediaType.APPLICATION_XML).header("md-trace-id", "51f9d5421059a38a%3A51f9d5421059a38a%3A0%3A1").post(ClientResponse.class, request);
 			System.out.println(response.getStatus());
 			if (response.getStatus() == 200) {
 				String empResponse = response.getEntity(String.class);
