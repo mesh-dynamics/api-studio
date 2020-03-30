@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 
 import io.md.constants.Constants;
+import io.md.dao.FnReqRespPayload;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.JsonByteArrayPayload;
@@ -38,6 +39,8 @@ public class PayloadSerializerModifier extends BeanSerializerModifier {
 				, "Delegating to payload serializer", "className"
 				, beanDescription.getBeanClass().getName())));
 			return new PayloadSerializer((JsonSerializer<Object>) jsonSerializer);
+		} else  if (beanDescription.getBeanClass() == FnReqRespPayload.class) {
+			return new FnReqRespPayloadSerializer();
 		}
 
 		return jsonSerializer;

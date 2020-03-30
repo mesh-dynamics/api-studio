@@ -6,7 +6,12 @@ import java.util.Optional;
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.md.utils.FnReqRespPayloadDeserializer;
+
+@JsonDeserialize(using = FnReqRespPayloadDeserializer.class)
 public class FnReqRespPayload extends LazyParseAbstractPayload {
 
 
@@ -34,6 +39,14 @@ public class FnReqRespPayload extends LazyParseAbstractPayload {
 		this.retOrExceptionVal = retOrException;
 		this.retStatus = retStatus;
 		this.exceptionType = exceptionType;
+	}
+
+	public FnReqRespPayload(JsonNode deserializedJsonTree) {
+		super(deserializedJsonTree);
+		/*this.queryParams = this.dataObj.getValAsObject("/".concat("queryParams"),
+			MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		*/
+		postParse();
 	}
 
 
