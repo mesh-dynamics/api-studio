@@ -46,12 +46,13 @@ public class ClientMockingFilter extends ClientFilter {
     String serviceName = CommonUtils.getEgressServiceName(originalUri);
     try {
       commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
-        LOGGER.info("Mocking URI Present :" + mockURI);
+        LOGGER.debug("Mocking URI Present :" + mockURI);
         commonConfig.authToken.ifPresentOrElse(auth -> {
            MultivaluedMap<String, Object> clientHeaders = clientRequest
                 .getHeaders();
            clientHeaders.add(Constants.AUTHORIZATION_HEADER, "Bearer "+auth);
-           LOGGER.info("Setting auth token in the header");
+           LOGGER.debug("Setting auth token in the header");
+
          }, ()-> {
           LOGGER.info("Auth token not present for Mocking service");
         });

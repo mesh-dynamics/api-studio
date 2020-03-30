@@ -32,6 +32,7 @@ import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
+import io.opentracing.Scope;
 import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
@@ -63,9 +64,7 @@ public class ClientLoggingFilter extends ClientFilter {
 		// Modify the request
 		try {
 			//If egress to be mocked then skip data capture
-			if (!commonConfig.shouldMockService(serviceName)) {
-				clientRequest = filter(clientRequest);
-			}
+			clientRequest = filter(clientRequest);
 		} catch (Exception e) {
 			LOGGER.error("Exception in client request filter ", e);
 		}
@@ -93,6 +92,18 @@ public class ClientLoggingFilter extends ClientFilter {
 		Optional<Span> newClientSpan = currentSpan.map( span -> {
 			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
 		});
+
+		newClientSpan.map(CommonUtils::activateSpan);
+
+		// Do not log request in case the egress serivce is to be mocked
+		String service = CommonUtils.getEgressServiceName(clientRequest.getURI());
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		if (commonConfig.shouldMockService(service)) {
+			currentSpan.ifPresent(span -> {
+				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+			});
+			return clientRequest;
+		}
 
 		newClientSpan.ifPresent(UtilException.rethrowConsumer(span ->
 		{
