@@ -59,6 +59,7 @@ import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 import io.md.dao.ReqRespUpdateOperation;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
@@ -124,7 +125,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
-            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -149,12 +150,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), key);
+                    RetStatus.Success, Optional.empty(), key);
             }
         } catch (Exception e) {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), key);
             }
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -174,7 +175,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
-            if (ret != null && ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            if (ret != null && ret.retStatus == RetStatus.Exception) {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -193,7 +194,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 "Error while population RecordOrReplay in cache")) , e);
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayStoreKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), collectionKey , rr);
             }
         }
@@ -1199,7 +1200,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(saveFuncKey , CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
-            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
             UpdateResponse fromSolr = (UpdateResponse) ret.retVal;
@@ -1223,7 +1224,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
-                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), doc);
+                    RetStatus.Success, Optional.empty(), doc);
             }
             return toReturn;
         } catch (Throwable e) {
@@ -1231,7 +1232,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(),
                     CommonUtils.getParentSpanId(),
-                    e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
             }
             throw e;
         }
@@ -1253,7 +1254,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) {
             FnResponseObj ret = config.mocker.mock(deleteFuncKey , CommonUtils.getCurrentTraceId(),
                 CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
-            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
             UpdateResponse fromSolr = (UpdateResponse) ret.retVal;
@@ -1275,7 +1276,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
-                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), query);
+                    RetStatus.Success, Optional.empty(), query);
             }
             return toReturn;
         } catch (Throwable e) {
@@ -1283,7 +1284,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(),
                     CommonUtils.getParentSpanId(),
-                    e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), query);
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
             }
             throw e;
         }
