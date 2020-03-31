@@ -564,7 +564,9 @@ public class AnalyzeWS {
                 Recording recording = recordingOpt.get();
                 recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
                     + "\" , \"collection\" : \"" + recording.collection
-                    + "\" , \"templateVer\" : \"" + recording.templateVersion;
+                    + "\" , \"templateVer\" : \"" + recording.templateVersion
+                    + "\", \"goldenName\" : \"" + recording.name
+                    + "\", \"userName\" : \"" + recording.userId;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
