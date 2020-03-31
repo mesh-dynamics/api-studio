@@ -9,5 +9,6 @@ public class Constants {
 	public static final String MD_PERFORMANCE_TEST = "io.md.performance.test";
 	public static final String SAMPLER_CONF_FILE_PATH = "io.md.samplerconfig.path";
 	public static final String SERVICES_TO_MOCK_PROP = "io.md.mock.services";
-
+	public static final String AUTH_TOKEN_PROP = "io.md.authtoken";
+	public static final String AUTHORIZATION_HEADER = "authorization";
 }
