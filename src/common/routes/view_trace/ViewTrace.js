@@ -261,6 +261,10 @@ class ViewTrace extends Component {
 
     flattenTree(traceDataTree) {
         let depth = 0, result = [], queue = [];
+        const { cube} = this.props;
+        const { testConfig} = cube;
+        const {testMockServices} = testConfig || [];
+
         for(let eachRootNode of traceDataTree) {
             queue.push({
                 depth: 0,
@@ -274,10 +278,16 @@ class ViewTrace extends Component {
             result.push({
                 ...current
             })
+            let isParentmocked = testMockServices.some(function(element, i) {
+                if (current.service.toLowerCase() === element.toLowerCase()) {
+                    return true;
+                }
+            });
             if(current.children && current.children.length > 0) {
                 depth++;
                 for(let eachTempNode of current.children) {
                     queue.unshift({
+                        isParentmocked: isParentmocked,
                         depth: depth,
                         show: true,
                         showChildren: true,
@@ -865,7 +875,7 @@ class ViewTrace extends Component {
                                         </td>
                                     </tr>
                                     {recProcessedTraceDataFlattenTreeResCount.map((item, index) => {
-                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
+                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={(event) =>  item.isParentmocked ? event.stopPropagation() : this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: item.isParentmocked ? "#A9A9A9": (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
