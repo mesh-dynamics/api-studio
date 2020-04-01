@@ -8,10 +8,10 @@ steps:
       username: aakashsinghalmd01
       password: 'Welcome@md'
       repo: cubeiocorp/jersy_1_19_emp
+      dockerfile: employee-service/Dockerfile
       tags:
         - ${DRONE_COMMIT}-${DRONE_BRANCH}
         - ${DRONE_BRANCH}-latest
-    dockerfile: employee-service/
     resources:
       requests:
         cpu: 0.1
