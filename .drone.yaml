@@ -8,6 +8,7 @@ steps:
       username: aakashsinghalmd01
       password: 'Welcome@md'
       repo: cubeiocorp/jersy_1_19_emp
+      target: prod
       dockerfile: employee-service/Dockerfile
       tags:
         - ${DRONE_COMMIT}-${DRONE_BRANCH}
