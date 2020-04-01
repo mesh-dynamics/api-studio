@@ -60,6 +60,7 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.spi.LoggerContextFactory;
 
 public class CommonConfig {
 
@@ -142,6 +143,8 @@ public class CommonConfig {
 	}
 
 	public static void initializeLogging() {
+
+		LogManager.setFactory(new MDLoggerContextFactory());
 		LoggerContext context= (LoggerContext) LogManager.getContext();
 		Configuration config= context.getConfiguration();
 
@@ -162,7 +165,7 @@ public class CommonConfig {
 		// @PluginElement("AppenderRef") AppenderRef[] refs, @PluginElement("Properties") Property[] properties
 		// , @PluginConfiguration Configuration config, @PluginElement("Filter") Filter filter) {
 		//
-		LoggerConfig loggerConfig = AsyncLoggerConfig.createLogger(false, Level.INFO
+		LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.INFO
 				, "io.cube.agent", String.valueOf(false), refs , null, config, null);
 		loggerConfig.addAppender(appender, null,null);
 		config.addAppender(appender);
