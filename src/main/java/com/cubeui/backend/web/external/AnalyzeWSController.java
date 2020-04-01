@@ -3,6 +3,7 @@ package com.cubeui.backend.web.external;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.web.ErrorResponse;
+import com.cubeui.backend.web.GoldenSetRequest;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -282,7 +283,8 @@ public class AnalyzeWSController {
 
                 //Get Data for API=/updateGoldenSet from JSON post body
                 jsonObject = (JSONObject)json.get("updateGoldenSet");
-                body = Optional.of(jsonObject.get("body").toString());
+                GoldenSetRequest goldenSetRequest = mapper.readValue(jsonObject.get("body").toString(), GoldenSetRequest.class);
+                body = Optional.of(goldenSetRequest.toString());
                 params = (JSONObject)jsonObject.get("params");
 
                 String recordingId = params.get("recordingId").toString();
