@@ -119,4 +119,9 @@ public class CubeStoreController {
     public ResponseEntity health(HttpServletRequest request, @RequestBody Optional<String> getBody){
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @PostMapping("/updateGoldenFields/{recordingId}")
+    public ResponseEntity updateGoldenFields(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
