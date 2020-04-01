@@ -302,9 +302,8 @@ public class JsonDataObj implements DataObj {
 						MultivaluedHashMap<String, String> fromJson = jsonMapper.treeToValue(val
 							, MultivaluedHashMap.class);
 						List<NameValuePair> nameValuePairs = new ArrayList<>();
-						AtomicInteger counter = new AtomicInteger();
-						fromJson.forEach((x , y) -> nameValuePairs.add(counter.getAndIncrement(),
-							new BasicNameValuePair(x, y.get(0))));
+						fromJson.forEach((x , y) -> y.forEach(z -> nameValuePairs.add(
+									new BasicNameValuePair(x, z))));
 						urlEncoded =  URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
 						if (asByteArray) {
 							valParentObj.set(fieldName, new BinaryNode(urlEncoded.
