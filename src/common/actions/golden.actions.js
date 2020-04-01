@@ -14,7 +14,7 @@ const beginFetch = () => ({ type: goldenConstants.BEGIN_FETCH });
 
 const fetchComplete = () => ({ type: goldenConstants.FETCH_COMPLETE });
 
-const resetServiceAndApiPath = () => ({ type: goldenConstants.RESET_GOLDEN_API_PATH_AND_SERVICE });
+const resetGoldenVisibilityDetails = () => ({ type: goldenConstants.RESET_GOLDEN_VISIBILITY_DETAILS });
 
 const setSelectedService = (data) => ({ type: goldenConstants.SET_SELECTED_SERVICE, data });
 
@@ -136,5 +136,5 @@ export const goldenActions = {
     updateGoldenMeta,
     setSelectedService,
     setSelectedApiPath,
-    resetServiceAndApiPath
+    resetGoldenVisibilityDetails
 };

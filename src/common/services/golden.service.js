@@ -34,19 +34,14 @@ const fetchGoldenMeta = async (recordingId, token) => {
         }
     };
 
-    try {
-        const response = await fetch(`${config.analyzeBaseUrl}/getGoldenMetaData/${recordingId}`, requestOptions);
+    const response = await fetch(`${config.analyzeBaseUrl}/getGoldenMetaData/${recordingId}`, requestOptions);
 
-        if(response.ok) {
-            const data = await response.json();
+    if(response.ok) {
+        const data = await response.json();
 
-            return data;
-        } else {
-            throw new Error("Error Fetching Golden Meta");
-        }
-
-    } catch (error) {
-        console.log("Error Caught", error)
+        return data;
+    } else {
+        throw new Error("Error Fetching Golden Meta");
     }
 };
 

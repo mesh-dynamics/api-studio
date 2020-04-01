@@ -67,13 +67,13 @@ const GoldenMeta = (props) => {
         setBranchName(branch);
         setCodeVersionNumber(codeVersion);
         setCommitId(gitCommitId);
-    }, [message])
+    }, [message, selectedGolden]);
 
     useEffect(() => {
         if(selectedApi !== "" && selectedService !== "" && selectedGolden.id) {
             getGoldenData(selectedGolden.id, selectedService, selectedApi);
         }
-    }, [selectedGolden.id, selectedService, selectedApi])
+    }, [selectedGolden.id, selectedService, selectedApi]);
     
     return (
         <div>

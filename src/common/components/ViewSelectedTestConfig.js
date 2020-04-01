@@ -284,7 +284,7 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ showGoldenMeta: false });
 
         dispatch(cubeActions.hideGoldenVisibility(true));
-        dispatch(goldenActions.resetServiceAndApiPath());
+        dispatch(goldenActions.resetGoldenVisibilityDetails());
     };
 
     renderTestInfo = () => {
