@@ -27,7 +27,7 @@ import com.cube.interceptor.apachecxf.egress.TracingFilter;
 @Produces("application/json")
 public class CourseRepository {
     private Map<Integer, Course> courses = new HashMap<>();
-    private String URL = "http://localhost:8085/meshd/students/1?source=aaa&trial=bbb";
+    private String URL = "http://34.220.106.159:8080/meshd/students/1?source=aaa&trial=bbb";
 
     {
         List<Integer> studentIds = new ArrayList<>();

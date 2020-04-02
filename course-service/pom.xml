@@ -6,7 +6,6 @@
     <name>cxf-jaxrs-implementation</name>
     <version>0.0.1-SNAPSHOT</version>
     <groupId>com.baeldung</groupId>
-    
     <!--<parent>
         <groupId>com.baeldung</groupId>
         <artifactId>apache-cxf</artifactId>
@@ -129,11 +128,6 @@
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
                 <version>1.8.0</version>
-                <configuration>
-                    <to>
-                        <image>docker.io/cubeiocorp/course-service</image>
-                    </to>
-                </configuration>
             </plugin>
         </plugins>
     </build>

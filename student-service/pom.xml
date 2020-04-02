@@ -111,6 +111,11 @@
                     <mainClass>com.baeldung.cxf.jaxrs.implementation.StudentServer</mainClass>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>1.8.0</version>
+            </plugin>
         </plugins>
     </build>
 

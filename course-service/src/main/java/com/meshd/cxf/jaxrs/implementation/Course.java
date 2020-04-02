@@ -31,7 +31,7 @@ public class Course {
     private int id;
     private String name;
     private List<Integer> studentIds = new ArrayList<>();
-    private String URL = "http://localhost:8085/meshd/students?source=aaa&trial=bbb";
+    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     private OkHttpClient httpClient = new OkHttpClient();
     private WebClient webClient = WebClient.create(URL, List.of(new ClientFilter(), new TracingFilter(), new MockingClientFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
