@@ -110,7 +110,7 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 				app.orElse(Constants.NOT_PRESENT), Constants.INSTANCE_ID_FIELD,
 				instanceId.orElse(Constants.NOT_PRESENT))));
 			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid,
-				Optional.of(RecordingStatus.Running))
+				Optional.of(RecordingStatus.Running), Optional.empty())
 				.findFirst()
 				.map(recording -> RecordOrReplay.createFromRecording(recording))
 				.or(() -> { // no ongoing recording, check replay

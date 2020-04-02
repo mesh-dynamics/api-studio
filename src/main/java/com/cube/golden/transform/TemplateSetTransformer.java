@@ -11,8 +11,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.cube.cache.ComparatorCache;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -21,6 +19,7 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.golden.SingleTemplateUpdateOperation;

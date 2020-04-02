@@ -54,19 +54,18 @@ import io.md.core.CompareTemplate.CompareTemplateStoreException;
 import io.md.core.TemplateEntry;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
+import io.md.dao.Event.RunType;
 import io.md.dao.ReqRespUpdateOperation;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
-
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
-
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
@@ -475,7 +474,9 @@ public class AnalyzeWS {
 			    matchRes.reqCompareRes.mt,
 			    respCompDiff, reqCompDiff, request, replayedRequest, recordedResponse
 			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
-			    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+                matchRes.replayedSpanId, matchRes.replayedParentSpanId,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
 
 		    String resultJson = null;
 		    try {
@@ -561,7 +562,9 @@ public class AnalyzeWS {
                 Recording recording = recordingOpt.get();
                 recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
                     + "\" , \"collection\" : \"" + recording.collection
-                    + "\" , \"templateVer\" : \"" + recording.templateVersion;
+                    + "\" , \"templateVer\" : \"" + recording.templateVersion
+                    + "\", \"goldenName\" : \"" + recording.name
+                    + "\", \"userName\" : \"" + recording.userId;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -661,6 +664,7 @@ public class AnalyzeWS {
 		                .flatMap(rrstore::getRequestEvent);
 	                replayedRequest = replayedRequestEvent.map(e -> e.getPayloadAsJsonString(true));
 	                replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
+
 	                try {
 		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
 			                .respCompareRes.diffs));
@@ -686,6 +690,8 @@ public class AnalyzeWS {
                     matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
 	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
 	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+                    matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+                    matchRes.replayedSpanId, matchRes.replayedParentSpanId,
 	                recordReqTime, recordRespTime,
 	                replayReqTime, replayRespTime);
             }).collect(Collectors.toList());
@@ -1319,6 +1325,40 @@ public class AnalyzeWS {
 
 	}
 
+
+	/**
+	 * API to return Golden meta data for a given golden Id
+	 * @param recordingId
+	 * @return
+	 */
+	@GET
+	@Path("getGoldenMetaData/{recordingId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getGoldenMetaData(@Context UriInfo urlInfo,
+		@PathParam("recordingId") String recordingId) {
+		try {
+			Recording recording = rrstore.getRecording(recordingId).orElseThrow(() ->
+				new Exception("Unable to find recording object for the given id"));
+
+			ArrayList servicePathFacets = rrstore
+				.getServicePathHierarchicalFacets(recording.collection, RunType.Record);
+
+			Map jsonMap = jsonMapper.convertValue(recording, Map.class);
+			jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
+			
+			return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
+		} catch (Exception e) {
+			LOGGER.error(
+				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while returning golden meta info",
+					Constants.RECORDING_ID, recordingId)), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while returning golden meta info",
+					e.getMessage())).build();
+		}
+
+	}
+
+
 	private void setRequestAndRules(Recording recording, String service, String apiPath,
 		JSONObject jsonObject, Event request) throws JsonProcessingException {
 		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString());
@@ -1378,6 +1418,10 @@ public class AnalyzeWS {
                         Optional<String> replayResponse,
 	                    Optional<String> recordTraceId,
 	                    Optional<String> replayTraceId,
+                        Optional<String> recordedSpanId,
+                        Optional<String> recordedParentSpanId,
+                        Optional<String> replayedSpanId,
+                        Optional<String> replayedParentSpanId,
 	                    Optional<Long> recordReqTime,
 					    Optional<Long> recordRespTime,
 		                Optional<Long> replayReqTime,
@@ -1399,11 +1443,14 @@ public class AnalyzeWS {
             this.replayResponse = replayResponse;
             this.recordTraceId = recordTraceId;
             this.replayTraceId = replayTraceId;
+            this.recordedSpanId = recordedSpanId;
+            this.recordedParentSpanId = recordedParentSpanId;
+            this.replayedSpanId = replayedSpanId;
+            this.replayedParentSpanId = replayedParentSpanId;
             this.recordReqTime = recordReqTime;
 		    this.recordRespTime = recordReqTime;
 		    this.replayReqTime = recordReqTime;
 		    this.replayRespTime = recordReqTime;
-
 	    }
 
         public final Optional<String> recordReqId;
@@ -1416,6 +1463,10 @@ public class AnalyzeWS {
         public final String path;
         public final Optional<String> recordTraceId;
         public final Optional<String> replayTraceId;
+        public final Optional<String> recordedSpanId;
+        public final Optional<String> recordedParentSpanId;
+        public final Optional<String> replayedSpanId;
+        public final Optional<String> replayedParentSpanId;
 	    public final Optional<Long> recordReqTime;
 	    public final Optional<Long> recordRespTime;
 	    public final Optional<Long> replayReqTime;

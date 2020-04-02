@@ -23,8 +23,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -75,7 +73,7 @@ public class Replay {
 		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
 		Optional<Double> sampleRate, List<String> intermediateServices,
 		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
-		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer) {
+		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mockServices) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -101,6 +99,7 @@ public class Replay {
 		this.service = service;
 		this.replayType = replayType;
 		this.generatedClassLoader = classLoader;
+		this.mockServices = mockServices;
 	}
 
 	//for deserialization
@@ -125,6 +124,7 @@ public class Replay {
 	    replayType = ReplayTypeEnum.HTTP;
 	    xfms = Optional.empty();
 	    xfmer = Optional.empty();
+	    mockServices = Collections.emptyList();
     }
 
 	/*
@@ -186,6 +186,8 @@ public class Replay {
 	public Optional<String> generatedClassJarPath;
 	@JsonProperty("replayType")
 	public final ReplayTypeEnum replayType;
+	@JsonProperty("mockServices")
+    public final List<String> mockServices;
 	public transient Optional<URLClassLoader> generatedClassLoader;
 
 	@JsonSetter

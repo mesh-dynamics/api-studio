@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.apache.solr.common.util.Pair;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,6 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.md.core.CompareTemplate;
 import io.md.dao.Event;
+import io.md.dao.Event.RunType;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
@@ -313,10 +312,11 @@ public interface ReqRespStore {
 	 * @param app
 	 * @param instanceId
 	 * @param status
+	 * @param archived
 	 * @return
 	 */
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-		Optional<String> instanceId, Optional<RecordingStatus> status);
+		Optional<String> instanceId, Optional<RecordingStatus> status, Optional<Boolean> archived);
 
 
 	/**
@@ -450,6 +450,11 @@ public interface ReqRespStore {
         }
 
 		@JsonIgnore
+		public Optional<String> getRecordingId() {
+			return recording.map(recording -> recording.id);
+		}
+
+		@JsonIgnore
 		public boolean isRecording() {
 			return recording.isPresent();
 		}
@@ -548,6 +553,14 @@ public interface ReqRespStore {
 	 * @return
 	 */
     Result<ReqRespMatchResult> getAnalysisMatchResultOnlyNoMatch(String replayId);
+
+	/**
+	 * Returns service facets with path sub-facets for each service
+	 * @param collectionId
+	 * @param runType
+	 * @return
+	 */
+    ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType);
 
     /**
      * Deletes the Requests and Responses from the passed collection that has the given trace id

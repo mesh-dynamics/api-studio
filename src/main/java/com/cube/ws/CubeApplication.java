@@ -1,6 +1,7 @@
 package com.cube.ws;
 
 import javax.ws.rs.ApplicationPath;
+
 import org.glassfish.jersey.server.ResourceConfig;
 
 @ApplicationPath("/")

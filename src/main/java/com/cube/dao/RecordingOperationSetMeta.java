@@ -1,6 +1,5 @@
 package com.cube.dao;
 
-import java.util.Objects;
 import java.util.UUID;
 
 public class RecordingOperationSetMeta {

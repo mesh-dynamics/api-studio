@@ -1,7 +1,5 @@
 package com.cube.exception;
 
-import org.apache.logging.log4j.message.ObjectMessage;
-
 public class DataObjException extends Exception {
 
     public DataObjException() {
