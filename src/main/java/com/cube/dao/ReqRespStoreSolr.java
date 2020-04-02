@@ -851,12 +851,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (val.isBlank()) {
                 // if value is a blank string, convert it to field negation predicate since Solr does not store blank
                 // fields
-                return (String.format("%s (*:* NOT %s:*)", prefix, fieldname));
+                return (String.format("(*:* NOT %s:*)", fieldname));
             } else {
-                return String.format("%s (%s:%s)", prefix, fieldname, SolrIterator.escapeQueryChars(val));
+                return String.format("(%s:%s)", fieldname, SolrIterator.escapeQueryChars(val));
             }
         }).collect(Collectors.joining(" OR "));
-        query.addFilterQuery(filter);
+        query.addFilterQuery(prefix + " ( " + filter + " ) ");
     }
 
     private static void addEndRangeFilter(SolrQuery query, String fieldname, String fval, boolean endInclusive, boolean quote) {
