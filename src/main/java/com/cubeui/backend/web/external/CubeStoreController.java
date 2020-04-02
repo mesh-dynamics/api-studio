@@ -92,13 +92,6 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/recordings")
-    public ResponseEntity recordings(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId,
-                                     @RequestParam String app){
-        validation.validateCustomerName(request, customerId);
-        return cubeServerService.fetchGetResponse(request, getBody);
-    }
-
     @GetMapping("/currentcollection")
     public ResponseEntity currentcollection(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId){
         validation.validateCustomerName(request,customerId);
