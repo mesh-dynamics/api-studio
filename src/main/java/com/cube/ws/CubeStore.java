@@ -897,7 +897,8 @@ public class CubeStore {
     @GET
     @Path("searchRecording")
     @Consumes("application/x-www-form-urlencoded")
-    public Response searchRecording(MultivaluedMap<String, String> formParams) {
+    public Response searchRecording(@Context UriInfo ui) {
+        MultivaluedMap<String, String> formParams = ui.getQueryParameters();
         Optional<String> customerId = Optional.ofNullable(formParams.getFirst(Constants.CUSTOMER_ID_FIELD));
         Optional<String> app = Optional.ofNullable(formParams.getFirst(Constants.APP_FIELD));
         Optional<String> instanceId = Optional.ofNullable(formParams.getFirst(Constants.INSTANCE_ID_FIELD));
