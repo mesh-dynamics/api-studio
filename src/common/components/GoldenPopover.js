@@ -107,34 +107,38 @@ class GoldenPopover extends React.Component {
     }
 
     updateGolden() {
-        const {dispatch, serverSideDiff, cube, handleHidePopoverClick} = this.props;
+        const { dispatch, serverSideDiff, cube, jsonPath, handleHidePopoverClick, eventType } = this.props;
+        const operation = {};
+
         if (serverSideDiff) {
-            let operation = {
-                op: serverSideDiff.op.toUpperCase(),
-                path: serverSideDiff.path,
-                value: serverSideDiff.value,
-                eventType: "Response" // TODO: To be set this from diff context
-            };
-            this.hideGR();
-            let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
-            if (indexMOS != -1) {
-                dispatch(cubeActions.pushToOperationSet(operation, indexMOS));
-            } else {
-                let user = JSON.parse(localStorage.getItem('user'));
-                dispatch(cubeActions.pushToMOS({
-                    "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
-                    "service": cube.pathResultsParams.service,
-                    "path": cube.pathResultsParams.path,
-                    "operationSet": [operation],
-                    "customer": user.customer_name,
-                    "app": cube.selectedApp
-                }));
-            }
-            //
+            operation["op"] = serverSideDiff.op.toUpperCase();
+            operation["path"] = serverSideDiff.path;
+            operation["value"] = serverSideDiff.value;
+            operation["op"] = "Response"; // eventType; // todo change this
         } else {
-            this.hideGR();
-            alert("Can't update golden for this line");
+            operation["op"] = "REPLACE";
+            operation["path"] = jsonPath.replace("<BEGIN>", "");
+            operation["value"] = null;
+            operation["op"] = "Response"; // eventType; // todo change this
         }
+
+        this.hideGR();
+
+        let indexMOS = cube.multiOperationsSet.findIndex((elem) => elem.path && elem.path == cube.pathResultsParams.path);
+        if (indexMOS != -1) {
+            dispatch(cubeActions.pushToOperationSet(operation, indexMOS));
+        } else {
+            let user = JSON.parse(localStorage.getItem('user'));
+            dispatch(cubeActions.pushToMOS({
+                "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
+                "service": cube.pathResultsParams.service,
+                "path": cube.pathResultsParams.path,
+                "operationSet": [operation],
+                "customer": user.customer_name,
+                "app": cube.selectedApp
+            }));
+        }
+        
         handleHidePopoverClick();
     }
 
