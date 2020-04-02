@@ -50,6 +50,7 @@ public class EventQuery {
 
     private final List<String> reqIds;
     private final List<String> paths;
+    private final boolean excludePaths;
     private final Optional<Integer> payloadKey;
     private final Optional<Integer> offset;
     private final Optional<Integer> limit;
@@ -70,6 +71,7 @@ public class EventQuery {
         private Instant timestamp = null;
         private List<String> reqIds = Collections.emptyList();
         private List<String> paths = Collections.emptyList();
+        private boolean excludePaths = false;
         private Integer payloadKey = null;
         private Integer offset = null;
         private Integer limit = null;
@@ -165,6 +167,11 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withExcludePaths(boolean val) {
+            excludePaths = val;
+            return this;
+        }
+
         public Builder withPayloadKey(int val) {
             payloadKey = val;
             return this;
@@ -205,6 +212,7 @@ public class EventQuery {
         timestamp = Optional.ofNullable(builder.timestamp);
         reqIds = builder.reqIds;
         paths = builder.paths;
+        excludePaths = builder.excludePaths;
         payloadKey = Optional.ofNullable(builder.payloadKey);
         offset = Optional.ofNullable(builder.offset);
         limit = Optional.ofNullable(builder.limit);
@@ -247,6 +255,10 @@ public class EventQuery {
 
     public List<String> getPaths() {
         return paths;
+    }
+
+    public boolean excludePaths() {
+        return excludePaths;
     }
 
     public Optional<Integer> getPayloadKey() {

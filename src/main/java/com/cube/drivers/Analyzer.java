@@ -387,7 +387,7 @@ public class Analyzer {
         return replay.flatMap(UtilException.rethrowFunction(r -> {
             // get request in batches ... for batching of corresponding trace id queries
             // TODO need to get the batch size from some config
-            Pair<Stream<List<Event>> , Long> result = r.getRequestEventBatches(TRACEBATCHSIZE , rrstore);
+            Pair<Stream<List<Event>> , Long> result = r.getRequestBatchesUsingEvents(TRACEBATCHSIZE , rrstore);
 
             String templateVersionToUse = r.templateVersion;
 
