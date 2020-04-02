@@ -896,8 +896,8 @@ public class CubeStore {
 
     @GET
     @Path("searchRecording")
-    @Consumes("application/x-www-form-urlencoded")
-    public Response searchRecording(MultivaluedMap<String, String> formParams) {
+    public Response searchRecording(@Context UriInfo ui) {
+        MultivaluedMap<String, String> formParams = ui.getQueryParameters();
         Optional<String> customerId = Optional.ofNullable(formParams.getFirst(Constants.CUSTOMER_ID_FIELD));
         Optional<String> app = Optional.ofNullable(formParams.getFirst(Constants.APP_FIELD));
         Optional<String> instanceId = Optional.ofNullable(formParams.getFirst(Constants.INSTANCE_ID_FIELD));
@@ -973,51 +973,6 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for customer %s, app %s, collection %s.", customerId, app, collection)).build());
         return resp;
-    }
-
-	@GET
-	@Path("recordings")
-    public Response recordings(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
-        Optional<String> customerId = Optional.ofNullable(queryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
-        Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst(Constants.STATUS))
-            .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-        String archivedString = queryParams.getFirst(Constants.ARCHIVED_FIELD);
-        Optional<Boolean> archived = Optional.empty();
-        try {
-            if(archivedString!=null) {
-                if (archivedString.equalsIgnoreCase("true") || archivedString
-                    .equalsIgnoreCase("false")) {
-                    archived = Optional.of(Boolean.valueOf(archivedString));
-                } else {
-                    throw new BadValueException(
-                        "Only \"true\" or \"false\" value allowed for archived(boolean) fields");
-                }
-            }
-
-            List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, archived).collect(Collectors.toList());
-
-            String json;
-            json = jsonMapper.writeValueAsString(recordings);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (JsonProcessingException e) {
-            LOGGER.error(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Error in converting Recording object to Json "
-                    + e.getMessage(),
-                Constants.CUSTOMER_ID_FIELD, customerId,
-                Constants.APP_FIELD, app,
-                Constants.INSTANCE_ID_FIELD, instanceId
-            )));
-            return Response.serverError().entity(
-                buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                    e.getMessage())).build();
-        } catch (BadValueException e) {
-            return Response.serverError().entity(
-                buildErrorResponse(Constants.ERROR, Constants.BAD_VALUE_EXCEPTION,
-                    e.getMessage())).build();
-        }
     }
 
     @GET
