@@ -6,9 +6,6 @@
 
 package com.cube.ws;
 
-import com.cube.dao.ReqRespStore;
-import com.cube.utils.Constants;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +17,9 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.SolrPing;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
+
+import com.cube.dao.ReqRespStore;
+import com.cube.utils.Constants;
 
 /*
  * Created by IntelliJ IDEA.

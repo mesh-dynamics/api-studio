@@ -3,8 +3,6 @@
  */
 package com.cube.dao;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.Optional;
 
 /**
