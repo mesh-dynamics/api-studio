@@ -44,6 +44,10 @@ public class ServiceGraphController {
         Optional<Service> fromService = serviceRepository.findById(serviceGraphDTO.getFromServiceId());
         Optional<Service> toService = serviceRepository.findById(serviceGraphDTO.getToServiceId());
         if (app.isPresent() && fromService.isPresent() && toService.isPresent()) {
+            Optional<ServiceGraph> serviceGraph = this.serviceGraphRepository.findByAppIdAndFromServiceIdAndToServiceId(
+                    serviceGraphDTO.getAppId(), serviceGraphDTO.getFromServiceId(), serviceGraphDTO.getToServiceId());
+            if (serviceGraph.isPresent())
+                return ok(serviceGraph);
             ServiceGraph saved = this.serviceGraphRepository.save(
                     ServiceGraph.builder()
                             .app(app.get())

@@ -3,6 +3,8 @@ package com.cubeui.backend.service;
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.AppUser;
 import com.cubeui.backend.domain.Customer;
+import com.cubeui.backend.domain.JiraCustomerDefaultCredentials;
+import com.cubeui.backend.domain.JiraUserCredentials;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.Instance;
@@ -14,6 +16,8 @@ import com.cubeui.backend.repository.AppUserRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.InstanceUserRepository;
 import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.repository.JiraCustomerCredentialsRepository;
+import com.cubeui.backend.repository.JiraUserCredentialsRepository;
 import com.cubeui.backend.service.jwt.JwtActivationTokenProvider;
 import com.cubeui.backend.service.utils.RandomUtil;
 import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
@@ -49,10 +53,13 @@ public class UserService {
     private final AppUserRepository appUserRepository;
     private final InstanceRepository instanceRepository;
     private final InstanceUserRepository instanceUserRepository;
+    private final JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository;
+    private final JiraUserCredentialsRepository jiraUserCredentialsRepository;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-        CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
-        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, JwtActivationTokenProvider jwtTokenProvider) {
+                       CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
+                       InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, JwtActivationTokenProvider jwtTokenProvider,
+                       JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository, JiraUserCredentialsRepository jiraUserCredentialsRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
@@ -61,6 +68,8 @@ public class UserService {
         this.appUserRepository = appUserRepository;
         this.instanceRepository = instanceRepository;
         this.instanceUserRepository = instanceUserRepository;
+        this.jiraCustomerCredentialsRepository = jiraCustomerCredentialsRepository;
+        this.jiraUserCredentialsRepository = jiraUserCredentialsRepository;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -110,6 +119,16 @@ public class UserService {
                     .activationKey(jwtTokenProvider.createActivationToken(userDTO.getEmail()))
                     .activated(isActivated)
                     .build());
+            Optional<JiraCustomerDefaultCredentials> jiraCustomerDefaultCredentialsOptional = jiraCustomerCredentialsRepository.findByCustomerId(userDTO.getCustomerId());
+            jiraCustomerDefaultCredentialsOptional.ifPresent(jiraCustomerDefaultCredentials -> {
+                JiraUserCredentials jiraUserCredentials = jiraUserCredentialsRepository.save(
+                        JiraUserCredentials.builder()
+                            .APIKey(jiraCustomerDefaultCredentials.getAPIKey())
+                            .jiraBaseURL(jiraCustomerDefaultCredentials.getJiraBaseURL())
+                            .userName(jiraCustomerDefaultCredentials.getUserName())
+                            .user(newUser)
+                            .build());
+            });
 
             if (createUserAppInstanceMapping) {
                 // assign apps and their instances to the user from the customer

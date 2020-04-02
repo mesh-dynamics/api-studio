@@ -81,6 +81,10 @@ public class TestPathController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field Path Id is empty."));
         }
+        Optional<TestPath> testPath = this.testPathRepository.findByTestConfigIdAndPathId(testPathDTO.getTestId(), testPathDTO.getPathId());
+        if (testPath.isPresent()) {
+            return ok(testPath);
+        }
         TestPath saved = this.testPathRepository.save(
                 TestPath.builder()
                 .testConfig(testConfig.get())

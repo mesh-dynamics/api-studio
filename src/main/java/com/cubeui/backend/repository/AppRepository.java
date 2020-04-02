@@ -10,4 +10,5 @@ import java.util.Optional;
 @RepositoryRestResource(path = "apps", collectionResourceRel = "apps", itemResourceRel = "app")
 public interface AppRepository extends JpaRepository<App, Long> {
     Optional<List<App>> findByCustomerId(Long customerId);
+    Optional<App> findByNameAndCustomerId(String name, Long customerId);
 }

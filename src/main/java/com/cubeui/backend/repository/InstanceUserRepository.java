@@ -13,5 +13,6 @@ public interface InstanceUserRepository extends JpaRepository<InstanceUser, Long
     Optional<List<InstanceUser>> findByUserId(Long userId);
 
     Optional<List<InstanceUser>> findByInstanceId(Long instanceId);
+    Optional<InstanceUser> findByUserIdAndInstanceId(Long userId, Long instanceId);
 
 }
