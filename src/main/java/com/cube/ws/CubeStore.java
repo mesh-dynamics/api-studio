@@ -976,29 +976,6 @@ public class CubeStore {
         return resp;
     }
 
-	@GET
-	@Path("recordings")
-    public Response recordings(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
-        Optional<String> customerId = Optional.ofNullable(queryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
-        Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst(Constants.STATUS))
-            .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-
-        List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status).collect(Collectors.toList());
-
-        String json;
-        try {
-            json = jsonMapper.writeValueAsString(recordings);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, instance %s.",
-                customerId.orElse(""), app.orElse(""), instanceId.orElse("")), e);
-            return Response.serverError().build();
-        }
-    }
-
     @GET
 	@Path("currentcollection")
     public Response currentcollection(@Context UriInfo ui) {
