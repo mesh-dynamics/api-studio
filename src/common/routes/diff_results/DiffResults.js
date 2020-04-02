@@ -175,6 +175,20 @@ class DiffResults extends Component {
         });
     }
 
+    componentWillReceiveProps(nextProps, prevState) {
+        let { cube, dispatch } = nextProps;
+        if (cube && (cube.goldenInProg || cube.newGoldenId)) {
+            this.setState({ showNewGolden: true });
+        } else {
+            this.setState({ showNewGolden: false });
+        }
+    }
+
+    componentWillUnmount() {
+        let { dispatch } = this.props;
+        dispatch(cubeActions.clearGolden());
+        this.setState({ showNewGolden: false });
+    }
 
     // update the filter, which will update the values in the DiffResultsFilter component,
     // and then fetch the new set of results    
@@ -548,7 +562,7 @@ class DiffResults extends Component {
         }
     }
 
-    updateGolden = () => {
+    updateGolden = async () => {
         const { cube, dispatch } = this.props;
 
         let user = JSON.parse(localStorage.getItem('user'));
@@ -559,74 +573,65 @@ class DiffResults extends Component {
             "Authorization": "Bearer " + user['access_token']
         };
 
-        const updateTemplateOperationSet = axios({
-            method: 'post',
-            url: `${config.analyzeBaseUrl}/updateTemplateOperationSet/${cube.newTemplateVerInfo['ID']}`,
-            data: cube.templateOperationSetObject,
-            headers: headers
-        });
-        
-        const goldenUpdate = axios({
-            method: 'post',
-            url: `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/updateMultiPath`,
-            data: cube.multiOperationsSet,
-            headers: headers
-        });
-        const _self = this;
-        axios.all([updateTemplateOperationSet, goldenUpdate]).then(axios.spread(function (r1, r2) {
-            dispatch(cubeActions.updateRecordingOperationSet());
-            _self.updateGoldenSet();
-            // dispatch(cubeActions.updateGoldenSet(_self.state.nameG, _self.state.replayId, cube.collectionUpdateOperationSetId.operationSetId, cube.newTemplateVerInfo['ID'], _self.state.recordingId, _self.state.app));
-        }));
-    }
-
-    updateGoldenSet = () => {
-        const {cube, dispatch} = this.props;
-        const user = JSON.parse(localStorage.getItem('user'));
-
-        const url = `${config.analyzeBaseUrl}/updateGoldenSet/${this.state.recordingId}/${this.state.replayId}/${cube.collectionUpdateOperationSetId.operationSetId}/${cube.newTemplateVerInfo['ID']}`;
-        const headers = {
-            'Access-Control-Allow-Origin': '*',
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": "Bearer " + user['access_token']
-        };
-
-        let searchParams = new URLSearchParams();
-        searchParams.set('name', this.state.nameG);
-        searchParams.set('userId', user.username);
-
-        if (this.state.version.trim()) {
-            searchParams.set('codeVersion', this.state.version.trim());
-        }
-
-        if (this.state.branch.trim()) {
-            searchParams.set('branch', this.state.branch.trim());
-        }
-
-        if (this.state.commitId.trim()) {
-            searchParams.set('gitCommitId', this.state.commitId.trim());
-        }
-
+        let tagList = [];
         if (this.state.tag.trim()) {
-            let tagList = this.state.tag.split(",");
+            tagList = this.state.tag.split(",");
             for (let tag of tagList) {
                 tag = tag.trim();
             }
-            searchParams.set('tags', JSON.stringify(tagList));
+        }
+        
+        let data = {
+            templateOperationSet: {
+                params: {
+                    operationSetId: cube.newTemplateVerInfo['ID'],
+                },
+                body: cube.templateOperationSetObject,
+            },
+
+            updateMultiPath : {
+                body: cube.multiOperationsSet,
+            },
+
+            updateGoldenSet: {
+                params: {
+                    recordingId: this.state.recordingId,
+                    replayId: this.state.replayId,
+                    collectionUpdOpSetId: cube.collectionUpdateOperationSetId.operationSetId,
+                    templateUpdOpSetId: cube.newTemplateVerInfo['ID'],
+                },
+                
+                body: {
+                    name: this.state.nameG,
+                    userId: user.username,
+                    codeVersion:  this.state.version.trim(),
+                    branch:  this.state.branch.trim(),
+                    gitCommitId: this.state.commitId.trim(),
+                    tags: tagList,
+                },
+            }
         }
 
-
-        axios.post(url, searchParams, {headers: headers})
-            .then((result) => {
-                this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
-                dispatch(cubeActions.updateGoldenSet(result.data));
-                dispatch(cubeActions.getTestIds(this.state.app));
-            })
-            .catch((err) => {
-                dispatch(cubeActions.clearGolden());
-                this.setState({saveGoldenError: err.response.data["Error"]});
-            })
+        axios({
+            method: 'post',
+            url: `${config.analyzeBaseUrl}/goldenUpdateUnified`,
+            data: data,
+            headers: headers
+        })
+        .then((result) => {
+            this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+            dispatch(cubeActions.updateGoldenSet(result.data));
+            dispatch(cubeActions.getTestIds(this.state.app));
+        })
+        .catch((err) => {
+            dispatch(cubeActions.clearGolden());
+            this.setState({saveGoldenError: err.response.data["Error"]});
+        });
+        
+        // needed for showing the updating dialog. (is this a good idea?)
+        dispatch(cubeActions.updateRecordingOperationSet()); 
     }
+
 
     handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
 
@@ -642,12 +647,16 @@ class DiffResults extends Component {
                     </Modal.Header>
                     <Modal.Body>
                         <p className={cube.newGoldenId ? "" : "hidden"}>Name: {this.state.nameG}</p>
-                        <p className={cube.newGoldenId ? "hidden" : ""}>Updating Operations...</p>
+                        <p className={cube.newGoldenId ? "hidden" : ""}>Saving Golden Operations</p>
                     </Modal.Body>
-                    <Modal.Footer className={cube.newGoldenId ? "" : "hidden"}>
+                    <Modal.Footer>
                         <div>
-                            <span onClick={this.handleClose} className="cube-btn">Go TO Test Config</span>&nbsp;&nbsp;
-                            <span onClick={this.handleCloseDone} className="cube-btn">Done</span>
+                            {cube.newGoldenId ?
+                                <span onClick={this.handleClose} className="cube-btn">Go TO Test Config</span>
+                            :
+                                <span className="modal-footer-text">The golden is being saved in the background and will be available later. </span>
+                            }
+                            &nbsp;&nbsp;<span onClick={this.handleCloseDone} className="cube-btn">Close</span>
                         </div>
                     </Modal.Footer>
                 </Modal>
