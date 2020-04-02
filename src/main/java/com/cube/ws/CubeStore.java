@@ -56,7 +56,6 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
-import io.md.dao.JsonPayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 
