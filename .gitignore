@@ -10,7 +10,9 @@ envoy_record_cs.yaml
 apps/common/kubernetes/*
 apps/cube/kubernetes/*
 apps/moviebook/kubernetes/*
+apps/jersy119/kubernetes/*
 !apps/moviebook/kubernetes/.gitkeep
 !apps/common/kubernetes/.gitkeep
 !apps/cube/kubernetes/.gitkeep
+!apps/jersy119/kubernetes/.gitkeep
 .idea
