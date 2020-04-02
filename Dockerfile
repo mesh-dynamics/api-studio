@@ -3,7 +3,7 @@ COPY department-service ./department-service
 COPY employee-service ./employee-service
 #Add settings.xml file for github auth
 RUN mkdir ~/.m2 && \
-echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>e7d95f942f6d4f68f23245ad7ddcdb02cafb99a4</password></server></servers></settings>" > ~/.m2/settings.xml
+echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>34685ee07206c085dd49ab3aadb687ce6de4d9a0</password></server></servers></settings>" > ~/.m2/settings.xml
 RUN cd ./department-service && \
 mvn package && \
 cd ../employee-service && \
