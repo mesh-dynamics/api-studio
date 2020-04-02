@@ -5,7 +5,6 @@ package com.cube.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -14,7 +13,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import io.md.utils.CommonUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -25,13 +23,12 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
-import org.apache.solr.common.util.NamedList;
-import org.apache.solr.common.util.Pair;
 
-import io.md.utils.FnKey;
 import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
+import io.md.utils.CommonUtils;
+import io.md.utils.FnKey;
 
 import com.cube.utils.Constants;
 import com.cube.ws.Config;

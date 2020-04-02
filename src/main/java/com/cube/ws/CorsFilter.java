@@ -11,11 +11,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 /*

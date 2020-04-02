@@ -5,8 +5,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import io.md.cryptography.JcaEncryption;
 
 import com.cube.utils.Constants;

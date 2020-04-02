@@ -67,7 +67,6 @@ import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
 import com.cube.dao.Recording.RecordingStatus;
@@ -2335,7 +2334,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-        Optional<String> instanceId, Optional<RecordingStatus> status) {
+        Optional<String> instanceId, Optional<RecordingStatus> status, Optional<Boolean> archived) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2344,6 +2343,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
+        addFilter(query, ARCHIVEDF, archived.map(archive -> archive.toString()));
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
@@ -2391,7 +2391,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
 
-    private final static int FACETLIMIT = 100;
+    private final static int FACETLIMIT = 500;
     private static final String REQMTFACET = "reqmt_facets";
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
@@ -2660,7 +2660,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
             domainBlock.ifPresent(d -> params.put(DOMAINK, d));
-            limit.ifPresent(l -> params.put(LIMITK, l));
+            limit.ifPresentOrElse(l -> params.put(LIMITK, l), () -> {
+                params.put(LIMITK, FACETLIMIT);
+            });
             // include missing value in facet
             params.put(MISSINGK, true);
 
