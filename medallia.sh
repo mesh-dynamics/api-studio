@@ -23,8 +23,8 @@ replay() {
 
 analyze() {
 	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
-	REQNOTMATCHED=$(echo $RESP | jq -r ".reqNotMatched")
-	RESPNOTMATCHED=$(echo $RESP | jq -r ".respNotMatched")
+	REQNOTMATCHED=$(echo $ANALYZE | jq -r ".reqNotMatched")
+	RESPNOTMATCHED=$(echo $ANALYZE | jq -r ".respNotMatched")
 
 	#Display replay ID
 	echo "Replay ID:" $REPLAY_ID
