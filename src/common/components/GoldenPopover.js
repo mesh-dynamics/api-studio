@@ -114,12 +114,12 @@ class GoldenPopover extends React.Component {
             operation["op"] = serverSideDiff.op.toUpperCase();
             operation["path"] = serverSideDiff.path;
             operation["value"] = serverSideDiff.value;
-            operation["op"] = "Response"; // eventType; // todo change this
+            operation["eventType"] = "Response"; // eventType; // todo change this
         } else {
             operation["op"] = "REPLACE";
             operation["path"] = jsonPath.replace("<BEGIN>", "");
             operation["value"] = null;
-            operation["op"] = "Response"; // eventType; // todo change this
+            operation["eventType"] = "Response"; // eventType; // todo change this
         }
 
         this.hideGR();
