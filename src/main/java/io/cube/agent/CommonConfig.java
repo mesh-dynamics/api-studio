@@ -29,9 +29,19 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.async.AsyncLoggerConfig;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
+import org.apache.logging.log4j.core.layout.CustomJsonLayout;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -49,6 +59,8 @@ import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.spi.LoggerContextFactory;
 
 public class CommonConfig {
 
@@ -131,8 +143,45 @@ public class CommonConfig {
 		return singleInstance.get();
 	}
 
+	public static void initializeLogging() {
+
+		LogManager.setFactory(new MDLoggerContextFactory());
+		LoggerContext context= (LoggerContext) LogManager.getContext();
+		Configuration config= context.getConfiguration();
+
+		CustomJsonLayout layout = CustomJsonLayout.newBuilder().setComplete(false).setEventEol(true)
+				.setPropertiesAsList(false).setCompact(true).setProperties(false).setIncludeStacktrace(true)
+				.setLocationInfo(false).build();
+		Appender appender = ConsoleAppender.newBuilder()
+				.setDirect(true).setTarget(ConsoleAppender.Target.SYSTEM_OUT).setName("StdOut").setLayout(layout).build();
+		appender.start();
+
+		AppenderRef ref = AppenderRef.createAppenderRef("CONSOLE_APPENDER", null, null);
+		AppenderRef[] refs = new AppenderRef[] {ref};
+
+		//public static LoggerConfig createLogger(@PluginAttribute(value = "additivity",defaultBoolean = true)
+		// boolean additivity, @PluginAttribute("level") Level level,
+		// @Required(message = "Loggers cannot be configured without a name") @PluginAttribute("name") String loggerName
+		// , @PluginAttribute("includeLocation") String includeLocation,
+		// @PluginElement("AppenderRef") AppenderRef[] refs, @PluginElement("Properties") Property[] properties
+		// , @PluginConfiguration Configuration config, @PluginElement("Filter") Filter filter) {
+		//
+		LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.INFO
+				, "io.cube.agent", String.valueOf(false), refs , null, config, null);
+		loggerConfig.addAppender(appender, null,null);
+		config.addAppender(appender);
+		config.addLogger("io.cube.agent", loggerConfig);
+		context.updateLoggers(config);
+
+		Logger logger=LogManager.getContext().getLogger("io.cube.agent");
+		logger.info("HELLO_WORLD");
+	}
+
+
 	static {
-		ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
+
+		//ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
+		initializeLogging();
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
