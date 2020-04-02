@@ -18,6 +18,7 @@ class Navigation extends Component{
         this.pieRef = React.createRef();
         this.handleShowHideApps = this.handleShowHideApps.bind(this);
         this.handleChangeForApps = this.handleChangeForApps.bind(this);
+        this.statusInterval;
     }
 
     componentDidMount() {
@@ -71,6 +72,22 @@ class Navigation extends Component{
         })
 
         return jsxContent;
+    }
+
+    checkReplayStatus = (replayId) => {
+        const { dispatch, cube } = this.props;
+        this.statusInterval = setInterval(() => {
+            const {cube} = this.props;
+            if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
+                clearInterval(this.statusInterval);
+            } else {
+                checkStatus();
+            }
+        }, 1000);
+        
+        let checkStatus = () => {
+            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, replayId, cube.selectedApp));
+        };
     }
 
     render() {
@@ -168,7 +185,7 @@ class Navigation extends Component{
                             <AddTestConfig />
                         </div>
 
-                        {!cube.hideTestConfigView ? <ViewSelectedTestConfig /> : null}
+                        {!cube.hideTestConfigView ? <ViewSelectedTestConfig checkReplayStatus={this.checkReplayStatus}/> : null}
                     </div>
                 </div>
             </div>

@@ -10,6 +10,7 @@ import withFixedColumns from 'react-table-hoc-fixed-columns';
 import 'react-table-hoc-fixed-columns/lib/styles.css';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import _ from 'lodash';
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
@@ -24,6 +25,25 @@ class TestResults extends Component {
             showHeaderDetails: false,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
+    }
+
+    shouldComponentUpdate = (nextProps, nextState) => {
+        const {cube} = this.props;
+        const {cube: nextCube} = nextProps;
+
+        if (!_.isEqual(this.state, nextState)) {
+            return true;
+        }
+
+        if (!cube.replayStatusObj && !nextCube.replayStatusObj) {
+            return true;
+        }
+
+        if (_.isEqual(cube.replayStatusObj, nextCube.replayStatusObj)) {
+            return false;
+        }
+
+        return true;
     }
 
     clearFilter = () => {

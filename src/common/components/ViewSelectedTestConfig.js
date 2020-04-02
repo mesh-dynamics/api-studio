@@ -41,7 +41,7 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             }
         };
-        this.statusInterval;
+        //this.statusInterval;
     }
 
     componentDidMount() {
@@ -146,7 +146,6 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleClose = () => {
         const {cube} = this.props;
-        clearInterval(this.statusInterval);
         this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
         this.setState({ show: false, showCT: false });
     };
@@ -446,8 +445,8 @@ class ViewSelectedTestConfig extends React.Component {
         });
     };
 
-    replay = () => {
-        const { cube, dispatch, authentication } = this.props;
+    replay = async () => {
+        const { cube, dispatch, authentication, checkReplayStatus } = this.props;
         const { testConfig: { testPaths, testMockServices }} = cube;
         const selectedInstances = cube.instances
             .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
@@ -486,14 +485,9 @@ class ViewSelectedTestConfig extends React.Component {
             };
             axios.post(url, searchParams, configForHTTP).then((response) => {
                 this.setState({replayId: response.data});
-                this.statusInterval = setInterval(() => {
-                    const {cube} = this.props;
-                    if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
-                        clearInterval(this.statusInterval);
-                    } else {
-                        checkStatus();
-                    }
-                }, 1000);
+                // check replay status periodically and call analyze at the end; and update timeline
+                // this method is run in the parent component (Navigation)
+                checkReplayStatus(this.state.replayId.replayId); 
             }).catch((error) => {
                 if(error.response.data) {
                     if (error.response.data['replayId'] !== "None") {
@@ -508,10 +502,6 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             });
         }
-
-        let checkStatus = () => {
-            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayId, cube.selectedApp));
-        };
     };
 
     render() {
