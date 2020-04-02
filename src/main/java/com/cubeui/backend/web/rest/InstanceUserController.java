@@ -64,6 +64,11 @@ public class InstanceUserController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field User Id is empty."));
         }
+        Optional<InstanceUser> instanceUser = this.instanceUserRepository.findByUserIdAndInstanceId(
+                                                instanceUserDTO.getUserId(), instanceUserDTO.getInstanceId());
+        if(instanceUser.isPresent()) {
+            return ok(instanceUser);
+        }
         InstanceUser saved = this.instanceUserRepository.save(
                 InstanceUser.builder()
                         .instance(instance.get())

@@ -92,13 +92,6 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/recordings")
-    public ResponseEntity recordings(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId,
-                                     @RequestParam String app){
-        validation.validateCustomerName(request, customerId);
-        return cubeServerService.fetchGetResponse(request, getBody);
-    }
-
     @GetMapping("/currentcollection")
     public ResponseEntity currentcollection(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId){
         validation.validateCustomerName(request,customerId);
@@ -118,5 +111,10 @@ public class CubeStoreController {
     @GetMapping("/health")
     public ResponseEntity health(HttpServletRequest request, @RequestBody Optional<String> getBody){
         return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/updateGoldenFields/{recordingId}")
+    public ResponseEntity updateGoldenFields(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchPostResponse(request, postBody);
     }
 }
