@@ -6,6 +6,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.gson.Gson;
 
+import io.cube.agent.logging.ValueEvent;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.opentracing.Scope;
@@ -39,7 +40,11 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 	public boolean record(Event event) {
 		final Span span = Utils.createPerformanceSpan("log4jLog");
 		try (Scope scope = Utils.activatePerformanceSpan(span)) {
-			LOGGER.info(new ObjectMessage(Map.of("Cube Event", event)));
+			long sequenceId = CommonConfig.ringBuffer.next();
+			ValueEvent valueEvent = CommonConfig.ringBuffer.get(sequenceId);
+			valueEvent.setValue(event);
+			CommonConfig.ringBuffer.publish(sequenceId);
+			//LOGGER.info(new ObjectMessage(Map.of("Cube Event", event)));
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(

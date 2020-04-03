@@ -5,8 +5,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,13 +15,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-//import javax.ws.rs.client.Client;
-//import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -33,21 +29,25 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
-import org.apache.logging.log4j.core.async.AsyncLoggerConfig;
 import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
-import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
 import org.apache.logging.log4j.core.layout.CustomJsonLayout;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lmax.disruptor.BusySpinWaitStrategy;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
+import com.lmax.disruptor.util.DaemonThreadFactory;
 
-import io.cube.agent.logging.MDConfigurationFactory;
+import io.cube.agent.logging.SingleEventPrintConsumer;
+import io.cube.agent.logging.ValueEvent;
 import io.cube.agent.samplers.AdaptiveSampler;
 import io.cube.agent.samplers.Attributes;
 import io.cube.agent.samplers.BoundarySampler;
@@ -59,8 +59,9 @@ import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.spi.LoggerContextFactory;
+
+//import javax.ws.rs.client.Client;
+//import javax.ws.rs.client.ClientBuilder;
 
 public class CommonConfig {
 
@@ -80,6 +81,8 @@ public class CommonConfig {
 
 	private WebTarget cubeRecordService;
 	private WebTarget cubeMockService;
+	public static Disruptor<ValueEvent> disruptor;
+	public static RingBuffer<ValueEvent> ringBuffer;
 
 	private static final Logger LOGGER = LogManager.getLogger(CommonConfig.class);
 
@@ -177,11 +180,28 @@ public class CommonConfig {
 		logger.info("HELLO_WORLD");
 	}
 
+	private static void initDisruptor() {
+		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;
+
+		WaitStrategy waitStrategy = new BusySpinWaitStrategy();
+		SingleEventPrintConsumer eventConsumer = new SingleEventPrintConsumer();
+		disruptor
+			= new Disruptor<>(
+			ValueEvent.EVENT_FACTORY,
+			1024,
+			threadFactory,
+			ProducerType.MULTI,
+			waitStrategy);
+		disruptor.handleEventsWith(eventConsumer.getEventHandler());
+		ringBuffer = disruptor.start();
+	}
+
 
 	static {
 
 		//ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
-		initializeLogging();
+		//initializeLogging();
+		initDisruptor();
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
