@@ -10,5 +10,4 @@ import java.util.Optional;
 @RepositoryRestResource(path = "test_virtualized_services", collectionResourceRel = "test_virtualized_services", itemResourceRel = "test_virtualized_service")
 public interface TestVirtualizedServiceRepository extends JpaRepository<TestVirtualizedService, Long> {
     Optional<List<TestVirtualizedService>> findByTestConfigId(Long testConfigId);
-    Optional<TestVirtualizedService> findByTestConfigIdAndServiceId(Long testId, Long serviceId);
 }

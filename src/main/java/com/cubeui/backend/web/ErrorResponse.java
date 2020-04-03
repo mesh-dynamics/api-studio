@@ -7,24 +7,24 @@ import java.util.Date;
 
 @Getter
 @Setter
-public class ErrorResponse<T>{
+public class ErrorResponse {
 
     private Date timestamp;
-    private T error;
+    private String error;
     private int status;
     private String message;
 
-    public ErrorResponse(T error) {
+    public ErrorResponse(String error) {
         this.timestamp = new Date();
         this.error = error;
     }
 
-    public ErrorResponse(T error, String message) {
+    public ErrorResponse(String error, String message) {
         this(error);
         this.message = message;
     }
 
-    public ErrorResponse(T error, String message, int status) {
+    public ErrorResponse(String error, String message, int status) {
         this(error, message);
         this.status = status;
     }

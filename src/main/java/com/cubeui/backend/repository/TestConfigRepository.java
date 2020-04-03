@@ -10,5 +10,4 @@ import java.util.Optional;
 @RepositoryRestResource(path = "tests", collectionResourceRel = "tests", itemResourceRel = "testConfig")
 public interface TestConfigRepository extends JpaRepository<TestConfig, Long> {
     Optional<List<TestConfig>> findByAppId(Long appId);
-    Optional<TestConfig> findByTestConfigNameAndAppId(String testConfigName, Long appId);
 }

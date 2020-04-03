@@ -76,11 +76,6 @@ public class AppController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field Customer Id is empty."));
         }
-        Optional<App> app = this.appRepository.findByNameAndCustomerId(appDTO.getName(), appDTO.getCustomerId());
-        if (app.isPresent())
-        {
-            return ok(app);
-        }
         App saved = this.appRepository.save(
                 App.builder()
                         .name(appDTO.getName())

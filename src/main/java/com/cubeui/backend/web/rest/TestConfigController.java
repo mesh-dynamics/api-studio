@@ -9,7 +9,6 @@ import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -42,13 +41,7 @@ public class TestConfigController {
         }
         Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
         Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
-        if (service.isPresent() && app.isPresent() &&
-                StringUtils.isNotBlank(testConfigDTO.getTestConfigName())) {
-            Optional<TestConfig> testConfig = this.testConfigRepository.findByTestConfigNameAndAppId(
-                    testConfigDTO.getTestConfigName(), testConfigDTO.getAppId());
-            if (testConfig.isPresent()) {
-                return ok(testConfig);
-            }
+        if (service.isPresent() && app.isPresent()) {
             TestConfig saved = this.testConfigRepository.save(
                     TestConfig.builder()
                             .testConfigName(testConfigDTO.getTestConfigName())

@@ -15,9 +15,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.UnknownHttpStatusCodeException;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -99,17 +97,17 @@ public class CubeServerService {
         }
     }
 
-    public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
-        return fetchResponse(request, requestBody, HttpMethod.GET, path);
+    public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody) {
+        return fetchResponse(request, requestBody, HttpMethod.GET);
     }
 
-    public <T> ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
-        return fetchResponse(request, requestBody, HttpMethod.POST, path);
+    public <T> ResponseEntity fetchPostResponse(HttpServletRequest request, Optional<T> requestBody) {
+        return fetchResponse(request, requestBody, HttpMethod.POST);
     }
 
-    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
+    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method){
         updateCubeBaseUrl(request);
-        String path = cubeServerBaseUrl + (pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", ""));
+        String path = cubeServerBaseUrl + request.getRequestURI().replace("/api", "");
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }
@@ -117,8 +115,6 @@ public class CubeServerService {
             URI uri = new URI(path);
             HttpHeaders headers = new HttpHeaders();
             request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
-            if (pathValue.length >1)
-                headers.set("Content-Type", pathValue[1]);
 //            MultiValueMap<String, String[]> map = new LinkedMultiValueMap<>();
 //            request.getParameterMap().forEach(map::add);
             HttpEntity<T> entity;
@@ -128,11 +124,7 @@ public class CubeServerService {
         } catch (URISyntaxException e){
             return noContent().build();
         } catch (HttpClientErrorException e){
-            return status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
-        } catch(HttpServerErrorException e) {
-            return status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
-        } catch(UnknownHttpStatusCodeException e) {
-            return status(e.getRawStatusCode()).body(e.getResponseBodyAsByteArray());
+            return status(e.getStatusCode()).body(new ErrorResponse(e.getLocalizedMessage()));
         } catch (Exception e){
             return status(NOT_FOUND).body(e);
         }

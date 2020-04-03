@@ -53,10 +53,6 @@ public class PathController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field Service Id is empty."));
         }
-        Optional<Path> path = this.pathRepository.findByPathAndServiceId(pathDTO.getPath(), pathDTO.getServiceId());
-        if(path.isPresent()) {
-            return ok(path);
-        }
         Path saved = this.pathRepository.save(
                 Path.builder()
                         .service(service.get())

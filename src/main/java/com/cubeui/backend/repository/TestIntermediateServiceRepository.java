@@ -10,5 +10,4 @@ import java.util.Optional;
 @RepositoryRestResource(path = "test_intermediate_services", collectionResourceRel = "test_intermediate_services", itemResourceRel = "test_intermediate_service")
 public interface TestIntermediateServiceRepository extends JpaRepository<TestIntermediateService, Long> {
     Optional<List<TestIntermediateService>> findByTestConfigId(Long testConfigId);
-    Optional<TestIntermediateService> findByTestConfigIdAndServiceId(Long testId, Long serviceId);
 }
