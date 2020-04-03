@@ -314,13 +314,17 @@ public class CommonConfig {
 	public HttpRequest getCubeRecordService() {
 		return cubeRecordService
 			.uri(URI.create(CUBE_RECORD_SERVICE_URI))
-			.timeout(Duration.ofMillis(CONNECT_TIMEOUT)).build();
+			.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
 	}
 
 	public HttpRequest getCubeMockService() {
 		return cubeRecordService
 			.uri(URI.create(CUBE_MOCK_SERVICE_URI))
-			.timeout(Duration.ofMillis(CONNECT_TIMEOUT)).build();
+			.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+	}
+
+	public HttpClient getHttpClient() {
+		return httpClient;
 	}
 
 	private Optional<String> fromDynamicOREnvORStaticProperties(String propertyName,
