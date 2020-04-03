@@ -462,7 +462,7 @@ class ViewSelectedTestConfig extends React.Component {
             let user = authentication.user;
             let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
 
-            const transforms = encodeURI(JSON.stringify(getTransformHeaders(this.state.customHeaders)));
+            const transforms = JSON.stringify(getTransformHeaders(this.state.customHeaders));
 
             const searchParams = new URLSearchParams();
             searchParams.set('endPoint', selectedInstances[0].gatewayEndpoint);

@@ -2,6 +2,7 @@ import ReduceDiff from '../ReduceDiff';
 import generator from '../generator/json-path-generator';
 import sortJson from "../sort-json";
 import _ from 'lodash';
+import config from "../../config";
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -246,10 +247,10 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
     return diffLayoutData;
 }
 
-const addCompressToggleData = (diffData, collapseLength) => {
+const addCompressToggleData = (diffData, collapseLength, diffCollapseStartIndex) => {
     let indx  = 0, atleastADiff = false;;
     if(!diffData) return diffData;
-    for (let i = 0; i < diffData.length; i++) {
+    for (let i = config.diffCollapseStartIndex; i < diffData.length; i++) {
         let diffDataChunk = diffData[i];
         if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
             let j = i - 1, chunkTopLength = 0;
