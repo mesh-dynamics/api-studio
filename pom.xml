@@ -16,6 +16,7 @@
     <version.commonstext>1.8</version.commonstext>
     <version.httpcomponents>4.5.11</version.httpcomponents>
     <version.flipkart-jsonpath>0.4.7</version.flipkart-jsonpath>
+    <version.slf4j>1.7.30</version.slf4j>
   </properties>
 <!--      <distributionManagement>
         <repository>
@@ -67,6 +68,12 @@
     </plugins>
   </build>
   <dependencies>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${version.slf4j}</version>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
@@ -96,16 +103,6 @@
       <version>2.0</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
 
     <dependency>
       <groupId>io.jaegertracing</groupId>
