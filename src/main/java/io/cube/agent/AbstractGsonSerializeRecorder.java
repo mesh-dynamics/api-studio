@@ -1,8 +1,6 @@
 package io.cube.agent;
 
 
-import static io.md.utils.CommonUtils.createPayload;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -18,10 +16,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import io.md.dao.Event;
+import io.md.dao.FnReqRespPayload;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
@@ -49,7 +49,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 		Optional<String> spanId,
 		Optional<String> parentSpanId,
 		Object responseOrException,
-		FnReqResponse.RetStatus retStatus,
+		RetStatus retStatus,
 		Optional<String> exceptionType,
 		Object... args) {
 		try {
@@ -96,28 +96,23 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 		Optional<String> spanId,
 		Optional<String> parentSpanId,
 		Object responseOrException,
-		FnReqResponse.RetStatus retStatus,
+		RetStatus retStatus,
 		Optional<String> exceptionType,
 		Object... args) {
 		try {
-			JsonObject payload = createPayload(responseOrException, gson, args);
-			MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null),
-				spanId.orElse(null), parentSpanId.orElse(null));
-
-			//TODO this has to be corrected with a payload FnReqRespPayload
-			/*Optional<Event> event = CommonUtils.creacreateEvent(fnKey, mdTraceInfo, RunType.Record,
-				Optional.of(Instant.now()), payload);
+			MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+			FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
+				args, responseOrException,retStatus , exceptionType);
+			Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, Event.RunType.Record,
+				Optional.of(Instant.now()), fnReqRespPayload);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
 				LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName, "trace_id",
 					traceId.orElse("NA"), "operation", "Record Event", "response",
 					"Event is empty!")));
 				return false;
-			});*/
-			return false;
+			});
 		} catch (Exception e) {
 			// encode can throw UnsupportedEncodingException
-			String stackTraceError = UtilException
-				.extractFirstStackTraceLocation(e.getStackTrace());
 			LOGGER.error(new ObjectMessage(
 				Map.of("func_name", fnKey.fnName, "trace_id", traceId.orElse("NA"))), e);
 			return false;
