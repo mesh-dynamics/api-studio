@@ -1,5 +1,7 @@
 package io.cube.agent;
 
+import io.md.dao.FnReqRespPayload;
+
 import java.time.Instant;
 import java.util.Optional;
 
@@ -12,12 +14,12 @@ public class FnResponseObj {
 
     final public Object retVal;
     final public Optional<Instant> timeStamp;
-    final public FnReqResponse.RetStatus retStatus;
+    final public FnReqRespPayload.RetStatus retStatus;
     final Optional<String> exceptionType;
 
 
 
-    public FnResponseObj(Object retVal, Optional<Instant> timeStamp, FnReqResponse.RetStatus retStatus, Optional<String> exceptionType) {
+    public FnResponseObj(Object retVal, Optional<Instant> timeStamp, FnReqRespPayload.RetStatus retStatus, Optional<String> exceptionType) {
         this.retVal = retVal;
         this.timeStamp = timeStamp;
         this.retStatus = retStatus;
