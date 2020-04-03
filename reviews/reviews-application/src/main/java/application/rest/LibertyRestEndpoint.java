@@ -15,6 +15,10 @@
  *******************************************************************************/
 package application.rest;
 
+import java.io.StringReader;
+import java.util.Date;
+import java.util.Random;
+
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -25,15 +29,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.StringReader;
-import java.util.Random;
-import java.util.Date;
 
 @Path("/")
 public class LibertyRestEndpoint extends Application {
@@ -56,8 +56,8 @@ public class LibertyRestEndpoint extends Application {
     public static String reviews = "";
 
     static {
-        String failPercent = System.getenv("FAIL_PERCENT");
-        String failPercentStdDev = System.getenv("FAIL_PERCENT");
+          String failPercent = System.getenv("FAIL_PERCENT");
+        String failPercentStdDev = System.getenv("FAIL_PERCENT_STD_DEV");
         String timeBetweenRuns = System.getenv("TIME_BETWEEN_RUNS");
         String numberOfReviews = System.getenv("NUMBER_OF_REVIEWS");
         if (failPercent != null) {
@@ -127,7 +127,7 @@ public class LibertyRestEndpoint extends Application {
     }
     
     private JsonObject getRatings(String productId, String user, String useragent, String xreq, String xtraceid, String xspanid,
-                                  String xparentspanid, String xsampled, String xflags, String xotspan){
+                                  String xparentspanid, String xsampled, String xflags, String xotspan, String baggageParentId){
       ClientBuilder cb = ClientBuilder.newBuilder();
       String timeout = star_color.equals("black") ? "10000" : "2500";
       cb.property("com.ibm.ws.jaxrs.client.connection.timeout", timeout);
@@ -162,6 +162,10 @@ public class LibertyRestEndpoint extends Application {
       if(useragent!=null) {
         builder.header("user-agent", useragent);
       }
+      if (baggageParentId != null) {
+        builder.header("baggage-parent-span-id", baggageParentId);
+      }
+
       Response r = builder.get();
       int statusCode = r.getStatusInfo().getStatusCode();
       if (statusCode == Response.Status.OK.getStatusCode() ) {
@@ -193,7 +197,8 @@ public class LibertyRestEndpoint extends Application {
                                     @HeaderParam("x-b3-parentspanid") String xparentspanid,
                                     @HeaderParam("x-b3-sampled") String xsampled,
                                     @HeaderParam("x-b3-flags") String xflags,
-                                    @HeaderParam("x-ot-span-context") String xotspan) {
+                                    @HeaderParam("x-ot-span-context") String xotspan,
+                                    @HeaderParam("baggage-parent-span-id") String baggageParentId) {
         /*
             Changing the random fail percent between runs.
             Ideally it should be updated with an API hook when a new replay starts.
@@ -214,7 +219,7 @@ public class LibertyRestEndpoint extends Application {
       int starsReviewer2 = -1;
 
       if (ratings_enabled) {
-        JsonObject ratingsResponse = getRatings(Integer.toString(productId), user, useragent, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan);
+        JsonObject ratingsResponse = getRatings(Integer.toString(productId), user, useragent, xreq, xtraceid, xspanid, xparentspanid, xsampled, xflags, xotspan, baggageParentId);
         if (ratingsResponse != null) {
           if (ratingsResponse.containsKey("ratings")) {
             JsonObject ratings = ratingsResponse.getJsonObject("ratings");
