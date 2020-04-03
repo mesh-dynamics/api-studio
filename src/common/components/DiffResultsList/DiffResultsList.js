@@ -295,6 +295,9 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArrayReqHeaders}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={!this.state.showFragments}
+                                filterPaths={item.filterPaths}
+                                searchFilterPath={this.state.searchFilterPath}
                             />
                         </div>
                     </div>
@@ -311,6 +314,9 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArrayReqQParams}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={!this.state.showFragments}
+                                filterPaths={item.filterPaths}
+                                searchFilterPath={this.state.searchFilterPath}
                             />
                         </div>
                     </div>
@@ -327,6 +333,9 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArrayReqFParams}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={!this.state.showFragments}
+                                filterPaths={item.filterPaths}
+                                searchFilterPath={this.state.searchFilterPath}
                             />
                         </div>
                     </div>
@@ -343,6 +352,9 @@ export default class DiffResultsList extends Component {
                                 disableWordDiff={false}
                                 diffArray={item.reductedDiffArrayReqBody}
                                 onLineNumberClick={(lineId, e) => { return; }}
+                                showAll={!this.state.showFragments}
+                                filterPaths={item.filterPaths}
+                                searchFilterPath={this.state.searchFilterPath}
                             />
                         </div>
                     </div>

@@ -3,6 +3,7 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import _ from 'lodash';
 import arrayToTree  from 'array-to-tree';
 import axios from "axios";
+import Iframe from 'react-iframe'
 // import sortJson from "sort-json";
 import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
@@ -115,7 +116,14 @@ class ViewTrace extends Component {
             selectedReqRespMatchType: "responseMismatch",
             showAll: true,
             timeStamp: "",
-            traceId: null
+            traceId: null,
+            showTrace: true,
+            showLogs: false,
+            collapseLength: 2,
+            collapseLengthIncrement: 10,
+            incrementCollapseLengthForRecReqId: null,
+            incrementCollapseLengthForRepReqId: null,
+            incrementStartJsonPath: null
         }
 
         this.inputElementRef = React.createRef();
@@ -124,6 +132,8 @@ class ViewTrace extends Component {
 
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
+        this.toggleBetweenTraceAndLogs = this.toggleBetweenTraceAndLogs.bind(this);
+        this.increaseCollapseLength = this.increaseCollapseLength.bind(this);
     }
 
     componentDidMount() {
@@ -235,8 +245,26 @@ class ViewTrace extends Component {
         });
     }
 
+    increaseCollapseLength(e, jsonPath, recordReqId, replayReqId) {
+        const { collapseLength, collapseLengthIncrement } = this.state;
+        this.setState({ collapseLength: (collapseLength + collapseLengthIncrement), incrementCollapseLengthForRecReqId: recordReqId, incrementCollapseLengthForRepReqId: replayReqId, incrementStartJsonPath: jsonPath});
+    }
+
+    toggleBetweenTraceAndLogs(e) {
+        e.preventDefault();
+        let { showTrace, showLogs } = this.state;
+        this.setState({
+            showTrace: !showTrace,
+            showLogs: !showLogs
+        })
+    }
+
     flattenTree(traceDataTree) {
         let depth = 0, result = [], queue = [];
+        const { cube} = this.props;
+        const { testConfig} = cube;
+        const {testMockServices} = testConfig || [];
+
         for(let eachRootNode of traceDataTree) {
             queue.push({
                 depth: 0,
@@ -250,10 +278,16 @@ class ViewTrace extends Component {
             result.push({
                 ...current
             })
+            let isParentmocked = testMockServices.some(function(element, i) {
+                if (current.service.toLowerCase() === element.toLowerCase()) {
+                    return true;
+                }
+            });
             if(current.children && current.children.length > 0) {
                 depth++;
                 for(let eachTempNode of current.children) {
                     queue.unshift({
+                        isParentmocked: isParentmocked,
                         depth: depth,
                         show: true,
                         showChildren: true,
@@ -462,6 +496,52 @@ class ViewTrace extends Component {
         return updatedReductedDiffArrayMsgPart;
     }
 
+    addCompressToggleData(diffData, collapseLength) {
+        let indx  = 0, atleastADiff = false;
+        if(!diffData) return diffData;
+        for (let i = 0; i < diffData.length; i++) {
+            let diffDataChunk = diffData[i];
+            if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
+                let j = i - 1, chunkTopLength = 0;
+                diffDataChunk["collapseChunk"] = false;
+                atleastADiff = true;
+                while (diffData[j] && diffData[j].serverSideDiff === null && chunkTopLength < collapseLength) {
+                    diffData[j]["collapseChunk"] = false;
+                    chunkTopLength++;
+                    j--;
+                }
+                let k = i + 1, chunkBottomLength = 0;
+                while (diffData[k] && diffData[k].serverSideDiff === null && chunkBottomLength < collapseLength) {
+                    diffData[k]["collapseChunk"] = false;
+                    chunkBottomLength++;
+                    k++;
+                }
+            } else {
+                if(!diffDataChunk.hasOwnProperty("collapseChunk")) diffDataChunk["collapseChunk"] = true;
+            }
+        }
+        if(!atleastADiff) {
+            for (let m = 0; m < collapseLength; m++) {
+                let tempDiffDataChunk = diffData[m];
+                if(tempDiffDataChunk) tempDiffDataChunk["collapseChunk"] = false;
+                if(m >= diffData.length) break;
+            }
+        }
+        let toggleDrawChunk  = false;
+        for (let eachChunk of diffData) {
+            if(eachChunk.collapseChunk === true && toggleDrawChunk === false) {
+                toggleDrawChunk = true;
+                eachChunk["drawChunk"] = true;
+            } else if(eachChunk.collapseChunk === true && toggleDrawChunk === true) {
+                eachChunk["drawChunk"] = false;
+            } else if(eachChunk.collapseChunk === false) {
+                toggleDrawChunk = false;
+                eachChunk["drawChunk"] = false;
+            }
+        }
+        return diffData;
+    }
+
     validateAndCreateDiffLayoutData(replayList) {
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
@@ -551,6 +631,8 @@ class ViewTrace extends Component {
             let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
                 return {
                     ...eachItem,
+                    recordReqId: item.recordReqId,
+                    replayReqId: item.replayReqId,
                     service: item.service,
                     app: this.state.app,
                     templateVersion: this.state.templateVersion,
@@ -559,6 +641,8 @@ class ViewTrace extends Component {
                     recordingId: this.state.recordingId
                 }
             });
+
+            let updatedReductedDiffArrayWithCollapsible = this.addCompressToggleData(updatedReductedDiffArray, this.state.collapseLength);
 
             let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
                 return {
@@ -615,7 +699,7 @@ class ViewTrace extends Component {
                 actJSON,
                 expJSON,
                 parsedDiff: diff,
-                reductedDiffArray: updatedReductedDiffArray,
+                reductedDiffArray: updatedReductedDiffArrayWithCollapsible,
                 missedRequiredFields,
                 show: true,
                 recordedRequestHeaders,
@@ -652,7 +736,7 @@ class ViewTrace extends Component {
     };
 
     render() {
-        let { recProcessedTraceDataFlattenTree, repProcessedTraceDataFlattenTree, app, service, apiPath, selectedDiffItem, selectedResolutionType } = this.state;
+        let { recProcessedTraceDataFlattenTree, repProcessedTraceDataFlattenTree, app, service, apiPath, selectedDiffItem, selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId } = this.state;
         let resolutionTypesForMenu = [];
         const filterFunction = (item, index, itself) => {
             item.count = itself.reduce((counter, currentItem, currentIndex) => {
@@ -670,6 +754,9 @@ class ViewTrace extends Component {
         };
         let recProcessedTraceDataFlattenTreeResCount = recProcessedTraceDataFlattenTree.map(eachItem => {
             let resolutionTypes = [];
+            if (incrementCollapseLengthForRepReqId && eachItem.replayReqId === incrementCollapseLengthForRepReqId) {
+                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength);
+            }
             for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
                 resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
             }
@@ -681,6 +768,9 @@ class ViewTrace extends Component {
         });
         let repProcessedTraceDataFlattenTreeResCount = repProcessedTraceDataFlattenTree.map(eachItem => {
             let resolutionTypes = [];
+            if (incrementCollapseLengthForRepReqId && eachItem.replayReqId === incrementCollapseLengthForRepReqId) {
+                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength);
+            }
             for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
                 resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
             }
@@ -785,7 +875,7 @@ class ViewTrace extends Component {
                                         </td>
                                     </tr>
                                     {recProcessedTraceDataFlattenTreeResCount.map((item, index) => {
-                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
+                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={(event) =>  item.isParentmocked ? event.stopPropagation() : this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: item.isParentmocked ? "#A9A9A9": (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
@@ -924,6 +1014,11 @@ class ViewTrace extends Component {
                                     </DropdownButton>
                                 </div>
                             </div>
+                            <div style={{display: "inline-block"}} className="pull-right">
+                                <Button bsSize="small" bsStyle={"primary"} style={{}} onClick={this.toggleBetweenTraceAndLogs}>
+                                    {showTrace ? "VIEW TRACE" : "VIEW LOGS"}
+                                </Button>
+                            </div>
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                                 ref={this.inputElementRef}
                                 type="text"
@@ -934,7 +1029,19 @@ class ViewTrace extends Component {
                                 onChange={this.handleSearchFilterChange}
                             />
                         </FormGroup>
-                        <div style={{marginTop: "9px"}}>
+                        <div style={{marginTop: "9px", display: showTrace ? "none": ""}}>
+                            <Iframe url="http://logging.dev.cubecorp.io/app/kibana#/discover/fcc46df0-17e6-11ea-a0f3-ffb2c1110291?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(log),filters:!(),index:ae33d640-1740-11ea-8ec6-cb0631ba08d0,interval:auto,query:(language:kuery,query:''),sort:!('@timestamp',desc))"
+                                width="100%"
+                                height="720px"
+                                id="myId"
+                                className="myClassname"
+                                display="initial"
+                                position="relative"
+                                frameBorder="1"
+                                styles={{ border: "1px solid" }}
+                            />
+                        </div>
+                        <div style={{marginTop: "9px", display: showLogs ? "none": ""}}>
                             {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && (
                                 <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
                                     <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
@@ -1060,6 +1167,7 @@ class ViewTrace extends Component {
                                                 showAll={this.state.showAll}
                                                 searchFilterPath={this.state.searchFilterPath}
                                                 disableOperationSet={true}
+                                                handleCollapseLength={this.increaseCollapseLength}
                                             />
                                         </div>
                                     )}

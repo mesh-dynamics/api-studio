@@ -57,8 +57,8 @@ const RequestRules = (props) => {
                 <span onClick={() => setViewExpanded(!viewExpanded)} className="gv-link">
                 {
                     viewExpanded 
-                    ? <i class="fa fa-minus" aria-hidden="true"></i>
-                    : <i class="fa fa-plus" aria-hidden="true"></i>
+                    ? <i className="fa fa-minus" aria-hidden="true"></i>
+                    : <i className="fa fa-plus" aria-hidden="true"></i>
                 }
                 </span>
             </div>

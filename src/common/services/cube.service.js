@@ -281,7 +281,7 @@ async function getTestIds (options) {
 async function fetchCollectionList(app) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.recordBaseUrl}/recordings?customerId=${user.customer_name}&app=${app}&archived=false`;
+    let url = `${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}`;
     let collections = [];
     try {
         response = await fetch(url, {
