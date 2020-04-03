@@ -74,7 +74,7 @@ class TestResults extends Component {
     toggleHeaderDetails = () => this.setState({ showHeaderDetails: !this.state.showHeaderDetails });
 
     renderTimeLineHeader = (header) => {
-        const { date, replayId, recordingId } = header;
+        const { date, replayId, recordingId, goldenName, userName } = header;
         const { showHeaderDetails } = this.state;
 
         return (
@@ -96,6 +96,12 @@ class TestResults extends Component {
                     content={
                         <div style={{ fontSize: "12px", color: "#000"}} className="grey">
                             <span className="timeline-replay-id">
+                                    {`Run By : ${userName}`}
+                            </span>
+                            <span className="timeline-replay-id">
+                                    {`Golden : ${goldenName}`}
+                            </span>
+                            <span className="timeline-replay-id">
                                     {`Test ID : ${replayId}`}
                             </span>
                             <span className="timeline-replay-id">
@@ -107,6 +113,12 @@ class TestResults extends Component {
                     <div className="timeline-replay-header">
                         <div className="timeline-header-text underline">
                                 {moment(date).format('lll')}
+                        </div>
+                        <div className="timeline-replay-id">
+                                {`Run By : ${userName}`}
+                        </div>
+                        <div className="timeline-replay-id">
+                                {`Golden : ${goldenName}`}
                         </div>
                         <div className="timeline-replay-id">
                                 {`Test ID : ${replayId}`}
@@ -164,7 +176,9 @@ class TestResults extends Component {
                 allRunsTimestamps.push({
                     date: momentDateObject.valueOf(), 
                     replayId: testResult.replayId,
-                    recordingId: testResult.recordingid
+                    recordingId: testResult.recordingid,
+                    goldenName: testResult.goldenName,
+                    userName: testResult.userName
                 })
             for (let eachReplayResult of testResultsPerReplay) {
                 if (eachReplayResult.service != null && eachReplayResult.path != null) {

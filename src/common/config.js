@@ -8,6 +8,7 @@ const config = {
     maxDiffResultsPerPage: process.env.REACT_APP_MAX_DIFF_RESULTS_PER_PAGE || 5,
     diffCollapseLength: process.env.REACT_APP_DIFF_COLLAPSE_LENGTH || 2,
     diffCollapseLengthIncrement: process.env.REACT_APP_DIFF_COLLAPSE_LENGTH_INCREMENT || 10,
+    diffCollapseStartIndex: process.env.REACT_APP_DIFF_COLLAPSE_START_INDEX || 3,
 };
 
 export default config;
