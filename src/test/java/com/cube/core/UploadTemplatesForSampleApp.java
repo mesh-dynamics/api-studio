@@ -1,7 +1,7 @@
 package com.cube.core;
 
-import com.cube.cache.TemplateKey.Type;
-import com.cube.utils.Constants;
+import static org.apache.commons.io.FileUtils.readFileToString;
+
 import java.io.File;
 import java.nio.charset.Charset;
 
@@ -11,10 +11,10 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
-import static org.apache.commons.io.FileUtils.readFileToString;
-
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.dao.ReqRespStore;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 public class UploadTemplatesForSampleApp {

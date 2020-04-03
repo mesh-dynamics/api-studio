@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.apache.solr.common.util.Pair;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -308,16 +306,6 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	Optional<Analysis> getAnalysis(String replayId);
-
-	/**
-	 * @param customerId
-	 * @param app
-	 * @param instanceId
-	 * @param status
-	 * @return
-	 */
-	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-		Optional<String> instanceId, Optional<RecordingStatus> status);
 
 
 	/**

@@ -1,7 +1,5 @@
 package com.cube.core;
 
-import com.cube.cache.TemplateKey.Type;
-import com.cube.utils.Constants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,7 +9,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.util.ClientUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,7 +19,9 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.dao.ReqRespStore;
+import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 public class TestPrefixPathQuerySolr {

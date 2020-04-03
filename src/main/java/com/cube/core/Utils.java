@@ -3,7 +3,6 @@
  */
 package com.cube.core;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -38,22 +37,17 @@ import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.ValidateCompareTemplate;
-import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
-import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.MDTraceInfo;
-import io.md.dao.RawPayload.RawPayloadEmptyException;
-import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
-
 import com.cube.dao.Recording;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
@@ -314,13 +308,18 @@ public class Utils {
                                                Config config,
                                                Comparator comparator)
 	    throws JsonProcessingException, EventBuilder.InvalidEventException {
+
 	    HTTPRequestPayload httpRequestPayload;
 	    // We treat empty body ("") as null
-	    if(body !=null && (!body.isEmpty())) {
-		    httpRequestPayload= new HTTPRequestPayload(hdrs, queryParams, formParams, method, body.getBytes(StandardCharsets.UTF_8));
+	    if (body != null && (!body.isEmpty())) {
+		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
+			    body.getBytes(StandardCharsets.UTF_8));
 	    } else {
-		    httpRequestPayload= new HTTPRequestPayload(hdrs, queryParams, formParams, method, null);
+		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
+			    null);
 	    }
+
+	    //httpRequestPayload.postParse();
 
         Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
@@ -362,16 +361,15 @@ public class Utils {
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
                                                 Config config) throws JsonProcessingException, EventBuilder.InvalidEventException {
-
 	    HTTPResponsePayload httpResponsePayload;
 	    // We treat empty body ("") as null
-	    if(body !=null && (!body.isEmpty())) {
+	    if (body != null && (!body.isEmpty())) {
 		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, body.getBytes(StandardCharsets.UTF_8));
 	    } else {
 		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, null);
 	    }
 
-        Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
+	    Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 

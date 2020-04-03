@@ -32,8 +32,6 @@ import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateEntry;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
 

@@ -56,7 +56,6 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
-import io.md.dao.JsonPayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 
@@ -897,8 +896,8 @@ public class CubeStore {
 
     @GET
     @Path("searchRecording")
-    @Consumes("application/x-www-form-urlencoded")
-    public Response searchRecording(MultivaluedMap<String, String> formParams) {
+    public Response searchRecording(@Context UriInfo ui) {
+        MultivaluedMap<String, String> formParams = ui.getQueryParameters();
         Optional<String> customerId = Optional.ofNullable(formParams.getFirst(Constants.CUSTOMER_ID_FIELD));
         Optional<String> app = Optional.ofNullable(formParams.getFirst(Constants.APP_FIELD));
         Optional<String> instanceId = Optional.ofNullable(formParams.getFirst(Constants.INSTANCE_ID_FIELD));
@@ -974,29 +973,6 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for customer %s, app %s, collection %s.", customerId, app, collection)).build());
         return resp;
-    }
-
-	@GET
-	@Path("recordings")
-    public Response recordings(@Context UriInfo ui) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
-        Optional<String> customerId = Optional.ofNullable(queryParams.getFirst(Constants.CUSTOMER_ID_FIELD));
-        Optional<String> app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
-        Optional<RecordingStatus> status = Optional.ofNullable(queryParams.getFirst(Constants.STATUS))
-            .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
-
-        List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status).collect(Collectors.toList());
-
-        String json;
-        try {
-            json = jsonMapper.writeValueAsString(recordings);
-            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-        } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, instance %s.",
-                customerId.orElse(""), app.orElse(""), instanceId.orElse("")), e);
-            return Response.serverError().build();
-        }
     }
 
     @GET

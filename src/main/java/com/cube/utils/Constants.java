@@ -95,7 +95,7 @@ public class Constants {
     public static final String METHOD_PATH = "/method";
     public static final String ARGS_PATH = "/argVals";
     public static final String FN_RESPONSE_PATH = "/response";
-    public static final String HDR_PATH = "/hdr";
+    public static final String HDR_PATH = "/hdrs";
     public static final String META_PATH = "/meta";
     public static final String BODY_PATH = "/body";
 

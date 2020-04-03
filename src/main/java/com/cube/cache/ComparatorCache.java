@@ -69,7 +69,7 @@ public class ComparatorCache {
 
         // default rules for HTTP Response
         CompareTemplate defaultHTTPResponseTemplate = new CompareTemplate();
-        defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.BODY_PATH, DataType.Default,
+        defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.ROOT_PATH, DataType.Default,
             PresenceType.Required, ComparisonType.Equal));
         defaultHTTPResponseTemplate.addRule(new TemplateEntry(Constants.HDR_PATH, DataType.Default,
             PresenceType.Optional, ComparisonType.Ignore));

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.ValidateCompareTemplate;
+
 import com.cube.cache.TemplateKey;
 
 public class CompareTemplateVersioned extends CompareTemplate {

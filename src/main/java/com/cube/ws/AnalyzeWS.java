@@ -61,13 +61,11 @@ import redis.clients.jedis.Jedis;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;
-
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
-
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
@@ -564,7 +562,9 @@ public class AnalyzeWS {
                 Recording recording = recordingOpt.get();
                 recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
                     + "\" , \"collection\" : \"" + recording.collection
-                    + "\" , \"templateVer\" : \"" + recording.templateVersion;
+                    + "\" , \"templateVer\" : \"" + recording.templateVersion
+                    + "\", \"goldenName\" : \"" + recording.name
+                    + "\", \"userName\" : \"" + recording.userId;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);

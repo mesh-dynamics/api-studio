@@ -68,7 +68,6 @@ import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
-
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
 import com.cube.dao.Recording.RecordingStatus;
@@ -2335,24 +2334,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-        Optional<String> instanceId, Optional<RecordingStatus> status) {
-
-        final SolrQuery query = new SolrQuery("*:*");
-        query.addField("*");
-        addFilter(query, TYPEF, Types.Recording.toString());
-        addFilter(query, CUSTOMERIDF, customerId);
-        addFilter(query, APPF, app);
-        addFilter(query, INSTANCEIDF, instanceId);
-        addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
-        addSort(query, TIMESTAMPF, false); // descending
-
-        //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
-    }
-
-
-    @Override
     public Optional<Recording> getRecording(String recordingId) {
         SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2392,7 +2373,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
 
-    private final static int FACETLIMIT = 100;
+    private final static int FACETLIMIT = 500;
     private static final String REQMTFACET = "reqmt_facets";
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
@@ -2661,7 +2642,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
             domainBlock.ifPresent(d -> params.put(DOMAINK, d));
-            limit.ifPresent(l -> params.put(LIMITK, l));
+            limit.ifPresentOrElse(l -> params.put(LIMITK, l), () -> {
+                params.put(LIMITK, FACETLIMIT);
+            });
             // include missing value in facet
             params.put(MISSINGK, true);
 

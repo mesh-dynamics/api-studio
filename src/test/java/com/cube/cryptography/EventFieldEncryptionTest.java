@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
 import io.md.cryptography.JcaEncryption;
