@@ -73,6 +73,8 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 			return body;
 		} else if (!this.dataObj.isDataObjEmpty()) {
 			try {
+				this.dataObj.wrapAsString("/".concat(BODY),
+					Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
 				return this.dataObj.getValAsByteArray("/".concat(BODY));
 			} catch (PathNotFoundException e) {
 				//do nothing

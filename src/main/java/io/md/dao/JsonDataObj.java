@@ -1,7 +1,9 @@
 package io.md.dao;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Iterator;
@@ -9,11 +11,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import javax.swing.MenuElement;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -35,6 +43,7 @@ import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.JsonTransformer;
 
 public class JsonDataObj implements DataObj {
@@ -200,14 +209,27 @@ public class JsonDataObj implements DataObj {
 				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
 					try {
 						JsonNode parsedVal = null;
+						String encodedUrl = null;
 						if (val.isBinary()) {
-							parsedVal = new TextNode(new String(val.binaryValue()
-						, StandardCharsets.UTF_8));
+							// if unwrapping in agent itself
+							encodedUrl = new String(val.binaryValue()
+								, StandardCharsets.UTF_8);
 						} else {
-							parsedVal =new TextNode(new String(Base64.getDecoder()
-								.decode(val.textValue())));
-
+							try {
+								// if un-wrapping in cube, after batch event call
+								encodedUrl = new String(Base64.getDecoder()
+									.decode(val.textValue()));
+							} catch (Throwable e) {
+								// this for older documents already in solr
+								encodedUrl = val.textValue();
+							}
 						}
+						List<NameValuePair> pairs = URLEncodedUtils
+							.parse(encodedUrl, StandardCharsets.UTF_8);
+						MultivaluedHashMap<String,String> formMap = new MultivaluedHashMap<>();
+						pairs.forEach(nameValuePair ->
+							formMap.add(nameValuePair.getName(), nameValuePair.getValue()));
+						parsedVal = jsonMapper.valueToTree(formMap);
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (IOException ex) {
@@ -268,11 +290,31 @@ public class JsonDataObj implements DataObj {
 				// currently handling only json type
 				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
 					if (asByteArray) {
-						valParentObj.set(fieldName, new BinaryNode(val.toString().getBytes()));
+						valParentObj.set(fieldName, new BinaryNode(val.toString()
+							.getBytes(StandardCharsets.UTF_8)));
 					} else {
 						valParentObj.set(fieldName, new TextNode(val.toString()));
 					}
 					return true;
+				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+					String urlEncoded = null;
+					try {
+						MultivaluedHashMap<String, String> fromJson = jsonMapper.treeToValue(val
+							, MultivaluedHashMap.class);
+						List<NameValuePair> nameValuePairs = new ArrayList<>();
+						fromJson.forEach((x , y) -> y.forEach(z -> nameValuePairs.add(
+									new BasicNameValuePair(x, z))));
+						urlEncoded =  URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
+						if (asByteArray) {
+							valParentObj.set(fieldName, new BinaryNode(urlEncoded.
+								getBytes(StandardCharsets.UTF_8)));
+						} else {
+							valParentObj.set(fieldName, new TextNode(urlEncoded));
+						}
+					} catch (JsonProcessingException e) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while"
+							+ " wrapping Url encoded form as UTF-8 string")), e);
+					}
 				}
 			} else if (val != null && val.isBinary() && !asByteArray) {
 				if (mimetype.equals(MediaType.APPLICATION_XML) || mimetype.equals(MediaType.TEXT_HTML)
