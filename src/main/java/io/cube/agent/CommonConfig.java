@@ -68,8 +68,8 @@ public class CommonConfig {
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
 
-	private HttpRequest.Builder cubeRecordService;
-	private HttpRequest.Builder cubeMockService;
+	private HttpRequest cubeRecordService;
+	private HttpRequest cubeMockService;
 	private HttpClient httpClient;
 
 	private static final Logger LOGGER = LogManager.getLogger(CommonConfig.class);
@@ -302,25 +302,26 @@ public class CommonConfig {
 			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
 				, dynamicProperties).orElse("false"));
 
-		httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
-			.build();
-		cubeRecordService = HttpRequest.newBuilder();
-		cubeMockService = HttpRequest.newBuilder();
+		httpClient = HttpClient.newBuilder()
+						.connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
+						.build();
+		cubeRecordService = HttpRequest.newBuilder()
+							.uri(URI.create(CUBE_RECORD_SERVICE_URI))
+							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+		cubeMockService = HttpRequest.newBuilder()
+							.uri(URI.create(CUBE_MOCK_SERVICE_URI))
+							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
 
 		LOGGER.info(new ObjectMessage(
 			Map.of(Constants.MESSAGE, "PROPERTIES POLLED :: " + this.toString())));
 	}
 
 	public HttpRequest getCubeRecordService() {
-		return cubeRecordService
-			.uri(URI.create(CUBE_RECORD_SERVICE_URI))
-			.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+		return cubeRecordService;
 	}
 
 	public HttpRequest getCubeMockService() {
-		return cubeRecordService
-			.uri(URI.create(CUBE_MOCK_SERVICE_URI))
-			.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+		return cubeMockService;
 	}
 
 	public HttpClient getHttpClient() {
