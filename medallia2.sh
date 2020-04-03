@@ -38,15 +38,18 @@ replay() {
 	COUNT=0
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ]; do
 		STATUS=$(curl -f -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq -r '.status')
-		sleep 20
+		sleep 10
 		COUNT=$((COUNT+1))
 	done
 	analyze
 }
 
 analyze() {
-	curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache'
-	echo "$CUBE_ENDPOINT/shareable_link?replayId=$REPLAY_ID" >> body.txt
+	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
+	echo "<br> Recording ID: $RECORDING_ID" >> body.txt
+	echo "Link to test result: $CUBE_ENDPOINT/diff_results?replayId=$REPLAY_ID" >> body.txt
+	echo "Test summary:" >> body.txt
+	echo $ANALYZE | jq >> body.txt
 }
 
 mail() {
@@ -61,7 +64,6 @@ from sendgrid.helpers.mail import Mail
 with open('body.txt', 'r') as file:
     data = file.read().replace('\n', '<br>')
 
-data = "Links to test results: <br>" + data
 message = Mail(
     from_email='mail@meshdynamics.io',
     to_emails='aakash.singhal@meshdynamics.io',
@@ -86,7 +88,7 @@ main() {
 	USER_ID=demo@cubecorp.io
 	TEMPLATE=RespPartialMatch
 	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4NTgyMzg4MywiZXhwIjoxNTg2NDI4NjgzfQ.Eqv0JW62MgN4rWc4Dc-4vbbJEOaPmEXCzeNbsjRQU3o"
-	SENDGRID_API_KEY='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'
+	export SENDGRID_API_KEY='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'
 	set_variables
 	mail
 	rm body.txt
