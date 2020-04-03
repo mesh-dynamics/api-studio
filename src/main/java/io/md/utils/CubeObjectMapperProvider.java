@@ -3,11 +3,6 @@
  */
 package io.md.utils;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;

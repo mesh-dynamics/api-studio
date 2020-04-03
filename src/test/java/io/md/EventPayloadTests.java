@@ -2,6 +2,7 @@ package io.md;
 
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 
 import javax.ws.rs.core.MediaType;
@@ -22,6 +23,8 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
+import io.md.dao.FnReqRespPayload;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.JsonByteArrayPayload;
@@ -36,6 +39,7 @@ public class EventPayloadTests {
 		private Event httpJsonResponseEvent;
 		private Event stringEvent;
 		private Event byteArrayEvent;
+		private Event fnReqRespEvent;
 		private ObjectMapper objectMapper;
 
 		@Before
@@ -90,6 +94,12 @@ public class EventPayloadTests {
 
 			eventBuilder.setPayload(new JsonByteArrayPayload(sampleJson.getBytes()));
 			byteArrayEvent = eventBuilder.createEvent();
+
+			FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()) ,
+				new Object[] {"firstArg" , Instant.now(), MediaType.TEXT_HTML, cubeMetaInfo},
+				true , RetStatus.Success , Optional.empty());
+			eventBuilder.setPayload(fnReqRespPayload);
+			fnReqRespEvent = eventBuilder.createEvent();
 			objectMapper = CubeObjectMapperProvider.getInstance();
 
 		}
@@ -204,8 +214,16 @@ public class EventPayloadTests {
 				, "foo");
 			Assert.assertEquals(payload.getValAsString("/age/bar"),
 				"2");
-	}
+		}
 
+
+		public void testFunctionReqRespEvent() throws IOException, PathNotFoundException {
+			String eventJsonSerialized = objectMapper.writeValueAsString(fnReqRespEvent);
+			System.out.println(eventJsonSerialized);
+			Event event = objectMapper.readValue(eventJsonSerialized, Event.class);
+			FnReqRespPayload paylaod = (FnReqRespPayload) event.payload;
+			Assert.assertEquals(paylaod.argVals[0], "firstArg");
+		}
 
 
 
