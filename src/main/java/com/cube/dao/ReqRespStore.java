@@ -307,17 +307,6 @@ public interface ReqRespStore {
 	 */
 	Optional<Analysis> getAnalysis(String replayId);
 
-	/**
-	 * @param customerId
-	 * @param app
-	 * @param instanceId
-	 * @param status
-	 * @param archived
-	 * @return
-	 */
-	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app,
-		Optional<String> instanceId, Optional<RecordingStatus> status, Optional<Boolean> archived);
-
 
 	/**
 	 * @param customerId
