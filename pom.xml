@@ -315,7 +315,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.12</version>
+			<version>1.0.14</version>
 		</dependency>
 
 		<dependency>
