@@ -34,7 +34,6 @@ public class CubeObjectMapperProvider  {
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        result.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         SimpleModule module = new SimpleModule();
         module.setSerializerModifier(new PayloadSerializerModifier());
         result.registerModule(module);
