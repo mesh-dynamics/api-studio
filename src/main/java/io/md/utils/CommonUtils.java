@@ -3,6 +3,7 @@ package io.md.utils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -18,6 +19,8 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.dao.Event;
+import io.md.dao.FnReqRespPayload;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -332,16 +335,16 @@ public class CommonUtils {
 		return payloadObj;
 	}
 
-	/*public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
-		RunType rrType, Optional<Instant> timestamp, JsonObject payload) {
+	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
+											  Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload) {
 
-		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
+		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
 			mdTraceInfo, rrType, timestamp, "NA",
 			fnKey.signature, Event.EventType.JavaRequest);
-		eventBuilder.setRawPayload(new StringPayload(payload.toString()));
+		eventBuilder.setPayload(payload);
 		return eventBuilder.createEventOpt();
-	}*/
+	}
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
 		JsonArray argsArray = new JsonArray();
