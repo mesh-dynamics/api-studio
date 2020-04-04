@@ -7,9 +7,8 @@ import java.util.Optional;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,7 +17,7 @@ import io.md.constants.Constants;
 // TODO this class will eventually go away
 public class DataObjFactory {
 
-	private static final Logger LOGGER = LogManager.getLogger(DataObjFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DataObjFactory.class);
 
 	// Http headers are case insensitive
 	private static final List<String> HTTP_CONTENT_TYPE_PATHS = List.of("/hdrs/content-type/0"
@@ -31,13 +30,12 @@ public class DataObjFactory {
 				mimeType = Optional.of(obj.getValAsString(HTTP_CONTENT_TYPE_PATH));
 				break;
 			} catch (DataObj.PathNotFoundException e) {
-				LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Content-type not found for field " + HTTP_CONTENT_TYPE_PATH)));
+				LOGGER.info(
+					"Content-type not found for field " + HTTP_CONTENT_TYPE_PATH);
 			}
 		}
 		if (mimeType.isEmpty()) {
-			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Content-type not found, using default of TEXT_PLAIN")));
+			LOGGER.info("Content-type not found, using default of TEXT_PLAIN");
 
 		}
 		return mimeType;
@@ -58,7 +56,7 @@ public class DataObjFactory {
 					obj.unwrapAsJson(Constants.BODY_PATH, mimeType);
 					return obj;
 				} catch (Exception e) {
-					LOGGER.error(new ObjectMessage("Error Occurred while creating data object")
+					LOGGER.error("Error Occurred while creating data object"
 						,e);
 				}
 
@@ -70,7 +68,7 @@ public class DataObjFactory {
 						throw new RuntimeException("Json Mapper Not Provided");
 					return new JsonDataObj(payload.rawPayloadAsString(), jsonMapper);
 				} catch (Exception e) {
-					LOGGER.error(new ObjectMessage("Error Occurred while creating data object")
+					LOGGER.error("Error Occurred while creating data object"
 						,e);
 				}
 			case ThriftRequest:

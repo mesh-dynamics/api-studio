@@ -20,8 +20,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +40,7 @@ import io.opentracing.Span;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
 	// Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {

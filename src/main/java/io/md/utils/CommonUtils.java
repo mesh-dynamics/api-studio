@@ -22,9 +22,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import io.md.dao.Event;
 import io.md.dao.FnReqRespPayload;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -54,7 +53,7 @@ import io.opentracing.tag.Tags;
 
 public class CommonUtils {
 
-	private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommonUtils.class);
 
 	private static final Tracer NOOPTracer = NoopTracerFactory.create();
 
@@ -148,8 +147,7 @@ public class CommonUtils {
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
 			fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
 		currentIntent.ifPresent(
-			intent -> LOGGER.debug(Map.of(Constants.MESSAGE, "Intent from trace", "intent",
-				intent)));
+			intent -> LOGGER.debug("Intent from trace : ".concat(intent)));
 		return currentIntent;
 	}
 
@@ -331,7 +329,7 @@ public class CommonUtils {
 		JsonObject payloadObj = new JsonObject();
 		payloadObj.add("args", createArgsJsonArray(gson, args));
 		payloadObj.addProperty("response", gson.toJson(responseOrException));
-		LOGGER.info(new ObjectMessage(Map.of("function_payload", payloadObj.toString())));
+		LOGGER.info("function_payload : ".concat(payloadObj.toString()));
 		return payloadObj;
 	}
 

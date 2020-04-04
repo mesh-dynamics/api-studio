@@ -3,16 +3,14 @@ package io.md.cryptography;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.md.constants.Constants;
 
@@ -23,7 +21,7 @@ import io.md.constants.Constants;
  */
 public class JcaEncryption implements EncryptionAlgorithm {
 
-	private static final Logger LOGGER = LogManager.getLogger(EncryptionAlgorithm.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionAlgorithm.class);
 
 
 	public JcaEncryption(String jcaAlgorithm, String cipherKeyType, String passPhrase) {
@@ -66,8 +64,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 			secretKey = new SecretKeySpec(key, cipherKeyType);
 		}
 		catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while setting key")), e);
+			LOGGER.error("Error while setting key", e);
 		}
 	}
 
@@ -82,8 +79,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		}
 		catch (Exception e)
 		{
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while encrypting")), e);
+			LOGGER.error("Error while encrypting", e);
 		}
 		return Optional.empty();
 	}
@@ -98,8 +94,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		}
 		catch (Exception e)
 		{
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while decrypting")), e);
+			LOGGER.error("Error while decrypting", e);
 
 		}
 		return Optional.empty();
@@ -115,8 +110,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		}
 		catch (Exception e)
 		{
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while encrypting")), e);
+			LOGGER.error("Error while encrypting", e);
 		}
 		return Optional.empty();
 	}
@@ -131,8 +125,7 @@ public class JcaEncryption implements EncryptionAlgorithm {
 		}
 		catch (Exception e)
 		{
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error while decrypting")), e);
+			LOGGER.error("Error while decrypting", e);
 
 		}
 		return Optional.empty();
