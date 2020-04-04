@@ -3,6 +3,8 @@
  */
 package io.md.utils;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -23,7 +25,9 @@ public class CubeObjectMapperProvider  {
     }
 
     private static ObjectMapper createDefaultMapper() {
-        final ObjectMapper result = new ObjectMapper();
+        JsonFactory jsonFactory = new JsonFactory();
+        jsonFactory.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+        final ObjectMapper result = new ObjectMapper(jsonFactory);
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
