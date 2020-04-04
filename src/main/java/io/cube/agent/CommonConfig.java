@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,15 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lmax.disruptor.BusySpinWaitStrategy;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.util.DaemonThreadFactory;
 
-import io.cube.agent.logging.SingleEventPrintConsumer;
-import io.cube.agent.logging.ValueEvent;
 import io.cube.agent.samplers.AdaptiveSampler;
 import io.cube.agent.samplers.Attributes;
 import io.cube.agent.samplers.BoundarySampler;
@@ -72,8 +63,6 @@ public class CommonConfig {
 
 	private WebTarget cubeRecordService;
 	private WebTarget cubeMockService;
-	public static Disruptor<ValueEvent> disruptor;
-	public static RingBuffer<ValueEvent> ringBuffer;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 
@@ -90,6 +79,11 @@ public class CommonConfig {
 	public final boolean performanceTest;
 
 	public List servicesToMock;
+
+	//disruptor
+	public int ringBufferSize;
+	public String disruptorOutputLocation;
+	public String disruptorFileOutName;
 
 	private static class Updater implements Runnable {
 
@@ -136,28 +130,11 @@ public class CommonConfig {
 		return singleInstance.get();
 	}
 
-	private static void initDisruptor() {
-		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;
-
-		WaitStrategy waitStrategy = new BusySpinWaitStrategy();
-		SingleEventPrintConsumer eventConsumer = new SingleEventPrintConsumer();
-		disruptor
-			= new Disruptor<>(
-			ValueEvent.EVENT_FACTORY,
-			1024,
-			threadFactory,
-			ProducerType.MULTI,
-			waitStrategy);
-		disruptor.handleEventsWith(eventConsumer.getEventHandler());
-		ringBuffer = disruptor.start();
-	}
-
 
 	static {
 
 		//ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
 		//initializeLogging();
-		initDisruptor();
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
@@ -278,6 +255,19 @@ public class CommonConfig {
 		performanceTest = BooleanUtils.toBoolean(
 			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
 				, dynamicProperties).orElse("false"));
+
+		ringBufferSize = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.RING_BUFFER_SIZE_PROP, dynamicProperties)
+			.map(Integer::valueOf).orElse(32768);
+
+		disruptorOutputLocation = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.RING_BUFFER_OUTPUT_PROP,
+			dynamicProperties).orElse("stdout");
+
+		disruptorFileOutName = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.RING_BUFFER_OUTPUT_FILE_NAME,
+			dynamicProperties).orElse("/var/log/event.log");
+
 
 		//TODO: Remove total dependecy of this from agent.
 		// Commenting now for cxf based app to work.

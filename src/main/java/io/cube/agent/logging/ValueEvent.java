@@ -12,7 +12,7 @@ public class ValueEvent {
 	private Event value;
 
 	@JsonIgnore
-	public final static EventFactory EVENT_FACTORY = () -> new ValueEvent();
+	public final static EventFactory<ValueEvent> EVENT_FACTORY = ValueEvent::new;
 
 	public Event getValue() {
 		return value;

@@ -1,5 +1,6 @@
 package io.cube.agent;
 
+import java.io.FileNotFoundException;
 import java.util.Optional;
 
 import com.google.gson.Gson;
@@ -13,7 +14,7 @@ import io.opentracing.Span;
 
 public class EncryptConsoleRecorder extends ConsoleRecorder {
 
-	public EncryptConsoleRecorder(Gson gson) {
+	public EncryptConsoleRecorder(Gson gson) throws FileNotFoundException {
 		super(gson);
 	}
 

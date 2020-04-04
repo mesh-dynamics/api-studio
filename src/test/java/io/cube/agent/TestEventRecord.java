@@ -39,7 +39,8 @@ public class TestEventRecord {
 				null, "GET", null));
 			Event httpRequestEvent = eventBuilder.createEvent();
 			consoleRecorder.record(httpRequestEvent);
-
+			Thread.sleep(5*1000);
+			consoleRecorder.record(httpRequestEvent);
 			Thread.sleep(5*1000);
 		} catch (Exception e) {
 			e.printStackTrace();
