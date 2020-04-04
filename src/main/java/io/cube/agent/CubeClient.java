@@ -11,9 +11,8 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +29,7 @@ public class CubeClient {
 	private ObjectMapper jsonMapper;
 
 
-	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CubeClient.class);
 
 	public CubeClient(ObjectMapper jsonMapper) throws Exception {
 		this.jsonMapper = jsonMapper;
@@ -41,8 +40,7 @@ public class CubeClient {
 		try {
 			config = CommonConfig.getInstance();
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Error while getting Common config instance" )), e);
+			LOGGER.error("Error while getting Common config instance" , e);
 		}
 		int maxNumberOfAttempts = config.RETRIES;
 		int numberOfAttempts = 0;
@@ -54,8 +52,7 @@ public class CubeClient {
 				}
 				numberOfAttempts++;
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Error while sending request to cube service" )), e);
+				LOGGER.error("Error while sending request to cube service" , e);
 				numberOfAttempts++;
 			}
 		}
@@ -69,8 +66,7 @@ public class CubeClient {
 			CommonUtils.addTraceHeaders(builder, "POST");
 			return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Error while serializing function req/resp object" )), e);
+			LOGGER.error("Error while serializing function req/resp object" , e);
 		}
 		return Optional.empty();
 	}
@@ -81,13 +77,9 @@ public class CubeClient {
 			CommonUtils.addTraceHeaders(builder, "POST");
 			return getResponse(builder.buildPost(Entity.entity(jsonEntity, MediaType.TEXT_PLAIN)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE,
-					"Error while serializing single HTTP req/resp object")),e);
+			LOGGER.error("Error while serializing single HTTP req/resp object",e);
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE,
-					"Error while getting response")),e);
+			LOGGER.error("Error while getting response",e);
 		}
 		return Optional.empty();
 	}
@@ -99,8 +91,7 @@ public class CubeClient {
 			return getResponse(
 				builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
-				"Error while serializing event")), e);
+			LOGGER.error("Error while serializing event", e);
 		}
 		return Optional.empty();
 	}
@@ -127,11 +118,10 @@ public class CubeClient {
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, fnReqResponse).flatMap(response -> {
 			try {
-				LOGGER.debug(new ObjectMessage(Map.of("Response" , response)));
+				LOGGER.debug("Response : ".concat(response));
 				return Optional.of(jsonMapper.readValue(response, FnResponse.class));
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
-					"Error while parsing json response from mock server")), e);
+				LOGGER.error("Error while parsing json response from mock server", e);
 				return Optional.empty();
 			}
 		});
@@ -143,11 +133,10 @@ public class CubeClient {
 			.request(MediaType.TEXT_PLAIN);
 		return getResponse(builder, event).flatMap(response -> {
 			try {
-				LOGGER.debug(new ObjectMessage(Map.of("Response" , response)));
+				LOGGER.debug("Response : ".concat(response));
 				return Optional.of(jsonMapper.readValue(response, FnResponse.class));
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
-					"Error while parsing json response from mock server")), e);
+				LOGGER.error("Error while parsing json response from mock server", e);
 				return Optional.empty();
 			}
 		});
@@ -158,11 +147,10 @@ public class CubeClient {
 		Invocation.Builder builder = cubeMockService.path("ms").path("thrift").request(MediaType.APPLICATION_JSON);
 		return getResponse(builder, event).flatMap(response -> {
 			try {
-				LOGGER.debug(new ObjectMessage(Map.of("Response" , response)));
+				LOGGER.debug("Response : ".concat(response));
 				return Optional.of(jsonMapper.readValue(response, Event.class));
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE ,
-					"Error while parsing json response from mock server")), e);
+				LOGGER.error("Error while parsing json response from mock server", e);
 				return Optional.empty();
 			}
 		});
@@ -225,13 +213,12 @@ public class CubeClient {
 			.request(MediaType.TEXT_PLAIN);
 		try {
 			String jsonEntity = jsonMapper.writeValueAsString(event);
-			LOGGER.debug(new ObjectMessage(Map.of("event", jsonEntity)));
+			LOGGER.debug("event : ".concat(jsonEntity));
 			CommonUtils.addTraceHeaders(builder, "POST");
 			return getResponse(
 				builder.buildPost(Entity.entity(jsonEntity, MediaType.APPLICATION_JSON)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(Map.of("operation",
-				"Store Event", "response", "Json Exception")), e);
+			LOGGER.error("Store event result in exception", e);
 		}
 		return Optional.empty();
 	}

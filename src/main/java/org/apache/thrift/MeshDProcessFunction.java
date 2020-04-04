@@ -5,14 +5,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.GsonBuilder;
 
@@ -32,7 +31,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 
 	private final String methodName;
 
-	private static final Logger LOGGER = LogManager.getLogger(MeshDProcessFunction.class.getName());
+	private static final Logger LOGGER = LoggerFactory.getLogger(MeshDProcessFunction.class.getName());
 
 
 	public MeshDProcessFunction(String methodName) {
@@ -78,8 +77,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					fluentDLogRecorder.record(eventBuilder.createEvent());
 				}
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Error while recording event")), e);
+				LOGGER.error("Error while recording event", e);
 			}
 		} catch (TProtocolException e) {
 			iprot.readMessageEnd();
@@ -104,25 +102,22 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					Constants.DEFAULT_COLLECTION)
 					.setPayload(new JsonByteArrayPayload(serializer.serialize(args)));
 				result = thriftMocker.mockThriftRequest(eventBuilder.createEvent());
-				LOGGER.info(new ObjectMessage(
-					Map.of(Constants.MESSAGE,
-						"Successfully retrieved result from mock service")));
+				LOGGER.info("Successfully retrieved result from mock service");
 			} else {
 				result = getResult(iface, args);
 			}
 		} catch (TTransportException ex) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Transport error while processing", "methodName", getMethodName())), ex);
+			LOGGER.error("Transport error while processing , methodName : "
+				.concat(getMethodName()), ex);
 			throw ex;
 		} catch (TApplicationException ex) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-				, "Internal application error while processing"
-				, "methodName", getMethodName())), ex);
+			LOGGER.error(("Internal application error while "
+				+ "processing, methodName : ").concat(getMethodName()) , ex);
 			result = ex;
 			msgType = TMessageType.EXCEPTION;
 		} catch (Exception ex) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Transport error while processing", "methodName", getMethodName())), ex);
+			LOGGER.error("Transport error while processing , methodName : "
+				.concat(getMethodName()), ex);
 			if (rethrowUnhandledExceptions()) {
 				throw new RuntimeException(ex.getMessage(), ex);
 			}
@@ -143,8 +138,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					.setPayload(new JsonByteArrayPayload(serializer.serialize(result)));
 				fluentDLogRecorder.record(eventBuilder.createEvent());
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Error while recording event")), e);
+				LOGGER.error("Error while recording event", e);
 			}
 		}
 		if (!isOneway()) {

@@ -1,13 +1,8 @@
 package io.cube.agent;
 
-import java.util.Map;
-
-import org.apache.logging.log4j.message.ObjectMessage;
-
 import com.google.gson.Gson;
 
 import io.cube.agent.logging.ValueEvent;
-import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -29,9 +24,7 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 			LOGGER.info("[Cube FnReqResp Event]" + jsonSerialized);
 			return true;
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Unable to serialize Function Req Response Object",
-					Constants.REASON, e.getMessage())));
+			LOGGER.error("Unable to serialize Function Req Response Object", e);
 			return false;
 		}
 	}
@@ -44,12 +37,9 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 			ValueEvent valueEvent = CommonConfig.ringBuffer.get(sequenceId);
 			valueEvent.setValue(event);
 			CommonConfig.ringBuffer.publish(sequenceId);
-			//LOGGER.info(new ObjectMessage(Map.of("Cube Event", event)));
 			return true;
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Unable to serialize Event Object", Constants.REASON,
-					e.getMessage())));
+			LOGGER.error("Unable to serialize Event Object", e);
 			return false;
 		} finally {
 			span.finish();
@@ -64,9 +54,7 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 			LOGGER.info("[Cube ReqResp]" + jsonSerialized);
 			return true;
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Unable to serialize ReqResp Object", Constants.REASON,
-					e.getMessage())));
+			LOGGER.error("Unable to serialize ReqResp Object", e);
 			return false;
 		}
 	}
