@@ -52,11 +52,6 @@ public class ServiceController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field ServiceGroup Id is empty."));
         }
-        Optional<Service> service = this.serviceRepository.findByNameAndAppIdAndServiceGroupId(
-                    serviceDTO.getName(), serviceDTO.getAppId(), serviceDTO.getServiceGroupId());
-        if (service.isPresent()) {
-            return ok(service);
-        }
         Service saved = this.serviceRepository.save(
                 Service.builder()
                         .app(app.get())

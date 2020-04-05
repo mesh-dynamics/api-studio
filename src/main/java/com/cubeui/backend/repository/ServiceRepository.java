@@ -10,5 +10,4 @@ import java.util.Optional;
 @RepositoryRestResource(path = "services", collectionResourceRel = "services", itemResourceRel = "service")
 public interface ServiceRepository extends JpaRepository<Service, Long> {
     Optional<List<Service>> findByAppId(Long appId);
-    Optional<Service> findByNameAndAppIdAndServiceGroupId(String name, Long appId, Long serviceGroupId);
 }

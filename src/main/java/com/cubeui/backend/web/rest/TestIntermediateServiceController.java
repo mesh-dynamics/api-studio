@@ -47,11 +47,6 @@ public class TestIntermediateServiceController {
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         if (testConfig.isPresent() && service.isPresent()) {
-            Optional<TestIntermediateService> testIntermediateService = this.testIntermediateServiceRepository.findByTestConfigIdAndServiceId(
-                    testServiceDTO.getTestId(), testServiceDTO.getServiceId());
-            if (testIntermediateService.isPresent()) {
-                return ok(testIntermediateService);
-            }
             TestIntermediateService saved = this.testIntermediateServiceRepository.save(
                     TestIntermediateService.builder().service(service.get()).testConfig(testConfig.get()).build());
             return created(

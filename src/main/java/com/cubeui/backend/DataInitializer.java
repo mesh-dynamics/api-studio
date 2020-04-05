@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private CustomerService customerService;
 
-    /*private AppRepository appRepository;
+    private AppRepository appRepository;
 
     private InstanceRepository instanceRepository;
 
@@ -43,35 +43,34 @@ public class DataInitializer implements CommandLineRunner {
 
     private TestVirtualizedServiceRepository testVirtualizedServiceRepository;
 
-    private TestPathRepository testPathRepository;*/
+    private TestPathRepository testPathRepository;
 
     private CustomerRepository customerRepository;
 
     private UserRepository userRepository;
 
-    /*private InstanceUserRepository instanceUserRepository;
+    private InstanceUserRepository instanceUserRepository;
 
     private AppUserRepository appUserRepository;
 
     private JiraUserCredentialsRepository jiraUserCredentialsRepository;
 
-    private EmailDomainRepository emailDomainRepository;*/
+    private EmailDomainRepository emailDomainRepository;
 
     public DataInitializer(UserService userService, CustomerService customerService,
-//        AppRepository appRepository, InstanceRepository instanceRepository,
-//        ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository,
-//        ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository,
-//        TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository,
-//        TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository,
-        CustomerRepository customerRepository, UserRepository userRepository
-//        InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository,
-//        JiraUserCredentialsRepository jiraUserCredentialsRepository, EmailDomainRepository emailDomainRepository
-        ) {
+        AppRepository appRepository, InstanceRepository instanceRepository,
+        ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository,
+        ServiceGroupRepository serviceGroupRepository, PathRepository pathRepository,
+        TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository,
+        TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository,
+        CustomerRepository customerRepository, UserRepository userRepository,
+        InstanceUserRepository instanceUserRepository, AppUserRepository appUserRepository,
+        JiraUserCredentialsRepository jiraUserCredentialsRepository, EmailDomainRepository emailDomainRepository) {
 
         this.userService = userService;
         this.customerService = customerService;
 
-        /*this.appRepository = appRepository;
+        this.appRepository = appRepository;
         this.instanceRepository = instanceRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -80,13 +79,13 @@ public class DataInitializer implements CommandLineRunner {
         this.testConfigRepository = testConfigRepository;
         this.testIntermediateServiceRepository = testIntermediateServiceRepository;
         this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
-        this.testPathRepository = testPathRepository;*/
+        this.testPathRepository = testPathRepository;
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
-        /*this.instanceUserRepository = instanceUserRepository;
+        this.instanceUserRepository = instanceUserRepository;
         this.appUserRepository = appUserRepository;
         this.jiraUserCredentialsRepository = jiraUserCredentialsRepository;
-        this.emailDomainRepository = emailDomainRepository;*/
+        this.emailDomainRepository = emailDomainRepository;
     }
 
     @Override
@@ -130,15 +129,6 @@ public class DataInitializer implements CommandLineRunner {
             this.userService.save(userDTOAdmin, true, false);
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
-
-//        Optional<EmailDomain> emailDomain = emailDomainRepository.findByDomain("cubecorp.io");
-//        if (emailDomain.isEmpty()) {
-//            EmailDomain domain = new EmailDomain();
-//            domain.setDomain("cubecorp.io");
-//            domain.setCustomer(customer.get());
-//            this.emailDomainRepository.save(domain);
-//            log.info("EmailDomain with domain '{}' created", domain.getDomain());
-//        }
 
 //        //if(!appRepository.existsById(4L)) {
 //            App app = new App();

@@ -47,11 +47,6 @@ public class TestVirtualizedServiceController {
         Optional<Service> service = serviceRepository.findById(testServiceDTO.getServiceId());
         Optional<TestConfig> testConfig = testConfigRepository.findById(testServiceDTO.getTestId());
         if (testConfig.isPresent() && service.isPresent()) {
-            Optional<TestVirtualizedService> testVirtualizedService = this.testVirtualizedServiceRepository.findByTestConfigIdAndServiceId(
-                    testServiceDTO.getTestId(), testServiceDTO.getServiceId());
-            if (testVirtualizedService.isPresent()) {
-                return ok(testVirtualizedService);
-            }
             TestVirtualizedService saved = this.testVirtualizedServiceRepository.save(
                     TestVirtualizedService.builder().service(service.get()).testConfig(testConfig.get()).build());
             return created(

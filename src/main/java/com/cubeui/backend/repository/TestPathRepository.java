@@ -10,5 +10,4 @@ import java.util.Optional;
 @RepositoryRestResource(path = "test_paths", collectionResourceRel = "test_paths", itemResourceRel = "test_path")
 public interface TestPathRepository extends JpaRepository<TestPath, Long> {
     Optional<List<TestPath>> findByTestConfigId(Long testConfigId);
-    Optional<TestPath> findByTestConfigIdAndPathId(Long testId, Long PathId);
 }
