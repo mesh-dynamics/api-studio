@@ -24,9 +24,10 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
 
-import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
+import io.md.dao.FnReqRespPayload.RetStatus;
+
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
