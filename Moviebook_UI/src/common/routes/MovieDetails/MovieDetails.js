@@ -14,7 +14,10 @@ class MovieDetails extends Component {
             stores: null,
             showRentModal: false,
             selectedStore: null,
-            rentNumDays: 2
+            rentNumDays: 2,
+            showRentCompleteModal: false,
+            rentMovieSuccess: false,
+            rentMovieInProgress: false,
         }
     }
 
@@ -59,7 +62,7 @@ class MovieDetails extends Component {
     };
 
     hideRentModal = () => {
-        this.setState({showRentModal: false, selectedStore: null});
+        this.setState({showRentModal: false, selectedStore: null, showRentCompleteModal: false});
     };
 
     openRentModal = (ev, store) => {
@@ -84,6 +87,7 @@ class MovieDetails extends Component {
     };
 
     rentMovie = () => {
+        this.setState({rentMovieInProgress: true})
         const url = `${config.apiBaseUrl}/rentmovie`;
         const headers = {
             "Access-Control-Allow-Origin": "*",
@@ -96,15 +100,21 @@ class MovieDetails extends Component {
             "duration": this.state.rentNumDays,
             "customerId": 200,
             "staffId": 1
-        }).then(function(response){
-            return response;
-        }).catch(function(error){
+        }).then((response) => {
+            const {inventory_id} = response.data;   
+            if (inventory_id > 0) {
+                this.setState({rentMovieSuccess: true, showRentCompleteModal: true, rentMovieInProgress: false})
+            } else {
+                this.setState({rentMovieSuccess: false, showRentCompleteModal: true, rentMovieInProgress: false})
+            }
+        }).catch((error) => {
+            this.setState({rentMovieSuccess: false, showRentCompleteModal: true, rentMovieInProgress: false})
             throw (error.response);
         });
     };
 
     render() {
-        const {movieDetails, stores, rentNumDays} = this.state;
+        const {movieDetails, stores, selectedStore, rentNumDays, showRentModal, rentMovieInProgress, showRentCompleteModal, rentMovieSuccess} = this.state;
         return (
             <div className="mov-detail">
                 <div className="title-bar">
@@ -160,9 +170,9 @@ class MovieDetails extends Component {
                                 ))}
                             </div>
 
-                            <Modal onHide={this.hideRentModal} show={this.state.showRentModal}>
+                            <Modal onHide={this.hideRentModal} show={showRentModal}>
                                 <Modal.Header closeButton>
-                                    <Modal.Title>{this.state.selectedStore ? "Store " + this.state.selectedStore.store_id : ""}</Modal.Title>
+                                    <Modal.Title>{selectedStore ? "Store " + selectedStore.store_id : ""}</Modal.Title>
                                 </Modal.Header>
 
                                 <Modal.Body>
@@ -172,8 +182,24 @@ class MovieDetails extends Component {
                                 </Modal.Body>
 
                                 <Modal.Footer>
-                                    <Button onClick={this.hideRentModal} variant="secondary">Cancel</Button>
-                                    <Button onClick={this.rentMovie} variant="primary">Rent</Button>
+                                    {!rentMovieInProgress && <Button onClick={this.hideRentModal} variant="secondary">Cancel</Button>}
+                                    
+                                    <Button disabled={rentMovieInProgress} onClick={this.rentMovie} variant="primary">
+                                    {rentMovieInProgress ? <i className="fa fa-spinner fa-spin" style={{"font-size":"24px"}}/> : "Rent"}</Button>
+                                </Modal.Footer>
+                            </Modal>
+
+                            <Modal show={showRentCompleteModal}>
+                                <Modal.Header>
+                                    <Modal.Title>Rent Movie</Modal.Title>
+                                </Modal.Header>
+                                <Modal.Body>
+                                    {rentMovieSuccess ? 
+                                    <p>Movie rented successfully</p>
+                                    : <p>Unable to rent movie</p>}
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button onClick={this.hideRentModal} variant="secondary">Close</Button>
                                 </Modal.Footer>
                             </Modal>
                         </React.Fragment>
