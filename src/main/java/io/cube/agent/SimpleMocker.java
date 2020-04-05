@@ -1,6 +1,5 @@
 package io.cube.agent;
 
-import static io.md.utils.CommonUtils.createPayload;
 import static io.md.utils.UtilException.rethrowFunction;
 
 import java.lang.reflect.Type;
@@ -20,12 +19,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
-import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.Event;
+import io.md.dao.Event.RunType;
+import io.md.dao.FnReqRespPayload;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
 /*
@@ -142,10 +143,10 @@ public class SimpleMocker implements Mocker {
 
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null), spanId.orElse(null),
 			parentSpanId.orElse(null));
-		JsonObject payload = createPayload(null, gson, args);
-		// TODO this has be implemented later with FnReqRespPayload
-		Optional<Event> event = /*createEvent(fnKey, mdTraceInfo, RunType.Replay,
-			Optional.of(prevRespTS.orElse(fnMap.get(key))), payload);*/ Optional.empty();
+		FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
+			args, null, null , null);
+		Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, RunType.Replay,
+			Optional.of(prevRespTS.orElse(fnMap.get(key))), fnReqRespPayload);
 
 		return event.map(eve -> {
 			Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);

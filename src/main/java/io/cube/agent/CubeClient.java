@@ -18,7 +18,6 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.jaegertracing.internal.utils.Http;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.utils.CommonUtils;

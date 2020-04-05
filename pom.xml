@@ -183,7 +183,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0.34</version>
+      <version>1.0.36</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.lmax/disruptor -->
     <dependency>
