@@ -309,7 +309,20 @@ public class MovieRentalRest {
 		LOGGER.info("Time took to construct review response (in ms) :" + (endtime-starttime));
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 	}
-	
+
+	@GET
+	@Path("/updateInventory")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateInventory(@Context HttpHeaders httpHeaders) {
+		try {
+			int result = mv.updateInventory();
+
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(result).build();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"" + e.toString() + "\"}").build();
+		}
+	}
 	/*
 	@Path("/ismovieavailable")
 	@GET

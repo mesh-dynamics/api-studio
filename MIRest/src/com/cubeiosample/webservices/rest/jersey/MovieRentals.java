@@ -482,7 +482,38 @@ public class MovieRentals {
       result.put("payment_updates", paymentUpdate.getInt("num_updates"));
       return result;
     }
-    
+
+	public int updateInventory() {
+		try {
+			JSONArray rs = null;
+			String inventoryQuery = "SELECT DISTINCT film_id, store_id from inventory";
+			JSONArray params = new JSONArray();
+			rs = ros.executeQuery(inventoryQuery, params);
+			if (rs == null || rs.length() < 1) {
+				return -1;
+			}
+			for(Object obj: rs) {
+				JSONObject jsonObject = (JSONObject)obj;
+				int filmId = jsonObject.getInt("film_id");
+				int storeId = jsonObject.getInt("store_id");
+				String dateString = format.format(new Date());
+				for (int i=0; i<10;i++) {
+					String inventoryInsertQuery = "INSERT INTO inventory (film_id, store_id, last_update) "
+							+ " VALUES (?, ?, ?)";
+					params = new JSONArray();
+					RestOverSql.addIntegerParam(params, filmId);
+					RestOverSql.addIntegerParam(params, storeId);
+					RestOverSql.addStringParam(params, dateString);
+					LOGGER.debug(inventoryInsertQuery + "; " + params.toString());
+					ros.executeUpdate(inventoryInsertQuery, params);
+				}
+			}
+			return rs.length();
+		} catch (Exception sqlException) {
+			LOGGER.error("Couldn't prepare  update inventory stmt: " + sqlException.toString());
+		}
+		return -1;
+	}
     /*
     
       private int GetFilmId(String filmName) throws SQLException {
