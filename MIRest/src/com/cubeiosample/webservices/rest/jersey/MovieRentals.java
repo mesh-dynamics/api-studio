@@ -496,14 +496,12 @@ public class MovieRentals {
 				JSONObject jsonObject = (JSONObject)obj;
 				int filmId = jsonObject.getInt("film_id");
 				int storeId = jsonObject.getInt("store_id");
-				String dateString = format.format(new Date());
 				for (int i=0; i<10;i++) {
-					String inventoryInsertQuery = "INSERT INTO inventory (film_id, store_id, last_update) "
-							+ " VALUES (?, ?, ?)";
+					String inventoryInsertQuery = "INSERT INTO inventory (film_id, store_id) "
+							+ " VALUES (?, ?)";
 					params = new JSONArray();
 					RestOverSql.addIntegerParam(params, filmId);
 					RestOverSql.addIntegerParam(params, storeId);
-					RestOverSql.addStringParam(params, dateString);
 					LOGGER.debug(inventoryInsertQuery + "; " + params.toString());
 					ros.executeUpdate(inventoryInsertQuery, params);
 				}
