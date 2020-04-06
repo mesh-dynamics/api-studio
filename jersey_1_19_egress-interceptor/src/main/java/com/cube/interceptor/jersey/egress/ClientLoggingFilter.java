@@ -32,7 +32,6 @@ import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
-import io.opentracing.Scope;
 import io.opentracing.Span;
 
 import com.cube.interceptor.config.Config;
@@ -59,7 +58,7 @@ public class ClientLoggingFilter extends ClientFilter {
 	@Override
 	public ClientResponse handle(ClientRequest clientRequest) throws ClientHandlerException {
 		String serviceName = CommonUtils.getEgressServiceName(clientRequest.getURI());
-		CommonConfig commonConfig = CommonConfig.getInstance();
+		CommonConfig commonConfig = config.commonConfig;
 
 		// Modify the request
 		try {
@@ -99,9 +98,6 @@ public class ClientLoggingFilter extends ClientFilter {
 		String service = CommonUtils.getEgressServiceName(clientRequest.getURI());
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		if (commonConfig.shouldMockService(service)) {
-			currentSpan.ifPresent(span -> {
-				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
-			});
 			return clientRequest;
 		}
 
