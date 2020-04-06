@@ -26,6 +26,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.filter.ClientFilter;
 import com.sun.jersey.spi.MessageBodyWorkers;
 
+import io.cube.agent.CommonConfig;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
@@ -56,8 +57,12 @@ public class ClientLoggingFilter extends ClientFilter {
 
 	@Override
 	public ClientResponse handle(ClientRequest clientRequest) throws ClientHandlerException {
+		String serviceName = CommonUtils.getEgressServiceName(clientRequest.getURI());
+		CommonConfig commonConfig = config.commonConfig;
+
 		// Modify the request
 		try {
+			//If egress to be mocked then skip data capture
 			clientRequest = filter(clientRequest);
 		} catch (Exception e) {
 			LOGGER.error("Exception in client request filter ", e);
@@ -69,7 +74,10 @@ public class ClientLoggingFilter extends ClientFilter {
 
 		// Modify the response
 		try {
-			return filter(clientRequest, resp);
+			//If egress to be mocked then skip data capture
+			if (!commonConfig.shouldMockService(serviceName)) {
+				return filter(clientRequest, resp);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Exception in client response filter ", e);
 		}
@@ -83,6 +91,15 @@ public class ClientLoggingFilter extends ClientFilter {
 		Optional<Span> newClientSpan = currentSpan.map( span -> {
 			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
 		});
+
+		newClientSpan.map(CommonUtils::activateSpan);
+
+		// Do not log request in case the egress serivce is to be mocked
+		String service = CommonUtils.getEgressServiceName(clientRequest.getURI());
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		if (commonConfig.shouldMockService(service)) {
+			return clientRequest;
+		}
 
 		newClientSpan.ifPresent(UtilException.rethrowConsumer(span ->
 		{
@@ -280,8 +297,8 @@ public class ClientLoggingFilter extends ClientFilter {
 		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
 
 		String traceId = spanContext.getTraceId();
-		String spanId = String.valueOf(spanContext.getSpanId());
-		String parentSpanId = String.valueOf(spanContext.getParentId());
+		String spanId = Long.toHexString(spanContext.getSpanId());
+		String parentSpanId = Long.toHexString(spanContext.getParentId());
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
 		return mdTraceInfo;
 	}
