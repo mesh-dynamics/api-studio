@@ -318,10 +318,10 @@ public class MovieRentalRest {
 		try {
 			int result = mv.updateInventory(number);
 
-			return Response.ok().type(MediaType.APPLICATION_JSON).entity(result).build();
+			return Response.ok().type(MediaType.TEXT_PLAIN).entity(result).build();
 		} catch (Exception e) {
 			e.printStackTrace();
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity("{\"" + e.toString() + "\"}").build();
+			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
 		}
 	}
 	/*
