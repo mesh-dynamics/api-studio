@@ -4,6 +4,9 @@ name: default
 steps:
   - name: build_serviceapp
     image: plugins/docker
+    environment:
+    TOKEN:
+      from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: 'Welcome@md'
@@ -22,6 +25,9 @@ steps:
 
   - name: build_deptapp
     image: plugins/docker
+    environment:
+    TOKEN:
+      from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: 'Welcome@md'
