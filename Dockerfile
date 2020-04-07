@@ -2,9 +2,9 @@ FROM maven:3.6.0-jdk-11-slim AS build
 COPY department-service ./department-service
 COPY employee-service ./employee-service
 #Add settings.xml file for github auth
-ENV TOKEN
+ARG TOKEN
 RUN mkdir ~/.m2 && \
-echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
+echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
 RUN cd ./employee-service && \
 mvn package && \
 cd ../department-service && \
