@@ -317,11 +317,10 @@ public class MovieRentalRest {
 	public Response updateInventory(@PathParam("number") int number, @Context HttpHeaders httpHeaders) {
 		try {
 			int result = mv.updateInventory(number);
-
-			return Response.ok().type(MediaType.TEXT_PLAIN).entity(result).build();
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"result\":\"" + result + "\"}").build();
 		} catch (Exception e) {
 			e.printStackTrace();
-			return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.toString()).build();
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"error\":\"" + e.toString() + "\"}").build();
 		}
 	}
 	/*
