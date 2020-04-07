@@ -483,7 +483,7 @@ public class MovieRentals {
       return result;
     }
 
-	public int updateInventory() {
+	public int updateInventory(int number) {
 		try {
 			JSONArray rs = null;
 			String inventoryQuery = "SELECT DISTINCT film_id, store_id from inventory";
@@ -496,15 +496,17 @@ public class MovieRentals {
 				JSONObject jsonObject = (JSONObject)obj;
 				int filmId = jsonObject.getInt("film_id");
 				int storeId = jsonObject.getInt("store_id");
-				for (int i=0; i<10;i++) {
-					String inventoryInsertQuery = "INSERT INTO inventory (film_id, store_id) "
-							+ " VALUES (?, ?)";
-					params = new JSONArray();
+				String inventoryInsertQuery = "INSERT INTO inventory (film_id, store_id) VALUES ";
+				params = new JSONArray();
+				for (int i=0; i<number;i++) {
+					inventoryInsertQuery = inventoryInsertQuery + "(?, ?)";
+					if (i < number-1)
+						inventoryInsertQuery = inventoryInsertQuery + ",";
 					RestOverSql.addIntegerParam(params, filmId);
 					RestOverSql.addIntegerParam(params, storeId);
-					LOGGER.debug(inventoryInsertQuery + "; " + params.toString());
-					ros.executeUpdate(inventoryInsertQuery, params);
 				}
+				LOGGER.debug(inventoryInsertQuery + "; " + params.toString());
+				ros.executeUpdate(inventoryInsertQuery, params);
 			}
 			return rs.length();
 		} catch (Exception sqlException) {

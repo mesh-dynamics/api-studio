@@ -1,13 +1,7 @@
 package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -310,12 +304,12 @@ public class MovieRentalRest {
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity(result.toString()).build();
 	}
 
-	@GET
-	@Path("/updateInventory")
+	@POST
+	@Path("/updateInventory/{number}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response updateInventory(@Context HttpHeaders httpHeaders) {
+	public Response updateInventory(@PathParam("number") int number, @Context HttpHeaders httpHeaders) {
 		try {
-			int result = mv.updateInventory();
+			int result = mv.updateInventory(number);
 
 			return Response.ok().type(MediaType.APPLICATION_JSON).entity(result).build();
 		} catch (Exception e) {
