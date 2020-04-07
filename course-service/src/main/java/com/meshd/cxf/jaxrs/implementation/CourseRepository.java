@@ -13,6 +13,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -125,5 +126,21 @@ public class CourseRepository {
 //                return objectMapper.readValue(response.body().string(), Student.class);
         }
         return null;
+    }
+
+    @GET
+    @Path("/dummyCourseList")
+    public List<Course> dummyCourseList(@QueryParam("count") int courseCount) {
+        List<Course> courseList = new ArrayList<>();
+        for (int i=0; i<courseCount; i++) {
+            Course course = new Course();
+            course.setId(i+1);
+            course.setName("Course " + (i+1));
+//            List<Integer> studentIds = new ArrayList<>();
+//            studentIds.add(i);
+//            course.setStudents(studentIds);
+            courseList.add(course);
+        }
+        return courseList;
     }
 }
