@@ -3,10 +3,10 @@ COPY department-service ./department-service
 COPY employee-service ./employee-service
 #Add settings.xml file for github auth
 RUN mkdir ~/.m2 && \
-echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>5cec32b5cc9a3f779ec122f6b47c6973f619d992</password></server></servers></settings>" > ~/.m2/settings.xml
-RUN cd ./department-service && \
+echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>c168c75eaf0a29bc3c45e5ec31fadc98d0546dcd</password></server></servers></settings>" > ~/.m2/settings.xml
+RUN cd ./employee-service && \
 mvn package && \
-cd ../employee-service && \
+cd ../department-service && \
 mvn package
 
 ################################################
@@ -15,7 +15,6 @@ mvn package
 FROM tomcat:9-jre11 AS serviceapp
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
 COPY --from=build employee-service/target/jersey_1_19_emp.war /usr/local/tomcat/webapps/ROOT.war
-COPY --from=build employee-service/src/main/java/resources/samplerconfig.json /tmp/samplerconfig.json
 # adding line below to speedup tomcat startup
 # see https://github.com/theotherp/nzbhydra2/issues/42
 # reduced time from 360 s to 6s!
