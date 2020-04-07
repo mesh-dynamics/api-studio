@@ -293,4 +293,67 @@ const addCompressToggleData = (diffData, collapseLength, diffCollapseStartIndex)
     return diffData;
 }
 
-export {validateAndCreateDiffLayoutData, addCompressToggleData}
+const roughSizeOfObject = (object) => {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+}
+
+const pruneResults = (diffLayoutData, fromBeginning) => {
+    let accumulatedObjectSize = 0;
+    const diffObjectSizeThreshold = config.diffObjectSizeThreshold;
+    const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
+    let len = diffLayoutData.length;
+    let i;
+    if (fromBeginning) { // prune from top of the list
+        i = 0;
+        while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+            accumulatedObjectSize += roughSizeOfObject(diffLayoutData[i]);
+            i++;
+        }
+        let diffLayoutDataPruned = diffLayoutData.slice(0, i)
+        return {diffLayoutDataPruned, i};
+    } else { // prune from bottom of the list
+        i = 0;
+        while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+            accumulatedObjectSize += roughSizeOfObject(diffLayoutData[len-i-1]);
+            i++;
+        }
+        let diffLayoutDataPruned = diffLayoutData.slice(len - i, len);
+        return {diffLayoutDataPruned, i} 
+    }
+}
+
+export {
+    validateAndCreateDiffLayoutData, 
+    addCompressToggleData,
+    pruneResults
+}

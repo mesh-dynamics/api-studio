@@ -104,6 +104,8 @@ class GoldenPopover extends React.Component {
         } else {
             dispatch(cubeActions.pushToOperations(operationsObj, key));
         }
+
+        this.props.handleHidePopoverClick();
     }
 
     updateGolden() {

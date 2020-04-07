@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import { Glyphicon } from 'react-bootstrap';
-import Popover, { ArrowContainer } from 'react-tiny-popover';
+import Modal from "react-bootstrap/lib/Modal";
 import GoldenPopover from "../GoldenPopover";
 import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
 import { DiffResultsContext } from "../../routes/diff_results/DiffResults";
 import "./OperationalSet.css";
-// import { history } from "../../helpers/history.js"
 
 class OperationSet extends Component {
     constructor(props) {
@@ -41,33 +40,7 @@ class OperationSet extends Component {
             (showPopover || showPopoverTrigger) 
             &&
                 <span className="os-actions-container"ref={this.props.elementRef}>
-                    <Popover
-                        isOpen={showPopover && popoverCurrentPath === this.props.jsonPath}
-                        position={['top', 'bottom', 'left', 'right']}
-                        padding={10}
-                        containerStyle={{ zIndex: 100 }}
-                        content={({ position, targetRect, popoverRect }) => (
-                            <ArrowContainer
-                                position={position}
-                                targetRect={targetRect}
-                                popoverRect={popoverRect}
-                                arrowColor={'grey'}
-                                arrowSize={10}
-                                arrowStyle={{ opacity: 0.7 }}
-                            >
-                                <div 
-                                    className="os-popover-wrapper grey" 
-                                    id={`tooltip-${this.props.jsonPath}`}
-                                >
-                                    <GoldenPopover 
-                                        {...this.props} 
-                                        handleHidePopoverClick={this.handleHidePopoverClick} 
-                                    />
-                                </div>
-                            </ArrowContainer>
-                        )}
-                    >
-                        <span 
+                    <span 
                             className="pointer" 
                             onClick={
                                 () => 
@@ -78,8 +51,7 @@ class OperationSet extends Component {
                             }
                         >
                             <Glyphicon glyph="plus" />
-                        </span>
-                    </Popover>
+                    </span>
                     <span className="pointer" onClick={this.filterPath}><Glyphicon glyph="search" /></span>
                 </span>
         );
@@ -94,20 +66,31 @@ class OperationSet extends Component {
                     <div 
                         onMouseEnter={this.handleShowPopoverTrigger} 
                         onMouseLeave={this.handleHidePopoverTrigger} 
-                        onClick={this.handlePopoverTriggerClick}
                         className="os-root-container"
                     >
-                        {
-                            /* TODO: temporary workaround; cleanup when removing shareable_link page */
-                        ((window.location.pathname.includes("/diff_results")) && 
-                        <DiffResultsContext.Consumer>
-                            {(context) => this.renderOperationalSet(context)}
-                        </DiffResultsContext.Consumer>)
-                        || 
-                        (<ShareableLinkContext.Consumer>
-                            {(context) => this.renderOperationalSet(context)}
-                        </ShareableLinkContext.Consumer>)
-                    }
+                        {	
+                            /* TODO: temporary workaround; cleanup when removing shareable_link page */	
+                            ((window.location.pathname.includes("/diff_results")) && 	
+                            <DiffResultsContext.Consumer>
+                                {(context) => this.renderOperationalSet(context)}
+                            </DiffResultsContext.Consumer>)
+                            || 	
+                            (<ShareableLinkContext.Consumer>
+                                {(context) => this.renderOperationalSet(context)}
+                            </ShareableLinkContext.Consumer>)
+                        }
+
+                        <Modal show={this.state.showPopover} dialogClassName="os-popover-modal popover-golden">
+                            <div 
+                                className="os-popover-wrapper grey" 
+                                id={`tooltip-${this.props.jsonPath}`}
+                            >
+                                <GoldenPopover 
+                                    {...this.props} 
+                                    handleHidePopoverClick={this.handleHidePopoverClick} 
+                                />
+                            </div>
+                        </Modal>
                     </div>
                 )
             : "");

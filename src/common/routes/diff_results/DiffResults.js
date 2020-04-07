@@ -1,19 +1,24 @@
+// Absolute imports from node_modules
 import  React , { Component, Fragment, createContext } from "react";
-import DiffResultsFilter from '../../components/DiffResultsFilter/DiffResultsFilter.js';
-import DiffResultsList from '../../components/DiffResultsList/DiffResultsList.js';
+import { Link } from "react-router-dom";
+import { connect } from "react-redux";
 import { Glyphicon} from 'react-bootstrap';
-import {Link} from "react-router-dom";
 import _ from 'lodash';
-import sortJson from "../../utils/sort-json";
-import ReduceDiff from '../../utils/ReduceDiff';
-import generator from '../../utils/generator/json-path-generator';
-import Modal from "react-bootstrap/lib/Modal";
-import {connect} from "react-redux";
 import axios from "axios";
-import {cubeActions} from "../../actions";
+
+// Application Imports
+import {
+    DiffResultsFilter,
+    DiffResultsList,
+    DiffModalWrapper,
+} from "../../components/Diff-Results";
+import { cubeActions } from "../../actions";
 import { constructUrlParamsDiffResults } from "../../utils/lib/url-utils";
+import { 
+    pruneResults, 
+    validateAndCreateDiffLayoutData  
+} from "../../utils/diff/diff-process.js";
 import config from "../../config";
-import {validateAndCreateDiffLayoutData} from "../../utils/diff/diff-process.js"
 
 const DiffResultsContext = createContext();
 
@@ -169,7 +174,7 @@ class DiffResults extends Component {
                 timeStamp: timeStamp
             }));
             dispatch(cubeActions.getCollectionUpdateOperationSet(app));
-            dispatch(cubeActions.setGolden({golden: recordingId, timeStamp: ""}));
+            dispatch(cubeActions.setGolden({ golden: recordingId, timeStamp: "" }));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
         });
@@ -273,68 +278,6 @@ class DiffResults extends Component {
                 })
             }
         );
-    }
-
-
-    // todo: move to utils
-    pruneResults = (diffLayoutData, fromBeginning) => {
-        let accumulatedObjectSize = 0;
-        const diffObjectSizeThreshold = config.diffObjectSizeThreshold;
-        const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
-        let len = diffLayoutData.length;
-        let i;
-        if (fromBeginning) { // prune from top of the list
-            i = 0;
-            while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
-                accumulatedObjectSize += this.roughSizeOfObject(diffLayoutData[i]);
-                i++;
-            }
-            let diffLayoutDataPruned = diffLayoutData.slice(0, i)
-            return {diffLayoutDataPruned, i};
-        } else { // prune from bottom of the list
-            i = 0;
-            while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
-                accumulatedObjectSize += this.roughSizeOfObject(diffLayoutData[len-i-1]);
-                i++;
-            }
-            let diffLayoutDataPruned = diffLayoutData.slice(len - i, len);
-            return {diffLayoutDataPruned, i} 
-        }
-    }
-
-    // todo: move to utils
-    roughSizeOfObject = ( object ) => {
-
-        var objectList = [];
-        var stack = [ object ];
-        var bytes = 0;
-    
-        while ( stack.length ) {
-            var value = stack.pop();
-    
-            if ( typeof value === 'boolean' ) {
-                bytes += 4;
-            }
-            else if ( typeof value === 'string' ) {
-                bytes += value.length * 2;
-            }
-            else if ( typeof value === 'number' ) {
-                bytes += 8;
-            }
-            else if
-            (
-                typeof value === 'object'
-                && objectList.indexOf( value ) === -1
-            )
-            {
-                objectList.push( value );
-    
-                for( var i in value ) {
-                    stack.push( value[ i ] );
-                }
-            }
-        }
-        return bytes;
     }
     
 
@@ -467,7 +410,7 @@ class DiffResults extends Component {
             const diffLayoutData = this.preProcessResults(results);
             
             let pruneEndIndex;
-            ({diffLayoutDataPruned, i: pruneEndIndex} = this.pruneResults(diffLayoutData, true));
+            ({diffLayoutDataPruned, i: pruneEndIndex} = pruneResults(diffLayoutData, true));
             
             endIndex = startIndex + pruneEndIndex;
             
@@ -480,7 +423,7 @@ class DiffResults extends Component {
             const diffLayoutData = this.preProcessResults(results);
             
             let pruneStartIndex;
-            ({diffLayoutDataPruned, i: pruneStartIndex} = this.pruneResults(diffLayoutData, false))
+            ({diffLayoutDataPruned, i: pruneStartIndex} = pruneResults(diffLayoutData, false))
             
             startIndex = Math.max(endIndex - pruneStartIndex, 0);
 
@@ -516,9 +459,7 @@ class DiffResults extends Component {
         }, this.updateUrlPathWithFilters);
     }
 
-    /**** Golden/Modal code */
-
-    handleClose = () => {
+    handleNewGoldenModalClose = () => {
         const { history, dispatch } = this.props;
         dispatch(cubeActions.clearGolden());
         this.setState({ showNewGolden: false });
@@ -550,9 +491,7 @@ class DiffResults extends Component {
         });
     }
 
-    handleCloseSG = () => {
-        this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
-    }
+    handleCloseSG = () => this.setState({ showSaveGoldenModal: false, saveGoldenError: ""});
 
     handleSaveGolden = () => {
         if (!this.state.nameG.trim()) {
@@ -632,112 +571,7 @@ class DiffResults extends Component {
         dispatch(cubeActions.updateRecordingOperationSet()); 
     }
 
-
     handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
-
-
-    // todo: move these to a separate component in the next refactor
-    renderModals = () => {
-        const {cube} = this.props;
-        return (
-            <Fragment>
-                <Modal show={this.state.showNewGolden}>
-                    <Modal.Header>
-                        <Modal.Title>{!cube.newGoldenId ? "Saving Golden" : "Golden Saved"}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <p className={cube.newGoldenId ? "" : "hidden"}>Name: {this.state.nameG}</p>
-                        <p className={cube.newGoldenId ? "hidden" : ""}>Saving Golden Operations</p>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <div>
-                            {cube.newGoldenId ?
-                                <span onClick={this.handleClose} className="cube-btn">Go TO Test Config</span>
-                            :
-                                <span className="modal-footer-text">The golden is being saved in the background and will be available later. </span>
-                            }
-                            &nbsp;&nbsp;<span onClick={this.handleCloseDone} className="cube-btn">Close</span>
-                        </div>
-                    </Modal.Footer>
-                </Modal>
-
-                <Modal show={this.state.showSaveGoldenModal}>
-                    <Modal.Header>
-                        <Modal.Title>Application:&nbsp;{cube.selectedApp}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <div style={{padding: "15px 25px"}}>
-                            <div className={this.state.saveGoldenError ? "error-div" : "hidden"}>
-                                <h5 style={{marginTop: 0}}>
-                                    <i className="fas fa-warning"></i>&nbsp;Error!
-                                </h5>
-                                {this.state.saveGoldenError}
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-3 bold">
-                                    Name*:
-                                </div>
-
-                                <div className="col-md-9">
-                                    <input required placeholder="Enter Golden Name" onChange={(event) => this.changeGoldenMetaData('nameG', event)} value={this.state.nameG} type="text" className="width-100"/>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-3 bold">
-                                    Branch:
-                                </div>
-
-                                <div className="col-md-9">
-                                    <input placeholder="Enter Branch Name" onChange={(event) => this.changeGoldenMetaData('branch', event)} value={this.state.branch} type="text" className="width-100"/>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-3 bold">
-                                    Version:
-                                </div>
-
-                                <div className="col-md-9">
-                                    <input placeholder="Enter Code Version" onChange={(event) => this.changeGoldenMetaData('version', event)} value={this.state.version} type="text" className="width-100"/>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-3 bold">
-                                    Commit ID:
-                                </div>
-
-                                <div className="col-md-9">
-                                    <input placeholder="Enter Git Commit ID" onChange={(event) => this.changeGoldenMetaData('commitId', event)} value={this.state.commitId} type="text" className="width-100"/>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-3 bold">
-                                    Tags:
-                                </div>
-
-                                <div className="col-md-9">
-                                    <input placeholder="Enter Tags(Comma Separated)" onChange={(event) => this.changeGoldenMetaData('tag', event)} value={this.state.tag} type="text" className="width-100"/>
-                                </div>
-                            </div>
-                        </div>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <div>
-                            <span onClick={this.handleCloseSG} className="cube-btn">CANCEL</span>&nbsp;&nbsp;
-                            <span onClick={this.handleSaveGolden} className="cube-btn">SAVE</span>
-                        </div>
-                    </Modal.Footer>
-                </Modal>
-            </Fragment>
-        );
-    }
-
-    /******** end Golden/Modal code */
-
 
     handleBackToDashboardClick = () => {
         const { history, dispatch } = this.props;
@@ -745,18 +579,50 @@ class DiffResults extends Component {
     }
 
     render() {
-        const showAll = this.state.showAll;
         const facetListData = {
             services: this.state.serviceFacets,
             apiPaths: this.state.apiPathFacets,
             resolutionTypes: this.state.resolutionTypeFacets,
         };
+
+        const {
+            tag,
+            nameG,
+            branch,
+            showAll,
+            version,
+            commitId,
+            showNewGolden,
+            saveGoldenError,
+            showSaveGoldenModal,
+        } = this.state;
+
+        
+        
         return (
             <DiffResultsContext.Provider 
                 value={{ 
                     popoverCurrentPath: this.state.popoverCurrentPath, 
                     setPopoverCurrentPath: this.handleCurrentPopoverPathChange 
                 }}>
+
+                <DiffModalWrapper 
+                    tag={tag}
+                    nameG={nameG}
+                    branch={branch}
+                    version={version}
+                    commitId={commitId}
+                    cube={this.props.cube} 
+                    showNewGolden={showNewGolden}
+                    saveGoldenError={saveGoldenError}
+                    handleCloseSG={this.handleCloseSG}
+                    handleCloseDone={this.handleCloseDone}
+                    handleSaveGolden={this.handleSaveGolden}
+                    showSaveGoldenModal={showSaveGoldenModal}
+                    changeGoldenMetaData={this.changeGoldenMetaData}
+                    handleNewGoldenModalClose={this.handleNewGoldenModalClose}
+                />
+
                 <div className="content-wrapper">
                     
                     <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
@@ -788,8 +654,6 @@ class DiffResults extends Component {
                             numResults={this.state.numResults}
                         ></DiffResultsList>
                     </div>
-                    
-                    {this.renderModals()}
                 </div>
             </DiffResultsContext.Provider>
         )
