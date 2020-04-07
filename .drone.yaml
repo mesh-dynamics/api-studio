@@ -55,7 +55,7 @@ steps:
       deployment: [ employee-record, employee-replay ]
       repo: cubeiocorp/jersy_1_19_emp
       container: employee
-      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
+      tag: ${DRONE_COMMIT}
 
   - name: deploy_department_app
     image: quay.io/honestbee/drone-kubernetes
@@ -66,7 +66,7 @@ steps:
       deployment: department
       repo: cubeiocorp/jersy_1_19_dep
       container: department
-      tag: ${DRONE_COMMIT}-${DRONE_BRANCH}
+      tag: ${DRONE_COMMIT}
 
 trigger:
   branch:
