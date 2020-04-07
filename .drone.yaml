@@ -4,13 +4,16 @@ name: default
 steps:
   - name: build_serviceapp
     image: plugins/docker
-    build_args_from_env: [ TOKEN ]
-    secrets: [githubtoken]
+    environment:
+      TOKEN:
+        from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: 'Welcome@md'
       repo: cubeiocorp/jersy_1_19_emp
       target: serviceapp
+      build_args_from_env:
+      - TOKEN
       tags:
         - ${DRONE_COMMIT}-${DRONE_BRANCH}
         - ${DRONE_BRANCH}-latest
