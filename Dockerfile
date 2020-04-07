@@ -16,6 +16,7 @@ mvn package
 FROM tomcat:9-jre11 AS serviceapp
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
 COPY --from=build employee-service/target/jersey_1_19_emp.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=build employee-service/src/main/java/resources/samplerconfig.json /tmp/samplerconfig.json
 # adding line below to speedup tomcat startup
 # see https://github.com/theotherp/nzbhydra2/issues/42
 # reduced time from 360 s to 6s!
