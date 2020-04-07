@@ -37,6 +37,33 @@ spec:
                   end
                   return s
                 end
+                local function esc_str_opt(str)
+                  local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
+                  local out_char = {'\\\\', '\\"', '\\/',  '\\b',  '\\f',  '\\n',  '\\r',  '\\t'}
+                  local buf = {}
+                  local inpstr = {string.byte(str, 1, #str)}
+                  for i = 1, #inpstr do
+                    local inp = string.char(inpstr[i])
+                    local out = inp
+                    for i, c in ipairs(in_char) do
+                      if (c == inp) then out = out_char[i] end
+                    end
+                    buf[#buf+1] = out
+                  end
+                  return table.concat(buf)
+                end
+                local function esc_str_opt2(str)
+                  local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
+                  local out_char = {'\\\\', '\\"', '\\/',  '\\b',  '\\f',  '\\n',  '\\r',  '\\t'}
+                  local outstr = string.gsub(str, '[\\"/\b\f\n\r\t]', function (inp)
+                    local out = inp
+                    for i, c in ipairs(in_char) do
+                      if (c == inp) then out = out_char[i] end
+                    end
+                    return out
+                  end)
+                  return outstr
+                end
                 function addToBuf(buf, tbl, delim, fieldname)
                   buf[#buf+1] = delim .. string.format("%q", fieldname) .. ': ['
                   local listdelim=''
@@ -48,6 +75,8 @@ spec:
                   delim = ', '
                 end
                 function logHdrBody(handle, meta)
+                  local starttime = os.clock()
+                  handle:logErr('logHdrBody Start time ' .. starttime)
                   local r = {['"'] = '\\"', ['\\'] = '\\\\'}
                   local p = '["\\]'
                   local hdrs = handle:headers()
@@ -65,12 +94,22 @@ spec:
                     b = body:getBytes(0, len)
                     -- b = "Hello World"
                   end
-                  buf[#buf+1] = delim .. '"body":"' .. escape_str(b) .. '"'
+                  -- buf[#buf+1] = delim .. '"body":"' .. escape_str(b) .. '"'
+                  buf[#buf+1] = delim .. '"body":"' .. esc_str_opt(b) .. '"'
+                  -- buf[#buf+1] = delim .. '"body":"' .. esc_str_opt2(b) .. '"'
+                  handle:logErr('optimized escaping 1')
                   buf[#buf+1] = '}'
                   data = table.concat(buf)
+                  local logStartTime = os.clock()
                   handle:logErr('[cube]' .. data)
+                  local logEndTime = os.clock()
+                  handle:logErr('log write time ' .. (logEndTime - logStartTime))
+                  local endtime = os.clock()
+                  handle:logErr('logHdrBody End time ' .. endtime)
+                  handle:logErr('logHdrBody time ' .. (endtime - starttime))
                 end
                 function envoy_on_response(response_handle)
+                  local starttime = os.clock()
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
@@ -88,6 +127,9 @@ spec:
                   if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
                   if (apiPath) then meta["apiPath"] = apiPath end
                   logHdrBody(response_handle, meta)
+                  local endtime = os.clock()
+                  response_handle:logErr('End time ' .. endtime)
+                  response_handle:logErr('envoy_on_response time ' .. (endtime - starttime))
                 end
                 function envoy_on_request(request_handle)
                   local service = "{{service_name}}"
