@@ -15,8 +15,7 @@ steps:
       build_args_from_env:
       - TOKEN
       tags:
-        - ${DRONE_COMMIT}-${DRONE_BRANCH}
-        - ${DRONE_BRANCH}-latest
+        - ${DRONE_COMMIT}
     resources:
       requests:
         cpu: 0.1
@@ -38,8 +37,7 @@ steps:
       build_args_from_env:
       - TOKEN
       tags:
-        - ${DRONE_COMMIT}-${DRONE_BRANCH}
-        - ${DRONE_BRANCH}-latest
+        - ${DRONE_COMMIT}
     resources:
       requests:
         cpu: 0.1
