@@ -316,11 +316,13 @@ public class MovieRentalRest {
 	@Path("/updateInventory/{number}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response updateInventory(@PathParam("number") int number, @Context HttpHeaders httpHeaders) {
-		try {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "updateInventory")) {
+			scope.span().setTag("updateInventory", number);
 			int result = mv.updateInventory(number);
 			return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"result\":\"" + result + "\"}").build();
 		} catch (Exception e) {
 			e.printStackTrace();
+			LOGGER.error("Error while updating the inventory table");
 			return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"error\":\"" + e.toString() + "\"}").build();
 		}
 	}
@@ -329,8 +331,14 @@ public class MovieRentalRest {
 	@Path("deleteRental")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteRental(@Context HttpHeaders httpHeaders) {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "deleteRental")) {
+			scope.span().setTag("deleteRental", "delete all data from rental");
 			int result = mv.deleteRental();
 			return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"result\":\"" + result + "\"}").build();
+		} catch (Exception e) {
+			LOGGER.error("Error while deleting the rentals");
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"err\":\"" + e.toString() + "\"}").build();
+		}
 	}
 
 	/*
