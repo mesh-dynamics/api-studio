@@ -27,6 +27,7 @@ import io.md.dao.FnReqRespPayload;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.FnKey;
 
 /*
@@ -43,10 +44,7 @@ public class SimpleMocker implements Mocker {
 	CubeClient cubeClient;
 
 	public SimpleMocker(Gson gson) throws Exception {
-		jsonMapper = new ObjectMapper();
-		jsonMapper.registerModule(new Jdk8Module());
-		jsonMapper.registerModule(new JavaTimeModule());
-		jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+		jsonMapper = CubeObjectMapperProvider.getInstance();
 		cubeClient = new CubeClient(jsonMapper);
 		this.gson = gson;
 	}
