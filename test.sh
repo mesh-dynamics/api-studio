@@ -57,7 +57,6 @@ main() {
   set -x
   apk add jq
   CUBE_ENDPOINT=https://demo.dev.cubecorp.io
-  DRONE_BUILD_NUMBER=16
   TEMPLATE=DEFAULT
   USER_ID=CubeCorp
   REPLAY_ENDPOINT=http://jersy119.dev.cubecorp.io
