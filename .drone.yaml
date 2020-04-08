@@ -75,4 +75,7 @@ steps:
 
 trigger:
   branch:
-  - add/drone
+  - master
+  event:
+  - push
+  - pull_request
