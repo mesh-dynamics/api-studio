@@ -9,6 +9,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -323,6 +324,15 @@ public class MovieRentalRest {
 			return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"error\":\"" + e.toString() + "\"}").build();
 		}
 	}
+
+	@DELETE
+	@Path("deleteRental")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteRental(@Context HttpHeaders httpHeaders) {
+			int result = mv.deleteRental();
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity("{\"result\":\"" + result + "\"}").build();
+	}
+
 	/*
 	@Path("/ismovieavailable")
 	@GET
