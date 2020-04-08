@@ -59,17 +59,17 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 	@Override
 	public boolean record(Event event) {
 		final Span span = Utils.createPerformanceSpan("log4jLog");
+		long sequenceId = ringBuffer.next();
 		try (Scope scope = Utils.activatePerformanceSpan(span)) {
-			long sequenceId = ringBuffer.next();
 			ValueEvent valueEvent = ringBuffer.get(sequenceId);
 			valueEvent.setValue(event);
-			ringBuffer.publish(sequenceId);
 			return true;
 		} catch (Exception e) {
 			LOGGER.error("Unable to serialize Event Object", e);
 			return false;
 		} finally {
 			span.finish();
+			ringBuffer.publish(sequenceId);
 		}
 	}
 

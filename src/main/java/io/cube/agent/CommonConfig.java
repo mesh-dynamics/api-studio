@@ -258,7 +258,7 @@ public class CommonConfig {
 
 		ringBufferSize = fromDynamicOREnvORStaticProperties(
 			io.cube.agent.Constants.RING_BUFFER_SIZE_PROP, dynamicProperties)
-			.map(Integer::valueOf).orElse(32768);
+			.map(Integer::valueOf).orElse(1024);
 
 		disruptorOutputLocation = fromDynamicOREnvORStaticProperties(
 			io.cube.agent.Constants.RING_BUFFER_OUTPUT_PROP,
