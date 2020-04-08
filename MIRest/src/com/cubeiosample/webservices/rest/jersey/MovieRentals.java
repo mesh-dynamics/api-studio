@@ -514,6 +514,13 @@ public class MovieRentals {
 		}
 		return -1;
 	}
+
+	public int deleteRental() {
+		String inventoryQuery = "DELETE from rental";
+		JSONArray params = new JSONArray();
+		JSONObject rs = ros.executeUpdate(inventoryQuery, params);
+		return rs.getInt("num_updates");
+	}
     /*
     
       private int GetFilmId(String filmName) throws SQLException {
