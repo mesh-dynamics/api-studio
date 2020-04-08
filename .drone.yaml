@@ -68,6 +68,11 @@ steps:
       container: department
       tag: ${DRONE_COMMIT}
 
+  - name: Test
+    image: spotify/alpine
+    command:
+    - ./test.sh
+
 trigger:
   branch:
   - add/drone
