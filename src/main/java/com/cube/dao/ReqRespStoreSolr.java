@@ -43,6 +43,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.FnReqResponse;
+import io.cube.agent.FnResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
@@ -64,8 +66,6 @@ import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
-import com.cube.agent.FnReqResponse;
-import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplateVersioned;
@@ -334,9 +334,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc, boolean multipleResults) {
-        FnReqResponse.RetStatus retStatus =
-            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
-            rs)).orElse(FnReqResponse.RetStatus.Success);
+        RetStatus retStatus =
+            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(RetStatus.class,
+            rs)).orElse(RetStatus.Success);
         Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
         return getStrFieldMVFirst(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
             retStatus, exceptionType, multipleResults));

@@ -1,6 +1,7 @@
 package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
+import static io.md.dao.FnReqRespPayload.RetStatus.Success;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -32,6 +33,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import io.cube.agent.FnReqResponse;
+import io.cube.agent.FnResponse;
 import io.md.dao.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,8 +51,6 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 
-import com.cube.agent.FnReqResponse;
-import com.cube.agent.FnResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ReplayResultCache;
 import com.cube.cache.TemplateKey;
@@ -208,10 +209,9 @@ public class MockServiceHTTP {
                 Constants.DATA, retEvent.payload.rawPayloadAsString()*/)));
         try {
             FnResponse fnResponse = new FnResponse(
-                null //TODO redo this once FnReqResp is sorted
-                /*retEvent.parsePayLoad(config).getValAsString(Constants.FN_RESPONSE_PATH)*/,
+                retEvent.payload.getValAsString(Constants.FN_RESPONSE_PATH),
                 Optional.of(retEvent.timestamp),
-                FnReqResponse.RetStatus.Success, Optional.empty(),
+                Success, Optional.empty(),
                 matchingEventsCount > 1);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
                 .build();
@@ -251,7 +251,7 @@ public class MockServiceHTTP {
                    fnReqRespPayload
                         .getValAsString(Constants.FN_RESPONSE_PATH),
                     Optional.of(defaultRespEvent.get().timestamp),
-                    FnReqResponse.RetStatus.Success, Optional.empty(),
+                    Success, Optional.empty(),
                     false);
             } catch (DataObj.PathNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
