@@ -101,8 +101,8 @@ class DiffResults extends Component {
         const searchFilterPath = urlParameters["searchFilterPath"] || "";
         const timeStamp = decodeURI(urlParameters["timeStamp"]) || "";
         
-        const startIndex = urlParameters["startIndex"] || null;
-        const endIndex = urlParameters["endIndex"] || null;
+        const startIndex = +urlParameters["startIndex"] || null;
+        const endIndex = +urlParameters["endIndex"] || null;
 
         // if only start index is present in the url, fetch forward
         // else if only end index is present, fetch backward

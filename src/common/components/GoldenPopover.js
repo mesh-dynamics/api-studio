@@ -80,7 +80,7 @@ class GoldenPopover extends React.Component {
     };
 
     updateRule() {
-        const {dispatch, jsonPath, cube} = this.props;
+        const {dispatch, jsonPath, cube, eventType} = this.props;
         this.hideGR();
 
         let operationsObj = {};
@@ -97,7 +97,7 @@ class GoldenPopover extends React.Component {
                 serviceId: cube.pathResultsParams.service,
                 path: cube.pathResultsParams.path,
                 version: cube.pathResultsParams.currentTemplateVer,
-                reqOrResp: "ResponseCompare"
+                reqOrResp: eventType==="Response" ? "ResponseCompare" : "RequestCompare",
             };
             key = JSON.stringify(keyObj);
             dispatch(cubeActions.pushNewOperationKeyToOperations(operationsObj, key));
@@ -113,15 +113,17 @@ class GoldenPopover extends React.Component {
         const operation = {};
 
         if (serverSideDiff) {
+            // golden update for lines with diff/resolutions from the server
             operation["op"] = serverSideDiff.op.toUpperCase();
             operation["path"] = serverSideDiff.path;
             operation["value"] = serverSideDiff.value;
-            operation["eventType"] = "Response"; // eventType; // todo change this
+            operation["eventType"] = eventType;
         } else {
-            operation["op"] = "REPLACE";
+            // golden update for lines without diff/resolutions
+            operation["op"] = "REPLACE"; // replace left with right side
             operation["path"] = jsonPath.replace("<BEGIN>", "");
-            operation["value"] = null;
-            operation["eventType"] = "Response"; // eventType; // todo change this
+            operation["value"] = null; // not required
+            operation["eventType"] = eventType; 
         }
 
         this.hideGR();
@@ -537,9 +539,11 @@ class GoldenPopover extends React.Component {
 
     async getResponseTemplate() {
         let user = JSON.parse(localStorage.getItem('user'));
-        let { cube, jsonPath } = this.props;
+        let { cube, jsonPath, eventType } = this.props;
         jsonPath = jsonPath.replace("<BEGIN>", "");
-        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}/ResponseCompare?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
+        let reqOrRespCompare = eventType==="Response" ? "ResponseCompare" : "RequestCompare";
+
+        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}/${reqOrRespCompare}?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
         
         try {
             const response = await fetch(url, {
