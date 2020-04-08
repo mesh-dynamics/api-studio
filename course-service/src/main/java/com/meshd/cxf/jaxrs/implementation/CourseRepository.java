@@ -1,6 +1,7 @@
 package com.meshd.cxf.jaxrs.implementation;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.http.client.utils.URIBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +30,10 @@ import com.cube.interceptor.apachecxf.egress.TracingFilter;
 @Produces("application/json")
 public class CourseRepository {
     private Map<Integer, Course> courses = new HashMap<>();
-    private String URL = "http://34.220.106.159:8080/meshd/students/1?source=aaa&trial=bbb";
+    private String BASE_URL = System.getenv("student.service.url");
+    private String URL = BASE_URL + "/meshd/students?source=aaa&trial=bbb";
+
+//    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
 
     {
         List<Integer> studentIds = new ArrayList<>();
@@ -101,14 +106,14 @@ public class CourseRepository {
 
     @GET
     @Path("courses/students/{studentId}")
-    public Student findStudentById(@PathParam("studentId") int id) {
+    public Student findStudentById(@PathParam("studentId") int id) throws URISyntaxException {
 //        WebClient studentWebClient = webClient.path(URL + id);
-        WebClient studentWebClient = WebClient.create(URL+id, List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        URIBuilder uriBuilder = new URIBuilder(URL);
+        uriBuilder.setPath(uriBuilder.getPath()+"/"+id);
+        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
             javax.ws.rs.core.MediaType.APPLICATION_JSON);
 //        WebClient studentWebClient = webClient;
 
-//        config.getInInterceptors().add(new LoggingInInterceptor());
-//        config.getOutInterceptors().add(new LoggingOutInterceptor());
         Response response = studentWebClient.get();
         int code = response.getStatus();
         if (code >= 200 && code <= 299) {

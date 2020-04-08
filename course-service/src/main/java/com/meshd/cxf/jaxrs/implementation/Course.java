@@ -23,16 +23,16 @@ import com.cube.interceptor.apachecxf.egress.ClientFilter;
 import com.cube.interceptor.apachecxf.egress.MockingClientFilter;
 import com.cube.interceptor.apachecxf.egress.TracingFilter;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
 
 @XmlRootElement(name = "Course")
 public class Course {
     private int id;
     private String name;
     private List<Integer> studentIds = new ArrayList<>();
-    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
-    private OkHttpClient httpClient = new OkHttpClient();
+    private String BASE_URL = System.getenv("student.service.url");
+    private String URL = BASE_URL + "/meshd/students?source=aaa&trial=bbb";
+
+    //    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     private WebClient webClient = WebClient.create(URL, List.of(new ClientFilter(), new TracingFilter(), new MockingClientFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
 
@@ -93,14 +93,17 @@ public class Course {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(URL+studentId).delete();
-        try (okhttp3.Response response = httpClient.newCall(requestBuilder.build()).execute()) {
-            int code = response.code();
-            return Response.status(code).build();
-        }
+        URIBuilder uriBuilder = new URIBuilder(URL);
+        uriBuilder.setPath(uriBuilder.getPath()+"/"+studentId);
+        WebClient studentWebClient = webClient.path(uriBuilder.build().toString());
 
+        Response response = studentWebClient.delete();
+
+        int code = response.getStatus();
+
+        return Response.status(code).build();
     }
+
 
     private Student findById(int id) throws Exception {
 
