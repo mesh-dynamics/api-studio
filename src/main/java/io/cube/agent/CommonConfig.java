@@ -5,6 +5,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,12 +22,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.ws.rs.client.WebTarget;
-
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +45,7 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 
-//import javax.ws.rs.client.Client;
-//import javax.ws.rs.client.ClientBuilder;
+
 
 public class CommonConfig {
 
@@ -61,8 +63,9 @@ public class CommonConfig {
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
 
-	private WebTarget cubeRecordService;
-	private WebTarget cubeMockService;
+	private HttpRequest cubeRecordService;
+	private HttpRequest cubeMockService;
+	private HttpClient httpClient;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 
@@ -258,7 +261,7 @@ public class CommonConfig {
 
 		ringBufferSize = fromDynamicOREnvORStaticProperties(
 			io.cube.agent.Constants.RING_BUFFER_SIZE_PROP, dynamicProperties)
-			.map(Integer::valueOf).orElse(1024);
+			.map(Integer::valueOf).orElse(16384);
 
 		disruptorOutputLocation = fromDynamicOREnvORStaticProperties(
 			io.cube.agent.Constants.RING_BUFFER_OUTPUT_PROP,
@@ -277,19 +280,30 @@ public class CommonConfig {
 //		Client restClient = ClientBuilder.newClient(clientConfig);
 //		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
 //		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
-		cubeRecordService = null;
-		cubeMockService = null;
 
+		httpClient = HttpClient.newBuilder()
+						.connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
+						.build();
+		cubeRecordService = HttpRequest.newBuilder()
+							.uri(URI.create(CUBE_RECORD_SERVICE_URI))
+							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+		cubeMockService = HttpRequest.newBuilder()
+							.uri(URI.create(CUBE_MOCK_SERVICE_URI))
+							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
 
 		LOGGER.info( "PROPERTIES POLLED :: " + this.toString());
 	}
 
-	public WebTarget getCubeRecordService() {
+	public HttpRequest getCubeRecordService() {
 		return cubeRecordService;
 	}
 
-	public WebTarget getCubeMockService() {
+	public HttpRequest getCubeMockService() {
 		return cubeMockService;
+	}
+
+	public HttpClient getHttpClient() {
+		return httpClient;
 	}
 
 	private Optional<String> fromDynamicOREnvORStaticProperties(String propertyName,
@@ -329,8 +343,9 @@ public class CommonConfig {
 		return servicesToMock.contains(serviceName);
 	}
 
-	public Optional<URI> getMockingURI(URI originalURI, String serviceName) throws URISyntaxException {
-		if(!shouldMockService(serviceName)) {
+	public Optional<URI> getMockingURI(URI originalURI, String serviceName)
+		throws URISyntaxException {
+		if (!shouldMockService(serviceName)) {
 			return Optional.empty();
 		} else {
 			URIBuilder uriBuilder = new URIBuilder(originalURI);

@@ -2,9 +2,12 @@ package io.cube.agent;
 
 import java.io.FileNotFoundException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.gson.Gson;
 import com.lmax.disruptor.BusySpinWaitStrategy;
+import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -21,6 +24,8 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
 	public Disruptor<ValueEvent> disruptor;
 	public RingBuffer<ValueEvent> ringBuffer;
+
+	AtomicLong droppedRequests = new AtomicLong();
 
 	public ConsoleRecorder(Gson gson) throws FileNotFoundException {
 		super(gson);
@@ -59,7 +64,16 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 	@Override
 	public boolean record(Event event) {
 		final Span span = Utils.createPerformanceSpan("log4jLog");
-		long sequenceId = ringBuffer.next();
+		long sequenceId = 0;
+		try {
+			sequenceId = ringBuffer.tryNext();
+		} catch (InsufficientCapacityException e) {
+			if (droppedRequests.incrementAndGet()%1000 == 0) {
+				LOGGER.info("Number of requests dropped so far "
+					+ droppedRequests.get());
+			}
+			return false;
+		}
 		try (Scope scope = Utils.activatePerformanceSpan(span)) {
 			ValueEvent valueEvent = ringBuffer.get(sequenceId);
 			valueEvent.setValue(event);
