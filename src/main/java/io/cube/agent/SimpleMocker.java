@@ -10,9 +10,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -35,7 +34,7 @@ import io.md.utils.FnKey;
  */
 public class SimpleMocker implements Mocker {
 
-	private static final Logger LOGGER = LogManager.getLogger(SimpleMocker.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleMocker.class);
 	private static Map<Integer, Instant> fnMap = new ConcurrentHashMap<>();
 	private ObjectMapper jsonMapper;
 	private Gson gson;
@@ -63,16 +62,17 @@ public class SimpleMocker implements Mocker {
 			Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode)
 				.toArray(Integer[]::new);
 			String traceIdString = traceId.orElse("N/A");
-			LOGGER.info(new ObjectMessage(
-				Map.of("state", "Before Mock", "func_name", fnKey.fnName, "trace_id",
-					traceIdString)));
+			LOGGER.debug("Before Mock :  func_name : ".concat(fnKey.fnName)
+				.concat(" , trace_id : ".concat(traceIdString)));
 			var counter = new Object() {
 				int x = 0;
 			};
 			Arrays.stream(argVals)
-				.forEach(arg -> LOGGER.info(new ObjectMessage(Map.of("func_name", fnKey.fnName
-					, "trace_id", traceIdString, "arg_hash", argsHash[counter.x],
-					"arg_val_" + counter.x++, arg))));
+				.forEach(arg -> LOGGER.debug("func_name : ".concat(fnKey.fnName)
+					.concat(" , trace_id : ").concat(traceIdString)
+					.concat(" , arg_hash : ").concat(String.valueOf(argsHash[counter.x]))
+					.concat(" , arg_val_".concat(String.valueOf(counter.x++))
+						.concat(" : ").concat(arg))));
 
 			//This key is to identify cases where multiple Solr docs are matched
 			Integer key = traceId.orElse("").concat(spanId.orElse(""))
@@ -92,16 +92,15 @@ public class SimpleMocker implements Mocker {
 			// need to check is before trying to convert return value, otherwise null return value also leads to
 			// empty optional
 			if (ret.isEmpty()) {
-				LOGGER.error(new ObjectMessage(Map.of("reason", "No Matching Response Received"
-					, "trace_id", traceIdString, "func_name", fnKey.fnName)));
+				LOGGER.error("No Matching Response Received : traceId : ".concat(traceIdString)
+					.concat(" , func_name : ").concat(fnKey.fnName));
 				return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 					Optional.empty());
 			} else {
 				FnResponse response = ret.get();
-				LOGGER.info(new ObjectMessage(
-					Map.of("state", "After Mock", "func_name", fnKey.fnName, "trace_id",
-						traceIdString,
-						"return_val", response.retVal)));
+				LOGGER.debug("After Mock :  func_name : ".concat(fnKey.fnName)
+					.concat(" , trace_id : ").concat(traceIdString)
+					.concat(" , return_val :").concat(response.retVal));
 				//If multiple Solr docs were returned, we need to maintain the last timestamp
 				//to be used in the next mock call.
 				if (response.retStatus == RetStatus.Success) {
@@ -125,8 +124,8 @@ public class SimpleMocker implements Mocker {
 			// encode can throw UnsupportedEncodingException
 			String stackTraceError = UtilException
 				.extractFirstStackTraceLocation(e.getStackTrace());
-			LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName, "trace_id", traceId)),
-				e);
+			LOGGER.error("func_name : ".concat(fnKey.fnName)
+				.concat(" , trace_id : ").concat(traceId.orElse(" NA ")), e);
 			return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
 		}
 	}
@@ -167,8 +166,8 @@ public class SimpleMocker implements Mocker {
 				} catch (Exception e) {
 					String stackTraceError = UtilException
 						.extractFirstStackTraceLocation(e.getStackTrace());
-					LOGGER.error(new ObjectMessage(Map.of("func_signature", eve.apiPath, "trace_id",
-						eve.getTraceId())), e);
+					LOGGER.error("func_signature :".concat(eve.apiPath)
+							.concat(" , trace_id : ").concat(eve.getTraceId()), e);
 					return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 						Optional.empty());
 				}
@@ -176,14 +175,14 @@ public class SimpleMocker implements Mocker {
 				return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus,
 					resp.exceptionType);
 			}).orElseGet(() -> {
-				LOGGER.error(new ObjectMessage(Map.of("reason", "No Matching Response Received"
-					, "trace_id", eve.getTraceId(), "func_signature", eve.apiPath)));
+				LOGGER.error("No Matching Response Received : trace_id : ".concat(eve.getTraceId())
+					.concat(" , func_signature : ".concat(eve.apiPath)));
 				return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 					Optional.empty());
 			});
 		}).orElseGet(() -> {
-			LOGGER.error(new ObjectMessage(Map.of("reason", "Not able to form a event"
-				, "trace_id", traceId, "func_signature", fnKey.signature)));
+			LOGGER.error("Not able to form an event : trace_id :".concat(traceId.orElse(" NA "))
+				.concat(" , func_signature : ".concat(fnKey.signature)));
 			return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
 		});
 	}

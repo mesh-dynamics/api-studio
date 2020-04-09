@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.time.Duration;
@@ -25,17 +26,9 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
-import org.apache.logging.log4j.core.config.AppenderRef;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.layout.CustomJsonLayout;
-import org.apache.logging.log4j.message.ObjectMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +44,8 @@ import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
+
+
 
 public class CommonConfig {
 
@@ -72,7 +67,7 @@ public class CommonConfig {
 	private HttpRequest cubeMockService;
 	private HttpClient httpClient;
 
-	private static final Logger LOGGER = LogManager.getLogger(CommonConfig.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 
 	public static String intent;
 
@@ -87,6 +82,11 @@ public class CommonConfig {
 	public final boolean performanceTest;
 
 	public List servicesToMock;
+
+	//disruptor
+	public int ringBufferSize;
+	public String disruptorOutputLocation;
+	public String disruptorFileOutName;
 
 	private static class Updater implements Runnable {
 
@@ -105,8 +105,7 @@ public class CommonConfig {
 				// Using just set instead of compareAndSet as the value being set is independent of the current value.
 				singleInstance.set(new CommonConfig(dynamicProperties));
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(
-					Constants.MESSAGE, "Error in updating common config object in thread")), e);
+				LOGGER.error("Error in updating common config object in thread", e);
 			}
 		}
 	}
@@ -134,47 +133,11 @@ public class CommonConfig {
 		return singleInstance.get();
 	}
 
-	public static void initializeLogging() {
-
-		LogManager.setFactory(new MDLoggerContextFactory());
-		LoggerContext context = (LoggerContext) LogManager.getContext();
-		Configuration config = context.getConfiguration();
-
-		CustomJsonLayout layout = CustomJsonLayout.newBuilder().setComplete(false).setEventEol(true)
-			.setPropertiesAsList(false).setCompact(true).setProperties(false)
-			.setIncludeStacktrace(true)
-			.setLocationInfo(false).build();
-		Appender appender = ConsoleAppender.newBuilder()
-			.setDirect(true).setTarget(ConsoleAppender.Target.SYSTEM_OUT).setName("StdOut")
-			.setLayout(layout).build();
-		appender.start();
-
-		AppenderRef ref = AppenderRef.createAppenderRef("CONSOLE_APPENDER", null, null);
-		AppenderRef[] refs = new AppenderRef[]{ref};
-
-		//public static LoggerConfig createLogger(@PluginAttribute(value = "additivity",defaultBoolean = true)
-		// boolean additivity, @PluginAttribute("level") Level level,
-		// @Required(message = "Loggers cannot be configured without a name") @PluginAttribute("name") String loggerName
-		// , @PluginAttribute("includeLocation") String includeLocation,
-		// @PluginElement("AppenderRef") AppenderRef[] refs, @PluginElement("Properties") Property[] properties
-		// , @PluginConfiguration Configuration config, @PluginElement("Filter") Filter filter) {
-		//
-		LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.INFO
-			, "io.cube.agent", String.valueOf(false), refs, null, config, null);
-		loggerConfig.addAppender(appender, null, null);
-		config.addAppender(appender);
-		config.addLogger("io.cube.agent", loggerConfig);
-		context.updateLoggers(config);
-
-		Logger logger = LogManager.getContext().getLogger("io.cube.agent");
-		logger.info("HELLO_WORLD");
-	}
-
 
 	static {
 
 		//ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
-		initializeLogging();
+		//initializeLogging();
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
@@ -183,9 +146,7 @@ public class CommonConfig {
 			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
 				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
 		} catch (Exception e) {
-			LOGGER.error(
-				new ObjectMessage(Map.of(Constants.MESSAGE, "Error while initializing con fig")),
-				e);
+			LOGGER.error("Error while initializing config", e);
 		}
 
 		CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_COMMON_CONF_FILE_PROP)
@@ -206,8 +167,7 @@ public class CommonConfig {
 		try {
 			config = new CommonConfig();
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Error in initialising common config object")), e);
+			LOGGER.error("Error in initialising common config object", e);
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
@@ -220,8 +180,7 @@ public class CommonConfig {
 		try {
 			MDGlobalTracer.register(tracer);
 		} catch (IllegalStateException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Trying to register a tracer when one is already registered")), e);
+			LOGGER.error("Trying to register a tracer when one is already registered", e);
 		}
 	}
 
@@ -259,8 +218,7 @@ public class CommonConfig {
 			try {
 				return Optional.of(jsonMapper.readValue(new File(scf), SamplerConfig.class));
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(
-					Constants.MESSAGE, "Error in reading sampler config file")), e);
+				LOGGER.error("Error in reading sampler config file", e);
 			}
 			return Optional.empty();
 		});
@@ -278,8 +236,7 @@ public class CommonConfig {
 			try {
 				return Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(
-					Constants.MESSAGE, "Error in reading encryption config file")), e);
+				LOGGER.error("Error in reading encryption config file", e);
 			}
 			return Optional.empty();
 		});
@@ -302,6 +259,28 @@ public class CommonConfig {
 			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
 				, dynamicProperties).orElse("false"));
 
+		ringBufferSize = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.RING_BUFFER_SIZE_PROP, dynamicProperties)
+			.map(Integer::valueOf).orElse(16384);
+
+		disruptorOutputLocation = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.RING_BUFFER_OUTPUT_PROP,
+			dynamicProperties).orElse("stdout");
+
+		disruptorFileOutName = fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.RING_BUFFER_OUTPUT_FILE_NAME,
+			dynamicProperties).orElse("/var/log/event.log");
+
+
+		//TODO: Remove total dependecy of this from agent.
+		// Commenting now for cxf based app to work.
+//		ClientConfig clientConfig = new ClientConfig()
+//			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
+//			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
+//		Client restClient = ClientBuilder.newClient(clientConfig);
+//		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
+//		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
+
 		httpClient = HttpClient.newBuilder()
 						.connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
 						.build();
@@ -312,8 +291,7 @@ public class CommonConfig {
 							.uri(URI.create(CUBE_MOCK_SERVICE_URI))
 							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
 
-		LOGGER.info(new ObjectMessage(
-			Map.of(Constants.MESSAGE, "PROPERTIES POLLED :: " + this.toString())));
+		LOGGER.info( "PROPERTIES POLLED :: " + this.toString());
 	}
 
 	public HttpRequest getCubeRecordService() {
@@ -389,10 +367,7 @@ public class CommonConfig {
 
 	Sampler initSampler() {
 		if (samplerConfig.isEmpty()) {
-			LOGGER.debug(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Invalid config file, not sampling!"
-				)));
+			LOGGER.debug("Invalid config file, not sampling!");
 			return Sampler.NEVER_SAMPLE;
 		}
 		SamplerConfig config = samplerConfig.get();
@@ -411,43 +386,29 @@ public class CommonConfig {
 		Optional<List<Attributes>> attributes = config.getAttributes();
 
 		if (type == null) {
-			LOGGER.debug(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Sampler Type missing!"
-				)));
+			LOGGER.debug( "Sampler Type missing!");
 			return false;
 		}
 
 		if ((type.equalsIgnoreCase(SimpleSampler.TYPE)
 			|| type.equalsIgnoreCase(CountingSampler.TYPE))
 			&& (rate.isEmpty() || accuracy.isEmpty())) {
-			LOGGER.debug(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Need sampling rate/accuracy "
-						+ "for Simple/Counting Samplers!"
-				)));
+			LOGGER.debug("Need sampling rate/accuracy for Simple/Counting Samplers!");
 			return false;
 		}
 
 		if (type.equalsIgnoreCase(BoundarySampler.TYPE)
 			&& (rate.isEmpty() || accuracy.isEmpty()
 			|| fieldCategory.isEmpty() || attributes.isEmpty())) {
-			LOGGER.debug(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Need sampling rate/accuracy/"
-						+ "fieldCategory/attributes "
-						+ "for Boundary Sampler!"
-				)));
+			LOGGER.debug("Need sampling rate/accuracy/ "
+				+ "fieldCategory/attributes for Boundary Sampler!");
 			return false;
 		}
 
 		if (type.equalsIgnoreCase(AdaptiveSampler.TYPE)
 			&& (fieldCategory.isEmpty() || attributes.isEmpty())) {
-			LOGGER.debug(new ObjectMessage(
-				Map.of(
-					Constants.MESSAGE, "Need field category/attributes "
-						+ "for Adaptive Sampler!"
-				)));
+			LOGGER.debug("Need field category/attributes "
+						+ "for Adaptive Sampler!");
 			return false;
 		}
 
@@ -475,10 +436,7 @@ public class CommonConfig {
 			List<String> samplingParams = new ArrayList<>();
 			for (Attributes attr : attributes.get()) {
 				if (attr.getField() == null || attr.getField().isBlank()) {
-					LOGGER.debug(new ObjectMessage(
-						Map.of(
-							Constants.MESSAGE, "Invalid input, using default sampler "
-						)));
+					LOGGER.debug("Invalid input, using default sampler ");
 					samplingParams.clear();
 					return Sampler.NEVER_SAMPLE;
 				}
@@ -499,10 +457,7 @@ public class CommonConfig {
 			for (Attributes attr : attributes.get()) {
 				if (attr.getField() == null || attr.getField().isBlank()
 					|| attr.getValue().isEmpty() || attr.getRate().isEmpty()) {
-					LOGGER.debug(new ObjectMessage(
-						Map.of(
-							Constants.MESSAGE, "Invalid input, using default sampler "
-						)));
+					LOGGER.debug("Invalid input, using default sampler ");
 					samplingParams.clear();
 					return Sampler.NEVER_SAMPLE;
 				}
@@ -513,11 +468,7 @@ public class CommonConfig {
 			return AdaptiveSampler.create(fieldCategory.get(), samplingParams);
 		}
 
-		LOGGER.error(new ObjectMessage(
-			Map.of(
-				Constants.MESSAGE, "Invalid sampling strategy, using default sampler",
-				Constants.MD_SAMPLER_TYPE, type
-			)));
+		LOGGER.error("Invalid sampling strategy, using default sampler , type : ".concat(type));
 		return Sampler.NEVER_SAMPLE;
 	}
 

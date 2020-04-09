@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.14</version>
+    <version>1.0.15</version>
     <properties>
         <version.log4j>2.13.0</version.log4j>
         <version.java>11</version.java>
@@ -13,6 +13,7 @@
         <version.jersey>2.27</version.jersey>
         <version.gson>2.8.5</version.gson>
         <version.jaeger>1.1.0</version.jaeger>
+        <version.slf4j>1.7.30</version.slf4j>
     </properties>
     <distributionManagement>
       <repository>
@@ -68,8 +69,14 @@
   </repositories>
 
   <dependencies>
-<!--    &lt;!&ndash; https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 &ndash;&gt;-->
-<!--    &lt;!&ndash;  json support for jdk 8 types such as Optional &ndash;&gt;-->
+    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${version.slf4j}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
+    <!--  json support for jdk 8 types such as Optional -->
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
@@ -88,18 +95,6 @@
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-properties</artifactId>
       <version>2.9.6</version>
-    </dependency>
-
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${version.log4j}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${version.log4j}</version>
     </dependency>
     <dependency>
       <!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
@@ -183,7 +178,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0.34</version>
+      <version>1.0.36</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.lmax/disruptor -->
     <dependency>
