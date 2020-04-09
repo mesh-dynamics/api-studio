@@ -15,7 +15,7 @@ CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
 CUBEUI_BACKEND_TAG=master-latest
 MOVIEINFO_TAG=master-latest
-AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5NTg3OTQyLCJleHAiOjE4OTQ5NDc5NDJ9.vompv79MxgNhJnPSXMfNVsxSN1hQD1z0dgC2GxjEX9U"
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 SOLR_CORE=cube" > apps/cube/config/temp.conf
 
 echo "
@@ -27,7 +27,7 @@ CUBE_CUSTOMER=CubeCorp
 INSTANCEID=prod
 REPLAY_PATHS=minfo/listmovies,minfo/liststores,minfo/rentmovie,minfo/returnmovie
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5NTg3OTQyLCJleHAiOjE4OTQ5NDc5NDJ9.vompv79MxgNhJnPSXMfNVsxSN1hQD1z0dgC2GxjEX9U"
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
 CUBEUI_BACKEND_TAG=master-latest
@@ -67,7 +67,7 @@ call_replay() {
 	#Status Check
 	COUNT=0
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
-		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/CubeCorp/MovieInfo/moviebook-$DRONE_BUILD_NUMBER/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | sed 's/^.*"status":"\([^"]*\)".*/\1/')
+		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status)
 		sleep 20
 		COUNT=$((COUNT+1))
 	done
@@ -109,7 +109,7 @@ check_test_status() {
 
 main() {
 	set -x
-	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiaWF0IjoxNTc5NTg3OTQyLCJleHAiOjE4OTQ5NDc5NDJ9.vompv79MxgNhJnPSXMfNVsxSN1hQD1z0dgC2GxjEX9U"
+	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 	check_test_status
 	generate_config_file
 	CONFIG_FILE="temp"
@@ -120,7 +120,7 @@ main() {
 	call_deploy_script moviebook init $CONFIG_FILE
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	call_deploy_script moviebook record $CONFIG_FILE moviebook-$DRONE_BUILD_NUMBER RespPartialMatch moviebook-$DRONE_BUILD_NUMBER
-	sleep 5
+	sleep 30
 	generate_traffic $NO_OF_REQUEST
 	sleep 5
 	call_deploy_script moviebook stop_record $CONFIG_FILE
