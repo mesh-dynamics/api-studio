@@ -1,25 +1,22 @@
 package io.cube.agent;
 
+
 import java.net.URLEncoder;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.cube.agent.EncryptionConfig.JSONPathMeta;
 import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SimpleSampler;
-import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
-import io.md.dao.DataObj;
 import io.md.dao.Event;
-import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.Payload;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
@@ -28,7 +25,7 @@ import io.opentracing.SpanContext;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
 	static Optional<Payload> encryptFields(CommonConfig commonConfig, Event event) {
 

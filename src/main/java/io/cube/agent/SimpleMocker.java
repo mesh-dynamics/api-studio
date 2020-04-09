@@ -8,9 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -32,7 +31,7 @@ import io.md.utils.FnKey;
  */
 public class SimpleMocker implements Mocker {
 
-	private static final Logger LOGGER = LogManager.getLogger(SimpleMocker.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleMocker.class);
 	private static Map<Integer, Instant> fnMap = new ConcurrentHashMap<>();
 	private ObjectMapper jsonMapper;
 	private Gson gson;
@@ -47,8 +46,6 @@ public class SimpleMocker implements Mocker {
 	@Override
 	public FnResponseObj mock(FnKey fnKey,
 		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
-
-		//This key is to identify cases where multiple Solr docs are matched
 		MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
 		Optional<String> traceId = Optional.ofNullable(mdTraceInfo.traceId);
 		Optional<String> spanId = Optional.ofNullable(mdTraceInfo.spanId);
@@ -81,8 +78,8 @@ public class SimpleMocker implements Mocker {
 						retType.isPresent() ? retType.get() : getRetOrExceptionClass(resp,
 							fnKey.function.getGenericReturnType()));
 				} catch (Exception e) {
-					LOGGER.error(new ObjectMessage(Map.of("func_signature", eve.apiPath, "trace_id",
-						eve.getTraceId())), e);
+					LOGGER.error("func_signature :".concat(eve.apiPath)
+							.concat(" , trace_id : ").concat(eve.getTraceId()), e);
 					return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 						Optional.empty());
 				}
@@ -90,14 +87,14 @@ public class SimpleMocker implements Mocker {
 				return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus,
 					resp.exceptionType);
 			}).orElseGet(() -> {
-				LOGGER.error(new ObjectMessage(Map.of("reason", "No Matching Response Received"
-					, "trace_id", eve.getTraceId(), "func_signature", eve.apiPath)));
+				LOGGER.error("No Matching Response Received : trace_id : ".concat(eve.getTraceId())
+					.concat(" , func_signature : ".concat(eve.apiPath)));
 				return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 					Optional.empty());
 			});
 		}).orElseGet(() -> {
-			LOGGER.error(new ObjectMessage(Map.of("reason", "Not able to form a event"
-				, "trace_id", traceId, "func_signature", fnKey.signature)));
+			LOGGER.error("Not able to form an event : trace_id :".concat(traceId.orElse(" NA "))
+				.concat(" , func_signature : ".concat(fnKey.signature)));
 			return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
 		});
 	}

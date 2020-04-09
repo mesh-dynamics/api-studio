@@ -6,9 +6,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -26,7 +25,7 @@ import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
-	protected final Logger LOGGER = LogManager.getLogger(this.getClass());
+	protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
 	protected ObjectMapper jsonMapper;
 	private Gson gson;
@@ -66,11 +65,13 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 				int x = 0;
 			};
 			Arrays.stream(argVals)
-				.forEach(arg -> LOGGER.info(new ObjectMessage(Map.of("func_name", fnKey.fnName
-					, "trace_id", traceIdString, "arg_hash", argsHash[counter.x],
-					"arg_val_" + counter.x++, arg))));
+				.forEach(arg -> LOGGER.debug("func_name : ".concat(fnKey.fnName)
+					.concat(" , trace_id : ").concat(traceIdString)
+					.concat(" , arg_hash : ").concat(String.valueOf(argsHash[counter.x]))
+					.concat(" , arg_val_".concat(String.valueOf(counter.x++))
+						.concat(" : ").concat(arg))));
 
-			LOGGER.info(new ObjectMessage(Map.of("return_value", respVal)));
+			LOGGER.info("return_value : ".concat(respVal));
 
 			FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId,
 				fnKey.service,
@@ -85,8 +86,8 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 			// encode can throw UnsupportedEncodingException
 			String stackTraceError = UtilException
 				.extractFirstStackTraceLocation(e.getStackTrace());
-			LOGGER.error(new ObjectMessage(
-				Map.of("func_name", fnKey.fnName, "trace_id", traceId.orElse("NA"))), e);
+			LOGGER.error("func_name : ".concat(fnKey.fnName)
+				.concat(" , trace_id : ").concat(traceId.orElse("NA")), e);
 			return false;
 		}
 	}
@@ -106,15 +107,16 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 			Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, Event.RunType.Record,
 				Optional.of(Instant.now()), fnReqRespPayload);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
-				LOGGER.error(new ObjectMessage(Map.of("func_name", fnKey.fnName, "trace_id",
-					traceId.orElse("NA"), "operation", "Record Event", "response",
-					"Event is empty!")));
+				LOGGER.error("func_name : ".concat(fnKey.fnName)
+					.concat(" , trace_id : ").concat(traceId.orElse("NA"))
+					.concat(" , operation : ".concat("Record Event")
+						.concat(" , response : ").concat("Event is empty!")));
 				return false;
 			});
 		} catch (Exception e) {
 			// encode can throw UnsupportedEncodingException
-			LOGGER.error(new ObjectMessage(
-				Map.of("func_name", fnKey.fnName, "trace_id", traceId.orElse("NA"))), e);
+			LOGGER.error("func_name : ".concat(fnKey.fnName)
+				.concat(" , trace_id : ").concat(traceId.orElse("NA")), e);
 			return false;
 		}
 	}
