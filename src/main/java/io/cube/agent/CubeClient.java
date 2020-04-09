@@ -32,6 +32,7 @@ public class CubeClient {
 
 	private static final String TEXT_PLAIN = "text/plain";
 	private static final String APPLICATION_JSON = "application/json";
+	private static final String APPLICATION_FORM_URL_ENCODED = "application/x-www-form-urlencoded";
 	private static final Logger LOGGER = LogManager.getLogger(CubeClient.class);
 
 	public CubeClient(ObjectMapper jsonMapper) throws Exception {
@@ -157,7 +158,7 @@ public class CubeClient {
 
 		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
 			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", "application/x-www-form-urlencoded");
+			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
 
 		return getResponse(recordReqbuilder.build());
@@ -171,7 +172,7 @@ public class CubeClient {
 
 		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
 			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", "application/x-www-form-urlencoded");
+			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
 
 		return getResponse(recordReqbuilder.build());
@@ -190,7 +191,7 @@ public class CubeClient {
 
 		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
 			.POST(ofFormData(params))
-			.header("Content-Type", "application/x-www-form-urlencoded");
+			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
 
 		return getResponse(recordReqbuilder.build());
@@ -203,7 +204,7 @@ public class CubeClient {
 
 		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
 			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", "application/x-www-form-urlencoded");
+			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
 
 		return getResponse(recordReqbuilder.build());
@@ -217,7 +218,7 @@ public class CubeClient {
 
 		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
 			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", "application/x-www-form-urlencoded");
+			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
 
 		return getResponse(recordReqbuilder.build());
