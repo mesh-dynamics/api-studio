@@ -22,7 +22,7 @@ class TestResults extends Component {
             endDate: new Date(),
             userFilter: "ALL",
             noFilter: true,
-            showHeaderDetails: false,
+            showHeaderDetails: true,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -94,7 +94,7 @@ class TestResults extends Component {
     toggleHeaderDetails = () => this.setState({ showHeaderDetails: !this.state.showHeaderDetails });
 
     renderTimeLineHeader = (header) => {
-        const { date, replayId, recordingId, goldenName, userName } = header;
+        const { date, replayId, goldenName, userName } = header;
         const { showHeaderDetails } = this.state;
 
         return (
@@ -124,9 +124,6 @@ class TestResults extends Component {
                             <span className="timeline-replay-id">
                                     {`Test ID : ${replayId}`}
                             </span>
-                            <span className="timeline-replay-id">
-                                    {`Recording ID : ${recordingId}`}
-                            </span>
                         </div>
                     }
                 >
@@ -142,9 +139,6 @@ class TestResults extends Component {
                         </div>
                         <div className="timeline-replay-id">
                                 {`Test ID : ${replayId}`}
-                        </div>
-                        <div className="timeline-replay-id">
-                                {`Recording ID : ${recordingId}`}
                         </div>
                     </div>
                 </Tippy>
@@ -196,7 +190,6 @@ class TestResults extends Component {
                 allRunsTimestamps.push({
                     date: momentDateObject.valueOf(), 
                     replayId: testResult.replayId,
-                    recordingId: testResult.recordingid,
                     goldenName: testResult.goldenName,
                     userName: testResult.userName
                 })
