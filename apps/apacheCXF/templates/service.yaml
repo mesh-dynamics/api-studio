@@ -1,0 +1,204 @@
+##################################################################################################
+# apachecxf course replay services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: apachecxf-replay
+  namespace: {{namespace}}
+  labels:
+    app: apachecxf
+    component: course-replay
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8084
+    name: http
+  selector:
+    component: course-replay
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: course-replay
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: apachecxf
+        component: course-replay
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: course
+        image: cubeiocorp/cxf-course-service:pm-080420-1
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8084
+        env:
+          - name: io.md.customer
+            value: "{{customer}}"
+          - name: io.md.app
+            value: "{{cube_application}}"
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.service
+            value: "course1"
+          - name: io.md.read.timeout
+            value: "100000"
+          - name: io.md.connect.retries
+            value: "3"
+          - name: io.md.intent
+            value: "mock"
+          - name: student.service.url
+            value: "http://student:8080"
+          - name: io.md.service.record
+            value: {{cube_host}}
+          - name: io.md.service.mock
+            value: {{cube_host}}
+          - name: io.md.mock.services
+            value: "http://student:8080"
+
+##################################################################################################
+# apachecxf course record services
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apachecxf-record
+  namespace: {{namespace}}
+  labels:
+    app: apachecxf
+    component: course-record
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8084
+    name: http
+  selector:
+    component: course-record
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: course-record
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: apachecxf
+        component: course-record
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: course
+        image: cubeiocorp/cxf-course-service:pm-080420-1
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8084
+        env:
+          - name: io.md.customer
+            value: "{{customer}}"
+          - name: io.md.app
+            value: "{{cube_application}}"
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.service
+            value: "course1"
+          - name: io.md.read.timeout
+            value: "100000"
+          - name: io.md.connect.retries
+            value: "3"
+          - name: io.md.intent
+            value: "record"
+          - name: student.service.url
+            value: "http://student:8080"
+          - name: io.md.service.record
+            value: {{cube_host}}
+          - name: io.md.service.mock
+            value: {{cube_host}}
+
+##################################################################################################
+# apachecxf student services
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: student
+  namespace: {{namespace}}
+  labels:
+    app: apachecxf
+    component: student
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8085
+    name: http
+  selector:
+    component: student
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: student
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: apachecxf
+        component: student
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: student
+        image: cubeiocorp/cxf-student-service:pm-300320-1
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8085

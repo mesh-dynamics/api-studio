@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: apachecxf
+  namespace: apachecxf
+spec:
+  hosts:
+  - "apachecxf.dev.cubecorp.io"
+  gateways:
+  - apachecxf-gateway
+  http:
+  - match:
+    - port: 8080
+    route:
+    - destination:
+        host: apachecxf-record
+        port:
+          number: 8080
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: apachecxf-replay
+        port:
+          number: 8080
