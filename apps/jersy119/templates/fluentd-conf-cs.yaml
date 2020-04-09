@@ -5,7 +5,7 @@ metadata:
   name: fluentd-jersy119-conf-{{namespace}}
   namespace: logging
   labels:
-    app: moviebook
+    app: jersy119
 data:
   fluent-jersy119-{{namespace}}.conf: |-
     # tail movieinfo (envoy) logs
