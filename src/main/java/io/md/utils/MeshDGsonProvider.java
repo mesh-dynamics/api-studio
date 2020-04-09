@@ -17,12 +17,7 @@ public class MeshDGsonProvider {
 	private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	public static Gson getInstance() {
-		lock.readLock().lock();
-		try {
-			return singleInstance;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return singleInstance;
 	}
 
 	public static void setInstance(Gson gson) {
