@@ -3,9 +3,9 @@ package io.md.utils;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -21,7 +21,7 @@ import io.md.dao.JsonPayload;
 
 public class PayloadSerializerModifier extends BeanSerializerModifier {
 
-	private static final Logger LOGGER = LogManager.getLogger(PayloadSerializerModifier.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PayloadSerializerModifier.class);
 
 	//NOTE as we implement more classes which implement payload, we'll need to add
 	//them here
@@ -35,9 +35,8 @@ public class PayloadSerializerModifier extends BeanSerializerModifier {
 		final JsonSerializer<?> jsonSerializer) {
 
 		if (payloadClasses.contains(beanDescription.getBeanClass())) {
-			LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
-				, "Delegating to payload serializer", "className"
-				, beanDescription.getBeanClass().getName())));
+			LOGGER.debug( "Delegating to payload serializer : className : "
+				.concat( beanDescription.getBeanClass().getName()));
 			return new PayloadSerializer((JsonSerializer<Object>) jsonSerializer);
 		} else  if (beanDescription.getBeanClass() == FnReqRespPayload.class) {
 			return new FnReqRespPayloadSerializer();

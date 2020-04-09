@@ -2,9 +2,6 @@ package io.md.utils;
 
 import java.io.IOException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.WritableTypeId;
@@ -16,8 +13,6 @@ import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.Payload;
 
 public class PayloadSerializer extends JsonSerializer<Payload> {
-
-	private static final Logger LOGGER = LogManager.getLogger(PayloadSerializer.class);
 
 	private final JsonSerializer<Object> serializer;
 
