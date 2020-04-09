@@ -57,7 +57,7 @@ init() {
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway-pvt.yaml
-	find kubernetes -name "*.yaml" | xargs -n1 -t kubectl apply -f
+	find $APP_DIR/kubernetes -name "*.yaml" | xargs -n1 -t kubectl apply -f
 	#Check if route exist
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
