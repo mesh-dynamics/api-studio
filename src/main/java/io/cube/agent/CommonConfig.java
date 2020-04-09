@@ -5,8 +5,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.NumberFormat;
-import java.text.ParseException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,11 +21,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-//import javax.ws.rs.client.Client;
-//import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.UriBuilder;
-
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -33,21 +29,17 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
-import org.apache.logging.log4j.core.async.AsyncLoggerConfig;
 import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
-import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
 import org.apache.logging.log4j.core.layout.CustomJsonLayout;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.logging.MDConfigurationFactory;
 import io.cube.agent.samplers.AdaptiveSampler;
 import io.cube.agent.samplers.Attributes;
 import io.cube.agent.samplers.BoundarySampler;
@@ -59,8 +51,6 @@ import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.spi.LoggerContextFactory;
 
 public class CommonConfig {
 
@@ -78,8 +68,9 @@ public class CommonConfig {
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
 
-	private WebTarget cubeRecordService;
-	private WebTarget cubeMockService;
+	private HttpRequest cubeRecordService;
+	private HttpRequest cubeMockService;
+	private HttpClient httpClient;
 
 	private static final Logger LOGGER = LogManager.getLogger(CommonConfig.class);
 
@@ -146,18 +137,20 @@ public class CommonConfig {
 	public static void initializeLogging() {
 
 		LogManager.setFactory(new MDLoggerContextFactory());
-		LoggerContext context= (LoggerContext) LogManager.getContext();
-		Configuration config= context.getConfiguration();
+		LoggerContext context = (LoggerContext) LogManager.getContext();
+		Configuration config = context.getConfiguration();
 
 		CustomJsonLayout layout = CustomJsonLayout.newBuilder().setComplete(false).setEventEol(true)
-				.setPropertiesAsList(false).setCompact(true).setProperties(false).setIncludeStacktrace(true)
-				.setLocationInfo(false).build();
+			.setPropertiesAsList(false).setCompact(true).setProperties(false)
+			.setIncludeStacktrace(true)
+			.setLocationInfo(false).build();
 		Appender appender = ConsoleAppender.newBuilder()
-				.setDirect(true).setTarget(ConsoleAppender.Target.SYSTEM_OUT).setName("StdOut").setLayout(layout).build();
+			.setDirect(true).setTarget(ConsoleAppender.Target.SYSTEM_OUT).setName("StdOut")
+			.setLayout(layout).build();
 		appender.start();
 
 		AppenderRef ref = AppenderRef.createAppenderRef("CONSOLE_APPENDER", null, null);
-		AppenderRef[] refs = new AppenderRef[] {ref};
+		AppenderRef[] refs = new AppenderRef[]{ref};
 
 		//public static LoggerConfig createLogger(@PluginAttribute(value = "additivity",defaultBoolean = true)
 		// boolean additivity, @PluginAttribute("level") Level level,
@@ -167,13 +160,13 @@ public class CommonConfig {
 		// , @PluginConfiguration Configuration config, @PluginElement("Filter") Filter filter) {
 		//
 		LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.INFO
-				, "io.cube.agent", String.valueOf(false), refs , null, config, null);
-		loggerConfig.addAppender(appender, null,null);
+			, "io.cube.agent", String.valueOf(false), refs, null, config, null);
+		loggerConfig.addAppender(appender, null, null);
 		config.addAppender(appender);
 		config.addLogger("io.cube.agent", loggerConfig);
 		context.updateLoggers(config);
 
-		Logger logger=LogManager.getContext().getLogger("io.cube.agent");
+		Logger logger = LogManager.getContext().getLogger("io.cube.agent");
 		logger.info("HELLO_WORLD");
 	}
 
@@ -309,28 +302,30 @@ public class CommonConfig {
 			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
 				, dynamicProperties).orElse("false"));
 
-		//TODO: Remove total dependecy of this from agent.
-		// Commenting now for cxf based app to work.
-//		ClientConfig clientConfig = new ClientConfig()
-//			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
-//			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
-//		Client restClient = ClientBuilder.newClient(clientConfig);
-//		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
-//		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
-		cubeRecordService = null;
-		cubeMockService = null;
-
+		httpClient = HttpClient.newBuilder()
+						.connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
+						.build();
+		cubeRecordService = HttpRequest.newBuilder()
+							.uri(URI.create(CUBE_RECORD_SERVICE_URI))
+							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+		cubeMockService = HttpRequest.newBuilder()
+							.uri(URI.create(CUBE_MOCK_SERVICE_URI))
+							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
 
 		LOGGER.info(new ObjectMessage(
 			Map.of(Constants.MESSAGE, "PROPERTIES POLLED :: " + this.toString())));
 	}
 
-	public WebTarget getCubeRecordService() {
+	public HttpRequest getCubeRecordService() {
 		return cubeRecordService;
 	}
 
-	public WebTarget getCubeMockService() {
+	public HttpRequest getCubeMockService() {
 		return cubeMockService;
+	}
+
+	public HttpClient getHttpClient() {
+		return httpClient;
 	}
 
 	private Optional<String> fromDynamicOREnvORStaticProperties(String propertyName,
@@ -370,8 +365,9 @@ public class CommonConfig {
 		return servicesToMock.contains(serviceName);
 	}
 
-	public Optional<URI> getMockingURI(URI originalURI, String serviceName) throws URISyntaxException {
-		if(!shouldMockService(serviceName)) {
+	public Optional<URI> getMockingURI(URI originalURI, String serviceName)
+		throws URISyntaxException {
+		if (!shouldMockService(serviceName)) {
 			return Optional.empty();
 		} else {
 			URIBuilder uriBuilder = new URIBuilder(originalURI);
