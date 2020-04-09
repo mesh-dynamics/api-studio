@@ -1,12 +1,10 @@
 package io.md.utils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +13,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.flipkart.zjsonpatch.JsonPatch;
 
-import io.md.constants.Constants;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 
@@ -23,7 +20,7 @@ public class JsonTransformer {
 
 
 	private final ObjectMapper jsonMapper;
-	private static final Logger LOGGER = LogManager.getLogger(JsonTransformer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(JsonTransformer.class);
 
 	public JsonTransformer(ObjectMapper jsonMapper) {
 		this.jsonMapper = jsonMapper;
@@ -38,17 +35,11 @@ public class JsonTransformer {
 		JsonNode patch =
 			preProcessUpdates(lhsRoot, rhsRoot, operationList);
 
-		LOGGER.debug(new ObjectMessage(Map.of(
-			Constants.MESSAGE, "PRE APPLYING PATCH",
-			Constants.DATA, lhsRoot,
-			"patch", patch
-		)));
+		LOGGER.debug("PRE APPLYING PATCH : data : ".concat(lhsRoot.toString())
+				.concat(" , patch : ").concat(patch.toString()));
 		JsonNode transformedRoot = JsonPatch.apply(patch, lhsRoot);
 		String transformedRespBody = transformedRoot.toString();
-		LOGGER.debug(new ObjectMessage(Map.of(
-			Constants.MESSAGE, "POST APPLYING PATCH",
-			Constants.DATA, transformedRespBody
-		)));
+		LOGGER.debug("POST APPLYING PATCH : data : ".concat(transformedRespBody));
 		return transformedRoot;
 	}
 
@@ -60,9 +51,7 @@ public class JsonTransformer {
 		// how: populate the operations with the right value (and path?)
 		// return: list of JsonNode objects to be used by the patch library
 
-		LOGGER.debug(new ObjectMessage(Map.of(
-			Constants.MESSAGE, "pre-processing operations"
-		)));
+		LOGGER.debug("pre-processing operations");
 
 		// create the patch as an array of JsonNodes
 		ArrayNode patch = new ArrayNode(new JsonNodeFactory(false));

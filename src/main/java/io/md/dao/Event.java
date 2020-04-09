@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -41,7 +41,7 @@ import io.md.dao.Event.EventBuilder.InvalidEventException;
  */
 public class Event {
 
-	private static final Logger LOGGER = LogManager.getLogger(Event.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Event.class);
 
 	private Event(String customerId, String app, String service, String instanceId,
 		String collection, String traceId, String spanId, String parentSpanId,
@@ -130,8 +130,8 @@ public class Event {
 			try {
 				return this.payload.rawPayloadAsString(wrapForDisplay);
 			} catch (Exception e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while "
-					+ "converting payload to json string")), e);
+				LOGGER.error("Error while "
+					+ "converting payload to json string", e);
 			}
 		}
 		return "";
@@ -195,17 +195,13 @@ public class Event {
 		List<String> keyVals = new ArrayList<>();
 		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
 			== CompareTemplate.ComparisonType.Equal, keyVals);
-		LOGGER.info(new ObjectMessage(
-			Map.of("message", "Generating event key from vals"
-				, "vals", keyVals.toString())));
+		LOGGER.info("Generating event key from vals : ".concat(keyVals.toString()));
 		payloadKey = Objects.hash(keyVals);
 		// TODO deal with this later
 		/*if (eventType == EventType.ThriftRequest) {
 			this.traceId = ((ThriftDataObject) payload).traceId;
 		}*/
-		LOGGER.info(
-			new ObjectMessage(Map.of("message", "Event key generated"
-				, "key", payloadKey)));
+		LOGGER.info("Event key generated : ".concat(String.valueOf(payloadKey)));
 	}
 
 	/**
@@ -287,7 +283,7 @@ public class Event {
 
 	public static class EventBuilder {
 
-		private static final Logger LOGGER = LogManager.getLogger(Event.class);
+		private static final Logger LOGGER = LoggerFactory.getLogger(EventBuilder.class);
 
 		private final String customerId;
 		private final String app;
@@ -354,8 +350,7 @@ public class Event {
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			if (timestamp.isEmpty()) {
-				LOGGER.info(new ObjectMessage(
-					Map.of(Constants.MESSAGE, "Timestamp empty, using current instant")));
+				LOGGER.info("Timestamp empty, using current instant");
 			}
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
@@ -371,8 +366,7 @@ public class Event {
 			try {
 				return Optional.of(createEvent());
 			} catch (io.md.dao.Event.EventBuilder.InvalidEventException e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-					, "Exception in creating an Event")) , e);
+				LOGGER.error("Exception in creating an Event" , e);
 			}
 			return Optional.empty();
 		}

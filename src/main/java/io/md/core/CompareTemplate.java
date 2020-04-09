@@ -16,8 +16,8 @@ import java.util.Set;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,7 +50,7 @@ import io.md.utils.CommonUtils;
  */
 public class CompareTemplate {
 
-	private static final Logger LOGGER = LogManager.getLogger(CompareTemplate.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CompareTemplate.class);
 	private Map<String, TemplateEntry> rules;
 
 	//Adding appropriate annotations for json serialization and deserialization
