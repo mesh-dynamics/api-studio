@@ -122,8 +122,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey, Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -172,8 +171,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
+            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey, Optional.empty(), Optional.empty(), collectionKey , rr);
             if (ret != null && ret.retStatus == RetStatus.Exception) {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));
@@ -1197,8 +1195,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(saveFuncKey , CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
+            FnResponseObj ret = config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(), doc);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -1251,8 +1248,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(deleteFuncKey , CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
+            FnResponseObj ret = config.mocker.mock(deleteFuncKey , Optional.empty(), Optional.empty(), query);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
