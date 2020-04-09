@@ -15,18 +15,10 @@ public interface Mocker {
 
     /**
      * @param fnKey The key to the function to mocked
-     * @param traceId The current traceid of the calling sequence
-     * @param spanId The span that the current call belongs to
      * @param prevRespTS The timestamp of the previous response
      * @param args The argument values as Java objects
      * @return The response value as Java object, along with a timestamp
      */
-    FnResponseObj mock(FnKey fnKey,
-                       Optional<String> traceId,
-                       Optional<String> spanId,
-                       Optional<String> parentSpanId,
-                       Optional<Instant> prevRespTS,
-                       Optional<Type> retType,
-                       Object... args);
-
+	FnResponseObj mock(FnKey fnKey,
+		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args);
 }

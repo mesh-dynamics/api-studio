@@ -4,7 +4,6 @@ import static io.md.utils.UtilException.rethrowFunction;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,11 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -50,16 +45,19 @@ public class SimpleMocker implements Mocker {
 	}
 
 	@Override
-	public FnResponseObj mock(FnKey fnKey, Optional<String> traceId, Optional<String> spanId,
-		Optional<String> parentSpanId,
+	public FnResponseObj mock(FnKey fnKey,
 		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
+
 		//This key is to identify cases where multiple Solr docs are matched
+		MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+		Optional<String> traceId = Optional.ofNullable(mdTraceInfo.traceId);
+		Optional<String> spanId = Optional.ofNullable(mdTraceInfo.spanId);
+		Optional<String> parentSpanId = Optional.ofNullable(mdTraceInfo.parentSpanId);
+
 		Integer key = traceId.orElse("").concat(spanId.orElse(""))
 			.concat(parentSpanId.orElse(""))
 			.concat(fnKey.signature).hashCode();
 
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(null), spanId.orElse(null),
-			parentSpanId.orElse(null));
 		FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
 			args, null, null , null);
 		Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, RunType.Replay,
