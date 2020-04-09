@@ -118,6 +118,8 @@ spec:
             value: "{{customer}}"
           - name: io.md.service
             value: "{{cube_application}}"
+          - name: io.md.intent
+            value: "record"
           - name: io.md.app
             value: "jersey_1_19_demo"
           - name: depURL
