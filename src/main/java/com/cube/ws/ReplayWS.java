@@ -221,6 +221,8 @@ public class ReplayWS {
         List<String> mockServices = Optional.ofNullable(formParams.get("mockServices"))
             .orElse(new ArrayList<String>());
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
+        boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
+
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -288,7 +290,7 @@ public class ReplayWS {
                     try {
                         json = jsonMapper.writeValueAsString(replayFromDriver);
                         if (startReplay) {
-                            boolean status = replayDriver.start();
+                            boolean status = replayDriver.start(analyze);
                             if (status) {
                                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
                             }

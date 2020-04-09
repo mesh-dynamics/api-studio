@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.cube.cache.ComparatorCache.TemplateNotFoundException;
+import com.cube.dao.Analysis;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +52,7 @@ public abstract class AbstractReplayDriver {
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
 
-	public boolean start() {
+	public boolean start(boolean analyze) {
 
 		if (replay.status != Replay.ReplayStatus.Init) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -66,7 +68,7 @@ public abstract class AbstractReplayDriver {
 		}
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Starting Replay",
 			Constants.REPLAY_ID_FIELD , replay.replayId)));
-		CompletableFuture.runAsync(this::replay).handle((ret, e) -> {
+		CompletableFuture.runAsync(() -> replay(analyze)).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
@@ -99,7 +101,7 @@ public abstract class AbstractReplayDriver {
 
 	private IReplayClient client;
 
-	protected void replay() {
+	protected void replay(boolean analyze) {
 
 		//List<Request> requests = getRequests();
 
@@ -174,7 +176,11 @@ public abstract class AbstractReplayDriver {
 
 		replay.status =
 			(replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
+
 		rrstore.saveReplay(replay);
+		if (analyze) {
+            analyze();
+        }
 		this.client.tearDown();
 	}
 
@@ -231,6 +237,26 @@ public abstract class AbstractReplayDriver {
 			}
 		}).collect(Collectors.toList());
 	}
+
+	public void analyze() {
+        if (replay.status != Replay.ReplayStatus.Completed) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Replay is not completed", Constants.REPLAY_ID_FIELD
+                , replay.replayId)));
+            return;
+        }
+        try {
+            replay.status = Replay.ReplayStatus.Analyzing;
+            Optional<Analysis> analyzer = Analyzer.analyze(replay.replayId, null, config);
+            if(analyzer.isPresent()) {
+                Analysis analysis = analyzer.get();
+                replay.status = analysis.status == Analysis.Status.Completed ? Replay.ReplayStatus.AnalyzeComplete : replay.status;
+            }
+        } catch (TemplateNotFoundException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
+        }
+    }
 
 	public Replay getReplay() {
 		return replay;

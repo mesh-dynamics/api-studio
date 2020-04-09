@@ -49,7 +49,9 @@ public class Replay {
 		Init,
 		Running,
 		Completed,
-		Error
+		Error,
+        Analyzing,
+        AnalyzeComplete
 	}
 
 
