@@ -10,7 +10,6 @@ generate_manifest() {
 	fi
 	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
-		#TODO: why not delete everything? Otherwise fluentd_patch_*.json remain
 		if [ -z "$CUBEIO_TAG" ]; then
 			CUBEIO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeio.git refs/heads/master | awk '{print $1}')-master
 		fi
@@ -23,7 +22,7 @@ generate_manifest() {
 		if [ -z "$MOVIEINFO_TAG" ]; then
 			MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/sample_apps.git refs/heads/master | awk '{print $1}')-master
 		fi
-		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
+		find $APP_DIR/kubernetes -name "*.yaml" -o -name "*.json" -type f | xargs -n1 -t rm -f #Delete old files
 		COMMON_DIR=apps/common
 		if [ -z "$CUBE_SERVICE_ENDPOINT" ]; then
 			CUBE_SERVICE_ENDPOINT=null
