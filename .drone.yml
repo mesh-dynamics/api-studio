@@ -4,10 +4,15 @@ name: default
 steps:
   - name: docker_build
     image: plugins/docker
+    environment:
+      TOKEN:
+        from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: Welcome@md
       repo: cubeiocorp/cubews
+      build_args_from_env:
+      - TOKEN
       target: prod
       tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
     resources:
@@ -28,11 +33,16 @@ steps:
 
   - name: docker_build_on_PR
     image: plugins/docker
+    environment:
+      TOKEN:
+        from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: Welcome@md
       repo: cubeiocorp/cubews
       target: prod
+      build_args_from_env:
+      - TOKEN
       tags:
         - ${DRONE_COMMIT}-${DRONE_BRANCH}
         - ${DRONE_BRANCH}-latest
