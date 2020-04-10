@@ -110,6 +110,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 					containerResponseContext.getStringHeaders());
 			containerRequestContext
 				.setProperty(Constants.MD_STATUS_PROP, containerResponseContext.getStatus());
+			// aroundWriteTo will not be called for empty body
+			if(containerResponseContext.getEntity()==null) {
+				logResponse(null, containerRequestContext);
+			}
 		}
 	}
 
@@ -184,8 +188,12 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			MDTraceInfo mdTraceInfo =
 				traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 
-			//body
-			byte[] responseBody = getResponseBody(context);
+			byte[] responseBody = new byte[0];
+
+			//we pass null for empty body
+			if (context != null) {
+				responseBody = getResponseBody(context);
+			}
 
 			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
