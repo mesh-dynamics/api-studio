@@ -48,6 +48,7 @@ import org.msgpack.value.ValueType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
@@ -59,7 +60,6 @@ import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 
-import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;

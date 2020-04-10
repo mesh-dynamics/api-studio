@@ -2,7 +2,8 @@ package com.cube.core;
 
 import java.util.Optional;
 
-import com.cube.agent.FnReqResponse;
+import io.cube.agent.FnReqResponse;
+import io.md.dao.FnReqRespPayload.RetStatus;
 
 public class FnReqResponsePreProcessTest {
 
@@ -24,7 +25,7 @@ public class FnReqResponsePreProcessTest {
         FnReqResponse fnReqResponse = new FnReqResponse("ravivj" , "moveinfo" , "dev",
             "movieinfo", 1, "add", Optional.empty() , Optional.empty() , Optional.empty(),
             Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random",
-            FnReqResponse.RetStatus.Success, Optional.empty());
+            RetStatus.Success, Optional.empty());
 
 
         Utils.preProcess(fnReqResponse);
@@ -42,7 +43,7 @@ public class FnReqResponsePreProcessTest {
         fnReqResponse = new FnReqResponse("ravivj" , "moveinfo" , "dev",
             "movieinfo", 1, "add", Optional.empty() , Optional.empty() , Optional.empty(),
             Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random",
-            FnReqResponse.RetStatus.Success, Optional.empty());
+            RetStatus.Success, Optional.empty());
 
         Utils.preProcess(fnReqResponse);
         System.out.println(fnReqResponse.argVals[0]);

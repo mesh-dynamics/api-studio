@@ -43,6 +43,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.FnReqResponse;
+import io.cube.agent.FnResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
@@ -64,8 +66,6 @@ import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
-import com.cube.agent.FnReqResponse;
-import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplateVersioned;
@@ -122,8 +122,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey, Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -172,8 +171,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
+            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey, Optional.empty(), Optional.empty(), collectionKey , rr);
             if (ret != null && ret.retStatus == RetStatus.Exception) {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));
@@ -334,9 +332,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc, boolean multipleResults) {
-        FnReqResponse.RetStatus retStatus =
-            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
-            rs)).orElse(FnReqResponse.RetStatus.Success);
+        RetStatus retStatus =
+            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(RetStatus.class,
+            rs)).orElse(RetStatus.Success);
         Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
         return getStrFieldMVFirst(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
             retStatus, exceptionType, multipleResults));
@@ -1197,8 +1195,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(saveFuncKey , CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
+            FnResponseObj ret = config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(), doc);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -1251,8 +1248,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(deleteFuncKey , CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
+            FnResponseObj ret = config.mocker.mock(deleteFuncKey , Optional.empty(), Optional.empty(), query);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
