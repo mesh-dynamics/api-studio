@@ -1013,10 +1013,10 @@ public class AnalyzeWS {
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
                 .withName(name).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
 	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId);
-	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
-	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
-	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
-	        originalRec.comment.ifPresent(recordingBuilder::withComment);
+            codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+            branch.ifPresent(recordingBuilder::withBranch);
+            gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+            comment.ifPresent(recordingBuilder::withComment);
 	        originalRec.generatedClassJarPath.ifPresent(UtilException
 		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
 
