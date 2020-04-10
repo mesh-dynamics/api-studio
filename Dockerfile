@@ -2,13 +2,14 @@
 ####build####
 ###############
 FROM maven:3.6.0-jdk-11-slim AS build
+ARG TOKEN
 COPY pom.xml ./pom.xml
 # download maven dependencies
 RUN mvn verify clean --fail-never
 COPY src ./src
 COPY WebContent ./WebContent
 #Add settings.xml file for github auth
-RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>5cec32b5cc9a3f779ec122f6b47c6973f619d992</password></server></servers></settings>" > ~/.m2/settings.xml
+RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
 RUN mvn package
 #########################################
 ####Copy build to production image####
