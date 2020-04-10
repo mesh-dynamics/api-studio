@@ -1,7 +1,11 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { connect } from "react-redux";
-import { generateServiceOptionsFromTimeLine, generateApiOptionsFromTimeLine } from '../../utils/lib/golden-utils';
-import {goldenActions} from '../../actions/golden.actions'
+import moment from "moment";
+import { 
+    generateServiceOptionsFromFacets,
+    generateApiOptionsFromFacets 
+} from '../../utils/lib/golden-utils';
+import { goldenActions } from '../../actions/golden.actions'
 
 const GoldenMeta = (props) => {
 
@@ -12,19 +16,15 @@ const GoldenMeta = (props) => {
             selectedGolden, 
             selectedService, 
         },
-        cube: { 
-            timelineData: { 
-                timelineResults 
-            } 
-        }, 
         handleBackToTestInfoClick, 
         setSelectedService, 
         setSelectedApiPath,
         updateGoldenMeta,
         getGoldenData,
+        getGoldenMeta,
     } = props;
 
-    const { id, name, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId } = selectedGolden;
+    const { id, name, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId, serviceFacets } = selectedGolden;
 
     const [editable, setEditable] = useState(false);
 
@@ -38,9 +38,7 @@ const GoldenMeta = (props) => {
 
     const [apiPathOptions, setApiPathOptions] = useState([]);
 
-    const timelineResult = timelineResults.find(item => item.recordingid === id);
-
-    const serviceOptions = generateServiceOptionsFromTimeLine(timelineResult);
+    const serviceOptions = generateServiceOptionsFromFacets(serviceFacets);
 
     const handleUpdateClick = () => {
         if(goldenName === name) {
@@ -54,31 +52,35 @@ const GoldenMeta = (props) => {
 
     const handleServiceChange = (e) => {
         setSelectedService(e.target.value);
-        setApiPathOptions(generateApiOptionsFromTimeLine(timelineResult, e.target.value));
+        setApiPathOptions(generateApiOptionsFromFacets(serviceFacets, e.target.value));
         setSelectedApiPath("");
     };
 
     const handleApiPathChange = (e) => setSelectedApiPath(e.target.value);
 
     useEffect(() => {
+        getGoldenMeta();
+    }, [getGoldenMeta]);
+
+    useEffect(() => {
         setGoldenName(name);
         setBranchName(branch);
         setCodeVersionNumber(codeVersion);
         setCommitId(gitCommitId);
-    }, [message])
+    }, [message, selectedGolden]);
 
     useEffect(() => {
         if(selectedApi !== "" && selectedService !== "" && selectedGolden.id) {
             getGoldenData(selectedGolden.id, selectedService, selectedApi);
         }
-    }, [selectedGolden.id, selectedService, selectedApi])
+    }, [selectedGolden.id, selectedService, selectedApi]);
     
     return (
         <div>
             <div className="margin-top-10">
                 {!editable &&
                     <div className="gv-edit-icon-container">
-                        <i class="fa fa-pencil-square-o pointer" aria-hidden="true" onClick={() => setEditable(true)}></i>
+                        <i className="fa fa-pencil-square-o pointer" aria-hidden="true" onClick={() => setEditable(true)}></i>
                     </div>
                 }
                 <span className="margin-right-10"><strong>Golden:</strong></span>
@@ -94,7 +96,7 @@ const GoldenMeta = (props) => {
             </div>
             <div className="margin-top-10">
                 <span className="margin-right-10"><strong>Date Created:</strong></span>
-                <span>{timestmp}</span>
+                <span>{moment.unix(timestmp).format("DD-MMM-YYYY hh:mm a")}</span>
             </div>
             <div className="margin-top-10">
                 <span className="margin-right-10"><strong>ID:</strong></span>
@@ -189,6 +191,8 @@ const mapDispatchToProps = (dispatch) => ({
     setSelectedApiPath: (data) => { dispatch(goldenActions.setSelectedApiPath(data)) },
 
     updateGoldenMeta: (data) => { dispatch(goldenActions.updateGoldenMeta(data))},
+
+    getGoldenMeta: () => { dispatch(goldenActions.getGoldenMeta())},
 
     getGoldenData: (goldenId, service, apiPath) => { 
         dispatch(goldenActions.getGoldenData(goldenId, service, apiPath));

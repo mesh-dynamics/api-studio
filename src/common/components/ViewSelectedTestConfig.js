@@ -10,6 +10,7 @@ import {getTransformHeaders} from "../utils/lib/url-utils";
 import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
+import { Glyphicon } from 'react-bootstrap';
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -40,7 +41,7 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             }
         };
-        this.statusInterval;
+        //this.statusInterval;
     }
 
     componentDidMount() {
@@ -136,7 +137,6 @@ class ViewSelectedTestConfig extends React.Component {
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
             dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
-            dispatch(goldenActions.setSelectedGolden({ collec: e.target.value, testIds: cube.testIds }));
         }
     };
     
@@ -283,7 +283,7 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ showGoldenMeta: false });
 
         dispatch(cubeActions.hideGoldenVisibility(true));
-        dispatch(goldenActions.resetServiceAndApiPath());
+        dispatch(goldenActions.resetGoldenVisibilityDetails());
     };
 
     renderTestInfo = () => {
@@ -347,7 +347,7 @@ class ViewSelectedTestConfig extends React.Component {
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
                         <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
-                        Add Custom Headers
+                        Custom Headers
                     </span>
                 </div>
 
@@ -445,9 +445,9 @@ class ViewSelectedTestConfig extends React.Component {
         });
     };
 
-    replay = () => {
-        const { cube, dispatch, authentication } = this.props;
-        const { testConfig: { testPaths }} = cube;
+    replay = async () => {
+        const { cube, dispatch, authentication, checkReplayStatus } = this.props;
+        const { testConfig: { testPaths, testMockServices }} = cube;
         const selectedInstances = cube.instances
             .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
         cubeActions.clearReplayStatus();
@@ -470,6 +470,7 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
             searchParams.set('transforms', transforms);
+            searchParams.set('mockServices',testMockServices);
             // Append Test Paths
             // If not specified, it will run all paths
             if(testPaths && testPaths.length !== 0) {
@@ -484,14 +485,9 @@ class ViewSelectedTestConfig extends React.Component {
             };
             axios.post(url, searchParams, configForHTTP).then((response) => {
                 this.setState({replayId: response.data});
-                this.statusInterval = setInterval(() => {
-                    const {cube} = this.props;
-                    if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
-                        clearInterval(this.statusInterval);
-                    } else {
-                        checkStatus();
-                    }
-                }, 1000);
+                // check replay status periodically and call analyze at the end; and update timeline
+                // this method is run in the parent component (Navigation)
+                checkReplayStatus(this.state.replayId.replayId); 
             }).catch((error) => {
                 if(error.response.data) {
                     if (error.response.data['replayId'] !== "None") {
@@ -506,10 +502,6 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             });
         }
-
-        let checkStatus = () => {
-            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, this.state.replayId.replayId, cube.selectedApp));
-        };
     };
 
     render() {
@@ -557,12 +549,19 @@ class ViewSelectedTestConfig extends React.Component {
                             Status: {cube.replayStatus}&nbsp;&nbsp;
                             {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
                         </h3>
+                        {cube.replayStatusObj && <p>
+                            Replay ID: {cube.replayStatusObj.replayId}
+                        </p>}
                     </Modal.Body>
-                    <Modal.Footer className={cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error")) ? "text-center" : "hidden"}>
+                    <Modal.Footer >
+                        {(cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error"))) ? 
                         <Link to="/">
                             <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
-                        <span onClick={this.handleClose} className="cube-btn">Done</span>
+                    :
+                    <span className="modal-footer-text">The results will be available on the test results page once the test completes</span>
+                    }
+                        <span onClick={this.handleClose} className="cube-btn">Close</span>
                     </Modal.Footer>
                 </Modal>
                 
