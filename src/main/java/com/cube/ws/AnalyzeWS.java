@@ -1345,7 +1345,7 @@ public class AnalyzeWS {
 
 			Map jsonMap = jsonMapper.convertValue(recording, Map.class);
 			jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
-			
+
 			return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
 		} catch (Exception e) {
 			LOGGER.error(

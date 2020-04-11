@@ -39,6 +39,7 @@ public class ReplayBuilder {
 	// particular reqIds to replay (if present the rest of the filtering
 	// won't matter much)
 	private List<String> reqIdsToReplay;
+	private boolean excludePaths;
 	private String replayId;
 	private boolean async;
 	private ReplayStatus replayStatus;
@@ -67,6 +68,7 @@ public class ReplayBuilder {
 		this.userId = userId;
 		this.templateSetVersion = Constants.DEFAULT_TEMPLATE_VER;
 		this.pathsToReplay = Collections.EMPTY_LIST;
+		this.excludePaths = false;
 		this.reqIdsToReplay = Collections.EMPTY_LIST;
 		this.replayId = Replay.getReplayIdFromCollection(collection);
 		this.replayStatus = ReplayStatus.Init;
@@ -96,7 +98,7 @@ public class ReplayBuilder {
 	public Replay build() {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
-			reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
+            excludePaths, reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
 			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices);
 	}
 
@@ -105,7 +107,13 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withReqIds(List<String> reqIds) {
+    public ReplayBuilder withExcludePaths(Boolean excludePaths) {
+        this.excludePaths = excludePaths;
+        return this;
+    }
+
+
+    public ReplayBuilder withReqIds(List<String> reqIds) {
 		this.reqIdsToReplay = reqIds;
 		return this;
 	}
