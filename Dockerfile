@@ -2,9 +2,10 @@
 #build#
 #################
 FROM maven:3.6.0-jdk-11-slim AS build
+ARG TOKEN
 COPY . /
 RUN mkdir ~/.m2
-RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>5cec32b5cc9a3f779ec122f6b47c6973f619d992</password></server></servers></settings>" > ~/.m2/settings.xml
+RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
 RUN mvn clean install -DskipTests \
 && ./mvnw -Pprod clean package -DskipTests
 ##################
