@@ -1,33 +1,27 @@
-const generateServiceOptionsFromTimeLine = (timelineResult) => {
 
-    if(timelineResult) {
-        const { results } = timelineResult;
-        
-        const services = Array.from(new Set(results.map(result => result.service))).filter(Boolean);
-
-        return services;
+const generateServiceOptionsFromFacets = (serviceFacets) => {
+    
+    if(serviceFacets && serviceFacets.length > 0) {
+        return serviceFacets.map(service => service.val);
     }
 
     return [];
-
 };
 
-const generateApiOptionsFromTimeLine = (timelineResult, selectedService) => {
-    if(timelineResult && selectedService) {
-        const  { results } = timelineResult;
+const generateApiOptionsFromFacets = (serviceFacets, selectedService) => {
+
+    if(serviceFacets && serviceFacets.length > 0 && selectedService) {
         
-        const apiPath = Array.from(
-            results
-                .filter(result => result.service === selectedService)
-                .map(item => item.path)
-                .filter(Boolean));
-                
-        return apiPath;
+        return serviceFacets
+                .find(service => service.val === selectedService)
+                .path_facets
+                .map(path => path.val)
     }
+
     return [];
 };
 
 export { 
-    generateServiceOptionsFromTimeLine,
-    generateApiOptionsFromTimeLine
+    generateServiceOptionsFromFacets,
+    generateApiOptionsFromFacets,
 };

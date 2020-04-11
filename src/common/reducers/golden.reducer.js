@@ -68,14 +68,8 @@ export const golden = (state = initialState, { type, data }) => {
                 ...data
             }
         };
-    case goldenConstants.RESET_GOLDEN_API_PATH_AND_SERVICE:
-        return {
-            ...state,
-            selectedService: "",
-            selectedApi: "",
-            isFetching: false,
-            fetchComplete: false
-        };
+    case goldenConstants.RESET_GOLDEN_VISIBILITY_DETAILS: 
+        return initialState;
     case goldenConstants.SET_MESSAGE:
         return {
             ...state,

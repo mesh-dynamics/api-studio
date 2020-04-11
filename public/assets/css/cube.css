@@ -4686,3 +4686,8 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .pointer {
     cursor: pointer;
 }
+
+.modal-footer-text {
+    margin: 10px;
+    color: grey;
+}
