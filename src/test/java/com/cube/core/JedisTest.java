@@ -1,17 +1,5 @@
 package com.cube.core;
 
-import com.cube.cache.TemplateKey.Type;
-import com.cube.utils.Constants;
-
-import java.net.URISyntaxException;
-import java.util.Optional;
-
-import org.apache.http.client.utils.URIBuilder;
-
-import redis.clients.jedis.Jedis;
-
-import com.cube.cache.TemplateKey;
-
 public class JedisTest {
 
     public static void main(String[] args) {

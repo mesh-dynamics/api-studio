@@ -2,8 +2,10 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,15 +43,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.core.Comparator;
 import io.md.core.Comparator.Match;
 import io.md.core.Comparator.MatchType;
-import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
-import io.md.dao.RawPayload.RawPayloadEmptyException;
-import io.md.dao.RawPayload.RawPayloadProcessingException;
 
 import com.cube.agent.FnReqResponse;
 import com.cube.agent.FnResponse;
@@ -58,7 +57,6 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Utils;
-
 import com.cube.dao.EventQuery;
 import com.cube.dao.EventQuery.Builder;
 import com.cube.dao.ReqRespMatchResult;
@@ -372,14 +370,79 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         meta.putSingle(Constants.SERVICE_FIELD, service);
         meta.putSingle(Constants.INSTANCE_ID_FIELD, instanceId);
+        setSpanTraceIDParentSpanInMeta(meta, headers);
         return Utils.createHTTPRequestEvent(path, requestId, queryParams, formParams, meta, headers.getRequestHeaders(),
             method, body, Optional.of(replayId), Instant.now(), Optional.of(RunType.Replay), Optional.of(customerId),
             Optional.of(app), config, comparator);
 
     }
 
+    private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, HttpHeaders headers) {
+        String mdTrace = headers.getRequestHeaders().getFirst(Constants.MD_TRACE_FIELD);
+        if (mdTrace != null && !mdTrace.equals("")) {
+            String[] parts = decodedValue(mdTrace).split(":");
+            if (parts.length != 4) {
+                LOGGER.warn("trace id should have 4 parts but found: " + parts.length);
+                return;
+            } else {
+                String traceId = parts[0];
+                if (traceId.length() <= 32 && traceId.length() >= 1) {
+                    meta.putSingle(Constants.DEFAULT_SPAN_FIELD, Long.toHexString((new BigInteger(parts[1], 16)).longValue()));
+                    meta.putSingle(Constants.DEFAULT_TRACE_FIELD, convertTraceId(high(parts[0]), (new BigInteger(parts[0], 16)).longValue()));
+                } else {
+                    LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
+                }
+            }
+        } else if ( headers.getRequestHeaders().getFirst(Constants.DEFAULT_TRACE_FIELD) != null ) {
+            meta.putSingle(Constants.DEFAULT_TRACE_FIELD, headers.getRequestHeaders().getFirst(Constants.DEFAULT_TRACE_FIELD));
+            if ( headers.getRequestHeaders().getFirst(Constants.DEFAULT_SPAN_FIELD) != null) {
+                meta.putSingle(Constants.DEFAULT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(Constants.DEFAULT_SPAN_FIELD)));
+            }
+        } else {
+            LOGGER.warn("Neither default not md trace id header found to the mock sever request");
+        }
 
+        if (headers.getRequestHeaders().getFirst(Constants.MD_BAGGAGE_PARENT_SPAN) != null ) {
+            meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(Constants.MD_BAGGAGE_PARENT_SPAN)));
+        } else if (headers.getRequestHeaders().getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN) != null ) {
+            meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getRequestHeaders().getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN)));
+        } else {
+            LOGGER.warn("Neither default not md baggage parent span id header found to the mock sever request");
+        }
+    }
 
+    private String decodedValue(String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (UnsupportedEncodingException var3) {
+            return value;
+        }
+    }
+
+    private String convertTraceId(long traceIdHigh, long traceIdLow) {
+        if (traceIdHigh == 0L) {
+            return Long.toHexString(traceIdLow);
+        }
+        final String hexStringHigh = Long.toHexString(traceIdHigh);
+        final String hexStringLow = Long.toHexString(traceIdLow);
+        if (hexStringLow.length() < 16) {
+            // left pad low trace id with '0'.
+            // In theory, only 12.5% of all possible long values will be padded.
+            // In practice, using Random.nextLong(), only 6% will need padding
+            return hexStringHigh + "0000000000000000".substring(hexStringLow.length()) + hexStringLow;
+        }
+        return hexStringHigh + hexStringLow;
+    }
+
+    private static long high(String hexString) {
+        if (hexString.length() > 16) {
+            int highLength = hexString.length() - 16;
+            String highString = hexString.substring(0, highLength);
+            return (new BigInteger(highString, 16)).longValue();
+        } else {
+            return 0L;
+        }
+    }
 
     /**
      * Create a dummy response event (just for the records) to save against the dummy mock request
@@ -519,7 +582,9 @@ public class MockServiceHTTP {
                     , Optional.ofNullable(mockRequestEvent.reqId), MatchType.NoMatch
                     , 0, mockRequestEvent.getCollection(), mockRequestEvent.service
                     , mockRequestEvent.apiPath, Optional.empty()
-                    , Optional.of(mockRequestEvent.getTraceId()), new Match(MatchType
+                    , Optional.of(mockRequestEvent.getTraceId()), Optional.empty(),
+                    Optional.empty(), Optional.ofNullable(mockRequestEvent.spanId),
+                    Optional.ofNullable(mockRequestEvent.parentSpanId), new Match(MatchType
                     .Default, "", Collections.emptyList()), new Match(MatchType
                     .Default, "", Collections.emptyList()));
             rrstore.saveResult(matchResult);
@@ -562,7 +627,9 @@ public class MockServiceHTTP {
                 , Optional.ofNullable(mockRequestEvent.reqId), Comparator.MatchType.ExactMatch
                 , 1, mockRequestEvent.getCollection(), mockRequestEvent.service
                 , mockRequestEvent.apiPath, Optional.of(respEventVal.getTraceId())
-                , Optional.of(mockRequestEvent.getTraceId()), new Match(Comparator.MatchType
+                , Optional.of(mockRequestEvent.getTraceId()), Optional.ofNullable(respEventVal.spanId),
+                Optional.ofNullable(respEventVal.parentSpanId), Optional.ofNullable(mockRequestEvent.spanId),
+                Optional.ofNullable(mockRequestEvent.parentSpanId), new Match(Comparator.MatchType
                 .ExactMatch, "", Collections.emptyList()), new Match(Comparator.MatchType
                 .ExactMatch, "", Collections.emptyList()));
         rrstore.saveResult(matchResult);
