@@ -200,11 +200,8 @@ public class ReplayWS {
         MultivaluedMap<String, String> formParams) {
 
         // TODO: move all these constant strings to a file so we can easily change them.
-        boolean async = Optional.ofNullable(formParams.getFirst("async"))
-            .map(v -> {
-                return (v == "t") ? true : false;
-            })
-            .orElse(false);
+        boolean async = Utils.strToBool(formParams.getFirst("async")).orElse(false);
+        boolean excludePaths = Utils.strToBool(formParams.getFirst("excludePaths")).orElse(false);
         List<String> reqIds = Optional.ofNullable(formParams.get("reqIds"))
             .orElse(new ArrayList<String>());
         Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endPoint"));
@@ -263,6 +260,7 @@ public class ReplayWS {
                     recording.app, instanceId), recording.collection, userId)
                 .withTemplateSetVersion(recording.templateVersion)
                 .withReqIds(reqIds).withAsync(async).withPaths(paths)
+                .withExcludePaths(excludePaths)
                 .withIntermediateServices(intermediateServices)
                 .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                     .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)

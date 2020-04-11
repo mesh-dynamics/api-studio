@@ -65,15 +65,16 @@ public class Replay {
      * @param async
      * @param templateVersion
      * @param status
+     * @param excludePaths
      * @param sampleRate
      */
 	public Replay(String endpoint, String customerId, String app, String instanceId,
-		String collection, String userId, List<String> reqIds,
-		String replayId, boolean async, String templateVersion, ReplayStatus status,
-		List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
-		Optional<Double> sampleRate, List<String> intermediateServices,
-		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
-		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mockServices) {
+                  String collection, String userId, List<String> reqIds,
+                  String replayId, boolean async, String templateVersion, ReplayStatus status,
+                  List<String> paths, boolean excludePaths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
+                  Optional<Double> sampleRate, List<String> intermediateServices,
+                  Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
+                  Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mockServices) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -87,7 +88,8 @@ public class Replay {
         this.templateVersion = templateVersion;
         this.status = status;
 		this.paths = paths;
-		this.reqcnt = reqcnt;
+        this.excludePaths = excludePaths;
+        this.reqcnt = reqcnt;
 		this.reqsent = reqsent;
 		this.reqfailed = reqfailed;
 		this.creationTimeStamp = creationTimestamp;
@@ -117,6 +119,7 @@ public class Replay {
         creationTimeStamp = Instant.now();
 	    reqIds = Collections.emptyList();
 	    paths = Collections.emptyList();
+	    excludePaths = false;
 	    service = Optional.empty();
 	    intermediateServices = Collections.emptyList();
 	    templateVersion = "";
@@ -167,6 +170,8 @@ public class Replay {
     public final Optional<String> service;
     @JsonProperty("paths")
     public final List<String> paths; // paths to be replayed
+    @JsonProperty("excludePaths")
+    public final boolean excludePaths; // true if paths should be excluded
     @JsonProperty("intermediateServices")
     public final List<String> intermediateServices;
     @JsonProperty("reqcnt")
@@ -213,26 +218,12 @@ public class Replay {
 	static final String replayIdPatternStr = "^(.*)-" + uuidPatternStr + "$";
 	private static final Pattern replayIdPattern = Pattern.compile(replayIdPatternStr);
 
-	/**
-	 * @param replayId
-	 * @return
-	 */
-	public static String getCollectionFromReplayId(String replayId) {
-		Matcher m = replayIdPattern.matcher(replayId);
-		if (m.find()) {
-			return m.group(1);
-		} else {
-			LOGGER.error(String.format("Not able to extract collection from replay id %s", replayId));
-			return replayId;
-		}
-	}
-
 	public static String getReplayIdFromCollection(String collection) {
 		return String.format("%s-%s", collection, UUID.randomUUID().toString());
 	}
 
-	public Pair<Stream<List<Event>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore,
-                                                                          ObjectMapper jsonMapper) {
+	@JsonIgnore
+	public Pair<Stream<List<Event>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore) {
         Result<Event> requests = getEventResult(rrstore);
         return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
     }
@@ -240,21 +231,11 @@ public class Replay {
 	private Result<Event> getEventResult(ReqRespStore rrstore) {
 		EventQuery eventQuery = new EventQuery.Builder(customerId, app, EventType.fromReplayType(replayType))
 			.withRunType(Event.RunType.Record).withReqIds(reqIds).withPaths(paths)
+            .withExcludePaths(excludePaths)
 			.withCollection(collection)
 			.withServices(service.map(List::of).orElse(Collections.emptyList())).withSortOrderAsc(true).build();
 		return rrstore.getEvents(eventQuery);
 	}
 
-
-    @JsonIgnore
-    public Pair<Stream<List<Event>>, Long> getRequestEventBatches(int batchSize, ReqRespStore rrstore) {
-	    EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.getRequestEventTypes());
-	    EventQuery eventQuery = builder.withCollection(collection)
-            .withReqIds(reqIds)
-            .withPaths(paths)
-            .withRunType(Event.RunType.Record).build();
-        Result<Event> requests = rrstore.getEvents(eventQuery);
-        return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
-    }
 
 }

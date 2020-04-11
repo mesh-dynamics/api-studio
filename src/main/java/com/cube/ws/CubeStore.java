@@ -1092,7 +1092,7 @@ public class CubeStore {
                 rec.generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
 
                 Recording updatedRecording = recordingBuilder.build();
-                
+
                 rrstore.saveRecording(updatedRecording);
 
                 String json;
