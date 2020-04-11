@@ -1,5 +1,6 @@
 package com.cube.drivers;
 
+import com.cube.dao.Replay.ReplayStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -239,47 +240,20 @@ public abstract class AbstractReplayDriver {
 	}
 
 	public void analyze() {
-		boolean replayComplete = false;
-		Object obj = new Object();
-		Optional<Replay> prevRunningReplay = null;
-		try {
-			synchronized (obj) {
-				while (!replayComplete) {
-					Optional<Replay> currentRunningReplay = rrstore
-							.getCurrentRecordOrReplay(Optional.of(replay.customerId),
-									Optional.of(replay.app), Optional.of(replay.instanceId))
-							.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-					if (currentRunningReplay.isPresent()) {
-						Replay runningReplay = currentRunningReplay.get();
-						if (runningReplay.replayId.equals(replay.replayId)) {
-							prevRunningReplay = currentRunningReplay;
-						}
-					}
-					if (currentRunningReplay.isEmpty() && prevRunningReplay == null) {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-								"No running replay present to analyze", Constants.REPLAY_ID_FIELD
-								, replay.replayId)));
-						return;
-					}
-					if (currentRunningReplay.isEmpty() && prevRunningReplay != null) {
-						replay.status = Replay.ReplayStatus.Completed;
-						replayComplete = true;
-					} else {
-						try {
-							obj.wait(5000);
-						} catch (Exception e) {
-							LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-									"Exception while starting wait for object replay to complete:",
-									Constants.REPLAY_ID_FIELD,
-									replay.replayId)), e);
-						}
-					}
-				}
+		ReplayStatus status = ReplayStatus.Running;
+		while( status == ReplayStatus.Running) {
+			try {
+				Thread.sleep(5000);
+				Optional<Replay> currentRunningReplay = rrstore.getCurrentRecordOrReplay(Optional.of(replay.customerId),
+						Optional.of(replay.app), Optional.of(replay.instanceId))
+						.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+				status = currentRunningReplay.filter(runningReplay -> runningReplay.
+						replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
+			} catch (InterruptedException e) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+						"Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
+						, replay.replayId)));
 			}
-		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Exception while Synchronising object for replay:", Constants.REPLAY_ID_FIELD,
-					replay.replayId)), e);
 		}
 		if (replay.status != Replay.ReplayStatus.Completed) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
