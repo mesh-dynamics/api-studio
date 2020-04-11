@@ -55,7 +55,10 @@ analyze() {
 }
 main() {
   set -x
-  apk add jq
+  if [[ ! -f /usr/local/bin/jq ]]
+  then
+	  apk add jq
+  fi
   CUBE_ENDPOINT=https://demo.dev.cubecorp.io
   TEMPLATE=DEFAULT
   USER_ID=CubeCorp
