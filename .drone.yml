@@ -5,10 +5,17 @@ name: default
 steps:
   - name: docker_build
     image: plugins/docker
+    environment:
+      TOKEN:
+        from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: 'Welcome@md'
       repo: cubeiocorp/cubeuibackend
+      build_args_from_env:
+      - TOKEN
+      target: prod
+      tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
       tags:
         - ${DRONE_COMMIT}-${DRONE_BRANCH}
         - ${DRONE_BRANCH}-latest
@@ -30,10 +37,17 @@ steps:
 
   - name: Test_build
     image: plugins/docker
+    environment:
+      TOKEN:
+        from_secret: githubtoken
     settings:
       username: aakashsinghalmd01
       password: 'Welcome@md'
       repo: cubeiocorp/cubeuibackend
+      build_args_from_env:
+      - TOKEN
+      target: prod
+      tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
       tags: ${DRONE_COMMIT}
       dry_run: true
     when:
