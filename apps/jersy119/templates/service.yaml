@@ -60,6 +60,12 @@ spec:
             value: "jersey_1_19_demo"
           - name: depURL
             value: department:8080
+          - name: io.md.service.mock
+            value: https://{{cube_host}}/api
+          - name: io.md.mock.services
+            value: department:8080
+          - name: io.md.authtoken
+            value: {{auth_token}}
 
 ##################################################################################################
 # Jersy119 employee record services
