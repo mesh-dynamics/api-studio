@@ -179,8 +179,8 @@ public abstract class AbstractReplayDriver {
 
 		rrstore.saveReplay(replay);
 		if (analyze) {
-            analyze();
-        }
+			analyze();
+		}
 		this.client.tearDown();
 	}
 
@@ -239,24 +239,64 @@ public abstract class AbstractReplayDriver {
 	}
 
 	public void analyze() {
-        if (replay.status != Replay.ReplayStatus.Completed) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Replay is not completed", Constants.REPLAY_ID_FIELD
-                , replay.replayId)));
-            return;
-        }
-        try {
-            replay.status = Replay.ReplayStatus.Analyzing;
-            Optional<Analysis> analyzer = Analyzer.analyze(replay.replayId, null, config);
-            if(analyzer.isPresent()) {
-                Analysis analysis = analyzer.get();
-                replay.status = analysis.status == Analysis.Status.Completed ? Replay.ReplayStatus.AnalyzeComplete : replay.status;
-            }
-        } catch (TemplateNotFoundException e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
-        }
-    }
+		boolean replayComplete = false;
+		Object obj = new Object();
+		Optional<Replay> prevRunningReplay = null;
+		try {
+			synchronized (obj) {
+				while (!replayComplete) {
+					Optional<Replay> currentRunningReplay = rrstore
+							.getCurrentRecordOrReplay(Optional.of(replay.customerId),
+									Optional.of(replay.app), Optional.of(replay.instanceId))
+							.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+					if (currentRunningReplay.isPresent()) {
+						Replay runningReplay = currentRunningReplay.get();
+						if (runningReplay.replayId.equals(replay.replayId)) {
+							prevRunningReplay = currentRunningReplay;
+						}
+					}
+					if (currentRunningReplay.isEmpty() && prevRunningReplay == null) {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+								"No running replay present to analyze", Constants.REPLAY_ID_FIELD
+								, replay.replayId)));
+						return;
+					}
+					if (currentRunningReplay.isEmpty() && prevRunningReplay != null) {
+						replay.status = Replay.ReplayStatus.Completed;
+						replayComplete = true;
+					} else {
+						try {
+							obj.wait(5000);
+						} catch (Exception e) {
+							LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+									"Exception while starting wait for object replay to complete:",
+									Constants.REPLAY_ID_FIELD,
+									replay.replayId)), e);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Exception while Synchronising object for replay:", Constants.REPLAY_ID_FIELD,
+					replay.replayId)), e);
+		}
+		if (replay.status != Replay.ReplayStatus.Completed) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Replay is not completed", Constants.REPLAY_ID_FIELD
+					, replay.replayId)));
+			return;
+		}
+		try {
+			replay.status = Replay.ReplayStatus.Analyzing;
+			Analyzer.analyze(replay.replayId, "", config);
+		} catch (TemplateNotFoundException e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD,
+					replay.replayId)), e);
+		}
+		replay.status = Replay.ReplayStatus.AnalyzeComplete;
+	}
 
 	public Replay getReplay() {
 		return replay;
