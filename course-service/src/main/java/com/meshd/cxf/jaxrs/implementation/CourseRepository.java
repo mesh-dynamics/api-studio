@@ -31,8 +31,8 @@ import com.cube.interceptor.apachecxf.egress.TracingFilter;
 public class CourseRepository {
     private Map<Integer, Course> courses = new HashMap<>();
     private String BASE_URL = System.getenv("student.service.url");
-    private String URL = BASE_URL + "/meshd/students?source=aaa&trial=bbb";
-
+    private String URL = BASE_URL!=null ? BASE_URL + "/meshd/students?source=aaa&trial=bbb" :
+        "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
 //    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
 
     {

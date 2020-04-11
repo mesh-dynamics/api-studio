@@ -30,8 +30,8 @@ public class Course {
     private String name;
     private List<Integer> studentIds = new ArrayList<>();
     private String BASE_URL = System.getenv("student.service.url");
-    private String URL = BASE_URL + "/meshd/students?source=aaa&trial=bbb";
-
+    private String URL = BASE_URL!=null ? BASE_URL + "/meshd/students?source=aaa&trial=bbb" :
+        "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     //    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     private WebClient webClient = WebClient.create(URL, List.of(new ClientFilter(), new TracingFilter(), new MockingClientFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
@@ -68,6 +68,7 @@ public class Course {
 
     @POST
     public Response createStudent(Student student) throws Exception     {
+//        return Response.ok().build();
         for (Integer id : studentIds) {
             if (id == student.getId()) {
                 return Response.status(Response.Status.CONFLICT).build();
