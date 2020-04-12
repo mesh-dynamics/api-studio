@@ -1,5 +1,6 @@
 package com.cube.drivers;
 
+import com.cube.dao.Replay.ReplayStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,6 +13,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.cube.cache.ComparatorCache.TemplateNotFoundException;
+import com.cube.dao.Analysis;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +53,7 @@ public abstract class AbstractReplayDriver {
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
 
-	public boolean start() {
+	public boolean start(boolean analyze) {
 
 		if (replay.status != Replay.ReplayStatus.Init) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -66,7 +69,7 @@ public abstract class AbstractReplayDriver {
 		}
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Starting Replay",
 			Constants.REPLAY_ID_FIELD , replay.replayId)));
-		CompletableFuture.runAsync(this::replay).handle((ret, e) -> {
+		CompletableFuture.runAsync(() -> replay(analyze)).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
@@ -99,7 +102,7 @@ public abstract class AbstractReplayDriver {
 
 	private IReplayClient client;
 
-	protected void replay() {
+	protected void replay(boolean analyze) {
 
 		//List<Request> requests = getRequests();
 
@@ -174,7 +177,11 @@ public abstract class AbstractReplayDriver {
 
 		replay.status =
 			(replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
+
 		rrstore.saveReplay(replay);
+		if (analyze) {
+			analyze();
+		}
 		this.client.tearDown();
 	}
 
@@ -230,6 +237,33 @@ public abstract class AbstractReplayDriver {
 				return client.getErrorStatusCode();
 			}
 		}).collect(Collectors.toList());
+	}
+
+	public void analyze() {
+		ReplayStatus status = ReplayStatus.Running;
+		while( status == ReplayStatus.Running) {
+			try {
+				Thread.sleep(5000);
+				Optional<Replay> currentRunningReplay = rrstore.getCurrentRecordOrReplay(Optional.of(replay.customerId),
+						Optional.of(replay.app), Optional.of(replay.instanceId))
+						.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+				status = currentRunningReplay.filter(runningReplay -> runningReplay.
+						replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
+			} catch (InterruptedException e) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+						"Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
+						, replay.replayId)));
+			}
+		}
+		try {
+			replay.status = Replay.ReplayStatus.Analyzing;
+			Analyzer.analyze(replay.replayId, "", config);
+		} catch (TemplateNotFoundException e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD,
+					replay.replayId)), e);
+		}
+		replay.status = Replay.ReplayStatus.AnalyzeComplete;
 	}
 
 	public Replay getReplay() {
