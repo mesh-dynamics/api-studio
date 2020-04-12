@@ -255,12 +255,6 @@ public abstract class AbstractReplayDriver {
 						, replay.replayId)));
 			}
 		}
-		if (replay.status != Replay.ReplayStatus.Completed) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Replay is not completed", Constants.REPLAY_ID_FIELD
-					, replay.replayId)));
-			return;
-		}
 		try {
 			replay.status = Replay.ReplayStatus.Analyzing;
 			Analyzer.analyze(replay.replayId, "", config);
