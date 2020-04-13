@@ -10,17 +10,14 @@ import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
@@ -250,7 +247,7 @@ public class Event {
 	private String traceId;
 	public final String spanId;
 	public final String parentSpanId;
-	public final RunType runType;
+	private RunType runType;
 
 
 	public void setCollection(String collection) {
@@ -280,6 +277,10 @@ public class Event {
 	public void setTraceId(String traceId) {
 		this.traceId = traceId;
 	}
+
+	public RunType getRunType() {return this.runType;}
+
+	public void setRunType(RunType runType) {this.runType = runType;}
 
 	public static class EventBuilder {
 
