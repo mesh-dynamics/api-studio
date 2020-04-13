@@ -1,21 +1,22 @@
 package io.cube.agent;
 
-import java.util.HashMap;
+
+import java.net.URLEncoder;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.cube.agent.EncryptionConfig.JSONPathMeta;
 import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SimpleSampler;
-import io.md.constants.Constants;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
-import io.md.dao.DataObj;
 import io.md.dao.Event;
-import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.Payload;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
@@ -24,7 +25,7 @@ import io.opentracing.SpanContext;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
 	static Optional<Payload> encryptFields(CommonConfig commonConfig, Event event) {
 
@@ -78,6 +79,26 @@ public class Utils {
 	public static Scope activatePerformanceSpan(Span span) {
 		return CommonUtils.activateSpan(span ,
 			! CommonConfig.getInstance().performanceTest);
+	}
+
+	/**
+	 * Reference : https://golb.hplar.ch/2019/01/java-11-http-client.html
+	 * @param data
+	 * @return
+	 */
+	public static BodyPublisher ofFormData(Map<Object, Object> data) {
+		var builder = new StringBuilder();
+		for (Map.Entry<Object, Object> entry : data.entrySet()) {
+			if (builder.length() > 0) {
+				builder.append("&");
+			}
+			builder
+				.append(URLEncoder.encode(entry.getKey().toString(), StandardCharsets.UTF_8));
+			builder.append("=");
+			builder
+				.append(URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8));
+		}
+		return BodyPublishers.ofString(builder.toString());
 	}
 }
 

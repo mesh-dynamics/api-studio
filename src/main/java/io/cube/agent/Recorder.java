@@ -3,6 +3,7 @@ package io.cube.agent;
 import java.util.Optional;
 
 import io.md.dao.Event;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.utils.FnKey;
 
 /*
@@ -31,7 +32,7 @@ public interface Recorder {
         Optional<String> spanId,
         Optional<String> parentSpanId,
         Object responseOrException,
-        FnReqResponse.RetStatus retStatus,
+        RetStatus retStatus,
         Optional<String> exceptionType,
         Object... args);
 
@@ -40,7 +41,7 @@ public interface Recorder {
         Optional<String> spanId,
         Optional<String> parentSpanId,
         Object responseOrException,
-        FnReqResponse.RetStatus retStatus,
+        RetStatus retStatus,
         Optional<String> exceptionType,
         Object... args);
 

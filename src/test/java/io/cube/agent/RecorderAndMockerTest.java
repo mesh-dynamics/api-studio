@@ -13,10 +13,9 @@ import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -26,7 +25,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import io.cube.agent.FnReqResponse.RetStatus;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.constants.Constants;
 import io.md.utils.FnKey;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
@@ -38,7 +37,7 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
  */
 class RecorderAndMockerTest {
 
-    private static final Logger LOGGER = LogManager.getLogger(RecorderAndMockerTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RecorderAndMockerTest.class);
 
 
     private final ObjectMapper jsonMapper;
@@ -73,8 +72,7 @@ class RecorderAndMockerTest {
             recorder = new SimpleHttpRecorder(gson);
             mocker = new SimpleMocker(gson);
         } catch (Exception e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Unable to initialize recorder/mocker")));
+            LOGGER.error("Unable to initialize recorder/mocker", e);
         }
         disc1.put("Prod1", 0.50); disc1.put("Prod2", 0.50); disc1.put("Prod3", 0.5); disc1.put("Prod4", 0.5);
         disc2.put("Prod1", 0.25); disc2.put("Prod2", 0.25); disc2.put("Prod3", 0.25); disc2.put("Prod4", 0.25);
@@ -123,7 +121,7 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(discountedPriceFnKey, traceid, spanid, parentSpanid,
+                FnResponseObj ret = mocker.mock(discountedPriceFnKey,
                         resTimeStamp, Optional.empty(), productId, price);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
@@ -149,7 +147,7 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(discountedPriceFnKey2, traceid, spanid, parentSpanid,
+                FnResponseObj ret = mocker.mock(discountedPriceFnKey,
                         resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
@@ -176,7 +174,7 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(discountedPriceRuntimeExceptionFnKey, traceid, spanid, parentSpanid,
+                FnResponseObj ret = mocker.mock(discountedPriceRuntimeExceptionFnKey,
                         resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 if (ret.retStatus == RetStatus.Exception) {
@@ -223,7 +221,7 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(discountedPriceTypedExceptionFnKey, traceid, spanid, parentSpanid,
+                FnResponseObj ret = mocker.mock(discountedPriceTypedExceptionFnKey,
                         resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 if (ret.retStatus == RetStatus.Exception) {
@@ -261,8 +259,7 @@ class RecorderAndMockerTest {
             }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(getPromoNameFnKey, traceid, spanid,
-                        parentSpanid,
+                FnResponseObj ret = mocker.mock(getPromoNameFnKey,
                         resTimeStamp, Optional.empty());
                 resTimeStamp = ret.timeStamp;
                 return (String) ret.retVal;

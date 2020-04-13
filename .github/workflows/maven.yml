@@ -20,7 +20,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>e7d95f942f6d4f68f23245ad7ddcdb02cafb99a4</password></server></servers></settings>" > ~/.m2/settings.xml
+        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>d988a4475c9b7e2afd2d18e4db5db54da65806cb</password></server></servers></settings>" > ~/.m2/settings.xml
         mvn -B package --file pom.xml -DskipTests -Dmaven.test.skip=true
         mvn deploy -Dregistry=https://maven.pkg.github.com/cube-io-corp -Dtoken=$GITHUB_TOKEN
 

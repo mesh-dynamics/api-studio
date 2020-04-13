@@ -1,14 +1,10 @@
 package io.cube.agent;
 
-import java.util.Map;
+import java.io.FileNotFoundException;
 import java.util.Optional;
-
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.gson.Gson;
 
-import io.md.constants.Constants;
-import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.MDTraceInfo;
@@ -18,7 +14,7 @@ import io.opentracing.Span;
 
 public class EncryptConsoleRecorder extends ConsoleRecorder {
 
-	public EncryptConsoleRecorder(Gson gson) {
+	public EncryptConsoleRecorder(Gson gson) throws FileNotFoundException {
 		super(gson);
 	}
 
@@ -51,9 +47,7 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 			}
 			return super.record(encryptedEvent);
 		} catch (Exception e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(io.md.constants.Constants.MESSAGE, "Unable to serialize Event Object", Constants.REASON,
-					e.getMessage())));
+			LOGGER.error("Unable to serialize Event Object", e);
 			return false;
 		}
 	}
