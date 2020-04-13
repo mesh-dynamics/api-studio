@@ -38,6 +38,7 @@ steps:
   - name: Test
     image: spotify/alpine
     command:
+    - sleep 20
     - ./test.sh
 
 trigger:
