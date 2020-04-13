@@ -196,20 +196,25 @@ public class CubeStore {
                 return Instant.now();
             });
 
-        Optional<Event.RunType> runType = Optional
+        Optional<RecordOrReplay> recordOrReplay = rrstore
+            .getCurrentRecordOrReplay(customerId, app, instanceId, true);
+
+        if (recordOrReplay.isEmpty()) {
+            throw new CubeStoreException(null, "Unable to find running record/replay"
+                , cubeEventMetaInfo);
+        }
+
+        Optional<Event.RunType> runType = Optional.of(recordOrReplay.get().isRecording() ?
+            RunType.Record : RunType.Replay);
+        /*Optional<Event.RunType> runType = Optional
             .ofNullable(meta.getFirst(Constants.RUN_TYPE_FIELD))
-            .flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));
+            .flatMap(rrt -> Utils.valueOf(Event.RunType.class, rrt));*/
         cubeEventMetaInfo.setRunType(runType.map(Enum::name));
 
         //LOGGER.info(String.format("Got store for type %s, for inpcollection %s, reqId %s, path %s"
         // , type.orElse("<empty>"), inpcollection.orElse("<empty>"), rid.orElse("<empty>"), path));
 
-        Optional<RecordOrReplay> recordOrReplay = rrstore
-            .getCurrentRecordOrReplay(customerId, app, instanceId, true);
 
-        if (recordOrReplay.isEmpty()) {
-            throw new CubeStoreException(null, "Unable to find running record/replay", cubeEventMetaInfo);
-        }
 
         Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
         cubeEventMetaInfo.setCollection(collection);
