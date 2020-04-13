@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
       - name: course
-        image: cubeiocorp/cxf-course-service:pm-080420-1
+        image: cubeiocorp/cxf-course-service:pm-110420-1
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -66,13 +66,15 @@ spec:
           - name: io.md.intent
             value: "mock"
           - name: student.service.url
-            value: "http://student:8080"
+            value: http://student:8080
           - name: io.md.service.record
-            value: {{cube_host}}
+            value: https://{{cube_host}}/api
           - name: io.md.service.mock
-            value: {{cube_host}}
+            value: https://{{cube_host}}/api
           - name: io.md.mock.services
-            value: "http://student:8080"
+            value: student:8080
+          - name: io.md.authtoken
+            value: Bearer {{auth_token}}
 
 ##################################################################################################
 # apachecxf course record services
@@ -116,7 +118,7 @@ spec:
     spec:
       containers:
       - name: course
-        image: cubeiocorp/cxf-course-service:pm-080420-1
+        image: cubeiocorp/cxf-course-service:pm-110420-1
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -144,10 +146,6 @@ spec:
             value: "record"
           - name: student.service.url
             value: "http://student:8080"
-          - name: io.md.service.record
-            value: {{cube_host}}
-          - name: io.md.service.mock
-            value: {{cube_host}}
 
 ##################################################################################################
 # apachecxf student services
