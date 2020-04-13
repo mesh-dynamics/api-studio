@@ -893,6 +893,32 @@ public class CubeStore {
         return resp.orElse(Response.serverError().build());
     }
 
+    @POST
+    @Path("resumeRecording/{recordingId}")
+    public Response resumeRecording(@PathParam("recordingId") String recordingId) {
+
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        Response resp = recording.map(r -> {
+            Recording resumedRecording = Recording.resumeRecording(r, rrstore);
+            String json;
+            try {
+                json = jsonMapper.writeValueAsString(resumedRecording);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Error in converting response and match results to Json",
+                    Constants.RECORDING_ID, recordingId
+                )));
+                return Response.serverError()
+                    .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        ex.getMessage())).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
+                String.format("Status not found for recordingid %s", recordingId))).build());
+        return resp;
+    }
+
 
     @GET
     @Path("searchRecording")

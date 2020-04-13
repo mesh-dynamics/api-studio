@@ -184,6 +184,17 @@ public class Recording {
 		return recording;
 	}
 
+	public static Recording resumeRecording(Recording recording, ReqRespStore rrstore) {
+		if (recording.status != RecordingStatus.Running) {
+			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Resuming recording",
+				Constants.RECORDING_ID, recording.id)));
+			recording.status = RecordingStatus.Running;
+			recording.updateTimestamp = Optional.of(Instant.now());
+			rrstore.saveRecording(recording);
+		}
+		return recording;
+	}
+
 	public Recording softDeleteRecording(ReqRespStore rrstore)
 		throws RecordingSaveFailureException {
 		this.archived = true;
