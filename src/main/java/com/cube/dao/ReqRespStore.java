@@ -189,11 +189,12 @@ public interface ReqRespStore {
      * @param start
      * @param userId
      * @param endDate
+		 * @param startDate
      * @return
      */
     Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
                              List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
-                             Optional<String> userId, Optional<Instant> endDate);
+                             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate);
 
     /**
      *
