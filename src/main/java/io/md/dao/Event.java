@@ -316,7 +316,11 @@ public class Event {
 			this.collection = collection;
 			this.traceId = mdTraceInfo.traceId;
 			this.spanId = mdTraceInfo.spanId;
-			this.parentSpanId = mdTraceInfo.parentSpanId;
+			String baggageParentSpanId = mdTraceInfo.baggageItems.get(Constants.MD_PARENT_SPAN);
+			if ( baggageParentSpanId != null)
+				this.parentSpanId = baggageParentSpanId;
+			else
+				this.parentSpanId = mdTraceInfo.parentSpanId;
 			this.runType = runType;
 			this.timestamp = timestamp;
 			this.reqId = reqId;
@@ -333,7 +337,11 @@ public class Event {
 			this.service = cubeMetaInfo.serviceName;
 			this.traceId = mdTraceInfo.traceId;
 			this.spanId = mdTraceInfo.spanId;
-			this.parentSpanId = mdTraceInfo.parentSpanId;
+			String baggageParentSpanId = mdTraceInfo.baggageItems.get(Constants.MD_PARENT_SPAN);
+			if ( baggageParentSpanId != null)
+				this.parentSpanId = baggageParentSpanId;
+			else
+				this.parentSpanId = mdTraceInfo.parentSpanId;
 			this.runType = runType;
 			this.apiPath = apiPath;
 			this.eventType = eventType;
