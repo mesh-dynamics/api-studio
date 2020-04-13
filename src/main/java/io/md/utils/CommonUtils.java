@@ -3,6 +3,8 @@ package io.md.utils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.net.http.HttpRequest;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -14,14 +16,12 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -34,6 +34,8 @@ import io.jaegertracing.internal.JaegerTracer;
 import io.jaegertracing.internal.samplers.ConstSampler;
 import io.md.constants.Constants;
 import io.md.dao.CubeMetaInfo;
+import io.md.dao.Event;
+import io.md.dao.FnReqRespPayload;
 import io.md.dao.MDTraceInfo;
 import io.md.tracer.HTTPHeadersCarrier;
 import io.md.tracer.MDGlobalTracer;
@@ -51,7 +53,7 @@ import io.opentracing.tag.Tags;
 
 public class CommonUtils {
 
-	private static final Logger LOGGER = LogManager.getLogger(CommonUtils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommonUtils.class);
 
 	private static final Tracer NOOPTracer = NoopTracerFactory.create();
 
@@ -69,7 +71,7 @@ public class CommonUtils {
 
 	}
 
-	public static void addTraceHeaders(Invocation.Builder requestBuilder, String requestType) {
+	public static void addTraceHeaders(HttpRequest.Builder requestBuilder, String requestType) {
 		if (MDGlobalTracer.isRegistered()) {
 			Tracer tracer = MDGlobalTracer.get();
 
@@ -93,7 +95,7 @@ public class CommonUtils {
 				activeSpan.setBaggageItem(Constants
 					.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY, null);
 				tracer.inject(activeSpan.context(),
-					Format.Builtin.HTTP_HEADERS, new RequestBuilderCarrier(requestBuilder));
+					Format.Builtin.HTTP_HEADERS, new RequestCarrier(requestBuilder));
 				activeSpan.setBaggageItem(Constants
 					.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY, currentIntent);
 			}
@@ -145,8 +147,7 @@ public class CommonUtils {
 			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
 			fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
 		currentIntent.ifPresent(
-			intent -> LOGGER.debug(Map.of(Constants.MESSAGE, "Intent from trace", "intent",
-				intent)));
+			intent -> LOGGER.debug("Intent from trace : ".concat(intent)));
 		return currentIntent;
 	}
 
@@ -171,12 +172,16 @@ public class CommonUtils {
 
 
 	public static Span startClientSpan(String operationName, SpanContext parentContext,
-		Map<String, String> tags , boolean noop) {
+		Map<String, String> tags, boolean noop) {
 		// TODO assuming that a tracer has been registered already with MDGlobalTracer
 		Tracer tracer = noop ? NOOPTracer : MDGlobalTracer.get();
 		Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
-		if (parentContext != null) spanBuilder.asChildOf(parentContext);
-		if (tags != null) tags.forEach(spanBuilder::withTag);
+		if (parentContext != null) {
+			spanBuilder.asChildOf(parentContext);
+		}
+		if (tags != null) {
+			tags.forEach(spanBuilder::withTag);
+		}
 		return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
 			.start();
 	}
@@ -200,7 +205,7 @@ public class CommonUtils {
 	}
 
 	public static Span startClientSpan(String operationName, Map<String, String> tags) {
-		return startClientSpan(operationName, null, tags,  false);
+		return startClientSpan(operationName, null, tags, false);
 	}
 
 	public static Span startServerSpan(MultivaluedMap<String, String> rawHeaders,
@@ -319,7 +324,7 @@ public class CommonUtils {
 		return getCaseInsensitiveMatches(mMap, possibleKey).stream().findFirst();
 	}
 
-	public static Optional<String> getTraceId (MultivaluedMap<String,String> mMap) {
+	public static Optional<String> getTraceId(MultivaluedMap<String, String> mMap) {
 		return findFirstCaseInsensitiveMatch(mMap, Constants.ZIPKIN_TRACE_HEADER);
 	}
 
@@ -328,20 +333,20 @@ public class CommonUtils {
 		JsonObject payloadObj = new JsonObject();
 		payloadObj.add("args", createArgsJsonArray(gson, args));
 		payloadObj.addProperty("response", gson.toJson(responseOrException));
-		LOGGER.info(new ObjectMessage(Map.of("function_payload", payloadObj.toString())));
+		LOGGER.info("function_payload : ".concat(payloadObj.toString()));
 		return payloadObj;
 	}
 
-	/*public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
-		RunType rrType, Optional<Instant> timestamp, JsonObject payload) {
+	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
+		Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload) {
 
-		EventBuilder eventBuilder = new EventBuilder(fnKey.customerId, fnKey.app,
+		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
 			mdTraceInfo, rrType, timestamp, "NA",
 			fnKey.signature, Event.EventType.JavaRequest);
-		eventBuilder.setRawPayload(new StringPayload(payload.toString()));
+		eventBuilder.setPayload(payload);
 		return eventBuilder.createEventOpt();
-	}*/
+	}
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
 		JsonArray argsArray = new JsonArray();

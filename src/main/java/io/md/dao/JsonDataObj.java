@@ -1,8 +1,8 @@
 package io.md.dao;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Iterator;
@@ -12,16 +12,14 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.swing.MenuElement;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.http.message.BasicNameValuePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -30,22 +28,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BinaryNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
-import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.JsonTransformer;
 
 public class JsonDataObj implements DataObj {
 
-	private static final Logger LOGGER = LogManager.getLogger(JsonDataObj.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataObj.class);
 
 	public static JsonDataObj createEmptyObject(ObjectMapper jsonMapper) {
 		return new JsonDataObj(MissingNode.getInstance(), jsonMapper);
@@ -138,8 +133,7 @@ public class JsonDataObj implements DataObj {
 		try {
 			return jsonMapper.writeValueAsString(objRoot);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(Map.of("message", "Not able to serialize json",
-				"value", objRoot.toString())));
+			LOGGER.error("Not able to serialize json " + objRoot.toString());
 			// TODO .. isn't this prone to errors ?
 			return objRoot.toString();
 		}
@@ -198,9 +192,8 @@ public class JsonDataObj implements DataObj {
 							valParentObj.set(fieldName, parsedVal);
 							return true;
 						} catch (IOException ex) {
-							LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-								"Exception in parsing json string", Constants.PATH_FIELD, path
-								, "value" , val.toString())) , e);
+							LOGGER.error("Exception in parsing json string, path : "
+									.concat(path).concat(" , value : ").concat(val.toString()), e);
 						}
 					}
 				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
@@ -230,9 +223,8 @@ public class JsonDataObj implements DataObj {
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (IOException ex) {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"Exception in parsing json string", Constants.PATH_FIELD, path
-							, "value" , val.toString())) , ex);
+						LOGGER.error("Exception in parsing json string, path : "
+							.concat(path).concat(" , value : ").concat(val.toString()), ex);
 					}
 				} else if (val.isTextual()) {
 					try {
@@ -245,9 +237,8 @@ public class JsonDataObj implements DataObj {
 						valParentObj.set(fieldName, parsedVal);
 						return true;
 					} catch (Exception e) {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"Exception in parsing json string", Constants.PATH_FIELD, path
-							, "value" , val.toString())) , e);
+						LOGGER.error("Exception in parsing json string, path : "
+							.concat(path).concat(" , value : ").concat(val.toString()), e);
 					}
 				}
 			}
@@ -285,14 +276,33 @@ public class JsonDataObj implements DataObj {
 			if (val != null && !val.isValueNode()) {
 				// convert to string
 				// currently handling only json type
-				if (mimetype.startsWith(MediaType.APPLICATION_JSON)
-					|| mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
 					if (asByteArray) {
-						valParentObj.set(fieldName, new BinaryNode(val.toString().getBytes()));
+						valParentObj.set(fieldName, new BinaryNode(val.toString()
+							.getBytes(StandardCharsets.UTF_8)));
 					} else {
 						valParentObj.set(fieldName, new TextNode(val.toString()));
 					}
 					return true;
+				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+					String urlEncoded = null;
+					try {
+						MultivaluedHashMap<String, String> fromJson = jsonMapper.treeToValue(val
+							, MultivaluedHashMap.class);
+						List<NameValuePair> nameValuePairs = new ArrayList<>();
+						fromJson.forEach((x , y) -> y.forEach(z -> nameValuePairs.add(
+									new BasicNameValuePair(x, z))));
+						urlEncoded =  URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
+						if (asByteArray) {
+							valParentObj.set(fieldName, new BinaryNode(urlEncoded.
+								getBytes(StandardCharsets.UTF_8)));
+						} else {
+							valParentObj.set(fieldName, new TextNode(urlEncoded));
+						}
+					} catch (JsonProcessingException e) {
+						LOGGER.error("Error while"
+							+ " wrapping Url encoded form as UTF-8 string", e);
+					}
 				}
 			} else if (val != null && val.isBinary() && !asByteArray) {
 				if (mimetype.equals(MediaType.APPLICATION_XML) || mimetype.equals(MediaType.TEXT_HTML)
@@ -302,8 +312,8 @@ public class JsonDataObj implements DataObj {
 							new TextNode(new String(val.binaryValue(), StandardCharsets.UTF_8)));
 						return true;
 					} catch (IOException e) {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while"
-							+ " wrapping byte array as UTF-8 string")), e);
+						LOGGER.error("Error while"
+							+ " wrapping byte array as UTF-8 string", e);
 
 					}
 				}
@@ -335,8 +345,7 @@ public class JsonDataObj implements DataObj {
 							return newVal;
 						});
 					} catch (IOException e) {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-							, "Error while retrieving binary node value")), e);
+						LOGGER.error("Error while retrieving binary node value", e);
 					}
 				} else {
 					return encrypter.encrypt(val.toString()).map(newVal -> {
@@ -363,13 +372,11 @@ public class JsonDataObj implements DataObj {
 			try {
 				return Optional.of(jsonMapper.treeToValue(valueNode, className));
 			} catch (Exception e) {
-				LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Unable to convert path to desired object" , Constants.PATH_FIELD,
-					path , "className" , className.getName())));
+				LOGGER.debug("Unable to convert path to desired object, path : ".concat(path)
+					.concat(" className : ").concat(className.getName()));
 			}
 		} else {
-			LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "path does not exist",
-				Constants.PATH_FIELD, path)));
+			LOGGER.debug("path does not exist : ".concat(path));
 		}
 		return Optional.empty();
 	}
@@ -412,10 +419,8 @@ public class JsonDataObj implements DataObj {
 	@Override
 	public DataObj applyTransform(DataObj rhs, List<ReqRespUpdateOperation> operationList) {
 		if (!(rhs instanceof JsonDataObj)) {
-			LOGGER.error(new ObjectMessage(Map.of(
-				Constants.MESSAGE, "Rhs not Json obj type. Ignoring the transformation",
-				Constants.DATA, rhs.toString()
-			)));
+			LOGGER.error("Rhs not Json obj type. Ignoring the transformation , rhs : "
+				.concat(rhs.toString()));
 			return this;
 		}
 		JsonTransformer jsonTransformer = new JsonTransformer(jsonMapper);
