@@ -865,14 +865,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addEndRangeFilter(query, fieldname, fval, true);
     }
 
-    private static void addStartRangeFilter(SolrQuery query, String fieldname, String fval, boolean startInclusive, boolean quote) {
-        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        String queryFmt = startInclusive ? "%s:[%s TO *]" : "%s:{%s TO *]";
-        query.addFilterQuery(String.format(queryFmt, fieldname, newfval));
-    }
-
-    private static void addStartRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval, boolean startInclusive) {
-        fval.ifPresent(val -> addStartRangeFilter(query, fieldname, val.toString(), startInclusive, true));
+    private static void addRangeFilter(SolrQuery query, String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
+        String startDateVal = startDate.isPresent() ? SolrIterator.escapeQueryChars(startDate.get().toString()) : "*";
+        String endDateVal = endDate.isPresent() ? SolrIterator.escapeQueryChars(endDate.get().toString()) : "*";
+        String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
+        query.addFilterQuery(String.format(queryFmt, fieldname, startDateVal, endDateVal));
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
@@ -1577,8 +1574,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
         addFilter(query, COLLECTIONF , collection);
         addFilter(query, USERIDF, userId);
-        addEndRangeFilter(query, CREATIONTIMESTAMPF, endDate, true);
-        addStartRangeFilter(query, CREATIONTIMESTAMPF, startDate, true);
+        addRangeFilter(query, CREATIONTIMESTAMPF, startDate, endDate, true, true);
         // Heuristic: getting the latest replayid if there are multiple.
         // TODO: what happens if there are multiple replays running for the
         // same triple (customer, app, instance)
