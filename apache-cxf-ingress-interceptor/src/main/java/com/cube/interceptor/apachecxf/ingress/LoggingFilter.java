@@ -216,8 +216,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
 
 		String traceId = spanContext.getTraceId();
-		String spanId = String.valueOf(spanContext.getSpanId());
-		String parentSpanId = String.valueOf(spanContext.getParentId());
+		String spanId = Long.toHexString(spanContext.getSpanId());
+		String parentSpanId = Long.toHexString(spanContext.getParentId());
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
 		return mdTraceInfo;
 	}

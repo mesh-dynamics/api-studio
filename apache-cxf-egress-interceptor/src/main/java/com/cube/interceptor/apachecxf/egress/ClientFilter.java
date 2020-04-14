@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
@@ -37,6 +39,7 @@ import org.apache.logging.log4j.util.Strings;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.CommonConfig;
+import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
@@ -236,6 +239,16 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 		}
 	}
 
+	private MDTraceInfo getTraceInfo(Span currentSpan) {
+		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
+
+		String traceId = spanContext.getTraceId();
+		String spanId = Long.toHexString(spanContext.getSpanId());
+		String parentSpanId = Long.toHexString(spanContext.getParentId());
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
+		return mdTraceInfo;
+	}
+
 	private void recordRequest(WriterInterceptorContext writerInterceptorContext,
 		ClientRequestContext clientRequestContext) throws IOException {
 		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
@@ -243,7 +256,8 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
 		});
 
-		// Do not log request in case the egress serivce is to be mocked
+		newClientSpan.map(CommonUtils::activateSpan);
+
 		String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		if (commonConfig.shouldMockService(service)) {
@@ -275,7 +289,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				//serviceName to be host+port for outgoing calls
 				String serviceName = CommonUtils.getEgressServiceName(uri);
 
-				MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+				MDTraceInfo mdTraceInfo = getTraceInfo(span);
 
 				String xRequestId = clientRequestContext.getStringHeaders()
 					.getFirst(Constants.X_REQUEST_ID);
