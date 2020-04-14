@@ -8,7 +8,7 @@ public class MDTraceInfo {
   public final String traceId;
   public final String spanId;
   public final String parentSpanId;
-  public final Map<String, String> baggageItems = new HashMap<>();
+  public Map<String, String> baggageItems = new HashMap<>();
 
   public MDTraceInfo() {
     this.traceId = null;
@@ -22,11 +22,11 @@ public class MDTraceInfo {
     this.parentSpanId = parentSpanId;
   }
 
-  public MDTraceInfo(String traceId, String spanId, String parentSpanId, Iterable<Map.Entry<String, String>> baggageItemsItr) {
+  public MDTraceInfo(String traceId, String spanId, String parentSpanId,
+      Map<String, String> baggageItems) {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
-    for (Map.Entry<String, String> baggageItem : baggageItemsItr)
-      baggageItems.entrySet().add(baggageItem);
+    this.baggageItems = baggageItems;
   }
 }
