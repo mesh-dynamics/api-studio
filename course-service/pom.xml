@@ -5,13 +5,7 @@
     <artifactId>cxf-jaxrs-implementation</artifactId>
     <name>cxf-jaxrs-implementation</name>
     <version>0.0.1-SNAPSHOT</version>
-    <groupId>com.baeldung</groupId>
-    <!--<parent>
-        <groupId>com.baeldung</groupId>
-        <artifactId>apache-cxf</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-    </parent>-->
-
+    <groupId>com.cube</groupId>
 
     <dependencies>
         <dependency>
@@ -100,23 +94,22 @@
         <dependency>
             <groupId>com.cube.interceptor</groupId>
             <artifactId>apache_cxf_2_7_interceptors</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
 
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.logging.log4j</groupId>-->
-<!--            <artifactId>log4j-core</artifactId>-->
-<!--            <version>2.13.1</version>-->
-<!--        </dependency>-->
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.13.1</version>
+        </dependency>
 
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.logging.log4j</groupId>-->
-<!--            <artifactId>log4j-slf4j-impl</artifactId>-->
-<!--            <version>2.13.1</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.13.1</version>
+        </dependency>
 
     </dependencies>
 
@@ -185,12 +178,6 @@
                             <artifactSet>
                                 <includes>
                                     <include>**</include>
-<!--                                    <include>com.cube.interceptor:apache_cxf_2_7_interceptors</include>-->
-<!--                                    <include>io.cube:agent</include>-->
-<!--                                    <include>io.cube:commons</include>-->
-<!--                                    <include>javax.ws.rs:javax.ws.rs-api</include>-->
-<!--                                    <include>org.apache.logging.log4j:log4j-api</include>-->
-<!--                                    <include>org.apache.logging.log4j:log4j-core</include>-->
                                 </includes>
                             </artifactSet>
                             <transformers>
