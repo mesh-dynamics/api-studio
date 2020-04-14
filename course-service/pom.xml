@@ -7,6 +7,14 @@
     <version>0.0.1-SNAPSHOT</version>
     <groupId>com.cube</groupId>
 
+    <repositories>
+      <repository>
+        <id>github</id>
+        <name>GitHub OWNER Apache Maven Packages</name>
+        <url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+      </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.cxf</groupId>
