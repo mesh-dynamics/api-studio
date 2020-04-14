@@ -35,6 +35,8 @@ public class Analysis {
 
 	/**
 	 * @param replayId
+     * @param replayId
+     * @param reqCnt
 	 */
 	public Analysis(String replayId, int reqCnt, String templateVersion) {
 		this.replayId = replayId;
@@ -48,11 +50,8 @@ public class Analysis {
 
 	/**
 	 * This constructor is only for jackson json deserialization
-     * @param replayId
-     * @param reqCnt
      */
-
-	private Analysis(String replayId, int reqCnt) {
+	private Analysis() {
 		super();
 		this.replayId = "";
 		// Assuming this value will be overwritten during json deserialization
