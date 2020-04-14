@@ -5,15 +5,17 @@ import {
     REQUEST_TABS,
     REQUEST_RULE
 } from "../../utils/enums/golden-visibility";
+import { resolveEndPoint } from "../../utils/lib/golden-utils";
 
 const RequestContract = (props) => {
-    const { 
+    const {
+        selectedApi, 
         requestExamples: { method, hdrs },
         handleExampleClick,
         requestContract: { matchRules, compareRules },
     } = props;
 
-    const endpoint = hdrs ? hdrs[":path"][0].split("?")[0] : "[URL]";
+    const endpoint = resolveEndPoint(hdrs, selectedApi);
 
     return (
         <Fragment>
