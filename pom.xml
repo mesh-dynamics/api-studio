@@ -5,12 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.16</version>
+    <version>1.0.17</version>
     <properties>
         <version.log4j>2.13.0</version.log4j>
         <version.java>11</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
-        <version.jersey>2.27</version.jersey>
         <version.gson>2.8.5</version.gson>
         <version.jaeger>1.1.0</version.jaeger>
         <version.slf4j>1.7.30</version.slf4j>
@@ -95,33 +94,6 @@
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-properties</artifactId>
       <version>2.9.6</version>
-    </dependency>
-    <dependency>
-      <!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>javax.ws.rs-api</artifactId>
-      <version>2.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-common</artifactId>
-      <version>${version.jersey}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-server</artifactId>
-      <version>${version.jersey}</version>
-    </dependency>
-    <!-- rest client dependencies-->
-    <dependency>
-      <groupId>org.glassfish.jersey.containers</groupId>
-      <artifactId>jersey-container-servlet</artifactId>
-      <version>${version.jersey}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.inject</groupId>
-      <artifactId>jersey-hk2</artifactId>
-      <version>${version.jersey}</version>
     </dependency>
 
     <dependency>
