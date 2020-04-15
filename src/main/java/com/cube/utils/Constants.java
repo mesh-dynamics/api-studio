@@ -130,6 +130,7 @@ public class Constants {
     public static final String REPLAY_REQ_ID_FIELD = "replayReqId";
     public static final String START_FIELD = "start";
     public static final String END_DATE_FIELD = "endDate";
+    public static final String START_DATE_FIELD = "startDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
     public static final String LIMIT_FIELD = "limit";

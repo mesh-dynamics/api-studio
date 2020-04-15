@@ -526,8 +526,10 @@ public class AnalyzeWS {
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
         Optional<String> userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
         Optional<String> endDate = Optional.ofNullable(queryParams.getFirst(Constants.END_DATE_FIELD));
+        Optional<String> startDate = Optional.ofNullable(queryParams.getFirst(Constants.START_DATE_FIELD));
 
         Optional<Instant> endDateTS = Optional.empty();
+        Optional<Instant> startDateTS =  Optional.empty();
         // For checking correct date format
         if(endDate.isPresent()) {
             try {
@@ -540,6 +542,15 @@ public class AnalyzeWS {
                         "Error", e.getMessage())).toString())).build();
             }
         }
+        if (startDate.isPresent()) {
+          try {
+            startDateTS = Optional.of(Instant.parse(startDate.get()));
+          } catch (DateTimeParseException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message", "start Date format should be yyyy-MM-ddTHH:MM:SSZ",
+                    "Error", e.getMessage())).toString())).build();
+          }
+        }
 
         boolean byPath = Optional.ofNullable(queryParams.getFirst("byPath"))
             .map(v -> v.equals("y")).orElse(false);
@@ -547,7 +558,7 @@ public class AnalyzeWS {
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).map(Integer::valueOf).or(() -> Optional.of(20));
 
         Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS);
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS, startDateTS);
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
