@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
@@ -313,7 +314,7 @@ public class Event {
 			this.collection = collection;
 			this.traceId = mdTraceInfo.traceId;
 			this.spanId = mdTraceInfo.spanId;
-			this.parentSpanId = mdTraceInfo.parentSpanId;
+			this.parentSpanId = mdTraceInfo.getParentSpanId();
 			this.runType = runType;
 			this.timestamp = timestamp;
 			this.reqId = reqId;
@@ -330,7 +331,7 @@ public class Event {
 			this.service = cubeMetaInfo.serviceName;
 			this.traceId = mdTraceInfo.traceId;
 			this.spanId = mdTraceInfo.spanId;
-			this.parentSpanId = mdTraceInfo.parentSpanId;
+			this.parentSpanId = mdTraceInfo.getParentSpanId();
 			this.runType = runType;
 			this.apiPath = apiPath;
 			this.eventType = eventType;
@@ -338,6 +339,7 @@ public class Event {
 			this.reqId = reqId;
 			this.collection = collection;
 		}
+
 
 		public EventBuilder setPayload(Payload payload) {
 			this.payload = payload;
