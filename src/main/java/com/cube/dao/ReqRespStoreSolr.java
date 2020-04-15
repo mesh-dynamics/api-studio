@@ -851,20 +851,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addFilterQuery(filter);
     }
 
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, String fval, boolean endInclusive, boolean quote) {
-        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        String queryFmt = endInclusive ? "%s:[* TO %s]" : "%s:[* TO %s}";
-        query.addFilterQuery(String.format(queryFmt, fieldname, newfval));
-    }
-
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval, boolean endInclusive) {
-        fval.ifPresent(val -> addEndRangeFilter(query, fieldname, val.toString(), endInclusive, true));
-    }
-
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval) {
-        addEndRangeFilter(query, fieldname, fval, true);
-    }
-
     private static void addRangeFilter(SolrQuery query, String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
         String startDateVal = startDate.isPresent() ? SolrIterator.escapeQueryChars(startDate.get().toString()) : "*";
         String endDateVal = endDate.isPresent() ? SolrIterator.escapeQueryChars(endDate.get().toString()) : "*";
