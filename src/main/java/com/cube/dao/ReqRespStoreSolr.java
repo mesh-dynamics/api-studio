@@ -969,7 +969,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TRACEIDF, event.getTraceId());
         if (event.spanId != null) doc.setField(SPAN_ID_F, event.spanId);
         if (event.parentSpanId != null) doc.setField(PARENT_SPAN_ID_F, event.parentSpanId);
-        doc.setField(RRTYPEF, event.runType.toString());
+        doc.setField(RRTYPEF, event.getRunType().toString());
         doc.setField(TIMESTAMPF, event.timestamp.toString());
         doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);

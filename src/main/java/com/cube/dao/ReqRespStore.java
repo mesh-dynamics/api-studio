@@ -450,6 +450,11 @@ public interface ReqRespStore {
 		}
 
 		@JsonIgnore
+		public RunType getRunType(){
+        	return recording.isPresent() ? RunType.Record : RunType.Replay;
+        }
+
+		@JsonIgnore
         public String getTemplateVersion() {
             return replay.map(replay1 -> replay1.templateVersion)
                 .orElseGet(() -> recording.map(recording1 -> recording1.templateVersion).orElse(

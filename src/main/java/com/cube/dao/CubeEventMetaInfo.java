@@ -32,7 +32,7 @@ public class CubeEventMetaInfo {
 		this.reqId = Optional.ofNullable(e.reqId);
 		this.service = Optional.ofNullable(e.service);
 		this.path = Optional.ofNullable(e.apiPath);
-		this.runType = Optional.ofNullable(e.runType).map(Enum::name);
+		this.runType = Optional.ofNullable(e.getRunType()).map(Enum::name);
 		this.collection = Optional.ofNullable(e.getCollection());
 		this.traceId = Optional.ofNullable(e.getTraceId());
 		this.eventType = Optional.ofNullable(e.eventType).map(Enum::name);
