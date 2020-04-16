@@ -4655,7 +4655,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
-    margin-bottom: -10px;
+    /* margin-bottom: -10px; */
 }
 .timeline-replay-id {
     overflow: hidden;
@@ -4669,6 +4669,11 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .timeline-replay-id::-webkit-scrollbar {
     display: none;
 } 
+.timeline-replay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
 .timeline-header-text {
     padding-bottom: 5px;
     font-weight: bold;
@@ -4690,4 +4695,17 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .modal-footer-text {
     margin: 10px;
     color: grey;
+}
+
+/* overridding react table styles */
+.rt-thead.-header {
+    display: none;
+}
+
+.ReactTable.rt-thead.rt-tr {
+    height: 0;
+}
+
+.ReactTable .rt-thead {
+    flex: 1 1 0;
 }

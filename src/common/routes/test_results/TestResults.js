@@ -22,7 +22,6 @@ class TestResults extends Component {
             endDate: new Date(),
             userFilter: "ALL",
             noFilter: true,
-            showHeaderDetails: true,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -91,14 +90,11 @@ class TestResults extends Component {
         });
     }
 
-    toggleHeaderDetails = () => this.setState({ showHeaderDetails: !this.state.showHeaderDetails });
 
     renderTimeLineHeader = (header) => {
         const { date, replayId, goldenName, userName } = header;
-        const { showHeaderDetails } = this.state;
 
         return (
-            showHeaderDetails ? 
             <div>
                 <Tippy 
                     arrow={true} 
@@ -131,33 +127,27 @@ class TestResults extends Component {
                         <div className="timeline-header-text underline">
                                 {moment(date).format('lll')}
                         </div>
-                        <div className="timeline-replay-id">
-                                {`Run By : ${userName}`}
-                        </div>
-                        <div className="timeline-replay-id">
-                                {`Golden : ${goldenName}`}
-                        </div>
-                        <div className="timeline-replay-id">
-                                {`Test ID : ${replayId}`}
+                        <div className="timeline-replay-content">
+                            <div className="timeline-replay-id">
+                                    {`Run By : ${userName}`}
+                            </div>
+                            <div className="timeline-replay-id">
+                                    {`Golden : ${goldenName}`}
+                            </div>
+                            <div className="timeline-replay-id">
+                                    {`Test ID : ${replayId}`}
+                            </div>
                         </div>
                     </div>
                 </Tippy>
-            </div>
-            : 
-            <div className="timeline-replay-header">
-                <div className="timeline-header-text">
-                        {moment(date).format('lll')}
-                </div>
             </div>
         );
     };
 
     renderServiceLabel = () => {
-        const { showHeaderDetails } = this.state;
         return (
             <div style={{ "fontSize": "14px", fontWeight: "bold" }}>
                 <span>Service</span>
-                <i className={showHeaderDetails ? "fas fa-chevron-up": "fas fa-chevron-down"} style={{marginLeft: "5px", cursor: "pointer"}} onClick={this.toggleHeaderDetails}></i>
             </div>
         );
     };
@@ -341,7 +331,6 @@ class TestResults extends Component {
             fixed: "left",
             columns: [{
                 expander: true,
-                Header: () => <strong></strong>,
                 width: 65,
                 sortable: false,
                 Expander: ({ isExpanded, ...rest }) => {
@@ -365,7 +354,6 @@ class TestResults extends Component {
                     userSelect: "none"
                 }
             }, {
-                Header: () => <strong>Test Summary</strong>,
                 id: "serviceRowKey",
                 headerClassName: "freeze-column",
                 className: "freeze-column",
@@ -375,7 +363,9 @@ class TestResults extends Component {
                 width: 300,
                 Cell: row => {
                     if (row.value && row.value.indexOf("--") == 0) {
-                        return (<strong></strong>);
+                        return null;
+                        // Returning the code below pads the cell 
+                        // return (<strong></strong>);
                     }
                     if (row.value && row.value.indexOf("--") > 0) {
                         return (
@@ -396,31 +386,35 @@ class TestResults extends Component {
                 sortable: false,
                 minWidth: count == 0 ? 240 : 150,
                 columns: [{
-                    Header: (args) => {
-                        if (!args.column && !args.column.id) return "";
-                        if (!args.data && !args.data.length == 0) return "";
-                        let cellId = args.column.id;
-                        let data = args.data;
-                        if (!data) return "";
-                        for (let eachRow of data) {
-                            let cellData = eachRow[cellId];
-                            if (!cellData) return (<strong>NA</strong>);
-                            return (<strong
-                                style={{
-                                    color: cellData.respnotmatched && cellData.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
-                                }}
-                            >
-                                {cellData.respnotmatched && cellData.respnotmatched > 0 ? 'Fail' : 'Pass'}
-                            </strong>)
-                        }
-                        return (<strong></strong>);
-                    },
+                    // NOTE: To be kept to understand underlying logic
+                    // Header: (args) => {
+                    //     if (!args.column && !args.column.id) return "";
+                    //     if (!args.data && !args.data.length == 0) return "";
+                    //     let cellId = args.column.id;
+                    //     let data = args.data;
+                    //     if (!data) return "";
+                    //     for (let eachRow of data) {
+                    //         let cellData = eachRow[cellId];
+                    //         if (!cellData) return (<strong>NA</strong>);
+                    //         return (<strong
+                    //             style={{
+                    //                 color: cellData.respnotmatched && cellData.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
+                    //             }}
+                    //         >
+                    //             {cellData.respnotmatched && cellData.respnotmatched > 0 ? 'Fail' : 'Pass'}
+                    //         </strong>)
+                    //     }
+                    //     return (<strong></strong>);
+                    // },
+                    // headerStyle: { display: "none", border: "1px solid green" },
                     accessor: "" + eachTimeStamp.date,
                     minWidth: count == 0 ? 240 : 150,
                     sortable: false,
                     Cell: row => {
                         if (row.row.serviceRowKey && row.row.serviceRowKey.indexOf("--") == 0) {
-                            return (<div><br/><br/></div>);
+                            return null;
+                            // Returning the code below pads the cell
+                            // return (<div><br/><br/></div>);
                         }
                         if (!row.value) {
                             return (<div
@@ -478,7 +472,7 @@ class TestResults extends Component {
                                             }}
                                         />
                                     </Tippy>
-                                </div >
+                                </div>
                             )
                         }
                         return (
@@ -575,7 +569,7 @@ class TestResults extends Component {
                     columns={columns}
                     subRowsKey="subRows"
                     style={{
-                        height: "600px" // This will force the table body to overflow and scroll, since there is not enough room
+                       height: "600px" // This will force the table body to overflow and scroll, since there is not enough room
                     }}
                     showPagination={true}
                     defaultPageSize={10}
