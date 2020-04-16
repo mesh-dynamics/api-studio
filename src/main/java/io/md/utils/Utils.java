@@ -5,7 +5,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -299,9 +302,14 @@ public class Utils {
 		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
 
 		String traceId = spanContext.getTraceId();
-		String spanId = String.valueOf(spanContext.getSpanId());
-		String parentSpanId = String.valueOf(spanContext.getParentId());
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
+		String spanId = Long.toHexString(spanContext.getSpanId());
+		String parentSpanId = Long.toHexString(spanContext.getParentId());
+		Iterable<Entry<String, String>> baggageEntrySet = spanContext.baggageItems();
+		Map<String, String> baggageItems = new HashMap<>();
+		for (Map.Entry<String, String> entry : baggageEntrySet) {
+			baggageItems.put(entry.getKey(), entry.getValue());
+		}
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId, baggageItems);
 		return mdTraceInfo;
 	}
 
