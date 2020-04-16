@@ -27,7 +27,7 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
 	AtomicLong droppedRequests = new AtomicLong();
 
-	public ConsoleRecorder(Gson gson) throws FileNotFoundException {
+	public ConsoleRecorder(Gson gson) {
 		super(gson);
 
 		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;

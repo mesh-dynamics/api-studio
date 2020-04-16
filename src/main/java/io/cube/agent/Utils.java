@@ -1,7 +1,14 @@
 package io.cube.agent;
 
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -76,5 +83,41 @@ public class Utils {
 		return CommonUtils.activateSpan(span ,
 			! CommonConfig.getInstance().performanceTest);
 	}
+
+	public static OutputStream nullOutputStream(Logger logger) {
+		return new OutputStream() {
+			private volatile boolean closed;
+			private Logger LOGGER = logger;
+
+			private void ensureOpen() throws IOException {
+				if (closed) {
+					throw new IOException("Stream closed");
+				}
+			}
+
+			public void discardLog() {
+				LOGGER.info("nullOutputStream: Discarding the write content");
+			}
+
+			@Override
+			public void write(int b) throws IOException {
+				ensureOpen();
+				discardLog();
+			}
+
+			@Override
+			public void write(byte b[], int off, int len) throws IOException {
+				Objects.checkFromIndexSize(off, len, b.length);
+				ensureOpen();
+				discardLog();
+			}
+
+			@Override
+			public void close() {
+				closed = true;
+			}
+		};
+	}
+
 }
 

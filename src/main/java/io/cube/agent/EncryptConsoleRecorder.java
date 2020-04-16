@@ -14,7 +14,7 @@ import io.opentracing.Span;
 
 public class EncryptConsoleRecorder extends ConsoleRecorder {
 
-	public EncryptConsoleRecorder(Gson gson) throws FileNotFoundException {
+	public EncryptConsoleRecorder(Gson gson) {
 		super(gson);
 	}
 
