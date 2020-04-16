@@ -3,7 +3,6 @@ package io.md.utils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.net.http.HttpRequest;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,6 +19,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +71,7 @@ public class CommonUtils {
 
 	}
 
-	public static void addTraceHeaders(HttpRequest.Builder requestBuilder, String requestType) {
+	public static void addTraceHeaders(HttpRequest requestBuilder, String requestType) {
 		if (MDGlobalTracer.isRegistered()) {
 			Tracer tracer = MDGlobalTracer.get();
 
