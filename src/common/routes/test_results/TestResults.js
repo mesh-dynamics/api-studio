@@ -161,6 +161,47 @@ class TestResults extends Component {
             </div>
         );
     };
+
+    getExpandedRows = () => {
+        const expanderIndexString = localStorage.getItem("expander");
+        const expandedServiceKey = {};
+        // if key exists
+        if (expanderIndexString) {
+            // convert the indices to keys with empty object
+            const expanderIndices = JSON.parse(expanderIndexString);
+
+            expanderIndices.forEach(indexKey => expandedServiceKey[indexKey] = {});
+
+            return expandedServiceKey;
+        }
+
+        // If expanderIndexString is not present return all rows collapsed
+        return {};
+    };
+
+    handleExpanderChange = ([index]) => {
+        const expanderIndexString = localStorage.getItem("expander");
+
+        // if key exists
+        if (expanderIndexString) {
+            // Process and add or remove
+            const expanderIndices = JSON.parse(expanderIndexString);
+            
+            if (!expanderIndices.includes(index)) {
+                // If expander index is not present add
+                expanderIndices.push(index);
+                localStorage.setItem("expander", JSON.stringify(expanderIndices));
+            } else {
+                // else remove
+                localStorage.setItem("expander", JSON.stringify(expanderIndices.filter(item => item !== index)));
+            }
+        } else {
+            // if key does not exist, add new key
+            localStorage.setItem("expander", JSON.stringify([index]));
+        }
+
+        this.forceUpdate();
+    }; 
     
     render() {
         const { cube } = this.props;
@@ -538,6 +579,8 @@ class TestResults extends Component {
                     }}
                     showPagination={true}
                     defaultPageSize={10}
+                    expanded={this.getExpandedRows()}
+                    onExpandedChange={(newExpanded, index) => this.handleExpanderChange(index)}
                 />
             </div >
         );
