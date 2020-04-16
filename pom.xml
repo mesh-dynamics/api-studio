@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.19</version>
+    <version>1.0.20</version>
     <properties>
         <version.java>11</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.0.46</version.mdcommons>
+        <version.mdcommons>1.0.47</version.mdcommons>
     </properties>
     <distributionManagement>
       <repository>
