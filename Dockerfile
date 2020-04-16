@@ -13,9 +13,12 @@ mvn package
 ##############
 #Package
 #############
-FROM cubeiocorp/jre:11 AS PROD
+FROM openjdk:11.0-jre AS PROD
+#FROM cubeiocorp/jre:11 AS PROD
 
 COPY --from=build course-service/target/cxf-jaxrs-implementation-0.0.1-SNAPSHOT.jar /root.jar
 COPY --from=build course-service/src/main/jib/tmp/samplerconfig.json /tmp/samplerconfig.json
+
+CMD java -jar /root.jar
 
 EXPOSE 8084
