@@ -32,6 +32,7 @@ class ViewSelectedTestConfig extends React.Component {
             recordModalVisible: false,
             recStatus: null,
             recName: "",
+            recLabel:"",
             recId: null,
             stopDisabled: true,
             customHeaders: {
@@ -213,7 +214,7 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         }
 
-        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
+        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
         return trList;
     }
 
@@ -395,7 +396,7 @@ class ViewSelectedTestConfig extends React.Component {
     startRecord = () => {
         const { cube, authentication } = this.props;
         let user = authentication.user;
-        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/record/${this.state.recName}/RespPartialMatch`;
+        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/record/RespPartialMatch`;
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -403,9 +404,11 @@ class ViewSelectedTestConfig extends React.Component {
             }
         };
 
+        let recLabel = Date.now().toString();
         const searchParams = new URLSearchParams();
         searchParams.set('name', this.state.recName);
         searchParams.set('userId', user.username);
+        searchParams.set('label', recLabel);
 
         axios.post(url, searchParams, configForHTTP).then((response) => {
             this.setState({stopDisabled: false, recId: response.data.id})
@@ -419,7 +422,7 @@ class ViewSelectedTestConfig extends React.Component {
         });
 
         let checkStatus = () => {
-            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/RespPartialMatch`;
+            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/${recLabel}`;
             axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
@@ -628,6 +631,7 @@ class ViewSelectedTestConfig extends React.Component {
                                 <thead>
                                 <tr>
                                     <td className="bold">Name</td>
+                                    <td className="bold">Label</td>
                                     <td className="bold">ID</td>
                                     <td className="bold">Date</td>
                                     <td className="bold">Created By</td>

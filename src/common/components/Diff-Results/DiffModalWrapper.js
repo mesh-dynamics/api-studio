@@ -6,6 +6,7 @@ const DiffModalWrapper = (props) => {
         tag,
         cube,
         nameG,
+        labelG,
         branch,
         version,
         commitId,
@@ -73,6 +74,23 @@ const DiffModalWrapper = (props) => {
                                     className="width-100"
                                     placeholder="Enter Golden Name" 
                                     onChange={(event) => changeGoldenMetaData('nameG', event)} 
+                                />
+                            </div>
+                        </div>
+
+                        <div className="row margin-bottom-10">
+                            <div className="col-md-3 bold">
+                                Label*:
+                            </div>
+
+                            <div className="col-md-9">
+                                <input
+                                    required
+                                    type="text"
+                                    value={labelG}
+                                    className="width-100"
+                                    placeholder="Enter Label Name"
+                                    onChange={(event) => changeGoldenMetaData('labelG', event)}
                                 />
                             </div>
                         </div>

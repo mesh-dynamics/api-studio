@@ -59,6 +59,7 @@ class DiffResults extends Component {
             showNewGolden: false,
             showSaveGoldenModal: false,
             nameG: "",
+            labelG: "",
             branch: "",
             version: "",
             tag: "",
@@ -481,7 +482,8 @@ class DiffResults extends Component {
 
     showSaveGoldenModal = () => {
         this.setState({
-            nameG: (this.state.recordingId + '_' + Date.now()),
+            nameG: (this.state.recordingId),
+            labelG: Date.now().toString(),
             branch: "",
             version: "",
             tag: "",
@@ -496,6 +498,8 @@ class DiffResults extends Component {
     handleSaveGolden = () => {
         if (!this.state.nameG.trim()) {
             this.setState({saveGoldenError: "Name is a Required Field, cannot be Empty.",})
+        } else if (!this.state.labelG.trim()) {
+            this.setState({saveGoldenError: "Label is a Required Field, cannot be Empty.",})
         } else {
             this.updateGolden();
         }
@@ -542,6 +546,7 @@ class DiffResults extends Component {
                 
                 body: {
                     name: this.state.nameG,
+                    label: this.state.labelG,
                     userId: user.username,
                     codeVersion:  this.state.version.trim(),
                     branch:  this.state.branch.trim(),
@@ -588,6 +593,7 @@ class DiffResults extends Component {
         const {
             tag,
             nameG,
+            labelG,
             branch,
             showAll,
             version,
@@ -609,6 +615,7 @@ class DiffResults extends Component {
                 <DiffModalWrapper 
                     tag={tag}
                     nameG={nameG}
+                    labelG={labelG}
                     branch={branch}
                     version={version}
                     commitId={commitId}

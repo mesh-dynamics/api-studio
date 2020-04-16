@@ -24,11 +24,13 @@ const GoldenMeta = (props) => {
         getGoldenMeta,
     } = props;
 
-    const { id, name, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId, serviceFacets } = selectedGolden;
+    const { id, name, label, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId, serviceFacets } = selectedGolden;
 
     const [editable, setEditable] = useState(false);
 
     const [goldenName, setGoldenName] = useState(name);
+
+    const [labelName, setLabelName] = useState(label);
 
     const [branchName, setBranchName] = useState(branch);
 
@@ -41,11 +43,11 @@ const GoldenMeta = (props) => {
     const serviceOptions = generateServiceOptionsFromFacets(serviceFacets);
 
     const handleUpdateClick = () => {
-        if(goldenName === name) {
-            alert("Golden name cannot be the same.");   
+        if((goldenName === name) && (labelName === label)) {
+            alert("Golden name and label combination cannot be the same.");
         } else {
             setEditable(false);
-            updateGoldenMeta({ id, goldenName, branchName, codeVersionNumber, commitId });
+            updateGoldenMeta({ id, goldenName, labelName, branchName, codeVersionNumber, commitId });
         }
     };
 
@@ -64,6 +66,7 @@ const GoldenMeta = (props) => {
 
     useEffect(() => {
         setGoldenName(name);
+        setLabelName(label);
         setBranchName(branch);
         setCodeVersionNumber(codeVersion);
         setCommitId(gitCommitId);
@@ -92,6 +95,18 @@ const GoldenMeta = (props) => {
                         value={goldenName} 
                         onChange={(e) => setGoldenName(e.target.value)}
                     />
+                }
+            </div>
+            <div className="margin-top-10">
+                <span className="margin-right-10"><strong>Label:</strong></span>
+                {!editable && <span>{labelName}</span>}
+                {editable &&
+                <input
+                    style={{ width: "100%"}}
+                    name="label"
+                    value={labelName}
+                    onChange={(e) => setLabelName(e.target.value)}
+                />
                 }
             </div>
             <div className="margin-top-10">
