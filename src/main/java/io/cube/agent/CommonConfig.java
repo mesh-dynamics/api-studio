@@ -5,10 +5,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.time.Duration;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,8 +22,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.utils.URIBuilder;
-
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +62,7 @@ public class CommonConfig {
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
 
-	private HttpRequest cubeRecordService;
-	private HttpRequest cubeMockService;
-	private HttpClient httpClient;
+	private CloseableHttpClient httpClient;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 
@@ -271,38 +268,18 @@ public class CommonConfig {
 			io.cube.agent.Constants.RING_BUFFER_OUTPUT_FILE_NAME,
 			dynamicProperties).orElse("/var/log/event.log");
 
+		RequestConfig requestConfig = RequestConfig.custom()
+			.setConnectionRequestTimeout(READ_TIMEOUT)
+			.setConnectTimeout(CONNECT_TIMEOUT)
+			.setSocketTimeout(CONNECT_TIMEOUT)
+			.build();
 
-		//TODO: Remove total dependecy of this from agent.
-		// Commenting now for cxf based app to work.
-//		ClientConfig clientConfig = new ClientConfig()
-//			.property(ClientProperties.READ_TIMEOUT, READ_TIMEOUT)
-//			.property(ClientProperties.CONNECT_TIMEOUT, CONNECT_TIMEOUT);
-//		Client restClient = ClientBuilder.newClient(clientConfig);
-//		cubeRecordService = restClient.target(CUBE_RECORD_SERVICE_URI);
-//		cubeMockService = restClient.target(CUBE_MOCK_SERVICE_URI);
-
-		httpClient = HttpClient.newBuilder()
-						.connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
-						.build();
-		cubeRecordService = HttpRequest.newBuilder()
-							.uri(URI.create(CUBE_RECORD_SERVICE_URI))
-							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
-		cubeMockService = HttpRequest.newBuilder()
-							.uri(URI.create(CUBE_MOCK_SERVICE_URI))
-							.timeout(Duration.ofMillis(READ_TIMEOUT)).build();
+		httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
 
 		LOGGER.info( "PROPERTIES POLLED :: " + this.toString());
 	}
 
-	public HttpRequest getCubeRecordService() {
-		return cubeRecordService;
-	}
-
-	public HttpRequest getCubeMockService() {
-		return cubeMockService;
-	}
-
-	public HttpClient getHttpClient() {
+	public CloseableHttpClient getHttpClient() {
 		return httpClient;
 	}
 

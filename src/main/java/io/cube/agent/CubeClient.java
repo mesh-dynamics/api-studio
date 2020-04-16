@@ -1,22 +1,29 @@
 package io.cube.agent;
 
-import static io.cube.agent.Utils.ofFormData;
-
+import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
+import org.apache.http.Consts;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.utils.CommonUtils;
 
@@ -38,68 +45,81 @@ public class CubeClient {
 		this.jsonMapper = jsonMapper;
 	}
 
-	private Optional<String> getResponse(HttpRequest httpRequest) {
-		HttpClient client = CommonConfig.getInstance().getHttpClient();
+	private Optional<String> getResponse(HttpPost postRequest) {
+		CloseableHttpClient client = CommonConfig.getInstance().getHttpClient();
 		CommonConfig config = null;
 		try {
 			config = CommonConfig.getInstance();
 		} catch (Exception e) {
-			LOGGER.error("Error while getting Common config instance" , e);
+			LOGGER.error("Error while getting Common config instance", e);
 		}
 		int maxNumberOfAttempts = config.RETRIES;
 		int numberOfAttempts = 0;
+		CloseableHttpResponse response = null;
 		while (numberOfAttempts < maxNumberOfAttempts) {
 			try {
-				HttpResponse<String> response =
-					client.send(httpRequest, BodyHandlers.ofString());
-				if (response.statusCode() == 200) {
-					return Optional.of(response.body());
+				response = client.execute(postRequest);
+				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+					String responseString = new BasicResponseHandler().handleResponse(response);
+					return Optional.ofNullable(responseString);
 				}
 				numberOfAttempts++;
 			} catch (Exception e) {
-				LOGGER.error("Error while sending request to cube service" , e);
+				LOGGER.error("Error while sending request to cube service", e);
 				numberOfAttempts++;
+			} finally {
+				try {
+					if (response != null) {
+						response.close();
+					}
+				} catch (IOException e) {
+					LOGGER.error("Error while closing the connection", e);
+				}
 			}
 		}
 		return Optional.empty();
 	}
 
-	private Optional<String> getResponse(HttpRequest.Builder requestBuilder, Object reqBody,
+	private Optional<String> getResponse(HttpPost requestBuilder, Object reqBody,
 		String contentType) {
 		try {
 			String requestBody = jsonMapper.writeValueAsString(reqBody);
 			CommonUtils.addTraceHeaders(requestBuilder, "POST");
-			requestBuilder.POST(HttpRequest.BodyPublishers.ofString(requestBody))
-				.header("Content-Type", contentType);
-			return getResponse(requestBuilder.build());
+			StringEntity requestEntity = new StringEntity(requestBody, contentType);
+			requestBuilder.setEntity(requestEntity);
+			requestBuilder.setHeader("Content-Type", contentType);
+			return getResponse(requestBuilder);
 		} catch (JsonProcessingException ex) {
 			LOGGER.error("Error while serializing request body", ex);
+		} catch (UnsupportedCharsetException ex2) {
+			LOGGER.error("Invalid string entity", ex2);
 		}
 		return Optional.empty();
 	}
 
 	//TODO: Cleanup - phase this out
 	public Optional<String> storeFunctionReqResp(FnReqResponse fnReqResponse) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("cs/").resolve("fr");
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI);
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("cs/").resolve("fr");
+
+		HttpPost recordReqbuilder = new HttpPost(recordURI);
 		return getResponse(recordReqbuilder, fnReqResponse, TEXT_PLAIN);
 	}
 
 	//TODO: Cleanup - phase this out
 	public Optional<String> storeSingleReqResp(ReqResp reqResp) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("cs/").resolve("rr");
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI);
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("cs/").resolve("rr");
+		HttpPost recordReqbuilder = new HttpPost(recordURI);
 		return getResponse(recordReqbuilder, reqResp, TEXT_PLAIN);
 	}
 
 
 	//TODO: Cleanup - phase this out
 	public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
-		HttpRequest mockService = CommonConfig.getInstance().getCubeMockService();
-		URI finalURI = mockService.uri().resolve("ms/").resolve("fr");
-		HttpRequest.Builder mockReqbuilder = HttpRequest.newBuilder(finalURI);
+		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("ms/").resolve("fr");
+		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		return getResponse(mockReqbuilder, fnReqResponse, TEXT_PLAIN).flatMap(response -> {
 			try {
 				LOGGER.debug("Response : ".concat(response));
@@ -112,10 +132,9 @@ public class CubeClient {
 	}
 
 	public Optional<FnResponse> getMockResponse(Event event) {
-		HttpRequest mockService = CommonConfig.getInstance().getCubeMockService();
-		URI finalURI = mockService.uri().resolve("ms/").resolve("mockFunction");
-		HttpRequest.Builder mockReqbuilder = HttpRequest.newBuilder(finalURI);
-
+		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("ms/").resolve("mockFunction");
+		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
 			try {
 				LOGGER.debug("Response : ".concat(response));
@@ -128,9 +147,9 @@ public class CubeClient {
 	}
 
 	public Optional<Event> getMockThriftResponse(Event event) {
-		HttpRequest mockService = CommonConfig.getInstance().getCubeMockService();
-		URI finalURI = mockService.uri().resolve("ms/").resolve("thrift");
-		HttpRequest.Builder mockReqbuilder = HttpRequest.newBuilder(finalURI);
+		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("ms/").resolve("thrift");
+		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
 			try {
 				LOGGER.debug("Response : ".concat(response));
@@ -144,95 +163,83 @@ public class CubeClient {
 
 	public Optional<String> startRecording(String customerid, String app, String instanceid,
 		String collection) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("cs/").resolve("start/")
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("cs/").resolve("start/")
 			.resolve(customerid.concat("/")).resolve(app.concat("/"))
 			.resolve(instanceid.concat("/")).resolve(collection);
-
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
-			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
-		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-
-		return getResponse(recordReqbuilder.build());
+		return getResponse(recordURI);
 	}
 
 	public Optional<String> stopRecording(String customerid, String app, String collection) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("cs/").resolve("stop/")
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("cs/").resolve("stop/")
 			.resolve(customerid.concat("/")).resolve(app.concat("/"))
 			.resolve(collection);
-
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
-			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
-		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-
-		return getResponse(recordReqbuilder.build());
+		return getResponse(recordURI);
 	}
 
 	public Optional<String> initReplay(String customerid, String app, String instanceid,
 		String collection, String endpoint) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("rs/").resolve("init/")
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("rs/").resolve("init/")
 			.resolve(customerid.concat("/")).resolve(app.concat("/"))
 			.resolve(collection);
 
-		Map<Object, Object> params = new HashMap<>();
-		params.put("instanceid", instanceid);
-		params.put("endpoint", endpoint);
-
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
-			.POST(ofFormData(params))
-			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
+		HttpPost recordReqbuilder = new HttpPost(recordURI);
+		List<NameValuePair> form = new ArrayList<>();
+		form.add(new BasicNameValuePair("instanceid", instanceid));
+		form.add(new BasicNameValuePair("endpoint", endpoint));
+		UrlEncodedFormEntity entity = new UrlEncodedFormEntity(form, Consts.UTF_8);
+		recordReqbuilder.setEntity(entity);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
+		recordReqbuilder.setHeader("Content-Type", APPLICATION_FORM_URL_ENCODED);
 
-		return getResponse(recordReqbuilder.build());
+		return getResponse(recordReqbuilder);
 	}
 
 	public Optional<String> forceStartReplay(String replayid) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("rs/").resolve("forcestart/")
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("rs/").resolve("forcestart/")
 			.resolve(replayid);
-
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
-			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
-		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-
-		return getResponse(recordReqbuilder.build());
+		return getResponse(recordURI);
 	}
 
 
 	public Optional<String> forceCompleteReplay(String replayid) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("rs/").resolve("forcecomplete/")
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("rs/").resolve("forcecomplete/")
 			.resolve(replayid);
-
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
-			.POST(ofFormData(new HashMap<>()))
-			.header("Content-Type", APPLICATION_FORM_URL_ENCODED);
-		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-
-		return getResponse(recordReqbuilder.build());
+		return getResponse(recordURI);
 	}
 
 	public Optional<String> storeEvent(Event event) {
-		HttpRequest recordService = CommonConfig.getInstance().getCubeRecordService();
-		URI finalURI = recordService.uri().resolve("cs/").resolve("storeEvent");
-		HttpRequest.Builder recordReqbuilder = HttpRequest.newBuilder(finalURI)
-			.header("Content-Type", "application/json");
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("cs/").resolve("storeEvent");
+		HttpPost recordReqbuilder = new HttpPost(recordURI);
+		recordReqbuilder.setHeader(Constants.CONTENT_TYPE, APPLICATION_JSON);
 
 		try {
 			String requestBody = jsonMapper.writeValueAsString(event);
 			LOGGER.debug("event : ".concat(requestBody));
 			CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-			recordReqbuilder.POST(HttpRequest.BodyPublishers.ofString(requestBody));
-			return getResponse(recordReqbuilder.build());
+			StringEntity requestEntity = new StringEntity(requestBody, APPLICATION_JSON);
+			recordReqbuilder.setEntity(requestEntity);
+			return getResponse(recordReqbuilder);
 		} catch (JsonProcessingException e) {
 			LOGGER.error("Store event result in exception", e);
 		}
 		return Optional.empty();
+	}
+
+	private Optional<String> getResponse(URI recordURI) {
+		HttpPost recordReqbuilder = new HttpPost(recordURI);
+		List<NameValuePair> form = new ArrayList<>();
+		UrlEncodedFormEntity entity = new UrlEncodedFormEntity(form, Consts.UTF_8);
+		recordReqbuilder.setEntity(entity);
+		recordReqbuilder.setHeader("Content-Type", APPLICATION_FORM_URL_ENCODED);
+		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
+
+		return getResponse(recordReqbuilder);
 	}
 
 }

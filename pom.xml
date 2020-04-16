@@ -7,12 +7,9 @@
     <artifactId>agent</artifactId>
     <version>1.0.18</version>
     <properties>
-        <version.log4j>2.13.0</version.log4j>
         <version.java>11</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.jaeger>1.1.0</version.jaeger>
-        <version.slf4j>1.7.30</version.slf4j>
     </properties>
     <distributionManagement>
       <repository>
@@ -68,23 +65,6 @@
   </repositories>
 
   <dependencies>
-    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${version.slf4j}</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
-    <!--  json support for jdk 8 types such as Optional -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jdk8</artifactId>
-    </dependency>
-    <!-- for dealing with Instant objects -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-parameter-names</artifactId>
-    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
@@ -136,16 +116,6 @@
       <groupId>net.dongliu</groupId>
       <artifactId>gson-java8-datatype</artifactId>
       <version>1.1.0</version>
-    </dependency>
-    <dependency>
-      <groupId>io.jaegertracing</groupId>
-      <artifactId>jaeger-client</artifactId>
-      <version>${version.jaeger}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
-      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>

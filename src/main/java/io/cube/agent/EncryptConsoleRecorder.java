@@ -37,7 +37,7 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 				encryptedEvent = payloadOptional.map(UtilException.rethrowFunction(payload -> {
 					EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
 						event.service, event.instanceId,
-						event.getCollection(), mdTraceInfo, event.runType,
+						event.getCollection(), mdTraceInfo, event.getRunType(),
 						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType)
 						.setPayload(payload);
 					return eventBuilder.createEvent();
