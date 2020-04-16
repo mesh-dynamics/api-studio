@@ -256,14 +256,12 @@ public abstract class AbstractReplayDriver {
 			}
 		}
 		try {
-			replay.status = Replay.ReplayStatus.Analyzing;
 			Analyzer.analyze(replay.replayId, "", config);
 		} catch (TemplateNotFoundException e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 					"Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD,
 					replay.replayId)), e);
 		}
-		replay.status = Replay.ReplayStatus.AnalyzeComplete;
 	}
 
 	public Replay getReplay() {
