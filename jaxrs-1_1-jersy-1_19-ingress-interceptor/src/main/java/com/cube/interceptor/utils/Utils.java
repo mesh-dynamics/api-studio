@@ -1,5 +1,6 @@
 package com.cube.interceptor.utils;
 
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -13,9 +14,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -29,15 +29,16 @@ import com.cube.interceptor.config.Config;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final Config config;
+	private static Config config;
 
 	static {
-		config = new Config();
+			config = new Config();
 	}
+
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
 		return ((config.intentResolver.isIntentToRecord()
@@ -113,15 +114,9 @@ public class Utils {
 					requestBody, Optional.empty(), CubeObjectMapperProvider.getInstance(), true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for api path :" + apiPath, e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event! for api path :" + apiPath, e);
 		}
 	}
 
@@ -135,15 +130,9 @@ public class Utils {
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for api path :" + apiPath, e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event! for api path :" + apiPath, e);
 		}
 	}
 

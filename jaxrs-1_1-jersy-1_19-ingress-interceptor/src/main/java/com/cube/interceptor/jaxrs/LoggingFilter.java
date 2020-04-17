@@ -5,8 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,11 +17,10 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 import javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.logging.log4j.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 import com.sun.jersey.spi.container.ContainerResponse;
@@ -36,25 +33,20 @@ import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
 import io.opentracing.Span;
 
-import com.cube.interceptor.config.Config;
 import com.cube.interceptor.utils.Utils;
 
 @Provider
-//@Priority(Priorities.HEADER_DECORATOR + 10)
 @Priority(3000)
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
+	public static final String EMPTY = "";
+	private static final Logger LOGGER = LoggerFactory.getLogger(LoggingFilter.class);
 
 	@Override
 	public ContainerRequest filter(ContainerRequest containerRequest) {
-		//hdrs
-		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
 		try {
+			//hdrs
+			Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
 			currentSpan.ifPresent(UtilException.rethrowConsumer(span ->
 			{
 				//Either baggage has sampling set to true or this service uses its veto power to sample.
@@ -74,7 +66,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 					//path
 					String apiPath = uri.getPath();
 
-					MDTraceInfo mdTraceInfo = getTraceInfo(span);
+					MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
 
 					MultivaluedMap<String, String> traceMetaMap = getTraceInfoMetaMap(containerRequest,
 						mdTraceInfo);
@@ -92,24 +84,25 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 					span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
 				}
 			}));
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			LOGGER.error("Exception while running the logging filter ", e);
 		}
 		return containerRequest;
 	}
 
 	@Override
 	public ContainerResponse filter(ContainerRequest request, ContainerResponse response) {
-		if (request.getProperties().get(Constants.MD_SAMPLE_REQUEST) != null) {
-			request.getProperties().put(Constants.MD_RESPONSE_HEADERS_PROP,
-					transformHeaders(response.getHttpHeaders()));
-			request.getProperties().put(Constants.MD_STATUS_PROP, response.getStatus());
-			try {
+		try {
+			if (request.getProperties().get(Constants.MD_SAMPLE_REQUEST) != null) {
+				request.getProperties().put(Constants.MD_RESPONSE_HEADERS_PROP,
+						transformHeaders(response.getHttpHeaders()));
+				request.getProperties().put(Constants.MD_STATUS_PROP, response.getStatus());
 				logResponse(request, getResponseBody(response));
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
 			}
+		} catch (Exception e) {
+			LOGGER.error("Exception while running the logging filter ", e);
 		}
+
 		return response;
 	}
 
@@ -163,10 +156,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ?
 				(MultivaluedMap<String, String>)traceMetaMapObj : Utils.createEmptyMultivaluedMap();
 
-		String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
+		String apiPath = apiPathObj != null ? apiPathObj.toString() : EMPTY;
 		//meta
 		MultivaluedMap<String, String> meta = Utils
-			.getResponseMeta(apiPath, statusObj != null ? statusObj.toString() : Strings.EMPTY,
+			.getResponseMeta(apiPath, statusObj != null ? statusObj.toString() : EMPTY,
 				Optional.empty());
 		meta.putAll(traceMetaMap);
 
@@ -184,16 +177,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		request.getProperties().remove(Constants.MD_STATUS_PROP);
 		request.getProperties().remove(Constants.MD_SAMPLE_REQUEST);
 		request.getProperties().remove(Constants.MD_TRACE_INFO);
-	}
-
-	private MDTraceInfo getTraceInfo(Span currentSpan) {
-		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
-
-		String traceId = spanContext.getTraceId();
-		String spanId = Long.toHexString(spanContext.getSpanId());
-		String parentSpanId = Long.toHexString(spanContext.getParentId());
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
-		return mdTraceInfo;
 	}
 
 	private MultivaluedMap<String, String> getTraceInfoMetaMap(ContainerRequest containerRequest,

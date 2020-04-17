@@ -50,11 +50,10 @@
   							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
   							<artifactSet>
   								<includes>
-  									<include>io.cube:agent</include>
-  									<include>io.cube:commons</include>
-									<include>javax.ws.rs:javax.ws.rs-api</include>
-									<include>org.apache.logging.log4j:log4j-api</include>
-									<include>org.apache.logging.log4j:log4j-core</include>	
+									<include>io.md:*</include>
+									<include>io.cube:*</include>
+									<include>com.cube.interceptor:md-jersey_1_19-egress-interceptor</include>
+ 									<include>com.cube.interceptor:md-jaxrs_1_1-ingress-interceptor</include>
   								</includes>
   							</artifactSet>
   						</configuration>

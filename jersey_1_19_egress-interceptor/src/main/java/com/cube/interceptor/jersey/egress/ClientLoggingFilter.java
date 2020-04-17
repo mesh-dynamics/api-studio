@@ -2,12 +2,15 @@ package com.cube.interceptor.jersey.egress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -39,7 +42,7 @@ import com.cube.interceptor.jersey.egress.utils.Utils;
 
 public class ClientLoggingFilter extends ClientFilter {
 
-	private static final Config config;
+	private static Config config;
 	private MessageBodyWorkers workers;
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
@@ -48,7 +51,7 @@ public class ClientLoggingFilter extends ClientFilter {
 			"Content-type", "Content-Type", "content-Type");
 
 	static {
-		config = new Config();
+			config = new Config();
 	}
 
 	public ClientLoggingFilter(MessageBodyWorkers workers) {
@@ -57,6 +60,11 @@ public class ClientLoggingFilter extends ClientFilter {
 
 	@Override
 	public ClientResponse handle(ClientRequest clientRequest) throws ClientHandlerException {
+		if (config == null) {
+			LOGGER.error("Skipping the filter as the config is null");
+			return getNext().handle(clientRequest);
+		}
+
 		String serviceName = CommonUtils.getEgressServiceName(clientRequest.getURI());
 		CommonConfig commonConfig = config.commonConfig;
 
@@ -67,7 +75,6 @@ public class ClientLoggingFilter extends ClientFilter {
 		} catch (Exception e) {
 			LOGGER.error("Exception in client request filter ", e);
 		}
-
 
 		// Call the next client handler in the filter chain
 		ClientResponse resp = getNext().handle(clientRequest);
@@ -127,7 +134,7 @@ public class ClientLoggingFilter extends ClientFilter {
 						? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
 						: uri.getHost();
 
-				MDTraceInfo mdTraceInfo = getTraceInfo(span);
+				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
 
 				MultivaluedMap<String, String> traceMetaMap = getTraceInfoMetaMap(headersMap, mdTraceInfo);
 
@@ -291,16 +298,6 @@ public class ClientLoggingFilter extends ClientFilter {
 		clientRequest.getProperties().remove(Constants.MD_LOG_STREAM_PROP);
 		clientRequest.getProperties().remove(Constants.MD_SAMPLE_REQUEST);
 		clientRequest.getProperties().remove(Constants.MD_TRACE_INFO);
-	}
-
-	private MDTraceInfo getTraceInfo(Span currentSpan) {
-		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
-
-		String traceId = spanContext.getTraceId();
-		String spanId = Long.toHexString(spanContext.getSpanId());
-		String parentSpanId = Long.toHexString(spanContext.getParentId());
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
-		return mdTraceInfo;
 	}
 
 	private MultivaluedMap<String, String> getTraceInfoMetaMap(
