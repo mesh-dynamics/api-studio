@@ -24,12 +24,12 @@ public class MDTraceInfo {
     this.parentSpanId = parentSpanId;
   }
 
-  public MDTraceInfo(String traceId, String spanId, String parentSpanId,
-      Map<String, String> baggageItems) {
+  public MDTraceInfo(String traceId, String spanId, String parentSpanId, Iterable<Map.Entry<String, String>> baggageItemsItr) {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
-    this.baggageItems = baggageItems;
+    for (Map.Entry<String, String> baggageItem : baggageItemsItr)
+      baggageItems.put(baggageItem.getKey(), baggageItem.getValue());
   }
 
   public String getParentSpanId() {

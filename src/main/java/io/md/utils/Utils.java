@@ -304,12 +304,7 @@ public class Utils {
 		String traceId = spanContext.getTraceId();
 		String spanId = Long.toHexString(spanContext.getSpanId());
 		String parentSpanId = Long.toHexString(spanContext.getParentId());
-		Iterable<Entry<String, String>> baggageEntrySet = spanContext.baggageItems();
-		Map<String, String> baggageItems = new HashMap<>();
-		for (Map.Entry<String, String> entry : baggageEntrySet) {
-			baggageItems.put(entry.getKey(), entry.getValue());
-		}
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId, baggageItems);
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId, spanContext.baggageItems());
 		return mdTraceInfo;
 	}
 
