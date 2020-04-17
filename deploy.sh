@@ -118,12 +118,6 @@ start_record() {
 	# $1 collection name
 	# $2 template version
 	# #3 golden name
-	if [ -z "$1" ]; then
-		echo "Enter collection name"
-		read COLLECTION_NAME
-	else
-		COLLECTION_NAME=$1
-	fi
 
 	if [ -z "$2" ]; then
 		if [ -e "$TEMPLATE_VERSION_TEMP_FILE" ]; then
@@ -150,12 +144,14 @@ start_record() {
 	else
 		GOLDEN_NAME=$3
 	fi
-	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
+
+	TIMESTAMP=$(date +%s)
+	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER&label=$TIMESTAMP"
 
 kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 
 	RESPONSE="$(curl -X POST \
-  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
+  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Authorization: Bearer $AUTH_TOKEN" \
 	-H "Host:$CUBE_HOST" \
