@@ -332,7 +332,7 @@ public interface ReqRespStore {
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
 		Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
 		Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-		Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId);
+		Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -387,9 +387,10 @@ public interface ReqRespStore {
      * @param customerId
      * @param app
      * @param name
+     * @param label
      * @return
      */
-    Optional<Recording> getRecordingByName(String customerId, String app, String name);
+    Optional<Recording> getRecordingByName(String customerId, String app, String name, Optional<String> label);
 
 	/**
 	 * @param replayId

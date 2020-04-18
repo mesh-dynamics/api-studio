@@ -149,6 +149,7 @@ public class Constants {
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
     public static final String GOLDEN_NAME_FIELD = "golden_name";
+    public static final String GOLDEN_LABEL_FIELD = "label";
     public static final String CODE_VERSION_FIELD = "code_version";
     public static final String BRANCH_FIELD = "branch";
     public static final String TAGS_FIELD = "tags";

@@ -2168,6 +2168,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String GOLDEN_NAMEF = CPREFIX + Constants.GOLDEN_NAME_FIELD + STRING_SUFFIX;
+    private static final String GOLDEN_LABELF = CPREFIX + Constants.GOLDEN_LABEL_FIELD + STRING_SUFFIX;
     private static final String CODE_VERSIONF = CPREFIX + Constants.CODE_VERSION_FIELD + STRING_SUFFIX;
     private static final String BRANCHF = CPREFIX + Constants.BRANCH_FIELD + STRING_SUFFIX;
     private static final String TAGSF = CPREFIX + Constants.TAGS_FIELD + STRINGSET_SUFFIX;
@@ -2191,6 +2192,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_IDF);
         Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_IDF);
         Optional<String> name = getStrField(doc, GOLDEN_NAMEF);
+        Optional<String> label = getStrField(doc, GOLDEN_LABELF);
         Optional<String> codeVersion = getStrField(doc, CODE_VERSIONF);
         Optional<String> branch = getStrField(doc, BRANCHF);
         List<String> tags = getStrFieldMV(doc, TAGSF);
@@ -2220,6 +2222,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
             templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
             comment.ifPresent(recordingBuilder::withComment);
+            label.ifPresent(recordingBuilder::withLabel);
             try {
                 generatedClassJarPath.ifPresent(
                     UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -2262,6 +2265,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(ROOT_RECORDING_IDF, recording.rootRecordingId);
         doc.setField(ARCHIVEDF, recording.archived);
         doc.setField(GOLDEN_NAMEF, recording.name);
+        doc.setField(GOLDEN_LABELF, recording.label);
         doc.setField(USERIDF, recording.userId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
@@ -2294,7 +2298,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId) {
+        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2308,6 +2312,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, PARENT_RECORDING_IDF, parentRecordingId);
         addFilter(query, ROOT_RECORDING_IDF, rootRecordingId);
         addFilter(query, GOLDEN_NAMEF, name);
+        addFilter(query, GOLDEN_LABELF, label);
         addFilter(query, CODE_VERSIONF, codeVersion);
         addFilter(query, BRANCHF, branch);
         addFilter(query, ARCHIVEDF, archived.map(a -> a.toString()));
@@ -2351,13 +2356,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Optional<Recording> getRecordingByName(String customerId, String app, String name) {
+    public Optional<Recording> getRecordingByName(String customerId, String app, String name, Optional<String> label) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, GOLDEN_NAMEF, name);
+        label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> addSort(query, TIMESTAMPF, false));
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }

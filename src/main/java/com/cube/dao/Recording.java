@@ -49,7 +49,7 @@ public class Recording {
 		, Optional<String> codeVersion, Optional<String> branch, List<String> tags
 		, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
 		, Optional<String> templateUpdOpSetId, Optional<String> comment, String userId,
-		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader) {
+		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader, String label) {
 
 		super();
 		this.customerId = customerId;
@@ -74,6 +74,7 @@ public class Recording {
 		this.userId = userId;
 		this.generatedClassJarPath = generatedClassJarPath;
 		this.generatedClassLoader = generatedClassLoader;
+		this.label = label;
 	}
 
 	// for json deserialization
@@ -98,6 +99,7 @@ public class Recording {
 		this.comment = Optional.empty();
 		this.userId = "";
 		this.generatedClassJarPath = Optional.empty();
+		this.label="";
 	}
 
 	@JsonProperty("id")
@@ -122,6 +124,8 @@ public class Recording {
 	public final Optional<String> parentRecordingId;
 	@JsonProperty("name")
 	public final String name;
+    @JsonProperty("label")
+    public final String label;
 	@JsonProperty("codeVersion")
 	public final Optional<String> codeVersion;
 	@JsonProperty("branch")

@@ -964,19 +964,23 @@ public class AnalyzeWS {
                 new Exception("Unable to find recording object for the given id"));
 
             String name = formParams.getFirst("name");
-            if (name==null) {
-                throw new Exception("Name not specified for golden");
+            String label = formParams.getFirst("label");
+
+            if (name==null || label==null) {
+                throw new Exception("Name or label not specified for golden");
             }
 
             String userId = formParams.getFirst("userId");
-            if (userId==null) {
+
+
+            if (userId==null ) {
                 throw new Exception("userId not specified for golden");
             }
 
             // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name, Optional.ofNullable(label));
             if (recWithSameName.isPresent()) {
-                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
+                throw new Exception("Golden already present for name - " + name + "/" + label + ".Specify unique name/label");
             }
 
             // creating a new temporary empty template set against the old version
@@ -1022,7 +1026,7 @@ public class AnalyzeWS {
             	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
                 .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
-                .withName(name).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
+                .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
 	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId);
             codeVersion.ifPresent(recordingBuilder::withCodeVersion);
             branch.ifPresent(recordingBuilder::withBranch);
@@ -1065,7 +1069,7 @@ public class AnalyzeWS {
             	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
 	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
-	            .withName(originalRec.name).withTags(originalRec.tags).withArchived(originalRec.archived)
+	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
 	            .withUserId(originalRec.userId);
 	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
@@ -1356,7 +1360,7 @@ public class AnalyzeWS {
 
 			Map jsonMap = jsonMapper.convertValue(recording, Map.class);
 			jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
-			
+
 			return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
 		} catch (Exception e) {
 			LOGGER.error(

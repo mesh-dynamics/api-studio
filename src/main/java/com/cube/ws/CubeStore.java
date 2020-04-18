@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -795,14 +796,13 @@ public class CubeStore {
     }
 
 	@POST
-	@Path("start/{customerId}/{app}/{instanceId}/{collection}/{templateSetVersion}")
+	@Path("start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
 	@Consumes("application/x-www-form-urlencoded")
     public Response start(@Context UriInfo ui,
                           MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerId") String customerId,
                           @PathParam("instanceId") String instanceId,
-                          @PathParam("collection") String collection,
                           @PathParam("templateSetVersion") String templateSetVersion) {
 	    // check if recording or replay is ongoing for (customer, app, instanceId)
         Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerId), Optional.ofNullable(app),
@@ -811,9 +811,35 @@ public class CubeStore {
             return errResp.get();
         }
 
+        String name = formParams.getFirst("name");
+        String userId = formParams.getFirst("userId");
+        String label = formParams.getFirst("label");
+
+        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
+
+        if (name==null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("Name needs to be given for a golden")
+                .build();
+        }
+
+        if (userId==null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("userId should be specified for a golden")
+                .build();
+        }
+
+        if (label==null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("label should be specified for a golden")
+                .build();
+        }
+
+        String collection = UUID.randomUUID().toString();;
+
         // check if recording collection name is unique for (customerId, app)
         Optional<Recording> recording = rrstore
-            .getRecordingByCollectionAndTemplateVer(customerId, app, collection, templateSetVersion);
+            .getRecordingByName(customerId, app, name, Optional.ofNullable(label));
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
@@ -829,27 +855,11 @@ public class CubeStore {
         LOGGER.info(String.format("Starting recording for customer %s, app %s, instance %s, collection %s",
             customerId, app, instanceId, collection));
 
-        String name = formParams.getFirst("name");
-        String userId = formParams.getFirst("userId");
-        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
-
-        if (name==null) {
-            return Response.status(Status.BAD_REQUEST)
-                .entity("Name needs to be given for a golden")
-                .build();
-        }
-
-        if (userId==null) {
-            return Response.status(Status.BAD_REQUEST)
-                .entity("userId should be specified for a golden")
-                .build();
-        }
-
         // Ensure name is unique for a customer and app
-        Optional<Recording> recWithSameName = rrstore.getRecordingByName(customerId, app, name);
+        Optional<Recording> recWithSameName = rrstore.getRecordingByName(customerId, app, name, Optional.ofNullable(label));
         if (recWithSameName.isPresent()) {
             return Response.status(Response.Status.CONFLICT)
-            .entity("Golden already present for name - " + name + ". Specify unique name")
+            .entity("Golden already present for name/label - " + name + "/" + label + ". Specify unique name/label combination")
             .build();
         }
 
@@ -861,7 +871,7 @@ public class CubeStore {
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(customerId, app
             , instanceId), collection).withTemplateSetVersion(templateSetVersion).withName(name)
-            .withUserId(userId).withTags(tags);
+            .withLabel(label).withUserId(userId).withTags(tags);
         codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         branch.ifPresent(recordingBuilder::withBranch);
         gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -932,6 +942,7 @@ public class CubeStore {
         Optional<String> parentRecordingId = Optional.ofNullable(formParams.getFirst(Constants.PARENT_RECORDING_FIELD));
         Optional<String> rootRecordingId = Optional.ofNullable(formParams.getFirst(Constants.ROOT_RECORDING_FIELD));
         Optional<String> name = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_NAME_FIELD));
+        Optional<String> label = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
         Optional<String> userId = Optional.ofNullable(formParams.getFirst(Constants.USER_ID_FIELD));
         Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst(Constants.CODE_VERSION_FIELD));
         Optional<String> branch = Optional.ofNullable(formParams.getFirst(Constants.BRANCH_FIELD));
@@ -955,7 +966,7 @@ public class CubeStore {
             }
 
             List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
-                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId).collect(Collectors.toList());
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label).collect(Collectors.toList());
 
             String json;
             json = jsonMapper.writeValueAsString(recordings);
@@ -977,14 +988,14 @@ public class CubeStore {
 
 
     @GET
-	@Path("status/{customerId}/{app}/{collection}/{templateSetVersion}")
+	@Path("status/{customerId}/{app}/{name}/{label}")
     public Response status(@Context UriInfo ui,
-                           @PathParam("collection") String collection,
+                           @PathParam("name") String name,
                            @PathParam("customerId") String customerId,
                            @PathParam("app") String app,
-                           @PathParam("templateSetVersion") String templateSetVersion) {
-	    Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerId,
-            app, collection, templateSetVersion);
+                           @PathParam("label") String label) {
+	    Optional<Recording> recording = rrstore.getRecordingByName(customerId,
+            app, name, Optional.of(label));
 
         Response resp = recording.map(r -> {
             String json;
@@ -992,10 +1003,10 @@ public class CubeStore {
                 json = jsonMapper.writeValueAsString(r);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, collection %s.", customerId, app, collection), e);
+                LOGGER.error(String.format("Error in converting Recording object to Json for customer %s, app %s, golden %s with label %s.", customerId, app, name, label), e);
                 return Response.serverError().build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for customer %s, app %s, collection %s.", customerId, app, collection)).build());
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for customer %s, app %s, golden %s with label %s.", customerId, app, name, label)).build());
         return resp;
     }
 
@@ -1070,6 +1081,7 @@ public class CubeStore {
         Response resp = recording.map(rec -> {
             try {
                 Optional<String> name = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_NAME_FIELD));
+                Optional<String> label = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
                 Optional<String> userId = Optional.ofNullable(formParams.getFirst(Constants.USER_ID_FIELD));
                 Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst(Constants.CODE_VERSION_FIELD));
                 Optional<String> branch = Optional.ofNullable(formParams.getFirst(Constants.BRANCH_FIELD));
@@ -1078,11 +1090,12 @@ public class CubeStore {
                 Optional<String> comment = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_COMMENT_FIELD));
 
 
-                if(name.isPresent()) {
+                if(name.isPresent() && label.isPresent()) {
                     String nameVal = name.get();
-                    Optional<Recording> recWithSameName = rrstore.getRecordingByName(rec.customerId, rec.app, nameVal);
+                    String labelVal = label.get();
+                    Optional<Recording> recWithSameName = rrstore.getRecordingByName(rec.customerId, rec.app, nameVal, Optional.ofNullable(labelVal));
                     if (recWithSameName.isPresent()) {
-                        String errorMessage = "Golden with same name present " + nameVal;
+                        String errorMessage = "Golden with same name/label present " + nameVal;
                         LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
                             errorMessage, "RecordingId", recordingId)));
                         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
@@ -1100,6 +1113,7 @@ public class CubeStore {
                     .withArchived(rec.archived);
                 rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
                 recordingBuilder.withName(name.orElse(rec.name));
+                recordingBuilder.withLabel(label.orElse(rec.label));
                 recordingBuilder.withUserId(userId.orElse(rec.userId));
                 recordingBuilder.withCodeVersion(codeVersion.orElse(rec.codeVersion.orElse(null)));
                 recordingBuilder.withBranch(branch.orElse(rec.branch.orElse(null)));
@@ -1116,7 +1130,7 @@ public class CubeStore {
                 rec.generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
 
                 Recording updatedRecording = recordingBuilder.build();
-                
+
                 rrstore.saveRecording(updatedRecording);
 
                 String json;
