@@ -133,8 +133,7 @@ class RecorderAndMockerTest {
 
             double ret = price*(1-discount);
             if (mode == Mode.Record) {
-                RecorderAndMockerTest.recorder.record(discountedPriceFnKey, traceid, spanid,
-                        parentSpanid,
+                RecorderAndMockerTest.recorder.record(discountedPriceFnKey,
                         Double.valueOf(ret), RetStatus.Success, Optional.empty(), productId, price);
             }
             return ret;
@@ -155,8 +154,7 @@ class RecorderAndMockerTest {
 
             double ret = (pp != null) ? discountedPrice(pp.productId, pp.price) : 0;
             if (mode == Mode.Record) {
-                RecorderAndMockerTest.recorder.record(discountedPriceFnKey2, traceid, spanid,
-                        parentSpanid,
+                RecorderAndMockerTest.recorder.record(discountedPriceFnKey2,
                         ret, RetStatus.Success, Optional.empty(), pp);
             }
             return ret;
@@ -187,15 +185,13 @@ class RecorderAndMockerTest {
             try {
                 double ret = discountedPrice(pp.productId, pp.price);
                 if (mode == Mode.Record) {
-                    RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey, traceid, spanid,
-                            parentSpanid,
+                    RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey,
                             ret, RetStatus.Success, Optional.empty(), pp);
                 }
                 return ret;
             } catch (Throwable e) {
                 if (mode == Mode.Record) {
-                    RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey, traceid, spanid,
-                            parentSpanid,
+                    RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey,
                             e, RetStatus.Exception, Optional.of(e.getClass().getName()), pp);
                 }
                 throw e;
@@ -235,15 +231,13 @@ class RecorderAndMockerTest {
                 double ret = 0D;
                 if (pp == null) throw new PriceException("Price Exception");
                 if (mode == Mode.Record) {
-                    RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey, traceid, spanid,
-                            parentSpanid,
+                    RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey,
                             ret, RetStatus.Success, Optional.empty(), pp);
                 }
                 return ret;
             } catch (Throwable e) {
                 if (mode == Mode.Record) {
-                    RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey, traceid, spanid,
-                            parentSpanid,
+                    RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey,
                             e, RetStatus.Exception, Optional.of(e.getClass().getName()), pp);
                 }
                 throw e;
@@ -267,8 +261,7 @@ class RecorderAndMockerTest {
 
             String ret = name;
             if (mode == Mode.Record) {
-                RecorderAndMockerTest.recorder.record(getPromoNameFnKey, traceid, spanid,
-                        parentSpanid,
+                RecorderAndMockerTest.recorder.record(getPromoNameFnKey,
                         ret, RetStatus.Success, Optional.empty());
             }
             return ret;
