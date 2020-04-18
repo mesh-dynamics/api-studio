@@ -257,6 +257,7 @@ public class ReplayWS {
             .orElse(new ArrayList<String>());
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
         boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
+        Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
 
         // Request transformations - for injecting tokens and such
@@ -298,6 +299,7 @@ public class ReplayWS {
                 .withMockServices(mockServices);
             sampleRate.ifPresent(replayBuilder::withSampleRate);
             service.ifPresent(replayBuilder::withServiceToReplay);
+            testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
             try {
                 recording.generatedClassJarPath

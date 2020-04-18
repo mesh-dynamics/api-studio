@@ -743,6 +743,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RRTYPEF = CPREFIX + Constants.RUN_TYPE_FIELD + STRING_SUFFIX;
     private static final String CUSTOMERIDF = CPREFIX + Constants.CUSTOMER_ID_FIELD + STRING_SUFFIX;
     private static final String USERIDF = CPREFIX + Constants.USER_ID_FIELD + STRING_SUFFIX;
+    private static final String TESTCONFIGNAMEF = CPREFIX + Constants.TEST_CONFIG_NAME_FIELD + STRING_SUFFIX;
     private static final String APPF = CPREFIX + Constants.APP_FIELD + STRING_SUFFIX;
     private static final String INSTANCEIDF = CPREFIX + Constants.INSTANCE_ID_FIELD + STRING_SUFFIX;
     private static final String STATUSF = CPREFIX + Constants.STATUS + INT_SUFFIX;
@@ -1320,6 +1321,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(ENDPOINTF, replay.endpoint);
         doc.setField(REPLAYIDF, replay.replayId);
         doc.setField(USERIDF, replay.userId);
+        replay.testConfigName.ifPresent(testconf -> doc.setField(TESTCONFIGNAMEF, testconf));
         replay.reqIds.forEach(reqId -> doc.addField(REQIDSF, reqId));
         doc.setField(REPLAYSTATUSF, replay.status.toString());
         doc.setField(TYPEF, type);
@@ -1391,6 +1393,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
         Optional<String> service = getStrField(doc, SERVICEF);
+        Optional<String> testConfigName = getStrField(doc, TESTCONFIGNAMEF);
         ReplayTypeEnum replayType = getStrField(doc, REPLAY_TYPE_F).flatMap(repType ->
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
@@ -1418,6 +1421,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .ifPresent(UtilException.rethrowConsumer(builder::withGeneratedClassJar));
                 service.ifPresent(builder::withServiceToReplay);
                 xfms.ifPresent(builder::withXfms);
+                testConfigName.ifPresent(builder::withTestConfigName);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE

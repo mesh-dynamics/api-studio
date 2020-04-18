@@ -55,6 +55,7 @@ public class ReplayBuilder {
     public Optional<String> xfms;
     public Optional<RRTransformer> xfmer;
     public List<String> mockServices;
+  public Optional<String> testConfigName;
 
 
     public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
@@ -81,6 +82,7 @@ public class ReplayBuilder {
 		this.xfms = Optional.empty();
 		this.xfmer = Optional.empty();
 		this.mockServices = Collections.emptyList();
+		this.testConfigName = Optional.empty();
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -97,7 +99,7 @@ public class ReplayBuilder {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
 			reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices);
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices, testConfigName);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -191,5 +193,10 @@ public class ReplayBuilder {
         this.mockServices = mockServices;
         return this;
     }
+
+    public ReplayBuilder withTestConfigName(String testConfigName) {
+    	this.testConfigName = Optional.of(testConfigName);
+    	return this;
+		}
 
 }

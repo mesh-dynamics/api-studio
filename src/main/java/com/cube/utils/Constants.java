@@ -126,6 +126,7 @@ public class Constants {
     public static final String EVENT_TYPE_FIELD = "eventType";
     public static final String JSON_PATH_FIELD = "jsonPath";
     public static final String USER_ID_FIELD = "userId";
+    public static final String TEST_CONFIG_NAME_FIELD = "testConfigName";
     public static final String RECORD_REQ_ID_FIELD = "recordReqId";
     public static final String REPLAY_REQ_ID_FIELD = "replayReqId";
     public static final String START_FIELD = "start";
