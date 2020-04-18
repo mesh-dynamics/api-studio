@@ -1,25 +1,26 @@
 ##################################################################################################
-# Jersy119 employee replay services
+# apachecxf course replay services
 ##################################################################################################
 apiVersion: v1
 kind: Service
 metadata:
-  name: jersy119-replay
+  name: apachecxf-replay
   namespace: {{namespace}}
   labels:
-    app: jersy119
-    component: employee-replay
+    app: apachecxf
+    component: course-replay
 spec:
   ports:
   - port: 8080
+    targetPort: 8084
     name: http
   selector:
-    component: employee-replay
+    component: course-replay
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: employee-replay
+  name: course-replay
   namespace: {{namespace}}
 spec:
   replicas: 1
@@ -31,14 +32,14 @@ spec:
   template:
     metadata:
       labels:
-        app: jersy119
-        component: employee-replay
+        app: apachecxf
+        component: course-replay
         version: v1
         namespace: {{namespace}}
     spec:
       containers:
-      - name: employee
-        image: cubeiocorp/jersy_1_19_emp:v1.0
+      - name: course
+        image: cubeiocorp/cxf-course-service:pm-110420-1
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -48,48 +49,57 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         ports:
-        - containerPort: 8080
+        - containerPort: 8084
         env:
-          - name: io.md.intent
-            value: "mock"
           - name: io.md.customer
             value: "{{customer}}"
-          - name: io.md.service
-            value: "{{cube_application}}"
           - name: io.md.app
-            value: "jersey_1_19_demo"
-          - name: depURL
-            value: department:8080
+            value: "{{cube_application}}"
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.service
+            value: "course1"
+          - name: io.md.read.timeout
+            value: "100000"
+          - name: io.md.connect.retries
+            value: "3"
+          - name: io.md.intent
+            value: "mock"
+          - name: student.service.url
+            value: http://student:8080
+          - name: io.md.service.record
+            value: https://{{cube_host}}/api
           - name: io.md.service.mock
             value: https://{{cube_host}}/api
           - name: io.md.mock.services
-            value: department:8080
+            value: student:8080
           - name: io.md.authtoken
-            value: {{auth_token}}
+            value: Bearer {{auth_token}}
 
 ##################################################################################################
-# Jersy119 employee record services
+# apachecxf course record services
 ##################################################################################################
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jersy119-record
+  name: apachecxf-record
   namespace: {{namespace}}
   labels:
-    app: jersy119
-    component: employee-record
+    app: apachecxf
+    component: course-record
 spec:
   ports:
   - port: 8080
+    targetPort: 8084
     name: http
   selector:
-    component: employee-record
+    component: course-record
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: employee-record
+  name: course-record
   namespace: {{namespace}}
 spec:
   replicas: 1
@@ -101,14 +111,14 @@ spec:
   template:
     metadata:
       labels:
-        app: jersy119
-        component: employee-record
+        app: apachecxf
+        component: course-record
         version: v1
         namespace: {{namespace}}
     spec:
       containers:
-      - name: employee
-        image: cubeiocorp/jersy_1_19_emp:v1.0
+      - name: course
+        image: cubeiocorp/cxf-course-service:pm-110420-1
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -118,43 +128,49 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         ports:
-        - containerPort: 8080
+        - containerPort: 8084
         env:
           - name: io.md.customer
             value: "{{customer}}"
-          - name: io.md.service
+          - name: io.md.app
             value: "{{cube_application}}"
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.service
+            value: "course1"
+          - name: io.md.read.timeout
+            value: "100000"
+          - name: io.md.connect.retries
+            value: "3"
           - name: io.md.intent
             value: "record"
-          - name: io.md.app
-            value: "jersey_1_19_demo"
-          - name: depURL
-            value: department:8080
+          - name: student.service.url
+            value: "http://student:8080"
 
 ##################################################################################################
-# Jersy119 record services
+# apachecxf student services
 ##################################################################################################
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: department
+  name: student
   namespace: {{namespace}}
   labels:
-    app: jersy119
-    component: department
+    app: apachecxf
+    component: student
 spec:
   ports:
   - port: 8080
-    targetPort: 8080
+    targetPort: 8085
     name: http
   selector:
-    component: department
+    component: student
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: department
+  name: student
   namespace: {{namespace}}
 spec:
   replicas: 1
@@ -166,14 +182,14 @@ spec:
   template:
     metadata:
       labels:
-        app: jersy119
-        component: department
+        app: apachecxf
+        component: student
         version: v1
         namespace: {{namespace}}
     spec:
       containers:
-      - name: department
-        image: cubeiocorp/jersy_1_19_dep:v1.0
+      - name: student
+        image: cubeiocorp/cxf-student-service:pm-300320-1
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -183,4 +199,4 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         ports:
-        - containerPort: 8080
+        - containerPort: 8085
