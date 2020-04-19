@@ -54,7 +54,7 @@ public class AnalysisMatchResultQuery {
 		this.replayId =replayId;
 		this.service = Optional
 			.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-        this.apiPaths = Optional.ofNullable(queryParams.get("path")) // the path to drill down on
+        this.apiPaths = Optional.ofNullable(queryParams.get(Constants.PATH_FIELD)) // the path to drill down on
             .orElse(Collections.emptyList());
 		this.start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
 			.flatMap(Utils::strToInt); // for paging
