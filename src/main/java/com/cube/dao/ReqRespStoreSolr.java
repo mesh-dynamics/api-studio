@@ -1885,7 +1885,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
         addFilter(query, REPLAYIDF, matchResQuery.replayId);
         addFilter(query, SERVICEF, matchResQuery.service);
-        addFilter(query, PATHF, matchResQuery.apiPath);
+        addFilter(query, PATHF, matchResQuery.apiPaths);
         addFilter(query, REQMTF, matchResQuery.reqMatchType.map(Enum::toString));
         addFilter(query, RESP_COMP_RES_TYPE_F,
             matchResQuery.respCompResType.map(Enum::toString));
