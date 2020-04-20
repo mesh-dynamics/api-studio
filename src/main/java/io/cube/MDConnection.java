@@ -25,9 +25,10 @@ import java.util.concurrent.Executor;
 
 import com.google.gson.reflect.TypeToken;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubeConnection implements Connection {
+
+public class MDConnection implements Connection {
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final Driver driver;
     private final Connection connection;
@@ -63,7 +64,7 @@ public class CubeConnection implements Connection {
     private FnKey gciFnKey;
     private FnKey gcipFnkey;
 
-    public CubeConnection(Config config, int connectionInstanceId) {
+    public MDConnection(Config config, int connectionInstanceId) {
         this.driver = null;
         this.connection = null;
         this.url = null;
@@ -71,7 +72,7 @@ public class CubeConnection implements Connection {
         this.connectionInstanceId = connectionInstanceId;
     }
 
-    public CubeConnection(Connection connection, Driver driver, String url, Config config) {
+    public MDConnection(Connection connection, Driver driver, String url, Config config) {
         this.connection = connection;
         this.driver = driver;
         this.url = url;
@@ -91,74 +92,74 @@ public class CubeConnection implements Connection {
     public Statement createStatement() throws SQLException {
         if (null == csFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            csFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            csFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, csFnKey, Optional.of(integerType), this.connectionInstanceId);
-            CubeStatement mockStatement = new CubeStatement(this, config,  (int) retVal);
+            MDStatement mockStatement = new MDStatement(this, config,  (int) retVal);
             return mockStatement;
         }
 
-        CubeStatement cubeStatement = new CubeStatement(connection.createStatement(), this, config);
+        MDStatement mdStatement = new MDStatement(connection.createStatement(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeStatement.getStatementInstanceId(), config, csFnKey, this.connectionInstanceId);
+            Utils.record(mdStatement.getStatementInstanceId(), config, csFnKey, this.connectionInstanceId);
         }
 
-        return cubeStatement;
+        return mdStatement;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         if (null == psFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            psFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, psFnKey, Optional.of(integerType), sql, this.connectionInstanceId);
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
+            MDPreparedStatement mockStatement = new MDPreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql), sql, this, config);
+        MDPreparedStatement mdPreparedStatement = new MDPreparedStatement(connection.prepareStatement(sql), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psFnKey, sql, this.connectionInstanceId);
+            Utils.record(mdPreparedStatement.getStatementInstanceId(), config, psFnKey, sql, this.connectionInstanceId);
         }
 
-        return cubePreparedStatement;
+        return mdPreparedStatement;
     }
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
         if (null == pcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            pcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, pcFnKey, Optional.of(integerType), sql, this.connectionInstanceId);
-            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int) retVal);
+            MDCallableStatement mockStatement = new MDCallableStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubeCallableStatement cubeCallableStatement = new CubeCallableStatement(connection.prepareCall(sql), sql, this, config);
+        MDCallableStatement mdCallableStatement = new MDCallableStatement(connection.prepareCall(sql), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeCallableStatement.getStatementInstanceId(), config, pcFnKey, sql, this.connectionInstanceId);
+            Utils.record(mdCallableStatement.getStatementInstanceId(), config, pcFnKey, sql, this.connectionInstanceId);
         }
 
-        return cubeCallableStatement;
+        return mdCallableStatement;
     }
 
     @Override
     public String nativeSQL(String sql) throws SQLException {
         if (null == nsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            nsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            nsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, nsFnKey, (fnArgs) -> connection.nativeSQL(sql), sql, this.connectionInstanceId);
@@ -175,8 +176,8 @@ public class CubeConnection implements Connection {
     public boolean getAutoCommit() throws SQLException {
         if (null == gacFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gacFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gacFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, gacFnKey, (fnArgs) -> connection.getAutoCommit(),
@@ -208,8 +209,8 @@ public class CubeConnection implements Connection {
     public boolean isClosed() throws SQLException {
         if (null == icFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            icFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            icFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> connection.isClosed(),
@@ -220,17 +221,17 @@ public class CubeConnection implements Connection {
     public DatabaseMetaData getMetaData() throws SQLException {
         if (null == gmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmdFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, gmdFnkey, Optional.of(integerType), this.connectionInstanceId);
-            CubeDatabaseMetaData mockMetadata = new CubeDatabaseMetaData(this, config, (int) retVal);
+            MDDatabaseMetaData mockMetadata = new MDDatabaseMetaData(this, config, (int) retVal);
             return mockMetadata;
         }
 
-        CubeDatabaseMetaData metaData = new CubeDatabaseMetaData(connection.getMetaData(), this, config);
+        MDDatabaseMetaData metaData = new MDDatabaseMetaData(connection.getMetaData(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
             Utils.record(metaData.getMetadataInstanceId(), config, gmdFnkey, this.connectionInstanceId);
         }
@@ -249,8 +250,8 @@ public class CubeConnection implements Connection {
     public boolean isReadOnly() throws SQLException {
         if (null == irFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            irFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            irFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, irFnKey, (fnArgs) -> connection.isReadOnly(),
@@ -268,8 +269,8 @@ public class CubeConnection implements Connection {
     public String getCatalog() throws SQLException {
         if (null == gcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gcFnKey, (fnArgs) -> connection.getCatalog(), this.connectionInstanceId);
@@ -286,8 +287,8 @@ public class CubeConnection implements Connection {
     public int getTransactionIsolation() throws SQLException {
         if (null == gtiFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtiFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> connection.getTransactionIsolation(), this.connectionInstanceId);
@@ -297,8 +298,8 @@ public class CubeConnection implements Connection {
     public SQLWarning getWarnings() throws SQLException {
         if (null == gwFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gwFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gwFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> connection.getWarnings(), this.connectionInstanceId);
@@ -315,66 +316,66 @@ public class CubeConnection implements Connection {
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
         if (null == csrsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            csrsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            csrsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, csrsFnKey, Optional.of(integerType), resultSetType, resultSetConcurrency, this.connectionInstanceId);
-            CubeStatement mockStatement = new CubeStatement(this, config,  (int) retVal);
+            MDStatement mockStatement = new MDStatement(this, config,  (int) retVal);
             return mockStatement;
         }
 
-        CubeStatement cubeStatement = new CubeStatement(connection.createStatement(resultSetType, resultSetConcurrency), this, config);
+        MDStatement mdStatement = new MDStatement(connection.createStatement(resultSetType, resultSetConcurrency), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeStatement.getStatementInstanceId(), config, csrsFnKey, resultSetType, resultSetConcurrency, this.connectionInstanceId);
+            Utils.record(mdStatement.getStatementInstanceId(), config, csrsFnKey, resultSetType, resultSetConcurrency, this.connectionInstanceId);
         }
 
-        return cubeStatement;
+        return mdStatement;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         if (null == psrsFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psrsFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            psrsFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, psrsFnkey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
+            MDPreparedStatement mockStatement = new MDPreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql,this, config);
+        MDPreparedStatement mdPreparedStatement = new MDPreparedStatement(connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql,this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psrsFnkey, sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
+            Utils.record(mdPreparedStatement.getStatementInstanceId(), config, psrsFnkey, sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
         }
 
-        return cubePreparedStatement;
+        return mdPreparedStatement;
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         if (null == pcrsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pcrsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            pcrsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, pcrsFnKey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
-            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int) retVal);
+            MDCallableStatement mockStatement = new MDCallableStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubeCallableStatement cubeCallableStatement = new CubeCallableStatement(connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql, this, config);
+        MDCallableStatement mdCallableStatement = new MDCallableStatement(connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeCallableStatement.getStatementInstanceId(), config, pcrsFnKey, sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
+            Utils.record(mdCallableStatement.getStatementInstanceId(), config, pcrsFnKey, sql, resultSetType, resultSetConcurrency, this.connectionInstanceId);
         }
 
-        return cubeCallableStatement;
+        return mdCallableStatement;
     }
 
     @Override
@@ -404,8 +405,8 @@ public class CubeConnection implements Connection {
     public int getHoldability() throws SQLException {
         if (null == ghFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ghFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            ghFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, ghFnKey, (fnArgs) -> connection.getHoldability(), this.connectionInstanceId);
@@ -415,45 +416,45 @@ public class CubeConnection implements Connection {
     public Savepoint setSavepoint() throws SQLException {
         if (null == ssFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ssFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            ssFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, ssFnKey, Optional.of(integerType), this.connectionInstanceId);
-            CubeSavepoint mockSavepoint = new CubeSavepoint(this, config, (int) retVal);
+            MDSavepoint mockSavepoint = new MDSavepoint(this, config, (int) retVal);
             return mockSavepoint;
         }
 
-        CubeSavepoint cubeSavepoint = new CubeSavepoint(connection.setSavepoint(), this, config);
+        MDSavepoint mdSavepoint = new MDSavepoint(connection.setSavepoint(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeSavepoint.getSavepointInstanceId(), config, ssFnKey, this.connectionInstanceId);
+            Utils.record(mdSavepoint.getSavepointInstanceId(), config, ssFnKey, this.connectionInstanceId);
         }
 
-        return cubeSavepoint;
+        return mdSavepoint;
     }
 
     @Override
     public Savepoint setSavepoint(String name) throws SQLException {
         if (null == ssnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ssnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            ssnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, ssnFnKey, Optional.of(integerType), name, this.connectionInstanceId);
-            CubeSavepoint mockSavepoint = new CubeSavepoint(this, config, (int) retVal);
+            MDSavepoint mockSavepoint = new MDSavepoint(this, config, (int) retVal);
 
             return mockSavepoint;
         }
 
-        CubeSavepoint cubeSavepoint = new CubeSavepoint(connection.setSavepoint(name), this, config);
+        MDSavepoint mdSavepoint = new MDSavepoint(connection.setSavepoint(name), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeSavepoint.getSavepointInstanceId(), config, ssnFnKey, name, this.connectionInstanceId);
+            Utils.record(mdSavepoint.getSavepointInstanceId(), config, ssnFnKey, name, this.connectionInstanceId);
         }
 
-        return cubeSavepoint;
+        return mdSavepoint;
     }
 
     @Override
@@ -474,133 +475,133 @@ public class CubeConnection implements Connection {
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         if (null == csrshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            csrshFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            csrshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, csrshFnKey, Optional.of(integerType), resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
 
-            CubeStatement mockStatement = new CubeStatement(this, config, (int) retVal);
+            MDStatement mockStatement = new MDStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubeStatement cubeStatement = new CubeStatement(connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability), this, config);
+        MDStatement mdStatement = new MDStatement(connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability), this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeStatement.getStatementInstanceId(), config, csrshFnKey, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
+            Utils.record(mdStatement.getStatementInstanceId(), config, csrshFnKey, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
         }
 
-        return cubeStatement;
+        return mdStatement;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         if (null == psrshFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psrshFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            psrshFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, psrshFnkey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
+            MDPreparedStatement mockStatement = new MDPreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql, this, config);
+        MDPreparedStatement mdPreparedStatement = new MDPreparedStatement(connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psrshFnkey, sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
+            Utils.record(mdPreparedStatement.getStatementInstanceId(), config, psrshFnkey, sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
         }
 
-        return cubePreparedStatement;
+        return mdPreparedStatement;
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         if (null == pcrshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pcrshFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            pcrshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, pcrshFnKey, Optional.of(integerType), sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
-            CubeCallableStatement mockStatement = new CubeCallableStatement(this, config, (int) retVal);
+            MDCallableStatement mockStatement = new MDCallableStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubeCallableStatement cubeCallableStatement = new CubeCallableStatement(connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql, this, config);
+        MDCallableStatement mdCallableStatement = new MDCallableStatement(connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeCallableStatement.getStatementInstanceId(), config, pcrshFnKey, sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
+            Utils.record(mdCallableStatement.getStatementInstanceId(), config, pcrshFnKey, sql, resultSetType, resultSetConcurrency, resultSetHoldability, this.connectionInstanceId);
         }
 
-        return cubeCallableStatement;
+        return mdCallableStatement;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
         if (null == psaFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psaFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            psaFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, psaFnkey, Optional.of(integerType), sql, autoGeneratedKeys, this.connectionInstanceId);
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
+            MDPreparedStatement mockStatement = new MDPreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, autoGeneratedKeys), sql, this, config);
+        MDPreparedStatement mdPreparedStatement = new MDPreparedStatement(connection.prepareStatement(sql, autoGeneratedKeys), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, psaFnkey, sql, autoGeneratedKeys, this.connectionInstanceId);
+            Utils.record(mdPreparedStatement.getStatementInstanceId(), config, psaFnkey, sql, autoGeneratedKeys, this.connectionInstanceId);
         }
 
-        return cubePreparedStatement;
+        return mdPreparedStatement;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
         if (null == pscFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pscFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            pscFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, pscFnkey, Optional.of(integerType), sql, columnIndexes, this.connectionInstanceId);
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
+            MDPreparedStatement mockStatement = new MDPreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, columnIndexes), sql, this, config);
+        MDPreparedStatement mdPreparedStatement = new MDPreparedStatement(connection.prepareStatement(sql, columnIndexes), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, pscFnkey, sql, columnIndexes, this.connectionInstanceId);
+            Utils.record(mdPreparedStatement.getStatementInstanceId(), config, pscFnkey, sql, columnIndexes, this.connectionInstanceId);
         }
 
-        return cubePreparedStatement;
+        return mdPreparedStatement;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
         if (null == pscnFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pscnFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            pscnFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, pscnFnkey, Optional.of(integerType), sql, columnNames, this.connectionInstanceId);
-            CubePreparedStatement mockStatement = new CubePreparedStatement(this, config, (int) retVal);
+            MDPreparedStatement mockStatement = new MDPreparedStatement(this, config, (int) retVal);
             return mockStatement;
         }
 
-        CubePreparedStatement cubePreparedStatement = new CubePreparedStatement(connection.prepareStatement(sql, columnNames), sql, this, config);
+        MDPreparedStatement mdPreparedStatement = new MDPreparedStatement(connection.prepareStatement(sql, columnNames), sql, this, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubePreparedStatement.getStatementInstanceId(), config, pscnFnkey, sql, columnNames, this.connectionInstanceId);
+            Utils.record(mdPreparedStatement.getStatementInstanceId(), config, pscnFnkey, sql, columnNames, this.connectionInstanceId);
         }
 
-        return cubePreparedStatement;
+        return mdPreparedStatement;
     }
 
     @Override
@@ -639,8 +640,8 @@ public class CubeConnection implements Connection {
     public boolean isValid(int timeout) throws SQLException {
         if (null == ivFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ivFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            ivFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, ivFnKey, (fnArgs) -> connection.isValid(timeout), timeout, this.connectionInstanceId);
@@ -664,8 +665,8 @@ public class CubeConnection implements Connection {
     public String getClientInfo(String name) throws SQLException {
         if (null == gciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gciFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gciFnKey, (fnArgs) -> connection.getClientInfo(name), name, this.connectionInstanceId);
@@ -675,8 +676,8 @@ public class CubeConnection implements Connection {
     public Properties getClientInfo() throws SQLException {
         if (null == gcipFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcipFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gcipFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (Properties) Utils.recordOrMock(config, gcipFnkey, (fnArgs) -> connection.getClientInfo(), this.connectionInstanceId);
@@ -709,8 +710,8 @@ public class CubeConnection implements Connection {
     public String getSchema() throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> connection.getSchema(), this.connectionInstanceId);
@@ -734,8 +735,8 @@ public class CubeConnection implements Connection {
     public int getNetworkTimeout() throws SQLException {
         if (null == gntFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gntFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gntFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gntFnKey, (fnArgs) -> connection.getNetworkTimeout(), this.connectionInstanceId);

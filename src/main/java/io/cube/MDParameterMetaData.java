@@ -4,11 +4,11 @@ import java.lang.reflect.Method;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubeParameterMetaData implements ParameterMetaData {
+public class MDParameterMetaData implements ParameterMetaData {
 	private final ParameterMetaData parameterMetaData;
-	private final CubePreparedStatement cubePreparedStatement;
+	private final MDPreparedStatement mdPreparedStatement;
 	private final Config config;
 	private final int parameterMetaDataInstanceId;
 	private FnKey gpcFnKey;
@@ -21,16 +21,16 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	private FnKey inpFnKey;
 	private FnKey gspFnKey;
 
-	public CubeParameterMetaData (CubePreparedStatement cubePreparedStatement, Config config, int parameterMetaDataInstanceId) {
+	public MDParameterMetaData(MDPreparedStatement mdPreparedStatement, Config config, int parameterMetaDataInstanceId) {
 		this.parameterMetaData = null;
-		this.cubePreparedStatement = cubePreparedStatement;
+		this.mdPreparedStatement = mdPreparedStatement;
 		this.config = config;
 		this.parameterMetaDataInstanceId = parameterMetaDataInstanceId;
 	}
 
-	public CubeParameterMetaData (ParameterMetaData parameterMetaData, CubePreparedStatement cubePreparedStatement, Config config) {
+	public MDParameterMetaData(ParameterMetaData parameterMetaData, MDPreparedStatement mdPreparedStatement, Config config) {
 		this.parameterMetaData = parameterMetaData;
-		this.cubePreparedStatement = cubePreparedStatement;
+		this.mdPreparedStatement = mdPreparedStatement;
 		this.config = config;
 		this.parameterMetaDataInstanceId = System.identityHashCode(this);
 	}
@@ -43,8 +43,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public int getParameterCount() throws SQLException {
 		if (null == gpcFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gpcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gpcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (int) Utils.recordOrMock(config, gpcFnKey,
@@ -55,8 +55,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public int isNullable(int param) throws SQLException {
 		if (null == inpFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			inpFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			inpFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (int) Utils.recordOrMock(config, inpFnKey,
@@ -67,8 +67,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public boolean isSigned(int param) throws SQLException {
 		if (null == ispFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			ispFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			ispFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (boolean) Utils.recordOrMock(config, ispFnKey,
@@ -79,8 +79,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public int getPrecision(int param) throws SQLException {
 		if (null == gppFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gppFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gppFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (int) Utils.recordOrMock(config, gppFnKey,
@@ -91,8 +91,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public int getScale(int param) throws SQLException {
 		if (null == gspFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gspFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gspFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (int) Utils.recordOrMock(config, gspFnKey,
@@ -103,8 +103,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public int getParameterType(int param) throws SQLException {
 		if (null == gptFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gptFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gptFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (int) Utils.recordOrMock(config, gptFnKey,
@@ -115,8 +115,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public String getParameterTypeName(int param) throws SQLException {
 		if (null == gptnFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gptnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gptnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (String) Utils.recordOrMock(config, gptnFnKey,
@@ -127,8 +127,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public String getParameterClassName(int param) throws SQLException {
 		if (null == gpcnFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gpcnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gpcnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (String) Utils.recordOrMock(config, gpcnFnKey,
@@ -139,8 +139,8 @@ public class CubeParameterMetaData implements ParameterMetaData {
 	public int getParameterMode(int param) throws SQLException {
 		if (null == gpmFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gpmFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-				config.commonConfig.serviceName, method);
+			gpmFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+				Config.commonConfig.serviceName, method);
 		}
 
 		return (int) Utils.recordOrMock(config, gpmFnKey,

@@ -4,14 +4,14 @@ import java.lang.reflect.Method;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubeResultSetMetaData implements ResultSetMetaData {
+public class MDResultSetMetaData implements ResultSetMetaData {
     private final ResultSetMetaData resultSetMetaData;
-    private final CubeResultSet cubeResultSet;
+    private final MDResultSet mdResultSet;
     private final Config config;
     private final int resultSetMetaDataInstanceId;
-    private final CubePreparedStatement cubePreparedStatement;
+    private final MDPreparedStatement mdPreparedStatement;
     private FnKey gccFnKey;
     private FnKey iaicFnKey;
     private FnKey icscFnKey;
@@ -34,34 +34,34 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     private FnKey idwcFnKey;
     private FnKey isicFnKey;
 
-    public CubeResultSetMetaData (CubeResultSet cubeResultSet, Config config, int resultSetMetaDataInstanceId) {
+    public MDResultSetMetaData(MDResultSet mdResultSet, Config config, int resultSetMetaDataInstanceId) {
         this.resultSetMetaData = null;
-        this.cubePreparedStatement = null;
-        this.cubeResultSet = cubeResultSet;
+        this.mdPreparedStatement = null;
+        this.mdResultSet = mdResultSet;
         this.config = config;
         this.resultSetMetaDataInstanceId = resultSetMetaDataInstanceId;
     }
 
-    public CubeResultSetMetaData (ResultSetMetaData resultSetMetaData, CubeResultSet cubeResultSet, Config config) {
+    public MDResultSetMetaData(ResultSetMetaData resultSetMetaData, MDResultSet mdResultSet, Config config) {
         this.resultSetMetaData = resultSetMetaData;
-        this.cubeResultSet = cubeResultSet;
-        this.cubePreparedStatement = null;
+        this.mdResultSet = mdResultSet;
+        this.mdPreparedStatement = null;
         this.config = config;
         this.resultSetMetaDataInstanceId = System.identityHashCode(this);
     }
 
-    public CubeResultSetMetaData (CubePreparedStatement cubePreparedStatement, Config config, int resultSetMetaDataInstanceId) {
+    public MDResultSetMetaData(MDPreparedStatement mdPreparedStatement, Config config, int resultSetMetaDataInstanceId) {
         this.resultSetMetaData = null;
-        this.cubeResultSet = null;
-        this.cubePreparedStatement = cubePreparedStatement;
+        this.mdResultSet = null;
+        this.mdPreparedStatement = mdPreparedStatement;
         this.config = config;
         this.resultSetMetaDataInstanceId = resultSetMetaDataInstanceId;
     }
 
-    public CubeResultSetMetaData (ResultSetMetaData resultSetMetaData, CubePreparedStatement cubePreparedStatement, Config config) {
+    public MDResultSetMetaData(ResultSetMetaData resultSetMetaData, MDPreparedStatement mdPreparedStatement, Config config) {
         this.resultSetMetaData = resultSetMetaData;
-        this.cubeResultSet = null;
-        this.cubePreparedStatement = cubePreparedStatement;
+        this.mdResultSet = null;
+        this.mdPreparedStatement = mdPreparedStatement;
         this.config = config;
         this.resultSetMetaDataInstanceId = System.identityHashCode(this);
     }
@@ -74,8 +74,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public int getColumnCount() throws SQLException {
         if (null == gccFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gccFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gccFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gccFnKey,
@@ -86,8 +86,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isAutoIncrement(int column) throws SQLException {
         if (null == iaicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            iaicFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            iaicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, iaicFnKey,
@@ -98,8 +98,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isCaseSensitive(int column) throws SQLException {
         if (null == icscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            icscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            icscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, icscFnKey,
@@ -110,8 +110,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isSearchable(int column) throws SQLException {
         if (null == iscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            iscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            iscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, iscFnKey,
@@ -122,8 +122,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isCurrency(int column) throws SQLException {
         if (null == iccFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            iccFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            iccFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, iccFnKey,
@@ -134,8 +134,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public int isNullable(int column) throws SQLException {
         if (null == incFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            incFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            incFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, incFnKey,
@@ -146,8 +146,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isSigned(int column) throws SQLException {
         if (null == isicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            isicFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            isicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, isicFnKey,
@@ -158,8 +158,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public int getColumnDisplaySize(int column) throws SQLException {
         if (null == gcdscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcdscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gcdscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gcdscFnKey,
@@ -170,8 +170,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getColumnLabel(int column) throws SQLException {
         if (null == gclcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gclcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gclcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gclcFnKey,
@@ -182,8 +182,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getColumnName(int column) throws SQLException {
         if (null == gcncFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcncFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gcncFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gcncFnKey,
@@ -194,8 +194,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getSchemaName(int column) throws SQLException {
         if (null == gsncFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsncFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gsncFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gsncFnKey,
@@ -206,8 +206,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public int getPrecision(int column) throws SQLException {
         if (null == gpcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gpcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gpcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gpcFnKey,
@@ -218,8 +218,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public int getScale(int column) throws SQLException {
         if (null == gscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gscFnKey,
@@ -230,8 +230,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getTableName(int column) throws SQLException {
         if (null == gtncFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtncFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtncFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gtncFnKey,
@@ -242,8 +242,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getCatalogName(int column) throws SQLException {
         if (null == gcancFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcancFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gcancFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gcancFnKey,
@@ -254,8 +254,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public int getColumnType(int column) throws SQLException {
         if (null == gctcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gctcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gctcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gctcFnKey,
@@ -266,8 +266,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getColumnTypeName(int column) throws SQLException {
         if (null == gctnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gctnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gctnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gctnFnKey,
@@ -278,8 +278,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isReadOnly(int column) throws SQLException {
         if (null == ircFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ircFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            ircFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, ircFnKey,
@@ -290,8 +290,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isWritable(int column) throws SQLException {
         if (null == iwcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            iwcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            iwcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, iwcFnKey,
@@ -302,8 +302,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public boolean isDefinitelyWritable(int column) throws SQLException {
         if (null == idwcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            idwcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            idwcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, idwcFnKey,
@@ -314,8 +314,8 @@ public class CubeResultSetMetaData implements ResultSetMetaData {
     public String getColumnClassName(int column) throws SQLException {
         if (null == gccncFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gccncFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gccncFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gccncFnKey,
