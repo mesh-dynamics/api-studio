@@ -1,6 +1,8 @@
 package com.cube.interceptor.apachecxf.ingress;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -13,14 +15,16 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.config.Config;
-import com.cube.interceptor.utils.Utils;
+import com.cube.interceptor.apachecxf.ingress.config.Config;
+import com.cube.interceptor.apachecxf.ingress.utils.Utils;
 
 /**
  * Priority is to specify in which order the filters are to be executed. Lower the order, early the
@@ -29,36 +33,42 @@ import com.cube.interceptor.utils.Utils;
 @Provider
 @Priority(1000)
 public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
-
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
+	// config not used but required to ensure commonConfig initailised properly before
+	// filter execution
+	public static final Config config = Utils.config;
+	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
 
 	@Override
-	public void filter(ContainerRequestContext reqContext) throws IOException {
-		//start a md-child-span
-		MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
-		String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
-		Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
-		Scope scope = CommonUtils.activateSpan(span);
+	public void filter(ContainerRequestContext reqContext) {
+		try {
+			//start a md-child-span
+			MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
+			String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
+			Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
+			Scope scope = CommonUtils.activateSpan(span);
 
-		Optional<String> fieldCategory = config.commonConfig.sampler.getFieldCategory();
-		String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
-		if (sampleBaggageItem == null) {
-			//root span
-			boolean isSampled = runSampling(reqContext, fieldCategory);
-			span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
-		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && config.commonConfig.samplerVeto) {
-			span.setBaggageItem(Constants.MD_IS_VETOED,
-				String.valueOf(runSampling(reqContext, fieldCategory)));
+			Optional<String> fieldCategory = Utils.config.commonConfig.sampler.getFieldCategory();
+			String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
+			if (sampleBaggageItem == null) {
+				//root span
+				boolean isSampled = runSampling(reqContext, fieldCategory);
+				span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
+			} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && Utils.config.commonConfig.samplerVeto) {
+				span.setBaggageItem(Constants.MD_IS_VETOED,
+					String.valueOf(runSampling(reqContext, fieldCategory)));
+			}
+
+			String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
+			reqContext.setProperty(scopeKey, scope);
+			reqContext.setProperty(spanKey, span);
+			CommonUtils.injectContext(requestHeaders);
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					Constants.MESSAGE, "Exception occurred in interceptor",
+					Constants.REASON, e.getMessage()
+				)));
 		}
-
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
-		reqContext.setProperty(scopeKey, scope);
-		reqContext.setProperty(spanKey, span);
-		CommonUtils.injectContext(requestHeaders);
 	}
 
 	private boolean runSampling(ContainerRequestContext reqContext, Optional<String> fieldCategory) {
@@ -88,20 +98,28 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	@Override
 	public void filter(ContainerRequestContext reqContext,
-		ContainerResponseContext respContext) throws IOException {
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
-		String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
+		ContainerResponseContext respContext) {
+		try {
+			String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
+			String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
 
-		Object obj = reqContext.getProperty(scopeKey);
-		if (obj != null) {
-			((Scope) obj).close();
-			reqContext.removeProperty(scopeKey);
-		}
+			Object obj = reqContext.getProperty(scopeKey);
+			if (obj != null) {
+				((Scope) obj).close();
+				reqContext.removeProperty(scopeKey);
+			}
 
-		obj = reqContext.getProperty(spanKey);
-		if (obj != null) {
-			((Span) obj).finish();
-			reqContext.removeProperty(spanKey);
+			obj = reqContext.getProperty(spanKey);
+			if (obj != null) {
+				((Span) obj).finish();
+				reqContext.removeProperty(spanKey);
+			}
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					Constants.MESSAGE, "Exception occurred in interceptor",
+					Constants.REASON, e.getMessage()
+				)));
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package com.cube.interceptor.apachecxf.egress.config;
 
+import java.io.FileNotFoundException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -30,9 +32,9 @@ public class Config {
 		}
 	}
 
-	public Config() {
+	public Config()  {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
 			.create();
-		recorder = new ConsoleRecorder(gson);
+			recorder = new ConsoleRecorder(gson);
 	}
 }

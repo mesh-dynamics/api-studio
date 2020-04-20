@@ -4,6 +4,7 @@ package com.cube.interceptor.apachecxf.egress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,15 +27,14 @@ import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.cxf.jaxrs.client.spec.ClientRequestContextImpl;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.impl.WriterInterceptorContextImpl;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Message;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.logging.log4j.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -46,7 +46,6 @@ import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.apachecxf.egress.config.Config;
 import com.cube.interceptor.apachecxf.egress.utils.Utils;
 
 
@@ -58,41 +57,51 @@ import com.cube.interceptor.apachecxf.egress.utils.Utils;
 @Priority(3500)
 public class ClientFilter implements WriterInterceptor, ClientRequestFilter, ClientResponseFilter {
 
-	private static final Logger LOGGER = LogManager.getLogger(ClientFilter.class);
-
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClientFilter.class);
 
 	@Override
-	public void aroundWriteTo(WriterInterceptorContext context)
-		throws IOException, WebApplicationException {
+	public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
 
-		ClientRequestContext reqContext = null;
-		//get the request context
-		if (context instanceof WriterInterceptorContextImpl) {
-			Message message = JAXRSUtils.getCurrentMessage();
-			reqContext = new ClientRequestContextImpl(message.getExchange().getOutMessage(), true);
-		}
+		MutableBoolean didContextProceed = new MutableBoolean(false);
 
-		if (reqContext != null) {
-				recordRequest(context, reqContext);
-		} else {
-			LOGGER
-				.debug(new ObjectMessage(
-					Map.of(Constants.MESSAGE, "Unable to fetch request context!")));
-			context.proceed();
+		try {
+			ClientRequestContext reqContext = null;
+			//get the request context
+			if (context instanceof WriterInterceptorContextImpl) {
+				Message message = JAXRSUtils.getCurrentMessage();
+				reqContext = new ClientRequestContextImpl(message.getExchange().getOutMessage(), true);
+			}
+
+			if (reqContext != null) {
+				recordRequest(context, reqContext, didContextProceed);
+			} else {
+				LOGGER.debug(String.valueOf(
+						Map.of(Constants.MESSAGE, "Unable to fetch request context!")));
+			}
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					Constants.MESSAGE, "Exception occurred in interceptor",
+					Constants.REASON, e.getMessage()
+				)));
+		} finally {
+			if(didContextProceed.isFalse()) {
+				LOGGER.info(String.valueOf(
+					Map.of(
+						io.md.constants.Constants.MESSAGE, "Proceeding context in aroundWriteTo finally"
+					)));
+				context.proceed();
+			}
 		}
 	}
 
 	private void logRequest(WriterInterceptorContext writerInterceptorContext,
 		ClientRequestContext clientRequestContext, String apiPath,
 		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo,
-		String serviceName)
+		String serviceName, MutableBoolean 	didContextProceed)
 		throws IOException {
 		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.PROCESS_REQUEST_EGRESS);
+		didContextProceed.setFalse();
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			//hdrs
 			MultivaluedMap<String, String> requestHeaders = clientRequestContext.getStringHeaders();
@@ -107,7 +116,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 
 			//we pass null for GET requests
 			if (writerInterceptorContext != null) {
-				requestBody = getRequestBody(writerInterceptorContext);
+				requestBody = getRequestBody(writerInterceptorContext, didContextProceed);
 			}
 
 			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta, mdTraceInfo,
@@ -117,7 +126,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 		}
 	}
 
-	private byte[] getRequestBody(WriterInterceptorContext interceptorContext) throws IOException {
+	private byte[] getRequestBody(WriterInterceptorContext interceptorContext, MutableBoolean didContextProceed) throws IOException {
 		final Span span = io.cube.agent.Utils.createPerformanceSpan(
 			Constants.COPY_REQUEST_BODY_EGRESS);
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
@@ -126,7 +135,14 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 			byte[] reqBody;
 			interceptorContext.setOutputStream(baos);
 			try {
+				didContextProceed.setTrue();
 				interceptorContext.proceed();
+			} catch (Exception e) {
+				LOGGER.error(String.valueOf(
+					Map.of(
+						io.md.constants.Constants.MESSAGE, "Error occurred in context proceed",
+						io.md.constants.Constants.REASON, e.getMessage()
+					)));
 			} finally {
 				reqBody = baos.toByteArray();
 				baos.writeTo(originalStream);
@@ -141,35 +157,43 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 
 	@Override
 	public void filter(ClientRequestContext clientRequestContext,
-		ClientResponseContext clientResponseContext) throws IOException {
-		if (clientRequestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
-			// Do not log request in case the egress serivce is to be mocked
-			String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
-			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (commonConfig.shouldMockService(service)) {
+		ClientResponseContext clientResponseContext) {
+		try {
+			if (clientRequestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
+				// Do not log request in case the egress serivce is to be mocked
+				String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
+				CommonConfig commonConfig = CommonConfig.getInstance();
+				if (commonConfig.shouldMockService(service)) {
+					removeSetContextProperty(clientRequestContext);
+					return;
+				}
+				Object apiPathObj = clientRequestContext.getProperty(Constants.MD_API_PATH_PROP);
+				Object serviceNameObj = clientRequestContext.getProperty(Constants.MD_SERVICE_PROP);
+				Object traceMetaMapObj = clientRequestContext
+					.getProperty(Constants.MD_TRACE_META_MAP_PROP);
+				Object traceInfo = clientRequestContext.getProperty(Constants.MD_TRACE_INFO);
+
+				String apiPath = apiPathObj != null ? apiPathObj.toString() : "";
+				String serviceName = serviceNameObj != null ? serviceNameObj.toString() : "";
+
+				ObjectMapper mapper = new ObjectMapper();
+				MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
+					.convertValue(traceMetaMapObj, MetadataMap.class)
+					: Utils.createEmptyMultivaluedMap();
+
+				MDTraceInfo mdTraceInfo =
+					traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
+
+				logResponse(clientResponseContext, apiPath, traceMetaMap, mdTraceInfo, serviceName);
+
 				removeSetContextProperty(clientRequestContext);
-				return;
 			}
-			Object apiPathObj = clientRequestContext.getProperty(Constants.MD_API_PATH_PROP);
-			Object serviceNameObj = clientRequestContext.getProperty(Constants.MD_SERVICE_PROP);
-			Object traceMetaMapObj = clientRequestContext
-				.getProperty(Constants.MD_TRACE_META_MAP_PROP);
-			Object traceInfo = clientRequestContext.getProperty(Constants.MD_TRACE_INFO);
-
-			String apiPath = apiPathObj != null ? apiPathObj.toString() : Strings.EMPTY;
-			String serviceName = serviceNameObj != null ? serviceNameObj.toString() : Strings.EMPTY;
-
-			ObjectMapper mapper = new ObjectMapper();
-			MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
-				.convertValue(traceMetaMapObj, MetadataMap.class)
-				: Utils.createEmptyMultivaluedMap();
-
-			MDTraceInfo mdTraceInfo =
-				traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
-
-			logResponse(clientResponseContext, apiPath, traceMetaMap, mdTraceInfo, serviceName);
-
-			removeSetContextProperty(clientRequestContext);
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					Constants.MESSAGE, "Error occured in intercepting the response",
+					Constants.REASON, e.getMessage()
+				)));
 		}
 	}
 
@@ -207,7 +231,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 					return respBody;
 				}
 			} catch (IOException ex) {
-				LOGGER.error(new ObjectMessage(
+				LOGGER.error(String.valueOf(
 					Map.of(
 						Constants.MESSAGE, "Failure during reading the response body",
 						Constants.REASON, ex.getMessage()
@@ -231,26 +255,24 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
-		if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
-				//aroundWriteTo will not be called, as there will be no body to write.
-				//hence have to log the request here. WebClient does not have a provision
-				//to create a get request with body, so double logging is not an issue.
-				recordRequest(null, clientRequestContext);
+		try {
+			if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
+					//aroundWriteTo will not be called, as there will be no body to write.
+					//hence have to log the request here. WebClient does not have a provision
+					//to create a get request with body, so double logging is not an issue.
+					recordRequest(null, clientRequestContext, new MutableBoolean(false));
+			}
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					Constants.MESSAGE, "Error occurred in intercepting the request",
+					Constants.REASON, e.getMessage()
+				)));
 		}
 	}
 
-	private MDTraceInfo getTraceInfo(Span currentSpan) {
-		JaegerSpanContext spanContext = (JaegerSpanContext) currentSpan.context();
-
-		String traceId = spanContext.getTraceId();
-		String spanId = Long.toHexString(spanContext.getSpanId());
-		String parentSpanId = Long.toHexString(spanContext.getParentId());
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId, spanId, parentSpanId);
-		return mdTraceInfo;
-	}
-
 	private void recordRequest(WriterInterceptorContext writerInterceptorContext,
-		ClientRequestContext clientRequestContext) throws IOException {
+		ClientRequestContext clientRequestContext, MutableBoolean didContextProceed) throws IOException {
 		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
 		Optional<Span> newClientSpan = currentSpan.map( span -> {
 			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
@@ -264,7 +286,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 			currentSpan.ifPresent(span -> {
 				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
 			});
-			return;
+			didContextProceed.setFalse();
 		}
 
 		if (newClientSpan.isPresent()) {
@@ -289,7 +311,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				//serviceName to be host+port for outgoing calls
 				String serviceName = CommonUtils.getEgressServiceName(uri);
 
-				MDTraceInfo mdTraceInfo = getTraceInfo(span);
+				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
 
 				String xRequestId = clientRequestContext.getStringHeaders()
 					.getFirst(Constants.X_REQUEST_ID);
@@ -305,23 +327,17 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 
 				logRequest(writerInterceptorContext, clientRequestContext, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
-					mdTraceInfo, serviceName);
+					mdTraceInfo, serviceName, didContextProceed);
 
 				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
 				span.finish();
 			} else {
-				LOGGER.debug(new ObjectMessage(
+				LOGGER.debug(String.valueOf(
 					Map.of(Constants.MESSAGE, "Sampling is false!")));
-				if (writerInterceptorContext != null) {
-					writerInterceptorContext.proceed();
-				}
 			}
 		} else {
 			LOGGER
-				.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Current Span is empty!")));
-			if (writerInterceptorContext != null) {
-				writerInterceptorContext.proceed();
-			}
+				.debug(String.valueOf(Map.of(Constants.MESSAGE, "Current Span is empty!")));
 		}
 	}
 }

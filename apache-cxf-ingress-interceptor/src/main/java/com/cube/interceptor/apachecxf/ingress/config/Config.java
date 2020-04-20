@@ -1,4 +1,6 @@
-package com.cube.interceptor.config;
+package com.cube.interceptor.apachecxf.ingress.config;
+
+import java.io.FileNotFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -23,11 +25,7 @@ public class Config {
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
 	static {
-		try {
-			commonConfig = CommonConfig.getInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		commonConfig = CommonConfig.getInstance();
 	}
 
 	public Config() {

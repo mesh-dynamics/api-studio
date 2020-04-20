@@ -11,6 +11,9 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.md.utils.CommonUtils;
 
 /**
@@ -22,15 +25,25 @@ import io.md.utils.CommonUtils;
 @Priority(4000)
 public class TracingFilter implements ClientRequestFilter {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
+
 	@Override
-	public void filter(ClientRequestContext clientRequestContext) throws IOException {
-		MultivaluedMap<String, String> mdTraceHeaders =  new MultivaluedHashMap<>();
-		CommonUtils.injectContext(mdTraceHeaders);
-		MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();
-		for (Map.Entry<String, List<String>> entry : mdTraceHeaders.entrySet()) {
-			for (String entValue: entry.getValue()) {
-				clientHeaders.add(entry.getKey(), entValue);
+	public void filter(ClientRequestContext clientRequestContext) {
+		try {
+			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
+			CommonUtils.injectContext(mdTraceHeaders);
+			MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();
+			for (Map.Entry<String, List<String>> entry : mdTraceHeaders.entrySet()) {
+				for (String entValue : entry.getValue()) {
+					clientHeaders.add(entry.getKey(), entValue);
+				}
 			}
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					io.md.constants.Constants.MESSAGE, "Error occurred in Mocking filter",
+					io.md.constants.Constants.REASON, e.getMessage()
+				)));
 		}
 	}
 }

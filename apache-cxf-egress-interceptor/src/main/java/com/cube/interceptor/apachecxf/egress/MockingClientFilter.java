@@ -6,15 +6,16 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Priority;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.cube.agent.CommonConfig;
 
@@ -22,17 +23,18 @@ import io.cube.agent.Constants;
 import io.md.utils.CommonUtils;
 
 @Provider
+@Priority(4500)
 public class MockingClientFilter implements ClientRequestFilter {
 
-	private static final Logger LOGGER = LogManager.getLogger(MockingClientFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MockingClientFilter.class);
 
 
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {
-		URI originalUri = clientRequestContext.getUri();
-		CommonConfig commonConfig = CommonConfig.getInstance();
-		String serviceName = CommonUtils.getEgressServiceName(originalUri);
 		try {
+			URI originalUri = clientRequestContext.getUri();
+			CommonConfig commonConfig = CommonConfig.getInstance();
+			String serviceName = CommonUtils.getEgressServiceName(originalUri);
 			commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
 				commonConfig.authToken.ifPresentOrElse(auth -> {
 					MultivaluedMap<String, Object> clientHeaders = clientRequestContext
@@ -43,8 +45,12 @@ public class MockingClientFilter implements ClientRequestFilter {
 				});
 				clientRequestContext.setUri(mockURI);
 			});
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			LOGGER.error(String.valueOf(
+				Map.of(
+					io.md.constants.Constants.MESSAGE, "Error occurred in Mocking filter",
+					io.md.constants.Constants.REASON, e.getMessage()
+				)));
 		}
 	}
 }
