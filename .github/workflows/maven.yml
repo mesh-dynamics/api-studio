@@ -15,7 +15,7 @@ jobs:
         java-version: 12
     - name: Build with Maven
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
       run: |
         mvn -B package --file pom.xml -DskipTests -Dmaven.test.skip=true
         echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
