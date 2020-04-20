@@ -42,6 +42,10 @@ class TestResults extends Component {
             return false;
         }
 
+        if (_.isEqual(cube.analysisStatusObj, nextCube.analysisStatusObj)) {
+            return false;
+        }
+        
         return true;
     }
 

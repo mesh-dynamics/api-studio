@@ -19,6 +19,7 @@ export const cubeService = {
     updateGoldenSet,
     getNewTemplateVerInfo,
     fetchJiraBugData,
+    fetchAnalysisStatus,
 };
 
 async function fetchAppsList() {
@@ -345,6 +346,34 @@ async function checkStatusForReplay(collectionId, replayId, app) {
         throw e;
     }
     console.log('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
+    return status;
+}
+
+async function fetchAnalysisStatus(replayId) {
+    let user = JSON.parse(localStorage.getItem('user'));
+    let response, json;
+    let url = `${config.analyzeBaseUrl}/status/${replayId}`;
+    let status = {};
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            status = json.data;
+        } else {
+            console.log("Response not ok in fetchAnalysisStatus", response);
+            throw new Error("Response not ok fetchAnalysisStatus");
+        }
+    } catch (e) {
+        console.log("fetchAnalysisStatus has errors!", e);
+        throw e;
+    }
+    console.log('fetchAnalysisStatus success: ', JSON.stringify(status, null, 4));
     return status;
 }
 

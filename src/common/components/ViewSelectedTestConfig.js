@@ -474,6 +474,8 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('userId', user.username);
             searchParams.set('transforms', transforms);
             searchParams.set('mockServices',testMockServices);
+            searchParams.set('analyze', true);
+
             // Append Test Paths
             // If not specified, it will run all paths
             if(testPaths && testPaths.length !== 0) {
@@ -515,6 +517,9 @@ class ViewSelectedTestConfig extends React.Component {
             recName, stopDisabled, recStatus, showAddCustomHeader
         } = this.state;
 
+        const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
+        const analysisDone = (cube.analysisStatus === "Completed" || cube.analysisStatus === "Error");
+
         return (
             <div>
                 {!showGoldenMeta && this.renderTestInfo()}
@@ -546,18 +551,21 @@ class ViewSelectedTestConfig extends React.Component {
                         <Modal.Title>{cube.testConfig ? cube.testConfig.testConfigName : ''}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <div className={!cube.replayStatusObj || (cube.replayStatusObj.status != "Completed" && cube.replayStatusObj.status != "Error") ? "" : "hidden"}>Test In Progress...</div>
-                        <div className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "" : "hidden"}>Test Completed</div>
-                        <h3>
-                            Status: {cube.replayStatus}&nbsp;&nbsp;
-                            {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
-                        </h3>
+                        <div>
+                            {
+                            !replayDone ? "Test in progress..." : 
+                                !analysisDone ? "Analyzing" : "Test Completed"
+                            }
+                        </div>
+                        <h4 style={{color: replayDone ? "green" : "#aab614", fontSize: "medium"}}><strong>Replay:</strong> {cube.replayStatus} {!replayDone && (cube.replayStatusObj ? (<small>{ cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null)}</h4>
+                        <h4 style={{color: replayDone ? (analysisDone ? "green" : "#aab614") : "grey", fontSize: "medium"}}><strong>Analysis:</strong> {cube.analysisStatus}</h4>
+                        
                         {cube.replayStatusObj && <p>
                             Replay ID: {cube.replayStatusObj.replayId}
                         </p>}
                     </Modal.Body>
                     <Modal.Footer >
-                        {(cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error"))) ? 
+                        {analysisDone ? 
                         <Link to="/">
                             <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>

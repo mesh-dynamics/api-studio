@@ -41,7 +41,8 @@ export const cubeActions = {
     getNewTemplateVerInfo,
     getJiraBugs,
     hideGoldenVisibility,
-    clearPathResultsParams
+    clearPathResultsParams,
+    getAnalysisStatus,
 };
 
 function clear() {
@@ -335,13 +336,26 @@ function getReplayStatus(collectionId, replayId, app) {
         try {
             let replayStatus = await cubeService.checkStatusForReplay(collectionId, replayId, app);
             dispatch(success(replayStatus, Date.now()));
-            if (replayStatus && (replayStatus.status == 'Completed' || replayStatus.status == 'Error')) {
-                dispatch(cubeActions.getAnalysis(replayStatus.collection, replayStatus.replayId, replayStatus.app));
-            }
         } catch (error) {
+            console.error("Error getting replay status: " + error);
         }
     }
     function success(replayStatus, date) { return { type: cubeConstants.REPLAY_STATUS_FETCHED, data: replayStatus, date: date } }
+}
+
+function getAnalysisStatus(replayId, app) {
+    return async dispatch => {
+        try {
+            let analysisStatus = await cubeService.fetchAnalysisStatus(replayId);
+            dispatch(success(analysisStatus, Date.now()));
+            if (analysisStatus && (analysisStatus.status == 'Completed' || analysisStatus.status == 'Error')) {
+                dispatch(cubeActions.getTimelineData(app));
+            }
+        } catch (error) {
+            console.error("Error getting analysis status: " + error);
+        }
+    }
+    function success(analysisStatus, date) { return { type: cubeConstants.ANALYSIS_STATUS_FETCHED, data: analysisStatus, date: date } }
 }
 
 function getAnalysis(collectionId, replayId, app) {

@@ -18,7 +18,8 @@ class Navigation extends Component{
         this.pieRef = React.createRef();
         this.handleShowHideApps = this.handleShowHideApps.bind(this);
         this.handleChangeForApps = this.handleChangeForApps.bind(this);
-        this.statusInterval;
+        this.replayStatusInterval;
+        this.analysisStatusInterval;
     }
 
     componentDidMount() {
@@ -76,10 +77,12 @@ class Navigation extends Component{
 
     checkReplayStatus = (replayId) => {
         const { dispatch, cube } = this.props;
-        this.statusInterval = setInterval(() => {
+        this.replayStatusInterval = setInterval(() => {
             const {cube} = this.props;
             if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
-                clearInterval(this.statusInterval);
+                // after the replay is completed stop polling and poll for analysis status
+                clearInterval(this.replayStatusInterval);
+                this.checkAnalysisStatus(replayId);
             } else {
                 checkStatus();
             }
@@ -87,6 +90,21 @@ class Navigation extends Component{
         
         let checkStatus = () => {
             dispatch(cubeActions.getReplayStatus(cube.selectedTestId, replayId, cube.selectedApp));
+        };
+    }
+
+    checkAnalysisStatus = (replayId) => {
+        const { dispatch, cube } = this.props;
+        this.analysisStatusInterval = setInterval(() => {
+            const {cube} = this.props;
+            if (cube.analysisStatusObj && (cube.analysisStatus == 'Completed' || cube.analysisStatus == 'Error')) {
+                clearInterval(this.analysisStatusInterval);
+            } else {
+                checkStatus();
+            }
+        }, 1000);
+        let checkStatus = () => {
+            dispatch(cubeActions.getAnalysisStatus(replayId, cube.selectedApp));
         };
     }
 
