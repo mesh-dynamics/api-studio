@@ -50,7 +50,7 @@ const initialState = {
     analysis: null,
     report: null,
 
-    timelineData: null,
+    timelineData: [],
 
     diffData: null,
 
@@ -277,7 +277,7 @@ export function cube (state = initialState, action) {
         case cubeConstants.TIMELINE_DATA_SUCCESS:
             return {
                 ...state,
-                timelineData: action.data
+                timelineData: action.data.timelineResults.concat(state.timelineData)
             };
         case cubeConstants.CLEAR_REPLAY_STATUS:
             return {
@@ -446,6 +446,11 @@ export function cube (state = initialState, action) {
                 ...state,
                 jiraBugs: action.data,
             };
+        case cubeConstants.CLEAR_TIMELINE:
+            return {
+                ...state,
+                timelineData: []
+            }
         default:
             return state
     }

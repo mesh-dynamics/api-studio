@@ -11,17 +11,22 @@ import 'react-table-hoc-fixed-columns/lib/styles.css';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import _ from 'lodash';
+import config from '../../config';
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 class TestResults extends Component {
+    intervalID;
 
     constructor(props) {
         super(props);
         this.state = {
             endDate: new Date(),
+            startDate : null,
             userFilter: "ALL",
             noFilter: true,
+            showHeaderDetails: true,
+            clearTimeline: true,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -49,33 +54,76 @@ class TestResults extends Component {
         return true;
     }
 
+    /**
+     * Used to bind the autorefresh call for timeineres to update the table
+     * componentDidMount will call the timeliners api with start Date as null and end Date as current Date and updates the timelineData
+     * After some interval autoRefresh gets called and calls timeliners api with start Date and end Date
+     * The new data gets appended in the table if already present.
+     */
+    componentDidMount() {
+        this.autoRefreshData();
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.intervalID);
+    }
+
     clearFilter = () => {
-        const {dispatch, cube} = this.props;
-        dispatch(cubeActions.getTimelineData(cube.selectedApp));
+        const {dispatch} = this.props;
         this.setState({
             endDate: new Date(),
             userFilter: "ALL",
-            noFilter: true
+            startDate: null,
+            noFilter: true,
+            clearTimeline: true
         });
     };
 
     changeUserFilter = event => {
-        const {dispatch, cube} = this.props;
-        dispatch(cubeActions.getTimelineData(cube.selectedApp, event.target.value, this.state.endDate));
+        const {dispatch} = this.props;
         this.setState({
             userFilter: event.target.value,
-            noFilter: false
+            startDate: null,
+            noFilter: false,
+            clearTimeline: true
         });
     };
 
     handleDateFilter = date => {
-        const {dispatch, cube} = this.props;
-        dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, date));
+        const {dispatch} = this.props;
         this.setState({
             endDate: date,
-            noFilter: false
+            startDate: null,
+            noFilter: false,
+            clearTimeline: true
         });
     };
+
+    autoRefreshData = () => {
+        this.intervalID = setInterval(() => {
+            let currentDate = new Date().toISOString().split('T')[0];
+            let endDate = this.state.endDate.toISOString().split('T')[0];
+            let endDateValue = currentDate === endDate ? new Date() : new Date(this.state.endDate);
+            /**
+             * If we select any old date the timeliners is called only once 
+             * The below check is to don't call the timeliners api after some interval if the date isn't current date
+             * startDate not equal to null is checked to allow the call once when we change date. After that the startDate gets updated with the changed date(old date) 
+             */
+            if (currentDate != endDate && this.state.startDate != null)
+            {
+                return;
+            }
+            else {
+                const {dispatch, cube} = this.props;
+                dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, this.state.endDate, this.state.startDate, this.state.clearTimeline));
+                this.setState({
+                    startDate: this.state.endDate,
+                    endDate: endDateValue,
+                    clearTimeline: false
+                });
+            }
+        }, config.timelineresRefreshIntervel);
+    }
 
     setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
         if (!cellData) return;
@@ -199,7 +247,7 @@ class TestResults extends Component {
     
     render() {
         const { cube } = this.props;
-        if (cube.timelineData == null) {
+        if (cube.timelineData.length === 0) {
             return (
                 <div style={{ margin: "27px" }}>
                     <h5>Test Results</h5>
@@ -207,7 +255,7 @@ class TestResults extends Component {
             );
         }
 
-        let timelineData = cube.timelineData.timelineResults,
+        let timelineData = cube.timelineData,
             columns = [], uniquePaths = [], tableData = [], tableDataPathMap = {},
             allRunsTimestamps = [];
         let tempTableData = {};

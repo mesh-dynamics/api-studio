@@ -46,6 +46,7 @@ class Navigation extends Component{
             setTimeout(() => {
                 const {cube} = this.props;
                 dispatch(cubeActions.clearGolden());
+                dispatch(cubeActions.clearTimeline());
                 dispatch(cubeActions.getGraphDataByAppId(cube.selectedAppObj.id));
                 dispatch(cubeActions.getTimelineData(e));
                 dispatch(cubeActions.getTestConfigByAppId(cube.selectedAppObj.id));

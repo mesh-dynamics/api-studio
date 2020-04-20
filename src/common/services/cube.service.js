@@ -434,15 +434,19 @@ async function fetchReport(collectionId, replayId) {
     return report;
 }
 
-async function fetchTimelineData(app, userId, endDate) {
+async function fetchTimelineData(app, userId, endDate, startDate) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let edTemp = new Date(endDate.toISOString().split('T')[0] + " 00:00");
-    edTemp.setDate(endDate.getDate() + 1);
-    let ed = edTemp.toISOString();
+    let ed = endDate.toISOString();
+
     let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&endDate=${ed}`;
     if (userId !== 'ALL') {
         url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&userId=${user.username}&endDate=${ed}`;
+    }
+
+    if (startDate != null) {
+        let sd = startDate.toISOString();
+        url = url+ `&startDate=${sd}`
     }
     let timelineData = {};
     try {

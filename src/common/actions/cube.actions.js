@@ -42,6 +42,7 @@ export const cubeActions = {
     getJiraBugs,
     hideGoldenVisibility,
     clearPathResultsParams,
+    clearTimeline,
     getAnalysisStatus,
 };
 
@@ -86,6 +87,10 @@ function pushToMOS(obj) {
 
 function clearGolden() {
     return {type: cubeConstants.CLEAR_GOLDEN, data: null};
+}
+
+function clearTimeline() {
+    return {type: cubeConstants.CLEAR_TIMELINE, data: null};
 }
 
 function pushToOperations(o, key) {
@@ -314,10 +319,13 @@ function getGraphData (app) {
     function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
-function getTimelineData(app = 'Cube', userId = 'ALL', endDate = new Date()) {
+function getTimelineData(app = 'Cube', userId = 'ALL', endDate = new Date(), startDate = null, clearTimeline = false) {
     return async dispatch => {
         try {
-            let timeline = await cubeService.fetchTimelineData(app, userId, endDate);
+            let timeline = await cubeService.fetchTimelineData(app, userId, endDate, startDate);
+            if(clearTimeline){
+                dispatch(cubeActions.clearTimeline())
+            };
             dispatch(success(timeline, Date.now()));
         } catch (error) {
 
@@ -348,9 +356,6 @@ function getAnalysisStatus(replayId, app) {
         try {
             let analysisStatus = await cubeService.fetchAnalysisStatus(replayId);
             dispatch(success(analysisStatus, Date.now()));
-            if (analysisStatus && (analysisStatus.status == 'Completed' || analysisStatus.status == 'Error')) {
-                dispatch(cubeActions.getTimelineData(app));
-            }
         } catch (error) {
             console.error("Error getting analysis status: " + error);
         }
@@ -363,7 +368,8 @@ function getAnalysis(collectionId, replayId, app) {
         try {
             let analysis = await cubeService.fetchAnalysis(collectionId, replayId);
             dispatch(success(analysis, Date.now()));
-            dispatch(cubeActions.getTimelineData(app));
+            //dispatch(cubeActions.clearTimeline());
+            //dispatch(cubeActions.getTimelineData(app));
         } catch (error) {
         }
     }
