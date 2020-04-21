@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 record() {
-  RECORDING_ID=$(curl -X POST $CUBE_ENDPOINT/api/cs/start/CubeCorp/CourseApp/prod/course-$DRONE_BUILD_NUMBER/default \
+  RECORDING_ID=$(curl -X POST $CUBE_ENDPOINT/api/cs/start/CubeCorp/CourseApp/prod/default \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H 'cache-control: no-cache' \
-  -d "name=course-$DRONE_BUILD_NUMBER&userId=CubeCorp" | jq .id | tr -d '"')
+  -d "name=course-$DRONE_BUILD_NUMBER&userId=CubeCorp&label=$(date +%s)" | jq .id | tr -d '"')
   echo $RECORDING_ID
 }
 
@@ -20,7 +20,6 @@ stop_recording() {
   curl -X POST https://demo.dev.cubecorp.io/api/cs/stop/$RECORDING_ID \
   -H "Authorization: Bearer $AUTH_TOKEN"
 }
-
 replay() {
   BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
   REPLAY_ID=$(curl -X POST \
