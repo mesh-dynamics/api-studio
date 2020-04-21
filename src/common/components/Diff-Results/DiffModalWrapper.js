@@ -1,5 +1,6 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import Modal from "react-bootstrap/lib/Modal";
+import { validateGoldenName } from "../../utils/lib/golden-utils";
 
 const DiffModalWrapper = (props) => {
     const { 
@@ -19,6 +20,8 @@ const DiffModalWrapper = (props) => {
         changeGoldenMetaData,
         handleNewGoldenModalClose,
     } = props;
+
+    const { goldenNameIsValid, goldenNameErrorMessage } = validateGoldenName(nameG);
     
     return (
         <Fragment>
@@ -73,8 +76,11 @@ const DiffModalWrapper = (props) => {
                                     value={nameG} 
                                     className="width-100"
                                     placeholder="Enter Golden Name" 
-                                    onChange={(event) => changeGoldenMetaData('nameG', event)} 
+                                    onChange={(event) => changeGoldenMetaData('nameG', event.target.value.replace(/  /g, " "))} 
                                 />
+                            </div>
+                            <div style={{ textAlign: "center", marginLeft: "20px" }}>
+                                <span style={{ color: "#c24b4b"}}>{goldenNameErrorMessage}</span>
                             </div>
                         </div>
 
@@ -90,7 +96,7 @@ const DiffModalWrapper = (props) => {
                                     value={labelG}
                                     className="width-100"
                                     placeholder="Enter Label Name"
-                                    onChange={(event) => changeGoldenMetaData('labelG', event)}
+                                    onChange={(event) => changeGoldenMetaData('labelG', event.target.value)}
                                 />
                             </div>
                         </div>
@@ -106,7 +112,7 @@ const DiffModalWrapper = (props) => {
                                     value={branch}
                                     className="width-100"
                                     placeholder="Enter Branch Name" 
-                                    onChange={(event) => changeGoldenMetaData('branch', event)} 
+                                    onChange={(event) => changeGoldenMetaData('branch', event.target.value)} 
                                 />
                             </div>
                         </div>
@@ -122,7 +128,7 @@ const DiffModalWrapper = (props) => {
                                     value={version} 
                                     className="width-100"
                                     placeholder="Enter Code Version" 
-                                    onChange={(event) => changeGoldenMetaData('version', event)} 
+                                    onChange={(event) => changeGoldenMetaData('version', event.target.value)} 
                                 />
                             </div>
                         </div>
@@ -138,7 +144,7 @@ const DiffModalWrapper = (props) => {
                                     value={commitId}
                                     className="width-100"
                                     placeholder="Enter Git Commit ID" 
-                                    onChange={(event) => changeGoldenMetaData('commitId', event)} 
+                                    onChange={(event) => changeGoldenMetaData('commitId', event.target.value)} 
                                 />
                             </div>
                         </div>
@@ -154,7 +160,7 @@ const DiffModalWrapper = (props) => {
                                     type="text" 
                                     className="width-100"
                                     placeholder="Enter Tags(Comma Separated)" 
-                                    onChange={(event) => changeGoldenMetaData('tag', event)} 
+                                    onChange={(event) => changeGoldenMetaData('tag', event.target.value.target.value)} 
                                 />
                             </div>
                         </div>
@@ -163,7 +169,7 @@ const DiffModalWrapper = (props) => {
                 <Modal.Footer>
                     <div>
                         <span onClick={handleCloseSG} className="cube-btn">CANCEL</span>&nbsp;&nbsp;
-                        <span onClick={handleSaveGolden} className="cube-btn">SAVE</span>
+                        <span onClick={handleSaveGolden} className={goldenNameIsValid ? "cube-btn" : "cube-btn disabled"}>SAVE</span>
                     </div>
                 </Modal.Footer>
             </Modal>

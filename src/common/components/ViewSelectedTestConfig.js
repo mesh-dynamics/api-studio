@@ -6,11 +6,13 @@ import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
 import {getTransformHeaders} from "../utils/lib/url-utils";
-// import { history } from "../helpers";
 import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
-import { Glyphicon } from 'react-bootstrap';
+import {validateGoldenName} from "../utils/lib/golden-utils";
+// import { history } from "../helpers";
+// import { Glyphicon } from 'react-bootstrap';
+
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -35,6 +37,7 @@ class ViewSelectedTestConfig extends React.Component {
             recLabel:"",
             recId: null,
             stopDisabled: true,
+            goldenNameErrorMessage: "",
             customHeaders: {
                 default: {
                     key: "",
@@ -75,7 +78,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     changeRecName = (e) => {
-        this.setState({recName: e.target.value});
+        this.setState({recName: e.target.value.replace(/  /g, " ")});
     };
 
     showAddCustomHeaderModal = () => this.setState({ showAddCustomHeader: true });
@@ -235,10 +238,10 @@ class ViewSelectedTestConfig extends React.Component {
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
             options = cube.testIds.map((item, index) => {
                 if (index < 8)
-                    return (<option key={item.collec} value={item.collec}>{item.name}</option>);
+                    return (<option key={item.collec + index} value={item.collec}>{item.name}</option>);
 
                 else
-                    return (<option className="hidden" key={item.collec} value={item.collec}>{item.name}</option>);
+                    return (<option className="hidden" key={item.collec + index} value={item.collec}>{item.name}</option>);
             });
         }
         let jsxContent = '';
@@ -429,6 +432,20 @@ class ViewSelectedTestConfig extends React.Component {
         };
     };
 
+    handleStartRecordClick = () => {
+        
+        const { recName } = this.state;
+
+        const { goldenNameIsValid, goldenNameErrorMessage } = validateGoldenName(recName);
+
+        if(goldenNameIsValid) {
+            this.setState({ goldenNameErrorMessage });
+            this.startRecord();
+        } else {
+            this.setState({ goldenNameErrorMessage });
+        }
+    };
+
     stopRecord = () => {
         const { cube, authentication } = this.props;
         let user = authentication.user;
@@ -514,7 +531,8 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             showGoldenMeta, customHeaders, recordModalVisible, 
             show, fcId, showGoldenFilter, selectedGoldenFromFilter,
-            recName, stopDisabled, recStatus, showAddCustomHeader
+            recName, stopDisabled, recStatus, showAddCustomHeader,
+            goldenNameErrorMessage
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -532,9 +550,20 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Header>
 
                     <Modal.Body className={"text-center padding-15"}>
-                        <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span onClick={this.startRecord} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>START</span>
-                        &nbsp;<span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column" }}>
+                                <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
+                                
+                            </div>
+                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                <span onClick={this.handleStartRecordClick} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
+                                <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                            </div>
+                            
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+                            <span style={{ color: "#c24b4b"}}>{goldenNameErrorMessage}</span>
+                        </div>
                         <div className={"padding-15 bold"}>
                             <span className={!recStatus ? "hidden" : ""}>Recording Id: {recStatus ? recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
                             Status: {recStatus ? recStatus.status : "Initialize"}

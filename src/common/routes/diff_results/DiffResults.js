@@ -475,10 +475,7 @@ class DiffResults extends Component {
         this.setState({ showNewGolden: false });
     };
     
-    changeGoldenMetaData = (meta, ev) => {
-        this.setState({[meta]: ev.target.value});
-    };
-    
+    changeGoldenMetaData = (meta, value) => this.setState({ [meta]: value });
 
     showSaveGoldenModal = () => {
         this.setState({

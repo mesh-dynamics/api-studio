@@ -3,7 +3,8 @@ import { connect } from "react-redux";
 import moment from "moment";
 import { 
     generateServiceOptionsFromFacets,
-    generateApiOptionsFromFacets 
+    generateApiOptionsFromFacets,
+    validateGoldenName,
 } from '../../utils/lib/golden-utils';
 import { goldenActions } from '../../actions/golden.actions'
 
@@ -43,11 +44,17 @@ const GoldenMeta = (props) => {
     const serviceOptions = generateServiceOptionsFromFacets(serviceFacets);
 
     const handleUpdateClick = () => {
-        if((goldenName === name) && (labelName === label)) {
-            alert("Golden name and label combination cannot be the same.");
+        const { goldenNameIsValid, goldenNameErrorMessage } = validateGoldenName(goldenName);
+
+        if(goldenNameIsValid) {
+            if((goldenName === name) && (labelName === label)) {
+                alert("Golden name and label combination cannot be the same.");
+            } else {
+                setEditable(false);
+                updateGoldenMeta({ id, goldenName, labelName, branchName, codeVersionNumber, commitId });
+            }
         } else {
-            setEditable(false);
-            updateGoldenMeta({ id, goldenName, labelName, branchName, codeVersionNumber, commitId });
+            alert(goldenNameErrorMessage);
         }
     };
 
@@ -93,7 +100,7 @@ const GoldenMeta = (props) => {
                         style={{ width: "100%"}} 
                         name="name"
                         value={goldenName} 
-                        onChange={(e) => setGoldenName(e.target.value)}
+                        onChange={(e) => setGoldenName(e.target.value.replace(/  /g, " "))}
                     />
                 }
             </div>

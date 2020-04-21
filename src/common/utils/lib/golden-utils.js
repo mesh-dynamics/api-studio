@@ -21,7 +21,32 @@ const generateApiOptionsFromFacets = (serviceFacets, selectedService) => {
     return [];
 };
 
+const validateGoldenName = (inputText) => {
+    // Special characters allowed are "+", "_" and  "-" and whitespace
+    const regex = /[~`*!@#$%^&()="{}'|\\[\]:;,.<>\/?]/; 
+
+    if(!inputText) {
+        return {
+            goldenNameIsValid: false,
+            goldenNameErrorMessage: "Recording name cannot be empty"
+        }
+    }
+
+    if(inputText.trim().match(regex)) {
+        return {
+            goldenNameIsValid: false,
+            goldenNameErrorMessage: "Special characters not allowed in golden name"
+        }
+    }
+
+    return {
+        goldenNameIsValid: true,
+        goldenNameErrorMessage: ""
+    };
+};
+
 export { 
     generateServiceOptionsFromFacets,
     generateApiOptionsFromFacets,
+    validateGoldenName
 };
