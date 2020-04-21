@@ -181,6 +181,8 @@ public class Recording {
 
 	public static Recording stopRecording(Recording recording, ReqRespStore rrstore) {
 		if (recording.status == RecordingStatus.Running) {
+			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Stopping recording",
+				Constants.RECORDING_ID, recording.id)));
 			recording.status = RecordingStatus.Completed;
 			recording.updateTimestamp = Optional.of(Instant.now());
 			rrstore.saveRecording(recording);

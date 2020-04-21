@@ -50,6 +50,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
+import io.cube.agent.Recorder;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
@@ -904,9 +905,31 @@ public class CubeStore {
     @POST
     @Path("resumeRecording/{recordingId}")
     public Response resumeRecording(@PathParam("recordingId") String recordingId) {
-
         Optional<Recording> recording = rrstore.getRecording(recordingId);
-        Response resp = recording.map(r -> {
+        return resumeRecording(recording);
+    }
+
+    @POST
+    @Path("resumeRecordingByNameLabel/")
+    public Response resumeRecordingByNameLabel(@Context UriInfo ui) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        String customerId = queryParams.getFirst(Constants.CUSTOMER_ID_FIELD);
+        String app = queryParams.getFirst(Constants.APP_FIELD);
+        String name = queryParams.getFirst(Constants.GOLDEN_NAME_FIELD);
+        if(customerId ==null || app ==null || name == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("CustomerId/app/name needs to be given for a golden")
+                .build();
+        }
+        Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
+
+
+        Optional<Recording> recording = rrstore.getRecordingByName(customerId, app, name, label);
+        return resumeRecording(recording);
+    }
+
+    public Response resumeRecording(Optional<Recording> recording) {
+        return recording.map(r -> {
             Recording resumedRecording = Recording.resumeRecording(r, rrstore);
             String json;
             try {
@@ -915,7 +938,7 @@ public class CubeStore {
             } catch (JsonProcessingException ex) {
                 LOGGER.error(new ObjectMessage(Map.of(
                     Constants.MESSAGE, "Error in converting response and match results to Json",
-                    Constants.RECORDING_ID, recordingId
+                    Constants.RECORDING_ID, r.id
                 )));
                 return Response.serverError()
                     .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
@@ -923,10 +946,8 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).
             entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
-                String.format("Status not found for recordingid %s", recordingId))).build());
-        return resp;
+                String.format("Recording not found"))).build());
     }
-
 
     @GET
     @Path("searchRecording")
@@ -1027,20 +1048,44 @@ public class CubeStore {
     public Response stop(@Context UriInfo ui,
                          @PathParam("recordingid") String recordingid) {
         Optional<Recording> recording = rrstore.getRecording(recordingid);
-        LOGGER.info(String.format("Stoppping recording for recordingid %s", recordingid));
-        Response resp = recording.map(r -> {
+        Response resp = stopRecording(recording);
+        return resp;
+    }
+
+    @POST
+    @Path("stopRecordingByNameLabel/")
+    public Response stopRecordingByNameLabel(@Context UriInfo ui) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        String customerId = queryParams.getFirst(Constants.CUSTOMER_ID_FIELD);
+        String app = queryParams.getFirst(Constants.APP_FIELD);
+        String name = queryParams.getFirst(Constants.GOLDEN_NAME_FIELD);
+        if(customerId ==null || app ==null || name == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("CustomerId/app/name needs to be given for a golden")
+                .build();
+        }
+        Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
+        Optional<Recording> recording = rrstore.getRecordingByName(customerId, app, name, label);
+        Response resp = stopRecording(recording);
+        return resp;
+    }
+
+    public Response stopRecording(Optional<Recording> recording) {
+        return recording.map(r -> {
             Recording stoppedr = Recording.stopRecording(r, rrstore);
             String json;
             try {
                 json = jsonMapper.writeValueAsString(stoppedr);
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException ex) {
-                LOGGER.error(String.format("Error in converting Recording object to Json for recordingid %s", recordingid), ex);
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Error in converting response and match results to Json",
+                    Constants.RECORDING_ID, r.id
+                )));
                 return Response.serverError().build();
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).
-            entity(String.format("Status not found for recordingid %s", recordingid)).build());
-        return resp;
+            entity(String.format("Recording not found")).build());
     }
 
     @POST
