@@ -23,14 +23,10 @@ class Navigation extends Component{
     }
 
     componentDidMount() {
-        const {
-            dispatch,
-            cube
-        } = this.props;
-        setTimeout(() => {
-            dispatch(cubeActions.getApps());
-            dispatch(cubeActions.getInstances());
-        }, 0);
+        const { dispatch } = this.props;
+
+        dispatch(cubeActions.getApps());
+        dispatch(cubeActions.getInstances());
     }
 
     handleShowHideApps() {

@@ -31,6 +31,20 @@ class TestResults extends Component {
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
 
+    componentDidMount() {
+        const { dispatch } = this.props;
+
+        dispatch(cubeActions.hideTestConfig(true));
+        dispatch(cubeActions.hideServiceGraph(true));
+    }
+
+    componentWillUnmount() {
+        const { dispatch } = this.props;
+
+        dispatch(cubeActions.hideTestConfig(false));
+        dispatch(cubeActions.hideServiceGraph(false));
+    }
+
     shouldComponentUpdate = (nextProps, nextState) => {
         const {cube} = this.props;
         const {cube: nextCube} = nextProps;

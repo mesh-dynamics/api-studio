@@ -639,8 +639,8 @@ class ViewSelectedTestConfig extends React.Component {
                                 <thead>
                                 <tr>
                                     <td className="bold">Name</td>
-                                    <td className="bold">Label</td>
-                                    <td className="bold">ID</td>
+                                    <td className="bold" style={{ minWidth: "100px" }}>Label</td>
+                                    <td className="bold" style={{ minWidth: "175px" }}>ID</td>
                                     <td className="bold">Date</td>
                                     <td className="bold">Created By</td>
                                     <td className="bold">Parent ID</td>
