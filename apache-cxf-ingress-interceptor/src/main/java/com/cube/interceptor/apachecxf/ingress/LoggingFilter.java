@@ -62,7 +62,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) {
-		//hdrs
+
 		try {
 			Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
 			currentSpan.ifPresent(UtilException.rethrowConsumer(span ->
@@ -73,9 +73,6 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				boolean isVetoed = BooleanUtils.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
 				if (isSampled || isVetoed) {
-					//this is local baggage item
-					span.setBaggageItem(Constants.MD_IS_VETOED, null);
-
 					URI uri = reqContext.getUriInfo().getRequestUri();
 
 					//query params
@@ -110,6 +107,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 					io.md.constants.Constants.REASON, e.getMessage()
 				)));
 		}
+
 	}
 
 	@Override

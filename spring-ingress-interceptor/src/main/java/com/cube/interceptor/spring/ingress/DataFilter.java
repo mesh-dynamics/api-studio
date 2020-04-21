@@ -70,9 +70,6 @@ public class DataFilter extends OncePerRequestFilter {
 			boolean isVetoed = BooleanUtils.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
 			if (isSampled || isVetoed) {
-				//this is local baggage item
-				span.setBaggageItem(Constants.MD_IS_VETOED, null);
-
 				//path
 				String apiPath = requestWrapper.getRequestURI();
 

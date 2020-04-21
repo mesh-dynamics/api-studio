@@ -67,6 +67,8 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 				.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
 			if (isSampled || isVetoed) {
+				//this is local baggage item
+				span.setBaggageItem(Constants.MD_IS_VETOED, null);
 				//hdrs
 				MultivaluedMap<String, String> requestHeaders = Utils
 					.getMultiMap(request.getHeaders().entrySet());

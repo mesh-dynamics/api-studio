@@ -4,22 +4,21 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.cube.interceptor</groupId>
-	<artifactId>md-jaxrs-egress-interceptor</artifactId>
+	<artifactId>md-jersey-1.x-ingress-interceptor</artifactId>
 	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>jaxrs-egress-interceptor</name>
-	<description>JAX-RS Egress Interceptors for HTTP Requests</description>
+	<name>jersey-1.x-ingress-interceptor</name>
+	<description>Jersey 1.x Ingress Interceptors for HTTP Requests</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-		<version.jersey>2.27</version.jersey>
 	</properties>
 
 
-	<repositories>
+  <repositories>
 		<repository>
 			<id>github</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
@@ -39,6 +38,12 @@
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
 			<version>1.0.21</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-server</artifactId>
+			<version>1.19</version>
 		</dependency>
 	</dependencies>
 
@@ -65,47 +70,6 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.22.0</version>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.2</version>
-				<configuration>
-					<relocations>
-						<relocation>
-							<pattern>io.jaegertracing</pattern>
-							<shadedPattern>io.md.jaegertracing</shadedPattern>
-						</relocation>
-						<relocation>
-							<pattern>org.apache.thrift</pattern>
-							<shadedPattern>io.md.apache.thrift</shadedPattern>
-						</relocation>
-						<relocation>
-							<pattern>com.squareup.okhttp3</pattern>
-							<shadedPattern>io.md.squareup.okhttp3</shadedPattern>
-						</relocation>
-						<relocation>
-							<pattern>io.opentracing</pattern>
-							<shadedPattern>io.md.opentracing</shadedPattern>
-						</relocation>
-					</relocations>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-							<transformers>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>${app.main.class}</mainClass>
-								</transformer>
-							</transformers>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 
 		</plugins>

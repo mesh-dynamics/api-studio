@@ -5,7 +5,7 @@
 
 	<groupId>com.cube.interceptor</groupId>
 	<artifactId>md-jaxrs-ingress-interceptor</artifactId>
-	<version>0.0.2</version>
+	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-ingress-interceptor</name>
@@ -15,7 +15,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-		<version.md.agent>1.0.8</version.md.agent>
+		<version.md.agent>1.0.21</version.md.agent>
 		<version.jaeger>1.1.0</version.jaeger>
 		<version.jax.api>2.1</version.jax.api>
 		<version.apache.http.client>4.5.10</version.apache.http.client>
@@ -23,46 +23,22 @@
 	</properties>
 
 
-<!--<repositories>-->
-<!--	<repository>-->
-<!--		<id>github</id>-->
-<!--		<name>GitHub OWNER Apache Maven Packages</name>-->
-<!--		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>-->
-<!--	</repository>-->
-<!--</repositories>-->
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub OWNER Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>${version.commons.io}</version>
-		</dependency>
+
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
 			<version>${version.md.agent}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>io.jaegertracing</groupId>
-			<artifactId>jaeger-client</artifactId>
-			<version>${version.jaeger}</version>
-		</dependency>
-
-		<dependency>
-			<!-- Needed for ClientBuilder; version is not aligned with version.jersey -->
-			<groupId>javax.ws.rs</groupId>
-			<artifactId>javax.ws.rs-api</artifactId>
-			<version>${version.jax.api}</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
-			<version>${version.apache.http.client}</version>
 		</dependency>
 
 	</dependencies>
@@ -91,7 +67,47 @@
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.22.0</version>
 			</plugin>
-
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.2</version>
+				<configuration>
+					<relocations>
+						<relocation>
+							<pattern>io.jaegertracing</pattern>
+							<shadedPattern>io.md.jaegertracing</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>org.apache.thrift</pattern>
+							<shadedPattern>io.md.apache.thrift</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>com.squareup.okhttp3</pattern>
+							<shadedPattern>io.md.squareup.okhttp3</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>io.opentracing</pattern>
+							<shadedPattern>io.md.opentracing</shadedPattern>
+						</relocation>
+					</relocations>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>${app.main.class}</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 

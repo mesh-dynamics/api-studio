@@ -14,6 +14,8 @@
         <module>jaxrs-ingress-interceptor</module>
         <module>apache-cxf-ingress-interceptor</module>
         <module>jaxrs-egress-interceptor</module>
+        <module>jersey-1.x-ingress-interceptor</module>
+        <module>jersey-1.x-egress-interceptor</module>
     </modules>
 
 </project>
