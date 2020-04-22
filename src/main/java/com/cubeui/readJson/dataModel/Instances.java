@@ -8,4 +8,5 @@ import lombok.Setter;
 public class Instances {
     String name;
     String gatewayEndpoint;
+    String loggingURL;
 }

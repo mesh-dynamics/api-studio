@@ -208,6 +208,7 @@ public class ReadJson {
         json.put("name", instance.getName());
         json.put("gatewayEndpoint", instance.getGatewayEndpoint());
         json.put("appId", appId);
+        json.put("loggingURL", instance.getLoggingURL());
         return json.toString();
     }
 

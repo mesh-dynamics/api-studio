@@ -73,6 +73,7 @@ public class InstanceController {
                     .name(instanceDTO.getName())
                     .app(app.get())
                     .gatewayEndpoint(instanceDTO.getGatewayEndpoint())
+                    .loggingURL(instanceDTO.getLoggingURL())
                     .build());
             return created(
                     ServletUriComponentsBuilder
@@ -94,6 +95,7 @@ public class InstanceController {
                 instance.setName(instanceDTO.getName());
                 instance.setApp(appRepository.findById(instanceDTO.getAppId()).get());
                 instance.setGatewayEndpoint(instanceDTO.getGatewayEndpoint());
+                instance.setLoggingURL(instanceDTO.getLoggingURL());
                 this.instanceRepository.save(instance);
             });
             this.instanceRepository.save(existing.get());

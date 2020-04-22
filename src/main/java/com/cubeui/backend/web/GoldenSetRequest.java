@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class GoldenSetRequest {
     private String name;
+    private String label;
     private String userId;
     private String codeVersion;
     private String branch;
@@ -21,6 +22,7 @@ public class GoldenSetRequest {
 
     public String toString() {
         String encoded = "name=" +  this.name
+                +"&label=" + this.label
                 +"&userId=" + this.userId
                 +"&codeVersion=" + this.codeVersion
                 +"&branch=" +this.branch

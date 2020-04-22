@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,5 +37,9 @@ public class Instance {
 
     @CreationTimestamp
     LocalDateTime createdAt;
+
+    @NotEmpty
+    @Column(nullable = false)
+    String loggingURL;
 
 }
