@@ -126,8 +126,7 @@ public abstract class AbstractReplayDriver {
 		// TODO: add support for matrix params
 
 		Pair<Stream<List<Event>>, Long> batchedResult = replay
-			.getRequestBatchesUsingEvents(BATCHSIZE, rrstore,
-				jsonMapper);
+			.getRequestBatchesUsingEvents(BATCHSIZE, rrstore);
 		replay.reqcnt = batchedResult.getRight().intValue();
 		// NOTE: converting long to int, should be ok, since we
 		// never replay so many requests

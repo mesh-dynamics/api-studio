@@ -245,7 +245,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TRACEIDF, eventQuery.getTraceIds());
         addFilter(query, RRTYPEF, eventQuery.getRunType().map(Object::toString));
         addFilter(query, REQIDF, eventQuery.getReqIds());
-        addFilter(query, PATHF, eventQuery.getPaths());
+        addFilter(query, PATHF, eventQuery.getPaths(), eventQuery.excludePaths());
         addFilter(query, EVENTTYPEF, eventQuery.getEventTypes().stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilterInt(query, PAYLOADKEYF, eventQuery.getPayloadKey());
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
@@ -839,7 +839,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
+        addFilter(query, fieldname, orValues, false);
+    }
+
+    private static void addFilter(SolrQuery query, String fieldname, List<String> orValues, boolean negate) {
         if(orValues.isEmpty()) return; // No values specified, so no filters
+        String prefix = negate ? "NOT " : "";
         String filter = orValues.stream().map(val -> {
             if (val.isBlank()) {
                 // if value is a blank string, convert it to field negation predicate since Solr does not store blank
@@ -849,7 +854,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 return String.format("(%s:%s)", fieldname, SolrIterator.escapeQueryChars(val));
             }
         }).collect(Collectors.joining(" OR "));
-        query.addFilterQuery(filter);
+        query.addFilterQuery(prefix + " ( " + filter + " ) ");
     }
 
     private static void addRangeFilter(SolrQuery query, String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
@@ -1288,6 +1293,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String ASYNCF = CPREFIX + "async" + BOOLEAN_SUFFIX;
     private static final String REPLAYSTATUSF = CPREFIX + "status" + STRING_SUFFIX;
     private static final String PATHSF = CPREFIX + Constants.PATH_FIELD + STRINGSET_SUFFIX;
+    private static final String EXCLUDEPATHSF = CPREFIX + Constants.EXCLUDE_PATH_FIELD + BOOLEAN_SUFFIX;
     private static final String REQCNTF = CPREFIX + "reqcnt" + INT_SUFFIX;
     private static final String REQSENTF = CPREFIX + "reqsent" + INT_SUFFIX;
     private static final String REQFAILEDF = CPREFIX + "reqfailed" + INT_SUFFIX;
@@ -1327,6 +1333,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TYPEF, type);
         replay.paths.forEach(path -> doc.addField(PATHSF, path));
         replay.mockServices.forEach(mockService -> doc.addField(MOCKSERVICESF,mockService));
+        doc.setField(EXCLUDEPATHSF, replay.excludePaths);
         doc.setField(REQCNTF, replay.reqcnt);
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
@@ -1386,6 +1393,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(s -> Utils.valueOf(ReplayStatus.class, s));
         List<String> paths = getStrFieldMV(doc, PATHSF);
         List<String> mockServices = getStrFieldMV(doc, MOCKSERVICESF);
+        Optional<Boolean> excludePaths = getBoolField(doc, EXCLUDEPATHSF);
         int reqcnt = getIntField(doc, REQCNTF).orElse(0);
         int reqsent = getIntField(doc, REQSENTF).orElse(0);
         int reqfailed = getIntField(doc, REQFAILEDF).orElse(0);
@@ -1418,8 +1426,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .withIntermediateServices(intermediateService)
                     .withReqCounts(reqcnt, reqsent, reqfailed)
                     .withReplayType(replayType).withUpdateTimestamp(
-                        creationTimestamp
-                            .orElseGet(() -> Instant.now()));
+                        creationTimestamp.orElseGet(() -> Instant.now()));
+                excludePaths.ifPresent(builder::withExcludePaths);
                 sampleRate.ifPresent(builder::withSampleRate);
                 generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(builder::withGeneratedClassJar));
