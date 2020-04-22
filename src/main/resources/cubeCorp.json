@@ -15,15 +15,18 @@
           "instances": [
             {
               "name": "PROD",
-              "gatewayEndpoint": "http://demo.dev.cubecorp.io"
+              "gatewayEndpoint": "http://demo.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             },
             {
               "name": "FLIPKART",
-              "gatewayEndpoint": "http://flipkart.prod.v2.cubecorp.io"
+              "gatewayEndpoint": "http://flipkart.prod.v2.cubecorp.io",
+              "loggingURL": "http://logging.prod.v2.cubecorp.io"
             },
             {
               "name": "NARVAR",
-              "gatewayEndpoint": "http://narvar.prod.v2.cubecorp.io"
+              "gatewayEndpoint": "http://narvar.prod.v2.cubecorp.io",
+              "loggingURL": "http://logging.prod.v2.cubecorp.io"
             }
           ],
           "serviceGroups": [
@@ -166,39 +169,48 @@
           "instances": [
             {
               "name": "PROD",
-              "gatewayEndpoint": "http://staging1.dev.cubecorp.io"
+              "gatewayEndpoint": "http://staging1.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             },
             {
               "name": "STAGING",
-              "gatewayEndpoint": "http://staging2.dev.cubecorp.io"
+              "gatewayEndpoint": "http://staging2.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             },
             {
               "name": "DEMO-AS",
-              "gatewayEndpoint": "http://demo-as.dev.cubecorp.io"
+              "gatewayEndpoint": "http://demo-as.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             },
             {
               "name": "DEMO-PD",
-              "gatewayEndpoint": "http://demo-pd.dev.cubecorp.io"
+              "gatewayEndpoint": "http://demo-pd.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             },
             {
               "name": "DEMO-SM",
-              "gatewayEndpoint": "http://demo-sm.dev.cubecorp.io"
+              "gatewayEndpoint": "http://demo-sm.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             },
             {
               "name": "DEMO.PROD",
-              "gatewayEndpoint": "http://demo.prod.cubecorp.io"
+              "gatewayEndpoint": "http://demo.prod.cubecorp.io",
+              "loggingURL": "http://logging.prod.cubecorp.io"
             },
             {
               "name": "DEMO.PROD.V2",
-              "gatewayEndpoint": "http://demo.prod.v2.cubecorp.io"
+              "gatewayEndpoint": "http://demo.prod.v2.cubecorp.io",
+              "loggingURL": "http://logging.prod.v2.cubecorp.io"
             },
             {
               "name": "FLIPKART",
-              "gatewayEndpoint": "http://flipkart.prod.v2.cubecorp.io"
+              "gatewayEndpoint": "http://flipkart.prod.v2.cubecorp.io",
+              "loggingURL": "http://logging.prod.v2.cubecorp.io"
             },
             {
               "name": "NARVAR",
-              "gatewayEndpoint": "http://narvar.prod.v2.cubecorp.io"
+              "gatewayEndpoint": "http://narvar.prod.v2.cubecorp.io",
+              "loggingURL": "http://logging.prod.v2.cubecorp.io"
             }
           ],
           "serviceGroups": [
@@ -483,7 +495,8 @@
           "instances": [
             {
               "name": "PROD",
-              "gatewayEndpoint": "http://35.160.68.101:8081"
+              "gatewayEndpoint": "http://35.160.68.101:8081",
+              "loggingURL": "http://logging.dev.cubecorp.io"
             }
           ],
           "serviceGroups": [
