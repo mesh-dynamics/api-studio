@@ -62,6 +62,18 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
             recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
         let isJson = true;
+        
+        // add eventype to each diff object
+        if (item.respCompDiff) {
+            item.respCompDiff.forEach(diff => {
+                diff.eventType = "Response";
+            })
+        }
+        if (item.reqCompDiff) {
+            item.reqCompDiff.forEach(diff => {
+                diff.eventType = "Request";
+            })
+        }
 
         // processing Response    
         // recorded response body and headers

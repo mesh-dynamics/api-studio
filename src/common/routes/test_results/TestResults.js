@@ -31,11 +31,19 @@ class TestResults extends Component {
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
 
+    /**
+     * Used to bind the autorefresh call for timeineres to update the table
+     * componentDidMount will call the timeliners api with start Date as null and end Date as current Date and updates the timelineData
+     * After some interval autoRefresh gets called and calls timeliners api with start Date and end Date
+     * The new data gets appended in the table if already present.
+     */
     componentDidMount() {
         const { dispatch } = this.props;
 
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
+
+        this.autoRefreshData();
     }
 
     componentWillUnmount() {
@@ -43,6 +51,8 @@ class TestResults extends Component {
 
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
+
+        clearInterval(this.intervalID);
     }
 
     shouldComponentUpdate = (nextProps, nextState) => {
@@ -66,20 +76,6 @@ class TestResults extends Component {
         }
         
         return true;
-    }
-
-    /**
-     * Used to bind the autorefresh call for timeineres to update the table
-     * componentDidMount will call the timeliners api with start Date as null and end Date as current Date and updates the timelineData
-     * After some interval autoRefresh gets called and calls timeliners api with start Date and end Date
-     * The new data gets appended in the table if already present.
-     */
-    componentDidMount() {
-        this.autoRefreshData();
-    }
-
-    componentWillUnmount() {
-        clearInterval(this.intervalID);
     }
 
     clearFilter = () => {
@@ -158,7 +154,8 @@ class TestResults extends Component {
 
 
     renderTimeLineHeader = (header) => {
-        const { date, replayId, goldenName, userName } = header;
+        const { date, replayId, recordingId, goldenName, userName } = header;
+        const { showHeaderDetails } = this.state;
 
         return (
             <div>
@@ -287,6 +284,7 @@ class TestResults extends Component {
                 allRunsTimestamps.push({
                     date: momentDateObject.valueOf(), 
                     replayId: testResult.replayId,
+                    recordingId: testResult.recordingid,
                     goldenName: testResult.goldenName,
                     userName: testResult.userName
                 })
