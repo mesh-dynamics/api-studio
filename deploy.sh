@@ -10,7 +10,6 @@ generate_manifest() {
 	fi
 	source $APP_CONF
 	if [ "$OPERATION" = "init" ]; then
-		#TODO: why not delete everything? Otherwise fluentd_patch_*.json remain
 		if [ -z "$CUBEIO_TAG" ]; then
 			CUBEIO_TAG=$(git ls-remote git@github.com:cube-io-corp/cubeio.git refs/heads/master | awk '{print $1}')-master
 		fi
@@ -23,7 +22,7 @@ generate_manifest() {
 		if [ -z "$MOVIEINFO_TAG" ]; then
 			MOVIEINFO_TAG=$(git ls-remote git@github.com:cube-io-corp/sample_apps.git refs/heads/master | awk '{print $1}')-master
 		fi
-		find $APP_DIR/kubernetes -name "*.yaml" -type f -delete #Delete old files
+		find $APP_DIR/kubernetes -name "*.yaml" -o -name "*.json" -type f | xargs -n1 -t rm -f #Delete old files
 		COMMON_DIR=apps/common
 		if [ -z "$CUBE_SERVICE_ENDPOINT" ]; then
 			CUBE_SERVICE_ENDPOINT=null
@@ -55,13 +54,10 @@ generate_manifest() {
 
 init() {
 	kubectl apply -f $COMMON_DIR/kubernetes/namespace.yaml
-	#Automatically inject Envoy container in application Pod if they are started in namespaces labeled with istio-injection=enabled
-	kubectl label namespace $NAMESPACE istio-injection=enabled || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
 	kubectl apply -f $COMMON_DIR/kubernetes/secret.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway.yaml
 	kubectl apply -f $COMMON_DIR/kubernetes/gateway-pvt.yaml
-	# TODO: This tries to apply fluentd_path_*.jsons which are not valid
-	kubectl apply -f $APP_DIR/kubernetes || :
+	find $APP_DIR/kubernetes -name "*.yaml" | xargs -n1 -t kubectl apply -f
 	#Check if route exist
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
@@ -118,12 +114,6 @@ start_record() {
 	# $1 collection name
 	# $2 template version
 	# #3 golden name
-	if [ -z "$1" ]; then
-		echo "Enter collection name"
-		read COLLECTION_NAME
-	else
-		COLLECTION_NAME=$1
-	fi
 
 	if [ -z "$2" ]; then
 		if [ -e "$TEMPLATE_VERSION_TEMP_FILE" ]; then
@@ -150,12 +140,14 @@ start_record() {
 	else
 		GOLDEN_NAME=$3
 	fi
-	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER"
+
+	TIMESTAMP=$(date +%s)
+	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER&label=$TIMESTAMP"
 
 kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 
 	RESPONSE="$(curl -X POST \
-  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$COLLECTION_NAME/$TEMPLATE_VERSION \
+  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$TEMPLATE_VERSION \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Authorization: Bearer $AUTH_TOKEN" \
 	-H "Host:$CUBE_HOST" \
