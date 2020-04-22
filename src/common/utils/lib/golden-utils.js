@@ -21,7 +21,25 @@ const generateApiOptionsFromFacets = (serviceFacets, selectedService) => {
     return [];
 };
 
+const resolveEndPoint = (hdrs, selectedApi) => {
+    try {
+        if(hdrs) {
+
+            if(hdrs[":path"]) {
+                return hdrs[":path"][0].split("?")[0];
+            }
+    
+            return selectedApi;
+        }
+    
+        return "[URL]" 
+    } catch (e) {
+        return "[URL]";
+    }
+};
+
 export { 
     generateServiceOptionsFromFacets,
     generateApiOptionsFromFacets,
+    resolveEndPoint
 };

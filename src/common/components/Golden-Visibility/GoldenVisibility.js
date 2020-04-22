@@ -42,6 +42,7 @@ const GoldenVisibility = (props) => {
             {
                 requestContract && currentView === VIEW.GOLDEN_SUMMARRY &&
                     <GoldenContract
+                        selectedApi={selectedApi}
                         requestExamples={requestExamples}
                         requestContract={requestContract}
                         responseContract={responseContract}
