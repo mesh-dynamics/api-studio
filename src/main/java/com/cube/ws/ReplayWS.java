@@ -296,7 +296,9 @@ public class ReplayWS {
                 .withIntermediateServices(intermediateServices)
                 .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                     .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-                .withMockServices(mockServices);
+                .withMockServices(mockServices)
+                .withRecordingId(recording.id)
+                .withGoldenName(recording.name);
             sampleRate.ifPresent(replayBuilder::withSampleRate);
             service.ifPresent(replayBuilder::withServiceToReplay);
             testConfigName.ifPresent(replayBuilder::withTestConfigName);

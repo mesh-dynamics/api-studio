@@ -1338,6 +1338,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.service.ifPresent(serv -> doc.setField(SERVICEF, serv));
         doc.setField(REPLAY_TYPE_F, replay.replayType.toString());
         replay.xfms.ifPresent(xfms -> doc.setField(XFMSF, xfms));
+        replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
+        replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
 
         return doc;
     }
@@ -1394,6 +1396,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
         Optional<String> service = getStrField(doc, SERVICEF);
         Optional<String> testConfigName = getStrField(doc, TESTCONFIGNAMEF);
+        Optional<String> goldenName = getStrField(doc, GOLDEN_NAMEF);
+        Optional<String> recordingId = getStrField(doc, RECORDING_IDF);
         ReplayTypeEnum replayType = getStrField(doc, REPLAY_TYPE_F).flatMap(repType ->
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
@@ -1422,6 +1426,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 service.ifPresent(builder::withServiceToReplay);
                 xfms.ifPresent(builder::withXfms);
                 testConfigName.ifPresent(builder::withTestConfigName);
+                goldenName.ifPresent(builder::withGoldenName);
+                recordingId.ifPresent(builder::withRecordingId);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -1554,7 +1560,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
             List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
-            Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate) {
+            Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName,
+            Optional<String> goldenName) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
@@ -1564,6 +1571,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
         addFilter(query, COLLECTIONF , collection);
         addFilter(query, USERIDF, userId);
+        addFilter(query, TESTCONFIGNAMEF, testConfigName);
+        addFilter(query, GOLDEN_NAMEF, goldenName);
         addRangeFilter(query, CREATIONTIMESTAMPF, startDate, endDate, true, true);
         // Heuristic: getting the latest replayid if there are multiple.
         // TODO: what happens if there are multiple replays running for the
@@ -1579,7 +1588,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
-        return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()).objects;
+        return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty(), Optional.empty()).objects;
     }
 
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
@@ -2172,6 +2182,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String GOLDEN_NAMEF = CPREFIX + Constants.GOLDEN_NAME_FIELD + STRING_SUFFIX;
+    private static final String RECORDING_IDF = CPREFIX + Constants.RECORDING_ID + STRING_SUFFIX;
     private static final String GOLDEN_LABELF = CPREFIX + Constants.GOLDEN_LABEL_FIELD + STRING_SUFFIX;
     private static final String CODE_VERSIONF = CPREFIX + Constants.CODE_VERSION_FIELD + STRING_SUFFIX;
     private static final String BRANCHF = CPREFIX + Constants.BRANCH_FIELD + STRING_SUFFIX;

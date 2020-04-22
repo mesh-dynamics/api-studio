@@ -527,6 +527,8 @@ public class AnalyzeWS {
         Optional<String> userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
         Optional<String> endDate = Optional.ofNullable(queryParams.getFirst(Constants.END_DATE_FIELD));
         Optional<String> startDate = Optional.ofNullable(queryParams.getFirst(Constants.START_DATE_FIELD));
+        Optional<String> testConfigName = Optional.ofNullable(queryParams.getFirst(Constants.TEST_CONFIG_NAME_FIELD));
+        Optional<String> goldenName = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_NAME_FIELD));
 
         Optional<Instant> endDateTS = Optional.empty();
         Optional<Instant> startDateTS =  Optional.empty();
@@ -558,11 +560,12 @@ public class AnalyzeWS {
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).map(Integer::valueOf).or(() -> Optional.of(20));
 
         Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS, startDateTS);
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS, startDateTS, testConfigName, goldenName);
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
             String replayId = replay.replayId;
+            String testConfigNameValue = replay.testConfigName.orElse("");
             Instant creationTimeStamp = replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
                 replay.collection , replay.templateVersion);
@@ -575,7 +578,8 @@ public class AnalyzeWS {
                     + "\" , \"collection\" : \"" + recording.collection
                     + "\" , \"templateVer\" : \"" + recording.templateVersion
                     + "\", \"goldenName\" : \"" + recording.name
-                    + "\", \"userName\" : \"" + recording.userId;
+                    + "\", \"userName\" : \"" + recording.userId
+                    + "\", \"goldenLabel\" : \"" + recording.label;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -585,7 +589,7 @@ public class AnalyzeWS {
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
-                + recordingInfo +  "\" , \"results\" : ");
+                + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
