@@ -1,7 +1,7 @@
 {
   "customers": [
     {
-      "name": "cubeCorp",
+      "name": "CubeCorp",
       "emailId": "demo@cubecorp.io",
       "domainUrl": "cubecorp.io",
       "jiraCredentials" : {
@@ -491,11 +491,11 @@
           ]
         },
         {
-          "name": "Jersey_1_19_demo",
+          "name": "jersey_1_19_demo",
           "instances": [
             {
-              "name": "PROD",
-              "gatewayEndpoint": "http://35.160.68.101:8081",
+              "name": "prod",
+              "gatewayEndpoint": "http://jersy119.dev.cubecorp.io",
               "loggingURL": "http://logging.dev.cubecorp.io"
             }
           ],
@@ -531,6 +531,46 @@
             {
               "from": "EmpService",
               "to": "Department"
+            }
+          ]
+        },
+        {
+          "name": "CourseApp",
+          "instances": [
+            {
+              "name": "prod",
+              "gatewayEndpoint": "http://apachecxf.dev.cuebcorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io"
+            }
+          ],
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "course1",
+                  "paths": []
+                },
+                {
+                  "name": "Student",
+                  "paths": []
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "CourseApp",
+              "serviceName": "course1",
+              "paths": [],
+              "test_virtualized_services": ["Student"],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "course1",
+              "to": "Student"
             }
           ]
         }
