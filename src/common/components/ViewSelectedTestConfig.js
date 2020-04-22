@@ -266,7 +266,12 @@ class ViewSelectedTestConfig extends React.Component {
 
     showRecordModal = () => {
         const { cube } = this.props;
-        this.setState({recordModalVisible: true});
+        
+        if(!cube.selectedInstance){
+            alert('Select an Instance to Record')
+        } else {
+            this.setState({recordModalVisible: true});
+        }
     };
 
     handleCloseRecModal = () => {
@@ -356,19 +361,10 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10 row">
-                    <div className={
-                        (cube.selectedApp === "MovieInfo" && !username.includes("guest@meshdynamics.io"))
-                        ? "col-sm-6" 
-                        : "col-sm-6 width-100"
-                        }
-                    >
+                    <div className="col-sm-6">
                         <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
                     </div>
-                    {
-                        (cube.selectedApp === "MovieInfo" && !username.includes("guest@meshdynamics.io"))
-                        &&
-                        <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
-                    }
+                    <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
                 </div>
             </Fragment>
         );
@@ -399,7 +395,7 @@ class ViewSelectedTestConfig extends React.Component {
     startRecord = () => {
         const { cube, authentication } = this.props;
         let user = authentication.user;
-        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/record/RespPartialMatch`;
+        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/${cube.selectedInstance}/${this.state.recName}/RespPartialMatch`;
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
