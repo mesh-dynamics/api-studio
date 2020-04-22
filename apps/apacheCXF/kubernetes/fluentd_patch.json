@@ -1,0 +1,21 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value" : {
+      "name" : "fluentd-apachecxf-conf-apachecxf",
+      "mountPath": "/fluentd/etc/conf.d/fluent-apachecxf-apachecxf.conf",
+      "subPath": "fluent-apachecxf-apachecxf.conf"
+      }
+  },
+  {
+  "op": "add",
+  "path": "/spec/template/spec/volumes/-",
+  "value" : {
+    "name" : "fluentd-apachecxf-conf-apachecxf",
+    "configMap" : {
+      "name" : "fluentd-apachecxf-conf-apachecxf"
+      }
+    }
+  }
+]
