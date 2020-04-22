@@ -2,26 +2,26 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: fluentd-jersy119-conf-{{namespace}}
+  name: fluentd-apachecxf-conf-{{namespace}}
   namespace: logging
   labels:
-    app: jersy119
+    app: apachecxf
 data:
-  fluent-jersy119-{{namespace}}.conf: |-
+  fluent-apachecxf-{{namespace}}.conf: |-
     # tail movieinfo (envoy) logs
     <source>
       @type tail
-      @id in_tail_cube_nginx_{{namespace}}
-      path /var/log/containers/*jersy119_employee*.log
-      pos_file /var/log/fluentd-containers-{{namespace}}-md_jersey_1_19_app.log.pos
-      tag cube.jersey
+      @id in_tail_cube_{{namespace}}
+      path /var/log/containers/*{{namespace}}_course*.log
+      pos_file /var/log/fluentd-containers-{{namespace}}-apachecxf_app.log.pos
+      tag cube.apachecxf
       read_from_head true
       <parse>
         @type json
       </parse>
     </source>
 
-    <filter cube.jersey>
+    <filter cube.apachecxf>
       @type parser
       format json
       key_name log
@@ -30,7 +30,7 @@ data:
     </filter>
 
     # filter for parsing cubews agent logs
-    <filter cube.jersey>
+    <filter cube.apachecxf>
       @type grep
       <regexp>
         key log
@@ -38,11 +38,11 @@ data:
       </regexp>
     </filter>
 
-    <filter cube.jersey>
+    <filter cube.apachecxf>
       @type stdout
     </filter>
 
-    <filter cube.jersey>
+    <filter cube.apachecxf>
       @type record_transformer
       enable_ruby true
       renew_record true
@@ -51,11 +51,7 @@ data:
       </record>
     </filter>
 
-    <filter cube.jersey>
-      @type stdout
-    </filter>
-
-    <match cube.jersey>
+    <match cube.apachecxf>
       @type http
       endpoint https://{{cube_host}}/api/cs/storeEventBatch
       headers  {"Authorization":"Bearer {{auth_token}}"}
