@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -56,6 +57,9 @@ public class CompareTemplate {
 	//Adding appropriate annotations for json serialization and deserialization
 	@JsonProperty("prefixPath")
 	public final String prefixpath;
+
+	@JsonIgnore
+	private Optional<AttributeRuleMap> appLevelAttributeRuleMap = Optional.empty();
 
 	public enum DataType {
 		Str,
@@ -113,7 +117,8 @@ public class CompareTemplate {
 	 */
 	public TemplateEntry getRule(String path) {
 		JsonPointer normalisedPathPointer = getNormalisedPath(path);
-		TemplateEntry toReturn = get(normalisedPathPointer.toString()).orElseGet(() -> getInheritedRule(normalisedPathPointer, path));
+		TemplateEntry toReturn = get(normalisedPathPointer)
+			.orElseGet(() -> getInheritedRule(normalisedPathPointer, path));
 		// TODO maybe it's better to precompute these values
 		toReturn.isParentArray = isParentArray(path);
 		return toReturn;
@@ -124,7 +129,7 @@ public class CompareTemplate {
 		int index = path.lastIndexOf('/');
 		if (index != -1) {
 			String subPath = path.substring(0, index);
-			toReturn = get(subPath).
+			toReturn = get(JsonPointer.valueOf(subPath)).
 				map(entry -> entry.dt == DataType.RptArray || entry.dt == DataType.NrptArray).orElse(false);
 		}
 		return toReturn;
@@ -149,6 +154,11 @@ public class CompareTemplate {
 		for (TemplateEntry rule : rulesList) {
 			addRule(rule);
 		}
+	}
+
+	@JsonIgnore
+	public void setAppLevelAttributeRuleMap(AttributeRuleMap ruleMap) {
+		this.appLevelAttributeRuleMap = Optional.of(ruleMap);
 	}
 
 	public CompareTemplate subsetWithPrefix(String prefix) {
@@ -176,7 +186,7 @@ public class CompareTemplate {
 		while (!pointer.toString().isEmpty()) {
 			String currentProperty = pointer.getMatchingProperty();
 
-			get(returnPointer[0].toString()).ifPresentOrElse(rule -> {
+			get(returnPointer[0]).ifPresentOrElse(rule -> {
 					if (rule.dt == DataType.RptArray) {
 						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/*"));
 					} else {
@@ -205,7 +215,7 @@ public class CompareTemplate {
 	private TemplateEntry getInheritedRule(JsonPointer pathPointer, String origPath) {
 		JsonPointer parentPointer = pathPointer.head();
 		if (parentPointer!=null) {
-			return get(parentPointer.toString()).flatMap(rule -> {
+			return get(parentPointer).flatMap(rule -> {
 				// Assumption is that rule.pt or rule.ct will never be set to default when the rule is being
 				// explicitly stated for a path. This will be ensured through validating template before registering.
 				if(rule.ct == ComparisonType.Default || rule.pt == PresenceType.Default) { // Ideally these should never be default
@@ -214,7 +224,6 @@ public class CompareTemplate {
 				} else {
 					return Optional.of(new TemplateEntry(origPath, DataType.Default, rule.pt, rule.ct));
 				}
-
 			}).orElseGet(() -> getInheritedRule(parentPointer, origPath));
 		} else {
 			return new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default);
@@ -273,8 +282,10 @@ public class CompareTemplate {
 		return validateCompareTemplate;
 	}
 
-	public Optional<TemplateEntry> get(String path) {
-		return Optional.ofNullable(rules.get(path));
+	public Optional<TemplateEntry> get(JsonPointer path) {
+		return Optional.ofNullable(rules.get(path.toString())).or(() ->
+			appLevelAttributeRuleMap.flatMap(map ->
+				map.getRule(path.last().toString())));
 	}
 
 
