@@ -28,6 +28,7 @@ public class RecordingBuilder {
 	private Optional<String> parentRecordingId;
 	private String rootRecordingId;
 	private String name;
+	private String label;
 	private Optional<String> codeVersion;
 	private Optional<String> branch;
 	private List<String> tags;
@@ -63,6 +64,7 @@ public class RecordingBuilder {
 		this.userId = "";
 		this.generatedClassJarPath = Optional.empty();
 		this.generatedClassLoader = Optional.empty();
+		this.label = "";
 	}
 
 	/**
@@ -75,7 +77,7 @@ public class RecordingBuilder {
 		return new Recording(id, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
-			, userId, generatedClassJarPath, generatedClassLoader);
+			, userId, generatedClassJarPath, generatedClassLoader, label);
 	}
 
 	private void recalculateId() {
@@ -124,6 +126,11 @@ public class RecordingBuilder {
 		this.name = name;
 		return this;
 	}
+
+    public RecordingBuilder withLabel(String label) {
+        this.label = label;
+        return this;
+    }
 
 	public RecordingBuilder withCodeVersion(String codeVersion) {
 		this.codeVersion = Optional.ofNullable(codeVersion);

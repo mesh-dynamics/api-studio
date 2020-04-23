@@ -1,5 +1,7 @@
 package com.cube.dao;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -13,7 +15,7 @@ public class AnalysisMatchResultQuery {
 
 	public final String replayId;
 	public final Optional<String> service;
-	public final Optional<String> apiPath;
+	public final List<String> apiPaths;
 	public final Optional<Comparator.MatchType> reqMatchType;
 	public final Optional<Comparator.MatchType> reqCompResType;
 	public final Optional<Comparator.MatchType> respCompResType;
@@ -32,7 +34,7 @@ public class AnalysisMatchResultQuery {
 	public AnalysisMatchResultQuery(String replayId) {
 		this.replayId = replayId;
 		service = Optional.empty();
-		apiPath = Optional.empty();
+		apiPaths = Collections.emptyList();
 		reqMatchType = Optional.empty();
 		reqCompResType = Optional.empty();
 		respCompResType = Optional.empty();
@@ -52,8 +54,8 @@ public class AnalysisMatchResultQuery {
 		this.replayId =replayId;
 		this.service = Optional
 			.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-		this.apiPath = Optional
-			.ofNullable(queryParams.getFirst(Constants.PATH_FIELD)); // the path to drill down on
+        this.apiPaths = Optional.ofNullable(queryParams.get(Constants.PATH_FIELD)) // the path to drill down on
+            .orElse(Collections.emptyList());
 		this.start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
 			.flatMap(Utils::strToInt); // for paging
 		this.numMatches =

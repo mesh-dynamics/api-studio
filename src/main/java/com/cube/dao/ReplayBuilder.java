@@ -56,6 +56,9 @@ public class ReplayBuilder {
     public Optional<String> xfms;
     public Optional<RRTransformer> xfmer;
     public List<String> mockServices;
+  public Optional<String> testConfigName;
+  public Optional<String> goldenName;
+  public Optional<String> recordingId;
 
 
     public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
@@ -83,6 +86,9 @@ public class ReplayBuilder {
 		this.xfms = Optional.empty();
 		this.xfmer = Optional.empty();
 		this.mockServices = Collections.emptyList();
+		this.testConfigName = Optional.empty();
+		this.goldenName = Optional.empty();
+		this.recordingId = Optional.empty();
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -99,7 +105,8 @@ public class ReplayBuilder {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
             excludePaths, reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices);
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices
+	            , testConfigName, goldenName, recordingId);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -199,5 +206,20 @@ public class ReplayBuilder {
         this.mockServices = mockServices;
         return this;
     }
+
+    public ReplayBuilder withTestConfigName(String testConfigName) {
+    	this.testConfigName = Optional.of(testConfigName);
+    	return this;
+		}
+
+		public ReplayBuilder withGoldenName(String goldenName) {
+    	this.goldenName = Optional.of(goldenName);
+    	return this;
+		}
+
+		public ReplayBuilder withRecordingId(String recordingId) {
+    	this.recordingId = Optional.of(recordingId);
+    	return this;
+		}
 
 }

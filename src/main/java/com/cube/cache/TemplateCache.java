@@ -9,10 +9,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.core.CompareTemplate;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
@@ -53,8 +53,7 @@ public class TemplateCache {
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(cacheFnKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(cacheFnKey, Optional.empty(), Optional.empty(), key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));

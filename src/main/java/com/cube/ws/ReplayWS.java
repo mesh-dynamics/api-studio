@@ -193,12 +193,47 @@ public class ReplayWS {
 
 
     @POST
+    @Path("start/byGoldenName/{customerId}/{app}/{goldenName}")
+    @Consumes("application/x-www-form-urlencoded")
+    public Response startByGoldenName(@Context UriInfo ui,
+        @PathParam("app") String app,
+        @PathParam("customerId") String customerId,
+        @PathParam("goldenName") String goldenName,
+        MultivaluedMap<String, String> formParams) {
+
+        String label = formParams.getFirst("label");
+
+        Optional<Recording> recordingOpt = rrstore.getRecordingByName(customerId, app, goldenName, Optional.ofNullable(label));
+
+        if (recordingOpt.isEmpty()) {
+            LOGGER.error(String
+                .format("Cannot init Replay since cannot find recording for golden  name %s", goldenName));
+            return Response.status(Status.NOT_FOUND)
+                .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
+        }
+
+        return  startReplay(formParams, recordingOpt);
+    }
+
+    @POST
     @Path("start/{recordingId}")
     @Consumes("application/x-www-form-urlencoded")
     public Response start(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         MultivaluedMap<String, String> formParams) {
+        Optional<Recording> recordingOpt = rrstore.getRecording(recordingId);
 
+        if (recordingOpt.isEmpty()) {
+            LOGGER.error(String
+                .format("Cannot init Replay since cannot find recording for id %s", recordingId));
+            return Response.status(Status.NOT_FOUND)
+                .entity(String.format("cannot find recording for id %s", recordingId)).build();
+        }
+
+        return  startReplay(formParams, recordingOpt);
+    }
+
+    private Response startReplay( MultivaluedMap<String, String> formParams, Optional<Recording> recordingOpt) {
         // TODO: move all these constant strings to a file so we can easily change them.
         boolean async = Utils.strToBool(formParams.getFirst("async")).orElse(false);
         boolean excludePaths = Utils.strToBool(formParams.getFirst("excludePaths")).orElse(false);
@@ -218,6 +253,9 @@ public class ReplayWS {
         List<String> mockServices = Optional.ofNullable(formParams.get("mockServices"))
             .orElse(new ArrayList<String>());
         boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
+        boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
+        Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
+
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -232,14 +270,6 @@ public class ReplayWS {
             return Response.status(Status.BAD_REQUEST)
                 .entity((new JSONObject(Map.of("Message", "instanceId Not Specified"))).toString())
                 .build();
-        }
-
-        Optional<Recording> recordingOpt = rrstore.getRecording(recordingId);
-        if (recordingOpt.isEmpty()) {
-            LOGGER.error(String
-                .format("Cannot init Replay since cannot find recording for id %s", recordingId));
-            return Response.status(Status.NOT_FOUND)
-                .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
         Recording recording = recordingOpt.get();
@@ -264,9 +294,12 @@ public class ReplayWS {
                 .withIntermediateServices(intermediateServices)
                 .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                     .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-                .withMockServices(mockServices);
+                .withMockServices(mockServices)
+                .withRecordingId(recording.id)
+                .withGoldenName(recording.name);
             sampleRate.ifPresent(replayBuilder::withSampleRate);
             service.ifPresent(replayBuilder::withServiceToReplay);
+            testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
             try {
                 recording.generatedClassJarPath
@@ -286,7 +319,7 @@ public class ReplayWS {
                     try {
                         json = jsonMapper.writeValueAsString(replayFromDriver);
                         if (startReplay) {
-                            boolean status = replayDriver.start();
+                            boolean status = replayDriver.start(analyze);
                             if (status) {
                                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
                             }
@@ -304,8 +337,8 @@ public class ReplayWS {
                     }
                 }).orElse(Response.serverError().build());
         }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
-    }
 
+    }
 
 	/**
 	 * @param config

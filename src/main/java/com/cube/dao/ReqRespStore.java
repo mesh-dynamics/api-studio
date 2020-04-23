@@ -21,12 +21,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.cube.agent.FnReqResponse;
+import io.cube.agent.FnResponse;
 import io.md.core.CompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
 
-import com.cube.agent.FnReqResponse;
-import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.Recording.RecordingStatus;
@@ -189,11 +189,14 @@ public interface ReqRespStore {
      * @param start
      * @param userId
      * @param endDate
+		 * @param startDate
+		 * @Param testConfigName
+		 * @Param goldenName
      * @return
      */
     Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
                              List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
-                             Optional<String> userId, Optional<Instant> endDate);
+                             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName, Optional<String> goldenName);
 
     /**
      *
@@ -331,7 +334,7 @@ public interface ReqRespStore {
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
 		Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
 		Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-		Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId);
+		Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -386,9 +389,10 @@ public interface ReqRespStore {
      * @param customerId
      * @param app
      * @param name
+     * @param label
      * @return
      */
-    Optional<Recording> getRecordingByName(String customerId, String app, String name);
+    Optional<Recording> getRecordingByName(String customerId, String app, String name, Optional<String> label);
 
 	/**
 	 * @param replayId
@@ -447,6 +451,11 @@ public interface ReqRespStore {
 		public boolean isRecording() {
 			return recording.isPresent();
 		}
+
+		@JsonIgnore
+		public RunType getRunType(){
+        	return recording.isPresent() ? RunType.Record : RunType.Replay;
+        }
 
 		@JsonIgnore
         public String getTemplateVersion() {

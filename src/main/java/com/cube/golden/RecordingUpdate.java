@@ -281,7 +281,7 @@ public class RecordingUpdate {
                 Event transformedResponse = new EventBuilder(recordResponse.customerId
                     , recordResponse.app, recordResponse.service, recordResponse.instanceId
                     , "", new MDTraceInfo(recordResponse.getTraceId(), null
-                    , null), recordResponse.runType
+                    , null), recordResponse.getRunType()
                     , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
                     , recordResponse.eventType)
                     .setPayload(recordResponse.payload)
@@ -297,7 +297,7 @@ public class RecordingUpdate {
                 Event transformedRequest = new EventBuilder(recordRequest.customerId
                     , recordRequest.app, recordRequest.service, recordRequest.instanceId
                     , "", new MDTraceInfo(recordResponse.getTraceId(), null
-                    , null), recordRequest.runType
+                    , null), recordRequest.getRunType()
                     , Optional.of(recordRequest.timestamp), newReqId, recordRequest.apiPath
                     , recordRequest.eventType)
                     .setPayload(recordRequest.payload)

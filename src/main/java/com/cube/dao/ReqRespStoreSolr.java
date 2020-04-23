@@ -43,6 +43,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.FnReqResponse;
+import io.cube.agent.FnResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
@@ -59,12 +61,11 @@ import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 import io.md.dao.ReqRespUpdateOperation;
+import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
-import com.cube.agent.FnReqResponse;
-import com.cube.agent.FnResponse;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.core.CompareTemplateVersioned;
@@ -121,9 +122,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), key);
-            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey, Optional.empty(), Optional.empty(), key);
+            if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -148,12 +148,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
-                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), key);
+                    RetStatus.Success, Optional.empty(), key);
             }
         } catch (Exception e) {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), key);
             }
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -171,9 +171,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), collectionKey , rr);
-            if (ret != null && ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey, Optional.empty(), Optional.empty(), collectionKey , rr);
+            if (ret != null && ret.retStatus == RetStatus.Exception) {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -192,7 +191,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 "Error while population RecordOrReplay in cache")) , e);
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayStoreKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, io.cube.agent.FnReqResponse.RetStatus.Exception,
+                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), collectionKey , rr);
             }
         }
@@ -333,9 +332,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<FnResponse> solrDocToFnResponse(SolrDocument doc, boolean multipleResults) {
-        FnReqResponse.RetStatus retStatus =
-            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(FnReqResponse.RetStatus.class,
-            rs)).orElse(FnReqResponse.RetStatus.Success);
+        RetStatus retStatus =
+            getStrField(doc, FUNC_RET_STATUSF).flatMap(rs -> Utils.valueOf(RetStatus.class,
+            rs)).orElse(RetStatus.Success);
         Optional<String> exceptionType = getStrField(doc, FUNC_EXCEPTION_TYPEF);
         return getStrFieldMVFirst(doc,FUNC_RET_VAL).map(retVal -> new FnResponse(retVal ,getTSField(doc,TIMESTAMPF),
             retStatus, exceptionType, multipleResults));
@@ -744,6 +743,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RRTYPEF = CPREFIX + Constants.RUN_TYPE_FIELD + STRING_SUFFIX;
     private static final String CUSTOMERIDF = CPREFIX + Constants.CUSTOMER_ID_FIELD + STRING_SUFFIX;
     private static final String USERIDF = CPREFIX + Constants.USER_ID_FIELD + STRING_SUFFIX;
+    private static final String TESTCONFIGNAMEF = CPREFIX + Constants.TEST_CONFIG_NAME_FIELD + STRING_SUFFIX;
     private static final String APPF = CPREFIX + Constants.APP_FIELD + STRING_SUFFIX;
     private static final String INSTANCEIDF = CPREFIX + Constants.INSTANCE_ID_FIELD + STRING_SUFFIX;
     private static final String STATUSF = CPREFIX + Constants.STATUS + INT_SUFFIX;
@@ -857,18 +857,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addFilterQuery(prefix + " ( " + filter + " ) ");
     }
 
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, String fval, boolean endInclusive, boolean quote) {
-        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        String queryFmt = endInclusive ? "%s:[* TO %s]" : "%s:[* TO %s}";
-        query.addFilterQuery(String.format(queryFmt, fieldname, newfval));
-    }
-
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval, boolean endInclusive) {
-        fval.ifPresent(val -> addEndRangeFilter(query, fieldname, val.toString(), endInclusive, true));
-    }
-
-    private static void addEndRangeFilter(SolrQuery query, String fieldname, Optional<Instant> fval) {
-        addEndRangeFilter(query, fieldname, fval, true);
+    private static void addRangeFilter(SolrQuery query, String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
+        String startDateVal = startDate.isPresent() ? SolrIterator.escapeQueryChars(startDate.get().toString()) : "*";
+        String endDateVal = endDate.isPresent() ? SolrIterator.escapeQueryChars(endDate.get().toString()) : "*";
+        String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
+        query.addFilterQuery(String.format(queryFmt, fieldname, startDateVal, endDateVal));
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
@@ -982,7 +975,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TRACEIDF, event.getTraceId());
         if (event.spanId != null) doc.setField(SPAN_ID_F, event.spanId);
         if (event.parentSpanId != null) doc.setField(PARENT_SPAN_ID_F, event.parentSpanId);
-        doc.setField(RRTYPEF, event.runType.toString());
+        doc.setField(RRTYPEF, event.getRunType().toString());
         doc.setField(TIMESTAMPF, event.timestamp.toString());
         doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
@@ -1201,9 +1194,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(saveFuncKey , CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), doc);
-            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            FnResponseObj ret = config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(), doc);
+            if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
             UpdateResponse fromSolr = (UpdateResponse) ret.retVal;
@@ -1227,7 +1219,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
-                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), doc);
+                    RetStatus.Success, Optional.empty(), doc);
             }
             return toReturn;
         } catch (Throwable e) {
@@ -1235,7 +1227,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(),
                     CommonUtils.getParentSpanId(),
-                    e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
             }
             throw e;
         }
@@ -1255,9 +1247,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(deleteFuncKey , CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
-            if (ret.retStatus == io.cube.agent.FnReqResponse.RetStatus.Exception) {
+            FnResponseObj ret = config.mocker.mock(deleteFuncKey , Optional.empty(), Optional.empty(), query);
+            if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
             UpdateResponse fromSolr = (UpdateResponse) ret.retVal;
@@ -1279,7 +1270,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
-                    io.cube.agent.FnReqResponse.RetStatus.Success, Optional.empty(), query);
+                    RetStatus.Success, Optional.empty(), query);
             }
             return toReturn;
         } catch (Throwable e) {
@@ -1287,7 +1278,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
                     CommonUtils.getCurrentSpanId(),
                     CommonUtils.getParentSpanId(),
-                    e, io.cube.agent.FnReqResponse.RetStatus.Exception, Optional.of(e.getClass().getName()), query);
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
             }
             throw e;
         }
@@ -1336,6 +1327,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(ENDPOINTF, replay.endpoint);
         doc.setField(REPLAYIDF, replay.replayId);
         doc.setField(USERIDF, replay.userId);
+        replay.testConfigName.ifPresent(testconf -> doc.setField(TESTCONFIGNAMEF, testconf));
         replay.reqIds.forEach(reqId -> doc.addField(REQIDSF, reqId));
         doc.setField(REPLAYSTATUSF, replay.status.toString());
         doc.setField(TYPEF, type);
@@ -1353,6 +1345,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.service.ifPresent(serv -> doc.setField(SERVICEF, serv));
         doc.setField(REPLAY_TYPE_F, replay.replayType.toString());
         replay.xfms.ifPresent(xfms -> doc.setField(XFMSF, xfms));
+        replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
+        replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
 
         return doc;
     }
@@ -1409,6 +1403,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
         Optional<String> service = getStrField(doc, SERVICEF);
+        Optional<String> testConfigName = getStrField(doc, TESTCONFIGNAMEF);
+        Optional<String> goldenName = getStrField(doc, GOLDEN_NAMEF);
+        Optional<String> recordingId = getStrField(doc, RECORDING_IDF);
         ReplayTypeEnum replayType = getStrField(doc, REPLAY_TYPE_F).flatMap(repType ->
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
@@ -1436,6 +1433,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .ifPresent(UtilException.rethrowConsumer(builder::withGeneratedClassJar));
                 service.ifPresent(builder::withServiceToReplay);
                 xfms.ifPresent(builder::withXfms);
+                testConfigName.ifPresent(builder::withTestConfigName);
+                goldenName.ifPresent(builder::withGoldenName);
+                recordingId.ifPresent(builder::withRecordingId);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -1568,7 +1568,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
             List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
-            Optional<String> userId, Optional<Instant> endDate) {
+            Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName,
+            Optional<String> goldenName) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
@@ -1578,7 +1579,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
         addFilter(query, COLLECTIONF , collection);
         addFilter(query, USERIDF, userId);
-        addEndRangeFilter(query, CREATIONTIMESTAMPF, endDate, true);
+        addFilter(query, TESTCONFIGNAMEF, testConfigName);
+        addFilter(query, GOLDEN_NAMEF, goldenName);
+        addRangeFilter(query, CREATIONTIMESTAMPF, startDate, endDate, true, true);
         // Heuristic: getting the latest replayid if there are multiple.
         // TODO: what happens if there are multiple replays running for the
         // same triple (customer, app, instance)
@@ -1593,7 +1596,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
-        return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty()).objects;
+        return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty(), Optional.empty()).objects;
     }
 
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
@@ -1899,7 +1903,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
         addFilter(query, REPLAYIDF, matchResQuery.replayId);
         addFilter(query, SERVICEF, matchResQuery.service);
-        addFilter(query, PATHF, matchResQuery.apiPath);
+        addFilter(query, PATHF, matchResQuery.apiPaths);
         addFilter(query, REQMTF, matchResQuery.reqMatchType.map(Enum::toString));
         addFilter(query, RESP_COMP_RES_TYPE_F,
             matchResQuery.respCompResType.map(Enum::toString));
@@ -2186,6 +2190,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String GOLDEN_NAMEF = CPREFIX + Constants.GOLDEN_NAME_FIELD + STRING_SUFFIX;
+    private static final String RECORDING_IDF = CPREFIX + Constants.RECORDING_ID + STRING_SUFFIX;
+    private static final String GOLDEN_LABELF = CPREFIX + Constants.GOLDEN_LABEL_FIELD + STRING_SUFFIX;
     private static final String CODE_VERSIONF = CPREFIX + Constants.CODE_VERSION_FIELD + STRING_SUFFIX;
     private static final String BRANCHF = CPREFIX + Constants.BRANCH_FIELD + STRING_SUFFIX;
     private static final String TAGSF = CPREFIX + Constants.TAGS_FIELD + STRINGSET_SUFFIX;
@@ -2209,6 +2215,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_IDF);
         Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_IDF);
         Optional<String> name = getStrField(doc, GOLDEN_NAMEF);
+        Optional<String> label = getStrField(doc, GOLDEN_LABELF);
         Optional<String> codeVersion = getStrField(doc, CODE_VERSIONF);
         Optional<String> branch = getStrField(doc, BRANCHF);
         List<String> tags = getStrFieldMV(doc, TAGSF);
@@ -2238,6 +2245,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
             templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
             comment.ifPresent(recordingBuilder::withComment);
+            label.ifPresent(recordingBuilder::withLabel);
             try {
                 generatedClassJarPath.ifPresent(
                     UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -2280,6 +2288,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(ROOT_RECORDING_IDF, recording.rootRecordingId);
         doc.setField(ARCHIVEDF, recording.archived);
         doc.setField(GOLDEN_NAMEF, recording.name);
+        doc.setField(GOLDEN_LABELF, recording.label);
         doc.setField(USERIDF, recording.userId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
@@ -2312,7 +2321,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId) {
+        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2326,6 +2335,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, PARENT_RECORDING_IDF, parentRecordingId);
         addFilter(query, ROOT_RECORDING_IDF, rootRecordingId);
         addFilter(query, GOLDEN_NAMEF, name);
+        addFilter(query, GOLDEN_LABELF, label);
         addFilter(query, CODE_VERSIONF, codeVersion);
         addFilter(query, BRANCHF, branch);
         addFilter(query, ARCHIVEDF, archived.map(a -> a.toString()));
@@ -2369,13 +2379,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Optional<Recording> getRecordingByName(String customerId, String app, String name) {
+    public Optional<Recording> getRecordingByName(String customerId, String app, String name, Optional<String> label) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, GOLDEN_NAMEF, name);
+        label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> addSort(query, TIMESTAMPF, false));
         Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
     }
