@@ -54,21 +54,11 @@
 			<artifactId>activation</artifactId>
 			<version>1.1</version>
 		</dependency>
-		<dependency>
-			<groupId>com.cube.interceptor</groupId>
-			<artifactId>md-jaxrs_1_1-ingress-interceptor</artifactId>
-			<version>0.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.cube.interceptor</groupId>
-			<artifactId>md-jersey_1_19-egress-interceptor</artifactId>
-			<version>0.0.1</version>
-		</dependency>
 
 		<dependency>
-			<groupId>io.cube.interceptor</groupId>
+			<groupId>io.cube</groupId>
 			<artifactId>jersey_1_19</artifactId>
-			<version>0.0.1</version>
+			<version>1.2.0</version>
 		</dependency>
 
 	</dependencies>

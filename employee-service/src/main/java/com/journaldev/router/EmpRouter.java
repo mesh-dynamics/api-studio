@@ -20,9 +20,9 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
-import com.cube.interceptor.jersey.egress.ClientLoggingFilter;
-import com.cube.interceptor.jersey.egress.ClientMockingFilter;
-import com.cube.interceptor.jersey.egress.ClientTracingFilter;
+import io.cube.interceptor.jersey_1x.egress.ClientLoggingFilter;
+import io.cube.interceptor.jersey_1x.egress.ClientMockingFilter;
+import io.cube.interceptor.jersey_1x.egress.ClientTracingFilter;
 
 @Path("/emp")
 public class EmpRouter {

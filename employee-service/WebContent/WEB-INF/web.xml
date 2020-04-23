@@ -20,15 +20,15 @@
 		<init-param>
 			<param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
 			<param-value>
-				com.cube.interceptor.jaxrs.TracingFilter,
-				com.cube.interceptor.jaxrs.LoggingFilter
+				io.cube.interceptor.jersey_1x.ingress.TracingFilter,
+				io.cube.interceptor.jersey_1x.ingress.LoggingFilter
 			</param-value>
 		</init-param>
 		<init-param>
 			<param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
 			<param-value>
-				com.cube.interceptor.jaxrs.LoggingFilter,
-				com.cube.interceptor.jaxrs.TracingFilter
+				io.cube.interceptor.jersey_1x.ingress.LoggingFilter,
+				io.cube.interceptor.jersey_1x.ingress.TracingFilter
 			</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
