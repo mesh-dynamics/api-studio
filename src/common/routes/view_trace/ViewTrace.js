@@ -4,6 +4,7 @@ import _ from 'lodash';
 import arrayToTree  from 'array-to-tree';
 import axios from "axios";
 import Iframe from 'react-iframe'
+import * as moment from 'moment';
 // import sortJson from "sort-json";
 import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
@@ -129,6 +130,7 @@ class ViewTrace extends Component {
         this.inputElementRef = React.createRef();
         this.layoutDataWithDiff = [];
         this.uniqueRecordReplayData = [];
+        this.loggingURL = "";
 
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
@@ -278,11 +280,11 @@ class ViewTrace extends Component {
             result.push({
                 ...current
             })
-            let isParentmocked = testMockServices.some(function(element, i) {
+            let isParentmocked = testMockServices ? testMockServices.some(function(element, i) {
                 if (current.service.toLowerCase() === element.toLowerCase()) {
                     return true;
                 }
-            });
+            }) : false;
             if(current.children && current.children.length > 0) {
                 depth++;
                 for(let eachTempNode of current.children) {
@@ -366,6 +368,14 @@ class ViewTrace extends Component {
                 })
             });
             if (response.ok) {
+                const { cube } = this.props;
+                const { instances, selectedApp } = cube;
+                for(let eachInstance of instances) {
+                    if(eachInstance.app.name === selectedApp) {
+                        this.loggingURL = eachInstance.loggingURL;
+                        break;
+                    }
+                }
                 json = await response.json();
                 dataList = json;
                 let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
@@ -543,6 +553,7 @@ class ViewTrace extends Component {
     }
 
     validateAndCreateDiffLayoutData(replayList) {
+        let loggingURL = this.loggingURL;
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
@@ -714,7 +725,8 @@ class ViewTrace extends Component {
                 reductedDiffArrayReqHeaders,
                 reductedDiffArrayReqQParams,
                 reductedDiffArrayReqFParams,
-                reductedDiffArrayReqBody
+                reductedDiffArrayReqBody,
+                loggingURL: loggingURL.replace("$STARTTIME", "'" + moment(item.replayReqTime).toISOString() + "'").replace("$ENDTIME", "'" + moment(Math.ceil(item.replayRespTime / (60 * 60 * 1000)) * (60 * 60 * 1000)).toISOString() + "'")
             }
         });
         return diffLayoutData;
@@ -1016,7 +1028,7 @@ class ViewTrace extends Component {
                             </div>
                             <div style={{display: "inline-block"}} className="pull-right">
                                 <Button bsSize="small" bsStyle={"primary"} style={{}} onClick={this.toggleBetweenTraceAndLogs}>
-                                    {showTrace ? "VIEW TRACE" : "VIEW LOGS"}
+                                    {showTrace ? "VIEW LOGS" : "VIEW TRACE"}
                                 </Button>
                             </div>
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
@@ -1030,7 +1042,7 @@ class ViewTrace extends Component {
                             />
                         </FormGroup>
                         <div style={{marginTop: "9px", display: showTrace ? "none": ""}}>
-                            <Iframe url="http://logging.dev.cubecorp.io/app/kibana#/discover/fcc46df0-17e6-11ea-a0f3-ffb2c1110291?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(log),filters:!(),index:ae33d640-1740-11ea-8ec6-cb0631ba08d0,interval:auto,query:(language:kuery,query:''),sort:!('@timestamp',desc))"
+                            <Iframe url={selectedDiffItem.loggingURL}
                                 width="100%"
                                 height="720px"
                                 id="myId"
