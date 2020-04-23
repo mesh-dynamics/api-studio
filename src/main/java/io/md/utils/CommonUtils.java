@@ -339,10 +339,12 @@ public class CommonUtils {
 
 	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
 		Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload) {
-
+		String reqId = fnKey.service.concat("-")
+			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId).concat("-").concat(
+				UUID.randomUUID().toString());
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, "NA",
-			mdTraceInfo, rrType, timestamp, "NA",
+			mdTraceInfo, rrType, timestamp, reqId,
 			fnKey.signature, Event.EventType.JavaRequest);
 		eventBuilder.setPayload(payload);
 		return eventBuilder.createEventOpt();
