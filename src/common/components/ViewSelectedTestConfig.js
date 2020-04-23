@@ -410,7 +410,7 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('label', recLabel);
 
         axios.post(url, searchParams, configForHTTP).then((response) => {
-            this.setState({stopDisabled: false, recId: response.data.id})
+            this.setState({stopDisabled: false, recId: response.data.id, recLabel });
             this.recStatusInterval = setInterval(() => {
                 if (!this.state.recId) {
                     clearInterval(this.recStatusInterval);
@@ -446,7 +446,6 @@ class ViewSelectedTestConfig extends React.Component {
         const { cube, authentication } = this.props;
         const user = authentication.user;
         const url = `${config.recordBaseUrl}/stop/${this.state.recId}`;
-        const recLabel = Date.now().toString();
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -455,7 +454,7 @@ class ViewSelectedTestConfig extends React.Component {
         };
         axios.post(url, {}, configForHTTP).then((response) => {
             this.setState({stopDisabled: true, recId: null});
-            const csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/${recLabel}`;
+            const csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/${this.state.recLabel}`;
             axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
