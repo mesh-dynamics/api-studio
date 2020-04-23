@@ -6,11 +6,13 @@ import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
 import {getTransformHeaders} from "../utils/lib/url-utils";
-// import { history } from "../helpers";
 import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
-import { Glyphicon } from 'react-bootstrap';
+import {validateGoldenName} from "../utils/lib/golden-utils";
+// import { history } from "../helpers";
+// import { Glyphicon } from 'react-bootstrap';
+
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -32,8 +34,10 @@ class ViewSelectedTestConfig extends React.Component {
             recordModalVisible: false,
             recStatus: null,
             recName: "",
+            recLabel:"",
             recId: null,
             stopDisabled: true,
+            goldenNameErrorMessage: "",
             customHeaders: {
                 default: {
                     key: "",
@@ -74,7 +78,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     changeRecName = (e) => {
-        this.setState({recName: e.target.value});
+        this.setState({recName: e.target.value.replace(/  /g, " ")});
     };
 
     showAddCustomHeaderModal = () => this.setState({ showAddCustomHeader: true });
@@ -213,7 +217,7 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         }
 
-        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
+        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
         return trList;
     }
 
@@ -234,10 +238,10 @@ class ViewSelectedTestConfig extends React.Component {
         if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
             options = cube.testIds.map((item, index) => {
                 if (index < 8)
-                    return (<option key={item.collec} value={item.collec}>{item.name}</option>);
+                    return (<option key={item.collec + index} value={item.collec}>{item.name}</option>);
 
                 else
-                    return (<option className="hidden" key={item.collec} value={item.collec}>{item.name}</option>);
+                    return (<option className="hidden" key={item.collec + index} value={item.collec}>{item.name}</option>);
             });
         }
         let jsxContent = '';
@@ -399,9 +403,11 @@ class ViewSelectedTestConfig extends React.Component {
             }
         };
 
+        let recLabel = Date.now().toString();
         const searchParams = new URLSearchParams();
         searchParams.set('name', this.state.recName);
         searchParams.set('userId', user.username);
+        searchParams.set('label', recLabel);
 
         axios.post(url, searchParams, configForHTTP).then((response) => {
             this.setState({stopDisabled: false, recId: response.data.id})
@@ -415,11 +421,25 @@ class ViewSelectedTestConfig extends React.Component {
         });
 
         let checkStatus = () => {
-            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/RespPartialMatch`;
+            let csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/${recLabel}`;
             axios.get(csUrl, configForHTTP).then(response => {
                 this.setState({recStatus: response.data});
             });
         };
+    };
+
+    handleStartRecordClick = () => {
+        
+        const { recName } = this.state;
+
+        const { goldenNameIsValid, goldenNameErrorMessage } = validateGoldenName(recName);
+
+        if(goldenNameIsValid) {
+            this.setState({ goldenNameErrorMessage });
+            this.startRecord();
+        } else {
+            this.setState({ goldenNameErrorMessage });
+        }
     };
 
     stopRecord = () => {
@@ -443,7 +463,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     replay = async () => {
         const { cube, dispatch, authentication, checkReplayStatus } = this.props;
-        const { testConfig: { testPaths, testMockServices }} = cube;
+        const { testConfig: { testPaths, testMockServices, testConfigName }} = cube;
         const selectedInstances = cube.instances
             .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
         cubeActions.clearReplayStatus();
@@ -467,6 +487,8 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('userId', user.username);
             searchParams.set('transforms', transforms);
             searchParams.set('mockServices',testMockServices);
+            searchParams.set('testConfigName', testConfigName);
+            searchParams.set('analyze', true);
             // Append Test Paths
             // If not specified, it will run all paths
             if(testPaths && testPaths.length !== 0) {
@@ -505,8 +527,12 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             showGoldenMeta, customHeaders, recordModalVisible, 
             show, fcId, showGoldenFilter, selectedGoldenFromFilter,
-            recName, stopDisabled, recStatus, showAddCustomHeader
+            recName, stopDisabled, recStatus, showAddCustomHeader,
+            goldenNameErrorMessage
         } = this.state;
+
+        const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
+        const analysisDone = (cube.analysisStatus === "Completed" || cube.analysisStatus === "Error");
 
         return (
             <div>
@@ -520,9 +546,20 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Header>
 
                     <Modal.Body className={"text-center padding-15"}>
-                        <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span onClick={this.startRecord} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>START</span>
-                        &nbsp;<span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column" }}>
+                                <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
+                                
+                            </div>
+                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                <span onClick={this.handleStartRecordClick} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
+                                <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                            </div>
+                            
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+                            <span style={{ color: "#c24b4b"}}>{goldenNameErrorMessage}</span>
+                        </div>
                         <div className={"padding-15 bold"}>
                             <span className={!recStatus ? "hidden" : ""}>Recording Id: {recStatus ? recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
                             Status: {recStatus ? recStatus.status : "Initialize"}
@@ -539,18 +576,21 @@ class ViewSelectedTestConfig extends React.Component {
                         <Modal.Title>{cube.testConfig ? cube.testConfig.testConfigName : ''}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <div className={!cube.replayStatusObj || (cube.replayStatusObj.status != "Completed" && cube.replayStatusObj.status != "Error") ? "" : "hidden"}>Test In Progress...</div>
-                        <div className={cube.replayStatusObj && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error") ? "" : "hidden"}>Test Completed</div>
-                        <h3>
-                            Status: {cube.replayStatus}&nbsp;&nbsp;
-                            {cube.replayStatusObj ? (<small>{cube.replayStatusObj.status + ': ' + cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null}
-                        </h3>
+                        <div>
+                            {
+                            !replayDone ? "Test in progress..." : 
+                                !analysisDone ? "Analyzing" : "Test Completed"
+                            }
+                        </div>
+                        <h4 style={{color: replayDone ? "green" : "#aab614", fontSize: "medium"}}><strong>Replay:</strong> {cube.replayStatus} {!replayDone && (cube.replayStatusObj ? (<small>{ cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null)}</h4>
+                        <h4 style={{color: replayDone ? (analysisDone ? "green" : "#aab614") : "grey", fontSize: "medium"}}><strong>Analysis:</strong> {cube.analysisStatus}</h4>
+                        
                         {cube.replayStatusObj && <p>
                             Replay ID: {cube.replayStatusObj.replayId}
                         </p>}
                     </Modal.Body>
                     <Modal.Footer >
-                        {(cube.replayStatusObj && (cube.analysis && (cube.replayStatusObj.status == "Completed" || cube.replayStatusObj.status == "Error"))) ? 
+                        {analysisDone ? 
                         <Link to="/">
                             <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
@@ -624,7 +664,8 @@ class ViewSelectedTestConfig extends React.Component {
                                 <thead>
                                 <tr>
                                     <td className="bold">Name</td>
-                                    <td className="bold">ID</td>
+                                    <td className="bold" style={{ minWidth: "100px" }}>Label</td>
+                                    <td className="bold" style={{ minWidth: "175px" }}>ID</td>
                                     <td className="bold">Date</td>
                                     <td className="bold">Created By</td>
                                     <td className="bold">Parent ID</td>

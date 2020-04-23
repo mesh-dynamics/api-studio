@@ -73,6 +73,7 @@ class ShareableLink extends Component {
             showAll: true,
             showSaveGoldenModal: false,
             nameG: "",
+            labelG: "",
             branch: "",
             version: "",
             tag: "",
@@ -1257,6 +1258,7 @@ class ShareableLink extends Component {
                     </Modal.Header>
                     <Modal.Body>
                         <p className={cube.newGoldenId ? "" : "hidden"}>Name: {this.state.nameG}</p>
+                        <p className={cube.newGoldenId ? "" : "hidden"}>Label: {this.state.labelG}</p>
                         <p className={cube.newGoldenId ? "hidden" : ""}>Updating Operations...</p>
                     </Modal.Body>
                     <Modal.Footer className={cube.newGoldenId ? "" : "hidden"}>
@@ -1287,6 +1289,16 @@ class ShareableLink extends Component {
 
                                 <div className="col-md-9">
                                     <input required placeholder="Enter Golden Name" onChange={(event) => this.changeGoldenMetaData('nameG', event)} value={this.state.nameG} type="text" className="width-100"/>
+                                </div>
+                            </div>
+
+                            <div className="row margin-bottom-10">
+                                <div className="col-md-3 bold">
+                                    Label*:
+                                </div>
+
+                                <div className="col-md-9">
+                                    <input required placeholder="Enter Label Name" onChange={(event) => this.changeGoldenMetaData('labelG', event)} value={this.state.labelG} type="text" className="width-100"/>
                                 </div>
                             </div>
 
@@ -1349,7 +1361,8 @@ class ShareableLink extends Component {
 
     showSaveGoldenModal = () => {
         this.setState({
-            nameG: (this.state.recordingId + '_' + Date.now()),
+            nameG: (this.state.recordingId),
+            labelG: Date.now(),
             branch: "",
             version: "",
             tag: "",
@@ -1366,6 +1379,8 @@ class ShareableLink extends Component {
     handleSaveGolden = () => {
         if (!this.state.nameG.trim()) {
             this.setState({saveGoldenError: "Name is a Required Field, cannot be Empty.",})
+        } else if (!this.state.labelG.trim()) {
+            this.setState({saveGoldenError: "Label is a Required Field, cannot be Empty.",})
         } else {
             this.updateGolden();
         }
@@ -1417,6 +1432,7 @@ class ShareableLink extends Component {
         let searchParams = new URLSearchParams();
         searchParams.set('name', this.state.nameG);
         searchParams.set('userId', user.username);
+        searchParams.set("label", this.state.labelG);
 
         if (this.state.version.trim()) {
             searchParams.set('codeVersion', this.state.version.trim());

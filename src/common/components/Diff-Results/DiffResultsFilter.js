@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react'
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import {cubeActions} from "../../actions";
 import _ from 'lodash';
-import {resolutionsIconMap} from '../../components/Resolutions.js'
+import {resolutionsIconMap} from '../Resolutions.js'
 
 export default class DiffResultsFilter extends Component {
 

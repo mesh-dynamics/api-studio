@@ -46,10 +46,11 @@ const fetchGoldenMeta = async (recordingId, token) => {
 };
 
 const postGoldenMeta = async (goldenDetails, token) => {
-    const { id, goldenName, branchName, codeVersionNumber, commitId } = goldenDetails;
+    const { id, goldenName, labelName, branchName, codeVersionNumber, commitId } = goldenDetails;
     //userId, golden_comment, tags to be added in later iterations
     const urlencoded = new URLSearchParams();
     urlencoded.append("golden_name", goldenName);
+    urlencoded.append("label", labelName),
     urlencoded.append("branch", branchName);
     urlencoded.append("git_commit_id", commitId);
     urlencoded.append("code_version", codeVersionNumber);
