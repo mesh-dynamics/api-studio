@@ -726,7 +726,7 @@ class ViewTrace extends Component {
                 reductedDiffArrayReqQParams,
                 reductedDiffArrayReqFParams,
                 reductedDiffArrayReqBody,
-                loggingURL: loggingURL.replace("$STARTTIME", "'" + moment(item.replayReqTime).toISOString() + "'").replace("$ENDTIME", "'" + moment(Math.ceil(item.replayRespTime / (60 * 60 * 1000)) * (60 * 60 * 1000)).toISOString() + "'")
+                loggingURL: loggingURL.replace("$STARTTIME", "'" + moment(item.replayReqTime).toISOString() + "'").replace("$ENDTIME", "'" + moment(Math.ceil(item.replayRespTime / (1.5 * 60 * 1000)) * (1.5 * 60 * 1000)).toISOString() + "'")
             }
         });
         return diffLayoutData;
