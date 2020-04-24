@@ -310,7 +310,7 @@ async function fetchCollectionList(app) {
 async function forceCompleteReplay(fcId) {
     let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.replayBaseUrl}/forcecomplete/${fcId}`;
-    await axios.post(url, {
+    await axios.post(url, null, {
         headers: {
             "Authorization": "Bearer " + user['access_token']
         }
