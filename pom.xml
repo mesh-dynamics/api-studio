@@ -176,21 +176,21 @@
     	<artifactId>solr-solrj</artifactId>
     	<version>7.5.0</version>
 	</dependency>
-<!--	<dependency>-->
-<!--	    <groupId>org.apache.logging.log4j</groupId>-->
-<!--	    <artifactId>log4j-api</artifactId>-->
-<!--	    <version>${version.log4j}</version>-->
-<!--	</dependency>-->
+	<dependency>
+	    <groupId>org.apache.logging.log4j</groupId>
+	    <artifactId>log4j-core</artifactId>
+	    <version>${version.log4j}</version>
+	</dependency>
+		<dependency>
+			    <groupId>org.apache.logging.log4j</groupId>
+			    <artifactId>log4j-slf4j-impl</artifactId>
+			    <version>${version.log4j}</version>
+			</dependency>
 <!--	<dependency>-->
 <!--	    <groupId>org.apache.logging.log4j</groupId>-->
 <!--	    <artifactId>log4j-core</artifactId>-->
 <!--	    <version>${version.log4j}</version>-->
 <!--	    </dependency>-->
-<!--	<dependency>-->
-<!--	    <groupId>org.apache.logging.log4j</groupId>-->
-<!--	    <artifactId>log4j-slf4j-impl</artifactId>-->
-<!--	    <version>${version.log4j}</version>-->
-<!--	</dependency>-->
 	<!-- jaxb was removed from java 9 onwards, so need to explicitly add -->
 	<!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
 	<dependency>
@@ -315,13 +315,13 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.10</version>
+			<version>1.0.16</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.31</version>
+			<version>1.0.42</version>
 		</dependency>
 
 	</dependencies>

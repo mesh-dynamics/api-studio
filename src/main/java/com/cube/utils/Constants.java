@@ -93,8 +93,8 @@ public class Constants {
     public static final String FORM_PARAMS_PATH = "/formParams";
     public static final String PATH_PATH = "/path";
     public static final String METHOD_PATH = "/method";
-    public static final String ARGS_PATH = "/args";
-    public static final String FN_RESPONSE_PATH = "/response";
+    public static final String ARGS_PATH = "/argVals";
+    public static final String FN_RESPONSE_PATH = "/retOrExceptionVal";
     public static final String HDR_PATH = "/hdrs";
     public static final String META_PATH = "/meta";
     public static final String BODY_PATH = "/body";
@@ -127,10 +127,12 @@ public class Constants {
     public static final String EVENT_TYPE_FIELD = "eventType";
     public static final String JSON_PATH_FIELD = "jsonPath";
     public static final String USER_ID_FIELD = "userId";
+    public static final String TEST_CONFIG_NAME_FIELD = "testConfigName";
     public static final String RECORD_REQ_ID_FIELD = "recordReqId";
     public static final String REPLAY_REQ_ID_FIELD = "replayReqId";
     public static final String START_FIELD = "start";
     public static final String END_DATE_FIELD = "endDate";
+    public static final String START_DATE_FIELD = "startDate";
     public static final String NUM_RESULTS_FIELD = "numResults";
     public static final String METHOD_FIELD = "method";
     public static final String LIMIT_FIELD = "limit";
@@ -149,6 +151,7 @@ public class Constants {
     public static final String ROOT_RECORDING_FIELD = "root_recording_id";
     public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
     public static final String GOLDEN_NAME_FIELD = "golden_name";
+    public static final String GOLDEN_LABEL_FIELD = "label";
     public static final String CODE_VERSION_FIELD = "code_version";
     public static final String BRANCH_FIELD = "branch";
     public static final String TAGS_FIELD = "tags";

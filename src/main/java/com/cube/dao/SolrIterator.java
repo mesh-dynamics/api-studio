@@ -24,9 +24,10 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
 
-import io.cube.agent.FnReqResponse.RetStatus;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
+import io.md.dao.FnReqRespPayload.RetStatus;
+
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
@@ -182,8 +183,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
             }
         }
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(queryFnKey,  CommonUtils.getCurrentTraceId(),
-                CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), Optional.empty(), Optional.empty(), query);
+            FnResponseObj ret = config.mocker.mock(queryFnKey, Optional.empty(), Optional.empty(), query);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }

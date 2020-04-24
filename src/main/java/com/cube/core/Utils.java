@@ -32,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
@@ -43,7 +44,6 @@ import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 
-import com.cube.agent.FnReqResponse;
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.cache.TemplateKey;

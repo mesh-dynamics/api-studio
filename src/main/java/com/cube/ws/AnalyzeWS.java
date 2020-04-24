@@ -526,8 +526,12 @@ public class AnalyzeWS {
         Optional<String> collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
         Optional<String> userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
         Optional<String> endDate = Optional.ofNullable(queryParams.getFirst(Constants.END_DATE_FIELD));
+        Optional<String> startDate = Optional.ofNullable(queryParams.getFirst(Constants.START_DATE_FIELD));
+        Optional<String> testConfigName = Optional.ofNullable(queryParams.getFirst(Constants.TEST_CONFIG_NAME_FIELD));
+        Optional<String> goldenName = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_NAME_FIELD));
 
         Optional<Instant> endDateTS = Optional.empty();
+        Optional<Instant> startDateTS =  Optional.empty();
         // For checking correct date format
         if(endDate.isPresent()) {
             try {
@@ -540,6 +544,15 @@ public class AnalyzeWS {
                         "Error", e.getMessage())).toString())).build();
             }
         }
+        if (startDate.isPresent()) {
+          try {
+            startDateTS = Optional.of(Instant.parse(startDate.get()));
+          } catch (DateTimeParseException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message", "start Date format should be yyyy-MM-ddTHH:MM:SSZ",
+                    "Error", e.getMessage())).toString())).build();
+          }
+        }
 
         boolean byPath = Optional.ofNullable(queryParams.getFirst("byPath"))
             .map(v -> v.equals("y")).orElse(false);
@@ -547,11 +560,12 @@ public class AnalyzeWS {
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).map(Integer::valueOf).or(() -> Optional.of(20));
 
         Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS);
+            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS, startDateTS, testConfigName, goldenName);
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {
             String replayId = replay.replayId;
+            String testConfigNameValue = replay.testConfigName.orElse("");
             Instant creationTimeStamp = replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
                 replay.collection , replay.templateVersion);
@@ -564,7 +578,8 @@ public class AnalyzeWS {
                     + "\" , \"collection\" : \"" + recording.collection
                     + "\" , \"templateVer\" : \"" + recording.templateVersion
                     + "\", \"goldenName\" : \"" + recording.name
-                    + "\", \"userName\" : \"" + recording.userId;
+                    + "\", \"userName\" : \"" + recording.userId
+                    + "\", \"goldenLabel\" : \"" + recording.label;
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -574,7 +589,7 @@ public class AnalyzeWS {
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
-                + recordingInfo +  "\" , \"results\" : ");
+                + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
@@ -953,19 +968,23 @@ public class AnalyzeWS {
                 new Exception("Unable to find recording object for the given id"));
 
             String name = formParams.getFirst("name");
-            if (name==null) {
-                throw new Exception("Name not specified for golden");
+            String label = formParams.getFirst("label");
+
+            if (name==null || label==null) {
+                throw new Exception("Name or label not specified for golden");
             }
 
             String userId = formParams.getFirst("userId");
-            if (userId==null) {
+
+
+            if (userId==null ) {
                 throw new Exception("userId not specified for golden");
             }
 
             // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name);
+            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name, Optional.ofNullable(label));
             if (recWithSameName.isPresent()) {
-                throw new Exception("Golden already present for name - " + name + " .Specify unique name");
+                throw new Exception("Golden already present for name - " + name + "/" + label + ".Specify unique name/label");
             }
 
             // creating a new temporary empty template set against the old version
@@ -1011,12 +1030,12 @@ public class AnalyzeWS {
             	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
                 .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
-                .withName(name).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
+                .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
 	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId);
-	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
-	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
-	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
-	        originalRec.comment.ifPresent(recordingBuilder::withComment);
+            codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+            branch.ifPresent(recordingBuilder::withBranch);
+            gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+            comment.ifPresent(recordingBuilder::withComment);
 	        originalRec.generatedClassJarPath.ifPresent(UtilException
 		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
 
@@ -1054,7 +1073,7 @@ public class AnalyzeWS {
             	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
 	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
-	            .withName(originalRec.name).withTags(originalRec.tags).withArchived(originalRec.archived)
+	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
 	            .withUserId(originalRec.userId);
 	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
